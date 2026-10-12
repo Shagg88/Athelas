@@ -1,5 +1,5 @@
 /*
- * ROTK Fix - core (test build 77)
+ * ROTK Fix - core (test build 78)
  *
  * Loaded into The Lord of the Rings: The Return of the King (PC, 2003)
  * through the d3d8.dll and dinput8.dll forwarders in the game folder (the
@@ -631,8 +631,9 @@ int readable(const void *addr, size_t n)
  * 0x50abd0 starts a movie; its second argument is the file path
  * ("Data/Movies/helmfmv1.avi" etc.). Hooked to remember the name, so the
  * graphics layer can choose how to fit the picture on a widescreen.
- * Story cutscenes ("...fmv...", except the attract video) are widescreen film
- * with black bars baked into a 4:3 frame; everything else is full-frame 4:3.
+ * Story cutscenes ("...fmv...", except the attract video) and the opening
+ * logos are widescreen film with black bars baked into a 4:3 frame; everything
+ * else is full-frame 4:3.
  */
 #define ADDR_MOVIE_START  0x50abd0
 #define ADDR_MOVIE_CALLEE 0x50a240
@@ -656,7 +657,9 @@ static const char *__cdecl on_movie_start(const char *path)
     }
     CharLowerA(name);
     lstrcpynA(g_movieName, name, sizeof g_movieName);
-    int film = strstr(name, "fmv") != NULL && strncmp(name, "attr", 4) != 0;
+    /* the opening logos fill the width too: the New Line part is letterboxed
+     * film like the cutscenes, and the EA logo sits in the middle of its frame */
+    int film = (strstr(name, "fmv") != NULL && strncmp(name, "attr", 4) != 0) || !strncmp(name, "logos", 5);
     g_movieFit = g_movieDisplay == MD_STRETCH ? MOVIE_FIT_STRETCH
                : g_movieDisplay == MD_43 ? MOVIE_FIT_43
                : film ? MOVIE_FIT_FILM : MOVIE_FIT_43;
@@ -986,7 +989,7 @@ BOOL WINAPI DllMain(HINSTANCE inst, DWORD reason, LPVOID reserved)
             char lp[MAX_PATH]; path_in_dir(lp, "ROTKFix.log");
             g_log = fopen(lp, "w");
         }
-        logf_("ROTK Fix test build 77 loaded (Limiter=%d TargetFPS=%d Spin=%dus)",
+        logf_("ROTK Fix test build 78 loaded (Limiter=%d TargetFPS=%d Spin=%dus)",
               g_limiterMode, g_targetFps, g_spinUs);
 
         QueryPerformanceFrequency(&g_freq);

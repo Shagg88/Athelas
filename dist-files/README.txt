@@ -78,8 +78,8 @@ sides instead of a stretched picture.
 Menus, text and the HUD fill the screen up to 16:9. On wider screens they stay
 16:9 in the middle, so text is not stretched; full-screen shading, fades and
 the pause screen still reach the edges.
-Logos and the trailer keep their 4:3 shape with black bars. Story cutscenes
-are film: they fill the width on 16:9, and the height on wider screens.
+The trailer keeps its 4:3 shape with black bars. Story cutscenes and the
+opening logos fill the width on 16:9, and the height on wider screens.
 To try an ultrawide shape on a normal monitor, set Display mode to Windowed:
 the Resolution list then also offers window sizes such as 2560 x 1080 (21:9).
 

@@ -43,6 +43,7 @@ void    sound_late_patch(void);   /* disc exe: from Direct3DCreate8 */
 void    textures_load_settings(const char *ini);
 void    textures_on_create(void *dev, void *realCreateTexture, void *tex);
 void   *textures_bind(void *dev, void *tex, int skip);   /* returns the texture to bind */
+void    textures_note_2d(const void *tex);
 void    textures_on_release(void *tex);
 
 /* input.c */

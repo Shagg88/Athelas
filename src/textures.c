@@ -476,6 +476,22 @@ void *textures_bind(void *dev, void *t, int skip)
     return r->repl ? (void *)r->repl : t;
 }
 
+/* graphics.c: texture t is drawn as a flat 2D picture (HUD, menus). With
+ * Dump on, each one is listed once in the log by its file name, so the
+ * pictures that make up the HUD are easy to find among the dumped files. */
+void textures_note_2d(const void *t)
+{
+    if (!g_dump || !t) return;
+    Rec *r = rec_find(t);
+    if (!r || r->state != ST_DONE || !r->hash) return;
+    static unsigned long long seen[256];
+    static int n;
+    for (int i = 0; i < n; i++) if (seen[i] == r->hash) return;
+    if (n >= 256) return;
+    seen[n++] = r->hash;
+    logf_("textures: 2D picture %ux%u_%016llx.png", r->w, r->h, r->hash);
+}
+
 /* graphics.c: texture t was freed */
 void textures_on_release(void *t)
 {

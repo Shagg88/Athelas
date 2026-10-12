@@ -675,7 +675,7 @@ static void tab_graphics(App &a)
 
     section("Movies");
     static const char *md[] = { "Fit", "Stretch", "4:3" };
-    row_begin("Movie display", "Fit: cutscenes fill the width with thin bars and correct proportions; logos and extras are shown 4:3.\n"
+    row_begin("Movie display", "Fit: cutscenes and the opening logos fill the width with correct proportions; the trailer is shown 4:3.\n"
                                "Stretch: the whole movie frame is stretched to the screen (thick bars, wider picture).\n"
                                "4:3: every movie in its original frame with bars at the sides.");
     segmented("md", &s.movieDisplay, md, 3);

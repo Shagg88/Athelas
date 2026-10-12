@@ -947,6 +947,7 @@ static int hud_sharpen_ok(IDirect3DDevice8 *dev)
     g_hudSharpPct = hud_sharpen_strength();
     static int logged;
     if (g_hudSharpPct && !logged++) logf_("graphics: sharper HUD on (%d%% for %u lines)", g_hudSharpPct, g_modeH);
+    if (g_curFVF == FVF_2D && g_tex0 && !is_rt(g_tex0) && !icons_is_font_texture(g_tex0)) textures_note_2d(g_tex0);
     if (!g_hudSharpPct || g_moviePSFailed) return 0;
     if (g_curFVF != FVF_2D) return hs_note(HS_FVF);
     if (!g_tex0) return hs_note(HS_NOTEX);
