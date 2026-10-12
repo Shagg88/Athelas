@@ -41,6 +41,7 @@ struct Settings {
     // [Launcher]
     int  preset = 3;              // 0 original 1 balanced 2 high 3 ultra 4 custom
     int  monitor = 0;
+    std::string screen = "main";   // [Graphics] Screen: main, or DISPLAY2 etc.
 
     // the game's own ROTK.ini (Documents)
     int  shadows = 2;             // 0 off 1 low 2 high

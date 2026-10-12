@@ -445,6 +445,12 @@ static bool save(App &a)
 {
     std::string err;
     a.s.refresh = a.s.displayMode == 1 ? pick_refresh(refresh_list(a), a.s.targetFps) : 0;
+    {
+        const Monitor &m = mon(a);
+        std::string d = m.device;
+        if (d.rfind("\\\\.\\", 0) == 0) d = d.substr(4);   // \\.\DISPLAY2 -> DISPLAY2
+        a.s.screen = m.primary ? "main" : d;
+    }
     if (!save_settings(a.dir, a.s, err)) { set_message(a, err, true); return false; }
     a.game = inspect_game(a.dir);
     set_message(a, "Settings saved", false);
@@ -1319,6 +1325,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     bool hadIni = load_settings(a.dir, a.s);
     if (!hadIni) apply_preset(a.s, PRESET_HIGH);
     a.s.renderer = 0;   // Vulkan always; the DLL falls back to Direct3D 8 by itself if Vulkan is unavailable
+    // the saved screen by name (the order of screens can change)
+    for (size_t i = 0; i < a.monitors.size(); i++) {
+        const Monitor &m = a.monitors[i];
+        bool match = _stricmp(a.s.screen.c_str(), "main") ? m.device.size() > 4 && !_stricmp(m.device.c_str() + 4, a.s.screen.c_str())
+                                                          : m.primary;
+        if (match) { a.s.monitor = (int)i; break; }
+    }
     if (a.s.monitor >= (int)a.monitors.size()) a.s.monitor = 0;
     // a saved fullscreen size this screen doesn't offer (any more): back to the screen's own
     if (a.s.displayMode == 1 && a.s.width > 0 && !mon(a).find(a.s.width, a.s.height)) a.s.width = a.s.height = 0;

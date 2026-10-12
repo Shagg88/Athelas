@@ -132,6 +132,8 @@ std::vector<Monitor> enum_monitors()
             return a.w != b.w ? a.w < b.w : a.h < b.h; });
         out.push_back(std::move(m));
     }
+    // the main screen first: it is where the game goes unless told otherwise
+    std::stable_sort(out.begin(), out.end(), [](const Monitor &a, const Monitor &b) { return a.primary && !b.primary; });
     if (out.empty()) {
         Monitor m; m.name = "Display"; m.deskW = 1920; m.deskH = 1080; m.deskHz = 60; m.primary = true;
         m.modes.push_back(Mode{ 1920, 1080, { 60 } });
@@ -383,6 +385,7 @@ bool load_settings(const std::string &dir, Settings &s)
         s.sound3d = !_stricmp(sm.c_str(), "off") ? 0 : !_stricmp(sm.c_str(), "headphones") ? 2 : 1;
     }
     s.monitor = std::max(0, geti(ini, "Launcher", "Monitor", 0));
+    s.screen = gets(ini, "Graphics", "Screen", "main");
 
     GameInfo g = inspect_game(dir);
     if (g.rotkIniExists) {
@@ -414,6 +417,7 @@ static const std::vector<IniSection> &ini_layout()
 {
     static const std::vector<IniSection> L = {
         { "Graphics", "Screen and picture", {
+            { "Screen", "main", "Which screen the game uses: main, or DISPLAY2 and so on" },
             { "DisplayMode", "borderless", "borderless, fullscreen or windowed" },
             { "Width", "0", "Resolution; 0 = the screen's own" },
             { "Height", "0", nullptr },
@@ -555,6 +559,7 @@ static bool write_rotkfix_ini(const std::string &p, const Settings &s, bool crea
     static const char *looks[] = { "original", "film", "vivid", "dark" };
     static const char *names[] = { "auto", "xbox", "playstation", "nintendo", "original" };
     static const char *sm[] = { "off", "speakers", "headphones" };
+    set("Graphics", "Screen", s.screen);
     set("Graphics", "DisplayMode", dm[s.displayMode]);
     set("Graphics", "Width", std::to_string(s.width));
     set("Graphics", "Height", std::to_string(s.height));

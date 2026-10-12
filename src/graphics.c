@@ -39,6 +39,8 @@ static int  g_renderer   = R_DXVK;
 static int  g_width      = 0;      /* 0 = desktop resolution */
 static int  g_height     = 0;
 static int  g_dispMode   = DM_BORDERLESS;
+static char g_screenName[32] = "main"; /* [Graphics] Screen: main, or DISPLAY2 etc. */
+static UINT g_screenAdapter;           /* the game's adapter 0 is drawn on this one */
 static int  g_refresh    = 0;      /* 0 = desktop refresh (fullscreen only) */
 static int  g_vsync      = 1;
 static int  g_msaa       = 0;      /* 0, 2, 4, 8 */
@@ -81,6 +83,7 @@ void graphics_load_settings(const char *ini)
         if (!((*c >= 'a' && *c <= 'z') || (*c >= 'A' && *c <= 'Z') || (*c >= '0' && *c <= '9') || *c == '-' || *c == '_' || *c == '.') || (c[0] == '.' && c[1] == '.'))
             okName = 0;
     if (okName) lstrcpynA(g_dxvkFolder, buf, sizeof g_dxvkFolder);
+    GetPrivateProfileStringA("Graphics", "Screen", "main", g_screenName, sizeof g_screenName, ini);
     GetPrivateProfileStringA("Graphics", "DisplayMode", "borderless", buf, sizeof buf, ini);
     g_dispMode = parse_choice(buf, dn, 3, DM_BORDERLESS);
     g_width   = GetPrivateProfileIntA("Graphics", "Width", 0, ini);
@@ -1163,6 +1166,30 @@ typedef struct {
 } D3D8Wrap;
 #define RD(This) (((D3D8Wrap *)(This))->real)
 
+/* The game always uses the main screen (adapter 0). When another screen is
+ * chosen, swap the two so the game's "adapter 0" is that screen. */
+static UINT AD(UINT a)
+{
+    if (!g_screenAdapter) return a;
+    return a == 0 ? g_screenAdapter : a == g_screenAdapter ? 0 : a;
+}
+static void find_screen_adapter(IDirect3D8 *real)
+{
+    g_screenAdapter = 0;
+    if (!_stricmp(g_screenName, "main") || !g_screenName[0]) return;
+    UINT n = IDirect3D8_GetAdapterCount(real);
+    for (UINT i = 0; i < n; i++) {
+        MONITORINFOEXA mi; memset(&mi, 0, sizeof mi); mi.cbSize = sizeof mi;
+        HMONITOR m = IDirect3D8_GetAdapterMonitor(real, i);
+        if (m && GetMonitorInfoA(m, (MONITORINFO *)&mi) && !_stricmp(mi.szDevice + (strncmp(mi.szDevice, "\\\\.\\", 4) ? 0 : 4), g_screenName)) {
+            g_screenAdapter = i;
+            logf_("graphics: game shown on %s (adapter %u)", mi.szDevice, i);
+            return;
+        }
+    }
+    logf_("graphics: screen %s not found; using the main screen", g_screenName);
+}
+
 static HRESULT WINAPI w_QueryInterface(IDirect3D8 *This, REFIID riid, void **ppv)
 {
     if (IsEqualGUID(riid, &IID_IUnknown) || IsEqualGUID(riid, &IID_IDirect3D8)) { *ppv = This; ((D3D8Wrap *)This)->ref++; return S_OK; }
@@ -1178,39 +1205,40 @@ static ULONG WINAPI w_Release(IDirect3D8 *This)
 }
 static HRESULT WINAPI w_RegisterSoftwareDevice(IDirect3D8 *This, void *f) { return IDirect3D8_RegisterSoftwareDevice(RD(This), f); }
 static UINT WINAPI w_GetAdapterCount(IDirect3D8 *This) { return IDirect3D8_GetAdapterCount(RD(This)); }
-static HRESULT WINAPI w_GetAdapterIdentifier(IDirect3D8 *This, UINT a, DWORD f, D3DADAPTER_IDENTIFIER8 *id) { return IDirect3D8_GetAdapterIdentifier(RD(This), a, f, id); }
+static HRESULT WINAPI w_GetAdapterIdentifier(IDirect3D8 *This, UINT a, DWORD f, D3DADAPTER_IDENTIFIER8 *id) { return IDirect3D8_GetAdapterIdentifier(RD(This), AD(a), f, id); }
 
 /* The game sees one resolution, in 32-bit and 16-bit formats. */
 static const D3DFORMAT g_listFormats[] = { D3DFMT_X8R8G8B8, D3DFMT_R5G6B5 };
 static UINT WINAPI w_GetAdapterModeCount(IDirect3D8 *This, UINT a)
 {
-    choose_mode(RD(This), a);
+    choose_mode(RD(This), AD(a));
     return 2;
 }
 static HRESULT WINAPI w_EnumAdapterModes(IDirect3D8 *This, UINT a, UINT mode, D3DDISPLAYMODE *m)
 {
-    choose_mode(RD(This), a);
+    choose_mode(RD(This), AD(a));
     if (!m || mode >= 2) return D3DERR_INVALIDCALL;
     m->Width = g_modeW; m->Height = g_modeH;
     m->RefreshRate = g_dispMode == DM_FULLSCREEN ? g_modeRefresh : 0;
     m->Format = g_listFormats[mode];
     return D3D_OK;
 }
-static HRESULT WINAPI w_GetAdapterDisplayMode(IDirect3D8 *This, UINT a, D3DDISPLAYMODE *m) { return IDirect3D8_GetAdapterDisplayMode(RD(This), a, m); }
+static HRESULT WINAPI w_GetAdapterDisplayMode(IDirect3D8 *This, UINT a, D3DDISPLAYMODE *m) { return IDirect3D8_GetAdapterDisplayMode(RD(This), AD(a), m); }
 static HRESULT WINAPI w_CheckDeviceType(IDirect3D8 *This, UINT a, D3DDEVTYPE t, D3DFORMAT df, D3DFORMAT bf, WINBOOL win)
 {
-    HRESULT hr = IDirect3D8_CheckDeviceType(RD(This), a, t, df, bf, win);
+    HRESULT hr = IDirect3D8_CheckDeviceType(RD(This), AD(a), t, df, bf, win);
     /* the game checks fullscreen 16/32-bit support; in borderless/windowed we
      * still run windowed, so report fullscreen support for the formats we list */
     return hr;
 }
-static HRESULT WINAPI w_CheckDeviceFormat(IDirect3D8 *This, UINT a, D3DDEVTYPE t, D3DFORMAT af, DWORD u, D3DRESOURCETYPE rt, D3DFORMAT cf) { return IDirect3D8_CheckDeviceFormat(RD(This), a, t, af, u, rt, cf); }
-static HRESULT WINAPI w_CheckDeviceMultiSampleType(IDirect3D8 *This, UINT a, D3DDEVTYPE t, D3DFORMAT f, WINBOOL win, D3DMULTISAMPLE_TYPE ms) { return IDirect3D8_CheckDeviceMultiSampleType(RD(This), a, t, f, win, ms); }
-static HRESULT WINAPI w_CheckDepthStencilMatch(IDirect3D8 *This, UINT a, D3DDEVTYPE t, D3DFORMAT af, D3DFORMAT rf, D3DFORMAT df) { return IDirect3D8_CheckDepthStencilMatch(RD(This), a, t, af, rf, df); }
-static HRESULT WINAPI w_GetDeviceCaps(IDirect3D8 *This, UINT a, D3DDEVTYPE t, D3DCAPS8 *c) { return IDirect3D8_GetDeviceCaps(RD(This), a, t, c); }
-static HMONITOR WINAPI w_GetAdapterMonitor(IDirect3D8 *This, UINT a) { return IDirect3D8_GetAdapterMonitor(RD(This), a); }
+static HRESULT WINAPI w_CheckDeviceFormat(IDirect3D8 *This, UINT a, D3DDEVTYPE t, D3DFORMAT af, DWORD u, D3DRESOURCETYPE rt, D3DFORMAT cf) { return IDirect3D8_CheckDeviceFormat(RD(This), AD(a), t, af, u, rt, cf); }
+static HRESULT WINAPI w_CheckDeviceMultiSampleType(IDirect3D8 *This, UINT a, D3DDEVTYPE t, D3DFORMAT f, WINBOOL win, D3DMULTISAMPLE_TYPE ms) { return IDirect3D8_CheckDeviceMultiSampleType(RD(This), AD(a), t, f, win, ms); }
+static HRESULT WINAPI w_CheckDepthStencilMatch(IDirect3D8 *This, UINT a, D3DDEVTYPE t, D3DFORMAT af, D3DFORMAT rf, D3DFORMAT df) { return IDirect3D8_CheckDepthStencilMatch(RD(This), AD(a), t, af, rf, df); }
+static HRESULT WINAPI w_GetDeviceCaps(IDirect3D8 *This, UINT a, D3DDEVTYPE t, D3DCAPS8 *c) { return IDirect3D8_GetDeviceCaps(RD(This), AD(a), t, c); }
+static HMONITOR WINAPI w_GetAdapterMonitor(IDirect3D8 *This, UINT a) { return IDirect3D8_GetAdapterMonitor(RD(This), AD(a)); }
 static HRESULT WINAPI w_CreateDevice(IDirect3D8 *This, UINT a, D3DDEVTYPE t, HWND focus, DWORD flags, D3DPRESENT_PARAMETERS *pp, IDirect3DDevice8 **dev)
 {
+    a = AD(a);
     choose_mode(RD(This), a);
     g_realD3D = RD(This);
     g_adapter = a;
@@ -1263,6 +1291,7 @@ __declspec(dllexport) IDirect3D8 *WINAPI RF_Direct3DCreate8(UINT sdk)
     }
     if (!real) { logf_("graphics: ERROR Direct3DCreate8 failed"); return NULL; }
     if (!g_gfxEnabled) { logf_("graphics: [Graphics] Enabled=0, not changing resolution or display mode"); return real; }
+    find_screen_adapter(real);
     D3D8Wrap *w = (D3D8Wrap *)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof *w);
     if (!w) return real;
     w->lpVtbl = &g_d3d8Vtbl;

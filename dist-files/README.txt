@@ -104,6 +104,7 @@ ROTKFIX.INI SETTINGS
 The launcher writes ROTKFix.ini in the game folder. You can also edit it in Notepad.
 
 [Graphics]  Screen and picture
+  Screen                 Which screen the game uses: main, or DISPLAY2 and so on (default main)
   DisplayMode            borderless, fullscreen or windowed (default borderless)
   Width                  Resolution; 0 = the screen's own (default 0)
   Height                 (default 0)
