@@ -97,11 +97,13 @@ static void setup_style()
 
 struct Picture { SDL_Texture *tex = nullptr; int w = 0, h = 0; };
 
+struct BgJob;
 struct Backgrounds {
     std::vector<std::string> files;
     int index = -1;
     Picture cur, prev;
     double changedAt = 0;
+    BgJob *job = nullptr;          // picture being read in the background
 };
 
 static void list_pictures(const std::string &dir, std::vector<std::string> &out, size_t maxCount)
@@ -132,37 +134,93 @@ static bool looks_like_text_screen(const unsigned char *px, int w, int h)
             int mx = std::max(c[0], std::max(c[1], c[2])), mn = std::min(c[0], std::min(c[1], c[2]));
             chroma += mx - mn; light += mx; n++;
         }
-    return n == 0 || chroma / n < 6.0 || light / n < 12.0;
+    // (dim, muted scenes such as the misty forests still count as pictures)
+    return n == 0 || chroma / n < 2.5 || light / n < 14.0;
 }
 
-static Picture load_picture(SDL_Renderer *ren, const std::string &path)
+// Pictures are read and shrunk on a separate thread, so the launcher opens
+// at once and never pauses when the background changes (screenshots can be
+// 4K PNGs of 10 MB or more).
+struct BgJob {
+    std::vector<std::string> files;
+    int start = 0, found = -1;
+    unsigned char *px = nullptr;
+    int w = 0, h = 0;
+    SDL_AtomicInt done;
+};
+
+// Halve (2x2 average) until no wider than the launcher could ever show.
+static void shrink_picture(unsigned char *&px, int &w, int &h)
 {
-    Picture p;
-    int w, h, n;
-    unsigned char *px = stbi_load(path.c_str(), &w, &h, &n, 4);
-    if (!px) return p;
-    if (path.find("\\Screenshots\\") != std::string::npos && looks_like_text_screen(px, w, h)) { stbi_image_free(px); return p; }
-    SDL_Surface *s = SDL_CreateSurfaceFrom(w, h, SDL_PIXELFORMAT_RGBA32, px, w * 4);
-    if (s) {
-        p.tex = SDL_CreateTextureFromSurface(ren, s);
-        if (p.tex) { p.w = w; p.h = h; SDL_SetTextureScaleMode(p.tex, SDL_SCALEMODE_LINEAR); }
-        SDL_DestroySurface(s);
+    while (w > 1600 && h >= 2) {
+        int nw = w / 2, nh = h / 2;
+        unsigned char *o = (unsigned char *)malloc((size_t)nw * nh * 4);
+        if (!o) return;
+        for (int y = 0; y < nh; y++)
+            for (int x = 0; x < nw; x++) {
+                const unsigned char *a = px + ((size_t)(2 * y) * w + 2 * x) * 4, *b = a + (size_t)w * 4;
+                unsigned char *d = o + ((size_t)y * nw + x) * 4;
+                for (int c = 0; c < 4; c++) d[c] = (unsigned char)((a[c] + a[c + 4] + b[c] + b[c + 4] + 2) / 4);
+            }
+        stbi_image_free(px);
+        px = o; w = nw; h = nh;   // freed with free(), same as stbi_image_free
     }
-    stbi_image_free(px);
-    return p;
 }
 
-static void backgrounds_next(Backgrounds &b, SDL_Renderer *ren)
+static int SDLCALL bg_worker(void *p)
 {
-    if (b.files.empty()) return;
-    if (b.prev.tex) SDL_DestroyTexture(b.prev.tex);
-    b.prev = b.cur;
-    b.cur = Picture();
-    for (size_t tries = 0; tries < b.files.size() && !b.cur.tex; tries++) {
-        b.index = (b.index + 1) % (int)b.files.size();
-        b.cur = load_picture(ren, b.files[b.index]);
+    BgJob *j = (BgJob *)p;
+    size_t n = j->files.size();
+    for (size_t tries = 0; tries < n && !j->px; tries++) {
+        int i = (int)((j->start + tries) % n);
+        int w, h, c;
+        unsigned char *px = stbi_load(j->files[i].c_str(), &w, &h, &c, 4);
+        if (!px) continue;
+        if (j->files[i].find("\\Screenshots\\") != std::string::npos && looks_like_text_screen(px, w, h)) { stbi_image_free(px); continue; }
+        shrink_picture(px, w, h);
+        j->px = px; j->w = w; j->h = h; j->found = i;
     }
-    b.changedAt = ImGui::GetTime();
+    SDL_SetAtomicInt(&j->done, 1);
+    return 0;
+}
+
+// Ask for the next picture (does nothing while one is still being read).
+static void backgrounds_next(Backgrounds &b)
+{
+    if (b.files.empty() || b.job) return;
+    BgJob *j = new BgJob();
+    j->files = b.files;
+    j->start = (b.index + 1) % (int)b.files.size();
+    SDL_SetAtomicInt(&j->done, 0);
+    SDL_Thread *t = SDL_CreateThread(bg_worker, "bg", j);
+    if (!t) { delete j; return; }
+    SDL_DetachThread(t);
+    b.job = j;
+}
+
+// Called every frame: show a picture once it has been read.
+static void backgrounds_poll(Backgrounds &b, SDL_Renderer *ren)
+{
+    BgJob *j = b.job;
+    if (!j || !SDL_GetAtomicInt(&j->done)) return;
+    b.job = nullptr;
+    if (j->px) {
+        SDL_Surface *s = SDL_CreateSurfaceFrom(j->w, j->h, SDL_PIXELFORMAT_RGBA32, j->px, j->w * 4);
+        SDL_Texture *t = s ? SDL_CreateTextureFromSurface(ren, s) : nullptr;
+        if (s) SDL_DestroySurface(s);
+        if (t) {
+            SDL_SetTextureScaleMode(t, SDL_SCALEMODE_LINEAR);
+            if (b.prev.tex) SDL_DestroyTexture(b.prev.tex);
+            b.prev = b.cur;
+            b.cur.tex = t; b.cur.w = j->w; b.cur.h = j->h;
+            b.changedAt = ImGui::GetTime();
+        }
+        b.index = j->found;
+        stbi_image_free(j->px);
+    } else {
+        b.files.clear();          // nothing usable: keep the drawn landscape
+    }
+    delete j;
 }
 
 // Draw a picture to cover the rect (cropping, never stretching).
@@ -214,7 +272,10 @@ static void draw_background(ImDrawList *dl, ImVec2 size, Backgrounds &b)
     if (b.cur.tex) {
         float t = (float)(ImGui::GetTime() - b.changedAt), fade = std::min(1.0f, t / 1.5f);
         dl->AddRectFilled(ImVec2(0, 0), size, IM_COL32(10, 8, 6, 255));
-        if (b.prev.tex && fade < 1.0f) draw_cover(dl, b.prev, size, 1.0f);
+        if (fade < 1.0f) {
+            if (b.prev.tex) draw_cover(dl, b.prev, size, 1.0f);
+            else draw_landscape(dl, size);      // the first picture fades in over the drawn backdrop
+        }
         draw_cover(dl, b.cur, size, fade);
     } else {
         draw_landscape(dl, size);
@@ -1049,7 +1110,8 @@ static void draw_setup(App &a)
 static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
 {
     // change background every 15 s
-    if (a.bg.files.size() > 1 && ImGui::GetTime() - a.bg.changedAt > 15.0) backgrounds_next(a.bg, ren);
+    backgrounds_poll(a.bg, ren);
+    if (a.bg.files.size() > 1 && a.bg.cur.tex && ImGui::GetTime() - a.bg.changedAt > 15.0) backgrounds_next(a.bg);
 
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(size);
@@ -1264,7 +1326,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
 
     list_pictures(a.dir + "\\ROTKFix\\backgrounds", a.bg.files, 100);
     list_pictures(a.dir + "\\Screenshots", a.bg.files, 30);
-    backgrounds_next(a.bg, ren);
+    backgrounds_next(a.bg);
     if (getenv("ROTKFIX_SAVE_AND_EXIT")) { save(a); return 0; }     // testing
     if (!hadIni) set_message(a, "Welcome! Settings are chosen for your PC - press Play, or adjust anything first.", false);
     if (protectedDir) set_message(a, "This game folder is protected by Windows, so settings can't be saved. "
