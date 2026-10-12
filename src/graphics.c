@@ -211,7 +211,19 @@ static void choose_mode(IDirect3D8 *real, UINT adapter)
         best = desk.RefreshRate;
     }
     g_modeW = w; g_modeH = h;
-    g_modeRefresh = g_refresh > 0 ? (UINT)g_refresh : (w == desk.Width && h == desk.Height ? desk.RefreshRate : best);
+    /* the saved refresh rate belongs to the saved resolution: use it only
+     * if this monitor really offers it at the size the game will use */
+    int rateOk = 0;
+    if (g_refresh > 0)
+        for (UINT i = 0; i < n && !rateOk; i++) {
+            D3DDISPLAYMODE m;
+            if (SUCCEEDED(IDirect3D8_EnumAdapterModes(real, adapter, i, &m)) && m.Format == D3DFMT_X8R8G8B8 &&
+                m.Width == w && m.Height == h && m.RefreshRate == (UINT)g_refresh) rateOk = 1;
+        }
+    if (g_refresh > 0 && !rateOk && g_dispMode == DM_FULLSCREEN)
+        logf_("graphics: %d Hz is not offered at %ux%u; using %u Hz", g_refresh, w, h,
+              w == desk.Width && h == desk.Height ? desk.RefreshRate : best);
+    g_modeRefresh = rateOk ? (UINT)g_refresh : (w == desk.Width && h == desk.Height ? desk.RefreshRate : best);
     if (g_modeRefresh == 0) g_modeRefresh = desk.RefreshRate;
     static const char *const dn[] = { "borderless", "fullscreen", "windowed" };
     logf_("graphics: game will render at %ux%u, %s", g_modeW, g_modeH, dn[g_dispMode]);
@@ -876,16 +888,47 @@ static int hud_sharpen_strength(void)
     return pct < 0 ? 0 : pct > 90 ? 90 : pct;
 }
 
+/* For checking in the log: what happened to 2D pictures in the first
+ * minutes (sharpened, or why not). */
+enum { HS_DONE, HS_FVF, HS_NOTEX, HS_COPY, HS_FONT, HS_PS, HS_STATE, HS_PROJ, HS_COUNT };
+static DWORD g_hsCount[HS_COUNT];
+static DWORD g_hsState[4][9];   /* most recent refused stage setups: cop ca1 ca2 aop aa1 aa2 c1op count */
+static int hs_note(int why) { g_hsCount[why]++; return why == HS_DONE; }
+static void hud_sharpen_report(void)
+{
+    static DWORD t0; static int reports;
+    DWORD now = GetTickCount();
+    if (reports >= 3 || !g_hudSharpPct) return;
+    if (!t0) { t0 = now; return; }
+    if (now - t0 < 60000) return;
+    t0 = now; reports++;
+    logf_("graphics: HUD pictures in the last minute: %lu sharpened; not: %lu other vertex type, %lu untextured, "
+          "%lu screen copies, %lu text, %lu own shader, %lu other blending, %lu other projection",
+          g_hsCount[HS_DONE], g_hsCount[HS_FVF], g_hsCount[HS_NOTEX], g_hsCount[HS_COPY], g_hsCount[HS_FONT],
+          g_hsCount[HS_PS], g_hsCount[HS_STATE], g_hsCount[HS_PROJ]);
+    for (int i = 0; i < 4; i++)
+        if (g_hsState[i][7])
+            logf_("graphics:   blending not sharpened: colour op %lu (%lu,%lu) alpha op %lu (%lu,%lu) stage 2 op %lu - %lu draws",
+                  g_hsState[i][0], g_hsState[i][1], g_hsState[i][2], g_hsState[i][3], g_hsState[i][4], g_hsState[i][5],
+                  g_hsState[i][6], g_hsState[i][7]);
+    memset(g_hsCount, 0, sizeof g_hsCount);
+    memset(g_hsState, 0, sizeof g_hsState);
+}
+
 static int hud_sharpen_ok(IDirect3DDevice8 *dev)
 {
     g_hudSharpPct = hud_sharpen_strength();
     static int logged;
     if (g_hudSharpPct && !logged++) logf_("graphics: sharper HUD on (%d%% for %u lines)", g_hudSharpPct, g_modeH);
-    if (!g_hudSharpPct || g_moviePSFailed || g_curFVF != FVF_2D || !g_tex0 || is_rt(g_tex0) || icons_is_font_texture(g_tex0)) return 0;
+    if (!g_hudSharpPct || g_moviePSFailed) return 0;
+    if (g_curFVF != FVF_2D) return hs_note(HS_FVF);
+    if (!g_tex0) return hs_note(HS_NOTEX);
+    if (is_rt(g_tex0)) return hs_note(HS_COPY);
+    if (icons_is_font_texture(g_tex0)) return hs_note(HS_FONT);
     void **vt = *(void ***)dev;
     DWORD ps = 0, cop = 0, ca1 = 0, ca2 = 0, aop = 0, aa1 = 0, aa2 = 0, c1op = 0;
     ((GetPS8_t)vt[89])(dev, &ps);
-    if (ps) return 0;
+    if (ps) return hs_note(HS_PS);
     ((GetTSS8_t)vt[62])(dev, 0, D3DTSS_COLOROP, &cop);
     ((GetTSS8_t)vt[62])(dev, 0, D3DTSS_COLORARG1, &ca1);
     ((GetTSS8_t)vt[62])(dev, 0, D3DTSS_COLORARG2, &ca2);
@@ -895,7 +938,15 @@ static int hud_sharpen_ok(IDirect3DDevice8 *dev)
     ((GetTSS8_t)vt[62])(dev, 1, D3DTSS_COLOROP, &c1op);
     int texDiff = (ca1 == D3DTA_TEXTURE && ca2 == D3DTA_DIFFUSE) || (ca1 == D3DTA_DIFFUSE && ca2 == D3DTA_TEXTURE);
     int aTexDiff = (aa1 == D3DTA_TEXTURE && aa2 == D3DTA_DIFFUSE) || (aa1 == D3DTA_DIFFUSE && aa2 == D3DTA_TEXTURE);
-    return cop == D3DTOP_MODULATE && texDiff && aop == D3DTOP_MODULATE && aTexDiff && c1op == D3DTOP_DISABLE;
+    if (cop == D3DTOP_MODULATE && texDiff && aop == D3DTOP_MODULATE && aTexDiff && c1op == D3DTOP_DISABLE) return hs_note(HS_DONE);
+    DWORD k[7] = { cop, ca1, ca2, aop, aa1, aa2, c1op };
+    int slot = -1;
+    for (int i = 0; i < 4 && slot < 0; i++)
+        if (g_hsState[i][7] && !memcmp(g_hsState[i], k, sizeof k)) slot = i;
+    for (int i = 0; i < 4 && slot < 0; i++)
+        if (!g_hsState[i][7]) { slot = i; memcpy(g_hsState[i], k, sizeof k); }
+    if (slot >= 0) g_hsState[slot][7]++;
+    return hs_note(HS_STATE);
 }
 
 /* Horizontal extent of a 2D draw in the game's own (unnarrowed) screen
@@ -1009,6 +1060,7 @@ static HRESULT WINAPI hook_DrawPrimitive(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE
             if (!draw_full_width(start, prim_verts(pt, count)) && !g_pictureDraw && hud_sharpen_ok(dev) &&
                 sharpen_draw(dev, g_hudSharpPct, pt, 0, start, count, 0, 0)) return D3D_OK;
         }
+        else if (!g_projPersp && g_curFVF == FVF_2D && g_hudSharpPct) hs_note(HS_PROJ);
         return g_realDrawPrim(dev, pt, start, count);
     }
     g_pictureDraw = 0;
@@ -1033,6 +1085,7 @@ static HRESULT WINAPI hook_DrawIndexedPrimitive(IDirect3DDevice8 *dev, D3DPRIMIT
             if (!draw_full_width(g_baseVertex + mi, nv) && !g_pictureDraw && hud_sharpen_ok(dev) &&
                 sharpen_draw(dev, g_hudSharpPct, pt, 1, mi, nv, si, pc)) return D3D_OK;
         }
+        else if (!g_projPersp && g_curFVF == FVF_2D && g_hudSharpPct) hs_note(HS_PROJ);
         return g_realDrawIdx(dev, pt, mi, nv, si, pc);
     }
     g_pictureDraw = 0;
@@ -1078,6 +1131,7 @@ static HRESULT WINAPI hook_Present(IDirect3DDevice8 *dev, const RECT *a, const R
     HRESULT hr = g_realPresent(dev, a, b, w, r);
     QueryPerformanceCounter(&p1);
     hitch_present(p0.QuadPart, p1.QuadPart);
+    hud_sharpen_report();
     return hr;
 }
 

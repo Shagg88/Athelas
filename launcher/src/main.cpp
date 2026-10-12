@@ -1258,6 +1258,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     if (!hadIni) apply_preset(a.s, PRESET_HIGH);
     a.s.renderer = 0;   // Vulkan always; the DLL falls back to Direct3D 8 by itself if Vulkan is unavailable
     if (a.s.monitor >= (int)a.monitors.size()) a.s.monitor = 0;
+    // a saved fullscreen size this screen doesn't offer (any more): back to the screen's own
+    if (a.s.displayMode == 1 && a.s.width > 0 && !mon(a).find(a.s.width, a.s.height)) a.s.width = a.s.height = 0;
     refresh_controllers(a);
 
     list_pictures(a.dir + "\\ROTKFix\\backgrounds", a.bg.files, 100);

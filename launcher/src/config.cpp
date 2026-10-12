@@ -59,6 +59,38 @@ const Mode *Monitor::find(int w, int h) const
     return nullptr;
 }
 
+// The monitor's own name ("XZ322QU V3") rather than Windows' "Generic PnP
+// Monitor". Empty if Windows can't tell.
+static std::string monitor_friendly_name(const char *gdiName)
+{
+    UINT32 np = 0, nm = 0;
+    if (GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &np, &nm) != ERROR_SUCCESS || !np) return "";
+    std::vector<DISPLAYCONFIG_PATH_INFO> paths(np);
+    std::vector<DISPLAYCONFIG_MODE_INFO> modes(nm);
+    if (QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &np, paths.data(), &nm, modes.data(), NULL) != ERROR_SUCCESS) return "";
+    for (UINT32 i = 0; i < np; i++) {
+        DISPLAYCONFIG_SOURCE_DEVICE_NAME src = {};
+        src.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
+        src.header.size = sizeof src;
+        src.header.adapterId = paths[i].sourceInfo.adapterId;
+        src.header.id = paths[i].sourceInfo.id;
+        if (DisplayConfigGetDeviceInfo(&src.header) != ERROR_SUCCESS) continue;
+        char gdi[64];
+        WideCharToMultiByte(CP_UTF8, 0, src.viewGdiDeviceName, -1, gdi, sizeof gdi, NULL, NULL);
+        if (_stricmp(gdi, gdiName)) continue;
+        DISPLAYCONFIG_TARGET_DEVICE_NAME tgt = {};
+        tgt.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME;
+        tgt.header.size = sizeof tgt;
+        tgt.header.adapterId = paths[i].targetInfo.adapterId;
+        tgt.header.id = paths[i].targetInfo.id;
+        if (DisplayConfigGetDeviceInfo(&tgt.header) != ERROR_SUCCESS || !tgt.monitorFriendlyDeviceName[0]) continue;
+        char name[128];
+        WideCharToMultiByte(CP_UTF8, 0, tgt.monitorFriendlyDeviceName, -1, name, sizeof name, NULL, NULL);
+        return name;
+    }
+    return "";
+}
+
 std::vector<Monitor> enum_monitors()
 {
     std::vector<Monitor> out;
@@ -70,6 +102,8 @@ std::vector<Monitor> enum_monitors()
         m.primary = (dd.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE) != 0;
         DISPLAY_DEVICEA mon; mon.cb = sizeof mon;
         m.name = EnumDisplayDevicesA(dd.DeviceName, 0, &mon, 0) && mon.DeviceString[0] ? mon.DeviceString : dd.DeviceString;
+        std::string friendly = monitor_friendly_name(dd.DeviceName);
+        if (!friendly.empty()) m.name = friendly;
         DEVMODEA dm; memset(&dm, 0, sizeof dm); dm.dmSize = sizeof dm;
         if (EnumDisplaySettingsA(dd.DeviceName, ENUM_CURRENT_SETTINGS, &dm)) {
             m.deskW = dm.dmPelsWidth; m.deskH = dm.dmPelsHeight; m.deskHz = dm.dmDisplayFrequency;
@@ -87,6 +121,13 @@ std::vector<Monitor> enum_monitors()
             if (hz > 1 && std::find(md->hz.begin(), md->hz.end(), hz) == md->hz.end()) md->hz.push_back(hz);
         }
         for (auto &x : m.modes) std::sort(x.hz.begin(), x.hz.end());
+        // Sizes larger than the screen that only run below the screen's
+        // refresh rate are the monitor shrinking a bigger signal itself (a
+        // 4K input on a 1440p screen, say), not driver supersampling
+        // (DSR/DLDSR/VSR keep the full rate). The game can't use them and
+        // they would cost frame rate, so leave them out.
+        m.modes.erase(std::remove_if(m.modes.begin(), m.modes.end(), [&](const Mode &x) {
+            return (x.w > m.deskW || x.h > m.deskH) && !x.hz.empty() && x.hz.back() < m.deskHz; }), m.modes.end());
         std::sort(m.modes.begin(), m.modes.end(), [](const Mode &a, const Mode &b) {
             return a.w != b.w ? a.w < b.w : a.h < b.h; });
         out.push_back(std::move(m));
