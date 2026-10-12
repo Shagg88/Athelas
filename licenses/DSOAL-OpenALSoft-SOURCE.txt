@@ -1,0 +1,9 @@
+DSOAL and OpenAL Soft are free software under the GNU LGPL (see the licence files here).
+ROTK Fix ships them unmodified, in ROTKFix\sound (dsound.dll = DSOAL, dsoal-aldrv.dll = OpenAL Soft).
+
+Source code for the exact versions shipped:
+  DSOAL        https://github.com/kcat/dsoal          commit e11128250439d586483ee6598d1670ab52ab5e37 (r697)
+  OpenAL Soft  https://github.com/kcat/openal-soft    commit 9ca7d05e4f1b16897104c913be7553891f0d027d (r10817)
+Binaries: https://github.com/kcat/dsoal/releases/tag/latest-master (DSOAL_r697.zip)
+
+You may replace these two files with your own builds of the same libraries.

@@ -1,0 +1,43 @@
+# Builds ROTK Fix on every push. Pushing a tag like v1.0 also publishes a
+# release with the zip, so every download is built from the code shown here.
+name: build
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+permissions:
+  contents: write
+env:
+  SDL_VERSION: 3.4.18
+  DXVK_VERSION: "3.1.1"
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y gcc-mingw-w64-i686 g++-mingw-w64-i686 binutils-mingw-w64-i686 zip
+      - name: Download SDL3 and DXVK
+        run: |
+          mkdir -p deps
+          curl -sSfL "https://github.com/libsdl-org/SDL/releases/download/release-$SDL_VERSION/SDL3-devel-$SDL_VERSION-mingw.tar.gz" | tar -xz -C deps
+          curl -sSfL "https://github.com/doitsujin/dxvk/releases/download/v$DXVK_VERSION/dxvk-$DXVK_VERSION.tar.gz" | tar -xz -C deps
+      # 3D sound (DSOAL + OpenAL Soft) comes from third_party/dsoal: the
+      # upstream download link always points at the newest build.
+      - name: Build and package
+        run: |
+          VER=${GITHUB_REF_NAME#v}
+          [ "$GITHUB_REF_TYPE" = tag ] || VER=dev-${GITHUB_SHA::7}
+          (cd third_party/dsoal && sha256sum -c SHA256SUMS)
+          SDL_DIR=$PWD/deps/SDL3-$SDL_VERSION DXVK_DIR=$PWD/deps/dxvk-$DXVK_VERSION DSOAL_DIR=$PWD/third_party/dsoal sh scripts/package.sh "$VER"
+          echo "VER=$VER" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ROTKFix-${{ env.VER }}
+          path: dist/ROTKFix-${{ env.VER }}.zip*
+      - name: Publish release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/ROTKFix-$VER.zip dist/ROTKFix-$VER.zip.sha256 --draft --title "ROTK Fix $VER" --notes-file dist-files/README.txt

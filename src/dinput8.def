@@ -1,0 +1,7 @@
+LIBRARY dinput8.dll
+EXPORTS
+    DirectInput8Create = ROTKFix.RF_DirectInput8Create
+    DllCanUnloadNow = ROTKFix.RF_DllCanUnloadNow PRIVATE
+    DllGetClassObject = ROTKFix.RF_DllGetClassObject PRIVATE
+    DllRegisterServer = ROTKFix.RF_DllRegisterServer PRIVATE
+    DllUnregisterServer = ROTKFix.RF_DllUnregisterServer PRIVATE

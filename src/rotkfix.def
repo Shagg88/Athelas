@@ -1,0 +1,11 @@
+LIBRARY ROTKFix.dll
+EXPORTS
+    RF_DirectInput8Create
+    RF_DllCanUnloadNow
+    RF_DllGetClassObject
+    RF_DllRegisterServer
+    RF_DllUnregisterServer
+    RF_Direct3DCreate8
+    RF_ValidatePixelShader
+    RF_ValidateVertexShader
+    RF_DebugSetMute

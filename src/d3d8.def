@@ -1,0 +1,6 @@
+LIBRARY d3d8.dll
+EXPORTS
+    Direct3DCreate8 = ROTKFix.RF_Direct3DCreate8
+    ValidatePixelShader = ROTKFix.RF_ValidatePixelShader
+    ValidateVertexShader = ROTKFix.RF_ValidateVertexShader
+    DebugSetMute = ROTKFix.RF_DebugSetMute

@@ -1,0 +1,22 @@
+#include <winver.h>
+1 ICON "../art/rotkfix.ico"
+1 VERSIONINFO
+FILEVERSION 0,3,0,0
+PRODUCTVERSION 0,3,0,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904b0"
+    BEGIN
+      VALUE "FileDescription", "ROTK Fix Launcher (unofficial fan project)"
+      VALUE "ProductName", "ROTK Fix"
+      VALUE "FileVersion", "0.3"
+      VALUE "ProductVersion", "0.3"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1200
+  END
+END
+1 24 "launcher.manifest"
