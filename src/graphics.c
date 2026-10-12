@@ -805,7 +805,9 @@ static void movie_fit_quad(IDirect3DDevice8 *dev, UINT start, UINT count)
  * sharpens at the movie's own pixel size (not the screen's) makes the
  * stretched picture noticeably crisper. Needs pixel shader 1.4. */
 #include "shaders/movie.h"
-static DWORD g_moviePS;
+#include "shaders/hud2x.h"
+static DWORD g_moviePS, g_hud2xPS;
+static int   g_hudX2;        /* the HUD picture being drawn uses MODULATE2X */
 static int   g_moviePSFailed;
 typedef HRESULT (WINAPI *CreatePS8_t)(IDirect3DDevice8 *, const DWORD *, DWORD *);
 typedef HRESULT (WINAPI *SetPS8_t)(IDirect3DDevice8 *, DWORD);
@@ -819,7 +821,13 @@ typedef HRESULT (WINAPI *SetTSS8_t)(IDirect3DDevice8 *, DWORD, D3DTEXTURESTAGEST
  * the bound texture's own pixel size (the picture's detail, not the
  * screen's). Used for movies and for HUD pictures. idx = 1: indexed draw
  * (a..d = min index, vertex count, start index, primitive count). */
+static int sharpen_draw_x(IDirect3DDevice8 *dev, int pct, int x2, D3DPRIMITIVETYPE pt, int idx, UINT a, UINT b, UINT c4, UINT d);
 static int sharpen_draw(IDirect3DDevice8 *dev, int pct, D3DPRIMITIVETYPE pt, int idx, UINT a, UINT b, UINT c4, UINT d)
+{
+    /* HUD pictures: their texture blend (set by hud_sharpen_ok) decides the shader */
+    return sharpen_draw_x(dev, pct, g_hudX2, pt, idx, a, b, c4, d);
+}
+static int sharpen_draw_x(IDirect3DDevice8 *dev, int pct, int x2, D3DPRIMITIVETYPE pt, int idx, UINT a, UINT b, UINT c4, UINT d)
 {
     void *tex = g_tex0Bound ? g_tex0Bound : g_tex0;
     if (!pct || g_moviePSFailed || !tex || !g_realDrawPrim) return 0;
@@ -853,7 +861,23 @@ static int sharpen_draw(IDirect3DDevice8 *dev, int pct, D3DPRIMITIVETYPE pt, int
         ((SetTSS8_t)vt[63])(dev, sN, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);
         ((SetTSS8_t)vt[63])(dev, sN, D3DTSS_MINFILTER, D3DTEXF_LINEAR);
     }
-    ((SetPS8_t)vt[88])(dev, g_moviePS);
+    DWORD ps = g_moviePS;
+    if (x2) {
+        if (!g_hud2xPS && FAILED(((CreatePS8_t)vt[87])(dev, k_hud2xPS, &g_hud2xPS))) g_hud2xPS = 0;
+        if (!g_hud2xPS) ps = 0;
+        else ps = g_hud2xPS;
+    }
+    if (!ps) {   /* restore what we changed and draw normally */
+        for (int sN = 0; sN < 5; sN++) {
+            for (int k = 0; k < 4; k++) ((SetTSS8_t)vt[63])(dev, sN, st[k], oldTSS[sN][k]);
+            if (sN) {
+                g_realSetTexture(dev, sN, oldTex[sN]);
+                if (oldTex[sN]) ((ULONG (WINAPI *)(IDirect3DBaseTexture8 *))(*(void ***)oldTex[sN])[2])(oldTex[sN]);
+            }
+        }
+        return 0;
+    }
+    ((SetPS8_t)vt[88])(dev, ps);
     if (idx) g_realDrawIdx(dev, pt, a, b, c4, d);
     else g_realDrawPrim(dev, pt, a, b);
     ((SetPS8_t)vt[88])(dev, oldPS);
@@ -870,7 +894,7 @@ static int sharpen_draw(IDirect3DDevice8 *dev, int pct, D3DPRIMITIVETYPE pt, int
 static int movie_sharpen_draw(IDirect3DDevice8 *dev, UINT start, UINT count)
 {
     static int logged;
-    int r = sharpen_draw(dev, g_movieSharpPct, D3DPT_TRIANGLESTRIP, 0, start, count, 0, 0);
+    int r = sharpen_draw_x(dev, g_movieSharpPct, 0, D3DPT_TRIANGLESTRIP, 0, start, count, 0, 0);
     if (r && !logged++) logf_("video: sharper cutscenes on (%d%%)", g_movieSharpPct);
     return r;
 }
@@ -941,7 +965,23 @@ static int hud_sharpen_ok(IDirect3DDevice8 *dev)
     ((GetTSS8_t)vt[62])(dev, 1, D3DTSS_COLOROP, &c1op);
     int texDiff = (ca1 == D3DTA_TEXTURE && ca2 == D3DTA_DIFFUSE) || (ca1 == D3DTA_DIFFUSE && ca2 == D3DTA_TEXTURE);
     int aTexDiff = (aa1 == D3DTA_TEXTURE && aa2 == D3DTA_DIFFUSE) || (aa1 == D3DTA_DIFFUSE && aa2 == D3DTA_TEXTURE);
-    if (cop == D3DTOP_MODULATE && texDiff && aop == D3DTOP_MODULATE && aTexDiff && c1op == D3DTOP_DISABLE) return hs_note(HS_DONE);
+    /* stage 2 off, or only passing the first stage's result through */
+    int pass = c1op == D3DTOP_DISABLE;
+    if (!pass && c1op == D3DTOP_SELECTARG2) {
+        DWORD c1a2 = 0, a1op = 0, a1a1 = 0, a1a2 = 0;
+        ((GetTSS8_t)vt[62])(dev, 1, D3DTSS_COLORARG2, &c1a2);
+        ((GetTSS8_t)vt[62])(dev, 1, D3DTSS_ALPHAOP, &a1op);
+        ((GetTSS8_t)vt[62])(dev, 1, D3DTSS_ALPHAARG1, &a1a1);
+        ((GetTSS8_t)vt[62])(dev, 1, D3DTSS_ALPHAARG2, &a1a2);
+        pass = (c1a2 & D3DTA_SELECTMASK) == D3DTA_CURRENT && !(c1a2 & ~D3DTA_SELECTMASK) &&
+               (a1op == D3DTOP_DISABLE || (a1op == D3DTOP_SELECTARG2 && a1a2 == D3DTA_CURRENT) ||
+                (a1op == D3DTOP_SELECTARG1 && a1a1 == D3DTA_CURRENT));
+    }
+    /* colour and alpha: texture x vertex colour, or the same doubled */
+    if (texDiff && aTexDiff && pass && cop == aop && (cop == D3DTOP_MODULATE || cop == D3DTOP_MODULATE2X)) {
+        g_hudX2 = cop == D3DTOP_MODULATE2X;
+        return hs_note(HS_DONE);
+    }
     DWORD k[7] = { cop, ca1, ca2, aop, aa1, aa2, c1op };
     int slot = -1;
     for (int i = 0; i < 4 && slot < 0; i++)
@@ -1257,7 +1297,7 @@ static HRESULT WINAPI w_CreateDevice(IDirect3D8 *This, UINT a, D3DDEVTYPE t, HWN
     if (FAILED(hr)) { logf_("graphics: CreateDevice failed (%#lx)", (unsigned long)hr); return hr; }
     logf_("graphics: device created (behavior flags %#lx)", (unsigned long)flags);
     forget_device_state();
-    g_moviePS = 0; g_moviePSFailed = 0;        /* shaders belong to the old device */
+    g_moviePS = 0; g_hud2xPS = 0; g_moviePSFailed = 0;        /* shaders belong to the old device */
     hook_device(*dev);
     return hr;
 }
