@@ -43,8 +43,9 @@ TEXTURE PACKS
 ROTK Fix can swap any of the game's textures for a PNG of your own. It
 includes no game art: packs are made from your own copy.
 - Making a pack: in ROTKFix.ini set Dump = 1 under [Textures] and play.
-  Every texture the game shows is saved once as a PNG in
-  ROTKFix\textures\dump, named <width>x<height>_<16-character code>.png.
+  Every texture is saved once as a PNG in ROTKFix\textures\dump as the game
+  loads it, named <width>x<height>_<16-character code>.png. A level loads all
+  its textures when it starts, so starting each level once is enough.
   Set Dump back to 0 when you have what you need.
 - Using a pack: put the edited or upscaled PNGs in ROTKFix\textures\replace
   (subfolders are fine). The game uses them the next time it starts. A file

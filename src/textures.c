@@ -2,8 +2,9 @@
  * ROTK Fix - texture dump and replacement
  *
  * Every game texture is recognised by a fingerprint of its contents (size,
- * format and pixels of the full-size level), the first time the game binds
- * it for drawing.
+ * format and pixels of the full-size level): when dumping, as the game loads
+ * it (so loading a level saves all of that level's textures); otherwise the
+ * first time the game binds it for drawing.
  *
  *  - Dump ([Textures] Dump=1): each new texture is saved once as
  *      ROTKFix\textures\dump\<w>x<h>_<fingerprint>.png
@@ -114,8 +115,8 @@ static const char *find_repl(unsigned long long h)
 }
 
 /* ---- per-texture records (open addressing, keyed by texture pointer) ---- */
-enum { ST_NEW, ST_DONE, ST_SKIP };
-typedef struct { void *tex; IDirect3DTexture8 *repl; unsigned long long hash; BYTE state, unlocks; } Rec;
+enum { ST_NEW, ST_HASHED, ST_DONE, ST_SKIP };   /* HASHED: fingerprinted at load, replacement not looked up yet */
+typedef struct { void *tex; IDirect3DTexture8 *repl; unsigned long long hash; WORD w, h; BYTE state, unlocks; } Rec;
 #define TAB_BITS 15
 #define TAB_SIZE (1u << TAB_BITS)
 static Rec g_tab[TAB_SIZE];
@@ -348,10 +349,18 @@ static void drop_replacement(Rec *r)
 }
 
 /* ---- hooks ---- */
+static int examine(Rec *r, IDirect3DTexture8 *tx);
 static HRESULT WINAPI hook_TexUnlock(IDirect3DTexture8 *t, UINT level)
 {
     HRESULT hr = g_realUnlock(t, level);
     Rec *r = level == 0 ? rec_find(t) : NULL;
+    if (!r && level == 0 && g_dump) {
+        /* dumping: save each texture as the game loads it (the full-size
+         * level is filled first), so loading a level saves all of it */
+        r = rec_add(t);
+        if (r) examine(r, t);
+        return hr;
+    }
     if (r && r->state != ST_SKIP) {
         if (r->state == ST_DONE) drop_replacement(r);
         /* changed after use: look again next time; changed over and over
@@ -408,30 +417,21 @@ void textures_on_create(void *dev, void *create, void *tex)
     patch_slot(vt, 17, (void *)hook_TexUnlock, (void **)&g_realUnlock);
 }
 
-/* graphics.c: the game is binding texture t; returns what to bind instead.
- * skip = render target / screen copy / font texture. */
-void *textures_bind(void *dev, void *t, int skip)
+/* Fingerprint (and, when dumping, save) a texture's full-size level.
+ * Returns 0 and marks it skipped if it is not a plain picture. */
+static int examine(Rec *r, IDirect3DTexture8 *tx)
 {
-    if (!t || (!g_dump && !g_nrepl) || !g_realUnlock || !g_createTex) return t;
-    Rec *r = rec_find(t);
-    if (r && r->state == ST_DONE) return r->repl ? (void *)r->repl : t;
-    if (r && r->state == ST_SKIP) return t;
-    if (!r) {
-        r = rec_add(t);
-        if (!r) return t;
-        if (skip || ((GetType_t)(*(void ***)t)[10])((IDirect3DBaseTexture8 *)t) != D3DRTYPE_TEXTURE) { r->state = ST_SKIP; return t; }
-    }
-    IDirect3DTexture8 *tx = (IDirect3DTexture8 *)t;
     D3DSURFACE_DESC d;
     int bpp, blk;
-    if (FAILED(((GetLevelDesc_t)(*(void ***)t)[14])(tx, 0, &d)) || d.Pool == D3DPOOL_DEFAULT ||
+    if (((GetType_t)(*(void ***)tx)[10])((IDirect3DBaseTexture8 *)tx) != D3DRTYPE_TEXTURE ||
+        FAILED(((GetLevelDesc_t)(*(void ***)tx)[14])(tx, 0, &d)) || d.Pool == D3DPOOL_DEFAULT ||
         (d.Usage & (D3DUSAGE_RENDERTARGET | D3DUSAGE_DEPTHSTENCIL | D3DUSAGE_DYNAMIC)) || !fmt_block(d.Format, &bpp, &blk) ||
         d.Width < 4 || d.Height < 4) {
         r->state = ST_SKIP;
-        return t;
+        return 0;
     }
     D3DLOCKED_RECT lr;
-    if (FAILED(g_realLock(tx, 0, &lr, NULL, D3DLOCK_READONLY)) || !lr.pBits) { r->state = ST_SKIP; return t; }
+    if (FAILED(g_realLock(tx, 0, &lr, NULL, D3DLOCK_READONLY)) || !lr.pBits) { r->state = ST_SKIP; return 0; }
     /* fingerprint: size, format and pixel data (row by row, without padding) */
     UINT rows = blk ? (d.Height + 3) / 4 : d.Height;
     UINT rowBytes = blk ? (d.Width + 3) / 4 * blk : d.Width * bpp;
@@ -444,15 +444,34 @@ void *textures_bind(void *dev, void *t, int skip)
         for (; i < rowBytes; i++) h = (h ^ p[i]) * 1099511628211ull;
     }
     r->hash = h;
+    r->w = (WORD)d.Width; r->h = (WORD)d.Height;
     BYTE *rgba = g_dump ? to_rgba((const BYTE *)lr.pBits, lr.Pitch, d.Width, d.Height, d.Format) : NULL;
     g_realUnlock(tx, 0);
     if (rgba) queue_dump(rgba, d.Width, d.Height, h);
+    r->state = ST_HASHED;
+    return 1;
+}
+
+/* graphics.c: the game is binding texture t; returns what to bind instead.
+ * skip = render target / screen copy / font texture. */
+void *textures_bind(void *dev, void *t, int skip)
+{
+    if (!t || (!g_dump && !g_nrepl) || !g_realUnlock || !g_createTex) return t;
+    Rec *r = rec_find(t);
+    if (r && r->state == ST_DONE) return r->repl ? (void *)r->repl : t;
+    if (r && r->state == ST_SKIP) return t;
+    if (!r) {
+        r = rec_add(t);
+        if (!r) return t;
+        if (skip) { r->state = ST_SKIP; return t; }
+    }
+    if (r->state == ST_NEW && !examine(r, (IDirect3DTexture8 *)t)) return t;
     r->state = ST_DONE;
-    const char *path = g_nrepl ? find_repl(h) : NULL;
+    const char *path = (g_nrepl && !skip) ? find_repl(r->hash) : NULL;
     if (path) {
         r->repl = make_replacement((IDirect3DDevice8 *)dev, path);
         static int logged;
-        if (r->repl && logged++ < 20) logf_("textures: replaced %ux%u_%016llx", d.Width, d.Height, h);
+        if (r->repl && logged++ < 20) logf_("textures: replaced %ux%u_%016llx", r->w, r->h, r->hash);
     }
     return r->repl ? (void *)r->repl : t;
 }
