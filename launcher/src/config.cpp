@@ -330,6 +330,7 @@ bool load_settings(const std::string &dir, Settings &s)
     s.lodBias = std::min(0.0f, std::max(-1.0f, getf(ini, "Graphics", "TextureLODBias", -0.5f)));
     s.brightness = std::min(2.0f, std::max(0.5f, getf(ini, "Graphics", "Brightness", 1.0f)));
     s.sharpening = clampi(geti(ini, "Graphics", "Sharpening", 60), 0, 100);
+    s.sharperHud = clampi(geti(ini, "Graphics", "SharperHUD", 60), 0, 100);
     {
         std::string lk = gets(ini, "Graphics", "ColourLook", "original");
         static const char *looks[] = { "original", "film", "vivid", "dark" };
@@ -385,6 +386,7 @@ static const std::vector<IniSection> &ini_layout()
             { "AnisotropicFiltering", "16", "Texture filtering: 0, 2, 4, 8 or 16" },
             { "TextureLODBias", "-0.50", "Texture sharpness: 0 = game's own, down to -1.0 = sharpest" },
             { "Sharpening", "60", "0-100, 0 = off. [ switches it on and off while playing" },
+            { "SharperHUD", "60", "Sharpens the HUD and menu pictures at their own pixel size, 0-100, 0 = off" },
             { "Brightness", "1.00", "Added to the game's own brightness option (0.5-2.0)" },
             { "ColourLook", "original", "original, film, vivid or dark. ] switches while playing" },
             { "ColourLookStrength", "100", "0-100" },
@@ -521,6 +523,7 @@ static bool write_rotkfix_ini(const std::string &p, const Settings &s, bool crea
     set("Graphics", "AnisotropicFiltering", std::to_string(s.aniso));
     set("Graphics", "TextureLODBias", fmtf(s.lodBias));
     set("Graphics", "Sharpening", std::to_string(s.sharpening));
+    set("Graphics", "SharperHUD", std::to_string(s.sharperHud));
     set("Graphics", "Brightness", fmtf(s.brightness));
     set("Graphics", "ColourLook", looks[s.colourLook]);
     set("Graphics", "ColourLookStrength", std::to_string(s.lookStrength));

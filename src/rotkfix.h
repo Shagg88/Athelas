@@ -48,6 +48,7 @@ void    input_patch_prompts(void);
 void    icons_load_settings(const char *ini);
 void    icons_patch(void);                 /* button pictures in the game's fonts */
 const char *icons_label(int phys, int style);   /* style 0 Xbox, 1 PlayStation, 2 Nintendo */
+int     icons_is_font_texture(const void *tex);   /* a texture the game draws text from */
 void    input_patch_rumble(void);          /* the game's Xbox vibration calls -> controllers */         /* controller button names in on-screen prompts */
 HRESULT input_wrap_dinput8(void *realCreate, HINSTANCE h, DWORD v, REFIID r, LPVOID *o, LPVOID u);
 

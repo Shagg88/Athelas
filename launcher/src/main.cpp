@@ -554,6 +554,10 @@ static void tab_graphics(App &a)
     ImGui::SliderInt("##sharp", &s.sharpening, 0, 100, s.sharpening == 0 ? "Off" : "%d");
     ImGui::EndDisabled();
     row_end();
+    row_begin("Sharper HUD", "The health bars, portraits and menu pictures are small images stretched to your screen.\n"
+                             "This sharpens them at their own size so they match the rest of the picture. 0 turns it off.");
+    ImGui::SliderInt("##hudsharp", &s.sharperHud, 0, 100, s.sharperHud == 0 ? "Off" : "%d");
+    row_end();
     static const char *looks[] = { "Original", "Film", "Vivid", "Dark fantasy" };
     row_begin("Colour look", "Original: the game's own colours.\n"
                              "Film: richer contrast, cool shadows and warm highlights.\n"

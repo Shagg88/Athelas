@@ -36,6 +36,7 @@ struct Settings {
     float lodBias = -0.5f;        // -1 .. 0
     float brightness = 1.0f;      // 0.5 - 2
     int  sharpening = 60;         // 0-100
+    int  sharperHud = 60;         // 0-100: HUD and menu pictures
     int  colourLook = 0;          // 0 original, 1 film, 2 vivid, 3 dark
     int  lookStrength = 100;      // 0-100
     // [Launcher]

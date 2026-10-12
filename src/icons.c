@@ -128,8 +128,31 @@ static int paint(FontIcons *fi, int style)
 }
 
 /* Called with each font the game has just loaded (its texture is ready). */
+/* Every font's texture, so other code can tell text from pictures. */
+#define MAX_FONT_TEX 32
+static BYTE *g_fontObj[MAX_FONT_TEX];
+static void *g_fontTex[MAX_FONT_TEX];
+int icons_is_font_texture(const void *tex)
+{
+    if (!tex) return 0;
+    for (int i = 0; i < MAX_FONT_TEX; i++) if (g_fontTex[i] == tex) return 1;
+    return 0;
+}
+static void remember_font(BYTE *font)
+{
+    if (!font || !readable(font, 0x43c)) return;
+    void *tex = *(void **)(font + 0x438);
+    int slot = -1;
+    for (int i = 0; i < MAX_FONT_TEX; i++) {
+        if (g_fontObj[i] == font) { slot = i; break; }
+        if (slot < 0 && !g_fontObj[i]) slot = i;
+    }
+    if (slot >= 0) { g_fontObj[slot] = font; g_fontTex[slot] = tex; }
+}
+
 static void __cdecl on_font_loaded(BYTE *font)
 {
+    remember_font(font);
     if (!g_enabled || !font || !readable(font, 0x464)) return;
     Glyph **table = (Glyph **)(font + 0x0c);
     int tw = *(short *)(font + 0x418), th = *(short *)(font + 0x41a);
@@ -206,6 +229,7 @@ const char *icons_label(int phys, int style)
 /* The game is about to free a font: forget it. */
 static void __cdecl on_font_free(BYTE *font)
 {
+    for (int i = 0; i < MAX_FONT_TEX; i++) if (g_fontObj[i] == font) { g_fontObj[i] = NULL; g_fontTex[i] = NULL; }
     for (int i = 0; i < g_nfonts; i++)
         if (g_fonts[i].font == font) { g_fonts[i].font = NULL; dlogf_("icons: font %p freed", (void *)font); }
 }

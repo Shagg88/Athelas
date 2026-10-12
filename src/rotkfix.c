@@ -1,5 +1,5 @@
 /*
- * ROTK Fix - core (test build 70)
+ * ROTK Fix - core (test build 71)
  *
  * Loaded into The Lord of the Rings: The Return of the King (PC, 2003)
  * through the d3d8.dll and dinput8.dll forwarders in the game folder (the
@@ -122,6 +122,7 @@ static void load_settings(void)
                   "AnisotropicFiltering = 16\n"
                   "TextureLODBias       = -0.50\n"
                   "Sharpening           = 60\n"
+                  "SharperHUD           = 60\n"
                   "Brightness           = 1.00\n"
                   "ColourLook           = original\n"
                   "ColourLookStrength   = 100\n"
@@ -980,7 +981,7 @@ BOOL WINAPI DllMain(HINSTANCE inst, DWORD reason, LPVOID reserved)
             char lp[MAX_PATH]; path_in_dir(lp, "ROTKFix.log");
             g_log = fopen(lp, "w");
         }
-        logf_("ROTK Fix test build 70 loaded (Limiter=%d TargetFPS=%d Spin=%dus)",
+        logf_("ROTK Fix test build 71 loaded (Limiter=%d TargetFPS=%d Spin=%dus)",
               g_limiterMode, g_targetFps, g_spinUs);
 
         QueryPerformanceFrequency(&g_freq);

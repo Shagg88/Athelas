@@ -48,6 +48,7 @@ static float g_lodBias   = 0.0f;   /* texture LOD bias, negative = sharper (DXVK
 static int  g_gfxEnabled = 1;
 static int  g_aspectFix;
 static int  g_movieSharpPct = 70;   /* [Video] SharperMovies: cutscene sharpening at movie-pixel size */
+static int  g_hudSharpPct = 60;     /* [Graphics] SharperHUD: HUD and menu pictures sharpened at their own pixel size */
 static int  g_projPersp;      /* current projection is perspective (3D) */
 static int  g_alphaEdges = 1;  /* smooth cut-out (alpha-tested) edges with MSAA: per-sample shading */
 static int  g_drawPct = 100;   /* [Graphics] DrawDistance: far clip plane and fog, percent of the game's */
@@ -91,6 +92,9 @@ void graphics_load_settings(const char *ini)
     g_movieSharpPct = GetPrivateProfileIntA("Video", "SharperMovies", 70, ini);
     if (g_movieSharpPct < 0) g_movieSharpPct = 0;
     if (g_movieSharpPct > 100) g_movieSharpPct = 100;
+    g_hudSharpPct = GetPrivateProfileIntA("Graphics", "SharperHUD", 60, ini);
+    if (g_hudSharpPct < 0) g_hudSharpPct = 0;
+    if (g_hudSharpPct > 100) g_hudSharpPct = 100;
     g_fovPct  = GetPrivateProfileIntA("Graphics", "FieldOfView", 100, ini);
     if (g_fovPct < 70) g_fovPct = 70;
     if (g_fovPct > 150) g_fovPct = 150;
@@ -323,6 +327,7 @@ static SetTransform_t g_realSetTransform;
 
 
 static D3DMATRIX g_ortho2D;        /* game's own 2D matrix, unmodified */
+static int g_projOrtho;           /* the current projection is the game's 2D one */
 static int g_orthoFixed;           /* the current projection is a narrowed 2D one */
 static void *g_tex0;               /* texture bound to stage 0 */
 
@@ -402,6 +407,8 @@ static HRESULT WINAPI hook_SetTransform(IDirect3DDevice8 *dev, D3DTRANSFORMSTATE
     }
     if (ortho && nOrtho < 3) { nOrtho++; dlogf_("graphics: 2D matrix _11=%.6f _22=%.6f _41=%.4f _42=%.4f", m->_11, m->_22, m->_41, m->_42); }
     g_projPersp = persp;
+    g_projOrtho = ortho;
+    if (ortho) g_ortho2D = *m;   /* the game's own 2D matrix (screen positions of 2D draws) */
     float screen = screen_aspect();
     /* The gameplay camera is mirrored (_11 negative), so work with magnitudes
      * and keep the sign. */
@@ -788,9 +795,13 @@ typedef HRESULT (WINAPI *GetTex8_t)(IDirect3DDevice8 *, DWORD, IDirect3DBaseText
 typedef HRESULT (WINAPI *GetTSS8_t)(IDirect3DDevice8 *, DWORD, D3DTEXTURESTAGESTATETYPE, DWORD *);
 typedef HRESULT (WINAPI *SetTSS8_t)(IDirect3DDevice8 *, DWORD, D3DTEXTURESTAGESTATETYPE, DWORD);
 
-static int movie_sharpen_draw(IDirect3DDevice8 *dev, UINT start, UINT count)
+/* Draw the current primitive through the sharpening shader: unsharp mask at
+ * the bound texture's own pixel size (the picture's detail, not the
+ * screen's). Used for movies and for HUD pictures. idx = 1: indexed draw
+ * (a..d = min index, vertex count, start index, primitive count). */
+static int sharpen_draw(IDirect3DDevice8 *dev, int pct, D3DPRIMITIVETYPE pt, int idx, UINT a, UINT b, UINT c4, UINT d)
 {
-    if (!g_movieSharpPct || g_moviePSFailed || !g_tex0 || !g_realDrawPrim) return 0;
+    if (!pct || g_moviePSFailed || !g_tex0 || !g_realDrawPrim) return 0;
     UINT w, h;
     tex_size(g_tex0, &w, &h);
     if (!w || !h) return 0;
@@ -798,10 +809,9 @@ static int movie_sharpen_draw(IDirect3DDevice8 *dev, UINT start, UINT count)
     if (!g_moviePS) {
         if (FAILED(((CreatePS8_t)vt[87])(dev, k_moviePS, &g_moviePS)) || !g_moviePS) {
             g_moviePSFailed = 1;
-            logf_("video: cutscene sharpening shader not available; movies drawn as before");
+            logf_("graphics: sharpening shader not available; movies and HUD drawn as before");
             return 0;
         }
-        logf_("video: sharper cutscenes on (%d%%)", g_movieSharpPct);
     }
     static const D3DTEXTURESTAGESTATETYPE st[4] = { D3DTSS_ADDRESSU, D3DTSS_ADDRESSV, D3DTSS_MAGFILTER, D3DTSS_MINFILTER };
     DWORD oldPS = 0, oldTSS[5][4];
@@ -811,7 +821,7 @@ static int movie_sharpen_draw(IDirect3DDevice8 *dev, UINT start, UINT count)
         if (sN) ((GetTex8_t)vt[60])(dev, sN, &oldTex[sN]);
         for (int k = 0; k < 4; k++) ((GetTSS8_t)vt[62])(dev, sN, st[k], &oldTSS[sN][k]);
     }
-    float dx = 1.0f / w, dy = 1.0f / h, amt = g_movieSharpPct / 100.0f;
+    float dx = 1.0f / w, dy = 1.0f / h, amt = pct / 100.0f;
     float c[6][4] = { { dx, 0, 0, 0 }, { -dx, 0, 0, 0 }, { 0, dy, 0, 0 }, { 0, -dy, 0, 0 },
                       { -0.25f, -0.25f, -0.25f, -0.25f }, { amt, amt, amt, 0 } };
     ((SetPSConst8_t)vt[91])(dev, 0, c, 6);
@@ -823,7 +833,8 @@ static int movie_sharpen_draw(IDirect3DDevice8 *dev, UINT start, UINT count)
         ((SetTSS8_t)vt[63])(dev, sN, D3DTSS_MINFILTER, D3DTEXF_LINEAR);
     }
     ((SetPS8_t)vt[88])(dev, g_moviePS);
-    g_realDrawPrim(dev, D3DPT_TRIANGLESTRIP, start, count);
+    if (idx) g_realDrawIdx(dev, pt, a, b, c4, d);
+    else g_realDrawPrim(dev, pt, a, b);
     ((SetPS8_t)vt[88])(dev, oldPS);
     for (int sN = 0; sN < 5; sN++) {
         for (int k = 0; k < 4; k++) ((SetTSS8_t)vt[63])(dev, sN, st[k], oldTSS[sN][k]);
@@ -833,6 +844,38 @@ static int movie_sharpen_draw(IDirect3DDevice8 *dev, UINT start, UINT count)
         }
     }
     return 1;
+}
+
+static int movie_sharpen_draw(IDirect3DDevice8 *dev, UINT start, UINT count)
+{
+    static int logged;
+    int r = sharpen_draw(dev, g_movieSharpPct, D3DPT_TRIANGLESTRIP, 0, start, count, 0, 0);
+    if (r && !logged++) logf_("video: sharper cutscenes on (%d%%)", g_movieSharpPct);
+    return r;
+}
+
+/* HUD and menu pictures are small images stretched across a large screen.
+ * Sharpen them at their own pixel size, like movies. Only plain pictures:
+ * the texture times the vertex colour, one texture stage, no pixel shader.
+ * Text (font textures), screen copies and full-screen layers are left as
+ * they are. */
+static int hud_sharpen_ok(IDirect3DDevice8 *dev)
+{
+    if (!g_hudSharpPct || g_moviePSFailed || g_curFVF != FVF_2D || !g_tex0 || is_rt(g_tex0) || icons_is_font_texture(g_tex0)) return 0;
+    void **vt = *(void ***)dev;
+    DWORD ps = 0, cop = 0, ca1 = 0, ca2 = 0, aop = 0, aa1 = 0, aa2 = 0, c1op = 0;
+    ((GetPS8_t)vt[89])(dev, &ps);
+    if (ps) return 0;
+    ((GetTSS8_t)vt[62])(dev, 0, D3DTSS_COLOROP, &cop);
+    ((GetTSS8_t)vt[62])(dev, 0, D3DTSS_COLORARG1, &ca1);
+    ((GetTSS8_t)vt[62])(dev, 0, D3DTSS_COLORARG2, &ca2);
+    ((GetTSS8_t)vt[62])(dev, 0, D3DTSS_ALPHAOP, &aop);
+    ((GetTSS8_t)vt[62])(dev, 0, D3DTSS_ALPHAARG1, &aa1);
+    ((GetTSS8_t)vt[62])(dev, 0, D3DTSS_ALPHAARG2, &aa2);
+    ((GetTSS8_t)vt[62])(dev, 1, D3DTSS_COLOROP, &c1op);
+    int texDiff = (ca1 == D3DTA_TEXTURE && ca2 == D3DTA_DIFFUSE) || (ca1 == D3DTA_DIFFUSE && ca2 == D3DTA_TEXTURE);
+    int aTexDiff = (aa1 == D3DTA_TEXTURE && aa2 == D3DTA_DIFFUSE) || (aa1 == D3DTA_DIFFUSE && aa2 == D3DTA_TEXTURE);
+    return cop == D3DTOP_MODULATE && texDiff && aop == D3DTOP_MODULATE && aTexDiff && c1op == D3DTOP_DISABLE;
 }
 
 /* Horizontal extent of a 2D draw in the game's own (unnarrowed) screen
@@ -941,6 +984,11 @@ static HRESULT WINAPI hook_DrawPrimitive(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE
     }
     if (!g_orthoFixed) {
         if (g_projPersp) { g_draws3D++; g_hitch[HITCH_DRAWS3D]++; }
+        else if (g_projOrtho && g_hudSharpPct) {            /* 2D at its normal width (16:9 or narrower) */
+            g_pictureDraw = 0;
+            if (!draw_full_width(start, prim_verts(pt, count)) && !g_pictureDraw && hud_sharpen_ok(dev) &&
+                sharpen_draw(dev, g_hudSharpPct, pt, 0, start, count, 0, 0)) return D3D_OK;
+        }
         return g_realDrawPrim(dev, pt, start, count);
     }
     g_pictureDraw = 0;
@@ -948,7 +996,9 @@ static HRESULT WINAPI hook_DrawPrimitive(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE
     DWORD sv[2]; int pic = g_pictureDraw;
     if (fw) g_realSetTransform(dev, D3DTS_PROJECTION, &g_ortho2D);
     if (pic) picture_clamp(dev, sv, 0);
-    HRESULT hr = g_realDrawPrim(dev, pt, start, count);
+    HRESULT hr = D3D_OK;
+    if (fw || pic || !hud_sharpen_ok(dev) || !sharpen_draw(dev, g_hudSharpPct, pt, 0, start, count, 0, 0))
+        hr = g_realDrawPrim(dev, pt, start, count);
     if (pic) picture_clamp(dev, sv, 1);
     if (fw) set_narrow(dev);
     return hr;
@@ -958,6 +1008,11 @@ static HRESULT WINAPI hook_DrawIndexedPrimitive(IDirect3DDevice8 *dev, D3DPRIMIT
     g_hitch[HITCH_DRAWS]++;
     if (!g_orthoFixed) {
         if (g_projPersp) { g_draws3D++; g_hitch[HITCH_DRAWS3D]++; }
+        else if (g_projOrtho && g_hudSharpPct) {
+            g_pictureDraw = 0;
+            if (!draw_full_width(g_baseVertex + mi, nv) && !g_pictureDraw && hud_sharpen_ok(dev) &&
+                sharpen_draw(dev, g_hudSharpPct, pt, 1, mi, nv, si, pc)) return D3D_OK;
+        }
         return g_realDrawIdx(dev, pt, mi, nv, si, pc);
     }
     g_pictureDraw = 0;
@@ -965,7 +1020,9 @@ static HRESULT WINAPI hook_DrawIndexedPrimitive(IDirect3DDevice8 *dev, D3DPRIMIT
     DWORD sv[2]; int pic = g_pictureDraw;
     if (fw) g_realSetTransform(dev, D3DTS_PROJECTION, &g_ortho2D);
     if (pic) picture_clamp(dev, sv, 0);
-    HRESULT hr = g_realDrawIdx(dev, pt, mi, nv, si, pc);
+    HRESULT hr = D3D_OK;
+    if (fw || pic || !hud_sharpen_ok(dev) || !sharpen_draw(dev, g_hudSharpPct, pt, 1, mi, nv, si, pc))
+        hr = g_realDrawIdx(dev, pt, mi, nv, si, pc);
     if (pic) picture_clamp(dev, sv, 1);
     if (fw) set_narrow(dev);
     return hr;
