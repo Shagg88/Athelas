@@ -91,8 +91,8 @@ static void setup_style()
 }
 
 // ---------------------------------------------------------------------------
-// Backgrounds: public-domain paintings in ROTKFix\backgrounds and the player's
-// own screenshots, shown one at a time with a slow cross-fade. Without any
+// Backgrounds: pictures in ROTKFix\backgrounds (the player's own screenshots
+// can be added back later), shown one at a time with a slow cross-fade. Without any
 // pictures, an original drawn landscape of misty mountains is used.
 
 struct Picture { SDL_Texture *tex = nullptr; int w = 0, h = 0; };
@@ -1325,7 +1325,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     refresh_controllers(a);
 
     list_pictures(a.dir + "\\ROTKFix\\backgrounds", a.bg.files, 100);
-    list_pictures(a.dir + "\\Screenshots", a.bg.files, 30);
+    // (screenshots as backgrounds: turned off for now)
     backgrounds_next(a.bg);
     if (getenv("ROTKFIX_SAVE_AND_EXIT")) { save(a); return 0; }     // testing
     if (!hadIni) set_message(a, "Welcome! Settings are chosen for your PC - press Play, or adjust anything first.", false);
