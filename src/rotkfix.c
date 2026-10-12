@@ -1,5 +1,5 @@
 /*
- * ROTK Fix - core (test build 72)
+ * ROTK Fix - core (test build 73)
  *
  * Loaded into The Lord of the Rings: The Return of the King (PC, 2003)
  * through the d3d8.dll and dinput8.dll forwarders in the game folder (the
@@ -176,6 +176,10 @@ static void load_settings(void)
                   "RangedAttack   = LT\n"
                   "KillingMove    = RT\n"
                   "\n"
+                  "[Textures]\n"
+                  "Dump    = 0\n"
+                  "Replace = 1\n"
+                  "\n"
                   "[Extras]\n"
                   "DeveloperButtons = 0\n"
                   "\n"
@@ -214,6 +218,7 @@ static void load_settings(void)
     input_load_settings(ini);
     icons_load_settings(ini);
     sound_load_settings(ini);
+    textures_load_settings(ini);
     g_devButtons = GetPrivateProfileIntA("Extras", "DeveloperButtons", 0, ini);
     graphics_load_settings(ini);
     post_load_settings(ini);
@@ -980,7 +985,7 @@ BOOL WINAPI DllMain(HINSTANCE inst, DWORD reason, LPVOID reserved)
             char lp[MAX_PATH]; path_in_dir(lp, "ROTKFix.log");
             g_log = fopen(lp, "w");
         }
-        logf_("ROTK Fix test build 72 loaded (Limiter=%d TargetFPS=%d Spin=%dus)",
+        logf_("ROTK Fix test build 73 loaded (Limiter=%d TargetFPS=%d Spin=%dus)",
               g_limiterMode, g_targetFps, g_spinUs);
 
         QueryPerformanceFrequency(&g_freq);

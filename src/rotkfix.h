@@ -39,6 +39,12 @@ void    sound_load_settings(const char *ini);
 void    sound_patch(void);
 void    sound_late_patch(void);   /* disc exe: from Direct3DCreate8 */
 
+/* textures.c */
+void    textures_load_settings(const char *ini);
+void    textures_on_create(void *dev, void *realCreateTexture, void *tex);
+void   *textures_bind(void *dev, void *tex, int skip);   /* returns the texture to bind */
+void    textures_on_release(void *tex);
+
 /* input.c */
 void    input_load_settings(const char *ini);
 int     input_keyboard_seen(void);

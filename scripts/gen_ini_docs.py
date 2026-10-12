@@ -14,7 +14,7 @@ for m in secre.finditer(lay):
     for k in keyre.finditer(body):
         key, d, c = k.groups()
         d = None if d == 'nullptr' else d[1:-1]
-        c = None if c == 'nullptr' else c[1:-1].replace('\\r\\n;   ', ' ').replace('\\"', '"')
+        c = None if c == 'nullptr' else c[1:-1].replace('\\r\\n;   ', ' ').replace('\\"', '"').replace('\\\\', '\\')
         keys.append((key, d, c))
     secs.append((name, title, keys))
 # 1. DLL template

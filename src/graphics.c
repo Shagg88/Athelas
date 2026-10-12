@@ -328,7 +328,8 @@ static SetTransform_t g_realSetTransform;
 static D3DMATRIX g_ortho2D;        /* game's own 2D matrix, unmodified */
 static int g_projOrtho;           /* the current projection is the game's 2D one */
 static int g_orthoFixed;           /* the current projection is a narrowed 2D one */
-static void *g_tex0;               /* texture bound to stage 0 */
+static void *g_tex0;               /* texture the game bound to stage 0 */
+static void *g_tex0Bound;          /* what is really bound there (a replacement picture, if any) */
 
 static float g_camVfov, g_camAspectIn, g_camAspectOut;   /* last 3D camera, for the log */
 static float g_camVfovOut;
@@ -647,6 +648,8 @@ static ULONG WINAPI hook_TexRelease(IUnknown *u)
     ULONG r = g_realTexRelease(u);
     if (r == 0) {
         if (g_tex0 == (void *)u) g_tex0 = NULL;
+        if (g_tex0Bound == (void *)u) g_tex0Bound = NULL;
+        textures_on_release(u);
         for (int i = 0; i < g_nrt; i++) if (g_rtTex[i] == (void *)u) { g_rtTex[i] = g_rtTex[--g_nrt]; break; }
     }
     return r;
@@ -658,6 +661,7 @@ static HRESULT WINAPI hook_CreateTex(IDirect3DDevice8 *dev, UINT w, UINT h, UINT
     g_hitch[HITCH_TEXNEW]++;
     if (SUCCEEDED(hr) && out && *out) {
         patch_vtbl(*(void ***)*out, 2, (void *)hook_TexRelease, (void **)&g_realTexRelease);
+        textures_on_create(dev, (void *)g_realCreateTex, *out);
         if (usage & D3DUSAGE_RENDERTARGET) {
             if (g_nrt < MAX_RT) g_rtTex[g_nrt++] = *out;
             dlogf_("graphics: game created a %ux%u render-target texture (format %d)", w, h, (int)f);
@@ -696,6 +700,7 @@ static HRESULT WINAPI hook_SetVS(IDirect3DDevice8 *dev, DWORD h)
 static void forget_device_state(void)
 {
     g_tex0 = NULL;
+    g_tex0Bound = NULL;
     g_stream0 = NULL;
     g_stream0Stride = 0;
     g_nrt = 0;
@@ -713,8 +718,9 @@ static HRESULT WINAPI hook_SetIndices(IDirect3DDevice8 *dev, IDirect3DIndexBuffe
 }
 static HRESULT WINAPI hook_SetTexture(IDirect3DDevice8 *dev, DWORD stage, IDirect3DBaseTexture8 *t)
 {
-    if (stage == 0) g_tex0 = t;
-    return g_realSetTexture(dev, stage, t);
+    IDirect3DBaseTexture8 *b = t ? (IDirect3DBaseTexture8 *)textures_bind(dev, t, is_rt(t) || icons_is_font_texture(t)) : t;
+    if (stage == 0) { g_tex0 = t; g_tex0Bound = b; }   /* g_tex0: the game's texture; g_tex0Bound: what is drawn (a replacement picture, if any) */
+    return g_realSetTexture(dev, stage, b);
 }
 
 static void tex_size(void *t, UINT *w, UINT *h)
@@ -800,9 +806,10 @@ typedef HRESULT (WINAPI *SetTSS8_t)(IDirect3DDevice8 *, DWORD, D3DTEXTURESTAGEST
  * (a..d = min index, vertex count, start index, primitive count). */
 static int sharpen_draw(IDirect3DDevice8 *dev, int pct, D3DPRIMITIVETYPE pt, int idx, UINT a, UINT b, UINT c4, UINT d)
 {
-    if (!pct || g_moviePSFailed || !g_tex0 || !g_realDrawPrim) return 0;
+    void *tex = g_tex0Bound ? g_tex0Bound : g_tex0;
+    if (!pct || g_moviePSFailed || !tex || !g_realDrawPrim) return 0;
     UINT w, h;
-    tex_size(g_tex0, &w, &h);
+    tex_size(tex, &w, &h);
     if (!w || !h) return 0;
     void **vt = *(void ***)dev;
     if (!g_moviePS) {
@@ -825,7 +832,7 @@ static int sharpen_draw(IDirect3DDevice8 *dev, int pct, D3DPRIMITIVETYPE pt, int
                       { -0.25f, -0.25f, -0.25f, -0.25f }, { amt, amt, amt, 0 } };
     ((SetPSConst8_t)vt[91])(dev, 0, c, 6);
     for (int sN = 0; sN < 5; sN++) {
-        if (sN) g_realSetTexture(dev, sN, (IDirect3DBaseTexture8 *)g_tex0);
+        if (sN) g_realSetTexture(dev, sN, (IDirect3DBaseTexture8 *)tex);
         ((SetTSS8_t)vt[63])(dev, sN, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
         ((SetTSS8_t)vt[63])(dev, sN, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
         ((SetTSS8_t)vt[63])(dev, sN, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);

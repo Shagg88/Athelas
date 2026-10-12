@@ -429,6 +429,10 @@ static const std::vector<IniSection> &ini_layout()
             { "FierceAttack", "Y", nullptr }, { "JumpBack", "LB", nullptr }, { "Action", "RB", nullptr },
             { "Special", "LS", nullptr }, { "RangedAttack", "LT", nullptr }, { "KillingMove", "RT", nullptr },
         } },
+        { "Textures", "Texture packs", {
+            { "Dump", "0", "1 = save every texture the game uses as a PNG in ROTKFix\\textures\\dump (for making texture packs)" },
+            { "Replace", "1", "1 = use replacement PNGs from ROTKFix\\textures\\replace (texture packs)" },
+        } },
         { "Extras", "Extras", {
             { "DeveloperButtons", "0", "1 = show the hidden developer menu buttons (testing)" },
         } },

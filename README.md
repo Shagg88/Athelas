@@ -15,6 +15,7 @@ It lets people play their own copy on a modern PC.
 - **Controllers:** Xbox, PlayStation, Switch and most others; button remapping; the right button names in hints
 - **Co-op:** two controllers on one PC, or online by streaming with Steam Remote Play Together or Parsec (see README.txt)
 - **Movies:** cutscenes fill widescreen screens with correct proportions; optional logo skip; a sound delay setting for Bluetooth speakers
+- **Texture packs:** dump the game's textures to PNG and load replacements from a folder (no game art included)
 - **Screenshots:** `\` or Print Screen saves a PNG
 - **Launcher:** every setting in one place, with presets (Original, Balanced, High, Ultra)
 

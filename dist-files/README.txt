@@ -38,6 +38,22 @@ WHILE PLAYING
   ]                    Next colour look
 
 
+TEXTURE PACKS
+-------------
+ROTK Fix can swap any of the game's textures for a PNG of your own. It
+includes no game art: packs are made from your own copy.
+- Making a pack: in ROTKFix.ini set Dump = 1 under [Textures] and play.
+  Every texture the game shows is saved once as a PNG in
+  ROTKFix\textures\dump, named <width>x<height>_<16-character code>.png.
+  Set Dump back to 0 when you have what you need.
+- Using a pack: put the edited or upscaled PNGs in ROTKFix\textures\replace
+  (subfolders are fine). The game uses them the next time it starts. A file
+  can be any size, but should keep the original's shape, and its name must
+  end with the original's 16-character code; anything before it is free,
+  for example hud_health_256x64_0123456789abcdef.png.
+Text, the movie picture and the screen effects cannot be replaced.
+
+
 PLAYING CO-OP ONLINE
 --------------------
 The game's co-op is for two players on one PC, but a friend can join over the
@@ -154,6 +170,10 @@ The launcher writes ROTKFix.ini in the game folder. You can also edit it in Note
   Special                (default LS)
   RangedAttack           (default LT)
   KillingMove            (default RT)
+
+[Textures]  Texture packs
+  Dump                   1 = save every texture the game uses as a PNG in ROTKFix\textures\dump (for making texture packs) (default 0)
+  Replace                1 = use replacement PNGs from ROTKFix\textures\replace (texture packs) (default 1)
 
 [Extras]  Extras
   DeveloperButtons       1 = show the hidden developer menu buttons (testing) (default 0)
