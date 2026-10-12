@@ -48,7 +48,8 @@ static float g_lodBias   = 0.0f;   /* texture LOD bias, negative = sharper (DXVK
 static int  g_gfxEnabled = 1;
 static int  g_aspectFix;
 static int  g_movieSharpPct = 70;   /* [Video] SharperMovies: cutscene sharpening at movie-pixel size */
-static int  g_hudSharpPct = 60;     /* [Graphics] SharperHUD: HUD and menu pictures sharpened at their own pixel size */
+static int  g_hudSharpPct = 0;      /* HUD and menu pictures sharpened at their own pixel size; set from the resolution */
+static int  g_sharpenOn = 1;        /* [Graphics] Sharpening > 0 */
 static int  g_projPersp;      /* current projection is perspective (3D) */
 static int  g_alphaEdges = 1;  /* smooth cut-out (alpha-tested) edges with MSAA: per-sample shading */
 static int  g_drawPct = 100;   /* [Graphics] DrawDistance: far clip plane and fog, percent of the game's */
@@ -92,9 +93,7 @@ void graphics_load_settings(const char *ini)
     g_movieSharpPct = GetPrivateProfileIntA("Video", "SharperMovies", 70, ini);
     if (g_movieSharpPct < 0) g_movieSharpPct = 0;
     if (g_movieSharpPct > 100) g_movieSharpPct = 100;
-    g_hudSharpPct = GetPrivateProfileIntA("Graphics", "SharperHUD", 60, ini);
-    if (g_hudSharpPct < 0) g_hudSharpPct = 0;
-    if (g_hudSharpPct > 100) g_hudSharpPct = 100;
+    g_sharpenOn = GetPrivateProfileIntA("Graphics", "Sharpening", 60, ini) > 0;
     g_fovPct  = GetPrivateProfileIntA("Graphics", "FieldOfView", 100, ini);
     if (g_fovPct < 70) g_fovPct = 70;
     if (g_fovPct > 150) g_fovPct = 150;
@@ -859,8 +858,22 @@ static int movie_sharpen_draw(IDirect3DDevice8 *dev, UINT start, UINT count)
  * the texture times the vertex colour, one texture stage, no pixel shader.
  * Text (font textures), screen copies and full-screen layers are left as
  * they are. */
+/* How strongly to sharpen HUD pictures: they were made for 640x480, so the
+ * larger the screen the more they are stretched and the more they need.
+ * None at 480 lines, 50 at 1080p, 80 at 1440p, at most 90 (4K). Off when
+ * the player has turned sharpening off. */
+static int hud_sharpen_strength(void)
+{
+    if (!g_sharpenOn || !g_modeH) return 0;
+    int pct = (int)(40.0f * ((float)g_modeH / 480.0f - 1.0f));
+    return pct < 0 ? 0 : pct > 90 ? 90 : pct;
+}
+
 static int hud_sharpen_ok(IDirect3DDevice8 *dev)
 {
+    g_hudSharpPct = hud_sharpen_strength();
+    static int logged;
+    if (g_hudSharpPct && !logged++) logf_("graphics: sharper HUD on (%d%% for %u lines)", g_hudSharpPct, g_modeH);
     if (!g_hudSharpPct || g_moviePSFailed || g_curFVF != FVF_2D || !g_tex0 || is_rt(g_tex0) || icons_is_font_texture(g_tex0)) return 0;
     void **vt = *(void ***)dev;
     DWORD ps = 0, cop = 0, ca1 = 0, ca2 = 0, aop = 0, aa1 = 0, aa2 = 0, c1op = 0;
@@ -984,7 +997,7 @@ static HRESULT WINAPI hook_DrawPrimitive(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE
     }
     if (!g_orthoFixed) {
         if (g_projPersp) { g_draws3D++; g_hitch[HITCH_DRAWS3D]++; }
-        else if (g_projOrtho && g_hudSharpPct) {            /* 2D at its normal width (16:9 or narrower) */
+        else if (g_projOrtho && g_sharpenOn) {            /* 2D at its normal width (16:9 or narrower) */
             g_pictureDraw = 0;
             if (!draw_full_width(start, prim_verts(pt, count)) && !g_pictureDraw && hud_sharpen_ok(dev) &&
                 sharpen_draw(dev, g_hudSharpPct, pt, 0, start, count, 0, 0)) return D3D_OK;
@@ -1008,7 +1021,7 @@ static HRESULT WINAPI hook_DrawIndexedPrimitive(IDirect3DDevice8 *dev, D3DPRIMIT
     g_hitch[HITCH_DRAWS]++;
     if (!g_orthoFixed) {
         if (g_projPersp) { g_draws3D++; g_hitch[HITCH_DRAWS3D]++; }
-        else if (g_projOrtho && g_hudSharpPct) {
+        else if (g_projOrtho && g_sharpenOn) {
             g_pictureDraw = 0;
             if (!draw_full_width(g_baseVertex + mi, nv) && !g_pictureDraw && hud_sharpen_ok(dev) &&
                 sharpen_draw(dev, g_hudSharpPct, pt, 1, mi, nv, si, pc)) return D3D_OK;

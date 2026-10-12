@@ -549,14 +549,11 @@ static void tab_graphics(App &a)
     if (ImGui::SliderInt("##lod", &ts, 0, 100, ts == 0 ? "Game default" : "%d%%")) s.lodBias = -ts / 100.0f;
     ImGui::EndDisabled();
     row_end();
-    row_begin("Sharpening", "Crisper picture. 0 turns it off. While playing, [ switches it on and off to compare.");
+    row_begin("Sharpening", "Crisper picture. 0 turns it off. While playing, [ switches it on and off to compare.\n"
+                            "The HUD and menu pictures are sharpened to match your resolution automatically.");
     ImGui::BeginDisabled(!vk);
     ImGui::SliderInt("##sharp", &s.sharpening, 0, 100, s.sharpening == 0 ? "Off" : "%d");
     ImGui::EndDisabled();
-    row_end();
-    row_begin("Sharper HUD", "The health bars, portraits and menu pictures are small images stretched to your screen.\n"
-                             "This sharpens them at their own size so they match the rest of the picture. 0 turns it off.");
-    ImGui::SliderInt("##hudsharp", &s.sharperHud, 0, 100, s.sharperHud == 0 ? "Off" : "%d");
     row_end();
     static const char *looks[] = { "Original", "Film", "Vivid", "Dark fantasy" };
     row_begin("Colour look", "Original: the game's own colours.\n"

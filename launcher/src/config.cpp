@@ -330,7 +330,6 @@ bool load_settings(const std::string &dir, Settings &s)
     s.lodBias = std::min(0.0f, std::max(-1.0f, getf(ini, "Graphics", "TextureLODBias", -0.5f)));
     s.brightness = std::min(2.0f, std::max(0.5f, getf(ini, "Graphics", "Brightness", 1.0f)));
     s.sharpening = clampi(geti(ini, "Graphics", "Sharpening", 60), 0, 100);
-    s.sharperHud = clampi(geti(ini, "Graphics", "SharperHUD", 60), 0, 100);
     {
         std::string lk = gets(ini, "Graphics", "ColourLook", "original");
         static const char *looks[] = { "original", "film", "vivid", "dark" };
@@ -385,8 +384,7 @@ static const std::vector<IniSection> &ini_layout()
             { "AlphaEdgeSmoothing", "1", "1 = also smooth leaves, grass and fences (needs MSAA; costs speed)" },
             { "AnisotropicFiltering", "16", "Texture filtering: 0, 2, 4, 8 or 16" },
             { "TextureLODBias", "-0.50", "Texture sharpness: 0 = game's own, down to -1.0 = sharpest" },
-            { "Sharpening", "60", "0-100, 0 = off. [ switches it on and off while playing" },
-            { "SharperHUD", "60", "Sharpens the HUD and menu pictures at their own pixel size, 0-100, 0 = off" },
+            { "Sharpening", "60", "0-100, 0 = off (also turns off the automatic HUD sharpening). [ switches it on and off while playing" },
             { "Brightness", "1.00", "Added to the game's own brightness option (0.5-2.0)" },
             { "ColourLook", "original", "original, film, vivid or dark. ] switches while playing" },
             { "ColourLookStrength", "100", "0-100" },
@@ -523,7 +521,6 @@ static bool write_rotkfix_ini(const std::string &p, const Settings &s, bool crea
     set("Graphics", "AnisotropicFiltering", std::to_string(s.aniso));
     set("Graphics", "TextureLODBias", fmtf(s.lodBias));
     set("Graphics", "Sharpening", std::to_string(s.sharpening));
-    set("Graphics", "SharperHUD", std::to_string(s.sharperHud));
     set("Graphics", "Brightness", fmtf(s.brightness));
     set("Graphics", "ColourLook", looks[s.colourLook]);
     set("Graphics", "ColourLookStrength", std::to_string(s.lookStrength));
@@ -553,7 +550,7 @@ static bool write_rotkfix_ini(const std::string &p, const Settings &s, bool crea
     // Compact layout: one aligned "Name = value" line per setting; what each
     // one does is explained in README.txt.
     static const char *retired[] = { "KeepHUDProportions", "DrawDistanceHotkey", "FoliageEdgeCutoff",
-                                     "FoliageEdgeCutoffDXT3", "ShadowResolution", "ButtonPictures" };
+                                     "FoliageEdgeCutoffDXT3", "ShadowResolution", "ButtonPictures", "SharperHUD" };
     auto isRetired = [&](const std::string &k) {
         for (const char *r : retired) if (!_stricmp(r, k.c_str())) return true;
         return false;
