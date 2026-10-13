@@ -16,11 +16,14 @@ struct LibGame {
     bool iso = false;
     uint32_t titleId = 0;      // Xbox games: from default.xbe
     std::string title;         // Xbox games: the title stored in default.xbe
+    uint32_t regions = 0;      // Xbox games: game region flags (1 = North America, 2 = Japan, 4 = Europe and the rest)
 };
 
 const char *game_kind_name(GameKind k);       // "The Return of the King - PC" ...
 const char *game_kind_short(GameKind k);      // "PC", "Xbox"
 bool game_kind_playable(GameKind k);          // false while its port isn't ready
+bool game_region_supported(const LibGame &g); // Xbox games: only US copies for now
+const char *game_region_name(const LibGame &g);
 
 // What is at 'path' (a game folder or an Xbox disc image)? GK_NONE if it isn't one of ours.
 GameKind detect_game_at(const std::string &path, LibGame &out);

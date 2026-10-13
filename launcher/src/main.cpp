@@ -1156,11 +1156,16 @@ static void draw_other_game(App &a)
     row_end();
     if (g.kind != GK_ROTK_PC) {
         row_begin("Version", nullptr);
-        ImGui::Text("Xbox, %s", g.iso ? "disc image" : "extracted files");
+        ImGui::Text("Xbox, %s copy, %s", game_region_name(g), g.iso ? "disc image" : "extracted files");
         if (g.titleId) { ImGui::SameLine(); ImGui::TextColored(C_DIM, "(title ID %08X)", (unsigned)g.titleId); }
         row_end();
         ImGui::Spacing();
         ImGui::PushTextWrapPos(0);
+        if (!game_region_supported(g)) {
+            ImGui::TextColored(C_WARN, "This is a %s copy. Only the US version is supported for now.", game_region_name(g));
+            ImGui::PopTextWrapPos();
+            return;
+        }
         ImGui::TextColored(C_WARN, "Recognised, but not playable from here yet.");
         ImGui::TextUnformatted(g.kind == GK_TT_XBOX
             ? "The Two Towers runs through its own PC port. Once that port is part of this launcher, its settings "

@@ -25,6 +25,15 @@ const char *game_kind_name(GameKind k)
 const char *game_kind_short(GameKind k) { return k == GK_ROTK_PC ? "PC" : k == GK_NONE ? "" : "Xbox"; }
 bool game_kind_playable(GameKind k) { return k == GK_ROTK_PC; }   // the Xbox ports are not ready yet
 
+// The ports are built from the US discs. A copy whose region flags include North
+// America is a US copy; others are recognised but not supported yet.
+bool game_region_supported(const LibGame &g) { return g.kind == GK_ROTK_PC || (g.regions & 1); }
+const char *game_region_name(const LibGame &g)
+{
+    uint32_t r = g.regions & 7;
+    return r & 1 ? "US" : r == 2 ? "Japanese" : r == 4 ? "European" : r ? "non-US" : "unknown-region";
+}
+
 static const char *kind_key(GameKind k)
 {
     return k == GK_ROTK_PC ? "rotk-pc" : k == GK_ROTK_XBOX ? "rotk-xbox" : k == GK_TT_XBOX ? "tt-xbox" : "none";
@@ -62,7 +71,7 @@ struct Reader {
 };
 
 // Title ID and name from an XBE whose first bytes are at 'off' in the reader.
-static bool xbe_title(Reader &r, unsigned long long off, uint32_t &tid, std::string &title)
+static bool xbe_title(Reader &r, unsigned long long off, uint32_t &tid, std::string &title, uint32_t *regions = nullptr)
 {
     unsigned char h[0x180];
     if (!r.read(off, h, sizeof h) || memcmp(h, "XBEH", 4)) return false;
@@ -70,9 +79,10 @@ static bool xbe_title(Reader &r, unsigned long long off, uint32_t &tid, std::str
     memcpy(&base, h + 0x104, 4);
     memcpy(&cert, h + 0x118, 4);
     if (cert < base || cert - base > 0x10000) return false;
-    unsigned char c[0x60];
+    unsigned char c[0xA4];
     if (!r.read(off + (cert - base), c, sizeof c)) return false;
     memcpy(&tid, c + 8, 4);
+    if (regions) memcpy(regions, c + 0xA0, 4);
     wchar_t w[41] = {};
     memcpy(w, c + 0x0C, 80);
     char b[128];
@@ -139,7 +149,7 @@ static GameKind detect_iso(const std::string &path, LibGame &out)
         uint32_t sec = 0, sz = 0;
         if (!iso_find(r, "default.xbe", sec, sz, saw, dirs, 2)) continue;
         uint32_t tid = 0; std::string title;
-        if (xbe_title(r, sec * 2048ull, tid, title)) {
+        if (xbe_title(r, sec * 2048ull, tid, title, &out.regions)) {
             k = kind_from_tid(tid);
             out.titleId = tid; out.title = title;
         }
@@ -161,7 +171,7 @@ static GameKind detect_folder(const std::string &dir, LibGame &out)
     Reader r;
     r.f = fopen(xbe.c_str(), "rb");
     uint32_t tid = 0; std::string title;
-    if (r.f && xbe_title(r, 0, tid, title)) { k = kind_from_tid(tid); out.titleId = tid; out.title = title; }
+    if (r.f && xbe_title(r, 0, tid, title, &out.regions)) { k = kind_from_tid(tid); out.titleId = tid; out.title = title; }
     if (r.f) fclose(r.f);
     // other regions may use other title IDs: go by the files
     if (k == GK_NONE && any_file(dir + "\\Worlds\\*.bfa")) k = GK_TT_XBOX;
