@@ -1202,6 +1202,10 @@ static void tt_load_settings(App &a)
 static bool tt_save(App &a)
 {
     SHCreateDirectoryExA(NULL, tt_data_dir().c_str(), NULL);
+    // the frame limit follows the frame rate
+    if (const PortSetting *cap = tt_setting(a, "display", "fps_cap"))
+        if (const PortSetting *fps = tt_setting(a, "graphics", "fps"))
+            a.ttFile.set(cap->section, cap->key, std::to_string(atoi(toml_unquote(tt_val(a, *fps)).c_str())));
     // every setting is written, so the file is complete even before the first run
     for (auto &ps : a.tt.settings) a.ttFile.set(ps.section, ps.key, tt_val(a, ps));
     if (!settings_file_save(tt_settings_path(), a.ttFile)) { set_message(a, "Could not save " + tt_settings_path(), true); return false; }
@@ -1445,6 +1449,12 @@ static void tt_open_textures()
     ShellExecuteA(NULL, "open", t.c_str(), NULL, NULL, SW_SHOWNORMAL);
 }
 
+// Settings the launcher sets by itself instead of showing: the frame limit follows the
+// frame rate (one "Frame rate" choice, as for ROTK)
+static bool tt_hidden(const PortSetting &ps) { return ps.section == "display" && ps.key == "fps_cap"; }
+// The tab a setting is shown on: its section's, except the frame rate, which is on Display as in ROTK's
+static int tt_tab_of_setting(const PortSetting &ps) { return ps.section == "graphics" && ps.key == "fps" ? 0 : tt_tab_of(ps.section); }
+
 // The settings on one tab, in the port's own order, grouped by section
 static void tt_settings_on_tab(App &a, int tab)
 {
@@ -1452,15 +1462,18 @@ static void tt_settings_on_tab(App &a, int tab)
     std::string sec = "\x01";
     if (tab == 1 && !a.tt.presets.empty()) { section("Preset"); tt_preset_row(a); }
     for (auto &ps : a.tt.settings) {
-        if (tt_tab_of(ps.section) != tab) continue;
-        if (ps.section != sec) {
+        if (tt_tab_of_setting(ps) != tab) continue;
+        // the frame rate joins the Display tab's screen settings, without starting a Graphics heading there
+        std::string psec = tab == 0 && ps.section == "graphics" ? std::string("display") : ps.section;
+        if (psec != sec) {
             if (sec == "textures" && ImGui::Button("Open texture folder")) tt_open_textures();
-            sec = ps.section;
+            sec = psec;
             const char *t = tt_section_title(sec);
             section(t ? t : cap_first(sec).c_str());
         }
         if (pw && ph && &ps == pw) { tt_resolution_row(a, *pw, *ph); continue; }
         if (pw && ph && &ps == ph) continue;
+        if (tt_hidden(ps)) continue;
         // the HUD-edge setting only matters with widescreen on
         bool off = false;
         if (ps.key == "hud_edges") if (const PortSetting *ws = tt_setting(a, "graphics", "widescreen")) off = tt_val(a, *ws) != "true";
@@ -1513,7 +1526,7 @@ static void tt_tabs(App &a, const LibGame &)
 {
     static const char *names[] = { "  Display  ", "  Graphics  ", "  Controls  ", "  Audio  ", "  Network  " };
     bool has[5] = {};
-    for (auto &ps : a.tt.settings) has[tt_tab_of(ps.section)] = true;
+    for (auto &ps : a.tt.settings) has[tt_tab_of_setting(ps)] = true;
     has[1] = true;   // the preset lives there
     ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
     if (ImGui::BeginTabBar("tttabs")) {
