@@ -443,6 +443,7 @@ void FvfInputs(uint32_t fvf, VertexShader& vs) {
 
 ScreenSpaceHook g_screen_space_hook = nullptr;
 ScreenSpaceTest g_screen_space_test = nullptr;
+ProjectionHook g_projection_hook = nullptr;
 ScreenSpacePlace g_screen_space_place = nullptr;
 
 namespace {

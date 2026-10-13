@@ -697,6 +697,7 @@ HLE_STDCALL(D3DDevice_SetTransform, 2) {
     std::memcpy(HostPtr(kDevice + kDevTransforms + t * 64), HostPtr(a[1]), 64);
     uint32_t pc = t < 2 ? t + 2 : t < 6 ? t + 14 : t + 250;
     std::memcpy(g_state.transforms[pc].data(), HostPtr(a[1]), 64);
+    if (t == 1 && gpu::g_projection_hook) gpu::g_projection_hook(g_state.transforms[pc].data());
     return 0;
 }
 

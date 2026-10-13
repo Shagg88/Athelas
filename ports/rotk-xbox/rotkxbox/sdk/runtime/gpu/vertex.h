@@ -68,6 +68,10 @@ extern ScreenSpacePlace g_screen_space_place;
 // in the log, so the pieces of a HUD are easy to find for a texture pack. Null for none.
 using ScreenSpaceTest = bool (*)(const State& s);
 extern ScreenSpaceTest g_screen_space_test;
+// the projection a game sets (SetTransform, Direct3D 8 layout, row major _11.._44), as the renderer will use it: the
+// game may change it (widescreen, field of view). The device copy GetTransform reads stays the game's. Null for none.
+using ProjectionHook = void (*)(float* m);
+extern ProjectionHook g_projection_hook;
 
 // false when there is nothing to draw
 // indices: the title's 16 bit indices, null for an unindexed draw

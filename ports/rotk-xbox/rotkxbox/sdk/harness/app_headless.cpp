@@ -79,6 +79,20 @@ std::recursive_mutex& UiLock() {
     return m;
 }
 
-void Pace() {}
+// as the window's: frames at most fps_cap a second (a game's frame rate setting), so game time can be checked
+void Pace() {
+    using clock = std::chrono::steady_clock;
+    static clock::time_point next = clock::now();
+    uint32_t cap = Get().fps_cap;
+    auto now = clock::now();
+    if (!cap) {
+        next = now;
+        return;
+    }
+    auto period = std::chrono::nanoseconds(1000000000ull / cap);
+    next += period;
+    if (next < now - period) next = now;
+    std::this_thread::sleep_until(next);
+}
 
 }  // namespace app

@@ -4,6 +4,9 @@
 // sets which movies a button press may stop: type 0 never (LOGOS), 1 always (ATTRFMV1, the bonus videos), 2 only
 // after it has been seen once (every story movie). Same table and rules as ROTK PC (0x572E00, see ROTK Fix).
 // [graphics] skip_all_videos (off by default, as on the console) sets every entry to 1.
+// The opening logos (copyright, THX, New Line, EA) are not a movie of their own on the Xbox, as logos.avi is on PC:
+// they are the start of HELMFMV1.vid, the Helm's Deep intro, so they can only be skipped with the whole intro
+// (skip_all_videos). LOGOS (logos.vid) is never played at startup. ROTK Fix's SkipOpeningLogos has no Xbox match.
 //
 // Movie timing: while a movie plays the renderer shows it by the movie settings (gpu::g_movie), which is what
 // [graphics] cutscene_audio_delay needs to hold the picture back for Bluetooth sound. The player draws each frame
@@ -12,6 +15,8 @@
 #include <chrono>
 #include <mutex>
 #include <thread>
+
+#include <cstring>
 
 #include "core/log.h"
 #include "gpu/backend.h"
@@ -48,8 +53,10 @@ void Loaded() {
     }
     LOGR("rotk: every video can be skipped (%d table entries changed)", changed);
 }
+
 }  // namespace rotk
 
+// 0xC46A0 draws a movie frame
 X86_EXTERN_FUNC(__imp__sub_000C46A0);
 X86_FUNC(sub_000C46A0) {
     static std::once_flag watcher;

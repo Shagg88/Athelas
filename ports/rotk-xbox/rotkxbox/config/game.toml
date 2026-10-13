@@ -281,3 +281,8 @@ XPP_MemoryUnitType          = 0x1478E0
 at = 0x00121EBE
 call = "ROTK_DiscCheckFailed"
 on_true = 0x00121EC3
+
+[[hook]]                   # frame end: the wait for a vertical blank since the last frame (skipped above 30 fps)
+at = 0x000D03D3
+call = "ROTK_FrameWait"
+on_true = 0x000D03F1

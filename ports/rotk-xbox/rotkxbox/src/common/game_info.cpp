@@ -1,8 +1,11 @@
 #include "app/app.h"
 
 namespace rotk {
-extern bool g_skip_all_videos;  // src/game/rotk_movies.cpp
-void Loaded();
+extern bool g_skip_all_videos;                  // src/game/rotk_movies.cpp
+extern uint32_t g_fps;                          // src/game/rotk_framerate.cpp
+extern uint32_t g_fov_percent;                  // src/game/rotk_widescreen.cpp
+void Loaded();                                  // rotk_movies.cpp
+void Init();                                    // rotk_settings.cpp: ROTKFix.ini, then the frame rate
 }
 
 // what the runtime asks of the game; strings must be set, hooks may stay null
@@ -21,11 +24,19 @@ const app::GameInfo app::kGame = {
     .options = {{"graphics", "skip_all_videos", cfg::Type::Bool, "Allow skipping all videos",
                  "On the console the opening logos can't be skipped and each story movie only after you have seen it "
                  "once. This lets a button press skip any of them.",
-                 &rotk::g_skip_all_videos}},
+                 &rotk::g_skip_all_videos},
+                {"graphics", "fps", cfg::Type::Choice, "Frame rate",
+                 "The game was made for 30 on the Xbox. Higher rates play at normal speed; movies keep their own pace.",
+                 nullptr, &rotk::g_fps, nullptr, 0, 0, {"30", "60", "90", "120", "144", "165", "180", "240"}, nullptr,
+                 nullptr, {"30 fps", "60 fps", "90 fps", "120 fps", "144 fps", "165 fps", "180 fps", "240 fps"}},
+                {"graphics", "fov", cfg::Type::Int, "Field of view",
+                 "How wide the camera sees, as a share of the game's own (100). Wider shows more of the battle but "
+                 "makes characters look further away.",
+                 nullptr, &rotk::g_fov_percent, nullptr, 70, 150, {}}},
     .presets = {},
     .load = nullptr,                      // reads more from the settings file's toml::table
     .save = nullptr,                      // writes more into it
-    .init = nullptr,                      // after the settings load, before the window and boot
+    .init = rotk::Init,                   // after the settings load, before the window and boot
     .loaded = rotk::Loaded,               // image in memory, before its entry point runs
     .window = nullptr,                    // the game window is up
     .message = nullptr,                   // window messages first; true takes one
