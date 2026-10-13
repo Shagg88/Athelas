@@ -1,0 +1,38 @@
+# Addresses proven by hand for The Two Towers (45410010); applied over xbe_symbols + XbSymbolDatabase.
+[data]
+D3D_DirtyFlags       = 0x12418C  # D3DDevice_SetTexture 0x117B51..0x117B5D or 0x4800 into it
+D3D_IndexData        = 0x124188  # D3DDevice_SetIndices 0x117C99 stores the index buffer data
+DSound_StreamVtable2 = 0x185154  # CDirectSoundStream constructor 0x12B40D stores it at +4
+[symbols]
+CDirectSoundStream_GetStatus        = 0x129802  # XbSymbolDatabase CDirectSoundStream_GetStatus__r2
+IDirectSoundBuffer_SetMixBins       = 0x129F79  # calls CDirectSoundBuffer_SetMixBins 0x129B85
+IDirectSoundBuffer_SetMixBinVolumes = 0x129F95  # calls CDirectSoundBuffer_SetMixBinVolumes 0x129BD3
+# The Two Towers host replacements (game/src/game/tt_d3d.cpp and the SDK dsound 4928 patch)
+D3DDevice_BeginPushBuffer          = 0x11AFC0
+D3DDevice_EndPushBuffer            = 0x11B030
+D3DDevice_RunPushBuffer            = 0x11AD50
+D3DDevice_KickPushBuffer           = 0x117380
+D3DDevice_InsertCallback           = 0x11ACD0
+D3DDevice_BeginVisibilityTest      = 0x117D50
+D3DDevice_EndVisibilityTest        = 0x117DF0
+D3DDevice_GetVisibilityTestResult  = 0x117390
+D3DDevice_SetPixelShaderProgram    = 0x119220
+IDirectSoundBuffer_PlayEx          = 0x129FD5
+IDirectSoundBuffer_PauseEx         = 0x12A035
+IDirectSoundBuffer_SetPitch        = 0x129EED
+IDirectSoundBuffer_SetLFO          = 0x129F09
+IDirectSoundBuffer_SetEG           = 0x129F25
+IDirectSoundBuffer_SetConeAngles   = 0x12ADFE
+IDirectSoundBuffer_SetConeOrientation   = 0x12AE22
+IDirectSoundBuffer_SetConeOutsideVolume = 0x12AE57
+IDirectSoundBuffer_SetMode         = 0x12AEBF
+IDirectSoundBuffer_SetDistanceFactor = 0x12AEDF
+IDirectSoundBuffer_SetDopplerFactor  = 0x12AF03
+IDirectSoundBuffer_SetRolloffFactor  = 0x12AF27
+CDirectSoundStream_SetPitch        = 0x129C21
+CDirectSoundStream_SetLFO          = 0x129CC5
+CDirectSoundStream_SetEG           = 0x129D17
+CDirectSoundStream_SetOutputBuffer = 0x12AD40
+IDirectSound_CreateSoundStream     = 0x12B749
+D3DDevice_DrawIndexedVerticesUP    = 0x118300
+XInputGetCapabilities              = 0x1695FB  # XbSymbolDatabase XAPILIB__XInputGetCapabilities, ret 8; host version in tt_input.cpp

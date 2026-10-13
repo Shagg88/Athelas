@@ -1,0 +1,81 @@
+// the host side without a window: settings at their defaults, the run folder as the exe folder
+#include <chrono>
+#include <cstdlib>
+#include <filesystem>
+#include <mutex>
+#include <thread>
+
+#include "app/app.h"
+#include "core/log.h"
+
+namespace app {
+
+Settings& Get() {
+    static Settings s;
+    return s;
+}
+void Load() {}
+void Save() {}
+void ApplyDisplay() {}
+Mode Desktop() { return {1280, 720}; }
+Mode Output() { return Desktop(); }
+float RenderScale(uint32_t) { return 1.0f; }
+bool Widescreen() { return true; }
+
+std::filesystem::path ExeDir() {
+    static const std::filesystem::path dir = std::filesystem::current_path();
+    return dir;
+}
+int Instance() {
+    static const int n = [] {
+        const char* e = std::getenv("INSTANCE");
+        return e ? std::atoi(e) : 0;
+    }();
+    return n;
+}
+void* Window() { return nullptr; }
+
+// no command line: the run folder holds everything
+const CommandLine& Args() {
+    static const CommandLine c = [] {
+        CommandLine c;
+        c.no_dialogs = true;
+        c.instance = Instance();
+        return c;
+    }();
+    return c;
+}
+std::filesystem::path TextureDir() { return ExeDir() / "textures"; }
+std::filesystem::path SavesDir() { return ExeDir() / (Instance() > 1 ? "hdd" + std::to_string(Instance()) : std::string("hdd")); }
+std::filesystem::path ShaderCacheDir() { return ExeDir() / "shadercache"; }
+std::filesystem::path ScreenshotDir() { return ExeDir() / "Screenshots"; }
+const std::vector<std::string>& ScreenNames() {
+    static const std::vector<std::string> n{"main"};
+    return n;
+}
+void* ScreenMonitor() { return nullptr; }
+std::filesystem::path LogFolder() { return ExeDir() / "logs"; }
+std::filesystem::path SettingsFile() { return ExeDir() / "settings.toml"; }
+std::vector<cfg::Desc> SettingsList() { return {}; }
+void Fail(int code, const std::wstring& message) {
+    LOGE("Exit (%d): %s", code, std::string(message.begin(), message.end()).c_str());
+    logx::Flush();
+    std::_Exit(code);
+}
+
+bool OpenSplash() { return false; }
+void SplashFirstFrame() {}
+void CloseSplash() {}
+void OpenGameWindow(bool) {}
+bool StartHandover() { return false; }
+bool HandingOver() { return false; }
+void FinishHandover() {}
+
+std::recursive_mutex& UiLock() {
+    static std::recursive_mutex m;
+    return m;
+}
+
+void Pace() {}
+
+}  // namespace app

@@ -1,0 +1,4128 @@
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/THIRD_PARTY.txt ../game/sdk/THIRD_PARTY.txt
+--- XboxXBE-Recomp/THIRD_PARTY.txt	2026-10-12 11:31:38.273539184 -0700
++++ ../game/sdk/THIRD_PARTY.txt	2026-10-12 22:05:57.866639559 -0700
+@@ -64,3 +64,23 @@
+ 2. Altered source versions must be plainly marked as such, and must not be
+    misrepresented as being the original software.
+ 3. This notice may not be removed or altered from any source distribution.
++
++
++stb_image v2.30 and stb_image_write v1.16 (https://github.com/nothings/stb, commit 2c980bb5), texture pack PNG files
++
++MIT License
++
++Copyright (c) 2017 Sean Barrett
++
++Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
++documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
++rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
++permit persons to whom the Software is furnished to do so, subject to the following conditions:
++
++The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
++Software.
++
++THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
++WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
++COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
++OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/harness/app_headless.cpp ../game/sdk/harness/app_headless.cpp
+--- XboxXBE-Recomp/harness/app_headless.cpp	2026-10-12 11:31:38.274338340 -0700
++++ ../game/sdk/harness/app_headless.cpp	2026-10-12 23:21:03.539414479 -0700
+@@ -6,6 +6,7 @@
+ #include <thread>
+ 
+ #include "app/app.h"
++#include "core/log.h"
+ 
+ namespace app {
+ 
+@@ -34,6 +35,34 @@
+ }
+ void* Window() { return nullptr; }
+ 
++// no command line: the run folder holds everything
++const CommandLine& Args() {
++    static const CommandLine c = [] {
++        CommandLine c;
++        c.no_dialogs = true;
++        c.instance = Instance();
++        return c;
++    }();
++    return c;
++}
++std::filesystem::path TextureDir() { return ExeDir() / "textures"; }
++std::filesystem::path SavesDir() { return ExeDir() / (Instance() > 1 ? "hdd" + std::to_string(Instance()) : std::string("hdd")); }
++std::filesystem::path ShaderCacheDir() { return ExeDir() / "shadercache"; }
++std::filesystem::path ScreenshotDir() { return ExeDir() / "Screenshots"; }
++const std::vector<std::string>& ScreenNames() {
++    static const std::vector<std::string> n{"main"};
++    return n;
++}
++void* ScreenMonitor() { return nullptr; }
++std::filesystem::path LogFolder() { return ExeDir() / "logs"; }
++std::filesystem::path SettingsFile() { return ExeDir() / "settings.toml"; }
++std::vector<cfg::Desc> SettingsList() { return {}; }
++void Fail(int code, const std::wstring& message) {
++    LOGE("Exit (%d): %s", code, std::string(message.begin(), message.end()).c_str());
++    logx::Flush();
++    std::_Exit(code);
++}
++
+ bool OpenSplash() { return false; }
+ void SplashFirstFrame() {}
+ void CloseSplash() {}
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/harness/build.sh ../game/sdk/harness/build.sh
+--- XboxXBE-Recomp/harness/build.sh	2026-10-12 11:31:38.274338340 -0700
++++ ../game/sdk/harness/build.sh	2026-10-12 22:04:39.483275290 -0700
+@@ -22,7 +22,9 @@
+ H=$(dirname "$(realpath "$0")"); RT=$REPO/sdk/runtime
+ CXX=${CXX:-clang++}; JOBS=${JOBS:-$(nproc)}
+ BASE="-std=c++20 -march=x86-64-v2 -fno-strict-aliasing"
+-HOST="$BASE -O1 -g -I$REPO/src -I$RT -I$GEN -I$H -I$H/compat -DXBE_RAW_VERTICES=0 -DXBE_RENDER_THREAD=0"
++# toml++ (header only) for the settings file code: TOML_INCLUDE, or the copy a CMake build of the repo fetched
++TOML_INCLUDE=${TOML_INCLUDE:-$(ls -d "$REPO"/out/build/*/_deps/tomlplusplus-src/include 2>/dev/null | head -1)}
++HOST="$BASE -O1 -g -I$REPO/src -I$RT -I$GEN -I$H -I$H/compat -I$TOML_INCLUDE -DXBE_RAW_VERTICES=0 -DXBE_RENDER_THREAD=0"
+ 
+ # generated code, an object rebuilt only when its partition is newer
+ export CXX BASE RT GEN GEN_OBJ
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/harness/null_audio.cpp ../game/sdk/harness/null_audio.cpp
+--- XboxXBE-Recomp/harness/null_audio.cpp	2026-10-12 11:31:38.274416979 -0700
++++ ../game/sdk/harness/null_audio.cpp	2026-10-12 19:43:56.850807538 -0700
+@@ -1,5 +1,8 @@
+-// the mixer pulled every 10 ms by the clock, its output dropped
++// the mixer pulled every 10 ms by the clock, its output dropped, or written to AUDIO_WAV as 16 bit stereo
+ #include <chrono>
++#include <cstdint>
++#include <cstdio>
++#include <cstdlib>
+ #include <thread>
+ #include <vector>
+ 
+@@ -7,11 +10,44 @@
+ 
+ namespace audio {
+ 
++namespace {
++
++void Header(std::FILE* f, uint32_t bytes) {
++    auto u32 = [&](uint32_t v) { std::fwrite(&v, 4, 1, f); };
++    auto u16 = [&](uint16_t v) { std::fwrite(&v, 2, 1, f); };
++    std::fseek(f, 0, SEEK_SET);
++    std::fwrite("RIFF", 1, 4, f); u32(36 + bytes); std::fwrite("WAVEfmt ", 1, 8, f);
++    u32(16); u16(1); u16(2); u32(kRate); u32(kRate * 4); u16(4); u16(16);
++    std::fwrite("data", 1, 4, f); u32(bytes);
++    std::fseek(f, 0, SEEK_END);
++}
++
++}  // namespace
++
+ void StartOutput(std::function<void(float*, uint32_t)> render) {
+     std::thread([render] {
++        std::FILE* wav = nullptr;
++        if (const char* p = std::getenv("AUDIO_WAV")) {
++            wav = std::fopen(p, "wb");
++            if (wav) Header(wav, 0);
++        }
++        uint32_t bytes = 0;
+         std::vector<float> b(kRate / 100 * 2);
+-        for (;;) {
++        std::vector<int16_t> s(b.size());
++        for (uint32_t n = 0;; n++) {
+             render(b.data(), kRate / 100);
++            if (wav) {
++                for (size_t i = 0; i < b.size(); i++) {
++                    float x = b[i] < -1 ? -1 : b[i] > 1 ? 1 : b[i];
++                    s[i] = int16_t(x * 32767);
++                }
++                std::fwrite(s.data(), 2, s.size(), wav);
++                bytes += uint32_t(s.size() * 2);
++                if (n % 100 == 0) {  // a header that stays right when the run is killed
++                    Header(wav, bytes);
++                    std::fflush(wav);
++                }
++            }
+             std::this_thread::sleep_for(std::chrono::milliseconds(10));
+         }
+     }).detach();
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/harness/null_backend.cpp ../game/sdk/harness/null_backend.cpp
+--- XboxXBE-Recomp/harness/null_backend.cpp	2026-10-12 11:31:38.274416979 -0700
++++ ../game/sdk/harness/null_backend.cpp	2026-10-12 20:19:58.646811556 -0700
+@@ -5,6 +5,7 @@
+ #include <cstdio>
+ #include <cstring>
+ #include <filesystem>
++#include <map>
+ #include <string>
+ 
+ #include "app/app.h"
+@@ -71,6 +72,24 @@
+     void SyncLate(uint32_t) override {}
+     void Flush() override {}
+     void SetGamma(const uint8_t*) override {}
++    // counted only when every frame is drawn (REF=1); otherwise the SDK reads everything as visible
++    bool Queries() const override { return harness::Env("REF") == 1; }
++    void BeginQuery() override {
++        query_from_ = reference::Passed();
++        if (++tests_ == 1 || tests_ % 1000 == 0) LOGI("query: %llu visibility tests by frame %llu", tests_, frames_);
++    }
++    void EndQuery(uint32_t index) override {
++        uint32_t n = uint32_t(reference::Passed() - query_from_);
++        results_[index] = n;
++        static const bool log = harness::Env("QUERY_LOG");
++        if (log) LOGI("query: frame %llu test %u: %u pixels", frames_, index, n);
++    }
++    bool QueryResult(uint32_t index, uint32_t& pixels) override {
++        auto it = results_.find(index);
++        if (it == results_.end()) return false;
++        pixels = it->second;
++        return true;
++    }
+ 
+ private:
+     static std::string File(const char* fmt, unsigned long long n) {
+@@ -128,6 +147,9 @@
+     bool drawing_ = false;
+     int snap_ = 0;
+     FILE* list_ = nullptr;
++    uint64_t query_from_ = 0;
++    unsigned long long tests_ = 0;
++    std::map<uint32_t, uint32_t> results_;
+ };
+ 
+ }  // namespace
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/harness/pad_script.cpp ../game/sdk/harness/pad_script.cpp
+--- XboxXBE-Recomp/harness/pad_script.cpp	2026-10-12 11:31:38.274416979 -0700
++++ ../game/sdk/harness/pad_script.cpp	2026-10-12 20:57:47.544246421 -0700
+@@ -1,6 +1,6 @@
+ // pad 0 from a script, then GameInfo::pad as on Windows
+ // SCRIPT file: lines of "frame buttons [frames held]", held 8 frames by default, # comments; buttons joined by +:
+-// UP DOWN LEFT RIGHT START BACK A B X Y LT RT LS LSD LSL LSR (left stick up, down, left, right)
++// UP DOWN LEFT RIGHT START BACK A B X Y BLACK WHITE LT RT LS LSD LSL LSR (left stick up, down, left, right)
+ // cmd in the run folder: "buttons [frames held]" pressed once from the frame it is read, then removed
+ #include <cstdio>
+ #include <string>
+@@ -54,6 +54,8 @@
+         else if (b == "B") p.analog[1] = 255;
+         else if (b == "X") p.analog[2] = 255;
+         else if (b == "Y") p.analog[3] = 255;
++        else if (b == "BLACK") p.analog[4] = 255;
++        else if (b == "WHITE") p.analog[5] = 255;
+         else if (b == "LT") p.analog[6] = 255;
+         else if (b == "RT") p.analog[7] = 255;
+         else if (b == "LS") p.ly = 32767;
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/harness/reference_renderer.cpp ../game/sdk/harness/reference_renderer.cpp
+--- XboxXBE-Recomp/harness/reference_renderer.cpp	2026-10-12 11:31:38.274416979 -0700
++++ ../game/sdk/harness/reference_renderer.cpp	2026-10-12 20:12:05.598003703 -0700
+@@ -23,6 +23,9 @@
+ 
+ namespace reference {
+ 
++uint64_t g_passed = 0;  // pixels past the depth and stencil tests, for visibility tests
++
++
+ using namespace gpu;
+ 
+ namespace {
+@@ -992,6 +995,8 @@
+     g_draws = 0;
+ }
+ 
++uint64_t Passed() { return g_passed; }
++
+ void Clear(const State& s, uint32_t count, const uint8_t* rects, uint32_t flags, uint32_t color, float z, uint32_t stencil) {
+     Plane rt = OpenPlane(s.rt), zs = OpenPlane(s.zs);
+     // the given rects, else the viewport
+@@ -1272,6 +1277,7 @@
+                         if (stencil) zs.StoreDepth(uint32_t(x), uint32_t(y), oz, stencil_op(op_zfail));
+                         continue;
+                     }
++                    g_passed++;
+                     if (zs.ok && (zwrite || stencil)) zs.StoreDepth(uint32_t(x), uint32_t(y), zwrite ? zi : oz, stencil ? stencil_op(op_pass) : os);
+                     if (!rt.ok || !cmask) continue;
+                     for (int j = 0; j < 4; j++) col[j] = Sat(col[j]);
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/harness/reference_renderer.h ../game/sdk/harness/reference_renderer.h
+--- XboxXBE-Recomp/harness/reference_renderer.h	2026-10-12 11:31:38.274416979 -0700
++++ ../game/sdk/harness/reference_renderer.h	2026-10-12 20:12:05.598325920 -0700
+@@ -11,6 +11,8 @@
+ void Clear(const gpu::State& s, uint32_t count, const uint8_t* rects, uint32_t flags, uint32_t color, float z, uint32_t stencil);
+ void Copy(const gpu::Surface& src, const gpu::Surface& dst, uint32_t count, uint32_t rects_va, uint32_t points_va);
+ void Draw(const gpu::State& s, uint32_t prim, uint32_t start, uint32_t count, const uint8_t* indices);
++// pixels drawn so far that passed the depth and stencil tests
++uint64_t Passed();
+ // 24 bit TGA of a surface's colour
+ bool WriteTga(const gpu::Surface& s, const char* path);
+ 
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/runtime/app/app.h ../game/sdk/runtime/app/app.h
+--- XboxXBE-Recomp/runtime/app/app.h	2026-10-12 11:31:38.274965909 -0700
++++ ../game/sdk/runtime/app/app.h	2026-10-13 00:27:36.980241579 -0700
+@@ -6,6 +6,8 @@
+ #include <utility>
+ #include <vector>
+ 
++#include "core/settings_file.h"
++
+ namespace input {
+ struct Pad;
+ }
+@@ -17,24 +19,67 @@
+ 
+ struct Settings {
+     DisplayMode display_mode = DisplayMode::Borderless;
++    std::string screen = "main";     // the screen the game opens on: "main", or a Windows display name, "DISPLAY2"
++    uint32_t refresh = 0;            // fullscreen refresh rate in Hz; 0 the highest the screen has for the size
+     uint32_t width = 0, height = 0;  // 0 is the desktop mode
+     uint32_t render_percent = 100;   // of the output height
+-    uint32_t fps_cap = 60;           // 0 unlimited
++    uint32_t fps_cap = 0;            // frames a second the window shows at most, 0 no limit; set by the game's frame rate setting
+     bool vsync = true;
+     uint32_t aniso = 0;              // 0 as the game asks
+     std::string join_ip;                   // co-op: a host past the LAN the system link search also asks
++    bool widescreen = false;               // 16:9 picture on a wide display; false keeps the console's 4:3 with side bars
++    bool texture_dump = false;             // write each texture as it is first seen to textures/dump (texture packs)
++    bool texture_replace = true;           // draw texture pack files from textures/replace in place of the game's
++    float brightness = 1.0f;               // a curve over the picture as shown: 1 the game's own, more lifts the darks
++    float lod_bias = 0.0f;                 // added to the game's mip level bias: below 0 picks sharper texture levels
++    uint32_t sharpening = 0;               // 0 to 100: contrast adaptive sharpening over the picture as shown
++    uint32_t msaa = 0;                     // anti-aliasing samples: 0 off, 2, 4 or 8
+ };
+ 
+ Settings& Get();
+-void Load();
++void Load();  // a settings file that is not TOML ends the run (kExitBadSettings); a missing one is made with defaults
+ void Save();
+ void LogSettings();  // every setting, as the settings file has them
++std::vector<cfg::Desc> SettingsList();  // every setting the file holds, the host's and the game's
++std::filesystem::path SettingsFile();   // --config, or GameInfo::settings beside the exe
++
++// The command line, for a launcher:
++//   --game <folder with the xbe, or a disc image>   --config <settings file>   --textures <folder>   --log <file>
++//   --saves <folder>: the console's hard disk (save games, the game's cache)   --shader-cache <folder>
++//   --screenshots <folder>: where \ saves a PNG of the picture
++//   With all of them given nothing is written beside the exe, which may then be read-only.
++//   --no-dialogs: failures end the run with their exit code and a line in the log, without a message box
++//   --version, --describe-settings: one line, or the settings as JSON, on stdout; then exit 0
++struct CommandLine {
++    std::filesystem::path game, config, textures, log, saves, shader_cache, screenshots;
++    bool no_dialogs = false, version = false, describe = false;
++    int instance = 0;  // --instance N: a second copy on this PC for system link tests
++};
++const CommandLine& Args();
++// exit codes a launcher turns into a message; a crash or anything else is another code
++enum ExitCode : int {
++    kExitOk = 0,
++    kExitNoGame = 2,        // the game files are not where --game (or assets) says, or are another game
++    kExitWrongRelease = 3,  // the game, but not the release this build was made from
++    kExitNoD3D12 = 4,       // the graphics card or driver cannot run the renderer
++    kExitBadSettings = 5,   // the settings file is not readable
++};
++// logs the reason, shows it unless --no-dialogs, and ends the process with code
++[[noreturn]] void Fail(int code, const std::wstring& message);
++std::filesystem::path TextureDir();  // --textures, or textures beside the exe: replace/ holds packs, dump/ dumps
++std::filesystem::path SavesDir();        // --saves, or hdd beside the exe (hddN for --instance N above 1)
++std::filesystem::path ShaderCacheDir();  // --shader-cache, or shadercache beside the exe
++std::filesystem::path ScreenshotDir();   // --screenshots, or Screenshots beside the exe
++std::filesystem::path LogFolder();       // --log's folder, or logs beside the exe; crash dumps and F3 captures go by it
+ void LogSystem();    // the machine and the settings, at a run's start
+ void ApplyDisplay();  // any thread
+ struct Mode {
+     uint32_t width, height;
+ };
+-Mode Desktop();
++Mode Desktop();  // the chosen screen's desktop mode
++// the screens Windows has, "main" first then each display name ("DISPLAY1"...), as the screen setting takes them
++const std::vector<std::string>& ScreenNames();
++void* ScreenMonitor();  // HMONITOR of the screen setting's screen, the main one when that screen is not there
+ Mode Output();
+ float RenderScale(uint32_t guest_height);
+ // the output is 3:2 or wider: the console reports a widescreen TV and the frame is shown 16:9, else 4:3 as on a 4:3 TV
+@@ -48,7 +93,7 @@
+     std::vector<uint8_t> xbe;
+ };
+ bool FindGame(GameFiles& game);
+-int Instance();  // --instance N on the command line, 0 without: a second copy on this PC for system link tests
++int Instance();  // Args().instance
+ void* Window();  // HWND
+ // boot splash: GameInfo::splash .bmp or .png beside the exe, up before the game window
+ bool OpenSplash();        // window thread, at launch; false without one, and the game window opens at once
+@@ -64,21 +109,20 @@
+ std::recursive_mutex& UiLock();
+ 
+ // what the game repo defines once
+-struct Option {  // a setting in the settings file, flag or value
+-    const char* key;
+-    bool* flag;
+-    uint32_t* value;
+-};
++using Option = cfg::Desc;  // a game setting in the settings file, described for a launcher
+ struct GameInfo {
+     const wchar_t* title;        // window and splash
+     const wchar_t* short_title;  // message boxes
+     const wchar_t* name;         // window classes, crash dumps, handover event
+     const char* log;             // log prefix
+-    const char* settings;        // settings file beside the exe
++    const char* settings;        // settings file beside the exe, unless --config names another
++    const char* version;         // --version: one line, "<program> <version>"
+     const wchar_t* splash;       // .bmp or .png beside the exe
+     const wchar_t* missing;      // message when neither the game files nor a disc image are found
++    uint32_t title_id;           // the xbe's title id: another one is another game (kExitNoGame), not another release
+     std::vector<std::pair<const char*, const char*>> images;  // xbe file name, executable name
+     std::vector<Option> options;
++    std::vector<cfg::Preset> presets;  // --describe-settings: a launcher's preset menu
+     // the settings file's toml::table, for what options cannot hold
+     void (*load)(const void* table);
+     void (*save)(void* table);
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/runtime/app/game_files.cpp ../game/sdk/runtime/app/game_files.cpp
+--- XboxXBE-Recomp/runtime/app/game_files.cpp	2026-10-12 11:31:38.275036570 -0700
++++ ../game/sdk/runtime/app/game_files.cpp	2026-10-12 22:03:08.549834999 -0700
+@@ -10,6 +10,7 @@
+ 
+ #include <algorithm>
+ #include <cwctype>
++#include <cstring>
+ #include <fstream>
+ 
+ #include "app/app.h"
+@@ -31,7 +32,16 @@
+     auto dir = ExeDir();
+     std::error_code ec;
+     for (int i = 0; i < 6; i++) {
+-        if (fs::is_directory(dir / "assets", ec)) return dir / "assets";
++        if (fs::is_directory(dir / "assets", ec)) {
++            // assets/redirect.txt: one line naming the folder that holds the game, so a dump elsewhere is used in place
++            std::ifstream r(dir / "assets" / "redirect.txt");
++            std::string line;
++            if (r && std::getline(r, line)) {
++                while (!line.empty() && (line.back() == '\r' || line.back() == ' ')) line.pop_back();
++                if (!line.empty() && fs::is_directory(fs::path(line), ec)) return fs::path(line);
++            }
++            return dir / "assets";
++        }
+         if (!dir.has_parent_path() || dir.parent_path() == dir) break;
+         dir = dir.parent_path();
+     }
+@@ -59,14 +69,37 @@
+     return true;
+ }
+ 
++// certificate +8 of an xbe's header: its title id, 0 if it is no xbe
++uint32_t TitleId(const std::vector<uint8_t>& x) {
++    auto u32 = [&](size_t at) {
++        uint32_t v = 0;
++        if (at + 4 <= x.size()) std::memcpy(&v, x.data() + at, 4);
++        return v;
++    };
++    if (x.size() < 0x180 || std::memcmp(x.data(), "XBEH", 4)) return 0;
++    uint32_t base = u32(0x104), cert = u32(0x118);
++    return cert > base ? u32(size_t(cert - base) + 8) : 0;
++}
++
++std::wstring Wide(const std::string& s) { return std::wstring(s.begin(), s.end()); }
++
+ }  // namespace
+ 
++// the game where --game says (a folder with the xbe, or a disc image), else in assets
+ bool FindGame(GameFiles& game) {
+-    fs::path assets = FindAssets();
+-    std::vector<fs::path> isos;
++    const fs::path& given = Args().game;
+     std::error_code ec;
+-    if (!assets.empty())
+-        for (auto& e : fs::directory_iterator(assets, ec)) {
++    fs::path folder;
++    std::vector<fs::path> isos;
++    if (!given.empty()) {
++        if (fs::is_directory(given, ec)) folder = given;
++        else if (fs::is_regular_file(given, ec)) isos.push_back(given);
++        else Fail(kExitNoGame, L"The game files couldn't be found: " + given.wstring() + L" does not exist.");
++    } else {
++        folder = FindAssets();
++    }
++    if (!folder.empty())
++        for (auto& e : fs::directory_iterator(folder, ec)) {
+             std::wstring ext = e.path().extension().wstring();
+             std::transform(ext.begin(), ext.end(), ext.begin(), [](wchar_t c) { return wchar_t(std::towlower(c)); });
+             if (ext == L".iso" && e.is_regular_file(ec)) isos.push_back(e.path());
+@@ -76,18 +109,24 @@
+     // the first copy with this xbe wins, the extracted files before any image; another release is kept to offer
+     GameFiles other;
+     std::unique_ptr<kernel::Disc> other_disc;
+-    fs::path other_name;
++    fs::path other_name, foreign;  // another release of this game; another game altogether
+     auto consider = [&](const fs::path& name, std::vector<uint8_t> xbe, std::unique_ptr<kernel::Disc> disc) {
+         std::string sha = Sha1(xbe);
+         bool match = sha == kImageSha1;
+-        LOGR("Game: %s in %s, sha1 %s%s", IMAGE_XBE, name.string().c_str(), sha.c_str(), match ? "" : ", another release");
++        uint32_t tid = TitleId(xbe);
++        bool same_title = !kGame.title_id || tid == kGame.title_id;
++        LOGR("Game: %s in %s, title %08X, sha1 %s%s", IMAGE_XBE, name.string().c_str(), tid, sha.c_str(),
++             match ? "" : same_title ? ", another release" : ", another game");
++        fs::path dir = fs::is_directory(name, ec) ? name : name.parent_path();
+         if (match) {
+-            game = {assets, std::move(xbe)};
++            game = {dir, std::move(xbe)};
+             kernel::MountDisc(std::move(disc));
+             return true;
+         }
+-        if (other_name.empty()) {
+-            other = {assets, std::move(xbe)};
++        if (!same_title) {
++            if (foreign.empty()) foreign = name;
++        } else if (other_name.empty()) {
++            other = {dir, std::move(xbe)};
+             other_disc = std::move(disc);
+             other_name = name;
+         }
+@@ -95,7 +134,7 @@
+     };
+ 
+     std::vector<uint8_t> xbe;
+-    if (!assets.empty() && ReadHostFile(assets / IMAGE_XBE, xbe) && consider(assets, std::move(xbe), nullptr)) return true;
++    if (!folder.empty() && ReadHostFile(folder / IMAGE_XBE, xbe) && consider(folder, std::move(xbe), nullptr)) return true;
+     for (const fs::path& iso : isos) {
+         auto disc = std::make_unique<kernel::Disc>();
+         std::string error;
+@@ -111,13 +150,22 @@
+     }
+ 
+     if (other_name.empty()) {
+-        MessageBoxW(nullptr, kGame.missing, kGame.short_title, MB_ICONERROR);
+-        return false;
++        if (!foreign.empty()) Fail(kExitNoGame, L"The game files couldn't be found: " + foreign.wstring() + L" holds another game.");
++        if (!given.empty())
++            Fail(kExitNoGame, L"The game files couldn't be found: " + given.wstring() + L" has no " + Wide(IMAGE_XBE) +
++                                  L" and no disc image with one.");
++        Fail(kExitNoGame, kGame.missing);
+     }
+     std::wstring text = other_name.filename().wstring() +
+-                        L" is a different release of the game than this build was made from, and will most likely "
+-                        L"crash.\n\nStart it anyway?";
+-    if (MessageBoxW(nullptr, text.c_str(), kGame.short_title, MB_ICONWARNING | MB_YESNO | MB_DEFBUTTON2) != IDYES) return false;
++                        L" is a different release of the game than this build was made from (only the US release is "
++                        L"supported for now), and will most likely crash.";
++    if (Args().no_dialogs) Fail(kExitWrongRelease, text);
++    if (MessageBoxW(nullptr, (text + L"\n\nStart it anyway?").c_str(), kGame.short_title,
++                    MB_ICONWARNING | MB_YESNO | MB_DEFBUTTON2) != IDYES) {
++        LOGR("Exit (%d): another release, not started", kExitWrongRelease);
++        logx::Flush();
++        ExitProcess(kExitWrongRelease);
++    }
+     game = std::move(other);
+     kernel::MountDisc(std::move(other_disc));
+     return true;
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/runtime/app/main.cpp ../game/sdk/runtime/app/main.cpp
+--- XboxXBE-Recomp/runtime/app/main.cpp	2026-10-12 11:31:38.275036570 -0700
++++ ../game/sdk/runtime/app/main.cpp	2026-10-12 23:49:04.056514817 -0700
+@@ -7,6 +7,7 @@
+ #endif
+ #include <windows.h>
+ #include <dbghelp.h>
++#include <shellapi.h>
+ #include <timeapi.h>
+ 
+ #include <algorithm>
+@@ -36,7 +37,9 @@
+ bool g_mode_changed = false;
+ bool g_apply_posted = false;  // a display apply is waiting in the queue or running
+ 
+-// crash dump in CrashDumps beside the exe
++std::filesystem::path LogDir() { return LogFolder(); }
++
++// crash dump in CrashDumps beside the exe, or beside the log when --log puts it elsewhere
+ LONG WINAPI WriteCrashDump(EXCEPTION_POINTERS* e) {
+     // the dump holds no guest memory: the guest registers and return addresses go to the log
+     if (kernel::Thread* t = kernel::Current(); e && t && t->ctx) {
+@@ -49,7 +52,7 @@
+         }
+         kernel::LogGuestStack(*t->ctx, 256);
+     }
+-    auto dir = ExeDir() / "CrashDumps";
++    auto dir = Args().log.empty() ? ExeDir() / "CrashDumps" : LogDir() / "CrashDumps";
+     CreateDirectoryW(dir.c_str(), nullptr);
+     SYSTEMTIME t;
+     GetLocalTime(&t);
+@@ -78,9 +81,20 @@
+ }
+ 
+ // window thread only
++// the highest refresh rate the screen offers for a size, 0 when it has none
++DWORD BestRefresh(const wchar_t* device, DWORD w, DWORD h) {
++    DWORD best = 0;
++    DEVMODEW dm{};
++    dm.dmSize = sizeof(dm);
++    for (DWORD i = 0; EnumDisplaySettingsW(device, i, &dm); i++)
++        if (dm.dmPelsWidth == w && dm.dmPelsHeight == h && dm.dmBitsPerPel == 32) best = std::max(best, dm.dmDisplayFrequency);
++    return best;
++}
++
+ void ApplyNow() {
+     const Settings& s = Get();
+-    HMONITOR mon = MonitorFromWindow(g_hwnd, MONITOR_DEFAULTTOPRIMARY);
++    // the chosen screen, read from it alone: its own modes and refresh rates, not the main screen's
++    HMONITOR mon = static_cast<HMONITOR>(ScreenMonitor());
+     MONITORINFOEXW mi{};
+     mi.cbSize = sizeof(mi);
+     GetMonitorInfoW(mon, &mi);
+@@ -93,15 +107,29 @@
+     DEVMODEW desktop{};
+     desktop.dmSize = sizeof(desktop);
+     EnumDisplaySettingsW(mi.szDevice, ENUM_REGISTRY_SETTINGS, &desktop);
+-    // the desktop's own size is no mode change: switching to it anyway blanks the screen for nothing
+-    if (s.display_mode == DisplayMode::Fullscreen && s.width && s.height &&
+-        (s.width != desktop.dmPelsWidth || s.height != desktop.dmPelsHeight)) {
++    // fullscreen at another size or refresh rate switches the screen's mode; the desktop's own mode is no change,
++    // switching to it anyway blanks the screen for nothing
++    DWORD fw = s.width && s.height ? s.width : desktop.dmPelsWidth, fh = s.width && s.height ? s.height : desktop.dmPelsHeight;
++    bool other_size = fw != desktop.dmPelsWidth || fh != desktop.dmPelsHeight;
++    DWORD hz = s.refresh ? s.refresh : other_size ? BestRefresh(mi.szDevice, fw, fh) : 0;
++    bool other_rate = hz && hz != desktop.dmDisplayFrequency;
++    if (s.display_mode == DisplayMode::Fullscreen && (other_size || other_rate)) {
+         DEVMODEW dm{};
+         dm.dmSize = sizeof(dm);
+-        dm.dmPelsWidth = s.width;
+-        dm.dmPelsHeight = s.height;
++        dm.dmPelsWidth = fw;
++        dm.dmPelsHeight = fh;
+         dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT;
+-        g_mode_changed = ChangeDisplaySettingsExW(mi.szDevice, &dm, nullptr, CDS_FULLSCREEN, nullptr) == DISP_CHANGE_SUCCESSFUL;
++        if (hz) {
++            dm.dmDisplayFrequency = hz;
++            dm.dmFields |= DM_DISPLAYFREQUENCY;
++        }
++        LONG r = ChangeDisplaySettingsExW(mi.szDevice, &dm, nullptr, CDS_FULLSCREEN, nullptr);
++        if (r != DISP_CHANGE_SUCCESSFUL && hz) {  // a rate the screen does not take: the size alone
++            dm.dmFields &= ~DWORD(DM_DISPLAYFREQUENCY);
++            r = ChangeDisplaySettingsExW(mi.szDevice, &dm, nullptr, CDS_FULLSCREEN, nullptr);
++        }
++        g_mode_changed = r == DISP_CHANGE_SUCCESSFUL;
++        LOGR("display: %ls %lux%lu at %lu Hz%s", mi.szDevice, fw, fh, hz, g_mode_changed ? "" : " failed, the desktop mode kept");
+         GetMonitorInfoW(mon, &mi);
+     }
+     if (s.display_mode == DisplayMode::Windowed) {
+@@ -128,6 +156,14 @@
+     switch (msg) {
+         case WM_KEYDOWN:
+             if (wp == VK_F3) DumpThreads();
++            // \, the key above Enter on a US keyboard (VK_OEM_5): a screenshot, once a press
++            if (wp == VK_OEM_5 && !(lp & (1 << 30))) gpu::g_screenshot = true;
++            // [ (VK_OEM_4): sharpening off and on, to compare, as ROTK Fix
++            if (wp == VK_OEM_4 && !(lp & (1 << 30)) && Get().sharpening) {
++                bool off = !gpu::g_sharpen_off;
++                gpu::g_sharpen_off = off;
++                LOGR("sharpening %s ([)", off ? "off" : "on");
++            }
+             return 0;
+         case WM_ACTIVATE:
+             if (LOWORD(wp) == WA_INACTIVE) {
+@@ -179,12 +215,64 @@
+     return std::filesystem::path(p).parent_path();
+ }
+ 
+-int Instance() {
+-    static const int n = [] {
+-        const wchar_t* p = std::wcsstr(GetCommandLineW(), L"--instance");
+-        return p ? std::max(0, std::min(8, _wtoi(p + 10))) : 0;
++const CommandLine& Args() {
++    static const CommandLine c = [] {
++        CommandLine c;
++        int n = 0;
++        wchar_t** v = CommandLineToArgvW(GetCommandLineW(), &n);
++        for (int i = 1; v && i < n; i++) {
++            std::wstring a = v[i];
++            auto next = [&]() -> std::filesystem::path { return i + 1 < n ? std::filesystem::path(v[++i]) : std::filesystem::path(); };
++            if (a == L"--game") c.game = next();
++            else if (a == L"--config") c.config = next();
++            else if (a == L"--textures") c.textures = next();
++            else if (a == L"--log") c.log = next();
++            else if (a == L"--saves") c.saves = next();
++            else if (a == L"--shader-cache") c.shader_cache = next();
++            else if (a == L"--screenshots") c.screenshots = next();
++            else if (a == L"--instance") c.instance = std::max(0, std::min(8, _wtoi(next().c_str())));
++            else if (a == L"--no-dialogs") c.no_dialogs = true;
++            else if (a == L"--version") c.version = true;
++            else if (a == L"--describe-settings") c.describe = true;
++        }
++        if (v) LocalFree(v);
++        // relative paths are taken from where the launcher started us, before anything changes the directory
++        std::error_code ec;
++        for (auto* p : {&c.game, &c.config, &c.textures, &c.log, &c.saves, &c.shader_cache, &c.screenshots})
++            if (!p->empty()) *p = std::filesystem::absolute(*p, ec);
++        return c;
+     }();
+-    return n;
++    return c;
++}
++
++int Instance() { return Args().instance; }
++
++std::filesystem::path TextureDir() { return Args().textures.empty() ? ExeDir() / "textures" : Args().textures; }
++
++std::filesystem::path LogFolder() { return Args().log.empty() ? ExeDir() / "logs" : Args().log.parent_path(); }
++
++std::filesystem::path SavesDir() {
++    std::filesystem::path base = Args().saves.empty() ? ExeDir() / "hdd" : Args().saves;
++    // a second copy for system link tests keeps a disk of its own
++    if (Instance() > 1) base += std::to_wstring(Instance());
++    return base;
++}
++
++std::filesystem::path ScreenshotDir() { return Args().screenshots.empty() ? ExeDir() / "Screenshots" : Args().screenshots; }
++
++std::filesystem::path ShaderCacheDir() {
++    return Args().shader_cache.empty() ? ExeDir() / "shadercache" : Args().shader_cache;
++}
++
++void Fail(int code, const std::wstring& message) {
++    std::string narrow;
++    int n = WideCharToMultiByte(CP_UTF8, 0, message.c_str(), int(message.size()), nullptr, 0, nullptr, nullptr);
++    narrow.resize(size_t(std::max(n, 0)));
++    if (n > 0) WideCharToMultiByte(CP_UTF8, 0, message.c_str(), int(message.size()), narrow.data(), n, nullptr, nullptr);
++    LOGE("Exit (%d): %s", code, narrow.c_str());
++    logx::Flush();
++    if (!Args().no_dialogs) MessageBoxW(nullptr, message.c_str(), kGame.short_title, MB_ICONERROR);
++    ExitProcess(UINT(code));
+ }
+ 
+ void* Window() { return g_hwnd; }
+@@ -215,7 +303,31 @@
+ 
+ }  // namespace app
+ 
++namespace {
++
++// a line for whoever started us: a launcher's pipe, or the console it was typed in
++void Print(const std::string& text) {
++    HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
++    if (!out || out == INVALID_HANDLE_VALUE) {
++        if (AttachConsole(ATTACH_PARENT_PROCESS)) out = GetStdHandle(STD_OUTPUT_HANDLE);
++    }
++    if (!out || out == INVALID_HANDLE_VALUE) return;
++    DWORD written;
++    WriteFile(out, text.data(), DWORD(text.size()), &written, nullptr);
++}
++
++}  // namespace
++
+ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int) {
++    // a launcher's questions, answered before anything else starts
++    if (app::Args().version) {
++        Print(std::string(app::kGame.version) + "\n");
++        return app::kExitOk;
++    }
++    if (app::Args().describe) {
++        Print(cfg::Describe(app::SettingsList(), app::kGame.presets));
++        return app::kExitOk;
++    }
+     SetUnhandledExceptionFilter(app::WriteCrashDump);
+     std::signal(SIGABRT, [](int) { app::WriteCrashDump(nullptr); });
+     timeBeginPeriod(1);
+@@ -224,14 +336,15 @@
+     bool relaunched = std::wcsstr(GetCommandLineW(), L"--relaunched") != nullptr;
+     std::string log = app::kGame.log;
+     if (app::Instance() > 1) log += "-" + std::to_string(app::Instance());
+-    logx::Init((app::ExeDir() / "logs").string(), log, relaunched);
++    if (!app::Args().log.empty()) log = app::Args().log.stem().string();
++    logx::Init(app::LogDir().string(), log, relaunched);
+     app::Load();
+     if (app::kGame.init) app::kGame.init();
+     if (relaunched && !logx::kVerbose) LOGR("Relaunched: %s", IMAGE_XBE);
+     else app::LogSystem();
+ 
+     app::GameFiles game;
+-    if (!app::FindGame(game)) return 1;
++    if (!app::FindGame(game)) return app::kExitNoGame;
+ 
+     bool splash = app::OpenSplash(), handover = app::StartHandover();
+ 
+@@ -262,10 +375,9 @@
+ 
+     input::Init();
+     if (app::kGame.window) app::kGame.window(app::g_hwnd);
+-    std::wstring hdd = app::Instance() > 1 ? L"hdd" + std::to_wstring(app::Instance()) : L"hdd";
+     if (app::Instance())
+         SetWindowTextW(app::g_hwnd, (std::wstring(app::kGame.title) + L" [" + std::to_wstring(app::Instance()) + L"]").c_str());
+-    if (!kernel::Boot(std::move(game.xbe), IMAGE_XBE, game.dir.string(), (app::ExeDir() / hdd).string())) {
++    if (!kernel::Boot(std::move(game.xbe), IMAGE_XBE, game.dir.string(), app::SavesDir().string())) {
+         MessageBoxW(app::g_hwnd, L"The game failed to start, see the log in the logs folder.", app::kGame.short_title,
+                     MB_ICONERROR);
+         return 1;
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/runtime/app/settings.cpp ../game/sdk/runtime/app/settings.cpp
+--- XboxXBE-Recomp/runtime/app/settings.cpp	2026-10-12 11:31:38.275036570 -0700
++++ ../game/sdk/runtime/app/settings.cpp	2026-10-12 23:21:03.538893225 -0700
+@@ -1,4 +1,4 @@
+-// the settings file beside the exe
++// the settings file: beside the exe, or where --config says (core/settings_file.h for its form)
+ #ifndef WIN32_LEAN_AND_MEAN
+ #define WIN32_LEAN_AND_MEAN
+ #endif
+@@ -21,9 +21,7 @@
+ 
+ namespace {
+ 
+-const char* kModes[] = {"fullscreen", "borderless", "windowed"};
+-
+-std::filesystem::path File() { return ExeDir() / kGame.settings; }
++std::wstring Wide(const std::string& s) { return std::wstring(s.begin(), s.end()); }
+ 
+ }  // namespace
+ 
+@@ -32,69 +30,102 @@
+     return s;
+ }
+ 
+-void Load() {
+-    Settings& s = Get();
+-    toml::table t;
+-    try {
+-        t = toml::parse_file(File().string());
+-    } catch (...) {
+-        return;
+-    }
+-    std::string mode = t["display_mode"].value_or(std::string(kModes[uint32_t(s.display_mode)]));
+-    for (uint32_t i = 0; i < 3; i++)
+-        if (mode == kModes[i]) s.display_mode = DisplayMode(i);
+-    s.width = t["width"].value_or(s.width);
+-    s.height = t["height"].value_or(s.height);
+-    s.render_percent = t["render_percent"].value_or(s.render_percent);
+-    s.fps_cap = t["fps_cap"].value_or(s.fps_cap);
+-    s.vsync = t["vsync"].value_or(s.vsync);
+-    s.aniso = t["anisotropic_filtering"].value_or(s.aniso);
+-    s.join_ip = t["join_ip"].value_or(s.join_ip);
+-    for (const Option& o : kGame.options) {
+-        if (o.flag) *o.flag = t[o.key].value_or(*o.flag);
+-        else *o.value = t[o.key].value_or(*o.value);
+-    }
+-    if (kGame.load) kGame.load(&t);
++std::filesystem::path SettingsFile() {
++    return Args().config.empty() ? ExeDir() / kGame.settings : Args().config;
+ }
+ 
+-namespace {
+-
+-toml::table Table() {
+-    const Settings& s = Get();
+-    toml::table t{{"display_mode", kModes[uint32_t(s.display_mode)]},
+-                  {"width", int64_t(s.width)},
+-                  {"height", int64_t(s.height)},
+-                  {"render_percent", int64_t(s.render_percent)},
+-                  {"fps_cap", int64_t(s.fps_cap)},
+-                  {"vsync", s.vsync},
+-                  {"anisotropic_filtering", int64_t(s.aniso)},
+-                  {"join_ip", s.join_ip}};
+-    for (const Option& o : kGame.options) {
+-        if (o.flag) t.insert(o.key, *o.flag);
+-        else t.insert(o.key, int64_t(*o.value));
++void Load() {
++    std::filesystem::path file = SettingsFile();
++    std::error_code ec;
++    bool fresh = !std::filesystem::exists(file, ec);
++    std::string error;
++    bool old_layout = false;
++    if (!cfg::Read(file.string(), SettingsList(), error, &old_layout))
++        Fail(kExitBadSettings, L"The settings file " + file.wstring() + L" could not be read: " + Wide(error) +
++                                   L"\n\nFix it, or delete it to start again with the defaults.");
++    if (kGame.load) {
++        try {
++            toml::table t = fresh ? toml::table{} : toml::parse_file(file.string());
++            kGame.load(&t);
++        } catch (...) {
++        }
++    }
++    // a launcher's new settings file starts with every setting at its default; an older flat file is written again
++    // in sections at once, its values kept, so a launcher finds the layout it edits
++    if ((fresh && !Args().config.empty()) || old_layout) {
++        if (old_layout) LOGR("settings: %s rewritten in sections, values kept", file.string().c_str());
++        Save();
+     }
+-    if (kGame.save) kGame.save(&t);
+-    return t;
+ }
+ 
+-}  // namespace
+-
+ void Save() {
+-    std::ofstream f(File());
+-    f << Table() << "\n";
++    if (!cfg::Write(SettingsFile().string(), SettingsList()))
++        LOGW("settings: could not write %s", SettingsFile().string().c_str());
+ }
+ 
+ void LogSettings() {
+-    std::ostringstream text;
+-    text << Table();
+-    std::istringstream lines(text.str());
+-    LOGR("Settings:");
++    std::istringstream lines(cfg::Text(SettingsList()));
++    LOGR("Settings: %s", SettingsFile().string().c_str());
+     for (std::string line; std::getline(lines, line);)
+         if (!line.empty()) LOGR("  %s", line.c_str());
+ }
+ 
++namespace {
++
++// "\\.\DISPLAY2" as the setting names it: DISPLAY2
++std::string ScreenName(const wchar_t* device) {
++    std::wstring d = device;
++    if (d.rfind(L"\\\\.\\", 0) == 0) d = d.substr(4);
++    return std::string(d.begin(), d.end());
++}
++
++struct Screen {
++    HMONITOR mon;
++    std::string name;
++    bool primary;
++};
++
++std::vector<Screen> Screens() {
++    std::vector<Screen> out;
++    EnumDisplayMonitors(nullptr, nullptr, [](HMONITOR m, HDC, LPRECT, LPARAM p) -> BOOL {
++        MONITORINFOEXW mi{};
++        mi.cbSize = sizeof(mi);
++        if (GetMonitorInfoW(m, &mi))
++            reinterpret_cast<std::vector<Screen>*>(p)->push_back({m, ScreenName(mi.szDevice), (mi.dwFlags & MONITORINFOF_PRIMARY) != 0});
++        return TRUE;
++    }, reinterpret_cast<LPARAM>(&out));
++    std::sort(out.begin(), out.end(), [](const Screen& a, const Screen& b) { return a.name < b.name; });
++    return out;
++}
++
++}  // namespace
++
++const std::vector<std::string>& ScreenNames() {
++    static const std::vector<std::string> names = [] {
++        std::vector<std::string> n{"main"};
++        for (const Screen& s : Screens()) n.push_back(s.name);
++        return n;
++    }();
++    return names;
++}
++
++// read each time: a screen plugged in or out while the game runs is seen at the next display change
++void* ScreenMonitor() {
++    const std::string& want = Get().screen;
++    HMONITOR main = MonitorFromPoint(POINT{0, 0}, MONITOR_DEFAULTTOPRIMARY);
++    if (want.empty() || want == "main") return main;
++    for (const Screen& s : Screens())
++        if (_stricmp(s.name.c_str(), want.c_str()) == 0) return s.mon;
++    static bool logged = false;
++    if (!logged) {
++        logged = true;
++        LOGR("display: screen %s is not connected, using the main one", want.c_str());
++    }
++    return main;
++}
++
+ Mode Desktop() {
+-    HMONITOR mon = MonitorFromWindow(static_cast<HWND>(Window()), MONITOR_DEFAULTTOPRIMARY);
++    HMONITOR mon = static_cast<HMONITOR>(ScreenMonitor());
+     MONITORINFOEXW mi{};
+     mi.cbSize = sizeof(mi);
+     DEVMODEW dm{};
+@@ -115,6 +146,7 @@
+     static std::atomic<uint64_t> key{~0ull};
+     static std::atomic<bool> wide{true};
+     const Settings& s = Get();
++    if (!s.widescreen) return false;  // the console's 4:3, side bars on a wide display
+     uint64_t k = uint64_t(s.width) << 32 | s.height;
+     if (key.exchange(k) != k) {
+         Mode m = Output();
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/runtime/app/settings_list.cpp ../game/sdk/runtime/app/settings_list.cpp
+--- XboxXBE-Recomp/runtime/app/settings_list.cpp	1969-12-31 16:00:00.000000000 -0800
++++ ../game/sdk/runtime/app/settings_list.cpp	2026-10-13 00:27:36.981028103 -0700
+@@ -0,0 +1,90 @@
++// every setting the settings file holds, described once: the host's here, the game's in GameInfo::options. No
++// platform code, so the list can be checked anywhere.
++#include <algorithm>
++#include <string>
++
++#include "app/app.h"
++
++namespace app {
++
++namespace {
++std::vector<const char*> ScreenChoices() {
++    std::vector<const char*> c;
++    for (const std::string& n : ScreenNames()) c.push_back(n.c_str());
++    return c;
++}
++}  // namespace
++
++// the host's settings, then the game's; the defaults are the values here before Load
++std::vector<cfg::Desc> SettingsList() {
++    using cfg::Type;
++    Settings& s = Get();
++    static_assert(sizeof(DisplayMode) == sizeof(uint32_t));
++    uint32_t* mode = reinterpret_cast<uint32_t*>(&s.display_mode);
++    // labels and help as ROTK Fix words them, so the launcher reads the same for every game
++    std::vector<cfg::Desc> l = {
++        {"display", "mode", Type::Choice, "Display mode",
++         "Borderless: fills the screen and switches instantly with Alt-Tab (recommended).\n"
++         "Fullscreen: the screen switches to the chosen resolution and refresh rate.\n"
++         "Windowed: a normal window you can move around.",
++         nullptr, mode, nullptr, 0, 0, {"fullscreen", "borderless", "windowed"}, "display_mode", nullptr,
++         {"Fullscreen", "Borderless", "Windowed"}},
++        {"display", "screen", Type::Choice, "Monitor", "Which screen the game runs on.", nullptr, nullptr, &s.screen, 0,
++         0, ScreenChoices()},
++        {"display", "refresh", Type::Int, "Refresh rate",
++         "Only used in fullscreen. Borderless and windowed use the desktop's refresh rate. 0 is the highest the screen "
++         "offers.",
++         nullptr, &s.refresh, nullptr, 0, 500},
++        {"display", "width", Type::Int, "Width",
++         "The size of the picture on screen, with height. 0 uses the screen's own size.", nullptr, &s.width, nullptr, 0,
++         16384, {}, "width"},
++        {"display", "height", Type::Int, "Height",
++         "The size of the picture on screen, with width. 0 uses the screen's own size.", nullptr, &s.height, nullptr, 0,
++         16384, {}, "height"},
++        {"display", "vsync", Type::Bool, "V-Sync",
++         "Prevents tearing. The frame rate can't go above the screen's refresh rate.", &s.vsync, nullptr, nullptr, 0, 0,
++         {}, "vsync"},
++        {"display", "render_percent", Type::Choice, "Render resolution",
++         "The game is drawn at this share of the screen's size, then fitted to it. Above 100% gives a cleaner, sharper "
++         "picture (supersampling) and costs speed; below 100% is faster but softer. 100% is the screen's own size.",
++         nullptr, &s.render_percent, nullptr, 0, 0, {"50", "75", "100", "125", "150", "200", "250", "300"},
++         "render_percent", nullptr,
++         {"50%", "75%", "100% (screen's own)", "125%", "150%", "200% (supersampling)", "250% (supersampling)",
++          "300% (supersampling)"}},
++        {"graphics", "anti_aliasing", Type::Choice, "Anti-aliasing",
++         "Smooths jagged edges (MSAA). Higher costs speed, most of all with a high render resolution.", nullptr,
++         &s.msaa, nullptr, 0, 0, {"0", "2", "4", "8"}, nullptr, nullptr, {"Off", "2x", "4x", "8x"}},
++        {"graphics", "anisotropic_filtering", Type::Choice, "Texture filtering",
++         "Anisotropic filtering: keeps ground and walls sharp at a distance.", nullptr, &s.aniso, nullptr, 0, 0,
++         {"0", "2", "4", "8", "16"}, "anisotropic_filtering", nullptr, {"Off", "2x", "4x", "8x", "16x"}},
++        {"graphics", "lod_bias", Type::Float, "Texture sharpness",
++         "Shows textures at higher detail sooner. Too high can shimmer. 0.00 is the game's own.", nullptr, nullptr,
++         nullptr, -100, 0, {}, nullptr, &s.lod_bias},
++        {"graphics", "sharpening", Type::Int, "Sharpening",
++         "Crisper picture. 0 turns it off. While playing, [ switches it on and off to compare.", nullptr, &s.sharpening,
++         nullptr, 0, 100},
++        {"graphics", "brightness", Type::Float, "Brightness",
++         "1.00 is the game's own picture. Higher lifts dark scenes and caves without washing out white.", nullptr,
++         nullptr, nullptr, 50, 200, {}, nullptr, &s.brightness},
++        {"graphics", "widescreen", Type::Bool, "Widescreen correction",
++         "Shows more at the sides. Off keeps the original 4:3 picture, with bars at the sides.", &s.widescreen, nullptr,
++         nullptr, 0, 0, {}, "widescreen"},
++        {"textures", "replace", Type::Bool, "Use texture packs",
++         "Shows sharper or remade pictures from texture packs. A pack goes in its own folder inside textures\\replace; "
++         "remove the folder to go back to the original pictures.",
++         &s.texture_replace},
++        {"textures", "dump", Type::Bool, "Save game textures",
++         "For making texture packs: every picture the game uses is saved as a PNG in textures\\dump as you play. Levels "
++         "load a little slower the first time. Turn it off when you have what you need.",
++         &s.texture_dump, nullptr, nullptr, 0, 0, {}, "texture_dump"},
++        {"network", "join_ip", Type::String, "Co-op host address",
++         "Also looks for a co-op host at this address, past the local network. Empty searches the local network only.",
++         nullptr, nullptr, &s.join_ip, 0, 0, {}, "join_ip"},
++    };
++    // the game's own settings go with the graphics ones, before textures
++    auto at = std::find_if(l.begin(), l.end(), [](const cfg::Desc& d) { return std::string(d.section) == "textures"; });
++    l.insert(at, kGame.options.begin(), kGame.options.end());
++    return l;
++}
++
++}  // namespace app
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/runtime/audio/reverb.cpp ../game/sdk/runtime/audio/reverb.cpp
+--- XboxXBE-Recomp/runtime/audio/reverb.cpp	1969-12-31 16:00:00.000000000 -0800
++++ ../game/sdk/runtime/audio/reverb.cpp	2026-10-12 19:39:04.250144637 -0700
+@@ -0,0 +1,145 @@
++#include "audio/reverb.h"
++
++#include <algorithm>
++#include <cmath>
++
++namespace audio {
++
++namespace {
++
++constexpr float kPi = 3.14159265f;
++
++float Db(int32_t hundredths) { return hundredths <= -10000 ? 0.0f : std::pow(10.0f, hundredths / 2000.0f); }
++
++// the pole of a one-pole low pass y += (1 - d)(x - y) whose gain at frequency w (radians a sample) is r, r <= 1
++float PoleFor(float r, float w) {
++    r = std::clamp(r, 1e-4f, 1.0f);
++    if (r > 0.9999f) return 0;
++    float a = r * r - 1, b = 2 - 2 * r * r * std::cos(w);
++    float s = std::sqrt(std::max(b * b - 4 * a * a, 0.0f));
++    float d1 = (-b + s) / (2 * a), d2 = (-b - s) / (2 * a);  // the roots multiply to 1: one is inside
++    float d = std::fabs(d1) < 1 ? d1 : d2;
++    return std::clamp(d, 0.0f, 0.999f);
++}
++
++// the late reverb's lines and the diffusers' delays at full density, in ms: mutually prime at 48 kHz
++constexpr float kLineMs[8] = {29.7f, 37.1f, 41.1f, 43.7f, 50.3f, 56.3f, 61.7f, 68.9f};
++constexpr float kAllpassMs[4] = {4.76f, 3.59f, 12.73f, 9.30f};
++// where the early reflections fall across their spread, and the side each favours
++constexpr float kTapAt[6] = {0.0f, 0.13f, 0.29f, 0.47f, 0.71f, 1.0f};
++constexpr float kTapPan[6] = {0.8f, -0.6f, 0.3f, -0.9f, 0.6f, -0.2f};
++
++}  // namespace
++
++Reverb::Reverb(uint32_t rate) : rate_(rate) {
++    pre_.Size(uint32_t(0.45f * rate) + 2);  // reflections delay up to 0.3 s, reverb delay up to 0.1 s more
++    Set(p_);
++}
++
++void Reverb::Set(const I3dl2& in) {
++    I3dl2 p = in;
++    // the I3DL2 ranges
++    p.decay_time = std::clamp(p.decay_time, 0.1f, 20.0f);
++    p.decay_hf_ratio = std::clamp(p.decay_hf_ratio, 0.1f, 2.0f);
++    p.reflections_delay = std::clamp(p.reflections_delay, 0.0f, 0.3f);
++    p.reverb_delay = std::clamp(p.reverb_delay, 0.0f, 0.1f);
++    p.diffusion = std::clamp(p.diffusion, 0.0f, 100.0f);
++    p.density = std::clamp(p.density, 0.0f, 100.0f);
++    p.hf_reference = std::clamp(p.hf_reference, 20.0f, 20000.0f);
++    bool resize = p.density != p_.density || len_[0] == 0;
++    p_ = p;
++    float fs = float(rate_), w = 2 * kPi * std::min(p.hf_reference, 0.45f * fs) / fs;
++
++    room_ = Db(p.room);
++    room_hf_ = Db(std::min(p.room_hf, 0));
++    hf_in_ = 1 - PoleFor(0.5f, w);  // the shelf's corner: half way down at the reference
++    refl_ = Db(p.reflections);
++    late_ = Db(p.reverb);
++    diff_ = 0.7f * p.diffusion / 100;
++    refl_delay_ = uint32_t(p.reflections_delay * fs);
++    late_delay_ = refl_delay_ + uint32_t(p.reverb_delay * fs);
++
++    // reflections spread over the gap to the late reverb, at least 10 ms; their energy adds up to Reflections
++    uint32_t spread = std::max(late_delay_ - refl_delay_, uint32_t(0.010f * fs));
++    float sum = 0;
++    for (int k = 0; k < kTaps; k++) sum += 1.0f / (1 + k);
++    for (int k = 0; k < kTaps; k++) {
++        tap_[k] = refl_delay_ + uint32_t(kTapAt[k] * spread);
++        float g = std::sqrt(1.0f / (1 + k) / sum);  // later ones quieter
++        float l = std::sqrt(0.5f * (1 - kTapPan[k])), r = std::sqrt(0.5f * (1 + kTapPan[k]));
++        tap_gain_[k][0] = g * l;
++        tap_gain_[k][1] = g * r;
++    }
++
++    // density sizes the room: the line lengths go from 40% to 100%
++    float size = 0.4f + 0.6f * p.density / 100;
++    if (resize) {
++        for (int i = 0; i < kAllpasses; i++) ap_[i].Size(ap_len_[i] = std::max(uint32_t(kAllpassMs[i] * size * fs / 1000), 1u));
++        for (int i = 0; i < kLines; i++) {
++            len_[i] = std::max(uint32_t(kLineMs[i] * size * fs / 1000), 2u);
++            line_[i].Size(len_[i] + 1);
++            lp_[i] = 0;
++        }
++    }
++    // each pass through a line loses 60 dB over the decay time, the high end over decay time * HF ratio
++    float hf_time = p.decay_time * std::min(p.decay_hf_ratio, 1.0f);
++    float mean = 0;
++    for (int i = 0; i < kLines; i++) {
++        gain_[i] = std::pow(10.0f, -3.0f * len_[i] / (p.decay_time * fs));
++        float hf = std::pow(10.0f, -3.0f * len_[i] / (hf_time * fs));
++        damp_[i] = PoleFor(hf / gain_[i], w);
++        mean += float(len_[i]) / kLines;
++    }
++    // A unit impulse's energy, spread over the lines, decays by r a sample and leaves through the N line reads each
++    // sample: mean length * (1 - r) of what is left. Over the whole tail that adds to 1 / (mean (1 - r)), half each
++    // side; scaled so each side's impulse response carries Reverb's energy.
++    float r = std::pow(10.0f, -6.0f / (p.decay_time * fs));
++    late_ *= std::sqrt(2.0f * mean * (1 - r));
++    tail_ = late_delay_ + uint32_t(p.decay_time * fs * 1.5f) + len_[kLines - 1];
++}
++
++void Reverb::Process(const float* in, float* out, uint32_t frames) {
++    for (uint32_t i = 0; i < frames; i++) {
++        float x = in[i];
++        idle_ = x != 0 ? 0 : idle_ + 1;
++        // RoomHF: the high end down by room_hf_, then Room over all of it
++        hf_in_state_ += (x - hf_in_state_) * hf_in_;
++        x = (hf_in_state_ + room_hf_ * (x - hf_in_state_)) * room_;
++        pre_.Write(x);
++
++        float el = 0, er = 0;
++        for (int k = 0; k < kTaps; k++) {
++            float s = pre_.Read(tap_[k] + 1);
++            el += s * tap_gain_[k][0];
++            er += s * tap_gain_[k][1];
++        }
++
++        // the late reverb: diffused, into eight lines mixed by a Householder matrix
++        float v = pre_.Read(late_delay_ + 1);
++        for (int k = 0; k < kAllpasses; k++) {
++            float d = ap_[k].Read(ap_len_[k]);
++            float y = d - diff_ * v;
++            ap_[k].Write(v + diff_ * y);
++            v = y;
++        }
++        float o[kLines], sum = 0;
++        for (int k = 0; k < kLines; k++) {
++            float s = line_[k].Read(len_[k]) * gain_[k];
++            lp_[k] += (1 - damp_[k]) * (s - lp_[k]);
++            o[k] = lp_[k];
++            sum += o[k];
++        }
++        sum *= 2.0f / kLines;
++        constexpr float kIn = 0.35355339f;  // 1 / sqrt(8)
++        float ll = 0, lr = 0;
++        for (int k = 0; k < kLines; k++) {
++            line_[k].Write(o[k] - sum + v * ((k & 2) ? -kIn : kIn));
++            if (k & 1) lr += (k & 4) ? -o[k] : o[k];
++            else ll += (k & 4) ? -o[k] : o[k];
++        }
++        out[i * 2] += refl_ * el + late_ * ll;
++        out[i * 2 + 1] += refl_ * er + late_ * lr;
++    }
++}
++
++}  // namespace audio
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/runtime/audio/reverb.h ../game/sdk/runtime/audio/reverb.h
+--- XboxXBE-Recomp/runtime/audio/reverb.h	1969-12-31 16:00:00.000000000 -0800
++++ ../game/sdk/runtime/audio/reverb.h	2026-10-12 19:37:27.022784365 -0700
+@@ -0,0 +1,54 @@
++#pragma once
++// An I3DL2 environmental reverb: the room effect the console's audio DSP ran on the I3DL2 mix bin. Takes the mono
++// send of every voice, gives stereo early reflections and late reverb, set by the I3DL2 listener values a title passes
++// to IDirectSound_SetI3DL2Listener.
++#include <cstdint>
++#include <vector>
++
++namespace audio {
++
++// DSI3DL2LISTENER as the title lays it out: levels in hundredths of a dB, times in seconds
++struct I3dl2 {
++    int32_t room = -10000, room_hf = 0;
++    float room_rolloff = 0, decay_time = 1.49f, decay_hf_ratio = 0.83f;
++    int32_t reflections = -2602;
++    float reflections_delay = 0.007f;
++    int32_t reverb = 200;
++    float reverb_delay = 0.011f, diffusion = 100, density = 100, hf_reference = 5000;
++};
++
++class Reverb {
++public:
++    explicit Reverb(uint32_t rate);
++    void Set(const I3dl2& p);
++    const I3dl2& Params() const { return p_; }
++    bool Silent() const { return room_ <= 0 && idle_ > tail_; }
++    // in: mono send, frames long; out: interleaved stereo, added to
++    void Process(const float* in, float* out, uint32_t frames);
++
++private:
++    static constexpr int kLines = 8, kTaps = 6, kAllpasses = 4;
++    struct Delay {
++        std::vector<float> b;
++        uint32_t at = 0;
++        void Size(uint32_t n) { b.assign(n ? n : 1, 0.0f); at = 0; }
++        float Read(uint32_t back) const { return b[(at + b.size() - back % b.size()) % b.size()]; }
++        void Write(float x) { b[at] = x; at = at + 1 == b.size() ? 0 : at + 1; }
++    };
++    uint32_t rate_;
++    I3dl2 p_;
++    // levels from the listener values
++    float room_ = 0, room_hf_ = 1, refl_ = 0, late_ = 0, diff_ = 0;
++    float hf_in_ = 0, hf_in_state_ = 0;  // RoomHF: a one-pole low pass on the send
++    uint32_t refl_delay_ = 0, late_delay_ = 0, tail_ = 0, idle_ = 0;
++    Delay pre_;  // the send, read at the reflections' taps and the late reverb's delay
++    uint32_t tap_[kTaps] = {};
++    float tap_gain_[kTaps][2] = {};
++    Delay ap_[kAllpasses];
++    uint32_t ap_len_[kAllpasses] = {};
++    Delay line_[kLines];
++    uint32_t len_[kLines] = {};
++    float gain_[kLines] = {}, damp_[kLines] = {}, lp_[kLines] = {};
++};
++
++}  // namespace audio
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/runtime/core/input.cpp ../game/sdk/runtime/core/input.cpp
+--- XboxXBE-Recomp/runtime/core/input.cpp	2026-10-12 11:31:38.275348744 -0700
++++ ../game/sdk/runtime/core/input.cpp	2026-10-12 21:06:11.459288302 -0700
+@@ -26,7 +26,13 @@
+     if (slot == std::end(g_pads)) return;
+     *slot = SDL_OpenGamepad(id);
+     const char* name = *slot ? SDL_GetGamepadName(*slot) : SDL_GetError();
+-    LOGI("input: controller %d %s: %s", int(slot - g_pads) + 1, *slot ? "plugged in" : "failed to open", name ? name : "");
++    // in the release log: which driver took the pad decides how its triggers read
++    const char* path = *slot ? SDL_GetGamepadPath(*slot) : nullptr;
++    SDL_Joystick* js = *slot ? SDL_GetGamepadJoystick(*slot) : nullptr;
++    LOGR("input: controller %d %s: %s (vendor %04X product %04X, %s, %s)", int(slot - g_pads) + 1,
++         *slot ? "plugged in" : "failed to open", name ? name : "", *slot ? SDL_GetGamepadVendor(*slot) : 0,
++         *slot ? SDL_GetGamepadProduct(*slot) : 0, path ? path : "no path",
++         js && SDL_IsJoystickVirtual(id) ? "virtual" : *slot && SDL_GamepadHasAxis(*slot, SDL_GAMEPAD_AXIS_LEFT_TRIGGER) ? "has triggers" : "no trigger axes");
+ }
+ 
+ void RemovePad(SDL_JoystickID id) {
+@@ -99,6 +105,17 @@
+             // 0 to 32767 into 0 to 255
+             p.analog[6] = uint8_t(std::max(axis(SDL_GAMEPAD_AXIS_LEFT_TRIGGER), 0) >> 7);
+             p.analog[7] = uint8_t(std::max(axis(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER), 0) >> 7);
++            // the first press of each trigger, and of each shoulder button, in the release log
++            static bool seen[4][4] = {};
++            const int lt = axis(SDL_GAMEPAD_AXIS_LEFT_TRIGGER), rt = axis(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
++            const bool lb = p.analog[5], rb = p.analog[4];
++            const bool now[4] = {lt > 4000, rt > 4000, lb, rb};
++            static const char* kWhat[4] = {"left trigger", "right trigger", "left shoulder (White)", "right shoulder (Black)"};
++            for (int k = 0; k < 4; k++)
++                if (now[k] && !seen[port][k]) {
++                    seen[port][k] = true;
++                    LOGR("input: controller %d first %s press (triggers read %d and %d of 32767)", port + 1, kWhat[k], lt, rt);
++                }
+             // SDL's sticks have y down
+             // not plain negation: -32768 has no positive
+             p.lx = int16_t(axis(SDL_GAMEPAD_AXIS_LEFTX));
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/runtime/core/settings_file.cpp ../game/sdk/runtime/core/settings_file.cpp
+--- XboxXBE-Recomp/runtime/core/settings_file.cpp	1969-12-31 16:00:00.000000000 -0800
++++ ../game/sdk/runtime/core/settings_file.cpp	2026-10-12 23:49:10.534816808 -0700
+@@ -0,0 +1,295 @@
++#include "core/settings_file.h"
++
++#include <algorithm>
++#include <cstdio>
++#include <cstring>
++#include <filesystem>
++#include <fstream>
++#include <map>
++#include <set>
++#include <sstream>
++
++#include <toml++/toml.hpp>
++
++namespace cfg {
++
++namespace {
++
++// a TOML basic string or a JSON string: both take these escapes
++std::string Quote(const std::string& s) {
++    std::string o = "\"";
++    for (unsigned char c : s) {
++        if (c == '"') o += "\\\"";
++        else if (c == '\\') o += "\\\\";
++        else if (c == '\n') o += "\\n";
++        else if (c == '\r') o += "\\r";
++        else if (c == '\t') o += "\\t";
++        else if (c < 0x20 || c == 0x7F) {
++            char b[8];
++            std::snprintf(b, sizeof(b), "\\u%04X", c);
++            o += b;
++        } else {
++            o += char(c);
++        }
++    }
++    return o + "\"";
++}
++
++// a choice list of numbers stores the number, one of words its place in the list
++bool Numeric(const Desc& d) {
++    for (const char* c : d.choices) {
++        char* end;
++        std::strtoll(c, &end, 10);
++        if (end == c || *end) return false;
++    }
++    return !d.choices.empty();
++}
++
++uint32_t ChoiceValue(const Desc& d, size_t i) {
++    return Numeric(d) ? uint32_t(std::strtoll(d.choices[i], nullptr, 10)) : uint32_t(i);
++}
++
++int ChoiceIndex(const Desc& d) {
++    if (d.flag) return *d.flag ? 1 : 0;
++    if (d.text) {
++        for (size_t i = 0; i < d.choices.size(); i++)
++            if (*d.text == d.choices[i]) return int(i);
++        return -1;
++    }
++    for (size_t i = 0; i < d.choices.size(); i++)
++        if (ChoiceValue(d, i) == *d.value) return int(i);
++    return -1;
++}
++
++const char* TypeName(Type t) {
++    switch (t) {
++        case Type::Bool: return "bool";
++        case Type::Int: return "int";
++        case Type::Float: return "float";
++        case Type::Choice: return "choice";
++        default: return "string";
++    }
++}
++
++// a value this file does not describe, written back as it was
++std::string NodeText(const toml::node& n) {
++    if (auto s = n.as_string()) return Quote(s->get());
++    if (auto b = n.as_boolean()) return b->get() ? "true" : "false";
++    if (auto i = n.as_integer()) return std::to_string(i->get());
++    std::ostringstream o;
++    o << toml::toml_formatter{n, toml::format_flags::none};
++    return o.str();
++}
++
++// setting one value from the file; false leaves the default
++bool Apply(const Desc& d, const toml::node& n) {
++    switch (d.type) {
++        case Type::Bool:
++            if (auto b = n.as_boolean()) return *d.flag = b->get(), true;
++            return false;
++        case Type::Int:
++            if (auto i = n.as_integer()) {
++                int64_t v = i->get();
++                if (v < d.min || v > d.max) return false;
++                *d.value = uint32_t(v);
++                return true;
++            }
++            return false;
++        case Type::Float: {
++            double v;
++            if (auto f = n.as_floating_point()) v = f->get();
++            else if (auto i = n.as_integer()) v = double(i->get());
++            else return false;
++            if (v < d.min / 100.0 - 1e-9 || v > d.max / 100.0 + 1e-9) return false;
++            *d.real = float(v);
++            return true;
++        }
++        case Type::Choice: {
++            std::string pick;
++            if (auto s = n.as_string()) pick = s->get();
++            else if (auto i = n.as_integer()) pick = std::to_string(i->get());  // an older file's number
++            else if (auto b = n.as_boolean()) {  // an older file's flag for a two-way choice
++                if (d.flag) *d.flag = b->get();
++                else if (d.value && !Numeric(d)) *d.value = b->get() ? 1 : 0;
++                else return false;
++                return true;
++            } else {
++                return false;
++            }
++            if (d.text) {  // a word kept even when this PC does not list it now
++                if (pick.empty()) return false;
++                *d.text = pick;
++                return true;
++            }
++            for (size_t i = 0; i < d.choices.size(); i++) {
++                if (pick != d.choices[i]) continue;
++                if (d.flag) *d.flag = i == 1;
++                else *d.value = ChoiceValue(d, i);
++                return true;
++            }
++            return false;
++        }
++        case Type::String:
++            if (auto s = n.as_string()) return *d.text = s->get(), true;
++            return false;
++    }
++    return false;
++}
++
++}  // namespace
++
++std::string ValueText(const Desc& d) {
++    switch (d.type) {
++        case Type::Bool: return *d.flag ? "true" : "false";
++        case Type::Int: return std::to_string(*d.value);
++        case Type::Float: {
++            // two decimals, always with a point so TOML reads it as a float: 1.00, -0.50
++            char b[32];
++            std::snprintf(b, sizeof(b), "%.2f", double(*d.real));
++            return b;
++        }
++        case Type::Choice: {
++            if (d.text) return Quote(*d.text);
++            int i = ChoiceIndex(d);
++            return Quote(i >= 0 && size_t(i) < d.choices.size() ? d.choices[size_t(i)] : std::to_string(*d.value));
++        }
++        default: return Quote(*d.text);
++    }
++}
++
++bool Read(const std::string& path, const std::vector<Desc>& list, std::string& error, bool* old_layout) {
++    if (old_layout) *old_layout = false;
++    std::error_code ec;
++    if (!std::filesystem::exists(path, ec)) return true;
++    toml::table t;
++    try {
++        t = toml::parse_file(path);
++    } catch (const toml::parse_error& e) {
++        std::ostringstream o;
++        o << e.description() << " (line " << e.source().begin.line << ")";
++        error = o.str();
++        return false;
++    } catch (...) {
++        error = "the file could not be read";
++        return false;
++    }
++    for (const Desc& d : list) {
++        const toml::node* n = t[d.section][d.key].node();
++        const toml::node* old = d.old_key ? t[d.old_key].node() : nullptr;
++        if (old && !old->is_table() && old_layout) *old_layout = true;
++        if (!n) n = old;
++        if (n) Apply(d, *n);
++    }
++    return true;
++}
++
++std::string Text(const std::vector<Desc>& list, const std::string& previous) {
++    toml::table old;
++    if (!previous.empty()) {
++        try {
++            old = toml::parse(previous);
++        } catch (...) {
++        }
++    }
++    std::set<std::string> known, old_keys;
++    std::vector<std::string> sections;
++    for (const Desc& d : list) {
++        known.insert(std::string(d.section) + "." + d.key);
++        if (d.old_key) old_keys.insert(d.old_key);
++        if (std::find(sections.begin(), sections.end(), d.section) == sections.end()) sections.push_back(d.section);
++    }
++    std::string out;
++    // top-level keys nobody describes stay at the top; an older file's keys go, their values now live in sections
++    for (auto& [k, v] : old) {
++        std::string key(k.str());
++        if (v.is_table() || old_keys.count(key)) continue;
++        out += key + " = " + NodeText(v) + "\n";
++    }
++    if (!out.empty()) out += "\n";
++    auto unknown = [&](const std::string& section) {
++        std::string s;
++        if (auto tbl = old[section].as_table())
++            for (auto& [k, v] : *tbl)
++                if (!known.count(section + "." + std::string(k.str()))) s += std::string(k.str()) + " = " + NodeText(v) + "\n";
++        return s;
++    };
++    for (size_t i = 0; i < sections.size(); i++) {
++        if (i) out += "\n";
++        out += "[" + sections[i] + "]\n";
++        for (const Desc& d : list)
++            if (sections[i] == d.section) out += std::string(d.key) + " = " + ValueText(d) + "\n";
++        out += unknown(sections[i]);
++    }
++    for (auto& [k, v] : old) {
++        std::string section(k.str());
++        if (!v.is_table() || std::find(sections.begin(), sections.end(), section) != sections.end()) continue;
++        out += "\n[" + section + "]\n" + unknown(section);
++    }
++    return out;
++}
++
++bool Write(const std::string& path, const std::vector<Desc>& list) {
++    std::string previous;
++    {
++        std::ifstream f(path, std::ios::binary);
++        if (f) previous.assign(std::istreambuf_iterator<char>(f), {});
++    }
++    std::error_code ec;
++    std::filesystem::path p(path);
++    if (p.has_parent_path()) std::filesystem::create_directories(p.parent_path(), ec);
++    // written beside it and moved over it, so a launcher never reads half a file
++    std::string tmp = path + ".new";
++    {
++        std::ofstream f(tmp, std::ios::binary | std::ios::trunc);
++        if (!f) return false;
++        f << Text(list, previous);
++        if (!f) return false;
++    }
++    std::filesystem::rename(tmp, path, ec);
++    if (ec) {
++        std::filesystem::remove(tmp, ec);
++        return false;
++    }
++    return true;
++}
++
++std::string Describe(const std::vector<Desc>& list, const std::vector<Preset>& presets) {
++    std::string o = "{ \"settings\": [\n";
++    for (size_t i = 0; i < list.size(); i++) {
++        const Desc& d = list[i];
++        o += "  { \"section\": " + Quote(d.section) + ", \"key\": " + Quote(d.key) + ", \"type\": \"" + TypeName(d.type) +
++             "\", \"default\": " + ValueText(d);
++        if (d.type == Type::Int) o += ", \"min\": " + std::to_string(d.min) + ", \"max\": " + std::to_string(d.max);
++        if (d.type == Type::Float) {
++            char b[64];
++            std::snprintf(b, sizeof(b), ", \"min\": %.2f, \"max\": %.2f", d.min / 100.0, d.max / 100.0);
++            o += b;
++        }
++        if (d.type == Type::Choice) {
++            o += ", \"choices\": [";
++            for (size_t c = 0; c < d.choices.size(); c++) o += (c ? ", " : "") + Quote(d.choices[c]);
++            o += "]";
++            if (d.labels.size() == d.choices.size()) {
++                o += ", \"choice_labels\": [";
++                for (size_t c = 0; c < d.labels.size(); c++) o += (c ? ", " : "") + Quote(d.labels[c]);
++                o += "]";
++            }
++        }
++        o += ", \"label\": " + Quote(d.label) + ", \"help\": " + Quote(d.help) + " }";
++        o += i + 1 < list.size() ? ",\n" : "\n";
++    }
++    o += "]";
++    if (!presets.empty()) {
++        o += ",\n\"presets\": {\n";
++        for (size_t p = 0; p < presets.size(); p++) {
++            o += "  " + Quote(presets[p].name) + ": { ";
++            for (size_t v = 0; v < presets[p].values.size(); v++)
++                o += (v ? ", " : "") + Quote(presets[p].values[v].first) + ": " + presets[p].values[v].second;
++            o += p + 1 < presets.size() ? " },\n" : " }\n";
++        }
++        o += "}";
++    }
++    return o + " }\n";
++}
++
++}  // namespace cfg
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/runtime/core/settings_file.h ../game/sdk/runtime/core/settings_file.h
+--- XboxXBE-Recomp/runtime/core/settings_file.h	1969-12-31 16:00:00.000000000 -0800
++++ ../game/sdk/runtime/core/settings_file.h	2026-10-12 23:49:10.534406205 -0700
+@@ -0,0 +1,55 @@
++#pragma once
++// The settings file as a launcher can edit it: plain [section] and key = value lines, one setting a line, kept to
++// bools, whole numbers and quoted strings. Each setting is described once (Desc), and the same list reads the file,
++// writes it back with any keys it does not know left in place, and describes the settings as JSON for a launcher
++// that builds its options page from them (--describe-settings).
++#include <cstdint>
++#include <string>
++#include <vector>
++
++namespace cfg {
++
++enum class Type { Bool, Int, Float, Choice, String };
++
++struct Desc {
++    const char* section;
++    const char* key;
++    Type type;
++    const char* label;  // a launcher's caption
++    const char* help;   // one line
++    // where the value lives: Bool in flag; Int in value; Float in real; Choice in flag (choices[0] false, [1] true) or in value (a
++    // list of numbers stores the number, "16" -> 16, a list of words the place in it) or in text (the word itself,
++    // any word kept: a list that changes from PC to PC, like its screens); String in text
++    bool* flag = nullptr;
++    uint32_t* value = nullptr;
++    std::string* text = nullptr;
++    int64_t min = 0, max = 0;           // Int; Float takes them in hundredths (-100 is -1.0)
++    std::vector<const char*> choices;   // Choice
++    const char* old_key = nullptr;      // the top-level key an older settings file used, read once and dropped
++    float* real = nullptr;              // Float
++    // Choice: how a launcher shows each choice ("Off", "2x", "60 fps"), in the choices' order; empty shows them as
++    // written. The file always stores the choice itself.
++    std::vector<const char*> labels;
++};
++
++// the setting's current value as the file writes it: true, 60, "30", "borderless"
++std::string ValueText(const Desc& d);
++
++// Read: false only for a file that exists but is not TOML (error says why); a missing file leaves the defaults.
++// Values out of range or not among the choices are ignored.
++// old_layout, when given, is set for a file that still uses an older top-level key (worth writing again).
++bool Read(const std::string& path, const std::vector<Desc>& list, std::string& error, bool* old_layout = nullptr);
++// the file as Write would make it, keeping what other (unknown) keys `previous` holds
++std::string Text(const std::vector<Desc>& list, const std::string& previous = {});
++bool Write(const std::string& path, const std::vector<Desc>& list);
++// a launcher's preset: "section.key" to the value as JSON writes it ("\"16\"", "true", "-0.50"); keys it leaves
++// out are the player's own
++struct Preset {
++    const char* name;
++    std::vector<std::pair<const char*, const char*>> values;
++};
++// {"settings":[{section,key,type,default,label,help,min,max | choices,choice_labels}], "presets":{name:{key:value}}} with the
++// current values as defaults
++std::string Describe(const std::vector<Desc>& list, const std::vector<Preset>& presets = {});
++
++}  // namespace cfg
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/runtime/gpu/backend.h ../game/sdk/runtime/gpu/backend.h
+--- XboxXBE-Recomp/runtime/gpu/backend.h	2026-10-12 11:31:38.275491373 -0700
++++ ../game/sdk/runtime/gpu/backend.h	2026-10-12 23:49:04.056106444 -0700
+@@ -38,6 +38,14 @@
+     virtual void Flush() = 0;
+     virtual void SetGamma(const uint8_t* ramp /*3 x 256*/) = 0;
+ 
++    // the XDK's visibility tests: the pixels drawn that pass the depth and stencil tests between Begin and End, which
++    // names the test. QueryResult gives the newest finished count for the index, in the title's pixels; false while
++    // none has finished. Read from the title's thread while the draws go on.
++    virtual void BeginQuery() {}
++    virtual void EndQuery(uint32_t /*index*/) {}
++    virtual bool QueryResult(uint32_t /*index*/, uint32_t& /*pixels*/) { return false; }
++    virtual bool Queries() const { return false; }  // counts them at all
++
+     // the XDK's fences and busy checks against the render thread; a backend that draws at once is never behind
+     virtual uint32_t Fence() { return ++fence_; }
+     virtual bool FencePending(uint32_t) { return false; }
+@@ -60,5 +68,9 @@
+ 
+ // F3: save the next frame, every draw and target, under diag::CaptureDir
+ inline std::atomic<bool> g_capture{false};
++// \ (the key above Enter): the next frame as shown, a PNG in app::ScreenshotDir
++inline std::atomic<bool> g_screenshot{false};
++// [ : sharpening off while held off, to compare; a press switches it back on
++inline std::atomic<bool> g_sharpen_off{false};
+ 
+ }  // namespace gpu
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/runtime/gpu/d3d12.cpp ../game/sdk/runtime/gpu/d3d12.cpp
+--- XboxXBE-Recomp/runtime/gpu/d3d12.cpp	2026-10-12 11:31:38.276172552 -0700
++++ ../game/sdk/runtime/gpu/d3d12.cpp	2026-10-13 00:29:57.456917296 -0700
+@@ -18,6 +18,7 @@
+ #include <cstdio>
+ #include <cstring>
+ #include <filesystem>
++#include <fstream>
+ #include <mutex>
+ #include <optional>
+ #include <unordered_map>
+@@ -34,6 +35,7 @@
+ #include "gpu/ext.h"
+ #include "gpu/shaders.h"
+ #include "gpu/texture.h"
++#include "gpu/texture_pack.h"
+ #include "gpu/vertex.h"
+ #include "kernel/kernel.h"
+ 
+@@ -73,6 +75,10 @@
+     double wait = 0;
+     double swap = 0;
+     double sync = 0;
++    double pso = 0;     // pipeline creation
++    double create = 0;  // texture and target resources made
++    double flush = 0;   // the upload ring filled mid-frame: submitted and waited for
++    uint64_t flushes = 0;
+     // counts and bytes
+     uint64_t draws = 0;
+     uint64_t verts = 0;
+@@ -106,7 +112,7 @@
+ }
+ 
+ const char* kBlitHlsl = R"(
+-cbuffer B : register(b1) { float4 uvrect; float4 opts; };
++cbuffer B : register(b1) { float4 uvrect; float4 opts; float4 sharp; };
+ Texture2D img : register(t0);
+ Texture2D lut : register(t1);
+ SamplerState ls : register(s0);
+@@ -126,12 +132,33 @@
+     for (int y = 0; y < n; y++)
+         for (int x = 0; x < n; x++) c += img.SampleLevel(ls, i.uv + px * ((float2(x, y) + 0.5) / n - 0.5), 0);
+     c /= n * n;
++    // sharpening (sharp.x 0..1), contrast adaptive as AMD's CAS: the cross of source texels around this one sets how
++    // much each neighbour is taken away, less where the contrast is already high, so edges get no haloes
++    if (sharp.x > 0) {
++        float2 t = sharp.yz;
++        float3 a = img.SampleLevel(ls, i.uv + float2(0, -t.y), 0).rgb, b = img.SampleLevel(ls, i.uv + float2(-t.x, 0), 0).rgb;
++        float3 d = img.SampleLevel(ls, i.uv + float2(t.x, 0), 0).rgb, e = img.SampleLevel(ls, i.uv + float2(0, t.y), 0).rgb;
++        float3 mn = min(min(min(a, b), min(d, e)), c.rgb), mx = max(max(max(a, b), max(d, e)), c.rgb);
++        float3 amp = sqrt(saturate(min(mn, 2.0 - mx) / max(mx, 1e-4)));
++        float3 w = amp * (-1.0 / lerp(8.0, 5.0, sharp.x));
++        c.rgb = saturate((c.rgb + (a + b + d + e) * w) / (1.0 + 4.0 * w));
++    }
+     c.rgb *= opts.w;
+     if (opts.x > 0) c.rgb = float3(lut.Sample(ps, float2(c.r, 0.5)).r, lut.Sample(ps, float2(c.g, 0.5)).g, lut.Sample(ps, float2(c.b, 0.5)).b);
+     return float4(c.rgb, opts.y > 0 ? c.a : 1);
+ }
+ )";
+ 
++// a clear of some colour channels only (D3DCLEAR_TARGET_R/G/B/A): drawn, with the other channels masked off
++const char* kClearHlsl = R"(
++cbuffer B : register(b1) { float4 col; };
++float4 vs(uint id : SV_VertexID) : SV_Position {
++    float2 t = float2((id << 1) & 2, id & 2);
++    return float4(t * float2(2, -2) + float2(-1, 1), 0, 1);
++}
++float4 psmain() : SV_Target { return col; }
++)";
++
+ const char* kDepthHlsl = R"(
+ Texture2D<float> img : register(t0);
+ SamplerState ps : register(s1);
+@@ -145,6 +172,33 @@
+ float psmain(O i) : SV_Depth { return img.SampleLevel(ps, i.uv, 0); }
+ )";
+ 
++// anti-aliasing: a target's pixels carried into its multisampled twin (every sample the pixel's), colour or depth,
++// and a multisampled depth buffer resolved into the plain one (its first sample)
++const char* kMsUpHlsl = R"(
++Texture2D<float4> img : register(t0);
++float4 vs(uint id : SV_VertexID) : SV_Position {
++    float2 t = float2((id << 1) & 2, id & 2);
++    return float4(t * float2(2, -2) + float2(-1, 1), 0, 1);
++}
++float4 psmain(float4 p : SV_Position) : SV_Target { return img.Load(int3(p.xy, 0)); }
++)";
++const char* kMsUpDepthHlsl = R"(
++Texture2D<float> img : register(t0);
++float4 vs(uint id : SV_VertexID) : SV_Position {
++    float2 t = float2((id << 1) & 2, id & 2);
++    return float4(t * float2(2, -2) + float2(-1, 1), 0, 1);
++}
++float psmain(float4 p : SV_Position) : SV_Depth { return img.Load(int3(p.xy, 0)); }
++)";
++const char* kMsDepthResolveHlsl = R"(
++Texture2DMS<float> img : register(t0);
++float4 vs(uint id : SV_VertexID) : SV_Position {
++    float2 t = float2((id << 1) & 2, id & 2);
++    return float4(t * float2(2, -2) + float2(-1, 1), 0, 1);
++}
++float psmain(float4 p : SV_Position) : SV_Depth { return img.Load(int2(p.xy), 0); }
++)";
++
+ float Bits(uint32_t v) {
+     float f;
+     std::memcpy(&f, &v, 4);
+@@ -318,6 +372,18 @@
+     uint64_t frame = 0;
+     uint64_t palette = 0;  // hash of the colours a P8 texture was decoded with
+     uint8_t flags = 0;  // Extension::Decoded's
++    // a texture pack's file drawn in its place (TexturePack), shared by every texture with the same contents
++    ComPtr<ID3D12Resource> repl;
++    DXGI_FORMAT repl_fmt = DXGI_FORMAT_UNKNOWN;
++    uint32_t repl_levels = 0;
++    uint64_t pack_hash = 0;  // the contents' hash a texture pack names it by, 0 if it cannot be in one
++};
++
++// a texture pack file loaded, or a failed load remembered
++struct PackTex {
++    ComPtr<ID3D12Resource> res;
++    DXGI_FORMAT fmt = DXGI_FORMAT_UNKNOWN;
++    uint32_t levels = 0;
+ };
+ 
+ struct PsoKey {
+@@ -349,6 +415,7 @@
+     int32_t zbias;
+     float zslope;
+     uint32_t rtfmt;
++    uint32_t samples;  // anti-aliasing: the bound targets' sample count, 0 or 1 without
+ };
+ 
+ // Blit's settings past the source and its rectangle
+@@ -359,6 +426,8 @@
+     float mul = 1;            // colour scale
+     DXGI_FORMAT rtv = kBgra;  // the target's format
+     bool over = false;        // premultiplied over the target, which keeps its alpha
++    float sharpen = 0;        // 0..1, contrast adaptive sharpening; texel is the source's texel size then
++    float texel[2] = {0, 0};
+ };
+ 
+ // Shrink's settings past the source and the size
+@@ -414,6 +483,12 @@
+     void RecordLate(uint32_t data) override;
+     void Flush() override;
+     void SetGamma(const uint8_t* ramp) override;
++    void BeginQuery() override;
++    void Screenshot(Target& t);
++    uint8_t Brighten(uint8_t v) const;
++    void EndQuery(uint32_t index) override;
++    bool QueryResult(uint32_t index, uint32_t& pixels) override;
++    bool Queries() const override { return !query_failed_; }
+ 
+     ID3D12Device* Device() override { return dev_.Get(); }
+     ID3D12GraphicsCommandList* List() override { return cl_.Get(); }
+@@ -474,8 +549,21 @@
+                         std::optional<uint32_t> sampler_slot = {});
+     ID3D12Resource* Feedback(Target& t) override;
+     void Resolve(Target& t) {
++        ReadyRes(t);
+         if (t.range != 1 && ext_) ext_->Resolve(*this, t);
+     }
++    // anti-aliasing ([graphics] anti_aliasing): targets at the frame's size draw into a multisampled twin
++    uint32_t PickSamples();
++    bool MsFormatOk(DXGI_FORMAT fmt);
++    bool WantMs(const Target& t);
++    bool CreateMsResource(Target& t);
++    void CreateMsView(Target& t);
++    ID3D12PipelineState* EnsureMsPipeline(uint32_t kind, DXGI_FORMAT fmt, uint32_t samples);
++    void ReadyRes(Target& t);  // res as new as ms: before anything but a draw reads or partly writes res
++    void ReadyMs(Target& t);   // ms as new as res: before a draw into ms
++    void ResWritten(Target& t) {
++        if (t.ms) t.res_new = true;
++    }
+     // Pass, then its step
+     void Pass(const char* hlsl, const char* entry, DXGI_FORMAT rtv, D3D12_CPU_DESCRIPTOR_HANDLE rh, uint32_t w,
+               uint32_t h, ID3D12Resource* const src[3], const DXGI_FORMAT fmt[3], const float p[8],
+@@ -525,6 +613,7 @@
+     ID3DBlob* Compile(const std::string& src, const char* entry, const char* profile, uint64_t& hash);
+     // Blit's pipeline
+     ID3D12PipelineState* EnsureBlitPipeline(DXGI_FORMAT rtv, bool over = false);
++    ID3D12PipelineState* EnsureMaskedClearPipeline(DXGI_FORMAT rtv, uint32_t mask, uint32_t samples = 1);
+     D3D12_GRAPHICS_PIPELINE_STATE_DESC FullScreenPipelineDesc(ID3DBlob* vs, ID3DBlob* ps, DXGI_FORMAT rtv) const;
+     // Init, in order, each callee right after its caller
+     bool CreateDevice();
+@@ -647,6 +736,15 @@
+     std::unordered_map<uint64_t, Target> targets_;
+     std::unordered_map<uint32_t, uint64_t> target_used_;  // target address to the frame it was last used
+     std::unordered_map<uint64_t, Tex> textures_;  // by data address, a P8 texture's with its palette's above
++    // texture packs: textures/ beside the exe holds replacements named by content hash, textures/dump/ what
++    // texture_dump writes
++    pack::Library pack_lib_;
++    std::unordered_map<uint64_t, PackTex> pack_cache_;
++    std::unordered_set<uint64_t> hud_logged_;  // textures already named as drawn in 2D
++    std::unordered_set<uint64_t> dumped_;
++    void TexturePack(Tex& tx, const TextureDesc& d, const uint8_t* p, const uint32_t* colours,
++                     const std::vector<std::vector<uint8_t>>& levels);
++    bool LoadPackTexture(const std::filesystem::path& file, PackTex& out);
+     std::unordered_map<uint64_t, ComPtr<ID3D12PipelineState>> blit_psos_;
+     Extension* ext_ = nullptr;
+     // one frame capture: every draw in a text file, each target as the frame leaves it, the textures it read
+@@ -668,9 +766,13 @@
+     D3D12_RESOURCE_STATES lut_state_ = D3D12_RESOURCE_STATE_COPY_DEST;
+     uint8_t ramp_[768] = {};
+     bool ramp_dirty_ = false;
++    bool ramp_set_ = false;  // the title set a ramp of its own
+     bool gamma_ = false;
+     Target* bound_rt_ = nullptr;
+     Target* bound_ds_ = nullptr;
++    bool bound_ms_ = false;    // the bound targets are the multisampled twins
++    uint32_t samples_ = 1;     // anti-aliasing samples, 1 off
++    std::unordered_map<uint32_t, bool> ms_ok_;  // formats that take samples_
+     Target* draw_rt_ = nullptr;  // the draw's targets, the bound ones go when a texture's copy is drawn
+     Target* draw_ds_ = nullptr;
+     uint32_t guest_w_ = 640;
+@@ -693,6 +795,27 @@
+     };
+     std::unordered_map<uint32_t, Late> late_;
+     std::mutex late_lock_;                      // DeliverLate runs on the title's thread
++
++    // visibility tests: occlusion queries from a ring of entries, resolved into one readback buffer, 8 bytes an
++    // entry. Each title index keeps its last few entries, so a result a few frames old is there while newer ones run.
++    static constexpr uint32_t kQueryEntries = 1024, kQueryIndexes = 256, kQueryRing = 4;
++    struct QuerySlot {
++        uint32_t entry[kQueryRing] = {};
++        uint64_t fence[kQueryRing] = {};  // the submit that carries the entry's resolve, 0 for none
++        float ratio[kQueryRing] = {};     // the title's pixels over ours on the target drawn to
++        uint32_t next = 0, pixels = 0;
++        uint64_t got = 0;  // the fence of the result in pixels
++        bool have = false;
++    };
++    bool EnsureQueries();
++    ComPtr<ID3D12QueryHeap> query_heap_;
++    ComPtr<ID3D12Resource> query_rb_;
++    const uint64_t* query_map_ = nullptr;
++    bool query_failed_ = false;
++    QuerySlot queries_[kQueryIndexes];
++    uint32_t query_next_ = 0;    // the entry the next test takes
++    int64_t query_active_ = -1;  // the entry begun on the open command list
++    std::mutex query_lock_;      // QueryResult runs on the title's thread
+     std::atomic<uint64_t> presents_seen_{0};    // presents_ for DeliverLate
+     Assembled asm_;  // kept between draws for its buffers
+     bool tearing_ = false;
+@@ -718,6 +841,10 @@
+     LoadSettings();
+     Begin();
+     LOGI("d3d12: %ux%u guest, %ux%u window, render scale %.3f", width, height, bb_w_, bb_h_, scale_);
++    // packs anywhere under textures/replace (older ones straight in textures/), dumps in textures/dump
++    if (app::Get().texture_replace) pack_lib_.Scan(app::TextureDir(), "dump");
++    if (pack_lib_.Size()) LOGR("texture pack: %zu replacement files under %s", pack_lib_.Size(), app::TextureDir().string().c_str());
++    if (app::Get().texture_dump) LOGR("texture pack: dumping textures to %s", (app::TextureDir() / "dump").string().c_str());
+     return true;
+ }
+ 
+@@ -854,6 +981,13 @@
+ 
+ void D3D12Backend::LoadSettings() {
+     scale_ = app::RenderScale(guest_h_);
++    samples_ = PickSamples();
++    // brightness goes through the gamma ramp: a game that never sets one gets the identity ramp to carry it
++    if (app::Get().brightness < 0.999f || app::Get().brightness > 1.001f) {
++        if (!ramp_set_)
++            for (int i = 0; i < 256; i++) ramp_[i] = ramp_[256 + i] = ramp_[512 + i] = uint8_t(i);
++        ramp_dirty_ = true;
++    }
+     ext_ = g_extension.get();
+     if (ext_) {
+         ext_->Settings();
+@@ -866,9 +1000,12 @@
+     cl_->SetDescriptorHeaps(2, heaps);
+     cl_->SetGraphicsRootSignature(root_.Get());
+     bound_rt_ = bound_ds_ = nullptr;
++    // a test open when the last list was closed goes on in this one; what it counted there is dropped
++    if (query_active_ >= 0) cl_->BeginQuery(query_heap_.Get(), D3D12_QUERY_TYPE_OCCLUSION, UINT(query_active_));
+ }
+ 
+ void D3D12Backend::Submit(bool wait) {
++    if (query_active_ >= 0) cl_->EndQuery(query_heap_.Get(), D3D12_QUERY_TYPE_OCCLUSION, UINT(query_active_));
+     cl_->Close();
+     ID3D12CommandList* lists[] = {cl_.Get()};
+     queue_->ExecuteCommandLists(1, lists);
+@@ -888,6 +1025,98 @@
+ 
+ void D3D12Backend::Flush() { Submit(true); }
+ 
++// the picture as shown: the frame at its render size, made as wide as the screen shows it (16:9 with widescreen),
++// saved as <PREFIX>_<date>_<time>_<ms>.png as ROTK Fix names its own, on the texture pack writer's thread
++void D3D12Backend::Screenshot(Target& t) {
++    uint32_t h = t.h, w = app::Widescreen() ? (t.h * 16 + 4) / 9 : t.w;
++    ComPtr<ID3D12Resource> down = Shrink(t.res.Get(), t.state, t.fmt, w, h, {});
++    std::vector<uint8_t> px;
++    if (!down || !ReadBack(down.Get(), w, h, px)) {
++        LOGW("screenshot: the frame could not be read back");
++        return;
++    }
++    for (size_t i = 0; i < px.size(); i += 4) {  // BGRA to RGBA, opaque
++        std::swap(px[i], px[i + 2]);
++        px[i + 3] = 255;
++    }
++    SYSTEMTIME st;
++    GetLocalTime(&st);
++    std::string prefix = app::kGame.log;
++    std::transform(prefix.begin(), prefix.end(), prefix.begin(), [](unsigned char c) { return char(std::toupper(c)); });
++    char name[96];
++    std::snprintf(name, sizeof(name), "%s_%04u-%02u-%02u_%02u-%02u-%02u_%03u.png", prefix.c_str(), st.wYear, st.wMonth,
++                  st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
++    std::filesystem::path file = app::ScreenshotDir() / name;
++    pack::WritePngLater(file, w, h, std::move(px));
++    LOGR("screenshot: %s (%ux%u)", file.string().c_str(), w, h);
++}
++
++bool D3D12Backend::EnsureQueries() {
++    if (query_heap_) return true;
++    if (query_failed_) return false;
++    D3D12_QUERY_HEAP_DESC qd{D3D12_QUERY_HEAP_TYPE_OCCLUSION, kQueryEntries, 0};
++    D3D12_HEAP_PROPERTIES hp{D3D12_HEAP_TYPE_READBACK};
++    D3D12_RESOURCE_DESC bd = BufferDesc(uint64_t(kQueryEntries) * 8);
++    void* map = nullptr;
++    D3D12_RANGE all{0, size_t(kQueryEntries) * 8};
++    if (FAILED(dev_->CreateQueryHeap(&qd, IID_PPV_ARGS(&query_heap_))) ||
++        FAILED(dev_->CreateCommittedResource(&hp, D3D12_HEAP_FLAG_NONE, &bd, D3D12_RESOURCE_STATE_COPY_DEST, nullptr,
++                                             IID_PPV_ARGS(&query_rb_))) ||
++        FAILED(query_rb_->Map(0, &all, &map))) {
++        LOGE("d3d12: occlusion queries unavailable, visibility tests read as fully visible");
++        query_heap_.Reset();
++        query_rb_.Reset();
++        query_failed_ = true;
++        return false;
++    }
++    query_map_ = static_cast<const uint64_t*>(map);
++    return true;
++}
++
++void D3D12Backend::BeginQuery() {
++    if (!EnsureQueries()) return;
++    if (query_active_ >= 0) cl_->EndQuery(query_heap_.Get(), D3D12_QUERY_TYPE_OCCLUSION, UINT(query_active_));  // left unnamed
++    query_active_ = query_next_;
++    query_next_ = (query_next_ + 1) % kQueryEntries;
++    cl_->BeginQuery(query_heap_.Get(), D3D12_QUERY_TYPE_OCCLUSION, UINT(query_active_));
++}
++
++void D3D12Backend::EndQuery(uint32_t index) {
++    if (query_active_ < 0) return;
++    UINT e = UINT(query_active_);
++    cl_->EndQuery(query_heap_.Get(), D3D12_QUERY_TYPE_OCCLUSION, e);
++    cl_->ResolveQueryData(query_heap_.Get(), D3D12_QUERY_TYPE_OCCLUSION, e, 1, query_rb_.Get(), uint64_t(e) * 8);
++    query_active_ = -1;
++    // counted at our resolution on the target the test drew to, given back in the title's
++    const Target* t = bound_ds_ ? bound_ds_ : bound_rt_;
++    float ratio = t && t->w && t->h ? float(t->gw) * t->gh / (float(t->w) * t->h) : 1 / (scale_ * scale_);
++    if (t && bound_ms_) ratio /= float(samples_);  // anti-aliasing counts samples, not pixels
++    std::lock_guard lock(query_lock_);
++    QuerySlot& q = queries_[index % kQueryIndexes];
++    q.entry[q.next] = e;
++    q.fence[q.next] = fence_value_ + 1;  // the next Submit carries it
++    q.ratio[q.next] = ratio;
++    q.next = (q.next + 1) % kQueryRing;
++}
++
++bool D3D12Backend::QueryResult(uint32_t index, uint32_t& pixels) {
++    if (!query_map_) return false;
++    uint64_t done = fence_->GetCompletedValue();
++    std::lock_guard lock(query_lock_);
++    QuerySlot& q = queries_[index % kQueryIndexes];
++    int best = -1;
++    for (uint32_t i = 0; i < kQueryRing; i++)
++        if (q.fence[i] && q.fence[i] <= done && q.fence[i] > q.got && (best < 0 || q.fence[i] > q.fence[best])) best = int(i);
++    if (best >= 0) {
++        uint64_t raw = query_map_[q.entry[best]];
++        q.pixels = uint32_t(std::min<double>(std::round(double(raw) * q.ratio[best]), 4294967295.0));
++        q.got = q.fence[best];
++        q.have = true;
++    }
++    pixels = q.pixels;
++    return q.have;
++}
++
+ void D3D12Backend::WaitFence(uint64_t value) {
+     fence_->SetEventOnCompletion(value, event_);
+     WaitForSingleObject(event_, INFINITE);
+@@ -958,6 +1187,10 @@
+     if (bound_rt_ == &it->second || bound_ds_ == &it->second) bound_rt_ = bound_ds_ = nullptr;
+     (it->second.depth ? free_dsv_ : free_rtv_).push_back(it->second.view);
+     CurrentFrame().garbage.push_back(it->second.res);
++    if (it->second.ms) {
++        (it->second.depth ? free_dsv_ : free_rtv_).push_back(it->second.ms_view);
++        CurrentFrame().garbage.push_back(it->second.ms);
++    }
+     if (it->second.fb) CurrentFrame().garbage.push_back(it->second.fb);
+     targets_.erase(it);
+ }
+@@ -983,8 +1216,10 @@
+         cv.Format = td.Format;
+         t.state = D3D12_RESOURCE_STATE_RENDER_TARGET;
+     }
+-    return SUCCEEDED(dev_->CreateCommittedResource(&hp, D3D12_HEAP_FLAG_NONE, &td, t.state, &cv,
+-                                                   IID_PPV_ARGS(&t.res)));
++    if (FAILED(dev_->CreateCommittedResource(&hp, D3D12_HEAP_FLAG_NONE, &td, t.state, &cv, IID_PPV_ARGS(&t.res))))
++        return false;
++    if (WantMs(t) && !CreateMsResource(t)) LOG_FIRST(2, "d3d12: anti-aliasing target %ux%u could not be made", t.w, t.h);
++    return true;
+ }
+ 
+ // a view from the free pool, cleared; false when the pool is empty
+@@ -1006,6 +1241,7 @@
+         float black[4] = {0, 0, 0, 0};
+         cl_->ClearRenderTargetView(Cpu(rtv_heap_.Get(), t.view, rtv_inc_), black, 0, nullptr);
+     }
++    if (t.ms) CreateMsView(t);
+     return true;
+ }
+ 
+@@ -1059,7 +1295,10 @@
+     t.depth = depth;
+     t.gw = slot.gw;
+     t.gh = slot.gh;
+-    if (!CreateTargetResource(t, s)) return nullptr;
++    {
++        PerfScope perf_create{g_perf.create};
++        if (!CreateTargetResource(t, s)) return nullptr;
++    }
+     g_perf.targets++;
+     // an empty pool drops the new resource with t
+     if (!CreateTargetView(t)) return nullptr;
+@@ -1077,25 +1316,219 @@
+     Target* ds = s.rs[kRsZEnable] || s.rs[kRsStencilEnable] ? EnsureTarget(s.zs, true) : nullptr;
+     if (rt && ds && (rt->w != ds->w || rt->h != ds->h)) ds = nullptr;
+     if (!rt && !ds) return false;
+-    if (rt) {
+-        if (LatchCpuWrite(*rt)) UploadTarget(*rt, s.rt);
+-        Transition(rt->res.Get(), rt->state, D3D12_RESOURCE_STATE_RENDER_TARGET);
+-        rt->drawn = true;
+-    }
+-    if (ds) {
+-        Transition(ds->res.Get(), ds->state, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+-        ds->drawn = true;
+-    }
+-    if (rt != bound_rt_ || ds != bound_ds_) {
+-        D3D12_CPU_DESCRIPTOR_HANDLE rh = rt ? Cpu(rtv_heap_.Get(), rt->view, rtv_inc_) : D3D12_CPU_DESCRIPTOR_HANDLE{};
+-        D3D12_CPU_DESCRIPTOR_HANDLE dh = ds ? Cpu(dsv_heap_.Get(), ds->view, dsv_inc_) : D3D12_CPU_DESCRIPTOR_HANDLE{};
++    if (rt && LatchCpuWrite(*rt)) UploadTarget(*rt, s.rt);
++    // the multisampled twins when every bound target has one, else the plain targets
++    bool ms = (!rt || rt->ms) && (!ds || ds->ms);
++    for (Target* t : {rt, ds}) {
++        if (!t) continue;
++        if (ms) ReadyMs(*t);
++        else ReadyRes(*t);
++    }
++    for (Target* t : {rt, ds}) {
++        if (!t) continue;
++        D3D12_RESOURCE_STATES want = t->depth ? D3D12_RESOURCE_STATE_DEPTH_WRITE : D3D12_RESOURCE_STATE_RENDER_TARGET;
++        if (ms) {
++            Transition(t->ms.Get(), t->ms_state, want);
++            t->ms_new = true;
++        } else {
++            Transition(t->res.Get(), t->state, want);
++            ResWritten(*t);
++        }
++        t->drawn = true;
++    }
++    if (rt != bound_rt_ || ds != bound_ds_ || ms != bound_ms_) {
++        D3D12_CPU_DESCRIPTOR_HANDLE rh =
++            rt ? Cpu(rtv_heap_.Get(), ms ? rt->ms_view : rt->view, rtv_inc_) : D3D12_CPU_DESCRIPTOR_HANDLE{};
++        D3D12_CPU_DESCRIPTOR_HANDLE dh =
++            ds ? Cpu(dsv_heap_.Get(), ms ? ds->ms_view : ds->view, dsv_inc_) : D3D12_CPU_DESCRIPTOR_HANDLE{};
+         cl_->OMSetRenderTargets(rt ? 1 : 0, rt ? &rh : nullptr, FALSE, ds ? &dh : nullptr);
+         bound_rt_ = rt;
+         bound_ds_ = ds;
++        bound_ms_ = ms;
+     }
+     return true;
+ }
+ 
++// anti-aliasing's sample count: the setting, lowered to what the card takes for the frame's colour and depth
++uint32_t D3D12Backend::PickSamples() {
++    uint32_t want = app::Get().msaa;
++    if (want < 2) return 1;
++    for (uint32_t n = std::min(want, 8u); n >= 2; n /= 2) {
++        bool ok = true;
++        for (DXGI_FORMAT f : {kBgra, DXGI_FORMAT_D24_UNORM_S8_UINT}) {
++            D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS q{f, n, D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE, 0};
++            if (FAILED(dev_->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &q, sizeof(q))) ||
++                !q.NumQualityLevels) {
++                ok = false;
++            }
++        }
++        if (!ok) continue;
++        static uint32_t logged = 0;
++        if (logged != n) {
++            logged = n;
++            if (n != want) LOGR("d3d12: anti-aliasing %ux (%ux is not supported by this graphics card)", n, want);
++            else LOGR("d3d12: anti-aliasing %ux", n);
++        }
++        return n;
++    }
++    LOGR("d3d12: anti-aliasing is not supported by this graphics card");
++    return 1;
++}
++
++bool D3D12Backend::MsFormatOk(DXGI_FORMAT fmt) {
++    auto it = ms_ok_.find(uint32_t(fmt));
++    if (it != ms_ok_.end()) return it->second;
++    D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS q{fmt, samples_, D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE, 0};
++    bool ok = SUCCEEDED(dev_->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &q, sizeof(q))) &&
++              q.NumQualityLevels;
++    if (ok && fmt != DXGI_FORMAT_D24_UNORM_S8_UINT) {
++        D3D12_FEATURE_DATA_FORMAT_SUPPORT fs{fmt};
++        ok = SUCCEEDED(dev_->CheckFeatureSupport(D3D12_FEATURE_FORMAT_SUPPORT, &fs, sizeof(fs))) &&
++             (fs.Support1 & D3D12_FORMAT_SUPPORT1_MULTISAMPLE_RESOLVE);
++    }
++    ms_ok_[uint32_t(fmt)] = ok;
++    return ok;
++}
++
++// the frame's own targets (the console's back buffer size) and the depth drawn with them; render-to-texture passes
++// of other sizes (shadows, water, glows) keep one sample
++bool D3D12Backend::WantMs(const Target& t) {
++    if (samples_ < 2 || t.gw != guest_w_ || t.gh != guest_h_) return false;
++    return MsFormatOk(t.depth ? DXGI_FORMAT_D24_UNORM_S8_UINT : t.fmt);
++}
++
++bool D3D12Backend::CreateMsResource(Target& t) {
++    D3D12_HEAP_PROPERTIES hp{D3D12_HEAP_TYPE_DEFAULT};
++    D3D12_RESOURCE_DESC td = t.res->GetDesc();
++    td.SampleDesc.Count = samples_;
++    D3D12_CLEAR_VALUE cv{};
++    if (t.depth) {
++        cv.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
++        cv.DepthStencil.Depth = 1;
++        t.ms_state = D3D12_RESOURCE_STATE_DEPTH_WRITE;
++    } else {
++        cv.Format = t.fmt;
++        t.ms_state = D3D12_RESOURCE_STATE_RENDER_TARGET;
++    }
++    if (FAILED(dev_->CreateCommittedResource(&hp, D3D12_HEAP_FLAG_NONE, &td, t.ms_state, &cv, IID_PPV_ARGS(&t.ms)))) {
++        t.ms.Reset();
++        return false;
++    }
++    return true;
++}
++
++// the twin's view, cleared like the plain target's; no free view leaves the target without a twin
++void D3D12Backend::CreateMsView(Target& t) {
++    auto& pool = t.depth ? free_dsv_ : free_rtv_;
++    if (pool.empty()) {
++        t.ms.Reset();
++        return;
++    }
++    t.ms_view = pool.back();
++    pool.pop_back();
++    if (t.depth) {
++        D3D12_DEPTH_STENCIL_VIEW_DESC dv{};
++        dv.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
++        dv.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
++        dev_->CreateDepthStencilView(t.ms.Get(), &dv, Cpu(dsv_heap_.Get(), t.ms_view, dsv_inc_));
++        cl_->ClearDepthStencilView(Cpu(dsv_heap_.Get(), t.ms_view, dsv_inc_),
++                                   D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1, 0, 0, nullptr);
++    } else {
++        D3D12_RENDER_TARGET_VIEW_DESC rv{};
++        rv.Format = t.fmt;
++        rv.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
++        dev_->CreateRenderTargetView(t.ms.Get(), &rv, Cpu(rtv_heap_.Get(), t.ms_view, rtv_inc_));
++        float black[4] = {0, 0, 0, 0};
++        cl_->ClearRenderTargetView(Cpu(rtv_heap_.Get(), t.ms_view, rtv_inc_), black, 0, nullptr);
++    }
++}
++
++constexpr uint32_t kMsUp = 0;            // colour into the twin
++constexpr uint32_t kMsUpDepth = 1;       // depth into the twin
++constexpr uint32_t kMsResolveDepth = 2;  // the twin's depth into the plain buffer
++
++// kind's pipeline at a sample count, kept in blit_psos_; null when it can't be made
++ID3D12PipelineState* D3D12Backend::EnsureMsPipeline(uint32_t kind, DXGI_FORMAT fmt, uint32_t samples) {
++    auto& pso = blit_psos_[0xA5A5000000000000ull | uint64_t(kind) << 40 | uint64_t(samples) << 32 | uint64_t(fmt)];
++    if (pso) return pso.Get();
++    const char* src = kind == kMsUp ? kMsUpHlsl : kind == kMsUpDepth ? kMsUpDepthHlsl : kMsDepthResolveHlsl;
++    uint64_t h;
++    ID3DBlob* vs = Compile(src, "vs", "vs_5_0", h);
++    ID3DBlob* ps = Compile(src, "psmain", "ps_5_0", h);
++    if (!vs || !ps) return nullptr;
++    D3D12_GRAPHICS_PIPELINE_STATE_DESC d = FullScreenPipelineDesc(vs, ps, fmt);
++    if (kind != kMsUp) {
++        d.NumRenderTargets = 0;
++        d.RTVFormats[0] = DXGI_FORMAT_UNKNOWN;
++        d.DepthStencilState.DepthEnable = TRUE;
++        d.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
++        d.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
++        d.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
++    }
++    d.SampleDesc.Count = samples;
++    if (FAILED(dev_->CreateGraphicsPipelineState(&d, IID_PPV_ARGS(&pso)))) {
++        LOG_FIRST(2, "d3d12: anti-aliasing pass %u could not be made", kind);
++        return nullptr;
++    }
++    return pso.Get();
++}
++
++void D3D12Backend::ReadyRes(Target& t) {
++    if (!t.ms || !t.ms_new) return;
++    t.ms_new = false;
++    if (!t.depth) {
++        Transition(t.ms.Get(), t.ms_state, D3D12_RESOURCE_STATE_RESOLVE_SOURCE);
++        Transition(t.res.Get(), t.state, D3D12_RESOURCE_STATE_RESOLVE_DEST);
++        cl_->ResolveSubresource(t.res.Get(), 0, t.ms.Get(), 0, t.fmt);
++        return;
++    }
++    // depth has no hardware resolve: the first sample of each pixel, drawn as depth (the stencil stays behind)
++    ID3D12PipelineState* pso = EnsureMsPipeline(kMsResolveDepth, DXGI_FORMAT_UNKNOWN, 1);
++    if (!pso) return;
++    Transition(t.ms.Get(), t.ms_state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
++    Transition(t.res.Get(), t.state, D3D12_RESOURCE_STATE_DEPTH_WRITE);
++    D3D12_CPU_DESCRIPTOR_HANDLE dh = Cpu(dsv_heap_.Get(), t.view, dsv_inc_);
++    cl_->OMSetRenderTargets(0, nullptr, FALSE, &dh);
++    bound_rt_ = bound_ds_ = nullptr;
++    SetFullViewport(t.w, t.h);
++    uint32_t slot = AllocSrvSlots(1);
++    D3D12_SHADER_RESOURCE_VIEW_DESC sv{};
++    sv.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
++    sv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMS;
++    sv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
++    dev_->CreateShaderResourceView(t.ms.Get(), &sv, Cpu(srv_heap_.Get(), slot, srv_inc_));
++    DrawFullScreen(pso, Upload(256, 256).gpu, slot);
++}
++
++void D3D12Backend::ReadyMs(Target& t) {
++    if (!t.ms || !t.res_new) return;
++    t.res_new = false;
++    ID3D12PipelineState* pso = EnsureMsPipeline(t.depth ? kMsUpDepth : kMsUp, t.depth ? DXGI_FORMAT_UNKNOWN : t.fmt, samples_);
++    if (!pso) return;
++    if (t.depth) LOG_FIRST(2, "d3d12: anti-aliasing: depth %08X written outside a draw, carried over without its stencil", t.data);
++    Transition(t.res.Get(), t.state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
++    D3D12_SHADER_RESOURCE_VIEW_DESC sv{};
++    sv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
++    sv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
++    sv.Texture2D.MipLevels = 1;
++    if (t.depth) {
++        Transition(t.ms.Get(), t.ms_state, D3D12_RESOURCE_STATE_DEPTH_WRITE);
++        D3D12_CPU_DESCRIPTOR_HANDLE dh = Cpu(dsv_heap_.Get(), t.ms_view, dsv_inc_);
++        cl_->OMSetRenderTargets(0, nullptr, FALSE, &dh);
++        sv.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
++    } else {
++        Transition(t.ms.Get(), t.ms_state, D3D12_RESOURCE_STATE_RENDER_TARGET);
++        D3D12_CPU_DESCRIPTOR_HANDLE rh = Cpu(rtv_heap_.Get(), t.ms_view, rtv_inc_);
++        cl_->OMSetRenderTargets(1, &rh, FALSE, nullptr);
++        sv.Format = t.fmt;
++    }
++    bound_rt_ = bound_ds_ = nullptr;
++    SetFullViewport(t.w, t.h);
++    uint32_t slot = AllocSrvSlots(1);
++    dev_->CreateShaderResourceView(t.res.Get(), &sv, Cpu(srv_heap_.Get(), slot, srv_inc_));
++    DrawFullScreen(pso, Upload(256, 256).gpu, slot);
++}
++
+ constexpr uint64_t kDepthCopyKey = ~0ull;  // DepthCopy's pipeline in blit_psos_
+ 
+ // DepthCopy's pipeline, kept in blit_psos_: writes depth only, always passing; null when it can't be made
+@@ -1127,6 +1560,8 @@
+ // src's depth drawn into dst's depth buffer
+ void D3D12Backend::DrawDepthCopy(Target& src, Target& dst, ID3D12PipelineState* pso) {
+     if (cap_) fprintf(cap_, "%04u depth copy %08X to %08X\n", cap_i_++, src.data, dst.data);
++    ReadyRes(src);
++    ReadyRes(dst);
+     Transition(src.res.Get(), src.state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+     Transition(dst.res.Get(), dst.state, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+     D3D12_CPU_DESCRIPTOR_HANDLE dh = Cpu(dsv_heap_.Get(), dst.view, dsv_inc_);
+@@ -1142,6 +1577,7 @@
+     Alloc cb = Upload(256, 256);
+     DrawFullScreen(pso, cb.gpu, slot);
+     dst.drawn = true;
++    ResWritten(dst);
+     bound_rt_ = bound_ds_ = nullptr;
+ }
+ 
+@@ -1210,6 +1646,7 @@
+     g_perf.rtups++;
+     TextureDesc d;
+     if (!Describe(s.header, d) || Format(d.format).depth) return;
++    ReadyRes(t);  // drawn over what the target holds
+     std::vector<uint8_t> px;
+     uint32_t pitch;
+     // after a Sync only the pixels the CPU changed go over the picture, which stays at render scale
+@@ -1228,6 +1665,7 @@
+     float mul = 1 / t.range;
+     Blit(tex.Get(), kBgra, uv, {.alpha = true, .mul = mul, .rtv = t.fmt, .over = over});
+     CurrentFrame().garbage.push_back(tex);
++    ResWritten(t);
+     t.epoch = DirtyEpoch(t.data);
+     t.sig = MemSig(t.data, t.bytes);
+ }
+@@ -1287,8 +1725,9 @@
+     dev_->CreateShaderResourceView(lut_.Get(), &sv, Cpu(srv_heap_.Get(), slot + 1, srv_inc_));
+     uint32_t si = EnsureBlitSamplers();
+     Alloc cb = Upload(256, 256);
+-    float c[8] = {uvrect[0], uvrect[1], uvrect[2], uvrect[3],
+-                  o.gamma ? 1.0f : 0.0f, o.alpha ? 1.0f : 0.0f, float(o.taps), o.mul};
++    float c[12] = {uvrect[0], uvrect[1], uvrect[2], uvrect[3],
++                   o.gamma ? 1.0f : 0.0f, o.alpha ? 1.0f : 0.0f, float(o.taps), o.mul,
++                   o.sharpen, o.texel[0], o.texel[1], 0};
+     std::memcpy(cb.cpu, c, sizeof(c));
+     DrawFullScreen(EnsureBlitPipeline(o.rtv, o.over), cb.gpu, slot, si);
+ }
+@@ -1300,7 +1739,27 @@
+     hash = Hash(src.data(), src.size(), entry_seed);
+     auto it = blobs_.find(hash);
+     if (it != blobs_.end()) return it->second.Get();
++    // compiled once and kept in the shader cache (shadercache\ beside the exe, or --shader-cache): a shader the game first uses mid-play (a cutscene
++    // ending, a new effect) does not stall the frame on D3DCompile again in later runs. The file name covers the
++    // source, entry point, profile and compile options; a different compiler or flags make new names.
++    static const char kCacheSalt[] = "d3dcompile O1 v1";
++    std::filesystem::path cached =
++        app::ShaderCacheDir() / (pack::Name(Hash(kCacheSalt, sizeof(kCacheSalt), hash)) + ".dxbc");
+     ComPtr<ID3DBlob> code;
++    {
++        std::ifstream f(cached, std::ios::binary | std::ios::ate);
++        std::streamsize n = f ? std::streamsize(f.tellg()) : 0;
++        if (n > 0 && SUCCEEDED(D3DCreateBlob(SIZE_T(n), &code))) {
++            f.seekg(0);
++            if (!f.read(static_cast<char*>(code->GetBufferPointer()), n)) code = nullptr;
++        } else {
++            code = nullptr;
++        }
++    }
++    if (code) {
++        blobs_[hash] = code;
++        return code.Get();
++    }
+     ComPtr<ID3DBlob> err;
+     PerfScope perf_compile{g_perf.compile};
+     g_perf.shaders++;
+@@ -1313,6 +1772,10 @@
+         return nullptr;
+     }
+     blobs_[hash] = code;
++    std::error_code ec;
++    std::filesystem::create_directories(cached.parent_path(), ec);
++    std::ofstream out(cached, std::ios::binary);
++    out.write(static_cast<const char*>(code->GetBufferPointer()), std::streamsize(code->GetBufferSize()));
+     return code.Get();
+ }
+ 
+@@ -1335,6 +1798,21 @@
+     return d;
+ }
+ 
++// kClearHlsl's pipeline for a format and channel mask, kept in blit_psos_; null when it can't be made
++ID3D12PipelineState* D3D12Backend::EnsureMaskedClearPipeline(DXGI_FORMAT rtv, uint32_t mask, uint32_t samples) {
++    auto& pso = blit_psos_[0xC1EA000000000000ull | uint64_t(samples) << 40 | uint64_t(rtv) << 8 | mask];
++    if (pso) return pso.Get();
++    uint64_t h;
++    ID3DBlob* vs = Compile(kClearHlsl, "vs", "vs_5_0", h);
++    ID3DBlob* ps = Compile(kClearHlsl, "psmain", "ps_5_0", h);
++    if (!vs || !ps) return nullptr;
++    D3D12_GRAPHICS_PIPELINE_STATE_DESC d = FullScreenPipelineDesc(vs, ps, rtv);
++    d.BlendState.RenderTarget[0].RenderTargetWriteMask = UINT8(mask);
++    d.SampleDesc.Count = samples;
++    if (FAILED(dev_->CreateGraphicsPipelineState(&d, IID_PPV_ARGS(&pso)))) return nullptr;
++    return pso.Get();
++}
++
+ ID3D12PipelineState* D3D12Backend::EnsureBlitPipeline(DXGI_FORMAT rtv, bool over) {
+     auto& pso = blit_psos_[uint64_t(rtv) | uint64_t(over) << 32];
+     if (pso) return pso.Get();
+@@ -1407,6 +1885,7 @@
+ 
+ // a copy of the target to read while drawing to it
+ ID3D12Resource* D3D12Backend::Feedback(Target& t) {
++    ReadyRes(t);
+     if (!t.fb) {
+         D3D12_HEAP_PROPERTIES hp{D3D12_HEAP_TYPE_DEFAULT};
+         D3D12_RESOURCE_DESC td = t.res->GetDesc();
+@@ -1485,7 +1964,7 @@
+     d.NumRenderTargets = k.has_rt ? 1 : 0;
+     d.RTVFormats[0] = k.has_rt ? DXGI_FORMAT(k.rtfmt) : DXGI_FORMAT_UNKNOWN;
+     d.DSVFormat = k.has_ds ? DXGI_FORMAT_D24_UNORM_S8_UINT : DXGI_FORMAT_UNKNOWN;
+-    d.SampleDesc.Count = 1;
++    d.SampleDesc.Count = std::max(k.samples, 1u);
+ }
+ 
+ ID3D12PipelineState* D3D12Backend::EnsurePipeline(const PsoKey& k, ID3DBlob* vs, ID3DBlob* ps) {
+@@ -1499,7 +1978,9 @@
+     FillPipelineDesc(k, vs, ps, d);
+     ComPtr<ID3D12PipelineState> pso;
+     g_perf.psos++;
++    auto perf_pso = PerfClock::now();
+     if (FAILED(dev_->CreateGraphicsPipelineState(&d, IID_PPV_ARGS(&pso)))) LOGE("d3d12: pipeline creation failed");
++    g_perf.pso += PerfMs(perf_pso);
+     psos_[h] = pso;
+     return pso.Get();
+ }
+@@ -1536,6 +2017,7 @@
+     sv.Format = t.depth ? DXGI_FORMAT_R24_UNORM_X8_TYPELESS : t.fmt;
+     // the console reads the pixels it is about to overwrite: give the draw a copy
+     if (feedback) return Feedback(t);
++    ReadyRes(t);
+     Transition(t.res.Get(), t.state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+     if (t.depth) info.shadow = ShadowDepthKind(d.format);
+     info.kind = kTex2D;
+@@ -1550,6 +2032,7 @@
+ // false when the texture could not be made, its entry dropped
+ bool D3D12Backend::CreateTexture(Tex& tx, const TextureDesc& d, const FormatInfo& fi, uint64_t key) {
+     g_perf.newtex++;
++    PerfScope perf_create{g_perf.create};
+     if (tx.res) CurrentFrame().garbage.push_back(tx.res);
+     tx = Tex{};
+     tx.d = d;
+@@ -1621,15 +2104,96 @@
+     Transition(tx.res.Get(), st, D3D12_RESOURCE_STATE_COPY_DEST);
+     uint32_t faces = d.cube ? 6 : 1;
+     std::vector<uint8_t> px;
++    // a plain 2D texture in a format a DDS file holds can be dumped and replaced
++    pack::Format pf = pack::Format(tx.fmt);
++    bool packable = !d.cube && d.depth == 1 && !d.linear && pack::Supported(pf) &&
++                    (pack_lib_.Size() || app::Get().texture_dump);
++    std::vector<std::vector<uint8_t>> levels;
+     for (uint32_t f = 0; f < faces; f++) {
+         for (uint32_t l = 0; l < tx.levels; l++) {
+             uint32_t pitch;
+             DecodeLevel(d, l, f, p, colours, px, pitch);
++            if (packable && app::Get().texture_dump && f == 0 && l == 0) {
++                // the level as decoded, before an extension changes it, rows tightly packed
++                uint32_t lw = std::max(d.width >> l, 1u), lh = std::max(d.height >> l, 1u);
++                uint32_t rb = pack::RowBytes(pf, lw), rows = pack::Rows(pf, lh);
++                std::vector<uint8_t>& out = levels.emplace_back(size_t(rb) * rows, 0);
++                for (uint32_t y = 0; y < rows && size_t(y + 1) * pitch <= px.size(); y++)
++                    std::memcpy(&out[size_t(y) * rb], &px[size_t(y) * pitch], std::min(rb, pitch));
++            }
+             if (ext_) ext_->Decoded(d, fi, f, l, px, pitch, tx.flags);
+             UploadTextureLevel(tx, f, l, px, pitch);
+         }
+     }
+     Transition(tx.res.Get(), st, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
++    tx.repl = nullptr;
++    tx.pack_hash = 0;
++    if (packable) TexturePack(tx, d, p, colours, levels);
++}
++
++// the texture's contents hashed (with its format, size and a P8 texture's colours): written to textures/dump with
++// texture_dump on, and a file of that name under textures/ drawn instead
++void D3D12Backend::TexturePack(Tex& tx, const TextureDesc& d, const uint8_t* p, const uint32_t* colours,
++                               const std::vector<std::vector<uint8_t>>& levels) {
++    uint64_t seed = uint64_t(d.format) | uint64_t(d.width) << 8 | uint64_t(d.height) << 24 | uint64_t(d.levels) << 40;
++    uint64_t h = Hash(p, TotalSize(d), seed);
++    if (colours) h = Hash(colours, 256 * sizeof(uint32_t), h);
++    if (!levels.empty() && dumped_.insert(h).second) {
++        // level 0 as a PNG, written on the pack thread
++        std::vector<uint8_t> rgba;
++        std::filesystem::path file = app::TextureDir() / "dump" / pack::PngName(d.width, d.height, h);
++        std::error_code ec;
++        if (std::filesystem::exists(file, ec)) {
++        } else if (pack::ToRgba(pack::Format(tx.fmt), d.width, d.height, levels[0], rgba)) {
++            pack::WritePngLater(file, d.width, d.height, std::move(rgba));
++        } else {
++            LOG_FIRST(4, "texture pack: %s is in a format a PNG does not take", file.filename().string().c_str());
++        }
++    }
++    tx.pack_hash = h;
++    const std::filesystem::path* file = pack_lib_.Find(h);
++    if (!file) return;
++    auto [it, fresh] = pack_cache_.try_emplace(h);
++    if (fresh && !LoadPackTexture(*file, it->second)) LOGW("texture pack: %s is not a PNG or DDS file the renderer takes", file->string().c_str());
++    if (!it->second.res) return;
++    tx.repl = it->second.res;
++    tx.repl_fmt = it->second.fmt;
++    tx.repl_levels = it->second.levels;
++}
++
++// a PNG or DDS file into a texture of its own size: a DDS file's mip levels, or ones made for a PNG
++bool D3D12Backend::LoadPackTexture(const std::filesystem::path& file, PackTex& out) {
++    pack::Image img;
++    std::string ext = file.extension().string();
++    std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return char(std::tolower(c)); });
++    if (!(ext == ".png" ? pack::ReadPng(file, img) : pack::ReadDds(file, img))) return false;
++    bool block = img.format != pack::Format::BGRA8 && img.format != pack::Format::RGBA8;
++    if (block && ((img.width & 3) || (img.height & 3))) return false;  // BC level 0 must be whole blocks
++    D3D12_HEAP_PROPERTIES hp{D3D12_HEAP_TYPE_DEFAULT};
++    D3D12_RESOURCE_DESC td{};
++    td.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
++    td.Width = img.width;
++    td.Height = img.height;
++    td.DepthOrArraySize = 1;
++    td.MipLevels = UINT16(img.levels.size());
++    td.Format = DXGI_FORMAT(img.format);
++    td.SampleDesc.Count = 1;
++    Tex t;
++    if (FAILED(dev_->CreateCommittedResource(&hp, D3D12_HEAP_FLAG_NONE, &td, D3D12_RESOURCE_STATE_COPY_DEST, nullptr,
++                                             IID_PPV_ARGS(&t.res)))) {
++        return false;
++    }
++    t.levels = uint32_t(img.levels.size());
++    for (uint32_t l = 0; l < t.levels; l++)
++        UploadTextureLevel(t, 0, l, img.levels[l], pack::RowBytes(img.format, std::max(img.width >> l, 1u)));
++    D3D12_RESOURCE_STATES st = D3D12_RESOURCE_STATE_COPY_DEST;
++    Transition(t.res.Get(), st, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
++    out.res = t.res;
++    out.fmt = td.Format;
++    out.levels = t.levels;
++    LOG_FIRST(16, "texture pack: %s, %ux%u, %u levels", file.filename().string().c_str(), img.width, img.height,
++              t.levels);
++    return true;
+ }
+ 
+ void FillTextureView(const Tex& tx, const TextureDesc& d, D3D12_SHADER_RESOURCE_VIEW_DESC& sv) {
+@@ -1697,6 +2261,17 @@
+     FillTextureView(tx, d, stages.sv[stage]);
+     if (fi.depth) info.shadow = ShadowDepthKind(d.format);
+     if (ext_) ext_->Sampled(d, nullptr, tx.flags, info);
++    // dumping: the first screen space draw of each texture names its file, to find a HUD's pieces by
++    if (tx.pack_hash && app::Get().texture_dump && g_screen_space_test && !hud_logged_.count(tx.pack_hash) &&
++        g_screen_space_test(s)) {
++        hud_logged_.insert(tx.pack_hash);
++        LOGR("texture pack: drawn in 2D (HUD, menu, text): %s", pack::PngName(d.width, d.height, tx.pack_hash).c_str());
++    }
++    if (tx.repl) {
++        stages.sv[stage].Format = tx.repl_fmt;
++        stages.sv[stage].Texture2D.MipLevels = tx.repl_levels;
++        return tx.repl.Get();
++    }
+     return tx.res.Get();
+ }
+ 
+@@ -1759,7 +2334,7 @@
+     sd.AddressU = Address(clamp && t[kTssAddressU] == kTaddressWrap ? kTaddressClamp : t[kTssAddressU]);
+     sd.AddressV = Address(clamp && t[kTssAddressV] == kTaddressWrap ? kTaddressClamp : t[kTssAddressV]);
+     sd.AddressW = Address(t[kTssAddressW]);
+-    sd.MipLODBias = Bits(t[kTssMipLodBias]);
++    sd.MipLODBias = Bits(t[kTssMipLodBias]) + app::Get().lod_bias;  // texture sharpness: 0 as the game asks
+     sd.MinLOD = float(t[kTssMaxMipLevel]);
+     sd.MaxLOD = mip ? D3D12_FLOAT32_MAX : sd.MinLOD;
+     Color(t[kTssBorderColor], sd.BorderColor);
+@@ -1930,6 +2505,7 @@
+     k.has_rt = bound_rt_ != nullptr;
+     k.has_ds = bound_ds_ != nullptr;
+     k.rtfmt = bound_rt_ ? bound_rt_->fmt : 0;
++    k.samples = bound_ms_ ? samples_ : 1;
+     KeyBlend(s, k);
+     if (k.has_ds) KeyDepthStencil(s, a, k);
+     KeyRasterizer(s, a, k);
+@@ -2358,7 +2934,11 @@
+     Assembled& a = asm_;
+     if (!AssembleDraw(s, prim, start, count, indices, a)) return;
+     // past the ring every upload is a buffer of its own: seconds lost on a frame that draws a whole level once
+-    if (CurrentFrame().used > kUploadSize - kUploadReserve) Submit(true);
++    if (CurrentFrame().used > kUploadSize - kUploadReserve) {
++        PerfScope perf_flush{g_perf.flush};
++        g_perf.flushes++;
++        Submit(true);
++    }
+     if (!BindTargets(s)) return;
+     if (ext_ && ext_->Bound(*this, s, bound_rt_, bound_ds_, a.pretransformed) && !BindTargets(s)) return;
+ 
+@@ -2425,20 +3005,49 @@
+         const auto& v = s.viewport;
+         rs.push_back(ScaledRect(t, int(v.x), int(v.y), int(v.x + v.w), int(v.y + v.h)));
+     }
++    // a target with a multisampled twin clears both, so neither falls behind the other
+     if (t.depth) {
+-        Transition(t.res.Get(), t.state, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+         D3D12_CLEAR_FLAGS cf = D3D12_CLEAR_FLAGS(((c.flags & kClearZ) ? D3D12_CLEAR_FLAG_DEPTH : 0) |
+                                                  ((c.flags & kClearStencil) ? D3D12_CLEAR_FLAG_STENCIL : 0));
+-        cl_->ClearDepthStencilView(Cpu(dsv_heap_.Get(), t.view, dsv_inc_), cf, std::clamp(c.z, 0.0f, 1.0f),
+-                                   UINT8(c.stencil), UINT(rs.size()), rs.data());
++        for (int twin = 0; twin < (t.ms ? 2 : 1); twin++) {
++            Transition(twin ? t.ms.Get() : t.res.Get(), twin ? t.ms_state : t.state, D3D12_RESOURCE_STATE_DEPTH_WRITE);
++            cl_->ClearDepthStencilView(Cpu(dsv_heap_.Get(), twin ? t.ms_view : t.view, dsv_inc_), cf,
++                                       std::clamp(c.z, 0.0f, 1.0f), UINT8(c.stencil), UINT(rs.size()), rs.data());
++        }
+     } else {
+         // pixels the CPU wrote before this clear go in first, a later upload would paint over the clear
+         if (LatchCpuWrite(t)) UploadTarget(t, s.rt);
+-        Transition(t.res.Get(), t.state, D3D12_RESOURCE_STATE_RENDER_TARGET);
+         float col[4];
+         Color(c.color, col);
+         for (int i = 0; t.range != 1 && i < 3; i++) col[i] /= t.range;
+-        cl_->ClearRenderTargetView(Cpu(rtv_heap_.Get(), t.view, rtv_inc_), col, UINT(rs.size()), rs.data());
++        uint32_t mask = (c.flags & kClearTarget) >> 4;  // R G B A, as D3D12_COLOR_WRITE_ENABLE_*
++        for (int twin = 0; twin < (t.ms ? 2 : 1); twin++) {
++            Transition(twin ? t.ms.Get() : t.res.Get(), twin ? t.ms_state : t.state, D3D12_RESOURCE_STATE_RENDER_TARGET);
++            D3D12_CPU_DESCRIPTOR_HANDLE rh = Cpu(rtv_heap_.Get(), twin ? t.ms_view : t.view, rtv_inc_);
++            if (mask == 0xF) {
++                cl_->ClearRenderTargetView(rh, col, UINT(rs.size()), rs.data());
++            } else if (ID3D12PipelineState* pso = EnsureMaskedClearPipeline(t.fmt, mask, twin ? samples_ : 1)) {
++                // ClearRenderTargetView writes every channel: The Two Towers clears only alpha (0x80) between drawing
++                // the world and its lighting passes, which would wipe the picture
++                cl_->OMSetRenderTargets(1, &rh, FALSE, nullptr);
++                bound_rt_ = bound_ds_ = nullptr;
++                D3D12_VIEWPORT vp{0, 0, float(t.w), float(t.h), 0, 1};
++                cl_->RSSetViewports(1, &vp);
++                Alloc cb = Upload(256, 256);
++                std::memcpy(cb.cpu, col, sizeof(col));
++                uint32_t slot = AllocSrvSlots(1);
++                D3D12_SHADER_RESOURCE_VIEW_DESC sv{};
++                sv.Format = kBgra;
++                sv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
++                sv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
++                sv.Texture2D.MipLevels = 1;
++                dev_->CreateShaderResourceView(nullptr, &sv, Cpu(srv_heap_.Get(), slot, srv_inc_));
++                for (const D3D12_RECT& r : rs) {
++                    cl_->RSSetScissorRects(1, &r);
++                    DrawFullScreen(pso, cb.gpu, slot);
++                }
++            }
++        }
+     }
+     t.drawn = true;
+ }
+@@ -2631,12 +3240,15 @@
+     Target* dst_t = EnsureTarget(dst, false);
+     if (!dst_t || src_t == dst_t) return;
+     CopyList l{.count = count, .src_rects = src_rects, .dst_points = dst_points};
++    ReadyRes(*dst_t);  // a copy may cover part of it
+     if (src_t->fmt != dst_t->fmt) {
+         // formats differ: drawn across
+         CopyByDraw(*src_t, src_t->res.Get(), src_t->state, *dst_t, l);
++        ResWritten(*dst_t);
+         return;
+     }
+     CopyByRegion(*src_t, src_t->res.Get(), src_t->state, *dst_t, l);
++    ResWritten(*dst_t);
+     if (cap_) {
+         char name[32];
+         snprintf(name, sizeof(name), "%04u_copy_%08X", cap_i_, dst_t->data);
+@@ -2683,7 +3295,9 @@
+     char stamp[32];
+     snprintf(stamp, sizeof(stamp), "%02u%02u%02u", tm.wHour, tm.wMinute, tm.wSecond);
+     std::error_code ec;
+-    cap_dir_ = std::filesystem::weakly_canonical(app::ExeDir() / diag::CaptureDir() / stamp, ec);
++    // beside the log folder: logs\..\captures by default, or next to a launcher's log
++    std::filesystem::path base = app::Args().log.empty() ? app::ExeDir() : app::LogFolder();
++    cap_dir_ = std::filesystem::weakly_canonical(base / diag::CaptureDir() / stamp, ec);
+     std::filesystem::create_directories(cap_dir_, ec);
+     cap_ = _wfopen((cap_dir_ / "frame.txt").c_str(), L"w");
+     cap_i_ = cap_rt_ = 0;
+@@ -2696,6 +3310,13 @@
+ constexpr int kRampGreen = 256;
+ constexpr int kRampBlue = 512;
+ 
++// brightness over the game's ramp: v^(1/b), black and white kept, the darks lifted (b > 1) or deepened
++uint8_t D3D12Backend::Brighten(uint8_t v) const {
++    float b = app::Get().brightness;
++    if (b > 0.999f && b < 1.001f) return v;
++    return uint8_t(std::lround(255.0f * std::pow(v / 255.0f, 1.0f / std::clamp(b, 0.5f, 2.0f))));
++}
++
+ void D3D12Backend::UploadGammaRamp() {
+     constexpr uint32_t kRampBytes = 256 * 4;  // one BGRA texel per ramp entry
+     ramp_dirty_ = false;
+@@ -2703,11 +3324,11 @@
+     bool identity = true;
+     for (int i = 0; i < 256; i++) {
+         uint8_t* p = a.cpu + i * 4;
+-        p[0] = ramp_[kRampBlue + i];
+-        p[1] = ramp_[kRampGreen + i];
+-        p[2] = ramp_[kRampRed + i];
++        p[0] = Brighten(ramp_[kRampBlue + i]);
++        p[1] = Brighten(ramp_[kRampGreen + i]);
++        p[2] = Brighten(ramp_[kRampRed + i]);
+         p[3] = 255;
+-        identity &= ramp_[kRampRed + i] == i && ramp_[kRampGreen + i] == i && ramp_[kRampBlue + i] == i;
++        identity &= p[2] == i && p[1] == i && p[0] == i;
+     }
+     gamma_ = !identity;
+     Transition(lut_.Get(), lut_state_, D3D12_RESOURCE_STATE_COPY_DEST);
+@@ -2732,7 +3353,10 @@
+     cl_->RSSetViewports(1, &vp);
+     cl_->RSSetScissorRects(1, &scissor);
+     Transition(t.res.Get(), t.state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+-    Blit(t.res.Get(), t.fmt, uv, {.gamma = gamma_});
++    // sharpening on the frame as shown: [graphics] sharpening, 0 the original picture
++    float sharpen = g_sharpen_off ? 0.0f : std::min(app::Get().sharpening, 100u) / 100.0f;
++    Blit(t.res.Get(), t.fmt, uv,
++         {.gamma = gamma_, .sharpen = sharpen, .texel = {1.0f / float(std::max(t.w, 1u)), 1.0f / float(std::max(t.h, 1u))}});
+ }
+ 
+ void D3D12Backend::RenderUi() {
+@@ -2805,18 +3429,40 @@
+ void LogPerf() {
+     static PerfClock::time_point perf_start = PerfClock::now();
+     static uint64_t perf_frames = 0;
++    // a frame that took twice a 60 Hz frame or more: what it spent its time on, against the frame before
++    static PerfClock::time_point last_frame = PerfClock::now();
++    static Perf before;
++    double frame_ms = PerfMs(last_frame);
++    last_frame = PerfClock::now();
++    if (frame_ms > 33.0 && perf_frames) {
++        const Perf& p = g_perf;
++        double host = (p.draw + p.clear + p.copy + p.present + p.sync) - (before.draw + before.clear + before.copy +
++                                                                          before.present + before.sync);
++        LOGR("perf: slow frame %.1f ms | compile %.1f ms (%llu shaders), pipelines %.1f ms (%llu), texture upload "
++             "%.1f ms (%llu, %.2f MB, %llu new), resources made %.1f ms (%llu targets), ring full %.1f ms (%llu), "
++             "assemble %.1f, bind %.1f, draw %.1f ms (%llu draws), sync %.1f, swap %.1f | title and other %.1f ms",
++             frame_ms, p.compile - before.compile, (unsigned long long)(p.shaders - before.shaders), p.pso - before.pso,
++             (unsigned long long)(p.psos - before.psos), p.texup - before.texup,
++             (unsigned long long)(p.texups - before.texups), (p.texup_bytes - before.texup_bytes) / 1048576.0,
++             (unsigned long long)(p.newtex - before.newtex), p.create - before.create,
++             (unsigned long long)(p.targets - before.targets), p.flush - before.flush,
++             (unsigned long long)(p.flushes - before.flushes), p.assemble - before.assemble, p.bind - before.bind,
++             p.draw - before.draw, (unsigned long long)(p.draws - before.draws), p.sync - before.sync,
++             p.swap - before.swap, frame_ms - host);
++    }
++    before = g_perf;
+     perf_frames++;
+     double el = PerfMs(perf_start);
+     if (el >= 1000.0) {
+         Perf& p = g_perf;
+         double n = double(perf_frames);
+         double host = p.draw + p.clear + p.copy + p.present + p.sync;
+-        LOGI("perf: %.1f fps %.2f ms/frame | host %.2f (draw %.2f: assemble %.2f bind %.2f [check %.2f, upload %.2f] "
++        LOGR("perf: %.1f fps %.2f ms/frame | host %.2f (draw %.2f: assemble %.2f bind %.2f [check %.2f, upload %.2f] "
+              "compile %.2f; clear %.2f copy %.2f sync %.2f present %.2f [swap %.2f wait %.2f]) other %.2f",
+              n * 1000.0 / el, el / n, host / n, p.draw / n, p.assemble / n, p.bind / n, p.sig / n, p.texup / n,
+              p.compile / n, p.clear / n, p.copy / n, p.sync / n, p.present / n, p.swap / n, p.wait / n,
+              (el - host) / n);
+-        LOGI("perf: title thread per frame: recording %.2f ms, waiting %.2f ms (%.1f waits: read-back %.2f "
++        LOGR("perf: title thread per frame: recording %.2f ms, waiting %.2f ms (%.1f waits: read-back %.2f "
+              "resource %.2f fence %.2f flush %.2f copy %.2f, next frame %.2f) | read-backs waited for: %.1f lock, "
+              "%.1f NOOVERWRITE",
+              g_perf_capture_ns.exchange(0) / n / 1e6, g_perf_wait_ns.exchange(0) / n / 1e6,
+@@ -2825,7 +3471,7 @@
+              g_perf_wait_kind_ns[3].exchange(0) / n / 1e6, g_perf_wait_kind_ns[4].exchange(0) / n / 1e6,
+              g_perf_wait_kind_ns[5].exchange(0) / n / 1e6, g_perf_sync_block.exchange(0) / n,
+              g_perf_sync_late.exchange(0) / n);
+-        LOGI("perf: per frame %.0f draws (%.0f raw) %.0fk verts %.1f MB upload %.1f overflow | %.0f checks %.2f MB "
++        LOGR("perf: per frame %.0f draws (%.0f raw) %.0fk verts %.1f MB upload %.1f overflow | %.0f checks %.2f MB "
+              "hashed | %.1f tex uploads %.2f MB, %.1f new tex, %.1f new targets, %.1f target uploads, %.1f shrinks, "
+              "%.1f read-backs %.1f late | %llu shaders %llu psos this second",
+              p.draws / n, p.raw / n, p.verts / n / 1000.0, p.upload / n / 1048576.0, p.overflow / n, p.sigs / n,
+@@ -2833,6 +3479,7 @@
+              p.targets / n, p.rtups / n, p.shrinks / n, p.syncs / n, p.lates / n,
+              (unsigned long long)p.shaders, (unsigned long long)p.psos);
+         g_perf = Perf{};
++        before = Perf{};
+         perf_start = PerfClock::now();
+         perf_frames = 0;
+     }
+@@ -2849,6 +3496,7 @@
+     Target* t = EnsureTarget(front, false);
+     if (t && LatchCpuWrite(*t)) UploadTarget(*t, front);
+     if (t) Resolve(*t);
++    if (t && g_screenshot.exchange(false)) Screenshot(*t);
+     if (ramp_dirty_) UploadGammaRamp();
+     Transition(lut_.Get(), lut_state_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+ 
+@@ -2873,11 +3521,17 @@
+ void D3D12Backend::ApplySettings() {
+     float want = app::RenderScale(guest_h_);
+     bool remake = ext_ && ext_->Settings();
+-    if (std::fabs(want - scale_) > 1e-4f || remake) {
++    uint32_t samples = PickSamples();
++    if (std::fabs(want - scale_) > 1e-4f || remake || samples != samples_) {
+         Flush();
+-        for (auto& [key, tg] : targets_) (tg.depth ? free_dsv_ : free_rtv_).push_back(tg.view);
++        for (auto& [key, tg] : targets_) {
++            (tg.depth ? free_dsv_ : free_rtv_).push_back(tg.view);
++            if (tg.ms) (tg.depth ? free_dsv_ : free_rtv_).push_back(tg.ms_view);
++        }
+         targets_.clear();
+         scale_ = want;
++        samples_ = samples;
++        ms_ok_.clear();
+         if (ext_) ext_->Reset(*this);
+         bound_rt_ = bound_ds_ = nullptr;
+     }
+@@ -3136,6 +3790,7 @@
+ }
+ 
+ void D3D12Backend::CapSave(Target& t, const char* name) {
++    ReadyRes(t);
+     DXGI_FORMAT fmt = t.depth ? DXGI_FORMAT_R24_UNORM_X8_TYPELESS : t.fmt;
+     float mul = t.depth ? 1 : t.range;
+     CapSave({.res = t.res.Get(), .state = &t.state, .fmt = fmt, .w = t.gw, .h = t.gh, .mul = mul}, name);
+@@ -3162,6 +3817,7 @@
+ 
+ void D3D12Backend::Capture(Target& t, const char* tag, float mul) {
+     if (!cap_) return;
++    ReadyRes(t);
+     char name[32];
+     snprintf(name, sizeof(name), "%04u_%s_%08X", cap_i_, tag, t.data);
+     CapSave({.res = t.res.Get(), .state = &t.state, .fmt = t.fmt, .w = t.gw, .h = t.gh, .mul = mul}, name);
+@@ -3169,6 +3825,7 @@
+ 
+ void D3D12Backend::SetGamma(const uint8_t* ramp) {
+     std::memcpy(ramp_, ramp, sizeof(ramp_));
++    ramp_set_ = true;
+     ramp_dirty_ = true;
+ }
+ 
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/runtime/gpu/ext.h ../game/sdk/runtime/gpu/ext.h
+--- XboxXBE-Recomp/runtime/gpu/ext.h	2026-10-12 11:31:38.276172552 -0700
++++ ../game/sdk/runtime/gpu/ext.h	2026-10-13 00:27:31.000780539 -0700
+@@ -36,6 +36,13 @@
+     DXGI_FORMAT fmt = DXGI_FORMAT_B8G8R8A8_UNORM;
+     float range = 1;         // colour held divided by it until the extension resolves the target
+     uint64_t tag = ~0ull;    // the extension's
++    // anti-aliasing: the multisampled twin draws go to, for targets at the frame's size; res is what everything else
++    // reads, resolved from it when ms_new, and written past it (uploads, copies) when res_new
++    Microsoft::WRL::ComPtr<ID3D12Resource> ms;
++    uint32_t ms_view = 0;
++    D3D12_RESOURCE_STATES ms_state = D3D12_RESOURCE_STATE_COMMON;
++    bool ms_new = false;   // ms holds draws res lacks
++    bool res_new = false;  // res holds writes ms lacks
+ };
+ 
+ // what the renderer lends an extension, on the render thread
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/runtime/gpu/png.cpp ../game/sdk/runtime/gpu/png.cpp
+--- XboxXBE-Recomp/runtime/gpu/png.cpp	1969-12-31 16:00:00.000000000 -0800
++++ ../game/sdk/runtime/gpu/png.cpp	2026-10-12 22:06:49.743827835 -0700
+@@ -0,0 +1,19 @@
++// stb_image and stb_image_write for texture packs: PNG only
++#define STB_IMAGE_IMPLEMENTATION
++#define STBI_ONLY_PNG
++#define STBI_NO_STDIO
++#define STB_IMAGE_WRITE_IMPLEMENTATION
++#define STBI_WRITE_NO_STDIO
++#if defined(__clang__) || defined(__GNUC__)
++#pragma GCC diagnostic push
++#pragma GCC diagnostic ignored "-Wunused-function"
++#pragma GCC diagnostic ignored "-Wsign-compare"
++#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
++#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
++#pragma GCC diagnostic ignored "-Wunused-parameter"
++#endif
++#include "gpu/stb/stb_image.h"
++#include "gpu/stb/stb_image_write.h"
++#if defined(__clang__) || defined(__GNUC__)
++#pragma GCC diagnostic pop
++#endif
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/runtime/gpu/render_thread.cpp ../game/sdk/runtime/gpu/render_thread.cpp
+--- XboxXBE-Recomp/runtime/gpu/render_thread.cpp	2026-10-12 11:31:38.276172552 -0700
++++ ../game/sdk/runtime/gpu/render_thread.cpp	2026-10-12 20:11:44.877753812 -0700
+@@ -41,7 +41,7 @@
+ 
+ enum class WaitFor : uint8_t { ReadBack, Resource, Fence, Flush, Copy, Frame, Count };
+ 
+-enum class Op : uint8_t { State, Draw, Clear, Copy, Present, Sync, RecordLate, Flush, Gamma };
++enum class Op : uint8_t { State, Draw, Clear, Copy, Present, Sync, RecordLate, Flush, Gamma, Query };
+ 
+ struct Cmd {
+     Op op;
+@@ -212,6 +212,12 @@
+         cur_->cmds.push_back(c);
+     }
+ 
++    // in order with the draws; the result straight from the inner backend, which keeps its own lock for it
++    void BeginQuery() override { Query(0, 1); }
++    void EndQuery(uint32_t index) override { Query(index, 0); }
++    bool QueryResult(uint32_t index, uint32_t& pixels) override { return inner_->QueryResult(index, pixels); }
++    bool Queries() const override { return inner_->Queries(); }
++
+     uint32_t Fence() override { return uint32_t(cur_->id); }
+     bool FencePending(uint32_t fence) override { return fence > done_.load(); }
+     void WaitFence(uint32_t fence) override { Wait(fence, WaitFor::Fence, "fence"); }
+@@ -225,6 +231,13 @@
+     }
+ 
+ private:
++    void Query(uint32_t index, uint32_t begin) {
++        Cmd c{Op::Query};
++        c.a = index;
++        c.b = begin;
++        cur_->cmds.push_back(c);
++    }
++
+     Batch* NewBatch() {
+         Batch* b;
+         {
+@@ -431,6 +444,10 @@
+             case Op::RecordLate: inner_->RecordLate(c.a); break;
+             case Op::Flush: inner_->Flush(); break;
+             case Op::Gamma: inner_->SetGamma(data); break;
++            case Op::Query:
++                if (c.b) inner_->BeginQuery();
++                else inner_->EndQuery(c.a);
++                break;
+         }
+     }
+ 
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/runtime/gpu/texture_pack.cpp ../game/sdk/runtime/gpu/texture_pack.cpp
+--- XboxXBE-Recomp/runtime/gpu/texture_pack.cpp	1969-12-31 16:00:00.000000000 -0800
++++ ../game/sdk/runtime/gpu/texture_pack.cpp	2026-10-12 22:17:44.992266729 -0700
+@@ -0,0 +1,407 @@
++#include "gpu/texture_pack.h"
++
++#include <algorithm>
++#include <condition_variable>
++#include <cstdio>
++#include <cstring>
++#include <deque>
++#include <fstream>
++#include <mutex>
++#include <system_error>
++#include <thread>
++
++#include "gpu/stb/stb_image.h"
++#include "gpu/stb/stb_image_write.h"
++
++namespace gpu::pack {
++
++namespace {
++
++constexpr uint32_t FourCC(char a, char b, char c, char d) {
++    return uint32_t(uint8_t(a)) | uint32_t(uint8_t(b)) << 8 | uint32_t(uint8_t(c)) << 16 | uint32_t(uint8_t(d)) << 24;
++}
++constexpr uint32_t kMagic = FourCC('D', 'D', 'S', ' ');
++constexpr uint32_t kDxt1 = FourCC('D', 'X', 'T', '1'), kDxt3 = FourCC('D', 'X', 'T', '3'),
++                   kDxt5 = FourCC('D', 'X', 'T', '5'), kDx10 = FourCC('D', 'X', '1', '0');
++// DDS_HEADER, offsets after the magic
++constexpr size_t kHeaderBytes = 124, kHdrFlags = 4, kHdrHeight = 8, kHdrWidth = 12, kHdrPitch = 16, kHdrMips = 24,
++                 kPfSize = 72, kPfFlags = 76, kPfFourCC = 80, kPfBits = 84, kPfR = 88, kPfG = 92, kPfB = 96,
++                 kPfA = 100, kHdrCaps = 104;
++constexpr uint32_t kFlagsBase = 0x1 | 0x2 | 0x4 | 0x1000;  // CAPS HEIGHT WIDTH PIXELFORMAT
++constexpr uint32_t kFlagPitch = 0x8, kFlagMips = 0x20000, kFlagLinear = 0x80000;
++constexpr uint32_t kPfAlpha = 0x1, kPfFourCCFlag = 0x4, kPfRgb = 0x40;
++constexpr uint32_t kCapsTexture = 0x1000, kCapsComplex = 0x8, kCapsMipmap = 0x400000;
++constexpr size_t kDx10Bytes = 20;
++constexpr uint32_t kDimension2D = 3;
++
++void Put(std::vector<uint8_t>& b, size_t at, uint32_t v) { std::memcpy(&b[at], &v, 4); }
++uint32_t Get(const std::vector<uint8_t>& b, size_t at) {
++    uint32_t v;
++    std::memcpy(&v, &b[at], 4);
++    return v;
++}
++
++bool Block(Format f) {
++    return f == Format::BC1 || f == Format::BC2 || f == Format::BC3 ||
++           f == Format::BC7;
++}
++
++// a DXGI format from a DX10 header, its sRGB variants read as UNORM
++Format FromDxgi(uint32_t f) {
++    switch (f) {
++        case 28: case 29: return Format::RGBA8;
++        case 71: case 72: return Format::BC1;
++        case 74: case 75: return Format::BC2;
++        case 77: case 78: return Format::BC3;
++        case 87: case 91: return Format::BGRA8;
++        case 98: case 99: return Format::BC7;
++        default: return Format::Unknown;
++    }
++}
++
++}  // namespace
++
++bool Supported(Format f) {
++    return Block(f) || f == Format::BGRA8 || f == Format::RGBA8;
++}
++
++uint32_t RowBytes(Format f, uint32_t w) {
++    w = std::max(w, 1u);
++    if (!Block(f)) return w * 4;
++    uint32_t blocks = (w + 3) / 4;
++    return blocks * (f == Format::BC1 ? 8 : 16);
++}
++
++uint32_t Rows(Format f, uint32_t h) {
++    h = std::max(h, 1u);
++    return Block(f) ? (h + 3) / 4 : h;
++}
++
++std::string Name(uint64_t hash) {
++    char b[17];
++    std::snprintf(b, sizeof(b), "%016llX", static_cast<unsigned long long>(hash));
++    return b;
++}
++
++std::string PngName(uint32_t width, uint32_t height, uint64_t hash) {
++    char b[64];
++    std::snprintf(b, sizeof(b), "%ux%u_%016llx.png", width, height, static_cast<unsigned long long>(hash));
++    return b;
++}
++
++namespace {
++
++bool ReadFile(const std::filesystem::path& file, std::vector<uint8_t>& out) {
++    std::ifstream f(file, std::ios::binary);
++    if (!f) return false;
++    out.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
++    return true;
++}
++
++// one level down: each texel the mean of the (up to) four above it
++std::vector<uint8_t> Halve(const std::vector<uint8_t>& src, uint32_t w, uint32_t h, uint32_t& nw, uint32_t& nh) {
++    nw = std::max(w / 2, 1u);
++    nh = std::max(h / 2, 1u);
++    std::vector<uint8_t> dst(size_t(nw) * nh * 4);
++    for (uint32_t y = 0; y < nh; y++)
++        for (uint32_t x = 0; x < nw; x++) {
++            uint32_t x0 = std::min(x * 2, w - 1), x1 = std::min(x * 2 + 1, w - 1);
++            uint32_t y0 = std::min(y * 2, h - 1), y1 = std::min(y * 2 + 1, h - 1);
++            for (int c = 0; c < 4; c++) {
++                auto at = [&](uint32_t xx, uint32_t yy) { return uint32_t(src[(size_t(yy) * w + xx) * 4 + c]); };
++                dst[(size_t(y) * nw + x) * 4 + c] = uint8_t((at(x0, y0) + at(x1, y0) + at(x0, y1) + at(x1, y1) + 2) / 4);
++            }
++        }
++    return dst;
++}
++
++// a BC colour block (8 bytes) into 16 RGBA texels; bc1 allows the punch-through black
++void ColourBlock(const uint8_t* b, bool bc1, uint8_t out[16][4]) {
++    uint16_t c0 = uint16_t(b[0] | b[1] << 8), c1 = uint16_t(b[2] | b[3] << 8);
++    uint8_t p[4][4];
++    auto rgb = [](uint16_t c, uint8_t* o) {
++        o[0] = uint8_t((c >> 11 & 31) * 255 / 31);
++        o[1] = uint8_t((c >> 5 & 63) * 255 / 63);
++        o[2] = uint8_t((c & 31) * 255 / 31);
++        o[3] = 255;
++    };
++    rgb(c0, p[0]);
++    rgb(c1, p[1]);
++    if (!bc1 || c0 > c1) {
++        for (int i = 0; i < 3; i++) {
++            p[2][i] = uint8_t((2 * p[0][i] + p[1][i] + 1) / 3);
++            p[3][i] = uint8_t((p[0][i] + 2 * p[1][i] + 1) / 3);
++        }
++        p[2][3] = p[3][3] = 255;
++    } else {
++        for (int i = 0; i < 3; i++) p[2][i] = uint8_t((p[0][i] + p[1][i]) / 2), p[3][i] = 0;
++        p[2][3] = 255;
++        p[3][3] = 0;
++    }
++    uint32_t bits = uint32_t(b[4]) | uint32_t(b[5]) << 8 | uint32_t(b[6]) << 16 | uint32_t(b[7]) << 24;
++    for (int i = 0; i < 16; i++) std::memcpy(out[i], p[bits >> (2 * i) & 3], 4);
++}
++
++struct PendingPng {
++    std::filesystem::path file;
++    uint32_t w, h;
++    std::vector<uint8_t> rgba;
++};
++// the writer thread's queue, never destroyed: the thread may still wait on it while the process exits
++struct Writes {
++    std::mutex lock;
++    std::condition_variable cv;
++    std::deque<PendingPng> queue;
++    bool thread = false;
++};
++Writes& Queue() {
++    static Writes* w = new Writes;
++    return *w;
++}
++
++}  // namespace
++
++bool ToRgba(Format f, uint32_t w, uint32_t h, const std::vector<uint8_t>& level, std::vector<uint8_t>& rgba) {
++    size_t n = size_t(w) * h;
++    rgba.assign(n * 4, 0);
++    if (f == Format::RGBA8 || f == Format::BGRA8) {
++        if (level.size() < n * 4) return false;
++        std::memcpy(rgba.data(), level.data(), n * 4);
++        if (f == Format::BGRA8)
++            for (size_t i = 0; i < n; i++) std::swap(rgba[i * 4], rgba[i * 4 + 2]);
++        return true;
++    }
++    if (f != Format::BC1 && f != Format::BC2 && f != Format::BC3) return false;
++    uint32_t bw = (w + 3) / 4, bh = (h + 3) / 4, bytes = f == Format::BC1 ? 8 : 16;
++    if (level.size() < size_t(bw) * bh * bytes) return false;
++    for (uint32_t by = 0; by < bh; by++)
++        for (uint32_t bx = 0; bx < bw; bx++) {
++            const uint8_t* b = &level[(size_t(by) * bw + bx) * bytes];
++            uint8_t t[16][4];
++            ColourBlock(f == Format::BC1 ? b : b + 8, f == Format::BC1, t);
++            if (f == Format::BC2) {  // 4 bit alpha
++                for (int i = 0; i < 16; i++) t[i][3] = uint8_t((b[i / 2] >> (i & 1) * 4 & 15) * 17);
++            } else if (f == Format::BC3) {  // interpolated alpha
++                uint8_t a[8] = {b[0], b[1]};
++                if (a[0] > a[1]) {
++                    for (int i = 1; i < 7; i++) a[i + 1] = uint8_t(((7 - i) * a[0] + i * a[1] + 3) / 7);
++                } else {
++                    for (int i = 1; i < 5; i++) a[i + 1] = uint8_t(((5 - i) * a[0] + i * a[1] + 2) / 5);
++                    a[6] = 0;
++                    a[7] = 255;
++                }
++                uint64_t bits = 0;
++                for (int i = 0; i < 6; i++) bits |= uint64_t(b[2 + i]) << (8 * i);
++                for (int i = 0; i < 16; i++) t[i][3] = a[bits >> (3 * i) & 7];
++            }
++            for (int i = 0; i < 16; i++) {
++                uint32_t x = bx * 4 + uint32_t(i & 3), y = by * 4 + uint32_t(i >> 2);
++                if (x < w && y < h) std::memcpy(&rgba[(size_t(y) * w + x) * 4], t[i], 4);
++            }
++        }
++    return true;
++}
++
++bool ReadPng(const std::filesystem::path& file, Image& img) {
++    img = Image{};
++    std::vector<uint8_t> bytes;
++    if (!ReadFile(file, bytes) || bytes.empty()) return false;
++    int w = 0, h = 0, comp = 0;
++    stbi_uc* px = stbi_load_from_memory(bytes.data(), int(bytes.size()), &w, &h, &comp, 4);
++    if (!px) return false;
++    if (w <= 0 || h <= 0 || w > 16384 || h > 16384) {
++        stbi_image_free(px);
++        return false;
++    }
++    img.width = uint32_t(w);
++    img.height = uint32_t(h);
++    img.format = Format::RGBA8;
++    img.levels.emplace_back(px, px + size_t(w) * size_t(h) * 4);
++    stbi_image_free(px);
++    for (uint32_t lw = img.width, lh = img.height; lw > 1 || lh > 1;) {
++        uint32_t nw, nh;
++        std::vector<uint8_t> next = Halve(img.levels.back(), lw, lh, nw, nh);
++        img.levels.push_back(std::move(next));
++        lw = nw;
++        lh = nh;
++    }
++    return true;
++}
++
++bool WritePng(const std::filesystem::path& file, uint32_t width, uint32_t height, const std::vector<uint8_t>& rgba) {
++    if (!width || !height || rgba.size() < size_t(width) * height * 4) return false;
++    std::vector<uint8_t> out;
++    auto sink = [](void* ctx, void* data, int size) {
++        auto* v = static_cast<std::vector<uint8_t>*>(ctx);
++        v->insert(v->end(), static_cast<uint8_t*>(data), static_cast<uint8_t*>(data) + size);
++    };
++    if (!stbi_write_png_to_func(sink, &out, int(width), int(height), 4, rgba.data(), int(width * 4))) return false;
++    std::error_code ec;
++    std::filesystem::create_directories(file.parent_path(), ec);
++    // written beside it and moved into place, so a pack maker never sees half a file
++    std::filesystem::path tmp = file;
++    tmp += ".part";
++    {
++        std::ofstream f(tmp, std::ios::binary | std::ios::trunc);
++        if (!f) return false;
++        f.write(reinterpret_cast<const char*>(out.data()), std::streamsize(out.size()));
++        if (!f) return false;
++    }
++    std::filesystem::rename(tmp, file, ec);
++    return !ec;
++}
++
++void WritePngLater(std::filesystem::path file, uint32_t width, uint32_t height, std::vector<uint8_t> rgba) {
++    Writes& q = Queue();
++    std::lock_guard lock(q.lock);
++    q.queue.push_back({std::move(file), width, height, std::move(rgba)});
++    q.cv.notify_one();
++    if (q.thread) return;
++    q.thread = true;
++    std::thread([&q] {
++        for (;;) {
++            PendingPng p;
++            {
++                std::unique_lock lock(q.lock);
++                q.cv.wait(lock, [&q] { return !q.queue.empty(); });
++                p = std::move(q.queue.front());
++                q.queue.pop_front();
++            }
++            std::error_code ec;
++            if (!std::filesystem::exists(p.file, ec)) WritePng(p.file, p.w, p.h, p.rgba);
++        }
++    }).detach();
++}
++
++bool WriteDds(const std::filesystem::path& file, const Image& img) {
++    if (!Supported(img.format) || img.levels.empty() || !img.width || !img.height) return false;
++    bool dx10 = img.format == Format::BC7;
++    std::vector<uint8_t> h(4 + kHeaderBytes + (dx10 ? kDx10Bytes : 0), 0);
++    Put(h, 0, kMagic);
++    const size_t o = 4;
++    uint32_t mips = uint32_t(img.levels.size());
++    bool block = Block(img.format);
++    Put(h, o + 0, kHeaderBytes);
++    Put(h, o + kHdrFlags, kFlagsBase | (block ? kFlagLinear : kFlagPitch) | (mips > 1 ? kFlagMips : 0));
++    Put(h, o + kHdrHeight, img.height);
++    Put(h, o + kHdrWidth, img.width);
++    Put(h, o + kHdrPitch, block ? uint32_t(img.levels[0].size()) : RowBytes(img.format, img.width));
++    Put(h, o + kHdrMips, mips);
++    Put(h, o + kPfSize, 32);
++    switch (img.format) {
++        case Format::BC1: Put(h, o + kPfFlags, kPfFourCCFlag); Put(h, o + kPfFourCC, kDxt1); break;
++        case Format::BC2: Put(h, o + kPfFlags, kPfFourCCFlag); Put(h, o + kPfFourCC, kDxt3); break;
++        case Format::BC3: Put(h, o + kPfFlags, kPfFourCCFlag); Put(h, o + kPfFourCC, kDxt5); break;
++        case Format::BC7: Put(h, o + kPfFlags, kPfFourCCFlag); Put(h, o + kPfFourCC, kDx10); break;
++        default: {
++            bool bgra = img.format == Format::BGRA8;
++            Put(h, o + kPfFlags, kPfRgb | kPfAlpha);
++            Put(h, o + kPfBits, 32);
++            Put(h, o + kPfR, bgra ? 0x00FF0000u : 0x000000FFu);
++            Put(h, o + kPfG, 0x0000FF00u);
++            Put(h, o + kPfB, bgra ? 0x000000FFu : 0x00FF0000u);
++            Put(h, o + kPfA, 0xFF000000u);
++            break;
++        }
++    }
++    Put(h, o + kHdrCaps, kCapsTexture | (mips > 1 ? kCapsComplex | kCapsMipmap : 0));
++    if (dx10) {
++        size_t x = 4 + kHeaderBytes;
++        Put(h, x, uint32_t(img.format));
++        Put(h, x + 4, kDimension2D);
++        Put(h, x + 12, 1);  // array size
++    }
++    std::error_code ec;
++    std::filesystem::create_directories(file.parent_path(), ec);
++    std::ofstream f(file, std::ios::binary);
++    if (!f) return false;
++    f.write(reinterpret_cast<const char*>(h.data()), std::streamsize(h.size()));
++    for (const auto& l : img.levels) f.write(reinterpret_cast<const char*>(l.data()), std::streamsize(l.size()));
++    return bool(f);
++}
++
++bool ReadDds(const std::filesystem::path& file, Image& img) {
++    img = Image{};
++    std::ifstream f(file, std::ios::binary);
++    if (!f) return false;
++    std::vector<uint8_t> b((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
++    if (b.size() < 4 + kHeaderBytes || Get(b, 0) != kMagic) return false;
++    const size_t o = 4;
++    if (Get(b, o) != kHeaderBytes || Get(b, o + kPfSize) != 32) return false;
++    uint32_t w = Get(b, o + kHdrWidth), h = Get(b, o + kHdrHeight);
++    uint32_t mips = (Get(b, o + kHdrFlags) & kFlagMips) ? std::max(Get(b, o + kHdrMips), 1u) : 1;
++    uint32_t pf = Get(b, o + kPfFlags), cc = Get(b, o + kPfFourCC);
++    size_t data = 4 + kHeaderBytes;
++    Format fmt = Format::Unknown;
++    if (pf & kPfFourCCFlag) {
++        if (cc == kDxt1) fmt = Format::BC1;
++        else if (cc == kDxt3) fmt = Format::BC2;
++        else if (cc == kDxt5) fmt = Format::BC3;
++        else if (cc == kDx10 && b.size() >= data + kDx10Bytes) {
++            fmt = FromDxgi(Get(b, data));
++            if (Get(b, data + 4) != kDimension2D || Get(b, data + 12) > 1) return false;  // 2D, one image
++            data += kDx10Bytes;
++        }
++    } else if ((pf & kPfRgb) && Get(b, o + kPfBits) == 32) {
++        uint32_t r = Get(b, o + kPfR), bl = Get(b, o + kPfB);
++        if (r == 0x00FF0000u && bl == 0x000000FFu) fmt = Format::BGRA8;
++        else if (r == 0x000000FFu && bl == 0x00FF0000u) fmt = Format::RGBA8;
++    }
++    if (!Supported(fmt) || !w || !h || w > 16384 || h > 16384) return false;
++    img.width = w;
++    img.height = h;
++    img.format = fmt;
++    for (uint32_t l = 0; l < mips && l < 15; l++) {
++        uint32_t lw = std::max(w >> l, 1u), lh = std::max(h >> l, 1u);
++        size_t n = size_t(RowBytes(fmt, lw)) * Rows(fmt, lh);
++        if (data + n > b.size()) break;  // a truncated chain keeps the levels it has
++        img.levels.emplace_back(b.begin() + std::ptrdiff_t(data), b.begin() + std::ptrdiff_t(data + n));
++        data += n;
++        if (lw == 1 && lh == 1) break;
++    }
++    return !img.levels.empty();
++}
++
++void Library::Scan(const std::filesystem::path& dir, const std::string& skip) {
++    files_.clear();
++    std::error_code ec;
++    if (!std::filesystem::is_directory(dir, ec)) return;
++    for (auto it = std::filesystem::recursive_directory_iterator(dir, ec);
++         !ec && it != std::filesystem::recursive_directory_iterator(); it.increment(ec)) {
++        if (it.depth() == 0 && it->is_directory(ec) && it->path().filename() == skip) {
++            it.disable_recursion_pending();
++            continue;
++        }
++        if (!it->is_regular_file(ec)) continue;
++        const auto& p = it->path();
++        std::string ext = p.extension().string();
++        std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return char(std::tolower(c)); });
++        std::string stem = p.stem().string();
++        if ((ext != ".dds" && ext != ".png") || stem.size() < 16) continue;
++        auto hex = [&](size_t at, uint64_t& h) {
++            h = 0;
++            for (size_t i = at; i < at + 16; i++) {
++                char c = stem[i];
++                uint32_t v = c >= '0' && c <= '9' ? c - '0' : c >= 'a' && c <= 'f' ? c - 'a' + 10 : c >= 'A' && c <= 'F' ? c - 'A' + 10 : 99;
++                if (v >= 16) return false;
++                h = h << 4 | v;
++            }
++            return true;
++        };
++        auto sep = [](char c) { return c == '_' || c == '-' || c == ' '; };
++        uint64_t h;
++        size_t tail = stem.size() - 16;
++        // ROTK Fix's names end in the 16 digits (256x64_0123456789abcdef, any prefix); older ones here began with them
++        if ((hex(tail, h) && (tail == 0 || sep(stem[tail - 1]))) || (hex(0, h) && (stem.size() == 16 || sep(stem[16]))))
++            files_.emplace_back(h, p);
++    }
++    std::sort(files_.begin(), files_.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
++}
++
++const std::filesystem::path* Library::Find(uint64_t hash) const {
++    auto it = std::lower_bound(files_.begin(), files_.end(), hash,
++                               [](const auto& e, uint64_t h) { return e.first < h; });
++    return it != files_.end() && it->first == hash ? &it->second : nullptr;
++}
++
++}  // namespace gpu::pack
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/runtime/gpu/texture_pack.h ../game/sdk/runtime/gpu/texture_pack.h
+--- XboxXBE-Recomp/runtime/gpu/texture_pack.h	1969-12-31 16:00:00.000000000 -0800
++++ ../game/sdk/runtime/gpu/texture_pack.h	2026-10-12 22:06:08.279464995 -0700
+@@ -0,0 +1,54 @@
++#pragma once
++// Texture packs: the game's textures written out as PNG files named by a hash of their contents, and PNG or DDS
++// files with those names loaded in their place, at any size. The layout and names are ROTK Fix's, so one guide covers
++// both: textures/dump/<w>x<h>_<16 hex digits>.png, and packs anywhere under textures/replace/ whose names end in the
++// same 16 digits (a prefix is allowed: hud_health_256x64_0123456789abcdef.png). A DDS file keeps its own mip levels;
++// a PNG gets them made.
++#include <cstdint>
++#include <filesystem>
++#include <string>
++#include <vector>
++
++namespace gpu::pack {
++
++// the formats a file may hold, all UNORM: 32 bit BGRA or RGBA, BC1, BC2, BC3, BC7. Values are DXGI's.
++enum class Format : uint32_t { Unknown = 0, RGBA8 = 28, BC1 = 71, BC2 = 74, BC3 = 77, BGRA8 = 87, BC7 = 98 };
++
++struct Image {
++    uint32_t width = 0, height = 0;
++    Format format = Format::Unknown;
++    std::vector<std::vector<uint8_t>> levels;  // level 0 first, rows tightly packed (block rows for BC formats)
++};
++
++bool Supported(Format f);
++// bytes of one row (one row of 4x4 blocks for BC formats) and the number of rows of a w x h level
++uint32_t RowBytes(Format f, uint32_t w);
++uint32_t Rows(Format f, uint32_t h);
++
++bool WriteDds(const std::filesystem::path& file, const Image& img);
++bool ReadDds(const std::filesystem::path& file, Image& img);
++
++// the file name a texture's contents go by: 16 hex digits, and the dump's <w>x<h>_<16 lower case hex digits>.png
++std::string Name(uint64_t hash);
++std::string PngName(uint32_t width, uint32_t height, uint64_t hash);
++
++// an RGBA picture as PNG: read with a full chain of mip levels made by halving (RGBA8), written from level 0
++bool ReadPng(const std::filesystem::path& file, Image& img);
++bool WritePng(const std::filesystem::path& file, uint32_t width, uint32_t height, const std::vector<uint8_t>& rgba);
++// written on a thread of its own, so a dump does not stall the frame; a file that exists is left alone
++void WritePngLater(std::filesystem::path file, uint32_t width, uint32_t height, std::vector<uint8_t> rgba);
++// level 0 of a texture as RGBA8, rows packed: from BGRA8, RGBA8, BC1, BC2 or BC3; false for another format
++bool ToRgba(Format f, uint32_t width, uint32_t height, const std::vector<uint8_t>& level, std::vector<uint8_t>& rgba);
++
++// replacement files (.png, .dds) under a folder and its subfolders, by hash; scanned once
++class Library {
++public:
++    void Scan(const std::filesystem::path& dir, const std::string& skip = "dump");  // skip: a subfolder left out
++    const std::filesystem::path* Find(uint64_t hash) const;
++    size_t Size() const { return files_.size(); }
++
++private:
++    std::vector<std::pair<uint64_t, std::filesystem::path>> files_;  // sorted by hash
++};
++
++}  // namespace gpu::pack
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/runtime/gpu/vertex.cpp ../game/sdk/runtime/gpu/vertex.cpp
+--- XboxXBE-Recomp/runtime/gpu/vertex.cpp	2026-10-12 11:31:38.276172552 -0700
++++ ../game/sdk/runtime/gpu/vertex.cpp	2026-10-12 22:18:19.933120619 -0700
+@@ -6,6 +6,7 @@
+ #include <dxgiformat.h>
+ 
+ #include "core/log.h"
++#include "gpu/texture.h"
+ #include "kernel/kernel.h"
+ 
+ namespace gpu {
+@@ -440,6 +441,37 @@
+     vs.stream_stride[0] = off;
+ }
+ 
++ScreenSpaceHook g_screen_space_hook = nullptr;
++ScreenSpaceTest g_screen_space_test = nullptr;
++ScreenSpacePlace g_screen_space_place = nullptr;
++
++namespace {
++// x of the position register (v0, screen pixels) pulled towards the target's centre by f; a draw as wide as the
++// target (fades, full screen passes, backgrounds) is left alone
++void SqueezeScreenX(const State& s, const int* regs, int nregs, float f, Assembled& out) {
++    int k = 0;
++    while (k < nregs && regs[k] != 0) k++;
++    if (k == nregs || !out.vertex_count) return;
++    uint32_t w, h;
++    SurfaceSize(s.rt, w, h);
++    float lo = 1e30f, hi = -1e30f, ylo = 1e30f, yhi = -1e30f;
++    for (uint32_t v = 0; v < out.vertex_count; v++) {
++        const float* p = &out.vertices[(size_t(v) * nregs + k) * 4];
++        lo = std::min(lo, p[0]);
++        hi = std::max(hi, p[0]);
++        ylo = std::min(ylo, p[1]);
++        yhi = std::max(yhi, p[1]);
++    }
++    if (hi - lo >= 0.9f * float(w)) return;
++    float a = f, b = float(w) / 2 * (1 - f);
++    if (g_screen_space_place) g_screen_space_place(lo, hi, ylo, yhi, float(w), f, a, b);
++    for (uint32_t v = 0; v < out.vertex_count; v++) {
++        float& x = out.vertices[(size_t(v) * nregs + k) * 4];
++        x = a * x + b;
++    }
++}
++}  // namespace
++
+ bool Assemble(const State& s, uint32_t prim, uint32_t start, uint32_t count, const uint8_t* ip, Assembled& out) {
+     ResetAssembled(out);
+     if (!count || prim < 1 || prim > 10) return false;
+@@ -466,10 +498,14 @@
+     if (!nregs) return false;
+     Inputs inputs = {*layout, regs, nregs};
+ 
++    // a game's screen space squeeze (a 4:3 HUD kept in proportion on a 16:9 display) needs its own copy to change
++    float squeeze = g_screen_space_hook ? g_screen_space_hook(s) : 1.0f;
+     // the guest's own vertices when the input assembler can read every element of them
+-    bool raw = kRawVertices && RawReadable(s, inputs);
++    bool raw = kRawVertices && squeeze == 1.0f && RawReadable(s, inputs);
+     if (raw) return AssembleRaw(s, inputs, d, out);
+-    return AssembleConverted(s, inputs, d, out);
++    bool ok = AssembleConverted(s, inputs, d, out);
++    if (ok && squeeze != 1.0f) SqueezeScreenX(s, regs, nregs, squeeze, out);
++    return ok;
+ }
+ 
+ }  // namespace gpu
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/runtime/gpu/vertex.h ../game/sdk/runtime/gpu/vertex.h
+--- XboxXBE-Recomp/runtime/gpu/vertex.h	2026-10-12 11:31:38.276172552 -0700
++++ ../game/sdk/runtime/gpu/vertex.h	2026-10-12 22:18:19.932562735 -0700
+@@ -55,6 +55,20 @@
+ // the FVF bits translated to the register layout the XDK's declarations use
+ void FvfInputs(uint32_t fvf, VertexShader& out);
+ 
++// for a draw, how much a game wants its screen space x (v0, pixels) pulled towards the target's centre: 1 leaves
++// it, 0.75 fits a 4:3 layout into the middle of a 16:9 picture. Set by game code; null for none.
++using ScreenSpaceHook = float (*)(const State& s);
++extern ScreenSpaceHook g_screen_space_hook;
++// where a squeezed draw goes: given its x and y extent (pixels), the target width and the squeeze, the game sets
++// x' = a * x + b. Null, or not set: pulled towards the centre (a = squeeze, b = width / 2 * (1 - squeeze)).
++using ScreenSpacePlace = void (*)(float x0, float x1, float y0, float y1, float width, float squeeze, float& a,
++                                  float& b);
++extern ScreenSpacePlace g_screen_space_place;
++// a draw in screen space (HUD, menus, text), as the game tells: texture dumps name the textures such draws use once
++// in the log, so the pieces of a HUD are easy to find for a texture pack. Null for none.
++using ScreenSpaceTest = bool (*)(const State& s);
++extern ScreenSpaceTest g_screen_space_test;
++
+ // false when there is nothing to draw
+ // indices: the title's 16 bit indices, null for an unindexed draw
+ bool Assemble(const State& s, uint32_t prim, uint32_t start, uint32_t count, const uint8_t* indices, Assembled& out);
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/runtime/xdk/bink.cpp ../game/sdk/runtime/xdk/bink.cpp
+--- XboxXBE-Recomp/runtime/xdk/bink.cpp	2026-10-12 11:31:38.276976103 -0700
++++ ../game/sdk/runtime/xdk/bink.cpp	2026-10-12 12:21:35.872835604 -0700
+@@ -32,7 +32,8 @@
+ X86_EXTERN_FUNC(GUEST_ORIG(BinkDoFrame));
+ X86_FUNC(GUEST(BinkDoFrame)) {
+     uint32_t bink = R32(ctx.esp + 4);
+-    if (bink && CallGuest(ctx, kBinkWait, {bink})) {
++    // titles that pace movies themselves may not link BinkWait (The Two Towers, XDK 4928): no hold then
++    if (HAS_BinkWait && bink && CallGuest(ctx, kBinkWait, {bink})) {
+         std::lock_guard<std::mutex> lock(g_held_lock);
+         g_held.insert(bink);
+         ctx.eax = 0;
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/runtime/xdk/d3d8.cpp ../game/sdk/runtime/xdk/d3d8.cpp
+--- XboxXBE-Recomp/runtime/xdk/d3d8.cpp	2026-10-12 11:31:38.277844975 -0700
++++ ../game/sdk/runtime/xdk/d3d8.cpp	2026-10-12 22:03:14.782469780 -0700
+@@ -1,6 +1,7 @@
+ // Direct3D 8 (XDK 5849) entry points the title calls, implemented on the host renderer.
+ // Resource creation, locking and the XG helpers stay recompiled: they only manage memory.
+ #include <algorithm>
++#include <cstdlib>
+ #include <atomic>
+ #include <chrono>
+ #include <map>
+@@ -20,6 +21,10 @@
+ using namespace kernel;
+ 
+ // configs written before the SDK knew the name
++#ifndef SYM_D3DDevice_DrawIndexedVerticesUP
++#define SYM_D3DDevice_DrawIndexedVerticesUP FFFFFE10
++#define HAS_D3DDevice_DrawIndexedVerticesUP 0
++#endif
+ #ifndef SYM_D3DDevice_BeginPush
+ #define SYM_D3DDevice_BeginPush FFFFFE00
+ #define HAS_D3DDevice_BeginPush 0
+@@ -48,7 +53,11 @@
+ #ifndef XBE_RENDER_THREAD
+ #define XBE_RENDER_THREAD 1
+ #endif
+-constexpr bool kRenderThread = XBE_RENDER_THREAD;
++// XBE_RENDER_THREAD=0 or 1 in the environment overrides the build's choice, to compare the two without a rebuild
++const bool kRenderThread = [] {
++    const char* e = std::getenv("XBE_RENDER_THREAD");
++    return e ? e[0] != '0' : bool(XBE_RENDER_THREAD);
++}();
+ 
+ // D3D globals of this build
+ constexpr uint32_t kDevice = SYM(D3D_Device);        // the static CDevice, g_pDevice points at it
+@@ -73,12 +82,14 @@
+ 
+ gpu::State g_state;
+ std::unique_ptr<gpu::Backend> g_backend;
++uint32_t g_screen_pixels = 640 * 480;  // the back buffer's, for visibility tests a backend cannot count
+ std::recursive_mutex g_lock;
+ 
+ std::unordered_map<uint32_t, std::shared_ptr<gpu::VertexShader>> g_vs;
+ std::unordered_map<uint32_t, std::shared_ptr<gpu::PixelShader>> g_ps;
+ std::array<uint32_t, 3> g_buffers{};  // front, back surfaces
+ uint32_t g_buffer_count = 2;
++bool g_title_surfaces = false;  // the color buffers came from the title's present params
+ uint32_t g_depth = 0;
+ uint32_t g_scratch_push = 0, g_scratch_size = 0;
+ uint32_t g_walk = 0;  // first scratch command not read yet
+@@ -274,19 +285,31 @@
+ 
+     uint32_t color_fmt = gpu::LinearColorFormat(fmt);
+     g_buffer_count = std::min<uint32_t>(count + 1, 3);
+-    for (uint32_t i = 0; i < g_buffer_count; i++) g_buffers[i] = NewSurface(w, h, color_fmt, 4);
+-    g_depth = 0;
+-    if (auto_depth) {
++    // BufferSurfaces[3] (+0x34) and DepthStencilSurface (+0x40): a title may hand the device its own surfaces, which
++    // it then draws into and keeps pointers to (The Two Towers, XDK 4928); the XDK uses them instead of allocating
++    uint32_t own = 0;
++    for (uint32_t i = 0; i < g_buffer_count; i++) {
++        uint32_t t = R32(pp + 0x34 + 4 * i);
++        g_buffers[i] = t ? t : NewSurface(w, h, color_fmt, 4);
++        own += t != 0;
++    }
++    g_title_surfaces = own == g_buffer_count;
++    g_depth = R32(pp + 0x40);
++    if (!g_depth && auto_depth) {
+         uint32_t zf = gpu::LinearDepthFormat(depth_fmt);
+         g_depth = NewSurface(w, h, zf, zf == 0x30 || zf == 0x31 ? 2 : 4);  // 0x30 LIN_D16, 0x31 LIN_F16
+     }
++    if (own || R32(pp + 0x40)) LOGI("d3d: title surfaces: %u color buffers, depth %08X", own, R32(pp + 0x40));
+     if (!g_backend) {
+         g_backend = gpu::CreateBackend();
+-        if (!g_backend->Init(w, h)) LOGE("d3d: renderer init failed");
++        if (!g_backend->Init(w, h))
++            app::Fail(app::kExitNoD3D12, L"Your graphics card or driver doesn't support Direct3D 12, which this "
++                                         L"game needs. Updating the graphics driver may help; the log has the details.");
+         if (kRenderThread) g_backend = gpu::CreateThreadedBackend(std::move(g_backend));
+     }
+     g_state = gpu::State{};
+     g_state.viewport = {0, 0, w, h, 0.0f, 1.0f};
++    g_screen_pixels = w * h;
+     SetDev(kDevRenderTarget, g_buffers[1]);
+     SetDev(kDevDepth, g_depth);
+     SetDev(kDevBackBuffer, g_buffers[1]);
+@@ -511,6 +534,22 @@
+     }
+     if (g_backend) g_backend->Present(SurfaceOf(g_buffers[1]));
+     app::Pace();
++    if (g_title_surfaces) {
++        // surfaces the title supplied (present params +0x34): the title tracks which one is the back buffer itself
++        // (The Two Towers flips an index at each Swap and picks its surface by it), so the surfaces rotate, not their
++        // memory. The presented back buffer becomes the front buffer, and a render target set to the old
++        // back buffer follows to the new one, as the XDK does.
++        uint32_t old_back = g_buffers[1], first = g_buffers[0];
++        for (uint32_t i = 0; i + 1 < g_buffer_count; i++) g_buffers[i] = g_buffers[i + 1];
++        g_buffers[g_buffer_count - 1] = first;
++        if (Dev(kDevRenderTarget) == old_back) SetDev(kDevRenderTarget, g_buffers[1]);
++        SetDev(kDevBackBuffer, g_buffers[1]);
++        SetDev(kDevFrontBuffer, g_buffers[0]);
++        g_state.rt = SurfaceOf(Dev(kDevRenderTarget));
++        uint32_t n = Dev(kDevSwapCount) + 1;
++        SetDev(kDevSwapCount, n);
++        return n;
++    }
+     // like the XDK, the surfaces stay put and their memory rotates: titles keep back buffer pointers and copy its data
+     uint32_t last = g_buffers[g_buffer_count - 1], data = R32(last + 4), lk = R32(last + 8);
+     for (uint32_t i = g_buffer_count - 1; i > 0; i--) {
+@@ -928,6 +967,42 @@
+ 
+ // drawing
+ 
++// Visibility tests: the pixels drawn between Begin and End(index) that pass the depth and stencil tests, read back a
++// frame or more later by index, as the console's GPU reports them. Before a test has finished it reads as nothing
++// visible, with D3DERR_TESTINCOMPLETE, so a flare or glow fades in rather than flashing on.
++HLE_STDCALL(D3DDevice_BeginVisibilityTest, 0) {
++    std::lock_guard<std::recursive_mutex> lock(g_lock);
++    SyncDeferred();
++    if (g_backend) g_backend->BeginQuery();
++    return 0;
++}
++HLE_STDCALL(D3DDevice_EndVisibilityTest, 1) {
++    std::lock_guard<std::recursive_mutex> lock(g_lock);
++    if (g_backend) g_backend->EndQuery(a[0]);
++    return 0;
++}
++// (index, pixel count out, timestamp out)
++HLE_STDCALL(D3DDevice_GetVisibilityTestResult, 3) {
++    constexpr uint32_t kTestIncomplete = 0x88760834;  // MAKE_D3DHRESULT(2100)
++    uint32_t pixels = 0;
++    bool done;
++    {
++        std::lock_guard<std::recursive_mutex> lock(g_lock);
++        // a backend without queries: everything visible, as before tests were counted
++        done = g_backend && g_backend->QueryResult(a[0], pixels);
++        if (!g_backend || !g_backend->Queries()) {
++            pixels = g_screen_pixels;
++            done = true;
++        }
++    }
++    if (a[1]) W32(a[1], pixels);
++    if (a[2]) {
++        W32(a[2], 0);
++        W32(a[2] + 4, 0);
++    }
++    return done ? 0 : kTestIncomplete;
++}
++
+ HLE_STDCALL(D3DDevice_DrawVertices, 3) {
+     std::lock_guard<std::recursive_mutex> lock(g_lock);
+     SyncDeferred();
+@@ -1097,6 +1172,23 @@
+     return 0;
+ }
+ 
++// DrawIndexedVerticesUP(prim, index count, 16-bit indices, vertices, stride): the vertices the indices reach are
++// copied to the UP ring like DrawVerticesUP's, then drawn indexed (XDK 4928, The Two Towers)
++HLE_STDCALL(D3DDevice_DrawIndexedVerticesUP, 5) {
++    std::lock_guard<std::recursive_mutex> lock(g_lock);
++    uint32_t count = a[1], stride = a[4];
++    if (!g_backend || !count || !stride || !a[2] || !a[3]) return 0;
++    const uint16_t* idx = static_cast<const uint16_t*>(HostPtr(a[2]));
++    uint32_t top = 0;
++    for (uint32_t i = 0; i < count; i++) top = std::max<uint32_t>(top, idx[i]);
++    SyncDeferred();
++    auto stream = g_state.streams[0];
++    g_state.streams[0] = {UpVertices(HostPtr(a[3]), (top + 1) * stride), stride};
++    g_backend->Draw(g_state, a[0], 0, count, reinterpret_cast<const uint8_t*>(idx));
++    g_state.streams[0] = stream;
++    return 0;
++}
++
+ // BeginPush(dwords) hands out room for raw hardware commands, EndPush(end) runs what the title wrote there:
+ // a primitive between two begin/end writes with its vertices inline, any other method as a simple state.
+ HLE_STDCALL(D3DDevice_BeginPush, 1) {
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/runtime/xdk/dsound.cpp ../game/sdk/runtime/xdk/dsound.cpp
+--- XboxXBE-Recomp/runtime/xdk/dsound.cpp	2026-10-12 11:31:38.277844975 -0700
++++ ../game/sdk/runtime/xdk/dsound.cpp	2026-10-12 20:04:38.186508107 -0700
+@@ -6,9 +6,13 @@
+ #include <condition_variable>
+ #include <deque>
+ #include <map>
++#include <string>
++#include <cstdlib>
++#include <cstring>
+ #include <vector>
+ 
+ #include "audio/audio.h"
++#include "audio/reverb.h"
+ #include "xbe/xbe.h"
+ #include "xdk/hle.h"
+ #include "xdk/layout.h"
+@@ -71,6 +75,75 @@
+ #define SYM_DirectSoundUseLightHRTF FFFFFF0B
+ #define HAS_DirectSoundUseLightHRTF 0
+ #endif
++// XDK 4928 (The Two Towers) names, absent from 5849 configs
++#ifndef SYM_IDirectSoundBuffer_PlayEx
++#define SYM_IDirectSoundBuffer_PlayEx FFFFFE40
++#define HAS_IDirectSoundBuffer_PlayEx 0
++#endif
++#ifndef SYM_IDirectSoundBuffer_PauseEx
++#define SYM_IDirectSoundBuffer_PauseEx FFFFFE41
++#define HAS_IDirectSoundBuffer_PauseEx 0
++#endif
++#ifndef SYM_IDirectSoundBuffer_SetPitch
++#define SYM_IDirectSoundBuffer_SetPitch FFFFFE42
++#define HAS_IDirectSoundBuffer_SetPitch 0
++#endif
++#ifndef SYM_IDirectSoundBuffer_SetLFO
++#define SYM_IDirectSoundBuffer_SetLFO FFFFFE43
++#define HAS_IDirectSoundBuffer_SetLFO 0
++#endif
++#ifndef SYM_IDirectSoundBuffer_SetEG
++#define SYM_IDirectSoundBuffer_SetEG FFFFFE44
++#define HAS_IDirectSoundBuffer_SetEG 0
++#endif
++#ifndef SYM_IDirectSoundBuffer_SetConeAngles
++#define SYM_IDirectSoundBuffer_SetConeAngles FFFFFE45
++#define HAS_IDirectSoundBuffer_SetConeAngles 0
++#endif
++#ifndef SYM_IDirectSoundBuffer_SetConeOrientation
++#define SYM_IDirectSoundBuffer_SetConeOrientation FFFFFE46
++#define HAS_IDirectSoundBuffer_SetConeOrientation 0
++#endif
++#ifndef SYM_IDirectSoundBuffer_SetConeOutsideVolume
++#define SYM_IDirectSoundBuffer_SetConeOutsideVolume FFFFFE47
++#define HAS_IDirectSoundBuffer_SetConeOutsideVolume 0
++#endif
++#ifndef SYM_IDirectSoundBuffer_SetMode
++#define SYM_IDirectSoundBuffer_SetMode FFFFFE48
++#define HAS_IDirectSoundBuffer_SetMode 0
++#endif
++#ifndef SYM_IDirectSoundBuffer_SetDistanceFactor
++#define SYM_IDirectSoundBuffer_SetDistanceFactor FFFFFE49
++#define HAS_IDirectSoundBuffer_SetDistanceFactor 0
++#endif
++#ifndef SYM_IDirectSoundBuffer_SetDopplerFactor
++#define SYM_IDirectSoundBuffer_SetDopplerFactor FFFFFE4A
++#define HAS_IDirectSoundBuffer_SetDopplerFactor 0
++#endif
++#ifndef SYM_IDirectSoundBuffer_SetRolloffFactor
++#define SYM_IDirectSoundBuffer_SetRolloffFactor FFFFFE4B
++#define HAS_IDirectSoundBuffer_SetRolloffFactor 0
++#endif
++#ifndef SYM_CDirectSoundStream_SetPitch
++#define SYM_CDirectSoundStream_SetPitch FFFFFE4C
++#define HAS_CDirectSoundStream_SetPitch 0
++#endif
++#ifndef SYM_CDirectSoundStream_SetLFO
++#define SYM_CDirectSoundStream_SetLFO FFFFFE4D
++#define HAS_CDirectSoundStream_SetLFO 0
++#endif
++#ifndef SYM_CDirectSoundStream_SetEG
++#define SYM_CDirectSoundStream_SetEG FFFFFE4E
++#define HAS_CDirectSoundStream_SetEG 0
++#endif
++#ifndef SYM_CDirectSoundStream_SetOutputBuffer
++#define SYM_CDirectSoundStream_SetOutputBuffer FFFFFE4F
++#define HAS_CDirectSoundStream_SetOutputBuffer 0
++#endif
++#ifndef SYM_IDirectSound_CreateSoundStream
++#define SYM_IDirectSound_CreateSoundStream FFFFFE50
++#define HAS_IDirectSound_CreateSoundStream 0
++#endif
+ #ifndef SYM_IDirectSoundStream_SetEG
+ #define SYM_IDirectSoundStream_SetEG FFFFFF0C
+ #define HAS_IDirectSoundStream_SetEG 0
+@@ -126,6 +199,15 @@
+ std::recursive_mutex g_lock;
+ std::map<uint32_t, Voice> g_voices;
+ float g_listener[3] = {}, g_front[3] = {0, 0, 1}, g_top[3] = {0, 1, 0};
++// the I3DL2 mix bin: every voice's send, through the room reverb the console's DSP ran. DSOUND_REVERB=0 leaves it out.
++constexpr uint32_t kI3dl2Bin = 10;
++audio::Reverb g_reverb(audio::kRate);
++bool g_reverb_set = false;  // no room until the title sets its listener
++std::vector<float> g_send;
++bool ReverbOn() {
++    static const bool on = [] { const char* e = std::getenv("DSOUND_REVERB"); return !e || e[0] != '0'; }();
++    return on;
++}
+ // Completed packets' callbacks, run as the XDK runs them: in DirectSoundDoWork on the title's thread, so they never
+ // overlap the title's own stream code. A stream flushed or released runs its own at once, before it is gone.
+ std::deque<Done> g_done;
+@@ -133,6 +215,14 @@
+ thread_local std::vector<Done> t_flushed;  // run by the STREAM call that flushed them, once g_lock is let go
+ std::atomic<int64_t> g_pumped{0};          // the last DirectSoundDoWork, steady ms
+ bool g_started = false;
++std::atomic<int> g_starts{0};  // buffer plays, for DSOUND_STATS
++std::map<std::string, std::pair<int, int>> g_calls;  // DSOUND_STATS: buffer method calls, found and unknown object
++void CountCall(const char* name, bool found) {
++    static const bool on = std::getenv("DSOUND_STATS") != nullptr;
++    if (!on) return;
++    auto& c = g_calls[name];
++    (found ? c.first : c.second)++;
++}
+ uint32_t g_ds = 0;
+ 
+ float Db(int32_t hundredths) { return hundredths <= -10000 ? 0.0f : std::pow(10.0f, hundredths / 2000.0f); }
+@@ -248,6 +338,13 @@
+     }
+ }
+ 
++// the voice's level into the I3DL2 bin, 0 when it sends none
++float SendLevel(const Voice& v) {
++    for (uint32_t s = 0; s < v.nbins; s++)
++        if (v.bin[s] == kI3dl2Bin) return Db(v.bin_mb[kI3dl2Bin]) * v.volume * v.headroom;
++    return 0;
++}
++
+ // a stream goes quiet: the synch hold ends, a started one loses its pause as well
+ void Deactivate(Voice& v) {
+     v.sync = false;
+@@ -257,10 +354,13 @@
+ void Render(float* out, uint32_t frames) {
+     std::memset(out, 0, frames * 2 * sizeof(float));
+     std::lock_guard<std::recursive_mutex> lock(g_lock);
++    bool reverb = g_reverb_set && ReverbOn();
++    if (reverb) g_send.assign(frames, 0.0f);
+     for (auto& [obj, v] : g_voices) {
+         if (v.paused || v.sync || (!v.stream && !v.playing)) continue;
+         float g[2][2];
+         Levels(v, g);
++        float send = reverb ? SendLevel(v) : 0.0f;
+         uint32_t base = v.data + v.play_start;
+         double step = double(v.freq ? v.freq : v.rate) / audio::kRate;
+         for (uint32_t i = 0; i < frames; i++) {
+@@ -317,10 +417,84 @@
+             b += (b1 - b) * t;
+             out[i * 2] += a * g[0][0] + b * g[1][0];
+             out[i * 2 + 1] += a * g[0][1] + b * g[1][1];
++            if (send > 0) g_send[i] += (v.channels > 1 ? 0.5f * (a + b) : a) * send;
+             v.pos += step;
+         }
+     }
+-    for (uint32_t i = 0; i < frames * 2; i++) out[i] = std::clamp(out[i], -1.0f, 1.0f);
++    static const bool stats = std::getenv("DSOUND_STATS") != nullptr;  // send and wet levels, every 2 s below
++    static double send_e = 0, wet_e = 0, dry_e = 0;
++    static int senders = 0, send_mb_min = 0, send_mb_max = -10000;
++    if (stats) {
++        for (uint32_t i = 0; i < frames * 2; i++) dry_e += double(out[i]) * out[i];
++        if (reverb) for (uint32_t i = 0; i < frames; i++) send_e += double(g_send[i]) * g_send[i];
++        for (auto& [obj, v] : g_voices) {
++            bool on = v.stream ? !v.packets.empty() : v.playing;
++            if (!on) continue;
++            for (uint32_t k = 0; k < v.nbins; k++)
++                if (v.bin[k] == kI3dl2Bin) {
++                    senders++;
++                    send_mb_min = std::min(send_mb_min, v.bin_mb[kI3dl2Bin]);
++                    send_mb_max = std::max(send_mb_max, v.bin_mb[kI3dl2Bin]);
++                }
++        }
++    }
++    std::vector<float> before;
++    if (stats) before.assign(out, out + frames * 2);
++    if (reverb && !(g_reverb.Silent() && std::all_of(g_send.begin(), g_send.end(), [](float x) { return x == 0; })))
++        g_reverb.Process(g_send.data(), out, frames);
++    if (!before.empty())
++        for (uint32_t i = 0; i < frames * 2; i++) wet_e += double(out[i] - before[i]) * (out[i] - before[i]);
++    // DSOUND_STATS=1: every 2 s, what the mixer is playing (diagnostics)
++    static uint64_t mixed = 0;
++    static float peak = 0;
++    for (uint32_t i = 0; i < frames * 2; i++) peak = std::max(peak, std::fabs(out[i]));
++    mixed += frames;
++    if (stats && mixed >= 2 * audio::kRate) {
++        mixed = 0;
++        int n = 0, play = 0, pause = 0, sync = 0, d3 = 0, quiet = 0, streams = 0, sactive = 0;
++        for (auto& [obj, v] : g_voices) {
++            n++;
++            if (v.stream) { streams++; sactive += !v.packets.empty(); }
++            bool on = v.stream ? !v.packets.empty() : v.playing;
++            if (!on) continue;
++            play += !v.stream;
++            pause += v.paused;
++            sync += v.sync;
++            float g[2][2];
++            Levels(v, g);
++            float m = std::max({g[0][0], g[0][1], g[1][0], g[1][1]});
++            if (m < 0.01f) quiet++;
++            if (v.is3d && v.mode != 2) {
++                d3++;
++                float d[3] = {v.p[0], v.p[1], v.p[2]};
++                for (int i = 0; i < 3 && v.mode != 1; i++) d[i] -= g_listener[i];
++                if (d3 <= 4)
++                    LOGI("dsound: 3d %08X mode %u dist %.1f min %.1f max %.1f curve %zu gain %.3f vol %.3f", obj,
++                         v.mode, std::sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]), v.min_dist, v.max_dist,
++                         v.curve.size(), m, v.volume);
++            }
++        }
++        auto db = [](double e) { return e > 0 ? 10 * std::log10(e / (2.0 * audio::kRate)) : -999.0; };
++        LOGI("dsound: dry %.1f dB, send %.1f dB, wet %.1f dB, %d voice-blocks sending (%d to %d mB)", db(dry_e),
++             db(send_e), db(wet_e), senders, send_mb_min, send_mb_max);
++        dry_e = send_e = wet_e = 0;
++        senders = 0;
++        send_mb_min = 0;
++        send_mb_max = -10000;
++        LOGI("dsound: %d voices, %d buffers playing (%d paused, %d held), streams %d/%d fed, %d 3d, %d near silent, "
++             "peak %.2f, %d plays", n, play, pause, sync, sactive, streams, d3, quiet, peak, g_starts.exchange(0));
++        peak = 0;
++        std::string calls;
++        for (auto& [k, c] : g_calls) calls += " " + k + "=" + std::to_string(c.first) + (c.second ? "/" + std::to_string(c.second) + "?" : "");
++        g_calls.clear();
++        LOGI("dsound: calls%s", calls.c_str());
++    }
++    // above 0.8 the mix is bent smoothly towards 1 instead of clipped: a busy scene of full scale voices
++    // otherwise distorts
++    for (uint32_t i = 0; i < frames * 2; i++) {
++        float x = std::fabs(out[i]);
++        if (x > 0.8f) out[i] = std::copysign(0.8f + 0.2f * std::tanh((x - 0.8f) / 0.2f), out[i]);
++    }
+ }
+ 
+ int64_t NowMs() {
+@@ -494,7 +668,34 @@
+ HLE_STDCALL(IDirectSound_SetRolloffFactor, 3) { return 0; }
+ HLE_STDCALL(IDirectSound_SetDistanceFactor, 3) { return 0; }
+ HLE_STDCALL(IDirectSound_SetVelocity, 5) { return 0; }
+-HLE_STDCALL(IDirectSound_SetI3DL2Listener, 3) { return 0; }
++// (this, DSI3DL2LISTENER, apply): the room the I3DL2 bin's reverb plays; null leaves it as it is
++HLE_STDCALL(IDirectSound_SetI3DL2Listener, 3) {
++    uint32_t q = a[1];
++    if (!q) return 0;
++    audio::I3dl2 p;
++    p.room = int32_t(R32(q));
++    p.room_hf = int32_t(R32(q + 4));
++    p.room_rolloff = F32(R32(q + 8));
++    p.decay_time = F32(R32(q + 0xC));
++    p.decay_hf_ratio = F32(R32(q + 0x10));
++    p.reflections = int32_t(R32(q + 0x14));
++    p.reflections_delay = F32(R32(q + 0x18));
++    p.reverb = int32_t(R32(q + 0x1C));
++    p.reverb_delay = F32(R32(q + 0x20));
++    p.diffusion = F32(R32(q + 0x24));
++    p.density = F32(R32(q + 0x28));
++    p.hf_reference = F32(R32(q + 0x2C));
++    std::lock_guard<std::recursive_mutex> lock(g_lock);
++    const audio::I3dl2& o = g_reverb.Params();
++    if (!g_reverb_set || std::memcmp(&o, &p, sizeof(p)))
++        LOGR("dsound: room %d hf %d, decay %.2f s hf %.2f, reflections %d at %.3f s, reverb %d at %.3f s, diffusion "
++             "%.0f density %.0f, %.0f Hz%s", p.room, p.room_hf, p.decay_time, p.decay_hf_ratio, p.reflections,
++             p.reflections_delay, p.reverb, p.reverb_delay, p.diffusion, p.density, p.hf_reference,
++             ReverbOn() ? "" : " (reverb off: DSOUND_REVERB=0)");
++    g_reverb.Set(p);
++    g_reverb_set = true;
++    return 0;
++}
+ HLE_STDCALL(IDirectSound_SetPosition, 5) {
+     std::lock_guard<std::recursive_mutex> lock(g_lock);
+     for (int i = 0; i < 3; i++) g_listener[i] = F32(a[1 + i]);
+@@ -594,6 +795,7 @@
+     HLE_STDCALL(IDirectSoundBuffer_##name, nargs) {         \
+         std::lock_guard<std::recursive_mutex> lock(g_lock); \
+         Voice* v = Find(a[0]);                              \
++        CountCall(#name, v != nullptr);                     \
+         return v ? buf_##name(*v, a) : 0x80004005u;         \
+     }                                                       \
+     static uint32_t buf_##name([[maybe_unused]] Voice& v, [[maybe_unused]] const Args& a)
+@@ -623,7 +825,9 @@
+     return 0;
+ }
+ BUFFER(Play, 4) {
++    g_starts++;
+     v.playing = true;
++    v.paused = false;
+     v.looping = a[3] & 1;
+     if (a[3] & 2) v.pos = 0;
+     v.sync = a[3] & 4;
+@@ -631,11 +835,13 @@
+ }
+ BUFFER(Stop, 1) {
+     v.playing = false;
++    v.paused = false;
+     return 0;
+ }
+ // (this, time low, time high, flags): stops now, the release envelope is not reproduced
+ BUFFER(StopEx, 4) {
+     v.playing = false;
++    v.paused = false;
+     return 0;
+ }
+ // (this, start, length) in bytes, 0 length plays to the end. The loop becomes the whole region.
+@@ -739,12 +945,13 @@
+ 
+ // streams, the object carries the XDK's own vtable
+ 
+-HLE_STDCALL(DirectSoundCreateStream, 2) {
++// (desc, stream out): shared by DirectSoundCreateStream and IDirectSound_CreateSoundStream; 4928 titles may
++// link only the method
++static uint32_t NewStream(uint32_t desc, uint32_t out) {
+     XDK_REQUIRE("dsound", XDK_KEY(CDirectSoundStream_Vtable), XDK_KEY(CDirectSoundStream_Vtable2),
+                 XDK_DATA(DSound_StreamVtable), XDK_DATA(DSound_StreamVtable2));
+     std::lock_guard<std::recursive_mutex> lock(g_lock);
+     Start();
+-    uint32_t desc = a[0];
+     uint32_t obj = mem::AllocSystem(0x80);
+     std::memset(HostPtr(obj), 0, 0x80);
+     W32(obj + XDK_CDirectSoundStream_Vtable, kStreamVtable);
+@@ -760,9 +967,10 @@
+     SetBins(v, R32(desc + 20));
+     v.is3d = flags & 0x10;  // DSBCAPS_CTRL3D
+     v.headroom = DefaultHeadroom(flags);
+-    W32(a[1], obj);
++    W32(out, obj);
+     return 0;
+ }
++HLE_STDCALL(DirectSoundCreateStream, 2) { return NewStream(a[0], a[1]); }
+ 
+ #define STREAM(name, nargs)                                     \
+     static uint32_t str_##name(Voice& v, const Args& a);        \
+@@ -891,3 +1099,55 @@
+ }
+ STREAM(SetVelocity, 5) { return 0; }
+ STREAM(SetI3DL2Source, 3) { return 0; }
++
++// ---- XDK 4928 additions (The Two Towers). Arg counts from the 4928 code's ret imm16. ----
++// lPitch is in 1/4096 octave relative to 48 kHz (XAudioCalculatePitch's inverse)
++static uint32_t PitchToHz(uint32_t pitch) {
++    return uint32_t(std::lround(48000.0 * std::exp2(double(int32_t(pitch)) / 4096.0)));
++}
++// (this, time low, time high, flags): plays now, the start time is not reproduced
++BUFFER(PlayEx, 4) {
++    g_starts++;
++    v.playing = true;
++    v.paused = false;
++    v.looping = a[3] & 1;
++    if (a[3] & 2) v.pos = 0;
++    v.sync = a[3] & 4;
++    return 0;
++}
++// (this, time low, time high, DSBPAUSE_*): 0 resumes, 1 pauses, 2 holds for SynchPlayback. Pausing keeps the
++// buffer playing (GetStatus still reports it, the position and loop are kept), and resuming a buffer that is not
++// playing does not start it: The Two Towers pauses and resumes all 48 of its voices around movies and cutscenes,
++// idle ones included.
++BUFFER(PauseEx, 4) {
++    v.paused = a[3] == 1;
++    v.sync = a[3] == 2 && v.playing;
++    return 0;
++}
++BUFFER(SetPitch, 2) {
++    v.freq = PitchToHz(a[1]);
++    return 0;
++}
++// modulation and 3D settings the software mixer does not reproduce yet; accepted so no console code runs
++BUFFER(SetLFO, 2) { return 0; }
++BUFFER(SetEG, 2) { return 0; }
++BUFFER(SetConeAngles, 4) { return 0; }
++BUFFER(SetConeOrientation, 5) { return 0; }
++BUFFER(SetConeOutsideVolume, 3) { return 0; }
++// (this, DS3DMODE, apply): 0 normal, 1 head relative, 2 3D disabled; the mixer reads it (XACT turns 3D off this way)
++BUFFER(SetMode, 3) {
++    v.mode = a[1];
++    return 0;
++}
++BUFFER(SetDistanceFactor, 3) { return 0; }
++BUFFER(SetDopplerFactor, 3) { return 0; }
++BUFFER(SetRolloffFactor, 3) { return 0; }
++STREAM(SetPitch, 2) {
++    v.freq = PitchToHz(a[1]);
++    return 0;
++}
++STREAM(SetLFO, 2) { return 0; }
++STREAM(SetEG, 2) { return 0; }
++STREAM(SetOutputBuffer, 2) { return 0; }
++// (this, desc, stream out, outer unknown): the device method form of DirectSoundCreateStream
++HLE_STDCALL(IDirectSound_CreateSoundStream, 4) { return NewStream(a[1], a[2]); }
+diff -ruN '--exclude=.git' '--exclude=stb' XboxXBE-Recomp/xdk/4928/layout.toml ../game/sdk/xdk/4928/layout.toml
+--- XboxXBE-Recomp/xdk/4928/layout.toml	1969-12-31 16:00:00.000000000 -0800
++++ ../game/sdk/xdk/4928/layout.toml	2026-10-12 11:57:07.765259220 -0700
+@@ -0,0 +1,59 @@
++# XDK 4928 library data layouts the runtime reads or writes. Each value is proven by the
++# The Two Towers (title 45410010) default.xbe code at the address given. Derived 2026-10-12.
++# Same keys as xdk/5849/layout.toml. Where a value equals 5849 that is noted; the CDevice moved a lot.
++[layout]
++# D3D8 CDevice, the static device D3D__pDevice (0x124180) points at (0x124930, Direct3D_CreateDevice 0x119789)
++CDevice_Push          = 0x0     # D3DDevice_SetTexture 0x117B22 reads it, compares with +4, calls MakeSpace 0x11ABA0 (= 5849)
++CDevice_PushThreshold = 0x4     # D3DDevice_SetTexture 0x117B25 compares the push pointer with it (= 5849)
++CDevice_BaseVertex    = 0x1C    # D3DDevice_SetIndices 0x117CD9 stores BaseVertexIndex (= 5849)
++CDevice_IndexBuffer   = 0x38C   # D3DDevice_SetIndices 0x117CAA reads the old one, 0x117CD2 stores the new one
++CDevice_ZScale        = 0x510   # D3DDevice_GetViewportOffsetAndScale 0x114C45 scales the Z range by it
++CDevice_SuperSampleX  = 0x518   # D3DDevice_GetViewportOffsetAndScale 0x114B9E scales viewport X by it
++CDevice_SuperSampleY  = 0x51C   # D3DDevice_GetViewportOffsetAndScale 0x114BC0 scales viewport Y by it
++CDevice_Transforms    = 0x810   # D3DDevice_SetTransform 0x117246 copies 16 dwords to +0x810 + type * 64
++CDevice_Textures      = 0xB38   # D3DDevice_SetTexture 0x117AE0 reads, 0x117B19 stores [stage]
++CDevice_Palettes      = 0xB48   # the device teardown 0x11D484 walks +0xB48 per stage and releases [-0x10] (textures) and the palette; Textures + 0x10 as in 5849
++CDevice_RenderTarget  = 0x21B4  # D3D_CommonSetRenderTarget 0x115CC2 stores it, D3DDevice_SetViewport 0x11797A compares it with the back buffer
++CDevice_Depth         = 0x21B8  # D3D_CommonSetRenderTarget 0x115CEB stores it
++CDevice_BackBuffer    = 0x21C0  # D3DDevice_GetBackBuffer2 0x1175D0 returns it for index 0
++CDevice_FrontBuffer   = 0x21C4  # D3DDevice_GetBackBuffer2 0x1175B5 returns it for index -1
++CDevice_SwapCount     = 0x2C10  # D3DDevice_Swap 0x11A2E0 increments it, 0x11A351 returns it
++CDevice_Size          = 0x2C30  # Direct3D_CreateDevice 0x1197CB clears 0xB0C dwords of the device on failure
++CDevice_Flags             = 0x8    # Direct3D_CreateDevice 0x11977F ors BehaviorFlags & 0x10 into it (0x124938) (= 5849)
++CDevice_Time              = 0x30   # D3D_KickOffAndWaitForIdle 0x11ABF5 passes it to D3D_BlockOnTime, D3D_SetFence 0x11A8C3 adds 2
++CDevice_PixelShader       = 0x370  # D3DDevice_SetPixelShader 0x119278 stores the handle
++CDevice_VertexShader      = 0x380  # D3DDevice_SetVertexShader 0x117031 reads, 0x117088 stores the current shader (FVF shader object 0x124800)
++CDevice_BackBufferScale   = 0x528  # the frame buffer init 0x11CA1A stores the X scale as a float, 0x11CA33 the Y scale at +4 (SuperSampleX + 0x10 as in 5849)
++CDevice_Viewport          = 0xA90  # D3DDevice_GetViewportOffsetAndScale 0x114B85..0x114C4F reads X, Y, Width, Height, MinZ, MaxZ at +0..+0x14
++CDevice_ScreenSpaceOffset = 0xAA8  # D3DDevice_SetScreenSpaceOffset 0x1180D3 stores x + 0.53125, 0x1180E3 y + 0.53125 at +4
++CDevice_AutoDepth         = 0x21CC # the frame buffer init 0x11CAD9 stores the depth buffer (BackBuffer + 0xC as in 5849)
++# the miniport is at +0x23C0 (5849: +0x1C28); its own field offsets are unchanged from 5849
++CDevice_VBlankCallback    = 0x2550 # D3DDevice_SetVerticalBlankCallback 0x1173FA stores it = miniport + 0x190, which the vertical blank handler 0x11DB4E calls
++CDevice_VBlankEvent       = 0x2554 # D3DDevice_BlockUntilVerticalBlank 0x11742D waits on it, 0x11741B clears its SignalState
++CDevice_DisplayFlags      = 0x2574 # miniport + 0x1B4: the mode set 0x11D82A stores it, 0x11996B tests 0x1000000
++CDevice_VBlankCount       = 0x2580 # miniport + 0x1C0: the vertical blank handler 0x11DAA4..0x11DAB1 increments it, 0x1199E7 reads it
++CDevice_Field             = 0x2590 # miniport + 0x1D0: the vertical blank handler 0x11DB14/0x11DB23 stores the field
++CDevice_GammaRamps        = 0x259C # D3DDevice_SetGammaRamp 0x1171F3 copies to miniport + 0x1DC + index * 0x300
++CDevice_GammaPending      = 0x2B9C # D3DDevice_SetGammaRamp 0x117211 sets [miniport + 0x7DC + index * 4]
++# D3D8 globals
++DirtyFlags_Texture    = 0x4800  # D3DDevice_SetTexture 0x117B57 ors it into D3D__DirtyFlags (0x12418C) (= 5849)
++TextureState_Stage    = 32      # D3DDevice_SetTextureStageStateNotInline 0x1155CB: [stage * 32 + type] dwords (= 5849)
++Stream_Size           = 12      # D3DDevice_SetStreamSource 0x116C8A indexes the stream table by n * 12 (= 5849)
++Stream_Stride         = 0x0     # D3DDevice_SetStreamSource 0x116CD2 stores Stride (= 5849)
++Stream_Buffer         = 0x8     # D3DDevice_SetStreamSource 0x116CD8 stores the vertex buffer (= 5849)
++PixelShader_Definition = 0x8  # D3DDevice_SetPixelShader 0x1192E0 reads the definition pointer (= 5849)
++# DSOUND
++CDirectSoundStream_Vtable  = 0x0  # CDirectSoundStream constructor 0x12B414 stores the first vtable 0x185160 (= 5849)
++CDirectSoundStream_Vtable2 = 0x4  # CDirectSoundStream constructor 0x12B40D stores the second vtable 0x185154 (= 5849)
++EffectsImage_Skip0    = 0x804   # 0x12BFB3 adds this dword count (= 5849)
++EffectsImage_Skip1    = 0x80C   # 0x12BFAD loads this dword count (= 5849)
++EffectsImage_Desc     = 0x818   # 0x12BFBC: descriptor at image + 0x818 + (Skip0 + Skip1) * 4 (= 5849)
++# XAPI XPP device type record
++XPP_Current           = 0x0     # XGetDevices 0x1698AA returns it (= 5849)
++XPP_Changed           = 0x4     # XGetDevices 0x1698AC clears it (= 5849)
++XPP_Previous          = 0x8     # XGetDevices 0x1698B2 copies Current into it (= 5849)
++
++# Extra 4928 facts this title needs (not read by the 5849 runtime):
++# CDevice + 0x350..0x35C  push-buffer recording state: D3DDevice_BeginPushBuffer 0x11AFDB stores the buffer at +0x350,
++#                         clears +0x354, saves the push pointer/threshold at +0x35C/+0x358; EndPushBuffer 0x11B04B restores them
++# CDevice + 0x2550        = miniport + 0x190 (vertical blank callback slot)
