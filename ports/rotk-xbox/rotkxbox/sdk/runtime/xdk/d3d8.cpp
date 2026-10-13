@@ -86,6 +86,13 @@ uint32_t g_screen_pixels = 640 * 480;  // the back buffer's, for visibility test
 std::recursive_mutex g_lock;
 
 std::unordered_map<uint32_t, std::shared_ptr<gpu::VertexShader>> g_vs;
+// vertex program memory, see D3DDevice_LoadVertexShader
+struct LoadedProgram {
+    std::vector<uint32_t> program;  // 4 dwords per instruction, from the address to the program's end
+    uint32_t type = 0;
+};
+std::map<uint32_t, LoadedProgram> g_vs_memory;  // by start address
+std::map<std::pair<uint32_t, uint32_t>, std::shared_ptr<gpu::VertexShader>> g_vs_selected;  // (declaration, address)
 std::unordered_map<uint32_t, std::shared_ptr<gpu::PixelShader>> g_ps;
 std::array<uint32_t, 3> g_buffers{};  // front, back surfaces
 uint32_t g_buffer_count = 2;
@@ -819,6 +826,8 @@ HLE_STDCALL(D3DDevice_DeleteVertexShader, 1) {
     if (it != g_vs.end()) {
         mem::FreeSystem(a[0] & ~1u);
         g_vs.erase(it);
+        for (auto sel = g_vs_selected.begin(); sel != g_vs_selected.end();)
+            sel = sel->first.first == a[0] ? g_vs_selected.erase(sel) : std::next(sel);
     }
     return 0;
 }
@@ -880,12 +889,73 @@ HLE_FASTCALL(D3DDevice_SetVertexShaderConstantNotInlineFast, 1) {
     return 0;
 }
 
+// Vertex program memory (136 instructions on the console). LoadVertexShader(handle, address) copies a shader's
+// program there; SelectVertexShader(handle, address) draws with the handle's declaration and the program that
+// starts at the address. The Return of the King loads its skinning programs at 12 and selects them per mesh.
+namespace d3d {
+namespace {
+
+void SelectVertexShader(uint32_t h, uint32_t address) {
+    std::shared_ptr<gpu::VertexShader> decl;
+    if (h & 1) {
+        auto it = g_vs.find(h);
+        if (it != g_vs.end()) decl = it->second;
+    } else if (!h) {
+        decl = g_state.vs;
+    }
+    if (!decl) {
+        LOG_FIRST(8, "d3d: SelectVertexShader with unknown handle %08X", h);
+        return;
+    }
+    auto key = std::make_pair(decl->handle, address);
+    auto sit = g_vs_selected.find(key);
+    if (sit == g_vs_selected.end()) {
+        // the program loaded at the address, or the tail of one loaded below it
+        const LoadedProgram* lp = nullptr;
+        uint32_t skip = 0;
+        for (auto& [at, p] : g_vs_memory)
+            if (at <= address && address < at + p.program.size() / 4) {
+                lp = &p;
+                skip = address - at;
+            }
+        auto vs = std::make_shared<gpu::VertexShader>(*decl);
+        vs->hash = 0;
+        if (lp) {
+            vs->program.assign(lp->program.begin() + skip * 4, lp->program.end());
+            vs->program_type = lp->type;
+        } else {
+            LOG_FIRST(8, "d3d: SelectVertexShader %08X at %u: nothing loaded there", h, address);
+        }
+        sit = g_vs_selected.emplace(key, vs).first;
+    }
+    g_state.vs = sit->second;
+    g_state.vs_handle = decl->handle;
+    for (auto& [reg, v] : decl->constants)
+        if (reg < 192) g_state.vsc[reg] = v;
+}
+}  // namespace
+}  // namespace d3d
+
 HLE_STDCALL(D3DDevice_LoadVertexShader, 2) {
-    LOG_FIRST(4, "d3d: LoadVertexShader %08X at %u is not supported", a[0], a[1]);
+    std::lock_guard<std::recursive_mutex> lock(g_lock);
+    auto it = g_vs.find(a[0]);
+    if (it == g_vs.end() || it->second->program.empty()) {
+        LOG_FIRST(8, "d3d: LoadVertexShader %08X at %u has no program", a[0], a[1]);
+        return 0;
+    }
+    uint32_t address = a[1], n = uint32_t(it->second->program.size() / 4);
+    // programs the new one overwrites go, and every selection made from that memory
+    for (auto m = g_vs_memory.begin(); m != g_vs_memory.end();)
+        m = m->first < address + n && address < m->first + m->second.program.size() / 4 ? g_vs_memory.erase(m) : std::next(m);
+    g_vs_memory[address] = {it->second->program, it->second->program_type};
+    for (auto sel = g_vs_selected.begin(); sel != g_vs_selected.end();)
+        sel = sel->first.second >= address && sel->first.second < address + n ? g_vs_selected.erase(sel) : std::next(sel);
+    LOG_FIRST(16, "d3d: LoadVertexShader %08X at %u, %u instructions", a[0], address, n);
     return 0;
 }
 HLE_STDCALL(D3DDevice_SelectVertexShader, 2) {
-    LOG_FIRST(4, "d3d: SelectVertexShader %08X at %u is not supported", a[0], a[1]);
+    std::lock_guard<std::recursive_mutex> lock(g_lock);
+    SelectVertexShader(a[0], a[1]);
     return 0;
 }
 HLE_STDCALL(D3DDevice_SetShaderConstantMode, 1) {

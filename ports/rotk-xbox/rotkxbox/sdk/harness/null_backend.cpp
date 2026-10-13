@@ -110,6 +110,13 @@ private:
         if (s.textures[0] && Describe(s.textures[0], d))
             std::fprintf(f, "  tex %ux%u fmt %X cop %u %X %X aop %u %X %X\n", d.width, d.height, d.format, t0[kTssColorOp],
                          t0[kTssColorArg1], t0[kTssColorArg2], t0[kTssAlphaOp], t0[kTssAlphaArg1], t0[kTssAlphaArg2]);
+        for (int st = 1; st < 4; st++) {  // the other stages, when bound
+            const auto& ts = s.tss[size_t(st)];
+            if (s.textures[size_t(st)] && Describe(s.textures[size_t(st)], d))
+                std::fprintf(f, "  tex%d %08X %ux%u fmt %X cop %u %X %X aop %u %X %X tci %X\n", st, s.textures[size_t(st)], d.width,
+                             d.height, d.format, ts[kTssColorOp], ts[kTssColorArg1], ts[kTssColorArg2], ts[kTssAlphaOp],
+                             ts[kTssAlphaArg1], ts[kTssAlphaArg2], ts[kTssTexCoordIndex]);
+        }
         std::fprintf(f, "  ttf %X tci %X addr %u %u t16", t0[kTssTextureTransformFlags], t0[kTssTexCoordIndex], t0[kTssAddressU],
                      t0[kTssAddressV]);
         auto matrix = [&](const char* name, uint32_t which) {
