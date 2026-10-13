@@ -23,6 +23,7 @@
 #include "config.h"
 #include "library.h"
 #include "port.h"
+#include "ornament.h"
 #include <shlobj.h>
 #include "font_cinzel.h"
 #include "font_garamond.h"
@@ -60,8 +61,8 @@ static float S(float v) { return v * g_scale; }
 static void setup_style()
 {
     ImGuiStyle &st = ImGui::GetStyle();
-    st.WindowRounding = 0; st.ChildRounding = S(6); st.FrameRounding = S(4); st.PopupRounding = S(4);
-    st.GrabRounding = S(3); st.TabRounding = S(4); st.ScrollbarRounding = S(6);
+    st.WindowRounding = 0; st.ChildRounding = 0; st.FrameRounding = S(2); st.PopupRounding = S(2);
+    st.GrabRounding = S(2); st.TabRounding = 0; st.ScrollbarRounding = S(2);
     st.WindowBorderSize = 0; st.ChildBorderSize = 1; st.FrameBorderSize = 1; st.PopupBorderSize = 1;
     st.FramePadding = ImVec2(S(10), S(5)); st.ItemSpacing = ImVec2(S(10), S(8)); st.ItemInnerSpacing = ImVec2(S(8), S(6));
     st.WindowPadding = ImVec2(S(18), S(14)); st.GrabMinSize = S(14); st.ScrollbarSize = S(12);
@@ -286,9 +287,7 @@ static void draw_background(ImDrawList *dl, ImVec2 size, Backgrounds &b)
     // darken for legibility: lighter at the top (banner), darker behind the settings
     ImU32 a0 = IM_COL32(8, 6, 4, 50), a1 = IM_COL32(8, 6, 4, 165);
     dl->AddRectFilledMultiColor(ImVec2(0, 0), size, a0, a0, a1, a1);
-    float m = S(8);
-    dl->AddRect(ImVec2(m, m), ImVec2(size.x - m, size.y - m), IM_COL32(170, 134, 66, 150), 0.0f, S(1));
-    dl->AddRect(ImVec2(m + S(4), m + S(4)), ImVec2(size.x - m - S(4), size.y - m - S(4)), IM_COL32(170, 134, 66, 64), 0.0f, S(1));
+    orn_window_frame(dl, size);   // carved stone border (ornament.cpp)
 }
 
 // ---------------------------------------------------------------------------
@@ -332,13 +331,17 @@ static void row_end()
     }
 }
 
+// A heading: the title, then a tapering rule ending in a leaf scroll (ornament.cpp)
 static void section(const char *title)
 {
     ImGui::Spacing();
+    float right = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x;
     ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
     ImGui::TextColored(C_GOLD, "%s", title);
     ImGui::PopFont();
-    ImGui::Separator();
+    ImVec2 t0 = ImGui::GetItemRectMin(), t1 = ImGui::GetItemRectMax();
+    orn_elf_rule(ImGui::GetWindowDrawList(), t1.x + S(16), right - S(4), (t0.y + t1.y) * 0.5f + S(1));
+    ImGui::Dummy(ImVec2(0, S(2)));
 }
 
 // A choice between a few named options, shown as a drop-down menu.
@@ -362,18 +365,7 @@ static bool segmented(const char *id, int *v, const char *const *names, int n, c
 
 static bool gold_button(const char *label, ImVec2 size, ImFont *font)
 {
-    ImGui::PushFont(font, font->LegacySize);
-    ImGui::PushStyleColor(ImGuiCol_Button, rgb(158, 118, 48));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, rgb(192, 146, 64));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, rgb(124, 92, 38));
-    ImGui::PushStyleColor(ImGuiCol_Text, rgb(24, 16, 8));
-    ImGui::PushStyleColor(ImGuiCol_Border, C_GOLD_H);
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, S(6));
-    bool r = ImGui::Button(label, size);
-    ImGui::PopStyleVar();
-    ImGui::PopStyleColor(5);
-    ImGui::PopFont();
-    return r;
+    return orn_arch_button(label, size, font, true);
 }
 
 // ---------------------------------------------------------------------------
@@ -1077,6 +1069,23 @@ static void games_section(App &a)
     if (ImGui::Button("Add an Xbox disc image...")) {
         std::string f;
         if (pick_disc_image(f)) add_game_from(a, f);
+    }
+
+    section("Background pictures");
+    ImGui::PushTextWrapPos(0);
+    ImGui::TextColored(C_DIM, "Pictures you put in this folder (PNG or JPG) are shown behind the launcher, changing every few seconds. "
+                              "They're your own: none come with the download.");
+    ImGui::PopTextWrapPos();
+    if (ImGui::Button("Open backgrounds folder")) {
+        std::string d = exe_dir() + "\\ROTKFix\\backgrounds";
+        SHCreateDirectoryExA(NULL, d.c_str(), NULL);
+        ShellExecuteA(NULL, "open", d.c_str(), NULL, NULL, SW_SHOWNORMAL);
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Show new pictures")) {
+        a.bg.files.clear();
+        list_pictures(exe_dir() + "\\ROTKFix\\backgrounds", a.bg.files, 100);
+        backgrounds_next(a.bg);
     }
 }
 
@@ -2613,8 +2622,15 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     ImGui::PopFont();
 
     // ---- settings panel
-    ImGui::SetCursorPos(ImVec2(pad, bannerH));
-    ImGui::BeginChild("panel", ImVec2(size.x - pad * 2, size.y - bannerH - barH - S(30)), ImGuiChildFlags_Borders);
+    // a dwarf-made bronze frame around it; the panel itself sits just inside the frame
+    const float frameT = S(9);
+    ImVec2 panelA = ImGui::GetWindowPos() + ImVec2(pad, bannerH);
+    ImVec2 panelB = panelA + ImVec2(size.x - pad * 2, size.y - bannerH - barH - S(30));
+    orn_dwarf_fill(ImGui::GetWindowDrawList(), panelA, panelB, ImGui::GetColorU32(rgb(16, 12, 9, 0.84f)));
+    const float inset = frameT * 0.5f + S(7);   // clear of the frame and its corner brackets
+    ImGui::SetCursorPos(ImVec2(pad + inset, bannerH + inset));
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0, 0, 0, 0));
+    ImGui::BeginChild("panel", ImVec2(size.x - pad * 2 - inset * 2, size.y - bannerH - barH - S(30) - inset * 2), ImGuiChildFlags_None);
     g_labelW = std::max(S(230), ImGui::GetContentRegionAvail().x * 0.36f);
     if (ttShown) {
         if (!a.ttLoaded) tt_load_settings(a);
@@ -2657,6 +2673,8 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     ImGui::PopFont();
     }
     ImGui::EndChild();
+    ImGui::PopStyleColor();
+    orn_dwarf_frame(ImGui::GetWindowDrawList(), panelA, panelB, frameT);
 
     // ---- bottom bar: summary on the left, buttons on the right
     float by = size.y - barH - S(16);
@@ -2677,8 +2695,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
             ImGui::PopFont();
         }
         ImVec2 c0 = ImGui::GetWindowPos() + ImVec2(pad, by + (playH - cardH) * 0.5f), c1 = c0 + ImVec2(cardW, cardH);
-        ImGui::GetWindowDrawList()->AddRectFilled(c0, c1, ImGui::GetColorU32(C_PANEL), S(8));
-        ImGui::GetWindowDrawList()->AddRect(c0, c1, ImGui::GetColorU32(C_LINE), S(8), 1.0f);
+        orn_dwarf_plate(ImGui::GetWindowDrawList(), c0, c1, ImGui::GetColorU32(C_PANEL), false);
         ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
         ImGui::SetCursorPos(ImVec2(pad + S(10), by + (playH - cardH) * 0.5f + S(5)));
         ImGui::PushTextWrapPos(pad + cardW - S(8));
@@ -2723,8 +2740,8 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     if (autoPlay && ttShown) { autoPlay = false; tt_play(a, a.lib[a.cur]); }
     if (autoPlay && rxShown && rx_ready(a)) { autoPlay = false; if (save(a)) rx_play(a, a.lib[a.cur]); }
     ImGui::SetCursorPos(ImVec2(bx, by));
-    ImGui::BeginDisabled(ttShown ? a.running != NULL : rxShown ? (!rx_ready(a) || a.running != NULL) : (!own || !g.exeFound || g_removeSelf));
-    if (gold_button("PLAY", ImVec2(playW, playH), F_PLAY)) {
+    bool playOk = !(ttShown ? a.running != NULL : rxShown ? (!rx_ready(a) || a.running != NULL) : (!own || !g.exeFound || g_removeSelf));
+    if (orn_arch_button("PLAY", ImVec2(playW, playH), F_PLAY, playOk)) {
         if (ttShown) tt_play(a, a.lib[a.cur]);
         else if (rxShown) { if (save(a)) rx_play(a, a.lib[a.cur]); }
         else if (save(a)) {
@@ -2733,12 +2750,10 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
             else set_message(a, err, true);
         }
     }
-    ImGui::EndDisabled();
     bx -= saveW + S(12);
     ImGui::SetCursorPos(ImVec2(bx, by + (playH - btnH) * 0.5f));
-    ImGui::BeginDisabled(ttShown || rxShown ? false : (!own || !g.exeFound || g_removeSelf));
-    if (ImGui::Button("Save", ImVec2(saveW, btnH))) { if (ttShown) tt_save(a); else save(a); }
-    ImGui::EndDisabled();
+    bool saveOk = ttShown || rxShown || !(!own || !g.exeFound || g_removeSelf);
+    if (orn_plate_button("Save", ImVec2(saveW, btnH), saveOk)) { if (ttShown) tt_save(a); else save(a); }
 
     ImGui::End();
 }
@@ -2803,6 +2818,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     io.FontDefault = F_BODY;
     ImGui::GetStyle().FontSizeBase = F_BODY->LegacySize;   // 1.92: size of the default font
     setup_style();
+    orn_set_scale(g_scale);
     ImGui_ImplSDL3_InitForSDLRenderer(win, ren);
     ImGui_ImplSDLRenderer3_Init(ren);
 
