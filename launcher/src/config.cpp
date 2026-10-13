@@ -665,6 +665,13 @@ int pick_refresh(const std::vector<int> &hz, int fps)
     return hz.back();
 }
 
+// Only ROTKFix.ini: for the Xbox port, which reads ROTK Fix's own keys (and none of the
+// PC game's ROTK.ini or Input.ini)
+bool save_rotkfix_ini(const std::string &dir, const Settings &s, std::string &err)
+{
+    return write_rotkfix_ini(dir + "\\ROTKFix.ini", s, false, err);
+}
+
 bool save_settings(const std::string &dir, const Settings &s, std::string &err)
 {
     std::string p = dir + "\\ROTKFix.ini";

@@ -101,6 +101,7 @@ void remove_launcher_after_exit();
 int  pick_refresh(const std::vector<int> &hz, int fps);
 bool load_settings(const std::string &dir, Settings &s);   // false = no ROTKFix.ini yet (defaults used)
 bool save_settings(const std::string &dir, const Settings &s, std::string &err);
+bool save_rotkfix_ini(const std::string &dir, const Settings &s, std::string &err);   // ROTKFix.ini only
 bool install_input_profile(const std::string &dir, std::string &err);
 bool launch_game(const std::string &dir, std::string &err);
 std::string exe_dir();

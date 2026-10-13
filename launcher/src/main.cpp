@@ -412,6 +412,9 @@ struct App {
     bool ttLooked = false;             // looked for the port program and asked it for its settings
     PortSettingsFile ttFile;
     bool ttLoaded = false;
+    // The Return of the King (Xbox) port: same settings page as the PC version (ROTKFix.ini)
+    Port rx;
+    bool rxLooked = false;
     HANDLE running = NULL;             // a port that is playing; the launcher waits, hidden
     std::string runningLog, runningGame;
 };
@@ -454,6 +457,16 @@ static void refresh_controllers(App &a)
 }
 
 static bool g_removeSelf;      // uninstalled: delete the launcher when it closes
+static bool g_xboxPage;        // the Return of the King page is showing the Xbox version (PC-only options greyed out)
+
+// A note under a section whose options are the PC game's own and don't apply on Xbox
+static void pc_only_note()
+{
+    if (!g_xboxPage) return;
+    ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
+    ImGui::TextColored(C_DIM, "PC version only.");
+    ImGui::PopFont();
+}
 
 static void set_message(App &a, const std::string &m, bool bad) { a.message = m; a.messageBad = bad; a.messageAt = ImGui::GetTime(); }
 
@@ -467,7 +480,7 @@ static bool save(App &a)
         if (d.rfind("\\\\.\\", 0) == 0) d = d.substr(4);   // \\.\DISPLAY2 -> DISPLAY2
         a.s.screen = m.primary ? "main" : d;
     }
-    if (!save_settings(a.dir, a.s, err)) { set_message(a, err, true); return false; }
+    if (!(g_xboxPage ? save_rotkfix_ini(a.dir, a.s, err) : save_settings(a.dir, a.s, err))) { set_message(a, err, true); return false; }
     a.game = inspect_game(a.dir);
     set_message(a, "Settings saved", false);
     return true;
@@ -672,6 +685,8 @@ static void tab_graphics(App &a)
     row_end();
 
     section("Game detail");
+    pc_only_note();
+    ImGui::BeginDisabled(g_xboxPage);   // the PC game's own ROTK.ini options
     static const char *sh[] = { "Off", "Low", "High" };
     row_begin("Shadows", "The game's own shadow setting. Low uses simple round shadows; High uses full character shadows.");
     segmented("sh", &s.shadows, sh, 3);
@@ -688,6 +703,7 @@ static void tab_graphics(App &a)
     row_begin("Alternate cameras", "The game's own camera option: uses its alternative camera angles during play.");
     ImGui::Checkbox("##altcam", &s.altCameras);
     row_end();
+    ImGui::EndDisabled();
 
     section("Texture packs");
     row_begin("Use texture packs", "Shows sharper or remade pictures from texture packs. A pack goes in its own folder inside "
@@ -728,9 +744,11 @@ static void tab_graphics(App &a)
     row_begin("Cutscene sound delay", "Bluetooth speakers and headphones play sound late. This holds the picture back to match (150-300 ms is typical). 0 = off.");
     ImGui::SliderInt("##adelay", &s.audioDelayMs, 0, 500, s.audioDelayMs == 0 ? "Off" : "%d ms");
     row_end();
-    row_begin("Subtitles", nullptr);
+    ImGui::BeginDisabled(g_xboxPage);
+    row_begin("Subtitles", g_xboxPage ? "PC version only: on Xbox, subtitles are in the game's own options." : nullptr);
     ImGui::Checkbox("##subs", &s.subtitles);
     row_end();
+    ImGui::EndDisabled();
 }
 
 enum { NAMES_AUTO, NAMES_XBOX, NAMES_PS, NAMES_NINTENDO, NAMES_ORIGINAL };
@@ -910,10 +928,12 @@ static void tab_controls(App &a)
     segmented("p2", &s.player2, p2, 2);
     row_end();
     static const char *bn[] = { "Automatic", "Xbox", "PlayStation", "Nintendo", "Original (\"Button 7\")" };
+    ImGui::BeginDisabled(g_xboxPage);   // the Xbox game already shows Xbox buttons
     row_begin("Button names", "Which controller's buttons the game's hints and tutorials show, as pictures.\n"
                               "Automatic follows the controller you play with. \"Original\" keeps the game's own text.");
     segmented("names", &s.buttonNames, bn, 5);
     row_end();
+    ImGui::EndDisabled();
     row_begin("Vibration", "Controller rumble from the original Xbox version, switched back on. 0 turns it off.");
     ImGui::SliderInt("##rumble", &s.vibration, 0, 100, s.vibration == 0 ? "Off" : "%d%%");
     row_end();
@@ -932,11 +952,14 @@ static void tab_audio(App &a)
     Settings &s = a.s;
     section("Sound");
     static const char *s3[] = { "Off (game's original)", "Speakers", "Headphones (3D surround)" };
+    pc_only_note();
+    ImGui::BeginDisabled(g_xboxPage);   // DirectSound/EAX on the PC only
     row_begin("3D sound and reverb", "Brings back the game's 3D sound and EAX reverb (echoes in caves and halls), "
                                      "which Windows stopped supporting after XP. Uses DSOAL and OpenAL Soft.\n"
                                      "Headphones adds virtual surround (HRTF): you can hear sounds above, behind and around you.");
     segmented("s3d", &s.sound3d, s3, 3);
     row_end();
+    ImGui::EndDisabled();
     static int vcrt = -1;
     if (vcrt < 0) {
         // the game is 32-bit: look in SysWOW64 on 64-bit Windows, System32 on 32-bit Windows
@@ -944,7 +967,7 @@ static void tab_audio(App &a)
         if (!GetSystemWow64DirectoryA(sys, MAX_PATH)) GetSystemDirectoryA(sys, MAX_PATH);
         vcrt = GetFileAttributesA((std::string(sys) + "\\msvcp140.dll").c_str()) != INVALID_FILE_ATTRIBUTES;
     }
-    if (s.sound3d && !vcrt) {
+    if (s.sound3d && !vcrt && !g_xboxPage) {
         ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
         ImGui::SetCursorPosX(g_labelW);
         ImGui::PushTextWrapPos(0);
@@ -953,9 +976,12 @@ static void tab_audio(App &a)
         ImGui::PopFont();
     }
     section("Volume");
+    pc_only_note();
+    ImGui::BeginDisabled(g_xboxPage);   // the PC game's ROTK.ini volumes
     row_begin("Music", nullptr);  ImGui::SliderInt("##vm", &s.volMusic, 0, 100, "%d%%"); row_end();
     row_begin("Voices", nullptr); ImGui::SliderInt("##vv", &s.volVoice, 0, 100, "%d%%"); row_end();
     row_begin("Effects", nullptr); ImGui::SliderInt("##vs", &s.volSfx, 0, 100, "%d%%"); row_end();
+    ImGui::EndDisabled();
 }
 
 static void status_dot(bool ok, bool warn, const char *label, const char *tip)
@@ -1042,8 +1068,10 @@ static void games_section(App &a)
     }
 }
 
+static void rx_about(App &a);
 static void tab_about(App &a)
 {
+    if (g_xboxPage) { rx_about(a); return; }
     games_section(a);
     section("Setup");
     const GameInfo &g = a.game;
@@ -1259,7 +1287,7 @@ static void tt_play(App &a, const LibGame &g)
     if (!h) { set_message(a, err, true); return; }
     a.running = h;
     a.runningLog = tt_log_path();
-    a.runningGame = game_kind_name(g.kind);
+    a.runningGame = "The Two Towers";
     SDL_HideWindow(a.win);
 }
 
@@ -1268,11 +1296,12 @@ static void port_finished(App &a, DWORD code)
 {
     std::string why = port_log_reason(a.runningLog);
     std::string logDir = a.runningLog.substr(0, a.runningLog.find_last_of('\\'));
+    std::string logName = a.runningLog.substr(a.runningLog.find_last_of('\\') + 1);
     std::string m;
     switch (code) {
     case 0: break;
-    case 1: m = "The game couldn't start" + (why.empty() ? std::string(".") : ": " + why + ".") + " Details are in tt.log in " + logDir + "."; break;
-    case 2: m = "The game files couldn't be found there, or they aren't The Two Towers. Check the location on this page."; break;
+    case 1: m = "The game couldn't start" + (why.empty() ? std::string(".") : ": " + why + ".") + " Details are in " + logName + " in " + logDir + "."; break;
+    case 2: m = "The game files couldn't be found there, or they aren't " + a.runningGame + ". Check the game's location in the About tab."; break;
     case 3: m = "This copy isn't the US release. Only the US version is supported for now."; break;
     case 4: m = "Direct3D 12 couldn't start. Update your graphics driver; the port needs a DirectX 12 graphics card."; break;
     case 5: m = "The settings file is damaged" + (why.empty() ? std::string("") : " (" + why + ")") + ". Use \"Reset to defaults\" below, then Play again."; break;
@@ -1282,7 +1311,7 @@ static void port_finished(App &a, DWORD code)
         break;
     default: {
         char b[32]; snprintf(b, sizeof b, "0x%08lX", (unsigned long)code);
-        m = std::string("The game closed unexpectedly (") + b + "). Details are in tt.log in " + logDir + ".";
+        m = std::string("The game closed unexpectedly (") + b + "). Details are in " + logName + " in " + logDir + ".";
     }
     }
     a.running = NULL;
@@ -2191,6 +2220,101 @@ static std::string tt_summary(const App &a)
     return s;
 }
 
+// ---------------------------------------------------------------------------
+// The Return of the King (Xbox), played through its PC port, ROTKXbox.exe. It reads
+// ROTK Fix's own ROTKFix.ini, so it shares the PC version's settings page.
+// The port is found next to the launcher (ROTKXbox\ROTKXbox.exe), or where the player
+// pointed to it (ROTKFix\ports.ini, [Ports] ROTKXbox=). Its log, saves and its own
+// texture packs (Xbox textures differ from the PC ones) live in ROTKFix\ROTKXbox.
+
+static std::string rx_data_dir() { return exe_dir() + "\\ROTKFix\\ROTKXbox"; }
+static std::string rx_log_path() { return rx_data_dir() + "\\rotkx.log"; }
+
+static void rx_find(App &a)
+{
+    a.rxLooked = true;
+    a.rx = Port();
+    std::string cand[2];
+    cand[0] = exe_dir() + "\\ROTKXbox\\ROTKXbox.exe";
+    char b[MAX_PATH * 2] = "";
+    GetPrivateProfileStringA("Ports", "ROTKXbox", "", b, sizeof b, ports_ini().c_str());
+    cand[1] = b;
+    for (auto &c : cand) if (!c.empty() && file_there(c)) { a.rx.exe = c; break; }
+    if (a.rx.exe.empty()) return;
+    std::string out;
+    if (run_capture(a.rx.exe, "--version", out, 15000) == 0) {
+        while (!out.empty() && (out.back() == '\n' || out.back() == '\r' || out.back() == ' ')) out.pop_back();
+        a.rx.version = out;
+    }
+}
+static bool rx_ready(const App &a) { return !a.rx.exe.empty(); }
+
+static void rx_play(App &a, const LibGame &g)
+{
+    std::string d = rx_data_dir();
+    SHCreateDirectoryExA(NULL, (d + "\\textures\\replace").c_str(), NULL);
+    SHCreateDirectoryExA(NULL, (d + "\\saves").c_str(), NULL);
+    std::string args = "--game \"" + g.path + "\" --ini \"" + a.dir + "\\ROTKFix.ini\" --log \"" + rx_log_path() +
+                       "\" --saves \"" + d + "\\saves\" --screenshots \"" + exe_dir() + "\\Screenshots\" --textures \"" + d +
+                       "\\textures\" --no-dialogs";
+    std::string err;
+    HANDLE h = port_start(a.rx.exe, args, err);
+    if (!h) { set_message(a, err, true); return; }
+    a.running = h;
+    a.runningLog = rx_log_path();
+    a.runningGame = "The Return of the King";
+    SDL_HideWindow(a.win);
+}
+
+static void rx_locate_button(App &a)
+{
+    if (ImGui::Button("Locate ROTKXbox.exe...")) {
+        std::string f;
+        if (pick_file(f, L"Choose ROTKXbox.exe", L"The Return of the King Xbox port (ROTKXbox.exe)", L"ROTKXbox.exe")) {
+            SHCreateDirectoryExA(NULL, (exe_dir() + "\\ROTKFix").c_str(), NULL);
+            WritePrivateProfileStringA("Ports", "ROTKXbox", f.c_str(), ports_ini().c_str());
+            rx_find(a);
+        }
+    }
+}
+
+// About tab on the Xbox version's page
+static void rx_about(App &a)
+{
+    const LibGame &g = a.lib[a.cur];
+    section("The Return of the King  -  Xbox");
+    row_begin("Location", nullptr);
+    ImGui::PushTextWrapPos(0); ImGui::TextUnformatted(g.path.c_str()); ImGui::PopTextWrapPos();
+    row_end();
+    row_begin("Version", nullptr);
+    ImGui::Text("Xbox, %s copy, %s", game_region_name(g), g.iso ? "disc image" : "extracted files");
+    if (g.titleId) { ImGui::SameLine(); ImGui::TextColored(C_DIM, "(title ID %08X)", (unsigned)g.titleId); }
+    row_end();
+    section("Port");
+    ImGui::PushTextWrapPos(0);
+    if (rx_ready(a)) {
+        ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
+        ImGui::TextColored(C_DIM, "%s  -  %s", a.rx.version.empty() ? "ROTKXbox" : a.rx.version.c_str(), a.rx.exe.c_str());
+        ImGui::TextColored(C_DIM, "Settings are shared with the PC version (%s\\ROTKFix.ini).", a.dir.c_str());
+        ImGui::TextColored(C_DIM, "Log, saves and Xbox texture packs: %s", rx_data_dir().c_str());
+        ImGui::PopFont();
+        ImGui::PopTextWrapPos();
+        if (ImGui::Button("Open folder##rx")) {
+            SHCreateDirectoryExA(NULL, (rx_data_dir() + "\\textures\\replace").c_str(), NULL);
+            ShellExecuteA(NULL, "open", rx_data_dir().c_str(), NULL, NULL, SW_SHOWNORMAL);
+        }
+        ImGui::SameLine();
+        rx_locate_button(a);
+    } else {
+        ImGui::TextColored(C_WARN, "The Return of the King Xbox port (ROTKXbox.exe) wasn't found.");
+        ImGui::TextUnformatted("It is normally in a ROTKXbox folder next to this launcher. If you have it somewhere else, show the launcher where.");
+        ImGui::PopTextWrapPos();
+        rx_locate_button(a);
+    }
+    games_section(a);
+}
+
+
 // Shown for a game other than this folder's PC game
 static void draw_other_game(App &a)
 {
@@ -2330,33 +2454,79 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     ImGui::PopFont();
     ImGui::SetCursorPosX(pad + S(2));
     ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
-    const char *curName = a.cur >= 0 ? game_kind_name(a.lib[a.cur].kind) : "The Return of the King  -  PC";
-    if (a.lib.size() > 1) {
+    // The Return of the King is one entry whatever versions the player has (PC, Xbox or
+    // both); with more than one, a second menu picks the version. Other games are listed as they are.
+    auto isRotk = [](GameKind k) { return k == GK_ROTK_PC || k == GK_ROTK_XBOX; };
+    std::vector<int> rotkIdx;
+    for (size_t i = 0; i < a.lib.size(); i++) if (isRotk(a.lib[i].kind)) rotkIdx.push_back((int)i);
+    bool curRotk = a.cur < 0 || isRotk(a.lib[a.cur].kind);
+    std::string curName = curRotk ? (rotkIdx.size() > 1 ? "The Return of the King" : (a.cur >= 0 ? game_kind_name(a.lib[a.cur].kind) : "The Return of the King  -  PC"))
+                                  : game_kind_name(a.lib[a.cur].kind);
+    int entries = (rotkIdx.empty() ? 0 : 1) + (int)(a.lib.size() - rotkIdx.size());
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0, 0, 0, 0));
+    ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
+    if (entries > 1) {
         // more than one game: the subtitle picks which one is shown
-        ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0, 0, 0, 0));
-        ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
-        ImGui::SetNextItemWidth(ImGui::CalcTextSize(curName).x + ImGui::GetFrameHeight() + S(24));
-        if (ImGui::BeginCombo("##game", curName)) {
+        ImGui::SetNextItemWidth(ImGui::CalcTextSize(curName.c_str()).x + ImGui::GetFrameHeight() + S(24));
+        if (ImGui::BeginCombo("##game", curName.c_str())) {
+            bool rotkListed = false;
             for (size_t i = 0; i < a.lib.size(); i++) {
                 ImGui::PushID((int)i);
-                bool sameKind = false;
-                for (size_t j = 0; j < a.lib.size(); j++) if (j != i && a.lib[j].kind == a.lib[i].kind) sameKind = true;
-                std::string label = game_kind_name(a.lib[i].kind);
-                if (sameKind) label += "  (" + a.lib[i].path + ")";     // two copies of one version: say which
-                if (ImGui::Selectable(label.c_str(), (int)i == a.cur)) a.cur = (int)i;
+                if (isRotk(a.lib[i].kind)) {
+                    if (!rotkListed) {
+                        rotkListed = true;
+                        const char *name = rotkIdx.size() > 1 ? "The Return of the King" : game_kind_name(a.lib[i].kind);
+                        if (ImGui::Selectable(name, curRotk) && !curRotk) a.cur = (int)i;
+                    }
+                } else {
+                    bool sameKind = false;
+                    for (size_t j = 0; j < a.lib.size(); j++) if (j != i && a.lib[j].kind == a.lib[i].kind) sameKind = true;
+                    std::string label = game_kind_name(a.lib[i].kind);
+                    if (sameKind) label += "  (" + a.lib[i].path + ")";     // two copies of one version: say which
+                    if (ImGui::Selectable(label.c_str(), (int)i == a.cur)) a.cur = (int)i;
+                }
                 ImGui::PopID();
             }
             ImGui::EndCombo();
         }
-        ImGui::PopStyleColor(2);
     } else {
-        ImGui::TextColored(C_TEXT, "%s", curName);
+        ImGui::TextColored(C_TEXT, "%s", curName.c_str());
     }
+    // the version picker: PC / Xbox (with the folder when there are two copies of one)
+    if (curRotk && rotkIdx.size() > 1) {
+        auto verName = [&](int i) {
+            const LibGame &lg = a.lib[i];
+            std::string v = lg.kind == GK_ROTK_PC ? "PC" : "Xbox";
+            int same = 0;
+            for (int j : rotkIdx) if (a.lib[j].kind == lg.kind) same++;
+            if (same > 1) v += "  (" + lg.path + ")";
+            return v;
+        };
+        int shown = a.cur >= 0 ? a.cur : rotkIdx[0];
+        std::string vcur = verName(shown);
+        ImGui::SameLine(0, S(4));
+        ImGui::TextColored(C_DIM, "-");
+        ImGui::SameLine(0, S(4));
+        ImGui::SetNextItemWidth(ImGui::CalcTextSize(vcur.c_str()).x + ImGui::GetFrameHeight() + S(24));
+        if (ImGui::BeginCombo("##version", vcur.c_str())) {
+            for (int i : rotkIdx) {
+                ImGui::PushID(i);
+                if (ImGui::Selectable(verName(i).c_str(), i == shown)) a.cur = i;
+                ImGui::PopID();
+            }
+            ImGui::EndCombo();
+        }
+    }
+    ImGui::PopStyleColor(2);
     ImGui::PopFont();
     const bool own = own_game(a);
     // The Two Towers shown, and its port ready: Play and Save work for it
     if (!own && a.lib[a.cur].kind == GK_TT_XBOX && !a.ttLooked) tt_find(a);
     const bool ttShown = !own && a.lib[a.cur].kind == GK_TT_XBOX && game_region_supported(a.lib[a.cur]) && a.ttLooked && tt_ready(a);
+    // The Return of the King on Xbox: the same settings page as the PC version
+    const bool rxShown = !own && a.lib[a.cur].kind == GK_ROTK_XBOX && game_region_supported(a.lib[a.cur]);
+    if (rxShown && !a.rxLooked) rx_find(a);
+    g_xboxPage = rxShown;
 
     // status (top right, one per line)
     struct St { bool ok, warn; std::string label, tip; };
@@ -2376,10 +2546,18 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     if (!own) {   // another game is shown: just say what it is
         st.clear();
         const LibGame &lg = a.lib[a.cur];
+        if (rxShown) {
+            bool r = rx_ready(a);
+            st.push_back({ r, true, r ? "Ready" : "Port not found", r ? a.rx.exe : "ROTKXbox.exe wasn't found - see the About tab." });
+            if (a.s.padEnabled)
+                st.push_back({ a.controllers > 0, true, a.controllers > 1 ? std::to_string(a.controllers) + " controllers" : a.controllers ? "Controller" : "No controller",
+                               a.controllers ? a.controller : "Connect a controller - it will be picked up automatically." });
+        } else {
         bool tt = lg.kind == GK_TT_XBOX;
         if (tt && !a.ttLooked) tt_find(a);
         bool ready = game_region_supported(lg) && (tt ? tt_ready(a) : game_kind_playable(lg.kind));
         st.push_back({ ready, true, ready ? "Ready" : !game_region_supported(lg) ? "Not supported" : tt ? "Port not found" : "Not playable yet", lg.path });
+        }
     }
     if (own && a.s.padEnabled)
         st.push_back({ a.controllers > 0 && g.hasSdl, true, a.controllers > 1 ? std::to_string(a.controllers) + " controllers" : a.controllers ? "Controller" : "No controller",
@@ -2402,13 +2580,13 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     if (ttShown) {
         if (!a.ttLoaded) tt_load_settings(a);
         tt_tabs(a, a.lib[a.cur]);
-    } else if (!own) {
+    } else if (!own && !rxShown) {
         ImGui::BeginChild("other", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_NoBackground);
         draw_other_game(a);
         ImGui::Dummy(ImVec2(0, S(10)));
         games_section(a);
         ImGui::EndChild();
-    } else if (!g.exeFound) {
+    } else if (!rxShown && !g.exeFound) {
         ImGui::BeginChild("setup", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_NoBackground);
         draw_setup(a);
         ImGui::EndChild();
@@ -2428,6 +2606,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
                 ImGui::BeginChild("tab", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_NoBackground);
                 t.fn(a);
                 ImGui::Dummy(ImVec2(0, S(6)));
+                if (getenv("ROTKFIX_SCROLL_END")) ImGui::SetScrollY(ImGui::GetScrollMaxY());   // testing
                 ImGui::EndChild();
                 ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
                 ImGui::EndTabItem();
@@ -2464,7 +2643,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
         ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
         ImGui::SetCursorPos(ImVec2(pad + S(10), by + (playH - cardH) * 0.5f + S(5)));
         ImGui::PushTextWrapPos(pad + cardW - S(8));
-        if (own) ImGui::TextColored(C_DIM, "%d x %d  |  %s  |  %d fps  |  %s", w, h, dm[a.s.displayMode], fps, pn[detect_preset(a.s)]);
+        if (own || rxShown) ImGui::TextColored(C_DIM, "%d x %d  |  %s  |  %d fps  |  %s", w, h, dm[a.s.displayMode], fps, pn[detect_preset(a.s)]);
         else if (ttShown) ImGui::TextColored(C_DIM, "%s", tt_summary(a).c_str());
         else ImGui::TextColored(C_DIM, "%s  |  %s", game_kind_name(a.lib[a.cur].kind),
                                 game_kind_playable(a.lib[a.cur].kind) ? "settings in its own launcher" : "not playable yet");
@@ -2502,10 +2681,12 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     }
     static bool autoPlay = getenv("ROTKFIX_PLAY") != nullptr;
     if (autoPlay && ttShown) { autoPlay = false; tt_play(a, a.lib[a.cur]); }
+    if (autoPlay && rxShown && rx_ready(a)) { autoPlay = false; if (save(a)) rx_play(a, a.lib[a.cur]); }
     ImGui::SetCursorPos(ImVec2(bx, by));
-    ImGui::BeginDisabled(ttShown ? a.running != NULL : (!own || !g.exeFound || g_removeSelf));
+    ImGui::BeginDisabled(ttShown ? a.running != NULL : rxShown ? (!rx_ready(a) || a.running != NULL) : (!own || !g.exeFound || g_removeSelf));
     if (gold_button("PLAY", ImVec2(playW, playH), F_PLAY)) {
         if (ttShown) tt_play(a, a.lib[a.cur]);
+        else if (rxShown) { if (save(a)) rx_play(a, a.lib[a.cur]); }
         else if (save(a)) {
             std::string err;
             if (launch_game(a.dir, err)) a.quit = true;
@@ -2515,7 +2696,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     ImGui::EndDisabled();
     bx -= saveW + S(12);
     ImGui::SetCursorPos(ImVec2(bx, by + (playH - btnH) * 0.5f));
-    ImGui::BeginDisabled(ttShown ? false : (!own || !g.exeFound || g_removeSelf));
+    ImGui::BeginDisabled(ttShown || rxShown ? false : (!own || !g.exeFound || g_removeSelf));
     if (ImGui::Button("Save", ImVec2(saveW, btnH))) { if (ttShown) tt_save(a); else save(a); }
     ImGui::EndDisabled();
 
