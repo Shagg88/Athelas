@@ -2,6 +2,7 @@
 #include "core/input.h"
 
 #include <algorithm>
+#include <cmath>
 #include <iterator>
 #include <mutex>
 
@@ -13,6 +14,30 @@
 namespace input {
 
 namespace {
+
+// [input] stick_deadzone: a stick inside the circle reads centred, the rest is stretched to the full range again so
+// a small push still moves; out of range or 0 leaves the stick as it is
+void Deadzone(int& x, int& y, uint32_t pct) {
+    if (!pct || pct >= 100) return;
+    float dz = pct / 100.0f;
+    float fx = x / 32767.0f, fy = y / 32767.0f;
+    float mag = std::sqrt(fx * fx + fy * fy);
+    if (mag <= dz) {
+        x = y = 0;
+        return;
+    }
+    float k = (mag - dz) / (1 - dz) / mag;  // corners past the circle stay at the corners
+    x = std::clamp(int(std::lround(fx * k * 32767)), -32768, 32767);
+    y = std::clamp(int(std::lround(fy * k * 32767)), -32768, 32767);
+}
+
+// [input] trigger_threshold: below it released, above it stretched to the full 0 to 255 again
+uint8_t Trigger(int raw, uint32_t pct) {
+    int v = std::max(raw, 0) >> 7;
+    if (!pct) return uint8_t(v);
+    int t = int(std::min(pct, 90u) * 255 / 100);
+    return v <= t ? 0 : uint8_t(std::min(255, (v - t) * 255 / (255 - t)));
+}
 
 // a controller takes the lowest free port when it is plugged in and keeps it until it is unplugged
 std::mutex g_lock;
@@ -103,8 +128,9 @@ Pad Poll(int port) {
             for (int i = 0; i < 6; i++) p.analog[i] = SDL_GetGamepadButton(pad, kAnalog[i]) ? 0xFF : 0;
             auto axis = [&](SDL_GamepadAxis a) { return int(SDL_GetGamepadAxis(pad, a)); };
             // 0 to 32767 into 0 to 255
-            p.analog[6] = uint8_t(std::max(axis(SDL_GAMEPAD_AXIS_LEFT_TRIGGER), 0) >> 7);
-            p.analog[7] = uint8_t(std::max(axis(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER), 0) >> 7);
+            const app::Settings& st = app::Get();
+            p.analog[6] = Trigger(axis(SDL_GAMEPAD_AXIS_LEFT_TRIGGER), st.trigger_threshold);
+            p.analog[7] = Trigger(axis(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER), st.trigger_threshold);
             // the first press of each trigger, and of each shoulder button, in the release log
             static bool seen[4][4] = {};
             const int lt = axis(SDL_GAMEPAD_AXIS_LEFT_TRIGGER), rt = axis(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
@@ -118,10 +144,14 @@ Pad Poll(int port) {
                 }
             // SDL's sticks have y down
             // not plain negation: -32768 has no positive
-            p.lx = int16_t(axis(SDL_GAMEPAD_AXIS_LEFTX));
-            p.ly = int16_t(-1 - axis(SDL_GAMEPAD_AXIS_LEFTY));
-            p.rx = int16_t(axis(SDL_GAMEPAD_AXIS_RIGHTX));
-            p.ry = int16_t(-1 - axis(SDL_GAMEPAD_AXIS_RIGHTY));
+            int lx = axis(SDL_GAMEPAD_AXIS_LEFTX), ly = axis(SDL_GAMEPAD_AXIS_LEFTY);
+            int rx = axis(SDL_GAMEPAD_AXIS_RIGHTX), ry = axis(SDL_GAMEPAD_AXIS_RIGHTY);
+            Deadzone(lx, ly, st.stick_deadzone);
+            Deadzone(rx, ry, st.stick_deadzone);
+            p.lx = int16_t(lx);
+            p.ly = int16_t(-1 - ly);
+            p.rx = int16_t(rx);
+            p.ry = int16_t(-1 - ry);
         }
     }
     if (app::kGame.pad) app::kGame.pad(port, p);
@@ -131,6 +161,15 @@ Pad Poll(int port) {
 // the motors run until set again
 void Rumble(int port, uint16_t left, uint16_t right) {
     if (app::kGame.rumble) app::kGame.rumble(port, left, right);
+    // [input] vibration scales both motors, 0 keeps them still
+    uint32_t pct = std::min(app::Get().vibration, 100u);
+    left = uint16_t(left * pct / 100);
+    right = uint16_t(right * pct / 100);
+    static bool logged = false;
+    if (!logged && (left || right)) {
+        logged = true;
+        LOGR("input: rumble on controller %d (vibration %u%%)", port + 1, pct);
+    }
     std::lock_guard lock(g_lock);
     if (port >= 0 && port < 4 && g_pads[port]) SDL_RumbleGamepad(g_pads[port], left, right, 0);
 }

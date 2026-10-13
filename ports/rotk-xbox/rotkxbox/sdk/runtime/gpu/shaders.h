@@ -18,6 +18,7 @@ struct TexInfo {
 };
 enum : uint8_t {
     kTexWide = 4,  // an upscaled target shrunk by the pass: each tap averaged over console texels
+    kTexSharp = 8, // a HUD or menu picture: sharpened at its own texel size (spread: texel step, strength)
 };
 
 struct PixelKey {
@@ -86,7 +87,7 @@ struct DrawConstants {
     float bumpl[4][4];  // scale offset
     float wvp[16];      // fixed function
     float ext[4];       // a backend extension's, declared by ShaderHooks::Constants
-    float spread[4][4]; // kTexWide: tap step in uv, taps per axis
+    float spread[4][4]; // kTexWide: tap step in uv, taps per axis; kTexSharp: texel in uv, strength
     // fixed function, lit in view space
     float wv[16];
     float wvn[16];       // normals: inverse transpose of wv

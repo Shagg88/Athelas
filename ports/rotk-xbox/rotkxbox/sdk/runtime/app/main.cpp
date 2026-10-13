@@ -158,6 +158,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             if (wp == VK_F3) DumpThreads();
             // \, the key above Enter on a US keyboard (VK_OEM_5): a screenshot, once a press
             if (wp == VK_OEM_5 && !(lp & (1 << 30))) gpu::g_screenshot = true;
+            // ] (VK_OEM_6): the next colour look, as ROTK Fix
+            if (wp == VK_OEM_6 && !(lp & (1 << 30))) {
+                static const char* const kNames[] = {"original", "film", "vivid", "dark fantasy"};
+                uint32_t n = (gpu::g_colour_look + 1) % gpu::kColourLooks;
+                gpu::g_colour_look = n;
+                LOGR("colour look %s (])", kNames[n]);
+            }
             // [ (VK_OEM_4): sharpening off and on, to compare, as ROTK Fix
             if (wp == VK_OEM_4 && !(lp & (1 << 30)) && Get().sharpening) {
                 bool off = !gpu::g_sharpen_off;

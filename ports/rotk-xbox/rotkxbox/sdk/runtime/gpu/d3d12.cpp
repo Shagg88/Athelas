@@ -13,6 +13,7 @@
 #include <wrl/client.h>
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -112,7 +113,7 @@ bool CaptureOn() {
 }
 
 const char* kBlitHlsl = R"(
-cbuffer B : register(b1) { float4 uvrect; float4 opts; float4 sharp; };
+cbuffer B : register(b1) { float4 uvrect; float4 opts; float4 sharp; float4 hdr; float4 look; float4 look2; float4 shade; float4 light; };
 Texture2D img : register(t0);
 Texture2D lut : register(t1);
 SamplerState ls : register(s0);
@@ -145,6 +146,31 @@ float4 psmain(O i) : SV_Target {
     }
     c.rgb *= opts.w;
     if (opts.x > 0) c.rgb = float3(lut.Sample(ps, float2(c.r, 0.5)).r, lut.Sample(ps, float2(c.g, 0.5)).g, lut.Sample(ps, float2(c.b, 0.5)).b);
+    // colour look (look2.y > 0, its strength), as ROTK Fix grades: a gamma, contrast about a low pivot (look.y) with a
+    // soft shoulder, saturation look.z with vibrance look.w lifting dull colours most, a tint fading in over the
+    // shadows (shade) and one over the lights (light)
+    if (look2.y > 0) {
+        float3 in0 = saturate(c.rgb);
+        float3 x = look.y + (pow(in0, look2.x) - look.y) * look.x;
+        x = max(x, 0);
+        x = lerp(x, 0.9 + 0.1 * tanh((x - 0.9) / 0.1), step(0.9, x));
+        float l = dot(x, float3(0.2126, 0.7152, 0.0722));
+        float mx = max(x.r, max(x.g, x.b)), mn = min(x.r, min(x.g, x.b));
+        float sat = look.z * (1 + look.w * (1 - (mx - mn) / (mx + 1e-4)));
+        float ws = (1 - l) * min(l * 6, 1);
+        float3 v = l + (x - l) * sat + ws * shade.rgb + l * light.rgb;
+        c.rgb = lerp(in0, saturate(v), look2.y);
+    }
+    // HDR (hdr.x): the SDR picture to linear light on an scRGB screen, normal scenes at paper white (hdr.y, in scRGB's
+    // 80 nit units) and the brightest tops (fire, sky, glows) raised smoothly to the screen's peak (hdr.z times paper
+    // white); the bright part is judged by the strongest channel, so saturated flames rise as well as white
+    if (hdr.x > 0) {
+        float3 lin = pow(saturate(c.rgb), 2.2);
+        float mx = max(lin.r, max(lin.g, lin.b));
+        float s = saturate((mx - 0.6) / 0.4);
+        lin *= 1 + (hdr.z - 1) * s * s * s;
+        c.rgb = lin * hdr.y;
+    }
     return float4(c.rgb, opts.y > 0 ? c.a : 1);
 }
 )";
@@ -428,6 +454,19 @@ struct BlitOptions {
     bool over = false;        // premultiplied over the target, which keeps its alpha
     float sharpen = 0;        // 0..1, contrast adaptive sharpening; texel is the source's texel size then
     float texel[2] = {0, 0};
+    bool hdr = false;         // to the HDR (scRGB) screen: linear, highlights raised (kBlitHlsl)
+    bool look = false;        // through [graphics] colour_look
+};
+
+// the colour looks, ROTK Fix's own numbers: contrast, pivot, saturation, vibrance, gamma, shadow tint, light tint
+struct ColourLook {
+    float contrast, pivot, sat, vibrance, gamma, shadow[3], light[3];
+};
+constexpr ColourLook kLooks[] = {
+    {1.00f, 0.30f, 1.00f, 0.00f, 1.00f, {0.000f, 0.000f, 0.000f}, {0.000f, 0.000f, 0.000f}},     // original
+    {1.12f, 0.30f, 1.06f, 0.15f, 0.97f, {-0.012f, 0.006f, 0.028f}, {0.045f, 0.018f, -0.030f}},   // film
+    {1.08f, 0.30f, 1.30f, 0.35f, 0.93f, {0.000f, 0.000f, 0.000f}, {0.010f, 0.005f, 0.000f}},     // vivid
+    {1.15f, 0.30f, 0.72f, 0.00f, 1.05f, {-0.020f, 0.000f, 0.025f}, {0.012f, 0.006f, -0.006f}},   // dark fantasy
 };
 
 // Shrink's settings past the source and the size
@@ -447,6 +486,7 @@ struct DrawTextures {
     bool rt[4] = {};            // stage samples a render target
     float k[4] = {1, 1, 1, 1};  // Extension::Sample's k
     float wide[4] = {};         // host texels per console texel of a target read into a smaller one, 0 otherwise
+    float sharp[4] = {};        // kTexSharp's strength, 0 otherwise
 };
 
 // a draw's shaders: what they are made from, their cache keys, the hashes Compile returned and the compiled blobs
@@ -632,6 +672,8 @@ private:
     void UploadGammaRamp();
     void DrawFrame(Target* t, uint32_t bi);
     void BlitFrame(Target& t);
+    void KeepMovieFrame(Target& t);
+    bool BlitMovie(const Target& t);
     void RenderUi();
     void ReleaseOldTextures();
     void ResetFrame();
@@ -771,6 +813,18 @@ private:
     Target* bound_rt_ = nullptr;
     Target* bound_ds_ = nullptr;
     bool bound_ms_ = false;    // the bound targets are the multisampled twins
+    // movies (g_movie): each presented frame kept at the console's size, the picture shown is the newest that is
+    // [graphics] cutscene_audio_delay old
+    struct MovieFrame {
+        ComPtr<ID3D12Resource> res;
+        D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_COPY_SOURCE;
+        double time = 0;
+    };
+    static constexpr uint32_t kMovieFrames = 32;
+    std::array<MovieFrame, kMovieFrames> movie_ring_;
+    uint32_t movie_n_ = 0;  // frames kept since the movie began
+    bool movie_on_ = false;
+    MovieFrame* PickMovieFrame();
     uint32_t samples_ = 1;     // anti-aliasing samples, 1 off
     std::unordered_map<uint32_t, bool> ms_ok_;  // formats that take samples_
     Target* draw_rt_ = nullptr;  // the draw's targets, the bound ones go when a texture's copy is drawn
@@ -819,6 +873,12 @@ private:
     std::atomic<uint64_t> presents_seen_{0};    // presents_ for DeliverLate
     Assembled asm_;  // kept between draws for its buffers
     bool tearing_ = false;
+    // [graphics] hdr on an HDR screen: an FP16 scRGB swap chain, the frame blit raising highlights
+    DXGI_FORMAT bb_fmt_ = DXGI_FORMAT_B8G8R8A8_UNORM;
+    bool hdr_ = false;
+    float hdr_paper_ = 200.0f / 80.0f;  // normal scenes and the HUD at 200 nits, in scRGB units
+    float hdr_peak_ = 600.0f / 80.0f;   // the screen's peak, read from it
+    bool HdrScreen(HWND hwnd, float& max_nits);
     uint64_t presents_ = 0;
     double fps_ = 0;
     std::chrono::steady_clock::time_point fps_t_ = std::chrono::steady_clock::now();
@@ -836,7 +896,7 @@ bool D3D12Backend::Init(uint32_t width, uint32_t height) {
     if (!CreateRootSignature()) return false;
     CreateFrames();
     CreateGammaLut();
-    ImGui_ImplDX12_Init(dev_.Get(), kFrames, DXGI_FORMAT_B8G8R8A8_UNORM, ui_heap_.Get(),
+    ImGui_ImplDX12_Init(dev_.Get(), kFrames, bb_fmt_, ui_heap_.Get(),
                         ui_heap_->GetCPUDescriptorHandleForHeapStart(), ui_heap_->GetGPUDescriptorHandleForHeapStart());
     LoadSettings();
     Begin();
@@ -886,7 +946,11 @@ bool D3D12Backend::CreateSwapChain(HWND hwnd) {
     DXGI_SWAP_CHAIN_DESC1 sd{};
     sd.Width = bb_w_;
     sd.Height = bb_h_;
-    sd.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+    float nits = 0;
+    hdr_ = app::Get().hdr && HdrScreen(hwnd, nits);
+    if (app::Get().hdr && !hdr_) LOGR("d3d12: HDR is on in the settings, but this screen has HDR off (or none): the normal picture");
+    bb_fmt_ = hdr_ ? DXGI_FORMAT_R16G16B16A16_FLOAT : DXGI_FORMAT_B8G8R8A8_UNORM;
+    sd.Format = bb_fmt_;
     sd.SampleDesc.Count = 1;
     sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     sd.BufferCount = kFrames;
@@ -899,7 +963,47 @@ bool D3D12Backend::CreateSwapChain(HWND hwnd) {
     }
     factory_->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER);
     sc1.As(&swap_);
+    if (hdr_) {
+        UINT support = 0;
+        constexpr DXGI_COLOR_SPACE_TYPE kScRgb = DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709;
+        if (SUCCEEDED(swap_->CheckColorSpaceSupport(kScRgb, &support)) &&
+            (support & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT) && SUCCEEDED(swap_->SetColorSpace1(kScRgb))) {
+            // a screen that reports less than twice paper white still gets some headroom; very bright ones are held
+            // to 1000 nits, past which the 2003 picture only glares
+            float peak = std::clamp(nits, 400.0f, 1000.0f);
+            hdr_peak_ = peak / 80.0f;
+            LOGR("d3d12: HDR on (screen peak %.0f nits, highlights up to %.0f, normal scenes at %.0f)", nits, peak,
+                 hdr_paper_ * 80.0f);
+        } else {
+            LOGR("d3d12: HDR could not be set up on this screen: the normal picture");
+            hdr_ = false;
+            bb_fmt_ = DXGI_FORMAT_B8G8R8A8_UNORM;
+            swap_->ResizeBuffers(kFrames, bb_w_, bb_h_, bb_fmt_, sd.Flags);
+        }
+    }
     return true;
+}
+
+// the window's screen shows HDR (Windows HDR on): max_nits its peak brightness
+bool D3D12Backend::HdrScreen(HWND hwnd, float& max_nits) {
+    HMONITOR mon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+    ComPtr<IDXGIFactory1> f1;
+    if (FAILED(factory_.As(&f1))) return false;
+    ComPtr<IDXGIAdapter1> ad;
+    for (UINT a = 0; f1->EnumAdapters1(a, &ad) != DXGI_ERROR_NOT_FOUND; a++) {
+        ComPtr<IDXGIOutput> out;
+        for (UINT o = 0; ad->EnumOutputs(o, &out) != DXGI_ERROR_NOT_FOUND; o++) {
+            DXGI_OUTPUT_DESC od{};
+            out->GetDesc(&od);
+            if (od.Monitor != mon) continue;
+            ComPtr<IDXGIOutput6> o6;
+            DXGI_OUTPUT_DESC1 d1{};
+            if (FAILED(out.As(&o6)) || FAILED(o6->GetDesc1(&d1))) return false;
+            max_nits = d1.MaxLuminance;
+            return d1.ColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
+        }
+    }
+    return false;
 }
 
 uint32_t D3D12Backend::CreateHeap(D3D12_DESCRIPTOR_HEAP_TYPE t, uint32_t n, bool visible,
@@ -981,6 +1085,7 @@ void D3D12Backend::CreateGammaLut() {
 
 void D3D12Backend::LoadSettings() {
     scale_ = app::RenderScale(guest_h_);
+    g_colour_look = std::min(app::Get().colour_look, kColourLooks - 1);
     samples_ = PickSamples();
     // brightness goes through the gamma ramp: a game that never sets one gets the identity ramp to carry it
     if (app::Get().brightness < 0.999f || app::Get().brightness > 1.001f) {
@@ -1028,8 +1133,55 @@ void D3D12Backend::Flush() { Submit(true); }
 // the picture as shown: the frame at its render size, made as wide as the screen shows it (16:9 with widescreen),
 // saved as <PREFIX>_<date>_<time>_<ms>.png as ROTK Fix names its own, on the texture pack writer's thread
 void D3D12Backend::Screenshot(Target& t) {
+    // the frame through the same pass as the screen (brightness, sharpening, colour look), without HDR; a movie as
+    // movie_display shows it
+    const app::Settings& stg = app::Get();
     uint32_t h = t.h, w = app::Widescreen() ? (t.h * 16 + 4) / 9 : t.w;
-    ComPtr<ID3D12Resource> down = Shrink(t.res.Get(), t.state, t.fmt, w, h, {});
+    ID3D12Resource* src = t.res.Get();
+    D3D12_RESOURCE_STATES* src_state = &t.state;
+    DXGI_FORMAT fmt = t.fmt;
+    float uv[4] = {0, 0, 1, 1};
+    BlitOptions o{.gamma = gamma_, .sharpen = g_sharpen_off ? 0.0f : std::min(stg.sharpening, 100u) / 100.0f,
+                  .texel = {1.0f / float(std::max(t.w, 1u)), 1.0f / float(std::max(t.h, 1u))}, .look = true};
+    if (MovieFrame* f = PickMovieFrame()) {
+        src = f->res.Get();
+        src_state = &f->state;
+        fmt = kBgra;
+        o.sharpen = std::min(stg.movie_sharpening, 100u) / 100.0f;
+        o.texel[0] = 1.0f / float(std::max(t.gw, 1u));
+        o.texel[1] = 1.0f / float(std::max(t.gh, 1u));
+        if (stg.movie_display == 0) {
+            uv[1] = 0.125f;
+            uv[3] = 0.75f;
+            w = (h * 16 + 4) / 9;
+        } else if (stg.movie_display == 1) {
+            w = uint32_t(uint64_t(h) * std::max(bb_w_, 1u) / std::max(bb_h_, 1u));
+        } else {
+            w = (h * 4 + 1) / 3;
+        }
+    }
+    ComPtr<ID3D12Resource> down;
+    {
+        D3D12_HEAP_PROPERTIES hp{D3D12_HEAP_TYPE_DEFAULT};
+        D3D12_RESOURCE_DESC td = Texture2DDesc(kBgra, w, h);
+        td.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+        D3D12_CLEAR_VALUE cv{};
+        cv.Format = kBgra;
+        if (!free_rtv_.empty() && SUCCEEDED(dev_->CreateCommittedResource(&hp, D3D12_HEAP_FLAG_NONE, &td,
+                                                                         D3D12_RESOURCE_STATE_RENDER_TARGET, &cv,
+                                                                         IID_PPV_ARGS(&down)))) {
+            // borrows the next free view without taking it, as Shrink does
+            D3D12_CPU_DESCRIPTOR_HANDLE rh = Cpu(rtv_heap_.Get(), free_rtv_.back(), rtv_inc_);
+            dev_->CreateRenderTargetView(down.Get(), nullptr, rh);
+            Transition(src, *src_state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            SetBlitTarget(rh, w, h);
+            Blit(src, fmt, uv, o);
+            D3D12_RESOURCE_STATES ds = D3D12_RESOURCE_STATE_RENDER_TARGET;
+            Transition(down.Get(), ds, D3D12_RESOURCE_STATE_COPY_SOURCE);
+        } else {
+            down.Reset();
+        }
+    }
     std::vector<uint8_t> px;
     if (!down || !ReadBack(down.Get(), w, h, px)) {
         LOGW("screenshot: the frame could not be read back");
@@ -1725,9 +1877,18 @@ void D3D12Backend::Blit(ID3D12Resource* src, DXGI_FORMAT fmt, const float uvrect
     dev_->CreateShaderResourceView(lut_.Get(), &sv, Cpu(srv_heap_.Get(), slot + 1, srv_inc_));
     uint32_t si = EnsureBlitSamplers();
     Alloc cb = Upload(256, 256);
-    float c[12] = {uvrect[0], uvrect[1], uvrect[2], uvrect[3],
+    const app::Settings& st = app::Get();
+    uint32_t li = std::min<uint32_t>(g_colour_look, std::size(kLooks) - 1);
+    const ColourLook& L = kLooks[li];
+    float strength = o.look && li ? std::min(st.look_strength, 100u) / 100.0f : 0.0f;
+    float c[32] = {uvrect[0], uvrect[1], uvrect[2], uvrect[3],
                    o.gamma ? 1.0f : 0.0f, o.alpha ? 1.0f : 0.0f, float(o.taps), o.mul,
-                   o.sharpen, o.texel[0], o.texel[1], 0};
+                   o.sharpen, o.texel[0], o.texel[1], 0,
+                   o.hdr ? 1.0f : 0.0f, hdr_paper_, hdr_peak_ / hdr_paper_, 0,
+                   L.contrast, L.pivot, L.sat, L.vibrance,
+                   L.gamma, strength, 0, 0,
+                   L.shadow[0], L.shadow[1], L.shadow[2], 0,
+                   L.light[0], L.light[1], L.light[2], 0};
     std::memcpy(cb.cpu, c, sizeof(c));
     DrawFullScreen(EnsureBlitPipeline(o.rtv, o.over), cb.gpu, slot, si);
 }
@@ -2426,6 +2587,20 @@ bool D3D12Backend::BindStageTexturesAndTargets(const State& s, DrawTextures& sta
     draw_rt_ = bound_rt_;
     draw_ds_ = bound_ds_;
     for (int i = 0; i < 4; i++) stages.res[i] = BindTexture(s, i, stages);
+    // HUD sharpening, as ROTK Fix: with [graphics] sharpening on, the pictures of 2D draws are sharpened at their own
+    // texel size, more the larger they are drawn (40% per 480 lines past the first 480, up to 90%)
+    float hud = 0;
+    if (g_screen_space_test && app::Get().sharpening && !g_sharpen_off)
+        hud = std::clamp(0.4f * (scale_ * float(guest_h_) / 480.0f - 1.0f), 0.0f, 0.9f);
+    if (hud > 0 && g_screen_space_test(s)) {
+        LOG_FIRST(1, "d3d12: sharper HUD on (%.0f%% at %.0f lines)", hud * 100, scale_ * float(guest_h_));
+        for (int i = 0; i < 4; i++) {
+            TexInfo& t = stages.info[i];
+            if (!stages.res[i] || stages.rt[i] || t.kind != kTex2D || t.rect || t.shadow || (t.flags & kTexWide)) continue;
+            t.flags |= kTexSharp;
+            stages.sharp[i] = hud;
+        }
+    }
     g_perf.bind += PerfMs(perf_t);
     // textures may have recorded copies that unbound the targets
     return BindTargets(s);
@@ -2560,6 +2735,11 @@ constexpr float kGlowBoxTexels = 3.0f;  // console texels across the box each wi
 void D3D12Backend::FillTexelConstants(int i, const TextureDesc& d, const DrawTextures& stages, DrawConstants& c) {
     c.texsize[i][0] = float(d.width);
     c.texsize[i][1] = float(d.height);
+    if (stages.sharp[i] > 0) {
+        c.spread[i][0] = 1.0f / float(std::max(d.width, 1u));
+        c.spread[i][1] = 1.0f / float(std::max(d.height, 1u));
+        c.spread[i][2] = stages.sharp[i];
+    }
     // the console samples pixels at integer positions, D3D12 half a pixel on: targets are read half a texel back
     if (!stages.rt[i]) return;
     float k = stages.k[i];
@@ -3268,7 +3448,7 @@ void D3D12Backend::ResizeSwap() {
         if (f.fence) WaitFence(f.fence);
     }
     for (auto& b : bb_) b.Reset();
-    swap_->ResizeBuffers(kFrames, w, h, DXGI_FORMAT_B8G8R8A8_UNORM, tearing_ ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0);
+    swap_->ResizeBuffers(kFrames, w, h, bb_fmt_, tearing_ ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0);
     CreateBackBufferViews();
     bb_w_ = w;
     bb_h_ = h;
@@ -3356,7 +3536,81 @@ void D3D12Backend::BlitFrame(Target& t) {
     // sharpening on the frame as shown: [graphics] sharpening, 0 the original picture
     float sharpen = g_sharpen_off ? 0.0f : std::min(app::Get().sharpening, 100u) / 100.0f;
     Blit(t.res.Get(), t.fmt, uv,
-         {.gamma = gamma_, .sharpen = sharpen, .texel = {1.0f / float(std::max(t.w, 1u)), 1.0f / float(std::max(t.h, 1u))}});
+         {.gamma = gamma_, .rtv = bb_fmt_, .sharpen = sharpen,
+          .texel = {1.0f / float(std::max(t.w, 1u)), 1.0f / float(std::max(t.h, 1u))}, .hdr = hdr_, .look = true});
+}
+
+double MovieClock() {
+    using namespace std::chrono;
+    return duration<double>(steady_clock::now().time_since_epoch()).count();
+}
+
+// the movie frame just drawn, averaged down to the console's size (the movie's own) into the ring
+void D3D12Backend::KeepMovieFrame(Target& t) {
+    if (!movie_on_) {
+        movie_on_ = true;
+        movie_n_ = 0;
+    }
+    MovieFrame& f = movie_ring_[movie_n_ % kMovieFrames];
+    float k = float(t.w) / float(std::max(t.gw, 1u));
+    ShrinkOptions o{.taps = uint32_t(std::max(1.0f, std::ceil(k - 0.01f))), .into = f.res.Get(), .into_state = f.state,
+                    .mul = t.range};
+    ComPtr<ID3D12Resource> down = Shrink(t.res.Get(), t.state, t.fmt, t.gw, t.gh, o);
+    if (!down) return;
+    f.res = down;
+    f.state = D3D12_RESOURCE_STATE_COPY_SOURCE;
+    f.time = MovieClock();
+    movie_n_++;
+}
+
+// a movie frame as [graphics] movie_display shows it, sharpened at its own size; false when no movie is on
+// the movie frame to show: the newest one old enough, else the oldest kept (the picture waits for the late sound);
+// null when no movie is on
+D3D12Backend::MovieFrame* D3D12Backend::PickMovieFrame() {
+    if (!movie_on_ || !movie_n_) return nullptr;
+    double due = MovieClock() - app::Get().movie_delay / 1000.0;
+    uint32_t kept = std::min(movie_n_, kMovieFrames);
+    MovieFrame* pick = &movie_ring_[(movie_n_ - kept) % kMovieFrames];
+    for (uint32_t i = movie_n_; i-- > movie_n_ - kept;) {
+        MovieFrame& f = movie_ring_[i % kMovieFrames];
+        if (f.time <= due) {
+            pick = &f;
+            break;
+        }
+    }
+    return pick->res ? pick : nullptr;
+}
+
+bool D3D12Backend::BlitMovie(const Target& t) {
+    MovieFrame* pick = PickMovieFrame();
+    if (!pick) return false;
+    const app::Settings& st = app::Get();
+    float w = float(bb_w_);
+    float h = float(bb_h_);
+    float uv[4] = {0, 0, 1, 1};
+    float aspect = 4.0f / 3.0f;
+    if (st.movie_display == 0) {
+        // fit: the middle 16:9 of the 4:3 frame, where the films and logos are (their bars are outside it)
+        uv[1] = 0.125f;
+        uv[3] = 0.75f;
+        aspect = 16.0f / 9.0f;
+    }
+    float vw = std::min(w, h * aspect);
+    float vh = vw / aspect;
+    if (st.movie_display == 1) {
+        vw = w;
+        vh = h;
+    }
+    D3D12_VIEWPORT vp{(w - vw) / 2, (h - vh) / 2, vw, vh, 0, 1};
+    D3D12_RECT scissor{0, 0, LONG(bb_w_), LONG(bb_h_)};
+    cl_->RSSetViewports(1, &vp);
+    cl_->RSSetScissorRects(1, &scissor);
+    Transition(pick->res.Get(), pick->state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    float sharpen = std::min(st.movie_sharpening, 100u) / 100.0f;
+    Blit(pick->res.Get(), kBgra, uv,
+         {.gamma = gamma_, .rtv = bb_fmt_, .sharpen = sharpen,
+          .texel = {1.0f / float(std::max(t.gw, 1u)), 1.0f / float(std::max(t.gh, 1u))}, .hdr = hdr_, .look = true});
+    return true;
 }
 
 void D3D12Backend::RenderUi() {
@@ -3379,7 +3633,7 @@ void D3D12Backend::DrawFrame(Target* t, uint32_t bi) {
     cl_->ClearRenderTargetView(rh, black, 0, nullptr);
     cl_->OMSetRenderTargets(1, &rh, FALSE, nullptr);
     bound_rt_ = bound_ds_ = nullptr;
-    if (t) BlitFrame(*t);
+    if (t && !BlitMovie(*t)) BlitFrame(*t);
     RenderUi();
     Transition(bb_[bi].Get(), bs, D3D12_RESOURCE_STATE_PRESENT);
 }
@@ -3497,6 +3751,8 @@ void D3D12Backend::Present(const Surface& front) {
     if (t && LatchCpuWrite(*t)) UploadTarget(*t, front);
     if (t) Resolve(*t);
     if (t && g_screenshot.exchange(false)) Screenshot(*t);
+    if (t && g_movie) KeepMovieFrame(*t);
+    else movie_on_ = false;
     if (ramp_dirty_) UploadGammaRamp();
     Transition(lut_.Get(), lut_state_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 

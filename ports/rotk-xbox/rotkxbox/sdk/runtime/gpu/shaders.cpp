@@ -392,6 +392,7 @@ std::string TexFetch(const PixelKey& k, int i) {
     };
     auto tex2d = [&](const std::string& uv) {
         if (t.flags & kTexWide) return F("spreadtap(tex%d, smp%d, %s, spread[%d], %s)", i, i, uv.c_str(), i, Hooks().ReadScale(t).c_str());
+        if (t.flags & kTexSharp) return F("sharptap(tex%d, smp%d, %s, spread[%d])", i, i, uv.c_str(), i);
         return F("tex%d.Sample(smp%d, %s)", i, i, uv.c_str());
     };
     auto cube = [&](const std::string& dir) {
@@ -456,7 +457,14 @@ const char* kPsSbyte = R"(
 // unorm to byte b, less lo under 128 or hi from 128, over d
 float3 sbyte(float3 u, float lo, float hi, float d) { float3 b = u * 255; return (b - (b >= 128 ? hi : lo)) / d; }
 )";
-const char* kPsTail = R"(float4 spreadtap(Texture2D t, SamplerState s, float2 uv, float4 w, float m) {
+const char* kPsTail = R"(float4 sharptap(Texture2D t, SamplerState s, float2 uv, float4 w) {
+    float4 c = t.Sample(s, uv);
+    float3 n = t.Sample(s, uv + float2(w.x, 0)).rgb + t.Sample(s, uv - float2(w.x, 0)).rgb +
+               t.Sample(s, uv + float2(0, w.y)).rgb + t.Sample(s, uv - float2(0, w.y)).rgb;
+    c.rgb = saturate(c.rgb + w.z * (c.rgb - n * 0.25));
+    return c;
+}
+float4 spreadtap(Texture2D t, SamplerState s, float2 uv, float4 w, float m) {
     float4 c = 0;
     int n = (int)w.z;
     for (int y = 0; y < n; y++)
@@ -860,6 +868,8 @@ std::string PixelHlsl(const PixelKey& k) {
                           i, i, i, norm.c_str(), i, i, t.shadow, i);
             else if (t.kind == kTex2D && (t.flags & kTexWide))
                 body += F("float4 t%d = spreadtap(tex%d, smp%d, %s, spread[%d], %s);\n", i, i, i, uv.c_str(), i, Hooks().ReadScale(t).c_str());
+            else if (t.kind == kTex2D && (t.flags & kTexSharp))
+                body += F("float4 t%d = sharptap(tex%d, smp%d, %s, spread[%d]);\n", i, i, i, uv.c_str(), i);
             else if (t.kind == kTex2D) body += F("float4 t%d = tex%d.Sample(smp%d, %s);\n", i, i, i, uv.c_str());
             else if (t.kind == kTexCube && !(cube = Hooks().Cube(t, i, F("tc%d.xyz", i))).empty()) body += F("float4 t%d = %s;\n", i, cube.c_str());
             else if (t.kind) body += F("float4 t%d = tex%d.Sample(smp%d, tc%d.xyz);\n", i, i, i, i);

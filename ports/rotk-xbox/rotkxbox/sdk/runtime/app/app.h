@@ -34,6 +34,16 @@ struct Settings {
     float lod_bias = 0.0f;                 // added to the game's mip level bias: below 0 picks sharper texture levels
     uint32_t sharpening = 0;               // 0 to 100: contrast adaptive sharpening over the picture as shown
     uint32_t msaa = 0;                     // anti-aliasing samples: 0 off, 2, 4 or 8
+    bool hdr = false;                      // HDR output on an HDR screen (Windows HDR on), read at start
+    uint32_t colour_look = 0;              // 0 original, 1 film, 2 vivid, 3 dark fantasy
+    uint32_t look_strength = 100;          // 0 to 100, how much of the look
+    // [input], as ROTK Fix's controller options; 0 deadzone and threshold leave it to the game, as on the console
+    uint32_t vibration = 100;              // 0 to 100, rumble strength
+    uint32_t stick_deadzone = 0;           // 0 to 50, % of a stick's travel read as centred
+    uint32_t trigger_threshold = 0;        // 0 to 90, % of a trigger's pull read as released
+    uint32_t movie_display = 2;            // movies: 0 fit (the middle 16:9), 1 stretch, 2 4:3 (the console's frame)
+    uint32_t movie_sharpening = 0;         // 0 to 100, sharpening at the movie's own pixel size
+    uint32_t movie_delay = 0;              // ms the movie picture is held back, for late (Bluetooth) sound
 };
 
 Settings& Get();

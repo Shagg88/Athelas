@@ -1,4 +1,5 @@
-// the host side without a window: settings at their defaults, the run folder as the exe folder
+// the host side without a window: settings from settings.toml in the run folder when there is one (else the
+// defaults), the run folder as the exe folder
 #include <chrono>
 #include <cstdlib>
 #include <filesystem>
@@ -14,7 +15,10 @@ Settings& Get() {
     static Settings s;
     return s;
 }
-void Load() {}
+void Load() {
+    std::string error;
+    if (!cfg::Read(SettingsFile().string(), SettingsList(), error)) LOGE("settings: %s", error.c_str());
+}
 void Save() {}
 void ApplyDisplay() {}
 Mode Desktop() { return {1280, 720}; }
@@ -56,7 +60,6 @@ const std::vector<std::string>& ScreenNames() {
 void* ScreenMonitor() { return nullptr; }
 std::filesystem::path LogFolder() { return ExeDir() / "logs"; }
 std::filesystem::path SettingsFile() { return ExeDir() / "settings.toml"; }
-std::vector<cfg::Desc> SettingsList() { return {}; }
 void Fail(int code, const std::wstring& message) {
     LOGE("Exit (%d): %s", code, std::string(message.begin(), message.end()).c_str());
     logx::Flush();

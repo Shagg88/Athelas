@@ -1,8 +1,7 @@
-diff --git a/rotkxbox/sdk/harness/null_backend.cpp b/rotkxbox/sdk/harness/null_backend.cpp
-index 721a1b2..7fd48ba 100644
---- a/rotkxbox/sdk/harness/null_backend.cpp
-+++ b/rotkxbox/sdk/harness/null_backend.cpp
-@@ -110,6 +110,13 @@ private:
+diff -ruN a/harness/null_backend.cpp b/harness/null_backend.cpp
+--- a/harness/null_backend.cpp	2026-10-13 12:24:26.983961312 -0700
++++ b/harness/null_backend.cpp	2026-10-13 12:21:43.000000000 -0700
+@@ -110,6 +110,13 @@
          if (s.textures[0] && Describe(s.textures[0], d))
              std::fprintf(f, "  tex %ux%u fmt %X cop %u %X %X aop %u %X %X\n", d.width, d.height, d.format, t0[kTssColorOp],
                           t0[kTssColorArg1], t0[kTssColorArg2], t0[kTssAlphaOp], t0[kTssAlphaArg1], t0[kTssAlphaArg2]);
@@ -16,11 +15,10 @@ index 721a1b2..7fd48ba 100644
          std::fprintf(f, "  ttf %X tci %X addr %u %u t16", t0[kTssTextureTransformFlags], t0[kTssTexCoordIndex], t0[kTssAddressU],
                       t0[kTssAddressV]);
          auto matrix = [&](const char* name, uint32_t which) {
-diff --git a/rotkxbox/sdk/harness/reference_renderer.cpp b/rotkxbox/sdk/harness/reference_renderer.cpp
-index 504ac13..0988546 100644
---- a/rotkxbox/sdk/harness/reference_renderer.cpp
-+++ b/rotkxbox/sdk/harness/reference_renderer.cpp
-@@ -1153,7 +1153,11 @@ void Draw(const State& s, uint32_t prim, uint32_t start, uint32_t count, const u
+diff -ruN a/harness/reference_renderer.cpp b/harness/reference_renderer.cpp
+--- a/harness/reference_renderer.cpp	2026-10-13 12:24:26.984058643 -0700
++++ b/harness/reference_renderer.cpp	2026-10-13 12:21:43.000000000 -0700
+@@ -1153,7 +1153,11 @@
              o.attr[kB0] = o.attr[kD0];
              o.attr[kB1] = o.attr[kD1];
              o.attr[kFog] = Splat(FogAmount(s, std::fabs(o.pos[2] / s.zscale)));
@@ -33,11 +31,10 @@ index 504ac13..0988546 100644
          }
          for (int a : {kD0, kD1, kB0, kB1})
              for (int j = 0; j < 4; j++) o.attr[a][j] = Sat(o.attr[a][j]);
-diff --git a/rotkxbox/sdk/runtime/kernel/files.cpp b/rotkxbox/sdk/runtime/kernel/files.cpp
-index e34ffbb..fa91fb2 100644
---- a/rotkxbox/sdk/runtime/kernel/files.cpp
-+++ b/rotkxbox/sdk/runtime/kernel/files.cpp
-@@ -78,6 +78,7 @@ struct File : Object {
+diff -ruN a/runtime/kernel/files.cpp b/runtime/kernel/files.cpp
+--- a/runtime/kernel/files.cpp	2026-10-13 12:24:26.985056357 -0700
++++ b/runtime/kernel/files.cpp	2026-10-13 12:21:43.000000000 -0700
+@@ -78,6 +78,7 @@
      size_t next = 0;
      bool listed = false;
      bool delete_on_close = false;
@@ -45,7 +42,7 @@ index e34ffbb..fa91fb2 100644
      std::mutex io;  // threads sharing a handle: seek and transfer stay together
      File() : Object(ObjType::File) {}
      ~File() override {
-@@ -296,6 +297,7 @@ uint32_t OpenOnDisc(const Disc::Entry* e, const std::string& name, uint32_t hand
+@@ -296,6 +297,7 @@
      f->xbox = Normalize(name);
      f->entry = e;
      f->dir = e->dir;
@@ -53,7 +50,7 @@ index e34ffbb..fa91fb2 100644
      W32(handle_out, NewHandle(f));
      IoStatus(iosb, kSuccess, 1);
      LOG_FIRST(400, "open %s", name.c_str());
-@@ -418,6 +420,7 @@ KERNEL_EXPORT(190, NtCreateFile, 9) {
+@@ -418,6 +420,7 @@
      f->xbox = Normalize(name);
      f->fp = fp;
      f->delete_on_close = options & 0x1000;  // FILE_DELETE_ON_CLOSE
@@ -61,7 +58,7 @@ index e34ffbb..fa91fb2 100644
      W32(handle_out, NewHandle(f));
      IoStatus(iosb, kSuccess, info);
      LOG_FIRST(400, "open %s", name.c_str());
-@@ -447,19 +450,23 @@ KERNEL_EXPORT(202, NtOpenFile, 6) {
+@@ -447,19 +450,23 @@
          if (!f->fp) f->fp = std::fopen(host.c_str(), "rb");
          if (!f->fp) return kAccessDenied;
      }
@@ -88,7 +85,7 @@ index e34ffbb..fa91fb2 100644
  }
  
  static uint64_t Offset(File& f, uint32_t off) {
-@@ -525,6 +532,12 @@ KERNEL_EXPORT(211, NtQueryInformationFile, 5) {
+@@ -525,6 +532,12 @@
              G<uint8_t>(out + 0x15) = f->dir;  // Directory, after DeletePending
              IoStatus(iosb, kSuccess, 0x18);
              return kSuccess;
@@ -101,10 +98,9 @@ index e34ffbb..fa91fb2 100644
          case 14:  // FilePositionInformation
              W64(out, f->pos);
              IoStatus(iosb, kSuccess, 8);
-diff --git a/rotkxbox/sdk/runtime/xdk/d3d8.cpp b/rotkxbox/sdk/runtime/xdk/d3d8.cpp
-index bd31022..609e9d6 100644
---- a/rotkxbox/sdk/runtime/xdk/d3d8.cpp
-+++ b/rotkxbox/sdk/runtime/xdk/d3d8.cpp
+diff -ruN a/runtime/xdk/d3d8.cpp b/runtime/xdk/d3d8.cpp
+--- a/runtime/xdk/d3d8.cpp	2026-10-13 12:24:26.985288423 -0700
++++ b/runtime/xdk/d3d8.cpp	2026-10-13 12:21:43.000000000 -0700
 @@ -1,6 +1,7 @@
  // Direct3D 8 (XDK 5849) entry points the title calls, implemented on the host renderer.
  // Resource creation, locking and the XG helpers stay recompiled: they only manage memory.
@@ -113,7 +109,7 @@ index bd31022..609e9d6 100644
  #include <cstdlib>
  #include <atomic>
  #include <chrono>
-@@ -86,6 +87,13 @@ uint32_t g_screen_pixels = 640 * 480;  // the back buffer's, for visibility test
+@@ -86,6 +87,13 @@
  std::recursive_mutex g_lock;
  
  std::unordered_map<uint32_t, std::shared_ptr<gpu::VertexShader>> g_vs;
@@ -127,7 +123,7 @@ index bd31022..609e9d6 100644
  std::unordered_map<uint32_t, std::shared_ptr<gpu::PixelShader>> g_ps;
  std::array<uint32_t, 3> g_buffers{};  // front, back surfaces
  uint32_t g_buffer_count = 2;
-@@ -819,6 +827,8 @@ HLE_STDCALL(D3DDevice_DeleteVertexShader, 1) {
+@@ -819,6 +827,8 @@
      if (it != g_vs.end()) {
          mem::FreeSystem(a[0] & ~1u);
          g_vs.erase(it);
@@ -136,7 +132,7 @@ index bd31022..609e9d6 100644
      }
      return 0;
  }
-@@ -880,12 +890,73 @@ HLE_FASTCALL(D3DDevice_SetVertexShaderConstantNotInlineFast, 1) {
+@@ -880,12 +890,73 @@
      return 0;
  }
  
@@ -212,7 +208,7 @@ index bd31022..609e9d6 100644
      return 0;
  }
  HLE_STDCALL(D3DDevice_SetShaderConstantMode, 1) {
-@@ -1199,9 +1270,41 @@ HLE_STDCALL(D3DDevice_BeginPush, 1) {
+@@ -1199,9 +1270,41 @@
  
  HLE_STDCALL(D3DDevice_EndPush, 1) {
      std::lock_guard<std::recursive_mutex> lock(g_lock);
@@ -255,7 +251,7 @@ index bd31022..609e9d6 100644
      for (uint32_t p = g_push_begin, end = a[0]; g_push_begin && p + 4 <= end;) {
          // count in bits 18 to 28, bit 30 keeps the method for every value
          uint32_t head = R32(p), method = head & 0x1FFC, n = (head >> 18) & 0x7FF;
-@@ -1214,11 +1317,18 @@ HLE_STDCALL(D3DDevice_EndPush, 1) {
+@@ -1214,11 +1317,18 @@
              uint32_t m = head & 0x40000000 ? method : method + i * 4, v = R32(p);
              if (m == kInlineArray) {
                  if (prim) vertices.push_back(v);
@@ -274,10 +270,9 @@ index bd31022..609e9d6 100644
              } else if (prim) {
                  uint32_t stride = VertexBytes(), bytes = uint32_t(vertices.size()) * 4;
                  if (stride && bytes % stride == 0) DrawUp(prim, bytes / stride, vertices.data(), stride);
-diff --git a/rotkxbox/sdk/runtime/xdk/xapi.cpp b/rotkxbox/sdk/runtime/xdk/xapi.cpp
-index 0fc7b2e..12fdc76 100644
---- a/rotkxbox/sdk/runtime/xdk/xapi.cpp
-+++ b/rotkxbox/sdk/runtime/xdk/xapi.cpp
+diff -ruN a/runtime/xdk/xapi.cpp b/runtime/xdk/xapi.cpp
+--- a/runtime/xdk/xapi.cpp	2026-10-13 12:24:26.985354889 -0700
++++ b/runtime/xdk/xapi.cpp	2026-10-13 12:21:43.000000000 -0700
 @@ -1,6 +1,7 @@
  // XAPI functions that talk to hardware: controller ports and the hard disk cache partition
  #include <chrono>
@@ -286,7 +281,7 @@ index 0fc7b2e..12fdc76 100644
  #include "core/input.h"
  #include "xdk/hle.h"
  #include "xdk/layout.h"
-@@ -68,6 +69,7 @@ HLE_STDCALL(XInitDevices, 2) {
+@@ -68,6 +69,7 @@
  
  HLE_STDCALL(XInputOpen, 4) {
      uint32_t type = a[0], port = a[1];
@@ -294,11 +289,9 @@ index 0fc7b2e..12fdc76 100644
      if (type != kGamepadType || port > 3) return 0;
      uint32_t h = mem::AllocSystem(16);
      std::lock_guard<std::mutex> lock(g_ports_lock);
-diff --git a/rotkxbox/sdk/xdk/5558/layout.toml b/rotkxbox/sdk/xdk/5558/layout.toml
-new file mode 100644
-index 0000000..a2ace18
---- /dev/null
-+++ b/rotkxbox/sdk/xdk/5558/layout.toml
+diff -ruN a/xdk/5558/layout.toml b/xdk/5558/layout.toml
+--- a/xdk/5558/layout.toml	1969-12-31 16:00:00.000000000 -0800
++++ b/xdk/5558/layout.toml	2026-10-13 12:21:43.000000000 -0700
 @@ -0,0 +1,57 @@
 +# XDK 5558 library data layouts the runtime reads or writes. Each value is proven by the
 +# The Return of the King (title 4541003E) default.xbe code at the address given. Derived 2026-10-13.
@@ -357,11 +350,9 @@ index 0000000..a2ace18
 +
 +# Render-state numbering: all 23 render states XbSymbolDatabase located (D3D_RenderState 0x13A630) have the same
 +# index as the runtime's enum (deferred from 92, complex from 136).
-diff --git a/rotkxbox/sdk/xdk/5558/signatures.toml b/rotkxbox/sdk/xdk/5558/signatures.toml
-new file mode 100644
-index 0000000..accbd98
---- /dev/null
-+++ b/rotkxbox/sdk/xdk/5558/signatures.toml
+diff -ruN a/xdk/5558/signatures.toml b/xdk/5558/signatures.toml
+--- a/xdk/5558/signatures.toml	1969-12-31 16:00:00.000000000 -0800
++++ b/xdk/5558/signatures.toml	2026-10-13 12:21:43.000000000 -0700
 @@ -0,0 +1,273 @@
 +# XDK library signatures read by xbe_symbols, written by xbe_symbols in sign mode. No library bytes stored.
 +# [symbols] name = {sec, len, hash, calls, deep, count, nth}: hash of len bytes from the function start in

@@ -72,5 +72,11 @@ inline std::atomic<bool> g_capture{false};
 inline std::atomic<bool> g_screenshot{false};
 // [ : sharpening off while held off, to compare; a press switches it back on
 inline std::atomic<bool> g_sharpen_off{false};
+// the game shows a full-screen movie (its frame fills the back buffer): presented by [graphics] movie_display,
+// movie_sharpening and cutscene_audio_delay instead of as a game frame
+inline std::atomic<bool> g_movie{false};
+// ] : the colour look shown, from [graphics] colour_look at start, the key steps through them while playing
+inline std::atomic<uint32_t> g_colour_look{0};
+constexpr uint32_t kColourLooks = 4;
 
 }  // namespace gpu
