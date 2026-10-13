@@ -352,6 +352,8 @@ bool load_settings(const std::string &dir, Settings &s)
             }
     }
     s.skipAllVideos = geti(ini, "Video", "AllowSkippingAllVideos", 1) != 0;
+    s.texReplace = geti(ini, "Textures", "Replace", 1) != 0;
+    s.texDump = geti(ini, "Textures", "Dump", 0) != 0;
     std::string md = gets(ini, "Video", "MovieDisplay", "auto");
     s.movieDisplay = !_stricmp(md.c_str(), "stretch") ? 1 : !_stricmp(md.c_str(), "4:3") ? 2 : 0;
     s.skipLogos = geti(ini, "Video", "SkipOpeningLogos", 0) != 0;
@@ -582,6 +584,8 @@ static bool write_rotkfix_ini(const std::string &p, const Settings &s, bool crea
     set("Video", "SharperMovies", std::to_string(s.sharperMovies));
     set("Video", "CutsceneAudioDelay", std::to_string(s.audioDelayMs));
     set("Video", "AllowSkippingAllVideos", std::to_string((int)s.skipAllVideos));
+    set("Textures", "Replace", std::to_string((int)s.texReplace));
+    set("Textures", "Dump", std::to_string((int)s.texDump));
     set("Video", "SkipOpeningLogos", std::to_string((int)s.skipLogos));
     set("Sound", "Mode", sm[s.sound3d]);
     set("Gamepad", "Enabled", std::to_string((int)s.padEnabled));

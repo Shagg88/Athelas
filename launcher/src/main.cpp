@@ -673,6 +673,25 @@ static void tab_graphics(App &a)
     ImGui::Checkbox("##altcam", &s.altCameras);
     row_end();
 
+    section("Texture packs");
+    row_begin("Use texture packs", "Shows sharper or remade pictures from texture packs. A pack goes in its own folder inside "
+                                   "ROTKFix\\textures\\replace; remove the folder to go back to the original pictures.");
+    ImGui::Checkbox("##texrepl", &s.texReplace);
+    row_end();
+    row_begin("Save game textures", "For making texture packs: every picture the game uses is saved as a PNG in "
+                                    "ROTKFix\\textures\\dump as you play. Levels load a little slower the first time. "
+                                    "Turn it off when you have what you need.");
+    ImGui::Checkbox("##texdump", &s.texDump);
+    row_end();
+    row_begin("Textures folder", "Opens ROTKFix\\textures, where the replace and dump folders are.");
+    if (ImGui::Button("Open folder")) {
+        std::string t = a.dir + "\\ROTKFix\\textures";
+        CreateDirectoryA(t.c_str(), NULL);
+        CreateDirectoryA((t + "\\replace").c_str(), NULL);
+        ShellExecuteA(NULL, "open", t.c_str(), NULL, NULL, SW_SHOWNORMAL);
+    }
+    row_end();
+
     section("Movies");
     static const char *md[] = { "Fit", "Stretch", "4:3" };
     row_begin("Movie display", "Fit: cutscenes and the opening logos fill the width with correct proportions; the trailer is shown 4:3.\n"

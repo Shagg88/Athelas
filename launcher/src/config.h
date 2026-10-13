@@ -18,6 +18,8 @@ struct Settings {
                           { 0, 1, 2, 3, 4, 5, 8, 10, 11 } };
     // [Video]
     bool skipAllVideos = true;
+    bool texReplace = true;       // [Textures] Replace: use texture packs
+    bool texDump = false;         // [Textures] Dump: save the game's textures as PNGs
     int  movieDisplay = 0;        // 0 auto, 1 stretch, 2 4:3
     bool skipLogos = false;
     int  audioDelayMs = 0;
