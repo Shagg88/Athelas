@@ -825,9 +825,14 @@ static void tab_controls(App &a)
 {
     Settings &s = a.s;
     section("Controller");
-    row_begin("Use a controller", "Xbox, PlayStation, Switch and most other controllers work, wired or wireless.");
-    ImGui::Checkbox("##pad", &s.padEnabled);
-    if (s.padEnabled) {
+    // on Xbox the controller is the game's own input, so this switch is the PC version's only
+    bool padOn = s.padEnabled || g_xboxPage;
+    row_begin("Use a controller", g_xboxPage ? "Always on for the Xbox version: the controller is the game's own input."
+                                             : "Xbox, PlayStation, Switch and most other controllers work, wired or wireless.");
+    ImGui::BeginDisabled(g_xboxPage);
+    if (g_xboxPage) { bool on = true; ImGui::Checkbox("##pad", &on); } else ImGui::Checkbox("##pad", &s.padEnabled);
+    ImGui::EndDisabled();
+    if (padOn) {
         ImGui::SameLine(0, S(16));
         ImGui::AlignTextToFramePadding();
         if (a.controllers > 1) ImGui::TextColored(C_GOOD, "%d controllers connected", a.controllers);
@@ -835,7 +840,7 @@ static void tab_controls(App &a)
         else ImGui::TextColored(C_WARN, "None connected");
     }
     row_end();
-    ImGui::BeginDisabled(!s.padEnabled);
+    ImGui::BeginDisabled(!padOn);
     section("Buttons");
     if (!s.player2) a.padPlayer = 0;
     // whose layout
@@ -2277,7 +2282,7 @@ static void rx_play(App &a, const LibGame &g)
     SHCreateDirectoryExA(NULL, (d + "\\saves").c_str(), NULL);
     std::string args = "--game \"" + g.path + "\" --ini \"" + a.dir + "\\ROTKFix.ini\" --log \"" + rx_log_path() +
                        "\" --saves \"" + d + "\\saves\" --screenshots \"" + exe_dir() + "\\Screenshots\" --textures \"" + d +
-                       "\\textures\" --no-dialogs";
+                       "\\textures\" --config \"" + d + "\\settings.toml\" --shader-cache \"" + d + "\\shadercache\" --no-dialogs";
     std::string err;
     HANDLE h = port_start(a.rx.exe, args, err);
     if (!h) { set_message(a, err, true); return; }
