@@ -184,6 +184,9 @@ GameKind detect_game_at(const std::string &path, LibGame &out)
     out = LibGame();
     std::string p = path;
     while (p.size() > 3 && (p.back() == '\\' || p.back() == '/')) p.pop_back();
+    // the game's default.xbe picked instead of its folder: the ports take the folder (or an .iso), never the .xbe
+    size_t slash = p.find_last_of("\\/");
+    if (slash != std::string::npos && !_stricmp(p.c_str() + slash + 1, "default.xbe")) p = p.substr(0, slash);
     out.path = p;
     if (is_dir(p)) out.kind = detect_folder(p, out);
     else if (exists(p)) { out.iso = true; out.kind = detect_iso(p, out); }
