@@ -13,6 +13,7 @@ struct PortSetting {
     std::string def;                   // default, written as it goes in the file (choices and strings quoted)
     double min = 0, max = 0;
     std::vector<std::string> choices;
+    std::vector<std::string> choiceLabels;   // optional display names, one per choice ("0" -> "Off")
 };
 
 struct PortSettingsFile {

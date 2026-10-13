@@ -1185,7 +1185,16 @@ static void tt_find(App &a)
 static bool tt_ready(const App &a) { return !a.tt.exe.empty() && a.tt.err.empty() && !a.tt.settings.empty(); }
 
 // The value of a setting: from the file, else its default
-static std::string tt_val(const App &a, const PortSetting &ps) { return a.ttFile.get(ps.section, ps.key, ps.def); }
+static std::string tt_val(const App &a, const PortSetting &ps)
+{
+    std::string v = a.ttFile.get(ps.section, ps.key, ps.def);
+    if (ps.type == "choice" && !ps.choices.empty()) {   // a choice the port no longer offers (an old "unlimited"): its default, as the port does
+        std::string u = toml_unquote(v);
+        for (auto &c : ps.choices) if (c == u) return v;
+        return ps.def;
+    }
+    return v;
+}
 static const PortSetting *tt_setting(const App &a, const char *sec, const char *key)
 {
     for (auto &ps : a.tt.settings) if (ps.section == sec && ps.key == key) return &ps;
@@ -1287,8 +1296,11 @@ static const char *tt_section_title(const std::string &s)
 // How a choice is shown in its menu
 static std::string tt_choice_name(const PortSetting &ps, const std::string &c)
 {
-    if (ps.key == "anisotropic_filtering") return c == "0" ? "As the game asks" : c + "x";
-    if (ps.key == "fps") return c == "unlimited" ? "Unlimited" : c + " fps";
+    // the port's own display names, when it gives them
+    for (size_t i = 0; i < ps.choiceLabels.size(); i++) if (ps.choices[i] == c) return ps.choiceLabels[i];
+    // otherwise, for older ports:
+    if (ps.key == "anisotropic_filtering") return c == "0" ? "Off" : c + "x";
+    if (ps.key == "fps") return c + " fps";
     if (ps.key == "msaa") return c == "0" ? "Off" : c + "x";
     return cap_first(c);
 }

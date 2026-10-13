@@ -172,6 +172,8 @@ bool port_query(Port &p)
         if (const JVal *v = j.get("min")) s.min = v->n;
         if (const JVal *v = j.get("max")) s.max = v->n;
         if (const JVal *v = j.get("choices")) for (auto &c : v->a) s.choices.push_back(c.t == JVal::STR ? c.s : num_text(c.n));
+        if (const JVal *v = j.get("choice_labels")) for (auto &c : v->a) s.choiceLabels.push_back(c.t == JVal::STR ? c.s : num_text(c.n));
+        if (s.choiceLabels.size() != s.choices.size()) s.choiceLabels.clear();   // only used when there's one per choice
         if (const JVal *d = j.get("default")) {
             switch (d->t) {
             case JVal::BOOL: s.def = d->b ? "true" : "false"; break;
