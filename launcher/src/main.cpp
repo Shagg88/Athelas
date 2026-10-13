@@ -1673,8 +1673,36 @@ static void tt_tab_display(App &a)
     }
     row_end();
 
-    // The Two Towers only: drawn at a share of the screen, then fitted (ROTK has no such setting)
-    if (const PortSetting *rp = tt_setting(a, "display", "render_percent")) tt_setting_row(a, *rp);
+    // The Two Towers only: drawn at a share of the screen, then fitted (ROTK has no such setting).
+    // Each choice shows the size it draws at, from the resolution above (the screen's own when 0),
+    // as the port works it out: round(width * pct / 100) x round(height * pct / 100).
+    if (const PortSetting *rp = tt_setting(a, "display", "render_percent")) {
+        int rw = w > 0 && h > 0 ? w : m.deskW, rh = w > 0 && h > 0 ? h : m.deskH;
+        auto sized = [&](const std::string &choice) {
+            int pct = atoi(choice.c_str());
+            char b[48];
+            snprintf(b, sizeof b, "  (%d x %d)", (int)lround(rw * pct / 100.0), (int)lround(rh * pct / 100.0));
+            return tt_choice_name(*rp, choice) + b;
+        };
+        if (rp->type == "choice") {
+            std::string cur = toml_unquote(tt_val(a, *rp));
+            row_begin(rp->label.c_str(), rp->help.c_str());
+            ImGui::SetNextItemWidth(std::min(ImGui::GetContentRegionAvail().x - S(4), S(290)));
+            if (ImGui::BeginCombo("##ttrender", sized(cur).c_str())) {
+                for (auto &c : rp->choices)
+                    if (ImGui::Selectable(sized(c).c_str(), c == cur)) a.ttFile.set(rp->section, rp->key, toml_quote(c));
+                ImGui::EndCombo();
+            }
+            row_end();
+        } else {   // older ports: a percentage slider
+            int pct = atoi(tt_val(a, *rp).c_str());
+            char fmt[64];
+            snprintf(fmt, sizeof fmt, "%%d%%%%  (%d x %d)", (int)lround(rw * pct / 100.0), (int)lround(rh * pct / 100.0));
+            row_begin(rp->label.c_str(), rp->help.c_str());
+            if (ImGui::SliderInt("##ttrender", &pct, (int)rp->min, (int)rp->max, fmt)) a.ttFile.set(rp->section, rp->key, std::to_string(pct));
+            row_end();
+        }
+    }
 
     section("Smoothness");
     bool vsync = tt_get(a, "display", "vsync", "true") == "true";
