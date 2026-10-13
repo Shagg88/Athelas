@@ -1276,6 +1276,10 @@ static void port_finished(App &a, DWORD code)
     case 3: m = "This copy isn't the US release. Only the US version is supported for now."; break;
     case 4: m = "Direct3D 12 couldn't start. Update your graphics driver; the port needs a DirectX 12 graphics card."; break;
     case 5: m = "The settings file is damaged" + (why.empty() ? std::string("") : " (" + why + ")") + ". Use \"Reset to defaults\" below, then Play again."; break;
+    case 0xC0000135:   // a DLL is missing, before the port could write its log (older builds need the VC++ runtime)
+        m = "The game couldn't start because a Windows component is missing. Installing the \"Microsoft Visual C++ "
+            "Redistributable (x64)\" from Microsoft usually fixes this.";
+        break;
     default: {
         char b[32]; snprintf(b, sizeof b, "0x%08lX", (unsigned long)code);
         m = std::string("The game closed unexpectedly (") + b + "). Details are in tt.log in " + logDir + ".";
@@ -1810,7 +1814,7 @@ static void tt_tab_graphics(App &a)
         row_end();
     }
 
-    bool image = tt_has(a, "graphics", "anti_aliasing") || tt_has(a, "graphics", "msaa") ||
+    bool image = tt_has(a, "graphics", "anti_aliasing") || tt_has(a, "graphics", "msaa") || tt_has(a, "graphics", "colour_look") ||
                  tt_has(a, "graphics", "anisotropic_filtering") || tt_has(a, "graphics", "lod_bias") ||
                  tt_has(a, "graphics", "sharpening") || tt_has(a, "graphics", "brightness");
     if (image) section("Image");
@@ -1859,6 +1863,32 @@ static void tt_tab_graphics(App &a)
         if (ImGui::SliderInt("##ttsharp", &v, (int)ps->min, (int)ps->max, v == 0 ? "Off" : "%d")) a.ttFile.set(ps->section, ps->key, std::to_string(v));
         row_end();
     }
+    if (const PortSetting *ps = tt_setting(a, "graphics", "colour_look")) {
+        mark("graphics", "colour_look");
+        std::string cur = toml_unquote(tt_val(a, *ps));
+        row_begin("Colour look", "Original: the game's own colours.\n"
+                                 "Film: richer contrast, cool shadows and warm highlights.\n"
+                                 "Vivid: stronger colour.\n"
+                                 "Dark fantasy: cooler and moodier, with less colour.\n"
+                                 "While playing, ] switches between them.");
+        ImGui::SetNextItemWidth(std::min(ImGui::GetContentRegionAvail().x - S(4), S(290)));
+        if (ImGui::BeginCombo("##ttlook", tt_choice_name(*ps, cur).c_str())) {
+            for (auto &c : ps->choices)
+                if (ImGui::Selectable(tt_choice_name(*ps, c).c_str(), c == cur)) a.ttFile.set(ps->section, ps->key, toml_quote(c));
+            ImGui::EndCombo();
+        }
+        row_end();
+        // strength only matters with a look chosen, as in ROTK
+        if (const PortSetting *pst = tt_setting(a, "graphics", "look_strength")) {
+            mark("graphics", "look_strength");
+            if (cur != "original") {
+                int v = atoi(tt_val(a, *pst).c_str());
+                row_begin("Look strength", "How strongly the colour look is applied.");
+                if (ImGui::SliderInt("##ttlookpct", &v, (int)pst->min, (int)pst->max, "%d%%")) a.ttFile.set(pst->section, pst->key, std::to_string(v));
+                row_end();
+            }
+        }
+    }
     if (const PortSetting *ps = tt_setting(a, "graphics", "brightness")) {
         mark("graphics", "brightness");
         float v = (float)atof(tt_val(a, *ps).c_str());
@@ -1866,6 +1896,14 @@ static void tt_tab_graphics(App &a)
         if (ImGui::SliderFloat("##ttbright", &v, (float)ps->min, (float)ps->max, fabsf(v - 1.0f) < 0.005f ? "Game's own" : "%.2f")) {
             char b[32]; snprintf(b, sizeof b, "%.2f", v); a.ttFile.set(ps->section, ps->key, b);
         }
+        row_end();
+    }
+
+    if (const PortSetting *ps = tt_setting(a, "graphics", "hdr")) {   // The Two Towers only
+        mark("graphics", "hdr");
+        bool v = tt_val(a, *ps) == "true";
+        row_begin("HDR", ps->help.c_str());
+        if (ImGui::Checkbox("##tthdr", &v)) a.ttFile.set(ps->section, ps->key, v ? "true" : "false");
         row_end();
     }
 
@@ -1925,19 +1963,94 @@ static void tt_tab_graphics(App &a)
         row_end();
     }
 
-    if (const PortSetting *ps = tt_setting(a, "graphics", "skip_logos")) {
-        mark("graphics", "skip_logos");
-        section("Movies");
-        bool v = tt_val(a, *ps) == "true";
-        row_begin("Skip opening logos", "Go straight to the menus at startup.");
-        if (ImGui::Checkbox("##ttlogos", &v)) a.ttFile.set(ps->section, ps->key, v ? "true" : "false");
-        row_end();
+    // Movies, in ROTK's order: Movie display, Sharper cutscenes, Skip any video, Skip opening logos, Cutscene sound delay
+    {
+        const PortSetting *pmd = tt_setting(a, "graphics", "movie_display"), *pms = tt_setting(a, "graphics", "movie_sharpening"),
+                          *psa = tt_setting(a, "graphics", "skip_all_videos"), *psl = tt_setting(a, "graphics", "skip_logos"),
+                          *pad = tt_setting(a, "graphics", "cutscene_audio_delay");
+        if (pmd || pms || psa || psl || pad) section("Movies");
+        if (pmd && pmd->type == "choice") {
+            mark("graphics", "movie_display");
+            std::string cur = toml_unquote(tt_val(a, *pmd));
+            row_begin("Movie display", pmd->help.c_str());
+            ImGui::SetNextItemWidth(std::min(ImGui::GetContentRegionAvail().x - S(4), S(290)));
+            if (ImGui::BeginCombo("##ttmd", tt_choice_name(*pmd, cur).c_str())) {
+                for (auto &c : pmd->choices)
+                    if (ImGui::Selectable(tt_choice_name(*pmd, c).c_str(), c == cur)) a.ttFile.set(pmd->section, pmd->key, toml_quote(c));
+                ImGui::EndCombo();
+            }
+            row_end();
+        }
+        if (pms) {
+            mark("graphics", "movie_sharpening");
+            int v = atoi(tt_val(a, *pms).c_str());
+            row_begin("Sharper cutscenes", pms->help.c_str());
+            if (ImGui::SliderInt("##ttmvsharp", &v, (int)pms->min, (int)pms->max, v == 0 ? "Off" : "%d")) a.ttFile.set(pms->section, pms->key, std::to_string(v));
+            row_end();
+        }
+        if (psa) {
+            mark("graphics", "skip_all_videos");
+            bool v = tt_val(a, *psa) == "true";
+            row_begin("Skip any video", psa->help.c_str());
+            if (ImGui::Checkbox("##ttskipall", &v)) a.ttFile.set(psa->section, psa->key, v ? "true" : "false");
+            row_end();
+        }
+        if (psl) {
+            mark("graphics", "skip_logos");
+            bool v = tt_val(a, *psl) == "true";
+            row_begin("Skip opening logos", psl->help.c_str());
+            if (ImGui::Checkbox("##ttlogos", &v)) a.ttFile.set(psl->section, psl->key, v ? "true" : "false");
+            row_end();
+        }
+        if (pad) {
+            mark("graphics", "cutscene_audio_delay");
+            int v = atoi(tt_val(a, *pad).c_str());
+            row_begin("Cutscene sound delay", pad->help.c_str());
+            if (ImGui::SliderInt("##ttadelay", &v, (int)pad->min, (int)pad->max, v == 0 ? "Off" : "%d ms")) a.ttFile.set(pad->section, pad->key, std::to_string(v));
+            row_end();
+        }
     }
 
     // anything else on this tab that the port adds later, with its own label
     bool more = false;
     for (auto &ps : a.tt.settings) {
         if (tt_tab_of_setting(ps) != 1 || tt_hidden(ps)) continue;
+        if (std::find(done.begin(), done.end(), ps.section + "." + ps.key) != done.end()) continue;
+        if (!more) { section("More"); more = true; }
+        tt_setting_row(a, ps);
+    }
+}
+
+
+// ---- The Two Towers' Controls tab: ROTK's "Controller options" rows the port has
+static void tt_tab_controls(App &a)
+{
+    std::vector<std::string> done;
+    section("Controller options");
+    if (const PortSetting *ps = tt_setting(a, "input", "vibration")) {
+        done.push_back("input.vibration");
+        int v = atoi(tt_val(a, *ps).c_str());
+        row_begin("Vibration", "Controller rumble from the original Xbox game. 0 turns it off.");
+        if (ImGui::SliderInt("##ttrumble", &v, (int)ps->min, (int)ps->max, v == 0 ? "Off" : "%d%%")) a.ttFile.set(ps->section, ps->key, std::to_string(v));
+        row_end();
+    }
+    if (const PortSetting *ps = tt_setting(a, "input", "stick_deadzone")) {
+        done.push_back("input.stick_deadzone");
+        int v = atoi(tt_val(a, *ps).c_str());
+        row_begin("Stick deadzone", "How far a stick must move before it counts. 0 keeps the game's own, as on the Xbox.");
+        if (ImGui::SliderInt("##ttdz", &v, (int)ps->min, (int)ps->max, v == 0 ? "Game's own" : "%d%%")) a.ttFile.set(ps->section, ps->key, std::to_string(v));
+        row_end();
+    }
+    if (const PortSetting *ps = tt_setting(a, "input", "trigger_threshold")) {
+        done.push_back("input.trigger_threshold");
+        int v = atoi(tt_val(a, *ps).c_str());
+        row_begin("Trigger sensitivity", "How far the triggers must be pulled to count as pressed. 0 keeps the game's own.");
+        if (ImGui::SliderInt("##tttrig", &v, (int)ps->min, (int)ps->max, v == 0 ? "Game's own" : "%d%%")) a.ttFile.set(ps->section, ps->key, std::to_string(v));
+        row_end();
+    }
+    bool more = false;
+    for (auto &ps : a.tt.settings) {
+        if (tt_tab_of_setting(ps) != 2 || tt_hidden(ps)) continue;
         if (std::find(done.begin(), done.end(), ps.section + "." + ps.key) != done.end()) continue;
         if (!more) { section("More"); more = true; }
         tt_setting_row(a, ps);
@@ -2032,7 +2145,9 @@ static void tt_tabs(App &a, const LibGame &)
             if (ImGui::BeginTabItem(t < 5 ? names[t] : "  About  ", nullptr, tf)) {
                 ImGui::PopFont();
                 ImGui::BeginChild("tttab", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_NoBackground);
-                if (t == 0) tt_tab_display(a); else if (t == 1) tt_tab_graphics(a); else if (t < 5) tt_settings_on_tab(a, t); else tt_about(a);
+                if (t == 0) tt_tab_display(a); else if (t == 1) tt_tab_graphics(a); else if (t == 2) tt_tab_controls(a);
+                else if (t < 5) tt_settings_on_tab(a, t); else tt_about(a);
+                if (getenv("ROTKFIX_SCROLL_END")) ImGui::SetScrollY(ImGui::GetScrollMaxY());   // testing
                 ImGui::Dummy(ImVec2(0, S(6)));
                 ImGui::EndChild();
                 ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
