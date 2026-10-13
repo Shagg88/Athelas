@@ -2307,7 +2307,8 @@ static void rx_about(App &a)
     if (rx_ready(a)) {
         ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
         ImGui::TextColored(C_DIM, "%s  -  %s", a.rx.version.empty() ? "ROTKXbox" : a.rx.version.c_str(), a.rx.exe.c_str());
-        ImGui::TextColored(C_DIM, "Settings are shared with the PC version (%s\\ROTKFix.ini).", a.dir.c_str());
+        if (a.game.exeFound) ImGui::TextColored(C_DIM, "Settings are shared with the PC version (%s\\ROTKFix.ini).", a.dir.c_str());
+        else ImGui::TextColored(C_DIM, "Settings: %s\\ROTKFix.ini", a.dir.c_str());
         ImGui::TextColored(C_DIM, "Log, saves and Xbox texture packs: %s", rx_data_dir().c_str());
         ImGui::PopFont();
         ImGui::PopTextWrapPos();
@@ -2380,9 +2381,31 @@ static void draw_other_game(App &a)
 static void draw_setup(App &a)
 {
     if (!a.searched) { a.found = find_game_folders(); a.searched = true; }
-    section("Let's find your game");
+    section("Let's find your games");
     ImGui::PushTextWrapPos(0);
-    ImGui::TextUnformatted("ROTK Fix has to be in the same folder as the game (the folder with rotk.exe), "
+    ImGui::TextUnformatted("This launcher plays your own copies of The Return of the King (PC or Xbox) and The Two Towers (Xbox). "
+                           "Show it where your games are; it remembers them.");
+    ImGui::PopTextWrapPos();
+
+    // Xbox games: a folder with the extracted game, or a disc image
+    section("Xbox games");
+    ImGui::PushTextWrapPos(0);
+    ImGui::TextUnformatted("Choose the folder you extracted an Xbox game to (the one with default.xbe), or its disc image (.iso). "
+                           "Nothing is copied or changed. Only US copies are supported for now.");
+    ImGui::PopTextWrapPos();
+    if (ImGui::Button("Add a game folder...##setup")) {
+        std::string d;
+        if (pick_folder(d, L"Choose the folder with your extracted Xbox game (default.xbe)")) add_game_from(a, d);
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Add an Xbox disc image...##setup")) {
+        std::string f;
+        if (pick_disc_image(f)) add_game_from(a, f);
+    }
+
+    section("The Return of the King  -  PC");
+    ImGui::PushTextWrapPos(0);
+    ImGui::TextUnformatted("For the PC version, ROTK Fix has to be in the game's own folder (the one with rotk.exe), "
                            "and this launcher isn't there. Choose your game below and ROTK Fix will be set up there for you.");
     ImGui::PopTextWrapPos();
     ImGui::Spacing();
@@ -2432,8 +2455,10 @@ static void draw_setup(App &a)
             else a.setupErr = "Permission was not given.";
         }
     }
-    ImGui::Dummy(ImVec2(0, S(10)));
-    games_section(a);
+    if (!a.lib.empty()) {
+        ImGui::Dummy(ImVec2(0, S(10)));
+        games_section(a);
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -2474,6 +2499,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     bool curRotk = a.cur < 0 || isRotk(a.lib[a.cur].kind);
     std::string curName = curRotk ? (rotkIdx.size() > 1 ? "The Return of the King" : (a.cur >= 0 ? game_kind_name(a.lib[a.cur].kind) : "The Return of the King  -  PC"))
                                   : game_kind_name(a.lib[a.cur].kind);
+    if (a.cur < 0 && !g.exeFound) curName = "Welcome";   // the welcome screen: no game chosen yet
     int entries = (rotkIdx.empty() ? 0 : 1) + (int)(a.lib.size() - rotkIdx.size());
     ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0, 0, 0, 0));
     ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
@@ -2488,7 +2514,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
                     if (!rotkListed) {
                         rotkListed = true;
                         const char *name = rotkIdx.size() > 1 ? "The Return of the King" : game_kind_name(a.lib[i].kind);
-                        if (ImGui::Selectable(name, curRotk) && !curRotk) a.cur = (int)i;
+                        if (ImGui::Selectable(name, curRotk && a.cur >= 0) && (!curRotk || a.cur < 0)) a.cur = (int)i;
                     }
                 } else {
                     bool sameKind = false;
@@ -2555,6 +2581,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
                        "or a fix that came with a repack). ROTK Fix can't load while it's there.\n\n"
                        "Move it out of the game folder (keep it in case you want it back), then copy ROTK Fix's " + f + " in again." });
     }
+    if (own && !g.exeFound) st.clear();   // the welcome screen: nothing is wrong, nothing to report yet
     if (!own) {   // another game is shown: just say what it is
         st.clear();
         const LibGame &lg = a.lib[a.cur];
@@ -2655,7 +2682,8 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
         ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
         ImGui::SetCursorPos(ImVec2(pad + S(10), by + (playH - cardH) * 0.5f + S(5)));
         ImGui::PushTextWrapPos(pad + cardW - S(8));
-        if (own || rxShown) ImGui::TextColored(C_DIM, "%d x %d  |  %s  |  %d fps  |  %s", w, h, dm[a.s.displayMode], fps, pn[detect_preset(a.s)]);
+        if (own && !g.exeFound) ImGui::TextColored(C_DIM, "Add a game to begin");
+        else if (own || rxShown) ImGui::TextColored(C_DIM, "%d x %d  |  %s  |  %d fps  |  %s", w, h, dm[a.s.displayMode], fps, pn[detect_preset(a.s)]);
         else if (ttShown) ImGui::TextColored(C_DIM, "%s", tt_summary(a).c_str());
         else ImGui::TextColored(C_DIM, "%s  |  %s", game_kind_name(a.lib[a.cur].kind),
                                 game_kind_playable(a.lib[a.cur].kind) ? "settings in its own launcher" : "not playable yet");
@@ -2794,6 +2822,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
             if (!protectedDir) library_save(a.dir, a.lib);
         }
     }
+    // Not in a PC game's folder, but the player has Xbox games: open on the first of them
+    // (The Return of the King first) instead of the PC setup screen.
+    if (a.cur < 0)
+        for (GameKind k : { GK_ROTK_XBOX, GK_TT_XBOX })
+            for (size_t i = 0; i < a.lib.size() && a.cur < 0; i++)
+                if (a.lib[i].kind == k && game_region_supported(a.lib[i])) a.cur = (int)i;
     if (const char *t = getenv("ROTKFIX_GAME")) { int n = atoi(t); if (n >= 0 && n < (int)a.lib.size()) a.cur = n; }   // testing
     a.monitors = enum_monitors();
     bool hadIni = load_settings(a.dir, a.s);
