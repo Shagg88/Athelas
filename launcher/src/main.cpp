@@ -22,6 +22,8 @@
 #include "imgui_impl_sdlrenderer3.h"
 #include "config.h"
 #include "library.h"
+#include "port.h"
+#include <shlobj.h>
 #include "font_cinzel.h"
 #include "font_garamond.h"
 
@@ -34,7 +36,7 @@
 #include "../third_party/stb_image.h"
 #pragma GCC diagnostic pop
 
-#define LAUNCHER_VERSION "0.7 (test)"
+#define LAUNCHER_VERSION "0.8 (test)"
 
 // ---------------------------------------------------------------------------
 // Theme
@@ -404,6 +406,14 @@ struct App {
     double messageAt = 0;
     bool quit = false;
     Backgrounds bg;
+    SDL_Window *win = nullptr;
+    // The Two Towers (Xbox) port
+    Port tt;
+    bool ttLooked = false;             // looked for the port program and asked it for its settings
+    PortSettingsFile ttFile;
+    bool ttLoaded = false;
+    HANDLE running = NULL;             // a port that is playing; the launcher waits, hidden
+    std::string runningLog, runningGame;
 };
 
 static const Monitor &mon(const App &a) { return a.monitors[std::min<size_t>(a.s.monitor, a.monitors.size() - 1)]; }
@@ -1144,6 +1154,287 @@ static void setup_here(App &a, const std::string &dst)
 }
 
 
+// ---------------------------------------------------------------------------
+// The Two Towers (Xbox), played through its PC port, TwoTowers.exe.
+// The port is found next to the launcher (TwoTowers\TwoTowers.exe), or where the
+// player pointed to it (remembered in ROTKFix\ports.ini). Its settings, texture
+// packs and log live in ROTKFix\TwoTowers next to the launcher.
+
+static std::string tt_data_dir() { return exe_dir() + "\\ROTKFix\\TwoTowers"; }
+static std::string tt_settings_path() { return tt_data_dir() + "\\settings.toml"; }
+static std::string tt_log_path() { return tt_data_dir() + "\\tt.log"; }
+static std::string ports_ini() { return exe_dir() + "\\ROTKFix\\ports.ini"; }
+
+static bool file_there(const std::string &p) { DWORD a = GetFileAttributesA(p.c_str()); return a != INVALID_FILE_ATTRIBUTES && !(a & FILE_ATTRIBUTE_DIRECTORY); }
+
+static void tt_find(App &a)
+{
+    a.ttLooked = true;
+    a.tt = Port();
+    std::string cand[2];
+    cand[0] = exe_dir() + "\\TwoTowers\\TwoTowers.exe";
+    char b[MAX_PATH * 2] = "";
+    GetPrivateProfileStringA("Ports", "TwoTowers", "", b, sizeof b, ports_ini().c_str());
+    cand[1] = b;
+    for (auto &c : cand) if (!c.empty() && file_there(c)) { a.tt.exe = c; break; }
+    if (a.tt.exe.empty()) return;
+    port_query(a.tt);
+    a.ttLoaded = false;
+}
+
+static bool tt_ready(const App &a) { return !a.tt.exe.empty() && a.tt.err.empty() && !a.tt.settings.empty(); }
+
+// The value of a setting: from the file, else its default
+static std::string tt_val(const App &a, const PortSetting &ps) { return a.ttFile.get(ps.section, ps.key, ps.def); }
+static const PortSetting *tt_setting(const App &a, const char *sec, const char *key)
+{
+    for (auto &ps : a.tt.settings) if (ps.section == sec && ps.key == key) return &ps;
+    return nullptr;
+}
+
+static void tt_load_settings(App &a)
+{
+    a.ttLoaded = true;
+    a.ttFile = PortSettingsFile();
+    settings_file_load(tt_settings_path(), a.ttFile);   // missing: every setting at its default
+}
+
+static bool tt_save(App &a)
+{
+    SHCreateDirectoryExA(NULL, tt_data_dir().c_str(), NULL);
+    // every setting is written, so the file is complete even before the first run
+    for (auto &ps : a.tt.settings) a.ttFile.set(ps.section, ps.key, tt_val(a, ps));
+    if (!settings_file_save(tt_settings_path(), a.ttFile)) { set_message(a, "Could not save " + tt_settings_path(), true); return false; }
+    set_message(a, "Settings saved", false);
+    return true;
+}
+
+static void tt_play(App &a, const LibGame &g)
+{
+    if (!tt_save(a)) return;
+    std::string tex = tt_data_dir() + "\\textures";
+    SHCreateDirectoryExA(NULL, (tex + "\\replace").c_str(), NULL);
+    std::string args = "--game \"" + g.path + "\" --config \"" + tt_settings_path() + "\" --textures \"" + tex +
+                       "\" --log \"" + tt_log_path() + "\" --no-dialogs";
+    std::string err;
+    HANDLE h = port_start(a.tt.exe, args, err);
+    if (!h) { set_message(a, err, true); return; }
+    a.running = h;
+    a.runningLog = tt_log_path();
+    a.runningGame = game_kind_name(g.kind);
+    SDL_HideWindow(a.win);
+}
+
+// The port has closed: back to the launcher, saying why if it wasn't a normal quit
+static void port_finished(App &a, DWORD code)
+{
+    std::string why = port_log_reason(a.runningLog);
+    std::string logDir = a.runningLog.substr(0, a.runningLog.find_last_of('\\'));
+    std::string m;
+    switch (code) {
+    case 0: break;
+    case 1: m = "The game couldn't start" + (why.empty() ? std::string(".") : ": " + why + ".") + " Details are in tt.log in " + logDir + "."; break;
+    case 2: m = "The game files couldn't be found there, or they aren't The Two Towers. Check the location on this page."; break;
+    case 3: m = "This copy isn't the US release. Only the US version is supported for now."; break;
+    case 4: m = "Direct3D 12 couldn't start. Update your graphics driver; the port needs a DirectX 12 graphics card."; break;
+    case 5: m = "The settings file is damaged" + (why.empty() ? std::string("") : " (" + why + ")") + ". Use \"Reset to defaults\" below, then Play again."; break;
+    default: {
+        char b[32]; snprintf(b, sizeof b, "0x%08lX", (unsigned long)code);
+        m = std::string("The game closed unexpectedly (") + b + "). Details are in tt.log in " + logDir + ".";
+    }
+    }
+    a.running = NULL;
+    if (code == 0) { a.quit = true; return; }       // played and quit: close, as after ROTK
+    a.ttLoaded = false;                              // the port may have rewritten its settings
+    SDL_ShowWindow(a.win);
+    SDL_RaiseWindow(a.win);
+    set_message(a, m, true);
+}
+
+static std::string cap_first(std::string s) { if (!s.empty() && s[0] >= 'a' && s[0] <= 'z') s[0] -= 32; return s; }
+
+static const char *tt_section_title(const std::string &s)
+{
+    if (s == "display") return "Screen";
+    if (s == "graphics") return "Graphics";
+    if (s == "textures") return "Texture packs";
+    if (s == "network") return "Network";
+    return nullptr;
+}
+
+// How a choice is shown in its menu
+static std::string tt_choice_name(const PortSetting &ps, const std::string &c)
+{
+    if (ps.key == "anisotropic_filtering") return c == "0" ? "As the game asks" : c + "x";
+    if (ps.key == "fps") return c + " fps";
+    return cap_first(c);
+}
+
+// Screen size: one menu with the main screen's sizes (width and height are two settings in the file)
+static void tt_resolution_row(App &a, const PortSetting &pw, const PortSetting &ph)
+{
+    int w = atoi(tt_val(a, pw).c_str()), h = atoi(tt_val(a, ph).c_str());
+    const Monitor &m = a.monitors[0];
+    char cur[64];
+    if (w <= 0 || h <= 0) snprintf(cur, sizeof cur, "Desktop (%d x %d)", m.deskW, m.deskH);
+    else snprintf(cur, sizeof cur, "%d x %d", w, h);
+    row_begin("Resolution", "The size of the picture on screen. Desktop uses the main screen's own size.");
+    if (ImGui::BeginCombo("##ttres", cur)) {
+        char d[64]; snprintf(d, sizeof d, "Desktop (%d x %d)", m.deskW, m.deskH);
+        if (ImGui::Selectable(d, w <= 0)) { a.ttFile.set(pw.section, pw.key, "0"); a.ttFile.set(ph.section, ph.key, "0"); }
+        for (auto it = m.modes.rbegin(); it != m.modes.rend(); ++it) {
+            if (it->w < 640 || it->h < 480) continue;
+            char l[64]; snprintf(l, sizeof l, "%d x %d", it->w, it->h);
+            if (ImGui::Selectable(l, it->w == w && it->h == h)) {
+                a.ttFile.set(pw.section, pw.key, std::to_string(it->w));
+                a.ttFile.set(ph.section, ph.key, std::to_string(it->h));
+            }
+        }
+        ImGui::EndCombo();
+    }
+    row_end();
+}
+
+static void tt_setting_row(App &a, const PortSetting &ps)
+{
+    std::string v = tt_val(a, ps);
+    ImGui::PushID((ps.section + "." + ps.key).c_str());
+    row_begin(ps.label.c_str(), ps.help.c_str());
+    if (ps.type == "bool") {
+        bool b = v == "true";
+        if (ImGui::Checkbox("##b", &b)) a.ttFile.set(ps.section, ps.key, b ? "true" : "false");
+    } else if (ps.type == "choice") {
+        std::string cur = toml_unquote(v);
+        int idx = -1;
+        std::vector<std::string> names;
+        for (size_t i = 0; i < ps.choices.size(); i++) { names.push_back(tt_choice_name(ps, ps.choices[i])); if (ps.choices[i] == cur) idx = (int)i; }
+        ImGui::SetNextItemWidth(std::min(ImGui::GetContentRegionAvail().x - S(4), S(290)));
+        if (ImGui::BeginCombo("##c", idx >= 0 ? names[idx].c_str() : cur.c_str())) {
+            for (size_t i = 0; i < names.size(); i++)
+                if (ImGui::Selectable(names[i].c_str(), (int)i == idx)) a.ttFile.set(ps.section, ps.key, toml_quote(ps.choices[i]));
+            ImGui::EndCombo();
+        }
+    } else if (ps.type == "int") {
+        int n = atoi(v.c_str()), lo = (int)ps.min, hi = (int)ps.max;
+        bool changed;
+        if (hi > lo && hi - lo <= 400) changed = ImGui::SliderInt("##i", &n, lo, hi, ps.key == "fov" || ps.key == "render_percent" ? "%d%%" : "%d");
+        else changed = ImGui::InputInt("##i", &n, 0, 0);
+        if (changed) { if (hi > lo) n = std::max(lo, std::min(hi, n)); a.ttFile.set(ps.section, ps.key, std::to_string(n)); }
+    } else if (ps.type == "float") {
+        float f = (float)atof(v.c_str());
+        bool changed = ps.max > ps.min ? ImGui::SliderFloat("##f", &f, (float)ps.min, (float)ps.max, "%.2f") : ImGui::InputFloat("##f", &f);
+        if (changed) { char b[32]; snprintf(b, sizeof b, "%g", f); a.ttFile.set(ps.section, ps.key, b); }
+    } else {
+        char b[256]; snprintf(b, sizeof b, "%s", toml_unquote(v).c_str());
+        if (ImGui::InputText("##s", b, sizeof b)) a.ttFile.set(ps.section, ps.key, toml_quote(b));
+    }
+    row_end();
+    ImGui::PopID();
+}
+
+static void draw_tt(App &a, const LibGame &)
+{
+    if (!a.ttLooked) tt_find(a);
+    ImGui::PushTextWrapPos(0);
+    if (a.tt.exe.empty()) {
+        ImGui::Spacing();
+        ImGui::TextColored(C_WARN, "The Two Towers port (TwoTowers.exe) wasn't found.");
+        ImGui::TextUnformatted("It is normally in a TwoTowers folder next to this launcher. If you have it somewhere else, show the launcher where.");
+        ImGui::PopTextWrapPos();
+        if (ImGui::Button("Locate TwoTowers.exe...")) {
+            std::string f;
+            if (pick_file(f, L"Choose TwoTowers.exe", L"The Two Towers port (TwoTowers.exe)", L"TwoTowers.exe")) {
+                SHCreateDirectoryExA(NULL, (exe_dir() + "\\ROTKFix").c_str(), NULL);
+                WritePrivateProfileStringA("Ports", "TwoTowers", f.c_str(), ports_ini().c_str());
+                tt_find(a);
+            }
+        }
+        return;
+    }
+    if (!tt_ready(a)) {
+        ImGui::Spacing();
+        ImGui::TextColored(C_BAD, "%s", a.tt.err.c_str());
+        ImGui::TextColored(C_DIM, "%s", a.tt.exe.c_str());
+        ImGui::PopTextWrapPos();
+        if (ImGui::Button("Try again")) tt_find(a);
+        ImGui::SameLine();
+        if (ImGui::Button("Locate TwoTowers.exe...")) {
+            std::string f;
+            if (pick_file(f, L"Choose TwoTowers.exe", L"The Two Towers port (TwoTowers.exe)", L"TwoTowers.exe")) {
+                WritePrivateProfileStringA("Ports", "TwoTowers", f.c_str(), ports_ini().c_str());
+                tt_find(a);
+            }
+        }
+        return;
+    }
+    ImGui::PopTextWrapPos();
+    if (!a.ttLoaded) tt_load_settings(a);
+
+    // the settings, in the port's own order, grouped by section
+    const PortSetting *pw = tt_setting(a, "display", "width"), *ph = tt_setting(a, "display", "height");
+    std::string sec = "\x01";
+    for (auto &ps : a.tt.settings) {
+        if (ps.section != sec) {
+            if (sec == "textures") {   // end of the texture section: its folder
+                if (ImGui::Button("Open texture folder")) {
+                    std::string t = tt_data_dir() + "\\textures";
+                    SHCreateDirectoryExA(NULL, (t + "\\replace").c_str(), NULL);
+                    ShellExecuteA(NULL, "open", t.c_str(), NULL, NULL, SW_SHOWNORMAL);
+                }
+            }
+            sec = ps.section;
+            const char *t = tt_section_title(sec);
+            section(t ? t : cap_first(sec).c_str());
+        }
+        if (pw && ph && &ps == pw) { tt_resolution_row(a, *pw, *ph); continue; }
+        if (pw && ph && &ps == ph) continue;
+        // the HUD-edge setting only matters with widescreen on
+        bool off = false;
+        if (ps.key == "hud_edges") if (const PortSetting *ws = tt_setting(a, "graphics", "widescreen")) off = tt_val(a, *ws) != "true";
+        ImGui::BeginDisabled(off);
+        tt_setting_row(a, ps);
+        ImGui::EndDisabled();
+    }
+    if (sec == "textures" && ImGui::Button("Open texture folder")) {
+        std::string t = tt_data_dir() + "\\textures";
+        SHCreateDirectoryExA(NULL, (t + "\\replace").c_str(), NULL);
+        ShellExecuteA(NULL, "open", t.c_str(), NULL, NULL, SW_SHOWNORMAL);
+    }
+
+    section("Port");
+    ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
+    ImGui::TextColored(C_DIM, "%s  -  %s", a.tt.version.c_str(), a.tt.exe.c_str());
+    ImGui::TextColored(C_DIM, "Settings, texture packs and the log: %s", tt_data_dir().c_str());
+    ImGui::PopFont();
+    if (ImGui::Button("Open settings folder")) {
+        SHCreateDirectoryExA(NULL, tt_data_dir().c_str(), NULL);
+        ShellExecuteA(NULL, "open", tt_data_dir().c_str(), NULL, NULL, SW_SHOWNORMAL);
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Reset to defaults")) {
+        a.ttFile = PortSettingsFile();
+        tt_save(a);
+        set_message(a, "The Two Towers settings are back to their defaults", false);
+    }
+}
+
+// One line for the bottom bar
+static std::string tt_summary(const App &a)
+{
+    if (!tt_ready(a)) return "The Two Towers  |  port not found";
+    std::string s;
+    const PortSetting *p;
+    int w = 0, h = 0;
+    if ((p = tt_setting(a, "display", "width"))) w = atoi(tt_val(a, *p).c_str());
+    if ((p = tt_setting(a, "display", "height"))) h = atoi(tt_val(a, *p).c_str());
+    if (w <= 0 || h <= 0) { w = a.monitors[0].deskW; h = a.monitors[0].deskH; }
+    s = std::to_string(w) + " x " + std::to_string(h);
+    if ((p = tt_setting(a, "display", "mode"))) s += "  |  " + cap_first(toml_unquote(tt_val(a, *p)));
+    if ((p = tt_setting(a, "graphics", "fps"))) s += "  |  " + toml_unquote(tt_val(a, *p)) + " fps";
+    if ((p = tt_setting(a, "graphics", "widescreen"))) s += tt_val(a, *p) == "true" ? "  |  Widescreen" : "  |  4:3";
+    return s;
+}
+
 // Shown for a game other than this folder's PC game
 static void draw_other_game(App &a)
 {
@@ -1166,12 +1457,10 @@ static void draw_other_game(App &a)
             ImGui::PopTextWrapPos();
             return;
         }
+        if (g.kind == GK_TT_XBOX) { ImGui::PopTextWrapPos(); draw_tt(a, g); return; }
         ImGui::TextColored(C_WARN, "Recognised, but not playable from here yet.");
-        ImGui::TextUnformatted(g.kind == GK_TT_XBOX
-            ? "The Two Towers runs through its own PC port. Once that port is part of this launcher, its settings "
-              "will appear here and Play will start it with your game files - nothing has to be copied or changed."
-            : "The Xbox Return of the King needs its own PC port, which is still to be built. When it's ready, "
-              "its settings will appear here and Play will start it with your game files.");
+        ImGui::TextUnformatted("The Xbox Return of the King needs its own PC port, which is still to be built. When it's ready, "
+                               "its settings will appear here and Play will start it with your game files.");
         ImGui::PopTextWrapPos();
         return;
     }
@@ -1309,6 +1598,8 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     }
     ImGui::PopFont();
     const bool own = own_game(a);
+    // The Two Towers shown, and its port ready: Play and Save work for it
+    const bool ttShown = !own && a.lib[a.cur].kind == GK_TT_XBOX && game_region_supported(a.lib[a.cur]) && a.ttLooked && tt_ready(a);
 
     // status (top right, one per line)
     struct St { bool ok, warn; std::string label, tip; };
@@ -1328,8 +1619,10 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     if (!own) {   // another game is shown: just say what it is
         st.clear();
         const LibGame &lg = a.lib[a.cur];
-        bool ready = game_kind_playable(lg.kind);
-        st.push_back({ ready, true, ready ? "Found" : "Not playable yet", lg.path });
+        bool tt = lg.kind == GK_TT_XBOX;
+        if (tt && !a.ttLooked) tt_find(a);
+        bool ready = game_region_supported(lg) && (tt ? tt_ready(a) : game_kind_playable(lg.kind));
+        st.push_back({ ready, true, ready ? "Ready" : !game_region_supported(lg) ? "Not supported" : tt ? "Port not found" : "Not playable yet", lg.path });
     }
     if (own && a.s.padEnabled)
         st.push_back({ a.controllers > 0 && g.hasSdl, true, a.controllers > 1 ? std::to_string(a.controllers) + " controllers" : a.controllers ? "Controller" : "No controller",
@@ -1399,7 +1692,12 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     {
         float cardW = bx - saveW - S(24) - pad;
         bool msg = !a.message.empty() && ImGui::GetTime() - a.messageAt < (a.messageBad ? 30.0 : 4.0);
-        float cardH = S(msg ? 54 : 32);
+        float cardH = S(32);
+        if (msg) {   // room for the message, however many lines it wraps to
+            ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
+            cardH += ImGui::CalcTextSize(a.message.c_str(), nullptr, false, cardW - S(18)).y + S(2);
+            ImGui::PopFont();
+        }
         ImVec2 c0 = ImGui::GetWindowPos() + ImVec2(pad, by + (playH - cardH) * 0.5f), c1 = c0 + ImVec2(cardW, cardH);
         ImGui::GetWindowDrawList()->AddRectFilled(c0, c1, ImGui::GetColorU32(C_PANEL), S(8));
         ImGui::GetWindowDrawList()->AddRect(c0, c1, ImGui::GetColorU32(C_LINE), S(8), 1.0f);
@@ -1407,6 +1705,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
         ImGui::SetCursorPos(ImVec2(pad + S(10), by + (playH - cardH) * 0.5f + S(5)));
         ImGui::PushTextWrapPos(pad + cardW - S(8));
         if (own) ImGui::TextColored(C_DIM, "%d x %d  |  %s  |  %d fps  |  %s", w, h, dm[a.s.displayMode], fps, pn[detect_preset(a.s)]);
+        else if (ttShown) ImGui::TextColored(C_DIM, "%s", tt_summary(a).c_str());
         else ImGui::TextColored(C_DIM, "%s  |  %s", game_kind_name(a.lib[a.cur].kind),
                                 game_kind_playable(a.lib[a.cur].kind) ? "settings in its own launcher" : "not playable yet");
         if (msg) {
@@ -1417,10 +1716,14 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
         ImGui::PopFont();
     }
 
+    // ROTKFIX_PLAY (testing): press Play once at start-up
+    static bool autoPlay = getenv("ROTKFIX_PLAY") != nullptr;
+    if (autoPlay && ttShown) { autoPlay = false; tt_play(a, a.lib[a.cur]); }
     ImGui::SetCursorPos(ImVec2(bx, by));
-    ImGui::BeginDisabled(!own || !g.exeFound || g_removeSelf);
+    ImGui::BeginDisabled(ttShown ? a.running != NULL : (!own || !g.exeFound || g_removeSelf));
     if (gold_button("PLAY", ImVec2(playW, playH), F_PLAY)) {
-        if (save(a)) {
+        if (ttShown) tt_play(a, a.lib[a.cur]);
+        else if (save(a)) {
             std::string err;
             if (launch_game(a.dir, err)) a.quit = true;
             else set_message(a, err, true);
@@ -1429,8 +1732,8 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     ImGui::EndDisabled();
     bx -= saveW + S(12);
     ImGui::SetCursorPos(ImVec2(bx, by + (playH - btnH) * 0.5f));
-    ImGui::BeginDisabled(!own || !g.exeFound || g_removeSelf);
-    if (ImGui::Button("Save", ImVec2(saveW, btnH))) save(a);
+    ImGui::BeginDisabled(ttShown ? false : (!own || !g.exeFound || g_removeSelf));
+    if (ImGui::Button("Save", ImVec2(saveW, btnH))) { if (ttShown) tt_save(a); else save(a); }
     ImGui::EndDisabled();
 
     ImGui::End();
@@ -1500,6 +1803,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     ImGui_ImplSDLRenderer3_Init(ren);
 
     App a;
+    a.win = win;
     a.dir = exe_dir();
     a.game = inspect_game(a.dir);
     // the player's games: this folder's PC game first, then the remembered ones
@@ -1546,6 +1850,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
             if (e.type == SDL_EVENT_QUIT) a.quit = true;
             if (e.type == SDL_EVENT_GAMEPAD_ADDED || e.type == SDL_EVENT_GAMEPAD_REMOVED) refresh_controllers(a);
             capture_event(a, e);
+        }
+        if (a.running) {   // a port is playing: wait, hidden, for it to close
+            if (WaitForSingleObject(a.running, 100) == WAIT_OBJECT_0) {
+                DWORD code = 0;
+                GetExitCodeProcess(a.running, &code);
+                CloseHandle(a.running);
+                port_finished(a, code);
+            }
+            continue;
         }
         if (SDL_GetWindowFlags(win) & SDL_WINDOW_MINIMIZED) { SDL_Delay(50); continue; }
         // while mapping (and just after), controller presses must not also click things here

@@ -240,16 +240,21 @@ int library_add(std::vector<LibGame> &games, const LibGame &g)
 
 bool pick_disc_image(std::string &out)
 {
+    return pick_file(out, L"Choose your Xbox disc image", L"Xbox disc image (*.iso)", L"*.iso");
+}
+
+bool pick_file(std::string &out, const wchar_t *title, const wchar_t *typeName, const wchar_t *pattern)
+{
     bool ok = false;
     HRESULT hrInit = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
     IFileOpenDialog *dlg = nullptr;
     if (SUCCEEDED(CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_IFileOpenDialog, (void **)&dlg))) {
-        COMDLG_FILTERSPEC types[] = { { L"Xbox disc image (*.iso)", L"*.iso" }, { L"All files", L"*.*" } };
+        COMDLG_FILTERSPEC types[] = { { typeName, pattern }, { L"All files", L"*.*" } };
         dlg->SetFileTypes(2, types);
         DWORD opts = 0;
         dlg->GetOptions(&opts);
         dlg->SetOptions(opts | FOS_FORCEFILESYSTEM | FOS_FILEMUSTEXIST);
-        dlg->SetTitle(L"Choose your Xbox disc image");
+        dlg->SetTitle(title);
         if (SUCCEEDED(dlg->Show(GetActiveWindow()))) {
             IShellItem *item = nullptr;
             if (SUCCEEDED(dlg->GetResult(&item))) {

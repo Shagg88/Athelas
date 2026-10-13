@@ -35,3 +35,4 @@ bool library_save(const std::string &launcherDir, const std::vector<LibGame> &ga
 int library_add(std::vector<LibGame> &games, const LibGame &g);
 
 bool pick_disc_image(std::string &out);      // Windows' file box, for .iso files
+bool pick_file(std::string &out, const wchar_t *title, const wchar_t *typeName, const wchar_t *pattern);
