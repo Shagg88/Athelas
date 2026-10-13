@@ -1,5 +1,10 @@
 #include "app/app.h"
 
+namespace rotk {
+extern bool g_skip_all_videos;  // src/game/rotk_movies.cpp
+void Loaded();
+}
+
 // what the runtime asks of the game; strings must be set, hooks may stay null
 const app::GameInfo app::kGame = {
     .title = L"ROTK Xbox (PC port)",      // window and splash; a neutral name until release
@@ -12,12 +17,16 @@ const app::GameInfo app::kGame = {
     .missing = L"The game files couldn't be found. Put the game in the assets folder: its disc image (.iso), or default.xbe with its folders beside it.",
     .title_id = 0x4541003E,
     .images = {{"default.xbe", "ROTKXbox"}},  // each recompiled xbe and its exe, for title launches
-    .options = {},                        // the game's own settings come once the faithful game runs
+    // the game's own settings, in the settings file's [graphics]; defaults as on the console
+    .options = {{"graphics", "skip_all_videos", cfg::Type::Bool, "Allow skipping all videos",
+                 "On the console the opening logos can't be skipped and each story movie only after you have seen it "
+                 "once. This lets a button press skip any of them.",
+                 &rotk::g_skip_all_videos}},
     .presets = {},
     .load = nullptr,                      // reads more from the settings file's toml::table
     .save = nullptr,                      // writes more into it
     .init = nullptr,                      // after the settings load, before the window and boot
-    .loaded = nullptr,                    // image in memory, before its entry point runs
+    .loaded = rotk::Loaded,               // image in memory, before its entry point runs
     .window = nullptr,                    // the game window is up
     .message = nullptr,                   // window messages first; true takes one
     .ui = nullptr,                        // ImGui drawing each frame

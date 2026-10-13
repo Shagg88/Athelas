@@ -65,3 +65,14 @@ Same as The Two Towers: run `rotkxbox\build.bat` (Visual Studio 2022/2026 with C
 `config\game.toml` is already written, so the build goes straight to recompiling. The game data is read from
 `C:\ROTKX\extracted` through `assets\redirect.txt`; `assets\default.xbe` is a copy the build uses (never commit
 it). The exe is `rotkxbox\out\build\release\ROTKXbox.exe`. `capture.bat` runs it with F3 captures and timing logs.
+
+## First Windows plays (2026-10-13 afternoon)
+
+- Built and ran on the PC (RTX 3080 Ti, 2560x1440): a 30-minute session and a second run as far as the Paths of the
+  Dead. Picture correct, music and effects present, controls good, rumble works, clean exit. About 30-35 fps (the
+  game's own pace); the only long frames were first-time shader builds, cached after.
+- Sound late: Bluetooth speakers. The SDK's `[graphics] cutscene_audio_delay` (from the TT patch) holds movie pictures
+  back; it needs `gpu::g_movie`, which `rotk_movies.cpp` now sets while the player draws frames (0xC46A0).
+- Cutscenes couldn't be skipped: the game's rule. Movie table 0x179F30 (same as ROTK PC 0x572E00): LOGOS type 0
+  (never), bonus videos 1 (always), story movies default 2 (only once seen). New `[graphics] skip_all_videos`
+  (off by default) sets them all to 1, as ROTK Fix's AllowSkippingAllVideos. Harness: logos and HELMFMV1 skipped.
