@@ -20,6 +20,7 @@ struct PortSettingsFile {
     std::vector<std::string> lines;    // the file as read, so unknown keys and comments are kept
     std::string get(const std::string &sec, const std::string &key, const std::string &def) const;
     void set(const std::string &sec, const std::string &key, const std::string &value);
+    void remove(const std::string &sec, const std::string &key);   // drops the key's line, if there is one
 };
 
 struct Port {

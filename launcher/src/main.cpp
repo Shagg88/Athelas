@@ -1213,10 +1213,8 @@ static bool tt_save(App &a)
 {
     SHCreateDirectoryExA(NULL, tt_data_dir().c_str(), NULL);
     tt_apply_refresh(a);   // fullscreen: the refresh rate that suits the frame rate, as ROTK does
-    // the frame limit follows the frame rate
-    if (const PortSetting *cap = tt_setting(a, "display", "fps_cap"))
-        if (const PortSetting *fps = tt_setting(a, "graphics", "fps"))
-            a.ttFile.set(cap->section, cap->key, std::to_string(atoi(toml_unquote(tt_val(a, *fps)).c_str())));
+    // the old frame limit is gone from the port: take it out of the file
+    if (!tt_setting(a, "display", "fps_cap")) a.ttFile.remove("display", "fps_cap");
     // every setting is written, so the file is complete even before the first run
     for (auto &ps : a.tt.settings) a.ttFile.set(ps.section, ps.key, tt_val(a, ps));
     if (!settings_file_save(tt_settings_path(), a.ttFile)) { set_message(a, "Could not save " + tt_settings_path(), true); return false; }
@@ -2340,6 +2338,29 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     }
 
     // ROTKFIX_PLAY (testing): press Play once at start-up
+    // ROTKFIX_TT_SET="graphics.fps=180,..." / ROTKFIX_TT_PRESET=name / ROTKFIX_TT_SAVE (testing):
+    // change Two Towers settings the way the menus do, then save
+    static bool ttTest = true;
+    if (ttTest && ttShown) {
+        ttTest = false;
+        if (!a.ttLoaded) tt_load_settings(a);
+        if (const char *e = getenv("ROTKFIX_TT_PRESET"))
+            for (auto &pr : a.tt.presets) if (pr.name == e)
+                for (auto &kv : pr.values) { size_t d = kv.first.find('.'); a.ttFile.set(kv.first.substr(0, d), kv.first.substr(d + 1), kv.second); }
+        if (const char *e = getenv("ROTKFIX_TT_SET")) {
+            std::string all = e;
+            size_t st = 0;
+            while (st < all.size()) {
+                size_t en = all.find(',', st); if (en == std::string::npos) en = all.size();
+                std::string item = all.substr(st, en - st);
+                size_t d = item.find('.'), q = item.find('=');
+                if (d != std::string::npos && q != std::string::npos)
+                    tt_put(a, item.substr(0, d).c_str(), item.substr(d + 1, q - d - 1).c_str(), item.substr(q + 1));
+                st = en + 1;
+            }
+        }
+        if (getenv("ROTKFIX_TT_SAVE")) tt_save(a);
+    }
     static bool autoPlay = getenv("ROTKFIX_PLAY") != nullptr;
     if (autoPlay && ttShown) { autoPlay = false; tt_play(a, a.lib[a.cur]); }
     ImGui::SetCursorPos(ImVec2(bx, by));

@@ -266,6 +266,17 @@ void PortSettingsFile::set(const std::string &sec, const std::string &key, const
     lines.push_back(key + " = " + value);
 }
 
+void PortSettingsFile::remove(const std::string &sec, const std::string &key)
+{
+    std::string cur;
+    for (size_t i = 0; i < lines.size(); i++) {
+        std::string s = line_section(lines[i]);
+        if (s != "\x01") { cur = s; continue; }
+        std::string k, v;
+        if (cur == sec && line_kv(lines[i], k, v) && k == key) { lines.erase(lines.begin() + i); return; }
+    }
+}
+
 bool settings_file_load(const std::string &path, PortSettingsFile &f)
 {
     f.lines.clear();
