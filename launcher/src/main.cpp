@@ -1308,7 +1308,7 @@ static std::string tt_choice_name(const PortSetting &ps, const std::string &c)
     // otherwise, for older ports:
     if (ps.key == "anisotropic_filtering") return c == "0" ? "Off" : c + "x";
     if (ps.key == "fps") return c + " fps";
-    if (ps.key == "msaa") return c == "0" ? "Off" : c + "x";
+    if (ps.key == "msaa" || ps.key == "anti_aliasing") return c == "0" ? "Off" : c + "x";
     return cap_first(c);
 }
 
@@ -1777,10 +1777,10 @@ static void tt_tab_graphics(App &a)
         section("Quality");
         std::string help;
         for (auto &p : a.tt.presets) {
-            const char *d = p.name == "Original" ? "as it looked on the Xbox in 2003: 4:3, 30 fps, no filtering or sharpening."
-                          : p.name == "Balanced" ? "widescreen, 8x texture filtering and light sharpening."
-                          : p.name == "High"     ? "widescreen, 16x texture filtering, sharper textures and sharpening."
-                          : p.name == "Ultra"    ? "High, drawn at 150% resolution for an even cleaner picture."
+            const char *d = p.name == "Original" ? "as it looked on the Xbox in 2003: 4:3, 30 fps, no anti-aliasing, filtering or sharpening."
+                          : p.name == "Balanced" ? "widescreen, light anti-aliasing and filtering, light sharpening."
+                          : p.name == "High"     ? "widescreen, 4x anti-aliasing, 16x texture filtering, sharper textures and sharpening."
+                          : p.name == "Ultra"    ? "8x anti-aliasing, and drawn at 150% resolution for an even cleaner picture."
                           : "";
             help += p.name + (*d ? std::string(": ") + d : std::string()) + "\n";
         }
@@ -1810,9 +1810,26 @@ static void tt_tab_graphics(App &a)
         row_end();
     }
 
-    bool image = tt_has(a, "graphics", "anisotropic_filtering") || tt_has(a, "graphics", "lod_bias") ||
+    bool image = tt_has(a, "graphics", "anti_aliasing") || tt_has(a, "graphics", "msaa") ||
+                 tt_has(a, "graphics", "anisotropic_filtering") || tt_has(a, "graphics", "lod_bias") ||
                  tt_has(a, "graphics", "sharpening") || tt_has(a, "graphics", "brightness");
     if (image) section("Image");
+    // Anti-aliasing first, as in ROTK
+    for (const char *k : { "anti_aliasing", "msaa" }) {
+        const PortSetting *ps = tt_setting(a, "graphics", k);
+        if (!ps || ps->type != "choice") continue;
+        mark("graphics", k);
+        std::string cur = toml_unquote(tt_val(a, *ps));
+        row_begin("Anti-aliasing", "Smooths jagged edges (MSAA). 8x is heavy: at high frame rates 4x looks almost the same and stays smooth.");
+        ImGui::SetNextItemWidth(std::min(ImGui::GetContentRegionAvail().x - S(4), S(290)));
+        if (ImGui::BeginCombo((std::string("##tt") + k).c_str(), tt_choice_name(*ps, cur).c_str())) {
+            for (auto &c : ps->choices)
+                if (ImGui::Selectable(tt_choice_name(*ps, c).c_str(), c == cur)) a.ttFile.set(ps->section, ps->key, toml_quote(c));
+            ImGui::EndCombo();
+        }
+        row_end();
+        break;
+    }
     if (const PortSetting *ps = tt_setting(a, "graphics", "anisotropic_filtering")) {
         mark("graphics", "anisotropic_filtering");
         std::string cur = toml_unquote(tt_val(a, *ps));
