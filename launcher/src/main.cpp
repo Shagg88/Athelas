@@ -560,19 +560,27 @@ static void tab_display(App &a)
     row_end();
 
     int maxHz = max_refresh(a);
-    row_begin("Frame rate", "The game was made for 60. Higher rates were tested and play at normal speed.\n"
-                            "In fullscreen the screen switches to the matching refresh rate. In borderless and windowed, "
-                            "rates that divide evenly into your screen's refresh rate are the smoothest.");
-    static const int rates[] = { 60, 90, 120, 144, 165, 180, 240 };
+    row_begin("Frame rate", g_xboxPage
+        ? "The Xbox game was made for 30. Higher rates play at normal speed.\n"
+          "In fullscreen the screen switches to the matching refresh rate. In borderless and windowed, "
+          "rates that divide evenly into your screen's refresh rate are the smoothest."
+        : "The game was made for 60. Higher rates were tested and play at normal speed.\n"
+          "In fullscreen the screen switches to the matching refresh rate. In borderless and windowed, "
+          "rates that divide evenly into your screen's refresh rate are the smoothest.");
+    static const int ratesPc[] = { 60, 90, 120, 144, 165, 180, 240 };
+    static const int ratesXbox[] = { 30, 60, 90, 120, 144, 165, 180, 240 };
+    const int original = g_xboxPage ? 30 : 60;
+    std::vector<int> rates = g_xboxPage ? std::vector<int>(std::begin(ratesXbox), std::end(ratesXbox))
+                                        : std::vector<int>(std::begin(ratesPc), std::end(ratesPc));
     char c[64];
-    snprintf(c, sizeof c, "%d fps", s.targetFps);
+    snprintf(c, sizeof c, "%d fps%s", s.targetFps, s.targetFps == original ? "  (original)" : "");
     if (ImGui::BeginCombo("##fps", c)) {
         for (int r : rates) {
             if (s.vsync && r > maxHz) continue;
-            snprintf(c, sizeof c, "%d fps%s", r, r == 60 ? "  (original)" : "");
+            snprintf(c, sizeof c, "%d fps%s", r, r == original ? "  (original)" : "");
             if (ImGui::Selectable(c, s.targetFps == r)) s.targetFps = r;
         }
-        if (std::find(std::begin(rates), std::end(rates), maxHz) == std::end(rates) && maxHz > 60) {
+        if (std::find(rates.begin(), rates.end(), maxHz) == rates.end() && maxHz > 60) {
             snprintf(c, sizeof c, "%d fps", maxHz);
             if (ImGui::Selectable(c, s.targetFps == maxHz)) s.targetFps = maxHz;
         }
@@ -738,9 +746,13 @@ static void tab_graphics(App &a)
     row_begin("Skip any video", "Every movie can be skipped with Start, including cutscenes you have not seen yet.");
     ImGui::Checkbox("##skipall", &s.skipAllVideos);
     row_end();
-    row_begin("Skip opening logos", "Go straight to the menus at startup.");
+    ImGui::BeginDisabled(g_xboxPage);   // on Xbox the logos are the start of the first movie: Skip any video covers them
+    row_begin("Skip opening logos", g_xboxPage ? "PC version only. On Xbox the logos are the start of the Helm's Deep intro movie: "
+                                                 "turn on \"Skip any video\" and press Start to skip it."
+                                               : "Go straight to the menus at startup.");
     ImGui::Checkbox("##logos", &s.skipLogos);
     row_end();
+    ImGui::EndDisabled();
     row_begin("Cutscene sound delay", "Bluetooth speakers and headphones play sound late. This holds the picture back to match (150-300 ms is typical). 0 = off.");
     ImGui::SliderInt("##adelay", &s.audioDelayMs, 0, 500, s.audioDelayMs == 0 ? "Off" : "%d ms");
     row_end();
