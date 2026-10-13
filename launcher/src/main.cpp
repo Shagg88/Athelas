@@ -1214,8 +1214,26 @@ static void tt_play(App &a, const LibGame &g)
     if (!tt_save(a)) return;
     std::string tex = tt_data_dir() + "\\textures";
     SHCreateDirectoryExA(NULL, (tex + "\\replace").c_str(), NULL);
+    // save games: kept with the launcher. The first time, bring over any the port
+    // already has in its own folder (hdd\ beside TwoTowers.exe), so no progress is lost.
+    std::string saves = tt_data_dir() + "\\saves";
+    if (GetFileAttributesA(saves.c_str()) == INVALID_FILE_ATTRIBUTES) {
+        std::string old = a.tt.exe.substr(0, a.tt.exe.find_last_of('\\')) + "\\hdd";
+        if (GetFileAttributesA(old.c_str()) != INVALID_FILE_ATTRIBUTES) {
+            std::string from = old + "\\*";
+            from.push_back('\0');                 // SHFileOperation lists end with two zeros
+            std::string to = saves; to.push_back('\0');
+            SHCreateDirectoryExA(NULL, saves.c_str(), NULL);
+            SHFILEOPSTRUCTA op; memset(&op, 0, sizeof op);
+            op.wFunc = FO_COPY; op.pFrom = from.c_str(); op.pTo = to.c_str();
+            op.fFlags = FOF_NOCONFIRMATION | FOF_NOCONFIRMMKDIR | FOF_NOERRORUI | FOF_SILENT;
+            SHFileOperationA(&op);
+        }
+    }
+    std::string shots = exe_dir() + "\\Screenshots";   // with ROTK's; the names start TT_
     std::string args = "--game \"" + g.path + "\" --config \"" + tt_settings_path() + "\" --textures \"" + tex +
-                       "\" --log \"" + tt_log_path() + "\" --no-dialogs";
+                       "\" --log \"" + tt_log_path() + "\" --saves \"" + saves + "\" --shader-cache \"" + tt_data_dir() +
+                       "\\shadercache\" --screenshots \"" + shots + "\" --no-dialogs";
     std::string err;
     HANDLE h = port_start(a.tt.exe, args, err);
     if (!h) { set_message(a, err, true); return; }
@@ -1324,7 +1342,7 @@ static void tt_setting_row(App &a, const PortSetting &ps)
     } else if (ps.type == "float") {
         float f = (float)atof(v.c_str());
         bool changed = ps.max > ps.min ? ImGui::SliderFloat("##f", &f, (float)ps.min, (float)ps.max, "%.2f") : ImGui::InputFloat("##f", &f);
-        if (changed) { char b[32]; snprintf(b, sizeof b, "%g", f); a.ttFile.set(ps.section, ps.key, b); }
+        if (changed) { char b[32]; snprintf(b, sizeof b, "%.2f", f); a.ttFile.set(ps.section, ps.key, b); }
     } else {
         char b[256]; snprintf(b, sizeof b, "%s", toml_unquote(v).c_str());
         if (ImGui::InputText("##s", b, sizeof b)) a.ttFile.set(ps.section, ps.key, toml_quote(b));
@@ -1474,6 +1492,12 @@ static void tt_about(App &a)
     if (ImGui::Button("Open settings folder")) {
         SHCreateDirectoryExA(NULL, tt_data_dir().c_str(), NULL);
         ShellExecuteA(NULL, "open", tt_data_dir().c_str(), NULL, NULL, SW_SHOWNORMAL);
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Open screenshots")) {
+        std::string d = exe_dir() + "\\Screenshots";
+        SHCreateDirectoryExA(NULL, d.c_str(), NULL);
+        ShellExecuteA(NULL, "open", d.c_str(), NULL, NULL, SW_SHOWNORMAL);
     }
     ImGui::SameLine();
     if (ImGui::Button("Reset to defaults")) {
