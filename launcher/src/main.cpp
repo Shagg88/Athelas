@@ -1179,6 +1179,13 @@ static void tt_find(App &a)
     for (auto &c : cand) if (!c.empty() && file_there(c)) { a.tt.exe = c; break; }
     if (a.tt.exe.empty()) return;
     port_query(a.tt);
+    // Frame rate is the player's own choice on the Display tab: only the Original preset
+    // (the game as it was, 30 fps) sets it. Other presets are picture quality only, as in ROTK.
+    for (auto &pr : a.tt.presets) {
+        if (pr.name == "Original") continue;
+        for (size_t i = 0; i < pr.values.size(); )
+            if (pr.values[i].first == "graphics.fps") pr.values.erase(pr.values.begin() + i); else i++;
+    }
     a.ttLoaded = false;
 }
 
@@ -1771,13 +1778,13 @@ static void tt_tab_graphics(App &a)
         std::string help;
         for (auto &p : a.tt.presets) {
             const char *d = p.name == "Original" ? "as it looked on the Xbox in 2003: 4:3, 30 fps, no filtering or sharpening."
-                          : p.name == "Balanced" ? "widescreen, 8x texture filtering and light sharpening, still 30 fps."
-                          : p.name == "High"     ? "widescreen, 16x texture filtering, sharper textures and sharpening, 60 fps."
+                          : p.name == "Balanced" ? "widescreen, 8x texture filtering and light sharpening."
+                          : p.name == "High"     ? "widescreen, 16x texture filtering, sharper textures and sharpening."
                           : p.name == "Ultra"    ? "High, drawn at 150% resolution for an even cleaner picture."
                           : "";
             help += p.name + (*d ? std::string(": ") + d : std::string()) + "\n";
         }
-        help += "Custom: shown when you change individual settings.";
+        help += "Custom: shown when you change individual settings.\nOnly Original changes the frame rate; the others keep the one chosen on the Display tab.";
         // reuse the preset row, with ROTK's wording
         int cur = -1;
         for (size_t i = 0; i < a.tt.presets.size() && cur < 0; i++) {
