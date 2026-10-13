@@ -46,7 +46,7 @@ includes no game art: packs are made from your own copy.
   Every texture is saved once as a PNG in ROTKFix\textures\dump as the game
   loads it, named <width>x<height>_<16-character code>.png. A level loads all
   its textures when it starts, so starting each level once is enough.
-  Untick it when you have what you need. With Dump on, the log lists the
+  Untick it when you have what you need. While saving, the log lists the
   pictures each screen draws in 2D (HUD, menus), to find them in the dump.
 - Using a pack: put the edited or upscaled PNGs in ROTKFix\textures\replace
   (subfolders are fine; Open folder on the Graphics tab goes there). The game
