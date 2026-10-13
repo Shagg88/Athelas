@@ -1288,20 +1288,45 @@ static const char *tt_section_title(const std::string &s)
 static std::string tt_choice_name(const PortSetting &ps, const std::string &c)
 {
     if (ps.key == "anisotropic_filtering") return c == "0" ? "As the game asks" : c + "x";
-    if (ps.key == "fps") return c + " fps";
+    if (ps.key == "fps") return c == "unlimited" ? "Unlimited" : c + " fps";
     if (ps.key == "msaa") return c == "0" ? "Off" : c + "x";
     return cap_first(c);
 }
 
 // Screen size: one menu with the main screen's sizes (width and height are two settings in the file)
+// The screen The Two Towers is set to use ("main", or "DISPLAY2" and so on)
+static const Monitor &tt_monitor(const App &a)
+{
+    std::string scr = "main";
+    if (const PortSetting *ps = tt_setting(a, "display", "screen")) scr = toml_unquote(tt_val(a, *ps));
+    if (_stricmp(scr.c_str(), "main"))
+        for (const Monitor &m : a.monitors)
+            if (m.device.size() > 4 && !_stricmp(m.device.c_str() + 4, scr.c_str())) return m;
+    for (const Monitor &m : a.monitors) if (m.primary) return m;
+    return a.monitors[0];
+}
+
+// How a screen choice is shown: the monitor's own name, as on ROTK's Display tab
+static std::string tt_screen_name(const App &a, const std::string &c)
+{
+    for (const Monitor &m : a.monitors) {
+        bool match = !_stricmp(c.c_str(), "main") ? m.primary : m.device.size() > 4 && !_stricmp(m.device.c_str() + 4, c.c_str());
+        if (!match) continue;
+        char b[160];
+        snprintf(b, sizeof b, "%s%s (%d x %d)", m.name.c_str(), m.primary ? ", main screen" : "", m.deskW, m.deskH);
+        return b;
+    }
+    return !_stricmp(c.c_str(), "main") ? "Main screen" : c;
+}
+
 static void tt_resolution_row(App &a, const PortSetting &pw, const PortSetting &ph)
 {
     int w = atoi(tt_val(a, pw).c_str()), h = atoi(tt_val(a, ph).c_str());
-    const Monitor &m = a.monitors[0];
+    const Monitor &m = tt_monitor(a);
     char cur[64];
     if (w <= 0 || h <= 0) snprintf(cur, sizeof cur, "Desktop (%d x %d)", m.deskW, m.deskH);
     else snprintf(cur, sizeof cur, "%d x %d", w, h);
-    row_begin("Resolution", "The size of the picture on screen. Desktop uses the main screen's own size.");
+    row_begin("Resolution", "The size of the picture on screen. Desktop uses the screen's own size.");
     if (ImGui::BeginCombo("##ttres", cur)) {
         char d[64]; snprintf(d, sizeof d, "Desktop (%d x %d)", m.deskW, m.deskH);
         if (ImGui::Selectable(d, w <= 0)) { a.ttFile.set(pw.section, pw.key, "0"); a.ttFile.set(ph.section, ph.key, "0"); }
@@ -1318,6 +1343,38 @@ static void tt_resolution_row(App &a, const PortSetting &pw, const PortSetting &
     row_end();
 }
 
+// Refresh rate: the rates the screen offers at the chosen size; only used in fullscreen
+static void tt_refresh_row(App &a, const PortSetting &pr)
+{
+    const Monitor &m = tt_monitor(a);
+    int w = 0, h = 0;
+    if (const PortSetting *ps = tt_setting(a, "display", "width")) w = atoi(tt_val(a, *ps).c_str());
+    if (const PortSetting *ps = tt_setting(a, "display", "height")) h = atoi(tt_val(a, *ps).c_str());
+    if (w <= 0 || h <= 0) { w = m.deskW; h = m.deskH; }
+    std::vector<int> hz;
+    if (const Mode *md = m.find(w, h)) hz = md->hz;
+    if (hz.empty()) hz.push_back(m.deskHz);
+    int r = atoi(tt_val(a, pr).c_str());
+    bool full = true;
+    if (const PortSetting *pm = tt_setting(a, "display", "mode")) full = toml_unquote(tt_val(a, *pm)) == "fullscreen";
+    char cur[48];
+    if (r <= 0) snprintf(cur, sizeof cur, "Highest (%d Hz)", hz.back());
+    else snprintf(cur, sizeof cur, "%d Hz", r);
+    ImGui::BeginDisabled(!full);
+    row_begin(pr.label.c_str(), full ? pr.help.c_str() : "Only used in fullscreen. Borderless and windowed use the desktop's refresh rate.");
+    if (ImGui::BeginCombo("##tthz", cur)) {
+        char b[48]; snprintf(b, sizeof b, "Highest (%d Hz)", hz.back());
+        if (ImGui::Selectable(b, r <= 0)) a.ttFile.set(pr.section, pr.key, "0");
+        for (auto it = hz.rbegin(); it != hz.rend(); ++it) {
+            snprintf(b, sizeof b, "%d Hz", *it);
+            if (ImGui::Selectable(b, *it == r)) a.ttFile.set(pr.section, pr.key, std::to_string(*it));
+        }
+        ImGui::EndCombo();
+    }
+    row_end();
+    ImGui::EndDisabled();
+}
+
 static void tt_setting_row(App &a, const PortSetting &ps)
 {
     std::string v = tt_val(a, ps);
@@ -1330,11 +1387,23 @@ static void tt_setting_row(App &a, const PortSetting &ps)
         std::string cur = toml_unquote(v);
         int idx = -1;
         std::vector<std::string> names;
-        for (size_t i = 0; i < ps.choices.size(); i++) { names.push_back(tt_choice_name(ps, ps.choices[i])); if (ps.choices[i] == cur) idx = (int)i; }
+        for (size_t i = 0; i < ps.choices.size(); i++) {
+            names.push_back(ps.section == "display" && ps.key == "screen" ? tt_screen_name(a, ps.choices[i]) : tt_choice_name(ps, ps.choices[i]));
+            if (ps.choices[i] == cur) idx = (int)i;
+        }
         ImGui::SetNextItemWidth(std::min(ImGui::GetContentRegionAvail().x - S(4), S(290)));
         if (ImGui::BeginCombo("##c", idx >= 0 ? names[idx].c_str() : cur.c_str())) {
-            for (size_t i = 0; i < names.size(); i++)
+            bool screen = ps.section == "display" && ps.key == "screen";
+            for (size_t i = 0; i < names.size(); i++) {
+                // the main screen also listed by its DISPLAY number: shown once, as "main"
+                if (screen && (int)i != idx && _stricmp(ps.choices[i].c_str(), "main")) {
+                    bool isPrimary = false;
+                    for (const Monitor &m : a.monitors)
+                        if (m.primary && m.device.size() > 4 && !_stricmp(m.device.c_str() + 4, ps.choices[i].c_str())) isPrimary = true;
+                    if (isPrimary) continue;
+                }
                 if (ImGui::Selectable(names[i].c_str(), (int)i == idx)) a.ttFile.set(ps.section, ps.key, toml_quote(ps.choices[i]));
+            }
             ImGui::EndCombo();
         }
     } else if (ps.type == "int") {
@@ -1471,9 +1540,14 @@ static void tt_settings_on_tab(App &a, int tab)
             const char *t = tt_section_title(sec);
             section(t ? t : cap_first(sec).c_str());
         }
-        if (pw && ph && &ps == pw) { tt_resolution_row(a, *pw, *ph); continue; }
+        if (pw && ph && &ps == pw) {
+            tt_resolution_row(a, *pw, *ph);
+            if (const PortSetting *pr = tt_setting(a, "display", "refresh")) if (pr->type == "int") tt_refresh_row(a, *pr);   // right under it
+            continue;
+        }
         if (pw && ph && &ps == ph) continue;
         if (tt_hidden(ps)) continue;
+        if (ps.section == "display" && ps.key == "refresh" && ps.type == "int") { if (!(pw && ph)) tt_refresh_row(a, ps); continue; }
         // the HUD-edge setting only matters with widescreen on
         bool off = false;
         if (ps.key == "hud_edges") if (const PortSetting *ws = tt_setting(a, "graphics", "widescreen")) off = tt_val(a, *ws) != "true";
@@ -1560,10 +1634,10 @@ static std::string tt_summary(const App &a)
     int w = 0, h = 0;
     if ((p = tt_setting(a, "display", "width"))) w = atoi(tt_val(a, *p).c_str());
     if ((p = tt_setting(a, "display", "height"))) h = atoi(tt_val(a, *p).c_str());
-    if (w <= 0 || h <= 0) { w = a.monitors[0].deskW; h = a.monitors[0].deskH; }
+    if (w <= 0 || h <= 0) { w = tt_monitor(a).deskW; h = tt_monitor(a).deskH; }
     s = std::to_string(w) + " x " + std::to_string(h);
     if ((p = tt_setting(a, "display", "mode"))) s += "  |  " + cap_first(toml_unquote(tt_val(a, *p)));
-    if ((p = tt_setting(a, "graphics", "fps"))) s += "  |  " + toml_unquote(tt_val(a, *p)) + " fps";
+    if ((p = tt_setting(a, "graphics", "fps"))) s += "  |  " + tt_choice_name(*p, toml_unquote(tt_val(a, *p)));
     if ((p = tt_setting(a, "graphics", "widescreen"))) s += tt_val(a, *p) == "true" ? "  |  Widescreen" : "  |  4:3";
     return s;
 }
