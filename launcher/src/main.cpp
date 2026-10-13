@@ -21,6 +21,7 @@
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_sdlrenderer3.h"
 #include "config.h"
+#include "library.h"
 #include "font_cinzel.h"
 #include "font_garamond.h"
 
@@ -378,6 +379,11 @@ static bool gold_button(const char *label, ImVec2 size, ImFont *font)
 
 struct App {
     std::string dir;
+    // the player's games (this folder's PC game first); cur = the one shown, -1 = none yet
+    std::vector<LibGame> lib;
+    int cur = -1;
+    GameInfo other;                    // inspect_game() of a PC game in another folder, when that one is shown
+    std::string otherFor;
     GameInfo game;
     Settings s;
     std::vector<Monitor> monitors;
@@ -962,8 +968,73 @@ static void status_dot(bool ok, bool warn, const char *label, const char *tip)
     }
 }
 
+// ---------------------------------------------------------------------------
+// The player's games
+
+// Is the game shown the PC game in this launcher's own folder (the normal case)?
+static bool own_game(const App &a)
+{
+    return a.cur < 0 || (a.lib[a.cur].kind == GK_ROTK_PC && !_stricmp(a.lib[a.cur].path.c_str(), a.dir.c_str()));
+}
+
+static void add_game_from(App &a, const std::string &path)
+{
+    LibGame g;
+    if (detect_game_at(path, g) == GK_NONE) {
+        set_message(a, g.iso ? "That disc image isn't The Two Towers or The Return of the King for Xbox."
+                             : "No supported game there: choose the folder with rotk.exe, or an extracted Xbox game (with default.xbe).", true);
+        return;
+    }
+    a.cur = library_add(a.lib, g);
+    library_save(exe_dir(), a.lib);
+    set_message(a, std::string("Added: ") + game_kind_name(g.kind), false);
+}
+
+// "Your games" (About tab): the list, adding and removing
+static void games_section(App &a)
+{
+    section("Your games");
+    ImGui::PushTextWrapPos(0);
+    ImGui::TextColored(C_DIM, "The launcher can keep track of every version of the games you have, wherever they are.");
+    ImGui::PopTextWrapPos();
+    int remove = -1;
+    for (size_t i = 0; i < a.lib.size(); i++) {
+        const LibGame &g = a.lib[i];
+        ImGui::PushID((int)i);
+        ImGui::Spacing();
+        ImGui::TextColored((int)i == a.cur ? C_GOLD_H : C_TEXT, "%s", game_kind_name(g.kind));
+        ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
+        ImGui::TextColored(C_DIM, "%s%s", g.path.c_str(), g.iso ? "  (disc image)" : "");
+        ImGui::PopFont();
+        bool isOwn = g.kind == GK_ROTK_PC && !_stricmp(g.path.c_str(), a.dir.c_str());
+        if ((int)i != a.cur && ImGui::SmallButton("Show")) a.cur = (int)i;
+        if (!isOwn) {
+            if ((int)i != a.cur) ImGui::SameLine();
+            if (ImGui::SmallButton("Remove from list")) remove = (int)i;
+        }
+        ImGui::PopID();
+    }
+    if (remove >= 0) {
+        a.lib.erase(a.lib.begin() + remove);
+        if (a.cur == remove) a.cur = a.lib.empty() ? -1 : 0;
+        else if (a.cur > remove) a.cur--;
+        library_save(exe_dir(), a.lib);
+    }
+    ImGui::Spacing();
+    if (ImGui::Button("Add a game folder...")) {
+        std::string d;
+        if (pick_folder(d, L"Choose a game folder (with rotk.exe, or an extracted Xbox game)")) add_game_from(a, d);
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Add an Xbox disc image...")) {
+        std::string f;
+        if (pick_disc_image(f)) add_game_from(a, f);
+    }
+}
+
 static void tab_about(App &a)
 {
+    games_section(a);
     section("Setup");
     const GameInfo &g = a.game;
     status_dot(g.exeFound && g.versionOk, g.exeFound, g.exeFound ? g.versionText.c_str() : "rotk.exe not found - put the launcher in your game folder", nullptr);
@@ -1072,6 +1143,54 @@ static void setup_here(App &a, const std::string &dst)
     } else if (denied) a.deniedDir = dst;
 }
 
+
+// Shown for a game other than this folder's PC game
+static void draw_other_game(App &a)
+{
+    LibGame &g = a.lib[a.cur];
+    section(game_kind_name(g.kind));
+    row_begin("Location", nullptr);
+    ImGui::PushTextWrapPos(0);
+    ImGui::TextUnformatted(g.path.c_str());
+    ImGui::PopTextWrapPos();
+    row_end();
+    if (g.kind != GK_ROTK_PC) {
+        row_begin("Version", nullptr);
+        ImGui::Text("Xbox, %s", g.iso ? "disc image" : "extracted files");
+        if (g.titleId) { ImGui::SameLine(); ImGui::TextColored(C_DIM, "(title ID %08X)", (unsigned)g.titleId); }
+        row_end();
+        ImGui::Spacing();
+        ImGui::PushTextWrapPos(0);
+        ImGui::TextColored(C_WARN, "Recognised, but not playable from here yet.");
+        ImGui::TextUnformatted(g.kind == GK_TT_XBOX
+            ? "The Two Towers runs through its own PC port. Once that port is part of this launcher, its settings "
+              "will appear here and Play will start it with your game files - nothing has to be copied or changed."
+            : "The Xbox Return of the King needs its own PC port, which is still to be built. When it's ready, "
+              "its settings will appear here and Play will start it with your game files.");
+        ImGui::PopTextWrapPos();
+        return;
+    }
+    // the PC game in another folder: its own copy of ROTK Fix keeps its own settings there
+    if (a.otherFor != g.path) { a.other = inspect_game(g.path); a.otherFor = g.path; }
+    const GameInfo &o = a.other;
+    row_begin("Version", nullptr);
+    ImGui::TextUnformatted(o.versionText.c_str());
+    row_end();
+    ImGui::Spacing();
+    if (o.hasDll && o.hasProxyD3D8) {
+        ImGui::PushTextWrapPos(0);
+        ImGui::TextUnformatted("ROTK Fix is installed there, with its own settings.");
+        ImGui::PopTextWrapPos();
+        if (ImGui::Button("Open the launcher there")) { if (start_launcher(g.path, false, "")) a.quit = true; }
+    } else {
+        ImGui::PushTextWrapPos(0);
+        ImGui::TextUnformatted("ROTK Fix isn't installed in that folder yet.");
+        ImGui::PopTextWrapPos();
+        if (gold_button("Set up ROTK Fix there", ImVec2(S(240), S(36)), F_BODY)) { setup_here(a, g.path); a.otherFor.clear(); }
+        if (!a.setupErr.empty()) { ImGui::PushTextWrapPos(0); ImGui::TextColored(C_BAD, "%s", a.setupErr.c_str()); ImGui::PopTextWrapPos(); }
+    }
+}
+
 static void draw_setup(App &a)
 {
     if (!a.searched) { a.found = find_game_folders(); a.searched = true; }
@@ -1127,6 +1246,8 @@ static void draw_setup(App &a)
             else a.setupErr = "Permission was not given.";
         }
     }
+    ImGui::Dummy(ImVec2(0, S(10)));
+    games_section(a);
 }
 
 // ---------------------------------------------------------------------------
@@ -1159,8 +1280,30 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     ImGui::PopFont();
     ImGui::SetCursorPosX(pad + S(2));
     ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
-    ImGui::TextColored(C_TEXT, "The Return of the King  -  PC");
+    const char *curName = a.cur >= 0 ? game_kind_name(a.lib[a.cur].kind) : "The Return of the King  -  PC";
+    if (a.lib.size() > 1) {
+        // more than one game: the subtitle picks which one is shown
+        ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0, 0, 0, 0));
+        ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
+        ImGui::SetNextItemWidth(ImGui::CalcTextSize(curName).x + ImGui::GetFrameHeight() + S(24));
+        if (ImGui::BeginCombo("##game", curName)) {
+            for (size_t i = 0; i < a.lib.size(); i++) {
+                ImGui::PushID((int)i);
+                bool sameKind = false;
+                for (size_t j = 0; j < a.lib.size(); j++) if (j != i && a.lib[j].kind == a.lib[i].kind) sameKind = true;
+                std::string label = game_kind_name(a.lib[i].kind);
+                if (sameKind) label += "  (" + a.lib[i].path + ")";     // two copies of one version: say which
+                if (ImGui::Selectable(label.c_str(), (int)i == a.cur)) a.cur = (int)i;
+                ImGui::PopID();
+            }
+            ImGui::EndCombo();
+        }
+        ImGui::PopStyleColor(2);
+    } else {
+        ImGui::TextColored(C_TEXT, "%s", curName);
+    }
     ImGui::PopFont();
+    const bool own = own_game(a);
 
     // status (top right, one per line)
     struct St { bool ok, warn; std::string label, tip; };
@@ -1177,7 +1320,13 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
                        "or a fix that came with a repack). ROTK Fix can't load while it's there.\n\n"
                        "Move it out of the game folder (keep it in case you want it back), then copy ROTK Fix's " + f + " in again." });
     }
-    if (a.s.padEnabled)
+    if (!own) {   // another game is shown: just say what it is
+        st.clear();
+        const LibGame &lg = a.lib[a.cur];
+        bool ready = game_kind_playable(lg.kind);
+        st.push_back({ ready, true, ready ? "Found" : "Not playable yet", lg.path });
+    }
+    if (own && a.s.padEnabled)
         st.push_back({ a.controllers > 0 && g.hasSdl, true, a.controllers > 1 ? std::to_string(a.controllers) + " controllers" : a.controllers ? "Controller" : "No controller",
                        a.controllers ? a.controller : "Connect a controller - it will be picked up automatically." });
     ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
@@ -1195,7 +1344,13 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     ImGui::SetCursorPos(ImVec2(pad, bannerH));
     ImGui::BeginChild("panel", ImVec2(size.x - pad * 2, size.y - bannerH - barH - S(30)), ImGuiChildFlags_Borders);
     g_labelW = std::max(S(230), ImGui::GetContentRegionAvail().x * 0.36f);
-    if (!g.exeFound) {
+    if (!own) {
+        ImGui::BeginChild("other", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_NoBackground);
+        draw_other_game(a);
+        ImGui::Dummy(ImVec2(0, S(10)));
+        games_section(a);
+        ImGui::EndChild();
+    } else if (!g.exeFound) {
         ImGui::BeginChild("setup", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_NoBackground);
         draw_setup(a);
         ImGui::EndChild();
@@ -1246,7 +1401,9 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
         ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
         ImGui::SetCursorPos(ImVec2(pad + S(10), by + (playH - cardH) * 0.5f + S(5)));
         ImGui::PushTextWrapPos(pad + cardW - S(8));
-        ImGui::TextColored(C_DIM, "%d x %d  |  %s  |  %d fps  |  %s", w, h, dm[a.s.displayMode], fps, pn[detect_preset(a.s)]);
+        if (own) ImGui::TextColored(C_DIM, "%d x %d  |  %s  |  %d fps  |  %s", w, h, dm[a.s.displayMode], fps, pn[detect_preset(a.s)]);
+        else ImGui::TextColored(C_DIM, "%s  |  %s", game_kind_name(a.lib[a.cur].kind),
+                                game_kind_playable(a.lib[a.cur].kind) ? "settings in its own launcher" : "not playable yet");
         if (msg) {
             ImGui::SetCursorPosX(pad + S(10));
             ImGui::TextColored(a.messageBad ? C_BAD : C_GOOD, "%s", a.message.c_str());
@@ -1256,7 +1413,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     }
 
     ImGui::SetCursorPos(ImVec2(bx, by));
-    ImGui::BeginDisabled(!g.exeFound || g_removeSelf);
+    ImGui::BeginDisabled(!own || !g.exeFound || g_removeSelf);
     if (gold_button("PLAY", ImVec2(playW, playH), F_PLAY)) {
         if (save(a)) {
             std::string err;
@@ -1267,7 +1424,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     ImGui::EndDisabled();
     bx -= saveW + S(12);
     ImGui::SetCursorPos(ImVec2(bx, by + (playH - btnH) * 0.5f));
-    ImGui::BeginDisabled(!g.exeFound || g_removeSelf);
+    ImGui::BeginDisabled(!own || !g.exeFound || g_removeSelf);
     if (ImGui::Button("Save", ImVec2(saveW, btnH))) save(a);
     ImGui::EndDisabled();
 
@@ -1340,6 +1497,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     App a;
     a.dir = exe_dir();
     a.game = inspect_game(a.dir);
+    // the player's games: this folder's PC game first, then the remembered ones
+    a.lib = library_load(a.dir);
+    if (a.game.exeFound) {
+        LibGame own;
+        if (detect_game_at(a.dir, own) == GK_ROTK_PC) {
+            for (size_t i = 0; i < a.lib.size(); i++)
+                if (!_stricmp(a.lib[i].path.c_str(), own.path.c_str())) { a.lib.erase(a.lib.begin() + i); break; }
+            a.lib.insert(a.lib.begin(), own);
+            a.cur = 0;
+            if (!protectedDir) library_save(a.dir, a.lib);
+        }
+    }
+    if (const char *t = getenv("ROTKFIX_GAME")) { int n = atoi(t); if (n >= 0 && n < (int)a.lib.size()) a.cur = n; }   // testing
     a.monitors = enum_monitors();
     bool hadIni = load_settings(a.dir, a.s);
     if (!hadIni) apply_preset(a.s, PRESET_HIGH);

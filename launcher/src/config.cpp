@@ -1014,7 +1014,7 @@ std::vector<FoundGame> find_game_folders()
     return out;
 }
 
-bool pick_folder(std::string &out)
+bool pick_folder(std::string &out, const wchar_t *title)
 {
     bool ok = false;
     HRESULT hrInit = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
@@ -1023,7 +1023,7 @@ bool pick_folder(std::string &out)
         DWORD opts = 0;
         dlg->GetOptions(&opts);
         dlg->SetOptions(opts | FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST);
-        dlg->SetTitle(L"Choose the folder with rotk.exe");
+        dlg->SetTitle(title);
         if (SUCCEEDED(dlg->Show(GetActiveWindow()))) {
             IShellItem *item = nullptr;
             if (SUCCEEDED(dlg->GetResult(&item))) {

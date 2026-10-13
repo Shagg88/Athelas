@@ -108,7 +108,7 @@ std::string exe_dir();
 // First-run help when the launcher is not in the game folder
 struct FoundGame { std::string dir; GameInfo info; };
 std::vector<FoundGame> find_game_folders();                 // installed-programs list, EA registry keys, usual folders
-bool pick_folder(std::string &out);                           // Windows' "choose a folder" box
+bool pick_folder(std::string &out, const wchar_t *title = L"Choose the folder with rotk.exe");   // Windows' "choose a folder" box
 // Copy ROTK Fix from 'src' into the game folder 'dst' (another mod's d3d8/dinput8 kept as *.before-rotkfix).
 // accessDenied is set when Windows refused to write there (Program Files without administrator rights).
 bool install_to(const std::string &src, const std::string &dst, std::string &err, bool &accessDenied);
