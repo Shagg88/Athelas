@@ -1153,7 +1153,11 @@ void Draw(const State& s, uint32_t prim, uint32_t start, uint32_t count, const u
             o.attr[kB0] = o.attr[kD0];
             o.attr[kB1] = o.attr[kD1];
             o.attr[kFog] = Splat(FogAmount(s, std::fabs(o.pos[2] / s.zscale)));
-            for (int t = 0; t < 4; t++) o.attr[kT0 + t] = slot[9 + t] >= 0 ? vp.in[9 + t] : V(0, 0, 0, 1);
+            // each stage reads the coordinate set its TEXCOORDINDEX names, as the D3D12 path's fixed key does
+            for (int t = 0; t < 4; t++) {
+                int set = int(s.tss[size_t(t)][kTssTexCoordIndex] & 3);
+                o.attr[kT0 + t] = slot[9 + set] >= 0 ? vp.in[9 + set] : V(0, 0, 0, 1);
+            }
         }
         for (int a : {kD0, kD1, kB0, kB1})
             for (int j = 0; j < 4; j++) o.attr[a][j] = Sat(o.attr[a][j]);

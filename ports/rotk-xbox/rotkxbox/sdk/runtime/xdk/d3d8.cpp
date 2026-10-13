@@ -1,6 +1,7 @@
 // Direct3D 8 (XDK 5849) entry points the title calls, implemented on the host renderer.
 // Resource creation, locking and the XG helpers stay recompiled: they only manage memory.
 #include <algorithm>
+#include <array>
 #include <cstdlib>
 #include <atomic>
 #include <chrono>
@@ -1269,9 +1270,41 @@ HLE_STDCALL(D3DDevice_BeginPush, 1) {
 
 HLE_STDCALL(D3DDevice_EndPush, 1) {
     std::lock_guard<std::recursive_mutex> lock(g_lock);
-    constexpr uint32_t kBeginEnd = 0x17FC, kInlineArray = 0x1818;
+    constexpr uint32_t kBeginEnd = 0x17FC, kInlineArray = 0x1818, kArrayFormat = 0x1760;  // 16 formats, 4 bytes apart
     static std::vector<uint32_t> vertices;
     uint32_t prim = 0;
+    // vertex array formats the title pushed itself (count bits 4 to 7, type bits 0 to 3: the D3DVSDT code); its
+    // inline vertices carry the enabled ones packed in register order (The Return of the King's particles)
+    std::array<uint32_t, 16> formats{};
+    bool own_formats = false;
+    auto draw_own = [&](uint32_t prim, const std::vector<uint32_t>& v) {
+        auto vs = std::make_shared<gpu::VertexShader>();
+        if ((g_state.vs_handle & 1) && g_state.vs) {
+            vs->program = g_state.vs->program;
+            vs->program_type = g_state.vs->program_type;
+        }
+        uint32_t stride = 0;
+        for (uint32_t r = 0; r < 16; r++) {
+            uint32_t f = formats[r], type = f & 0xF, count = (f >> 4) & 0xF;
+            if (!count) continue;  // disabled
+            uint32_t bytes = type == 2 ? count * 4 : type == 1 || type == 5 ? count * 2 : type == 6 ? 4 : count;
+            vs->inputs[r] = {0, stride, f & 0xFF};
+            stride += bytes;
+        }
+        vs->stream_stride[0] = stride;
+        uint32_t total = uint32_t(v.size()) * 4;
+        if (!stride || total % stride) {
+            LOG_FIRST(8, "d3d: EndPush primitive %u dropped, %u bytes of vertices of %u (own formats)", prim, total, stride);
+            return;
+        }
+        auto bound = g_state.vs;
+        uint32_t handle = g_state.vs_handle;
+        g_state.vs = vs;
+        g_state.vs_handle = handle | 1;
+        DrawUp(prim, total / stride, v.data(), stride);
+        g_state.vs = bound;
+        g_state.vs_handle = handle;
+    };
     for (uint32_t p = g_push_begin, end = a[0]; g_push_begin && p + 4 <= end;) {
         // count in bits 18 to 28, bit 30 keeps the method for every value
         uint32_t head = R32(p), method = head & 0x1FFC, n = (head >> 18) & 0x7FF;
@@ -1284,11 +1317,18 @@ HLE_STDCALL(D3DDevice_EndPush, 1) {
             uint32_t m = head & 0x40000000 ? method : method + i * 4, v = R32(p);
             if (m == kInlineArray) {
                 if (prim) vertices.push_back(v);
+            } else if (m >= kArrayFormat && m < kArrayFormat + 16 * 4) {
+                formats[(m - kArrayFormat) / 4] = v;
+                own_formats = true;
+                if (m >> 2 < g_state.simple.size()) g_state.simple[m >> 2] = v;
             } else if (m != kBeginEnd) {
                 if (m >> 2 < g_state.simple.size()) g_state.simple[m >> 2] = v;
             } else if (v) {
                 prim = v;
                 vertices.clear();
+            } else if (prim && own_formats) {
+                draw_own(prim, vertices);
+                prim = 0;
             } else if (prim) {
                 uint32_t stride = VertexBytes(), bytes = uint32_t(vertices.size()) * 4;
                 if (stride && bytes % stride == 0) DrawUp(prim, bytes / stride, vertices.data(), stride);
