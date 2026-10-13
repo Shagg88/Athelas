@@ -26,3 +26,6 @@ settings.toml
 
 # Local temporary folder
 .local
+
+# release copies (release.bat)
+/release/

@@ -75,6 +75,10 @@ inline std::atomic<bool> g_sharpen_off{false};
 // the game shows a full-screen movie (its frame fills the back buffer): presented by [graphics] movie_display,
 // movie_sharpening and cutscene_audio_delay instead of as a game frame
 inline std::atomic<bool> g_movie{false};
+// set by a game: alpha to coverage for cut-outs (leaves, grass, fences) when anti-aliasing is on
+inline std::atomic<bool> g_alpha_edges{false};
+// set by a game: fixed function fog distances scaled by this (a longer draw distance), density divided by it
+inline std::atomic<float> g_fog_scale{1.0f};
 // ] : the colour look shown, from [graphics] colour_look at start, the key steps through them while playing
 inline std::atomic<uint32_t> g_colour_look{0};
 constexpr uint32_t kColourLooks = 4;

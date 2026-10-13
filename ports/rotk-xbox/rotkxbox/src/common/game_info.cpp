@@ -3,7 +3,9 @@
 namespace rotk {
 extern bool g_skip_all_videos;                  // src/game/rotk_movies.cpp
 extern uint32_t g_fps;                          // src/game/rotk_framerate.cpp
-extern uint32_t g_fov_percent;                  // src/game/rotk_widescreen.cpp
+extern uint32_t g_fov_percent, g_draw_percent;  // src/game/rotk_widescreen.cpp
+extern bool g_alpha_edges;                      // src/game/rotk_widescreen.cpp
+void Pad(int port, input::Pad& pad);            // src/game/rotk_controls.cpp
 void Loaded();                                  // rotk_movies.cpp
 void Init();                                    // rotk_settings.cpp: ROTKFix.ini, then the frame rate
 }
@@ -32,7 +34,12 @@ const app::GameInfo app::kGame = {
                 {"graphics", "fov", cfg::Type::Int, "Field of view",
                  "How wide the camera sees, as a share of the game's own (100). Wider shows more of the battle but "
                  "makes characters look further away.",
-                 nullptr, &rotk::g_fov_percent, nullptr, 70, 150, {}}},
+                 nullptr, &rotk::g_fov_percent, nullptr, 70, 150, {}},
+                {"graphics", "draw_distance", cfg::Type::Int, "Draw distance",
+                 "How far the camera sees, as a share of the game's own (100); the fog moves out with it.",
+                 nullptr, &rotk::g_draw_percent, nullptr, 50, 800, {}},
+                {"graphics", "alpha_edges", cfg::Type::Bool, "Smooth leaf edges",
+                 "With anti-aliasing on, smooths the edges of leaves, grass and fences.", &rotk::g_alpha_edges}},
     .presets = {},
     .load = nullptr,                      // reads more from the settings file's toml::table
     .save = nullptr,                      // writes more into it
@@ -41,6 +48,6 @@ const app::GameInfo app::kGame = {
     .window = nullptr,                    // the game window is up
     .message = nullptr,                   // window messages first; true takes one
     .ui = nullptr,                        // ImGui drawing each frame
-    .pad = nullptr,                       // changes a polled pad
+    .pad = rotk::Pad,                     // changes a polled pad
     .rumble = nullptr,                    // changes a rumble before it is set
 };

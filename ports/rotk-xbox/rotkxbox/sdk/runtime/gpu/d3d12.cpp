@@ -442,6 +442,7 @@ struct PsoKey {
     float zslope;
     uint32_t rtfmt;
     uint32_t samples;  // anti-aliasing: the bound targets' sample count, 0 or 1 without
+    uint32_t a2c;      // alpha to coverage for a cut-out (g_alpha_edges)
 };
 
 // Blit's settings past the source and its rectangle
@@ -2126,6 +2127,7 @@ void D3D12Backend::FillPipelineDesc(const PsoKey& k, ID3DBlob* vs, ID3DBlob* ps,
     d.RTVFormats[0] = k.has_rt ? DXGI_FORMAT(k.rtfmt) : DXGI_FORMAT_UNKNOWN;
     d.DSVFormat = k.has_ds ? DXGI_FORMAT_D24_UNORM_S8_UINT : DXGI_FORMAT_UNKNOWN;
     d.SampleDesc.Count = std::max(k.samples, 1u);
+    d.BlendState.AlphaToCoverageEnable = k.a2c != 0;
 }
 
 ID3D12PipelineState* D3D12Backend::EnsurePipeline(const PsoKey& k, ID3DBlob* vs, ID3DBlob* ps) {
@@ -2682,6 +2684,11 @@ void D3D12Backend::BuildPipelineKey(const State& s, const Assembled& a, uint64_t
     k.rtfmt = bound_rt_ ? bound_rt_->fmt : 0;
     k.samples = bound_ms_ ? samples_ : 1;
     KeyBlend(s, k);
+    // smooth cut-out edges: an alpha test passing above the reference, unblended, into anti-aliased targets
+    if (g_alpha_edges && k.samples > 1 && !k.blend && SimpleState(s, kMAlphaTestEnable)) {
+        int f = int(Cmp(SimpleState(s, kMAlphaFunc))) - 1;
+        k.a2c = f == 4 || f == 6;  // greater, greater or equal
+    }
     if (k.has_ds) KeyDepthStencil(s, a, k);
     KeyRasterizer(s, a, k);
 }
@@ -2703,9 +2710,10 @@ void FillFogConstants(const State& s, bool vertex_program, DrawConstants& c) {
         c.fog[3] = kFogTableLinear;
         return;
     }
-    c.fog[0] = Bits(s.rs[kRsFogStart]);
-    c.fog[1] = Bits(s.rs[kRsFogEnd]);
-    c.fog[2] = Bits(s.rs[kRsFogDensity]);
+    float k = g_fog_scale;
+    c.fog[0] = Bits(s.rs[kRsFogStart]) * k;
+    c.fog[1] = Bits(s.rs[kRsFogEnd]) * k;
+    c.fog[2] = Bits(s.rs[kRsFogDensity]) / k;
     c.fog[3] = float(s.rs[kRsFogTableMode]);
 }
 
@@ -2887,6 +2895,7 @@ void D3D12Backend::UploadConstants(const State& s, const DrawShaders& sh, const 
     std::memcpy(vc.cpu, s.vsc.data(), sizeof(s.vsc));
     Alloc dc = Upload(sizeof(DrawConstants), 256);
     FillSurfaceConstants(s, size, c);
+    c.surf[3] = k.a2c ? 1.0f : 0.0f;
     FillFogConstants(s, sh.prog, c);
     FillCombinerConstants(s, c);
     if (ext_) ext_->Constants(reinterpret_cast<float(*)[4]>(vc.cpu), c.ext, bound_rt_, k.blend ? k.src : 1);
