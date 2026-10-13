@@ -1,8 +1,8 @@
 @echo off
 setlocal
-set "GAME_TITLE=The Two Towers PC"
+set "GAME_TITLE=ROTK Xbox PC port"
 set "GAME_XBE=default.xbe"
-set "GAME_EXE=TwoTowers"
+set "GAME_EXE=ROTKXbox"
 title %GAME_TITLE% - Build
 cd /d "%~dp0"
 echo.

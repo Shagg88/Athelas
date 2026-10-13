@@ -1,0 +1,6 @@
+
+# ---- The Return of the King hooks (appended to game.toml by the config build) ----
+[[hook]]                   # XapiInitProcess: failed disc authentication (0x121C84 < 0) -> continue instead of booting to the dashboard (0x121EE4)
+at = 0x00121EBE
+call = "ROTK_DiscCheckFailed"
+on_true = 0x00121EC3

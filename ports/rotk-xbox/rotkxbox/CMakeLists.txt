@@ -1,4 +1,4 @@
-# The Two Towers (original Xbox), statically recompiled
+# The Return of the King (original Xbox, XDK 5558), statically recompiled
 
 cmake_minimum_required(VERSION 3.25)
 project(game LANGUAGES C CXX)
@@ -36,8 +36,7 @@ if(NOT GAME_PARTITIONS)
 endif()
 
 # target name = GAME_EXE in build.bat, xbe = GAME_XBE
-# The Two Towers paces the GPU with push-buffer recording and InsertCallback, which the host replaces with immediate
-# versions; with the threaded renderer the title then rewrites vertex memory the render thread has not read yet
-# (spiky, ghosted characters). Draw on the title's thread, as the headless harness does.
-add_xbe_image(TwoTowers default.xbe game.toml ${GAME_PARTITIONS} game)
-target_compile_definitions(TwoTowers PRIVATE XBE_RENDER_THREAD=0)
+# Draw on the title's thread, as The Two Towers' port and the headless harness do; the threaded renderer can be
+# tried once the game runs.
+add_xbe_image(ROTKXbox default.xbe game.toml ${GAME_PARTITIONS} game)
+target_compile_definitions(ROTKXbox PRIVATE XBE_RENDER_THREAD=0)

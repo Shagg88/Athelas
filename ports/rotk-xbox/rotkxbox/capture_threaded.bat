@@ -7,4 +7,4 @@ rem draws on a second thread, as the SDK does by default (compare smoothness and
 set XBE_RENDER_THREAD=1
 if not exist "%XBE_CAPTURE_DIR%" mkdir "%XBE_CAPTURE_DIR%"
 cd /d "%~dp0out\build\release"
-start "" TwoTowers.exe
+start "" ROTKXbox.exe
