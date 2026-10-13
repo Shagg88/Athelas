@@ -1208,9 +1208,11 @@ static void tt_load_settings(App &a)
     settings_file_load(tt_settings_path(), a.ttFile);   // missing: every setting at its default
 }
 
+static void tt_apply_refresh(App &a);
 static bool tt_save(App &a)
 {
     SHCreateDirectoryExA(NULL, tt_data_dir().c_str(), NULL);
+    tt_apply_refresh(a);   // fullscreen: the refresh rate that suits the frame rate, as ROTK does
     // the frame limit follows the frame rate
     if (const PortSetting *cap = tt_setting(a, "display", "fps_cap"))
         if (const PortSetting *fps = tt_setting(a, "graphics", "fps"))
@@ -1536,6 +1538,362 @@ static bool tt_hidden(const PortSetting &ps) { return ps.section == "display" &&
 // The tab a setting is shown on: its section's, except the frame rate, which is on Display as in ROTK's
 static int tt_tab_of_setting(const PortSetting &ps) { return ps.section == "graphics" && ps.key == "fps" ? 0 : tt_tab_of(ps.section); }
 
+
+// ---- The Two Towers' Display tab, laid out exactly like ROTK's (tab_display):
+// Screen (Monitor, Display mode, Resolution) and Smoothness (V-Sync, Frame rate,
+// and the note under it). The refresh rate isn't shown: as in ROTK, fullscreen
+// picks it from the frame rate (written to display.refresh on save).
+
+static std::string tt_get(const App &a, const char *sec, const char *key, const char *def)
+{
+    const PortSetting *ps = tt_setting(a, sec, key);
+    return ps ? toml_unquote(tt_val(a, *ps)) : def;
+}
+static int tt_geti(const App &a, const char *sec, const char *key, int def)
+{
+    const PortSetting *ps = tt_setting(a, sec, key);
+    return ps ? atoi(toml_unquote(tt_val(a, *ps)).c_str()) : def;
+}
+static void tt_put(App &a, const char *sec, const char *key, const std::string &v)
+{
+    const PortSetting *ps = tt_setting(a, sec, key);
+    if (!ps) return;
+    a.ttFile.set(sec, key, ps->type == "choice" || ps->type == "string" ? toml_quote(v) : v);
+}
+static int tt_mode_index(const App &a)   // 0 borderless, 1 fullscreen, 2 windowed (ROTK's order)
+{
+    std::string m = tt_get(a, "display", "mode", "borderless");
+    return m == "fullscreen" ? 1 : m == "windowed" ? 2 : 0;
+}
+static int tt_max_refresh(const App &a)
+{
+    const Monitor &m = tt_monitor(a);
+    if (tt_mode_index(a) == 1) {
+        int w = tt_geti(a, "display", "width", 0), h = tt_geti(a, "display", "height", 0);
+        if (w <= 0 || h <= 0) { w = m.deskW; h = m.deskH; }
+        if (const Mode *md = m.find(w, h)) if (!md->hz.empty()) return md->hz.back();
+    }
+    return m.deskHz;
+}
+static std::vector<int> tt_refresh_list(const App &a)
+{
+    const Monitor &m = tt_monitor(a);
+    int w = tt_geti(a, "display", "width", 0), h = tt_geti(a, "display", "height", 0);
+    if (w <= 0 || h <= 0) { w = m.deskW; h = m.deskH; }
+    if (const Mode *md = m.find(w, h)) if (!md->hz.empty()) return md->hz;
+    return { m.deskHz };
+}
+// The refresh rate the port should use: in fullscreen, the best match for the frame rate
+static int tt_effective_refresh(const App &a)
+{
+    if (tt_mode_index(a) != 1) return tt_monitor(a).deskHz;
+    return pick_refresh(tt_refresh_list(a), tt_geti(a, "graphics", "fps", 30));
+}
+static void tt_apply_refresh(App &a)
+{
+    if (tt_setting(a, "display", "refresh")) tt_put(a, "display", "refresh", std::to_string(tt_mode_index(a) == 1 ? tt_effective_refresh(a) : 0));
+}
+// "main" for the main screen, else its device name without \\.\ ("DISPLAY2")
+static std::string tt_screen_value(const Monitor &m)
+{
+    if (m.primary) return "main";
+    return m.device.rfind("\\\\.\\", 0) == 0 ? m.device.substr(4) : m.device;
+}
+
+static void tt_tab_display(App &a)
+{
+    const Monitor &m = tt_monitor(a);
+    section("Screen");
+    const PortSetting *pscr = tt_setting(a, "display", "screen");
+    if (pscr && a.monitors.size() > 1) {
+        row_begin("Monitor", "Which screen the game runs on.");
+        if (ImGui::BeginCombo("##ttmon", m.name.c_str())) {
+            for (int i = 0; i < (int)a.monitors.size(); i++) {
+                const Monitor &mi = a.monitors[i];
+                std::string v = tt_screen_value(mi);
+                bool offered = v == "main";
+                for (auto &c : pscr->choices) if (!_stricmp(c.c_str(), v.c_str())) offered = true;
+                if (!offered) continue;
+                char b[256];
+                snprintf(b, sizeof b, "%d: %s%s  (%dx%d @ %d Hz)", i + 1, mi.name.c_str(), mi.primary ? ", main" : "", mi.deskW, mi.deskH, mi.deskHz);
+                if (ImGui::Selectable(b, &mi == &m)) { tt_put(a, "display", "screen", v); tt_put(a, "display", "width", "0"); tt_put(a, "display", "height", "0"); }
+            }
+            ImGui::EndCombo();
+        }
+        row_end();
+    }
+
+    static const char *modes[] = { "Borderless", "Fullscreen", "Windowed" };
+    static const char *modeVals[] = { "borderless", "fullscreen", "windowed" };
+    int mode = tt_mode_index(a);
+    int w = tt_geti(a, "display", "width", 0), h = tt_geti(a, "display", "height", 0);
+    row_begin("Display mode", "Borderless: fills the screen and switches instantly with Alt-Tab (recommended).\n"
+                              "Fullscreen: the screen switches to the chosen resolution and refresh rate.\n"
+                              "Windowed: a normal window you can move around.");
+    if (segmented("ttmode", &mode, modes, 3)) {
+        tt_put(a, "display", "mode", modeVals[mode]);
+        if (mode != 1 && (w > m.deskW || h > m.deskH)) { w = h = 0; }      // supersampling resolutions are for fullscreen only
+        if (mode != 2 && w > 0 && !m.find(w, h)) { w = h = 0; }            // free window sizes are for windowed only
+        tt_put(a, "display", "width", std::to_string(w)); tt_put(a, "display", "height", std::to_string(h));
+    }
+    row_end();
+
+    row_begin("Resolution", "Only resolutions your monitor supports are listed.\n"
+                            "In fullscreen, sizes marked \"supersampling\" are larger than your screen: the game is drawn at that size "
+                            "and your graphics driver shrinks it down for a cleaner, sharper picture. They appear when NVIDIA DSR/DLDSR "
+                            "or AMD VSR is turned on in the driver's control panel.");
+    char cur[64];
+    if (w > 0 && h > 0) snprintf(cur, sizeof cur, "%d x %d", w, h);
+    else snprintf(cur, sizeof cur, "%d x %d  (screen)", m.deskW, m.deskH);
+    auto setres = [&](int nw, int nh) { tt_put(a, "display", "width", std::to_string(nw)); tt_put(a, "display", "height", std::to_string(nh)); };
+    if (ImGui::BeginCombo("##ttres", cur, ImGuiComboFlags_HeightLarge)) {
+        char b[64];
+        snprintf(b, sizeof b, "%d x %d  (screen)", m.deskW, m.deskH);
+        if (ImGui::Selectable(b, w <= 0)) setres(0, 0);
+        for (int i = (int)m.modes.size() - 1; i >= 0; i--) {
+            const Mode &md = m.modes[i];
+            bool bigger = md.w > m.deskW || md.h > m.deskH;
+            if ((bigger && mode != 1) || (md.w == m.deskW && md.h == m.deskH)) continue;
+            const char *tag = md.h * 16 == md.w * 9 ? "  16:9" : md.h * 16 == md.w * 10 ? "  16:10" : md.h * 4 == md.w * 3 ? "  4:3" : "";
+            snprintf(b, sizeof b, "%d x %d%s%s", md.w, md.h, tag, bigger ? "  (supersampling)" : "");
+            if (ImGui::Selectable(b, w == md.w && h == md.h)) setres(md.w, md.h);
+        }
+        if (mode == 2) {
+            static const struct { int w, h; const char *tag; } extra[] = {
+                { 3440, 1440, "  21:9 ultrawide" }, { 2560, 1080, "  21:9 ultrawide" }, { 2560, 1440, "  16:9" },
+                { 1920, 1080, "  16:9" }, { 1600, 900, "  16:9" }, { 1280, 720, "  16:9" }, { 1440, 1080, "  4:3" } };
+            ImGui::SeparatorText("Window sizes");
+            for (auto &e : extra) {
+                if (e.w > m.deskW || e.h > m.deskH || (e.w == m.deskW && e.h == m.deskH) || m.find(e.w, e.h)) continue;
+                snprintf(b, sizeof b, "%d x %d%s", e.w, e.h, e.tag);
+                if (ImGui::Selectable(b, w == e.w && h == e.h)) setres(e.w, e.h);
+            }
+        }
+        ImGui::EndCombo();
+    }
+    row_end();
+
+    // The Two Towers only: drawn at a share of the screen, then fitted (ROTK has no such setting)
+    if (const PortSetting *rp = tt_setting(a, "display", "render_percent")) tt_setting_row(a, *rp);
+
+    section("Smoothness");
+    bool vsync = tt_get(a, "display", "vsync", "true") == "true";
+    if (tt_setting(a, "display", "vsync")) {
+        row_begin("V-Sync", "Prevents tearing. The frame rate can't go above the screen's refresh rate.");
+        if (ImGui::Checkbox("##ttvsync", &vsync)) tt_put(a, "display", "vsync", vsync ? "true" : "false");
+        row_end();
+    }
+
+    const PortSetting *pf = tt_setting(a, "graphics", "fps");
+    if (pf) {
+        int maxHz = tt_max_refresh(a);
+        int fps = tt_geti(a, "graphics", "fps", 30);
+        row_begin("Frame rate", "The game was made for 30. Higher rates play at normal speed.\n"
+                                "In fullscreen the screen switches to the matching refresh rate. In borderless and windowed, "
+                                "rates that divide evenly into your screen's refresh rate are the smoothest.");
+        char c[64];
+        snprintf(c, sizeof c, "%d fps%s", fps, fps == 30 ? "  (original)" : "");
+        if (ImGui::BeginCombo("##ttfps", c)) {
+            for (auto &ch : pf->choices) {
+                int r = atoi(ch.c_str());
+                if (r <= 0 || (vsync && r > maxHz && r != fps)) continue;
+                snprintf(c, sizeof c, "%d fps%s", r, r == 30 ? "  (original)" : "");
+                if (ImGui::Selectable(c, fps == r)) tt_put(a, "graphics", "fps", ch);
+            }
+            ImGui::EndCombo();
+        }
+        row_end();
+        ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
+        ImGui::SetCursorPosX(g_labelW);
+        ImGui::PushTextWrapPos(0);
+        if (vsync && fps > maxHz)
+            ImGui::TextColored(C_WARN, "Above this screen's %d Hz - the game will run at %d fps.", maxHz, maxHz);
+        else if (mode == 1)
+            ImGui::TextColored(C_DIM, "Screen will run at %d Hz.", tt_effective_refresh(a));
+        else if (fps > 0 && maxHz % fps)
+            ImGui::TextColored(C_DIM, "Your screen runs at %d Hz; %d fps won't divide evenly into it, so motion may be slightly uneven.", maxHz, fps);
+        else
+            ImGui::TextColored(C_DIM, "Your screen runs at %d Hz - %d fps fits it evenly.", maxHz, fps);
+        ImGui::PopTextWrapPos();
+        ImGui::PopFont();
+    }
+
+    // anything else the port adds to [display] later, with its own label
+    bool more = false;
+    for (auto &ps : a.tt.settings) {
+        if (ps.section != "display") continue;
+        if (ps.key == "screen" || ps.key == "mode" || ps.key == "width" || ps.key == "height" || ps.key == "refresh" ||
+            ps.key == "vsync" || ps.key == "render_percent" || tt_hidden(ps)) continue;
+        if (!more) { section("More"); more = true; }
+        tt_setting_row(a, ps);
+    }
+}
+
+
+// ---- The Two Towers' Graphics tab, laid out like ROTK's (tab_graphics): Quality,
+// Image, View, Texture packs, Movies. Only the settings the port really has are shown.
+
+static bool tt_has(const App &a, const char *sec, const char *key) { return tt_setting(a, sec, key) != nullptr; }
+
+static void tt_tab_graphics(App &a)
+{
+    std::vector<std::string> done;   // section.key shown here; anything else goes under "More"
+    auto mark = [&](const char *sec, const char *key) { done.push_back(std::string(sec) + "." + key); };
+
+    if (!a.tt.presets.empty()) {
+        section("Quality");
+        std::string help;
+        for (auto &p : a.tt.presets) {
+            const char *d = p.name == "Original" ? "as it looked on the Xbox in 2003: 4:3, 30 fps, no filtering or sharpening."
+                          : p.name == "Balanced" ? "widescreen, 8x texture filtering and light sharpening, still 30 fps."
+                          : p.name == "High"     ? "widescreen, 16x texture filtering, sharper textures and sharpening, 60 fps."
+                          : p.name == "Ultra"    ? "High, drawn at 150% resolution for an even cleaner picture."
+                          : "";
+            help += p.name + (*d ? std::string(": ") + d : std::string()) + "\n";
+        }
+        help += "Custom: shown when you change individual settings.";
+        // reuse the preset row, with ROTK's wording
+        int cur = -1;
+        for (size_t i = 0; i < a.tt.presets.size() && cur < 0; i++) {
+            bool all = true;
+            for (auto &kv : a.tt.presets[i].values) {
+                size_t dot = kv.first.find('.');
+                const PortSetting *ps = tt_setting(a, kv.first.substr(0, dot).c_str(), kv.first.substr(dot + 1).c_str());
+                if (!ps || !tt_value_equal(tt_val(a, *ps), kv.second)) { all = false; break; }
+            }
+            if (all) cur = (int)i;
+        }
+        row_begin("Preset", help.c_str());
+        ImGui::SetNextItemWidth(std::min(ImGui::GetContentRegionAvail().x - S(4), S(290)));
+        if (ImGui::BeginCombo("##ttpreset", cur >= 0 ? a.tt.presets[cur].name.c_str() : "Custom")) {
+            for (size_t i = 0; i < a.tt.presets.size(); i++)
+                if (ImGui::Selectable(a.tt.presets[i].name.c_str(), (int)i == cur))
+                    for (auto &kv : a.tt.presets[i].values) {
+                        size_t dot = kv.first.find('.');
+                        a.ttFile.set(kv.first.substr(0, dot), kv.first.substr(dot + 1), kv.second);
+                    }
+            ImGui::EndCombo();
+        }
+        row_end();
+    }
+
+    bool image = tt_has(a, "graphics", "anisotropic_filtering") || tt_has(a, "graphics", "lod_bias") ||
+                 tt_has(a, "graphics", "sharpening") || tt_has(a, "graphics", "brightness");
+    if (image) section("Image");
+    if (const PortSetting *ps = tt_setting(a, "graphics", "anisotropic_filtering")) {
+        mark("graphics", "anisotropic_filtering");
+        std::string cur = toml_unquote(tt_val(a, *ps));
+        row_begin("Texture filtering", "Anisotropic filtering: keeps ground and walls sharp at a distance.");
+        ImGui::SetNextItemWidth(std::min(ImGui::GetContentRegionAvail().x - S(4), S(290)));
+        if (ImGui::BeginCombo("##ttaf", tt_choice_name(*ps, cur).c_str())) {
+            for (auto &c : ps->choices)
+                if (ImGui::Selectable(tt_choice_name(*ps, c).c_str(), c == cur)) a.ttFile.set(ps->section, ps->key, toml_quote(c));
+            ImGui::EndCombo();
+        }
+        row_end();
+    }
+    if (const PortSetting *ps = tt_setting(a, "graphics", "lod_bias")) {
+        mark("graphics", "lod_bias");
+        int ts = (int)lroundf(-(float)atof(tt_val(a, *ps).c_str()) * 100.0f);
+        int lo = (int)lround(-ps->max * 100), hi = (int)lround(-ps->min * 100);   // -1.00..0 -> 0..100%
+        row_begin("Texture sharpness", "Shows textures at higher detail sooner. Too high can shimmer.");
+        if (ImGui::SliderInt("##ttlod", &ts, lo, hi, ts == 0 ? "Game default" : "%d%%")) {
+            char b[32]; snprintf(b, sizeof b, "%.2f", -ts / 100.0f); a.ttFile.set(ps->section, ps->key, b);
+        }
+        row_end();
+    }
+    if (const PortSetting *ps = tt_setting(a, "graphics", "sharpening")) {
+        mark("graphics", "sharpening");
+        int v = atoi(tt_val(a, *ps).c_str());
+        row_begin("Sharpening", "Crisper picture. 0 turns it off. While playing, [ switches it on and off to compare.");
+        if (ImGui::SliderInt("##ttsharp", &v, (int)ps->min, (int)ps->max, v == 0 ? "Off" : "%d")) a.ttFile.set(ps->section, ps->key, std::to_string(v));
+        row_end();
+    }
+    if (const PortSetting *ps = tt_setting(a, "graphics", "brightness")) {
+        mark("graphics", "brightness");
+        float v = (float)atof(tt_val(a, *ps).c_str());
+        row_begin("Brightness", "Lifts the darker parts of the picture (dark cutscenes, caves) without washing out white.");
+        if (ImGui::SliderFloat("##ttbright", &v, (float)ps->min, (float)ps->max, fabsf(v - 1.0f) < 0.005f ? "Game's own" : "%.2f")) {
+            char b[32]; snprintf(b, sizeof b, "%.2f", v); a.ttFile.set(ps->section, ps->key, b);
+        }
+        row_end();
+    }
+
+    const PortSetting *pws = tt_setting(a, "graphics", "widescreen");
+    if (pws || tt_has(a, "graphics", "fov") || tt_has(a, "graphics", "hud_edges")) section("View");
+    bool ws = pws ? tt_val(a, *pws) == "true" : false;
+    if (pws) {
+        mark("graphics", "widescreen");
+        row_begin("Widescreen correction", "Shows more at the sides instead of stretching the 4:3 picture.");
+        if (ImGui::Checkbox("##ttws", &ws)) a.ttFile.set(pws->section, pws->key, ws ? "true" : "false");
+        row_end();
+    }
+    if (const PortSetting *ps = tt_setting(a, "graphics", "hud_edges")) {
+        mark("graphics", "hud_edges");
+        bool v = tt_val(a, *ps) == "true";
+        ImGui::BeginDisabled(!ws);
+        row_begin("HUD at the screen edges", "With widescreen correction on: health bars and other HUD pieces sit at the screen's edges "
+                                             "instead of in the middle 4:3 area.");
+        if (ImGui::Checkbox("##tthud", &v)) a.ttFile.set(ps->section, ps->key, v ? "true" : "false");
+        row_end();
+        ImGui::EndDisabled();
+    }
+    if (const PortSetting *ps = tt_setting(a, "graphics", "fov")) {
+        mark("graphics", "fov");
+        int v = atoi(tt_val(a, *ps).c_str());
+        row_begin("Field of view", "How wide the camera sees, compared with the game's own. Wider shows more of the battle "
+                                   "but makes characters look further away.");
+        if (ImGui::SliderInt("##ttfov", &v, (int)ps->min, (int)ps->max, v == 100 ? "100%%  (game's own)" : "%d%%"))
+            a.ttFile.set(ps->section, ps->key, std::to_string(v));
+        row_end();
+    }
+
+    const PortSetting *prep = tt_setting(a, "textures", "replace"), *pdump = tt_setting(a, "textures", "dump");
+    if (prep || pdump) {
+        section("Texture packs");
+        std::string dir = tt_data_dir() + "\\textures";
+        if (prep) {
+            mark("textures", "replace");
+            bool v = tt_val(a, *prep) == "true";
+            std::string h = "Shows sharper or remade pictures from texture packs. A pack goes in its own folder inside "
+                            "ROTKFix\\TwoTowers\\textures\\replace; remove the folder to go back to the original pictures.";
+            row_begin("Use texture packs", h.c_str());
+            if (ImGui::Checkbox("##tttexrepl", &v)) a.ttFile.set(prep->section, prep->key, v ? "true" : "false");
+            row_end();
+        }
+        if (pdump) {
+            mark("textures", "dump");
+            bool v = tt_val(a, *pdump) == "true";
+            row_begin("Save game textures", "For making texture packs: every picture the game uses is saved as a PNG in "
+                                            "ROTKFix\\TwoTowers\\textures\\dump as you play. Levels load a little slower the first time. "
+                                            "Turn it off when you have what you need.");
+            if (ImGui::Checkbox("##tttexdump", &v)) a.ttFile.set(pdump->section, pdump->key, v ? "true" : "false");
+            row_end();
+        }
+        row_begin("Textures folder", "Opens ROTKFix\\TwoTowers\\textures, where the replace and dump folders are.");
+        if (ImGui::Button("Open folder##tttex")) tt_open_textures();
+        row_end();
+    }
+
+    if (const PortSetting *ps = tt_setting(a, "graphics", "skip_logos")) {
+        mark("graphics", "skip_logos");
+        section("Movies");
+        bool v = tt_val(a, *ps) == "true";
+        row_begin("Skip opening logos", "Go straight to the menus at startup.");
+        if (ImGui::Checkbox("##ttlogos", &v)) a.ttFile.set(ps->section, ps->key, v ? "true" : "false");
+        row_end();
+    }
+
+    // anything else on this tab that the port adds later, with its own label
+    bool more = false;
+    for (auto &ps : a.tt.settings) {
+        if (tt_tab_of_setting(ps) != 1 || tt_hidden(ps)) continue;
+        if (std::find(done.begin(), done.end(), ps.section + "." + ps.key) != done.end()) continue;
+        if (!more) { section("More"); more = true; }
+        tt_setting_row(a, ps);
+    }
+}
+
 // The settings on one tab, in the port's own order, grouped by section
 static void tt_settings_on_tab(App &a, int tab)
 {
@@ -1624,7 +1982,7 @@ static void tt_tabs(App &a, const LibGame &)
             if (ImGui::BeginTabItem(t < 5 ? names[t] : "  About  ", nullptr, tf)) {
                 ImGui::PopFont();
                 ImGui::BeginChild("tttab", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_NoBackground);
-                if (t < 5) tt_settings_on_tab(a, t); else tt_about(a);
+                if (t == 0) tt_tab_display(a); else if (t == 1) tt_tab_graphics(a); else if (t < 5) tt_settings_on_tab(a, t); else tt_about(a);
                 ImGui::Dummy(ImVec2(0, S(6)));
                 ImGui::EndChild();
                 ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
@@ -1638,6 +1996,7 @@ static void tt_tabs(App &a, const LibGame &)
 }
 
 // One line for the bottom bar
+static bool tt_value_equal(const std::string &x, const std::string &y);
 static std::string tt_summary(const App &a)
 {
     if (!tt_ready(a)) return "The Two Towers  |  port not found";
@@ -1649,8 +2008,21 @@ static std::string tt_summary(const App &a)
     if (w <= 0 || h <= 0) { w = tt_monitor(a).deskW; h = tt_monitor(a).deskH; }
     s = std::to_string(w) + " x " + std::to_string(h);
     if ((p = tt_setting(a, "display", "mode"))) s += "  |  " + cap_first(toml_unquote(tt_val(a, *p)));
-    if ((p = tt_setting(a, "graphics", "fps"))) s += "  |  " + tt_choice_name(*p, toml_unquote(tt_val(a, *p)));
-    if ((p = tt_setting(a, "graphics", "widescreen"))) s += tt_val(a, *p) == "true" ? "  |  Widescreen" : "  |  4:3";
+    if ((p = tt_setting(a, "graphics", "fps"))) s += "  |  " + std::to_string(atoi(toml_unquote(tt_val(a, *p)).c_str())) + " fps";
+    // the preset, as ROTK's line ends with it
+    if (!a.tt.presets.empty()) {
+        std::string name = "Custom";
+        for (auto &pr : a.tt.presets) {
+            bool all = true;
+            for (auto &kv : pr.values) {
+                size_t dot = kv.first.find('.');
+                const PortSetting *ps = tt_setting(a, kv.first.substr(0, dot).c_str(), kv.first.substr(dot + 1).c_str());
+                if (!ps || !tt_value_equal(tt_val(a, *ps), kv.second)) { all = false; break; }
+            }
+            if (all) { name = pr.name; break; }
+        }
+        s += "  |  " + name;
+    }
     return s;
 }
 
