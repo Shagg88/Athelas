@@ -25,6 +25,8 @@ struct Port {
     std::string exe;                   // full path to the port program, "" if not found
     std::string version;               // from --version
     std::vector<PortSetting> settings; // from --describe-settings
+    struct Preset { std::string name; std::vector<std::pair<std::string, std::string>> values; };   // "section.key" -> value as written in the file
+    std::vector<Preset> presets;       // optional "presets" in the list, in its order
     std::string err;                   // why it couldn't be read
 };
 

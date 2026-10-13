@@ -1267,6 +1267,7 @@ static std::string tt_choice_name(const PortSetting &ps, const std::string &c)
 {
     if (ps.key == "anisotropic_filtering") return c == "0" ? "As the game asks" : c + "x";
     if (ps.key == "fps") return c + " fps";
+    if (ps.key == "msaa") return c == "0" ? "Off" : c + "x";
     return cap_first(c);
 }
 
@@ -1332,7 +1333,8 @@ static void tt_setting_row(App &a, const PortSetting &ps)
     ImGui::PopID();
 }
 
-static void draw_tt(App &a, const LibGame &)
+static void tt_tabs(App &a, const LibGame &g);
+static void draw_tt(App &a, const LibGame &g)
 {
     if (!a.ttLooked) tt_find(a);
     ImGui::PushTextWrapPos(0);
@@ -1370,18 +1372,71 @@ static void draw_tt(App &a, const LibGame &)
     ImGui::PopTextWrapPos();
     if (!a.ttLoaded) tt_load_settings(a);
 
-    // the settings, in the port's own order, grouped by section
+    tt_tabs(a, g);
+}
+
+// Which tab a section goes on (as ROTK's: Display, Graphics, Controls, Audio)
+static int tt_tab_of(const std::string &sec)
+{
+    if (sec == "display") return 0;
+    if (sec == "controls" || sec == "input") return 2;
+    if (sec == "audio" || sec == "sound") return 3;
+    if (sec == "network") return 4;
+    return 1;   // graphics, textures and anything else
+}
+
+static bool tt_value_equal(const std::string &x, const std::string &y)
+{
+    if (x == y) return true;
+    char *e1, *e2;
+    double a = strtod(x.c_str(), &e1), b = strtod(y.c_str(), &e2);
+    return *e1 == 0 && *e2 == 0 && e1 != x.c_str() && e2 != y.c_str() && fabs(a - b) < 1e-6;
+}
+
+// Preset menu: the port's presets, or "Custom" when the settings match none
+static void tt_preset_row(App &a)
+{
+    if (a.tt.presets.empty()) return;
+    int cur = -1;
+    for (size_t i = 0; i < a.tt.presets.size() && cur < 0; i++) {
+        bool all = true;
+        for (auto &kv : a.tt.presets[i].values) {
+            size_t dot = kv.first.find('.');
+            const PortSetting *ps = tt_setting(a, kv.first.substr(0, dot).c_str(), kv.first.substr(dot + 1).c_str());
+            if (!ps || !tt_value_equal(tt_val(a, *ps), kv.second)) { all = false; break; }
+        }
+        if (all) cur = (int)i;
+    }
+    row_begin("Preset", "A starting point for the graphics settings. Changing any of them afterwards makes it Custom.");
+    if (ImGui::BeginCombo("##ttpreset", cur >= 0 ? a.tt.presets[cur].name.c_str() : "Custom")) {
+        for (size_t i = 0; i < a.tt.presets.size(); i++)
+            if (ImGui::Selectable(a.tt.presets[i].name.c_str(), (int)i == cur))
+                for (auto &kv : a.tt.presets[i].values) {
+                    size_t dot = kv.first.find('.');
+                    a.ttFile.set(kv.first.substr(0, dot), kv.first.substr(dot + 1), kv.second);
+                }
+        ImGui::EndCombo();
+    }
+    row_end();
+}
+
+static void tt_open_textures()
+{
+    std::string t = tt_data_dir() + "\\textures";
+    SHCreateDirectoryExA(NULL, (t + "\\replace").c_str(), NULL);
+    ShellExecuteA(NULL, "open", t.c_str(), NULL, NULL, SW_SHOWNORMAL);
+}
+
+// The settings on one tab, in the port's own order, grouped by section
+static void tt_settings_on_tab(App &a, int tab)
+{
     const PortSetting *pw = tt_setting(a, "display", "width"), *ph = tt_setting(a, "display", "height");
     std::string sec = "\x01";
+    if (tab == 1 && !a.tt.presets.empty()) { section("Preset"); tt_preset_row(a); }
     for (auto &ps : a.tt.settings) {
+        if (tt_tab_of(ps.section) != tab) continue;
         if (ps.section != sec) {
-            if (sec == "textures") {   // end of the texture section: its folder
-                if (ImGui::Button("Open texture folder")) {
-                    std::string t = tt_data_dir() + "\\textures";
-                    SHCreateDirectoryExA(NULL, (t + "\\replace").c_str(), NULL);
-                    ShellExecuteA(NULL, "open", t.c_str(), NULL, NULL, SW_SHOWNORMAL);
-                }
-            }
+            if (sec == "textures" && ImGui::Button("Open texture folder")) tt_open_textures();
             sec = ps.section;
             const char *t = tt_section_title(sec);
             section(t ? t : cap_first(sec).c_str());
@@ -1395,16 +1450,26 @@ static void draw_tt(App &a, const LibGame &)
         tt_setting_row(a, ps);
         ImGui::EndDisabled();
     }
-    if (sec == "textures" && ImGui::Button("Open texture folder")) {
-        std::string t = tt_data_dir() + "\\textures";
-        SHCreateDirectoryExA(NULL, (t + "\\replace").c_str(), NULL);
-        ShellExecuteA(NULL, "open", t.c_str(), NULL, NULL, SW_SHOWNORMAL);
-    }
+    if (sec == "textures" && ImGui::Button("Open texture folder")) tt_open_textures();
+}
 
+static void tt_about(App &a)
+{
+    const LibGame &g = a.lib[a.cur];
+    section(game_kind_name(g.kind));
+    row_begin("Location", nullptr);
+    ImGui::PushTextWrapPos(0); ImGui::TextUnformatted(g.path.c_str()); ImGui::PopTextWrapPos();
+    row_end();
+    row_begin("Version", nullptr);
+    ImGui::Text("Xbox, %s copy, %s", game_region_name(g), g.iso ? "disc image" : "extracted files");
+    if (g.titleId) { ImGui::SameLine(); ImGui::TextColored(C_DIM, "(title ID %08X)", (unsigned)g.titleId); }
+    row_end();
     section("Port");
     ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
+    ImGui::PushTextWrapPos(0);
     ImGui::TextColored(C_DIM, "%s  -  %s", a.tt.version.c_str(), a.tt.exe.c_str());
     ImGui::TextColored(C_DIM, "Settings, texture packs and the log: %s", tt_data_dir().c_str());
+    ImGui::PopTextWrapPos();
     ImGui::PopFont();
     if (ImGui::Button("Open settings folder")) {
         SHCreateDirectoryExA(NULL, tt_data_dir().c_str(), NULL);
@@ -1416,6 +1481,37 @@ static void draw_tt(App &a, const LibGame &)
         tt_save(a);
         set_message(a, "The Two Towers settings are back to their defaults", false);
     }
+    games_section(a);
+}
+
+// The Two Towers' page when its port is ready: tabs like ROTK's
+static void tt_tabs(App &a, const LibGame &)
+{
+    static const char *names[] = { "  Display  ", "  Graphics  ", "  Controls  ", "  Audio  ", "  Network  " };
+    bool has[5] = {};
+    for (auto &ps : a.tt.settings) has[tt_tab_of(ps.section)] = true;
+    has[1] = true;   // the preset lives there
+    ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
+    if (ImGui::BeginTabBar("tttabs")) {
+        static int startTab = getenv("ROTKFIX_TAB") ? atoi(getenv("ROTKFIX_TAB")) : -1;
+        int shown = 0;
+        for (int t = 0; t < 6; t++) {
+            if (t < 5 && !has[t]) continue;
+            ImGuiTabItemFlags tf = shown++ == startTab ? ImGuiTabItemFlags_SetSelected : 0;
+            if (ImGui::BeginTabItem(t < 5 ? names[t] : "  About  ", nullptr, tf)) {
+                ImGui::PopFont();
+                ImGui::BeginChild("tttab", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_NoBackground);
+                if (t < 5) tt_settings_on_tab(a, t); else tt_about(a);
+                ImGui::Dummy(ImVec2(0, S(6)));
+                ImGui::EndChild();
+                ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
+                ImGui::EndTabItem();
+            }
+        }
+        ImGui::EndTabBar();
+        startTab = -1;
+    }
+    ImGui::PopFont();
 }
 
 // One line for the bottom bar
@@ -1599,6 +1695,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     ImGui::PopFont();
     const bool own = own_game(a);
     // The Two Towers shown, and its port ready: Play and Save work for it
+    if (!own && a.lib[a.cur].kind == GK_TT_XBOX && !a.ttLooked) tt_find(a);
     const bool ttShown = !own && a.lib[a.cur].kind == GK_TT_XBOX && game_region_supported(a.lib[a.cur]) && a.ttLooked && tt_ready(a);
 
     // status (top right, one per line)
@@ -1642,7 +1739,10 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     ImGui::SetCursorPos(ImVec2(pad, bannerH));
     ImGui::BeginChild("panel", ImVec2(size.x - pad * 2, size.y - bannerH - barH - S(30)), ImGuiChildFlags_Borders);
     g_labelW = std::max(S(230), ImGui::GetContentRegionAvail().x * 0.36f);
-    if (!own) {
+    if (ttShown) {
+        if (!a.ttLoaded) tt_load_settings(a);
+        tt_tabs(a, a.lib[a.cur]);
+    } else if (!own) {
         ImGui::BeginChild("other", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_NoBackground);
         draw_other_game(a);
         ImGui::Dummy(ImVec2(0, S(10)));

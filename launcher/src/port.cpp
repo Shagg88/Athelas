@@ -149,7 +149,7 @@ std::string toml_unquote(const std::string &v)
 
 bool port_query(Port &p)
 {
-    p.version.clear(); p.settings.clear(); p.err.clear();
+    p.version.clear(); p.settings.clear(); p.presets.clear(); p.err.clear();
     std::string out;
     int rc = run_capture(p.exe, "--version", out, 15000);
     if (rc != 0) { p.err = "The port didn't answer (--version, exit " + std::to_string(rc) + ")."; return false; }
@@ -183,6 +183,24 @@ bool port_query(Port &p)
         p.settings.push_back(s);
     }
     if (p.settings.empty()) { p.err = "The port listed no settings."; return false; }
+    // presets: { "High": { "graphics.msaa": "4", ... }, ... }
+    if (const JVal *pr = root.get("presets")) if (pr->t == JVal::OBJ) for (auto &np : pr->o) {
+        if (np.second.t != JVal::OBJ) continue;
+        Port::Preset ps; ps.name = np.first;
+        for (auto &kv : np.second.o) {
+            const PortSetting *st = nullptr;
+            for (auto &s : p.settings) if (s.section + "." + s.key == kv.first) st = &s;
+            if (!st) continue;   // a setting this list doesn't have: ignored
+            const JVal &v = kv.second;
+            std::string fv;
+            if (v.t == JVal::BOOL) fv = v.b ? "true" : "false";
+            else if (v.t == JVal::NUM) fv = st->type == "choice" || st->type == "string" ? toml_quote(num_text(v.n)) : num_text(v.n);
+            else if (v.t == JVal::STR) fv = st->type == "choice" || st->type == "string" ? toml_quote(v.s) : v.s;
+            else continue;
+            ps.values.push_back({ kv.first, fv });
+        }
+        if (!ps.values.empty()) p.presets.push_back(ps);
+    }
     return true;
 }
 
