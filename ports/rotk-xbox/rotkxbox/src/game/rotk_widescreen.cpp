@@ -122,19 +122,22 @@ bool Place2D(const gpu::State& s, float x0, float x1, float y0, float y1, float&
     gpu::TextureDesc y;
     if (s.textures[2] && gpu::Describe(s.textures[2], y) && y.width == 768 && y.height == 544) return false;
     float wide = ultra ? (16.0f / 9.0f) / frame : 1.0f;  // 16:9 in the middle of an ultrawide picture
-    // gradients and shading bands stretched across the screen (small textures, bands along the top or bottom) keep
-    // the whole width at any shape: held at 16:9 they would end in a visible edge
+    // gradients and shading bands stretched across the screen (small textures over the whole screen, bands along the
+    // top or bottom) keep the whole width at any shape: held at 16:9 they would end in a visible edge
     bool spans = x0 <= -0.98f && x1 >= 0.98f;
     bool edge_y = y0 <= -0.98f || y1 >= 0.98f;
     bool band = (y1 - y0) < 0.5f && edge_y;
-    if (spans && (d.width <= 128 || d.height <= 128 || band)) return false;
+    bool tall = y0 <= -0.98f && y1 >= 0.98f;
+    if (spans && ((tall && (d.width <= 128 || d.height <= 128)) || band)) return false;  // not a light streak
     if (!spans && (x0 <= -0.98f || x1 >= 0.98f) && edge_y && band && (x1 - x0) >= 0.8f) return false;  // in pieces
     // Begin/End draws (a declaration in place of an FVF: the menus, and the HUD too): held at 16:9 on an ultrawide
     // screen, left alone otherwise. hud_edges' placement below only ever reached vertex-buffer draws (the SDK could
     // not measure the others before), and moving the Begin/End ones breaks the HUD's pieces apart and squeezes the
     // menus, so it keeps to them.
+    // On an ultrawide screen everything is held at 16:9 (hud_edges too: the vertex-buffer draws it reaches are mostly
+    // menu effects, the cursor sparkle and the rings round the arrows, which it threw out to the screen's edges).
     bool begin_end = s.vs_handle & 1;
-    if (!rotk::g_hud_edges || begin_end) {
+    if (!rotk::g_hud_edges || begin_end || ultra) {
         if (!ultra) return false;
         a = wide;
         b = 0;

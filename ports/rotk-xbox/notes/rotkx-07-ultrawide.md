@@ -43,3 +43,14 @@ ultrawide screens the way ROTK Fix does on PC.
 
 The game still renders a 4:3 frame that is stretched sideways. At 2560x1080 that's 1440 pixels across stretched to
 2560, so the picture is softer across than at 16:9. A render_percent above 100 makes up for it, at a cost in speed.
+
+## First Windows play at 2560x1080 (23:03)
+
+- **Working.** The frame is 2.37:1 and the viewports were made 2.37:1. Gameplay fills the width, with the HUD inside
+  the middle 16:9. The ISENFMV1 film is shown 1986x1080 (1.84:1, bars at the sides). The menus sit at 16:9.
+- **Fixed: stray menu effects at the screen edges.**
+  - The rings round the save screen's arrows and the cursor's light streak were thrown out to the screen edges.
+  - The rings are vertex-buffer draws, which hud_edges moved to the edges of the full 2.37 picture. On ultrawide
+    screens everything is now held at 16:9, hud_edges included.
+  - The streak is a wide quad of a small texture that was kept full width as a "gradient". Only small textures over
+    the whole screen height keep the full width now.
