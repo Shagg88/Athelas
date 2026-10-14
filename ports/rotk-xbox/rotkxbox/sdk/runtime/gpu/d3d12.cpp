@@ -646,7 +646,7 @@ private:
     void CaptureShader(const char* kind, uint64_t key, const std::string& src);
     void SetTextureViewsAndSamplers(const State& s, const Assembled& a, DrawTextures& stages);
     uint32_t EnsureStageSamplers(const State& s, const DrawTextures& stages, bool clamp);
-    void SetViewportScissor(const State& s, uint32_t gw);
+    void SetViewportScissor(const State& s, uint32_t gw, uint32_t gh);
     void SetBlendFactorStencilRef(const State& s);
     void DrawGeometry(const Assembled& a);
     void UploadVertexBuffers(const Assembled& a);
@@ -839,6 +839,8 @@ private:
     uint32_t bb_w_ = 0;
     uint32_t bb_h_ = 0;
     float scale_ = 1.0f;
+    float xmul_ = 1.0f;  // extra width of the targets (g_wide_targets)
+    float WideMul() const;
     // surfaces locked without a wait: copies in flight, the newest finished one goes to guest memory
     struct Late {
         ComPtr<ID3D12Resource> rb[kFrames];
@@ -905,7 +907,8 @@ bool D3D12Backend::Init(uint32_t width, uint32_t height) {
                         ui_heap_->GetCPUDescriptorHandleForHeapStart(), ui_heap_->GetGPUDescriptorHandleForHeapStart());
     LoadSettings();
     Begin();
-    LOGI("d3d12: %ux%u guest, %ux%u window, render scale %.3f", width, height, bb_w_, bb_h_, scale_);
+    LOGI("d3d12: %ux%u guest, %ux%u window, render scale %.3f (%.2f across)", width, height, bb_w_, bb_h_, scale_,
+         scale_ * xmul_);
     // packs anywhere under textures/replace (older ones straight in textures/), dumps in textures/dump
     if (app::Get().texture_replace) pack_lib_.Scan(app::TextureDir(), "dump");
     if (pack_lib_.Size()) LOGR("texture pack: %zu replacement files under %s", pack_lib_.Size(), app::TextureDir().string().c_str());
@@ -1088,8 +1091,15 @@ void D3D12Backend::CreateGammaLut() {
                                   IID_PPV_ARGS(&lut_));
 }
 
+// g_wide_targets: the frame's shape over the guest's 4:3, so targets come out at the shape the frame is shown at
+float D3D12Backend::WideMul() const {
+    if (!g_wide_targets || !guest_h_ || std::fabs(float(guest_w_) / float(guest_h_) - 4.0f / 3.0f) > 0.01f) return 1.0f;
+    return std::max(1.0f, app::FrameAspect() / (4.0f / 3.0f));
+}
+
 void D3D12Backend::LoadSettings() {
     scale_ = app::RenderScale(guest_h_);
+    xmul_ = WideMul();
     g_colour_look = std::min(app::Get().colour_look, kColourLooks - 1);
     samples_ = PickSamples();
     // brightness goes through the gamma ramp: a game that never sets one gets the identity ramp to carry it
@@ -1365,7 +1375,7 @@ void D3D12Backend::ReleaseTarget(std::unordered_map<uint64_t, Target>::iterator 
 bool D3D12Backend::CreateTargetResource(Target& t, const Surface& s) {
     float sc = scale_;
     if (ext_) ext_->MakeTarget(s, t.depth, t.gw, t.gh, sc, t.fmt);
-    t.w = std::max(1u, uint32_t(std::lround(t.gw * sc)));
+    t.w = std::max(1u, uint32_t(std::lround(t.gw * sc * xmul_)));
     t.h = std::max(1u, uint32_t(std::lround(t.gh * sc)));
     D3D12_HEAP_PROPERTIES hp{D3D12_HEAP_TYPE_DEFAULT};
     D3D12_RESOURCE_DESC td = Texture2DDesc(DXGI_FORMAT_UNKNOWN, t.w, t.h);
@@ -3065,21 +3075,21 @@ void D3D12Backend::SetTextureViewsAndSamplers(const State& s, const Assembled& a
 }
 
 // viewport covers the target, the guest viewport is in the shader; scissor clips to it
-void D3D12Backend::SetViewportScissor(const State& s, uint32_t gw) {
+void D3D12Backend::SetViewportScissor(const State& s, uint32_t gw, uint32_t gh) {
     float W = float(bound_rt_ ? bound_rt_->w : bound_ds_->w);
     float H = float(bound_rt_ ? bound_rt_->h : bound_ds_->h);
     D3D12_VIEWPORT vp{0, 0, W, H, 0, 1};
     cl_->RSSetViewports(1, &vp);
-    float sc = W / gw;
-    LONG x0 = LONG(s.viewport.x * sc);
-    LONG y0 = LONG(s.viewport.y * sc);
-    LONG x1 = LONG((s.viewport.x + s.viewport.w) * sc);
-    LONG y1 = LONG((s.viewport.y + s.viewport.h) * sc);
+    float sx = W / gw, sy = H / std::max(gh, 1u);  // across and down differ with g_wide_targets
+    LONG x0 = LONG(s.viewport.x * sx);
+    LONG y0 = LONG(s.viewport.y * sy);
+    LONG x1 = LONG((s.viewport.x + s.viewport.w) * sx);
+    LONG y1 = LONG((s.viewport.y + s.viewport.h) * sy);
     if (s.scissor_count) {
-        x0 = std::max(x0, LONG(s.scissors[0] * sc));
-        y0 = std::max(y0, LONG(s.scissors[1] * sc));
-        x1 = std::min(x1, LONG(s.scissors[2] * sc));
-        y1 = std::min(y1, LONG(s.scissors[3] * sc));
+        x0 = std::max(x0, LONG(s.scissors[0] * sx));
+        y0 = std::max(y0, LONG(s.scissors[1] * sy));
+        x1 = std::min(x1, LONG(s.scissors[2] * sx));
+        y1 = std::min(y1, LONG(s.scissors[3] * sy));
     }
     D3D12_RECT rect{std::clamp<LONG>(x0, 0, LONG(W)), std::clamp<LONG>(y0, 0, LONG(H)),
                     std::clamp<LONG>(x1, 0, LONG(W)), std::clamp<LONG>(y1, 0, LONG(H))};
@@ -3210,7 +3220,7 @@ void D3D12Backend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t 
 
     // texture views and samplers, viewport and scissor, blend factor and stencil reference
     SetTextureViewsAndSamplers(s, a, stages);
-    SetViewportScissor(s, size.w);
+    SetViewportScissor(s, size.w, size.h);
     SetBlendFactorStencilRef(s);
 
     // geometry
@@ -3219,9 +3229,9 @@ void D3D12Backend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t 
 
 // a guest rect scaled to the target and clamped to it
 D3D12_RECT ScaledRect(const Target& t, int x0, int y0, int x1, int y1) {
-    float sc = float(t.w) / t.gw;
-    return {std::clamp<LONG>(LONG(x0 * sc), 0, t.w), std::clamp<LONG>(LONG(y0 * sc), 0, t.h),
-            std::clamp<LONG>(LONG(x1 * sc), 0, t.w), std::clamp<LONG>(LONG(y1 * sc), 0, t.h)};
+    float sx = float(t.w) / t.gw, sy = float(t.h) / t.gh;
+    return {std::clamp<LONG>(LONG(x0 * sx), 0, t.w), std::clamp<LONG>(LONG(y0 * sy), 0, t.h),
+            std::clamp<LONG>(LONG(x1 * sx), 0, t.w), std::clamp<LONG>(LONG(y1 * sy), 0, t.h)};
 }
 
 // rs: the rects buffer, reused across targets
@@ -3386,7 +3396,7 @@ void D3D12Backend::CopyByDraw(const Target& src_t, ID3D12Resource* src_res, D3D1
     D3D12_CPU_DESCRIPTOR_HANDLE rh = Cpu(rtv_heap_.Get(), dst_t.view, rtv_inc_);
     cl_->OMSetRenderTargets(1, &rh, FALSE, nullptr);
     float src_scale = float(src_t.w) / src_t.gw;
-    float dst_scale = float(dst_t.w) / dst_t.gw;
+    float dst_scale = float(dst_t.w) / dst_t.gw, dst_scale_y = float(dst_t.h) / dst_t.gh;
     bool listed = l.count && l.src_rects;
     uint32_t n = listed ? l.count : 1;
     for (uint32_t i = 0; i < n; i++) {
@@ -3395,7 +3405,7 @@ void D3D12Backend::CopyByDraw(const Target& src_t, ID3D12Resource* src_res, D3D1
         DrawnRect r{.x0 = 0, .y0 = 0, .x1 = whole_w, .y1 = whole_h};
         if (listed) r = ReadDrawnRect(l.src_rects, l.dst_points, i);
         if (r.x1 <= r.x0 || r.y1 <= r.y0) continue;
-        D3D12_VIEWPORT vp{r.dx * dst_scale, r.dy * dst_scale, (r.x1 - r.x0) * dst_scale, (r.y1 - r.y0) * dst_scale,
+        D3D12_VIEWPORT vp{r.dx * dst_scale, r.dy * dst_scale_y, (r.x1 - r.x0) * dst_scale, (r.y1 - r.y0) * dst_scale_y,
                           0, 1};
         LONG right = std::min(LONG(vp.TopLeftX + vp.Width), LONG(dst_t.w));
         LONG bottom = std::min(LONG(vp.TopLeftY + vp.Height), LONG(dst_t.h));
@@ -3420,7 +3430,7 @@ void D3D12Backend::CopyByRegion(const Target& src_t, ID3D12Resource* src_res, D3
     Transition(dst_t.res.Get(), dst_t.state, D3D12_RESOURCE_STATE_COPY_DEST);
     D3D12_TEXTURE_COPY_LOCATION dl{dst_t.res.Get(), D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX};
     D3D12_TEXTURE_COPY_LOCATION sl{src_res, D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX};
-    float dst_scale = float(dst_t.w) / dst_t.gw;
+    float dst_scale = float(dst_t.w) / dst_t.gw, dst_scale_y = float(dst_t.h) / dst_t.gh;
     bool listed = l.count && l.src_rects;
     uint32_t n = listed ? l.count : 1;
     for (uint32_t i = 0; i < n; i++) {
@@ -3430,15 +3440,15 @@ void D3D12Backend::CopyByRegion(const Target& src_t, ID3D12Resource* src_res, D3
         if (listed) {
             GuestRect r = ReadGuestRect(l.src_rects, i);
             b.left = ScaleUnsigned(r.left, dst_scale);
-            b.top = ScaleUnsigned(r.top, dst_scale);
+            b.top = ScaleUnsigned(r.top, dst_scale_y);
             b.right = std::min(ScaleUnsigned(r.right, dst_scale), src_t.w);
-            b.bottom = std::min(ScaleUnsigned(r.bottom, dst_scale), src_t.h);
+            b.bottom = std::min(ScaleUnsigned(r.bottom, dst_scale_y), src_t.h);
             dx = b.left;
             dy = b.top;
             if (l.dst_points) {
                 GuestPoint p = ReadGuestPoint(l.dst_points, i);
                 dx = ScaleUnsigned(p.x, dst_scale);
-                dy = ScaleUnsigned(p.y, dst_scale);
+                dy = ScaleUnsigned(p.y, dst_scale_y);
             }
         }
         if (b.right <= b.left || b.bottom <= b.top || dx >= dst_t.w || dy >= dst_t.h) continue;
@@ -3849,10 +3859,10 @@ void D3D12Backend::Present(const Surface& front) {
 }
 
 void D3D12Backend::ApplySettings() {
-    float want = app::RenderScale(guest_h_);
+    float want = app::RenderScale(guest_h_), want_x = WideMul();
     bool remake = ext_ && ext_->Settings();
     uint32_t samples = PickSamples();
-    if (std::fabs(want - scale_) > 1e-4f || remake || samples != samples_) {
+    if (std::fabs(want - scale_) > 1e-4f || std::fabs(want_x - xmul_) > 1e-4f || remake || samples != samples_) {
         Flush();
         for (auto& [key, tg] : targets_) {
             (tg.depth ? free_dsv_ : free_rtv_).push_back(tg.view);
@@ -3860,6 +3870,7 @@ void D3D12Backend::ApplySettings() {
         }
         targets_.clear();
         scale_ = want;
+        xmul_ = want_x;
         samples_ = samples;
         ms_ok_.clear();
         if (ext_) ext_->Reset(*this);

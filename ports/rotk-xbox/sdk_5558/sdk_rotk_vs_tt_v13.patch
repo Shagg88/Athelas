@@ -1,0 +1,1673 @@
+diff -ruN a/harness/app_headless.cpp b/harness/app_headless.cpp
+--- a/harness/app_headless.cpp	2026-10-13 14:30:15.000000000 -0700
++++ b/harness/app_headless.cpp	2026-10-13 22:43:32.904854312 -0700
+@@ -1,5 +1,6 @@
+ // the host side without a window: settings from settings.toml in the run folder when there is one (else the
+ // defaults), the run folder as the exe folder
++#include <algorithm>
+ #include <chrono>
+ #include <cstdlib>
+ #include <filesystem>
+@@ -25,6 +26,13 @@
+ Mode Output() { return Desktop(); }
+ float RenderScale(uint32_t) { return 1.0f; }
+ bool Widescreen() { return true; }
++float g_max_frame_aspect = 16.0f / 9.0f;
++// ASPECT=2.37 (in the environment) tests an ultrawide screen
++float FrameAspect() {
++    const char* e = std::getenv("ASPECT");
++    float a = e ? float(std::atof(e)) : 16.0f / 9.0f;
++    return std::clamp(a, 16.0f / 9.0f, std::max(g_max_frame_aspect, 16.0f / 9.0f));
++}
+ 
+ std::filesystem::path ExeDir() {
+     static const std::filesystem::path dir = std::filesystem::current_path();
+@@ -79,6 +87,20 @@
+     return m;
+ }
+ 
+-void Pace() {}
++// as the window's: frames at most fps_cap a second (a game's frame rate setting), so game time can be checked
++void Pace() {
++    using clock = std::chrono::steady_clock;
++    static clock::time_point next = clock::now();
++    uint32_t cap = Get().fps_cap;
++    auto now = clock::now();
++    if (!cap) {
++        next = now;
++        return;
++    }
++    auto period = std::chrono::nanoseconds(1000000000ull / cap);
++    next += period;
++    if (next < now - period) next = now;
++    std::this_thread::sleep_until(next);
++}
+ 
+ }  // namespace app
+diff -ruN a/harness/null_backend.cpp b/harness/null_backend.cpp
+--- a/harness/null_backend.cpp	2026-10-13 15:10:44.772911982 -0700
++++ b/harness/null_backend.cpp	2026-10-13 23:31:02.534169756 -0700
+@@ -6,12 +6,16 @@
+ #include <cstring>
+ #include <filesystem>
+ #include <map>
++#include <memory>
++#include <set>
+ #include <string>
+ 
+ #include "app/app.h"
+ #include "core/log.h"
+ #include "gpu/backend.h"
++#include "gpu/shaders.h"
+ #include "gpu/texture.h"
++#include "gpu/vertex.h"
+ #include "harness.h"
+ #include "kernel/kernel.h"
+ #include "kernel/memory.h"
+@@ -33,10 +37,32 @@
+     }
+     void Draw(const State& s, uint32_t prim, uint32_t start, uint32_t count, const uint8_t* indices) override {
+         draws_++;
+-        if (drawing_) reference::Draw(s, prim, start, count, indices);
++        if (g_draw_observer) g_draw_observer(s);
++        // a 2D draw the game moves sideways (g_ortho_place), as the D3D12 renderer moves it; asked on every frame, as
++        // the renderer asks, since a game may keep state across frames
++        float x0, x1, y0, y1, a = 1, b = 0;
++        bool placed = g_ortho_place && OrthoExtent(s, start, count, indices, x0, x1, y0, y1) && g_ortho_place(s, x0, x1, y0, y1, a, b);
++        if (drawing_) {
++            if (placed) {
++                auto moved = std::make_unique<State>(s);
++                auto& p = moved->transforms[3];
++                for (int r = 0; r < 4; r++) p[size_t(r * 4)] = a * p[size_t(r * 4)] + b * p[size_t(r * 4 + 3)];
++                reference::Draw(*moved, prim, start, count, indices);
++            } else {
++                reference::Draw(s, prim, start, count, indices);
++            }
++        }
+         if (list_) List(s, prim, start, count);
++        static const bool texdump = harness::Env("TEXDUMP");
++        if (texdump) DumpTexture(s);
+     }
+     void Copy(const Surface& src, const Surface& dst, uint32_t n, uint32_t rects, uint32_t points) override {
++        if (harness::Env("TEXDUMP") == 2) {  // what is copied onto what, each pair once
++            static std::set<uint64_t> seen;
++            if (seen.insert(uint64_t(src.data) << 32 | dst.data).second)
++                LOGI("copy: %08x fmt %x size %08x -> %08x fmt %x size %08x, %u rects", src.data, src.format, src.size,
++                     dst.data, dst.format, dst.size, n);
++        }
+         if (drawing_) reference::Copy(src, dst, n, rects, points);
+         else CopySurfaceMemory(src, dst, n, rects, points);
+     }
+@@ -61,6 +87,8 @@
+             std::fclose(f);
+             snap_ = 1;
+         }
++        static const long scan_at = harness::Env("TEXSCAN");
++        if (scan_at && long(frames_) == scan_at) ScanTextures();
+         static const long every = harness::Env("REF"), cap = harness::Env("CAP");
+         drawing_ = snap_ || (every && (frames_ + 1) % every == 0);
+         if (drawing_) reference::BeginFrame();
+@@ -92,6 +120,60 @@
+     }
+ 
+ private:
++    // TEXDUMP=1: each texture drawn under an orthographic projection (HUD, menus, prompts) once, as
++    // cap/tex/<w>x<h>_<hash>.tga with the hash the renderer's texture packs use (no palette)
++    void DumpTexture(const State& s) {
++        const auto& pm = s.transforms[3];
++        static const bool all = harness::Env("TEXDUMP") == 2;  // TEXDUMP=2: every draw, not only 2D
++        if (!all && !(pm[11] == 0.0f && pm[15] == 1.0f)) return;
++        for (int stage = 0; stage < (all ? 4 : 1); stage++) DumpStage(s.textures[stage], all);
++    }
++    void DumpStage(uint32_t t, bool all) {
++        TextureDesc d;
++        if (!t || !Describe(t, d) || d.cube || d.depth > 1 || (d.linear && !all)) return;
++        uint64_t seed = uint64_t(d.format) | uint64_t(d.width) << 8 | uint64_t(d.height) << 24 | uint64_t(d.levels) << 40;
++        uint64_t h = Hash(kernel::HostPtr(d.data), TotalSize(d), seed);
++        if (!dumped_.insert(h).second) return;
++        std::filesystem::create_directories(app::ExeDir() / "cap" / "tex");
++        char name[96];
++        std::snprintf(name, sizeof name, "cap/tex/%ux%u_%016llx_f%X.tga", d.width, d.height, (unsigned long long)h, d.format);
++        reference::WriteTextureTga(t, (app::ExeDir() / name).string().c_str());
++        // the guest bytes as stored (all levels), to find them in the game's files
++        std::snprintf(name, sizeof name, "cap/tex/%ux%u_%016llx_f%X.bin", d.width, d.height, (unsigned long long)h, d.format);
++        if (FILE* f = std::fopen((app::ExeDir() / name).string().c_str(), "wb")) {
++            std::fwrite(kernel::HostPtr(d.data), 1, TotalSize(d), f);
++            std::fclose(f);
++        }
++    }
++    std::set<uint64_t> dumped_;
++    // TEXSCAN=<frame>: at that frame, every 64x64 DXT3 texture header in guest memory (Common type texture) is
++    // dumped as by TEXDUMP: textures loaded but not yet drawn, such as button pictures the game shows only sometimes
++    void ScanTextures() {
++        int n = 0;
++        for (uint32_t p = 0x10000; p + 20 < 0x4000000; p += 4) {
++            if ((p & 0xFFF) == 0 && !mem::IsCommitted(p)) {  // whole pages the game never touched
++                p += 0xFFC;
++                continue;
++            }
++            if ((p & 0xFFF) > 0xFEC && !mem::IsCommitted((p + 20) & ~0xFFFu)) continue;
++            uint32_t common = kernel::R32(p);
++            if ((common & 0x70000) != 0x40000) continue;
++            TextureDesc d;
++            // the button pictures' kind: 64x64, format 0xE (DXT3)
++            if (!Describe(p, d) || d.cube || d.depth > 1 || d.linear || d.width != 64 || d.height != 64 || d.format != 0xE) continue;
++            if (!mem::IsCommitted(d.data) || !mem::IsCommitted(d.data + TotalSize(d) - 1)) continue;
++            uint64_t seed = uint64_t(d.format) | uint64_t(d.width) << 8 | uint64_t(d.height) << 24 | uint64_t(d.levels) << 40;
++            uint64_t h = Hash(kernel::HostPtr(d.data), TotalSize(d), seed);
++            if (!dumped_.insert(h).second) continue;
++            std::filesystem::create_directories(app::ExeDir() / "cap" / "scan");
++            char name[96];
++            std::snprintf(name, sizeof name, "cap/scan/%ux%u_%016llx_f%X.tga", d.width, d.height, (unsigned long long)h, d.format);
++            if (reference::WriteTextureTga(p, (app::ExeDir() / name).string().c_str())) n++;
++        }
++        LOGI("harness: %d textures found in memory", n);
++        logx::Flush();
++    }
++
+     static std::string File(const char* fmt, unsigned long long n) {
+         char name[64];
+         std::snprintf(name, sizeof name, fmt, n);
+@@ -110,6 +192,13 @@
+         if (s.textures[0] && Describe(s.textures[0], d))
+             std::fprintf(f, "  tex %ux%u fmt %X cop %u %X %X aop %u %X %X\n", d.width, d.height, d.format, t0[kTssColorOp],
+                          t0[kTssColorArg1], t0[kTssColorArg2], t0[kTssAlphaOp], t0[kTssAlphaArg1], t0[kTssAlphaArg2]);
++        for (int st = 1; st < 4; st++) {  // the other stages, when bound
++            const auto& ts = s.tss[size_t(st)];
++            if (s.textures[size_t(st)] && Describe(s.textures[size_t(st)], d))
++                std::fprintf(f, "  tex%d %08X %ux%u fmt %X cop %u %X %X aop %u %X %X tci %X\n", st, s.textures[size_t(st)], d.width,
++                             d.height, d.format, ts[kTssColorOp], ts[kTssColorArg1], ts[kTssColorArg2], ts[kTssAlphaOp],
++                             ts[kTssAlphaArg1], ts[kTssAlphaArg2], ts[kTssTexCoordIndex]);
++        }
+         std::fprintf(f, "  ttf %X tci %X addr %u %u t16", t0[kTssTextureTransformFlags], t0[kTssTexCoordIndex], t0[kTssAddressU],
+                      t0[kTssAddressV]);
+         auto matrix = [&](const char* name, uint32_t which) {
+diff -ruN a/harness/pad_script.cpp b/harness/pad_script.cpp
+--- a/harness/pad_script.cpp	2026-10-13 14:30:15.000000000 -0700
++++ b/harness/pad_script.cpp	2026-10-13 19:05:58.499457583 -0700
+@@ -90,6 +90,9 @@
+     return p;
+ }
+ 
++// PAD_STYLE=1 (PlayStation) or 2 (Nintendo): the kind of controller the test plays with
++int Style(int) { return int(harness::Env("PAD_STYLE")); }
++
+ void Rumble(int port, uint16_t left, uint16_t right) {
+     if (app::kGame.rumble) app::kGame.rumble(port, left, right);
+ }
+diff -ruN a/harness/reference_renderer.cpp b/harness/reference_renderer.cpp
+--- a/harness/reference_renderer.cpp	2026-10-13 15:10:44.773182073 -0700
++++ b/harness/reference_renderer.cpp	2026-10-13 22:24:08.255906502 -0700
+@@ -17,6 +17,7 @@
+ #include "core/log.h"
+ #include "gpu/shaders.h"
+ #include "gpu/texture.h"
++#include "gpu/texture_pack.h"
+ #include "gpu/vertex.h"
+ #include "kernel/kernel.h"
+ #include "kernel/memory.h"
+@@ -239,6 +240,33 @@
+                 out[size_t(y) * d.width + x] = V(p[2] / 255.f, p[1] / 255.f, p[0] / 255.f, p[3] / 255.f);
+             }
+     }
++    // a game's built-in replacement (pack::g_builtin), sampled down to the texture's size, as the renderer would draw it
++    if (pack::g_builtin && img->faces == 1 && !d.linear && d.depth == 1) {
++        uint64_t seed = uint64_t(d.format) | uint64_t(d.width) << 8 | uint64_t(d.height) << 24 | uint64_t(d.levels) << 40;
++        uint64_t h = Hash(guest, TotalSize(d), seed);
++        pack::Image rep;
++        if (pack::g_builtin(h, d.width, d.height, rep) && !rep.levels.empty() && rep.format == pack::Format::RGBA8) {
++            for (uint32_t y = 0; y < d.height; y++)
++                for (uint32_t x = 0; x < d.width; x++) {
++                    const uint8_t* q = &rep.levels[0][(size_t(y * rep.height / d.height) * rep.width + x * rep.width / d.width) * 4];
++                    img->texels[0][size_t(y) * d.width + x] = V(q[0] / 255.f, q[1] / 255.f, q[2] / 255.f, q[3] / 255.f);
++                }
++        }
++    }
++    // a built-in replacement found from the contents (pack::g_builtin_contents), the same way, colours left to it
++    if (pack::g_builtin_contents && img->faces == 1 && d.depth == 1) {
++        pack::Image rep;
++        if (pack::g_builtin_contents({d.format, d.width, d.height, d.levels, guest, TotalSize(d), nullptr}, rep) &&
++            !rep.levels.empty() && (rep.format == pack::Format::RGBA8 || rep.format == pack::Format::BGRA8)) {
++            bool bgra = rep.format == pack::Format::BGRA8;
++            for (uint32_t y = 0; y < d.height; y++)
++                for (uint32_t x = 0; x < d.width; x++) {
++                    const uint8_t* q = &rep.levels[0][(size_t(y * rep.height / d.height) * rep.width + x * rep.width / d.width) * 4];
++                    float r = q[bgra ? 2 : 0] / 255.f, b = q[bgra ? 0 : 2] / 255.f;
++                    img->texels[0][size_t(y) * d.width + x] = V(r, q[1] / 255.f, b, q[3] / 255.f);
++                }
++        }
++    }
+     g_images[key] = img;
+     return img;
+ }
+@@ -1153,7 +1181,11 @@
+             o.attr[kB0] = o.attr[kD0];
+             o.attr[kB1] = o.attr[kD1];
+             o.attr[kFog] = Splat(FogAmount(s, std::fabs(o.pos[2] / s.zscale)));
+-            for (int t = 0; t < 4; t++) o.attr[kT0 + t] = slot[9 + t] >= 0 ? vp.in[9 + t] : V(0, 0, 0, 1);
++            // each stage reads the coordinate set its TEXCOORDINDEX names, as the D3D12 path's fixed key does
++            for (int t = 0; t < 4; t++) {
++                int set = int(s.tss[size_t(t)][kTssTexCoordIndex] & 3);
++                o.attr[kT0 + t] = slot[9 + set] >= 0 ? vp.in[9 + set] : V(0, 0, 0, 1);
++            }
+         }
+         for (int a : {kD0, kD1, kB0, kB1})
+             for (int j = 0; j < 4; j++) o.attr[a][j] = Sat(o.attr[a][j]);
+@@ -1338,6 +1370,24 @@
+     }
+     std::fclose(f);
+     return true;
++}
++
++bool WriteTextureTga(uint32_t header, const char* path) {
++    std::shared_ptr<Image> img = FindImage(header);
++    if (!img || img->texels[0].empty()) return false;
++    FILE* f = std::fopen(path, "wb");
++    if (!f) return false;
++    uint8_t head[18] = {0, 0, 2};
++    head[12] = uint8_t(img->w), head[13] = uint8_t(img->w >> 8), head[14] = uint8_t(img->h), head[15] = uint8_t(img->h >> 8);
++    head[16] = 32;
++    head[17] = 0x28;  // top row first, 8 alpha bits
++    std::fwrite(head, 1, 18, f);
++    for (const Vec& c : img->texels[0]) {
++        uint8_t px[4] = {uint8_t(Sat(c[2]) * 255), uint8_t(Sat(c[1]) * 255), uint8_t(Sat(c[0]) * 255), uint8_t(Sat(c[3]) * 255)};
++        std::fwrite(px, 1, 4, f);
++    }
++    std::fclose(f);
++    return true;
+ }
+ 
+ }  // namespace reference
+diff -ruN a/harness/reference_renderer.h b/harness/reference_renderer.h
+--- a/harness/reference_renderer.h	2026-10-13 14:30:15.000000000 -0700
++++ b/harness/reference_renderer.h	2026-10-13 18:33:19.430802648 -0700
+@@ -15,5 +15,7 @@
+ uint64_t Passed();
+ // 24 bit TGA of a surface's colour
+ bool WriteTga(const gpu::Surface& s, const char* path);
++// a texture's level 0 as a 32 bit TGA (testing: which texture a pack file replaces)
++bool WriteTextureTga(uint32_t header, const char* path);
+ 
+ }  // namespace reference
+diff -ruN a/runtime/app/app.h b/runtime/app/app.h
+--- a/runtime/app/app.h	2026-10-13 14:30:15.000000000 -0700
++++ b/runtime/app/app.h	2026-10-13 22:41:53.470613661 -0700
+@@ -94,6 +94,10 @@
+ float RenderScale(uint32_t guest_height);
+ // the output is 3:2 or wider: the console reports a widescreen TV and the frame is shown 16:9, else 4:3 as on a 4:3 TV
+ bool Widescreen();
++// the shape the frame is shown at: 4:3 without widescreen, else the output's shape, at least 16:9 and at most
++// g_max_frame_aspect (16:9 unless the game handles wider screens: its 3D, 2D and movies then follow FrameAspect)
++float FrameAspect();
++extern float g_max_frame_aspect;
+ 
+ std::filesystem::path ExeDir();
+ // the game in assets (game_files.cpp): its folder and this executable's xbe, from the extracted files or a disc
+diff -ruN a/runtime/app/settings.cpp b/runtime/app/settings.cpp
+--- a/runtime/app/settings.cpp	2026-10-13 14:30:15.000000000 -0700
++++ b/runtime/app/settings.cpp	2026-10-13 22:41:53.470862442 -0700
+@@ -155,6 +155,21 @@
+     return wide;
+ }
+ 
++float g_max_frame_aspect = 16.0f / 9.0f;
++
++float FrameAspect() {
++    if (!Widescreen()) return 4.0f / 3.0f;
++    static std::atomic<uint64_t> key{~0ull};
++    static std::atomic<float> aspect{16.0f / 9.0f};
++    const Settings& s = Get();
++    uint64_t k = uint64_t(s.width) << 32 | s.height;
++    if (key.exchange(k) != k) {
++        Mode m = Output();
++        aspect = m.height ? float(m.width) / float(m.height) : 16.0f / 9.0f;
++    }
++    return std::clamp(aspect.load(), 16.0f / 9.0f, std::max(g_max_frame_aspect, 16.0f / 9.0f));
++}
++
+ float RenderScale(uint32_t guest_height) {
+     float h = Output().height * (Get().render_percent / 100.0f);
+     return guest_height ? std::max(h / guest_height, 0.1f) : 1.0f;
+diff -ruN a/runtime/core/input.cpp b/runtime/core/input.cpp
+--- a/runtime/core/input.cpp	2026-10-13 14:30:15.000000000 -0700
++++ b/runtime/core/input.cpp	2026-10-13 19:05:58.499127864 -0700
+@@ -174,4 +174,19 @@
+     if (port >= 0 && port < 4 && g_pads[port]) SDL_RumbleGamepad(g_pads[port], left, right, 0);
+ }
+ 
++int Style(int port) {
++    std::lock_guard lock(g_lock);
++    if (port < 0 || port >= 4 || !g_pads[port]) return 0;
++    switch (SDL_GetGamepadType(g_pads[port])) {
++        case SDL_GAMEPAD_TYPE_PS3:
++        case SDL_GAMEPAD_TYPE_PS4:
++        case SDL_GAMEPAD_TYPE_PS5: return 1;
++        case SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_PRO:
++        case SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_JOYCON_LEFT:
++        case SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT:
++        case SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_JOYCON_PAIR: return 2;
++        default: return 0;
++    }
++}
++
+ }  // namespace input
+diff -ruN a/runtime/core/input.h b/runtime/core/input.h
+--- a/runtime/core/input.h	2026-10-13 14:30:15.000000000 -0700
++++ b/runtime/core/input.h	2026-10-13 19:05:52.307151216 -0700
+@@ -15,5 +15,7 @@
+ // the controller on that port, then GameInfo::pad
+ Pad Poll(int port);
+ void Rumble(int port, uint16_t left, uint16_t right);
++// the kind of controller on that port, for button pictures: 0 none or Xbox-like, 1 PlayStation, 2 Nintendo
++int Style(int port);
+ 
+ }  // namespace input
+diff -ruN a/runtime/gpu/backend.h b/runtime/gpu/backend.h
+--- a/runtime/gpu/backend.h	2026-10-13 14:30:15.000000000 -0700
++++ b/runtime/gpu/backend.h	2026-10-13 23:22:07.329805339 -0700
+@@ -75,6 +75,21 @@
+ // the game shows a full-screen movie (its frame fills the back buffer): presented by [graphics] movie_display,
+ // movie_sharpening and cutscene_audio_delay instead of as a game frame
+ inline std::atomic<bool> g_movie{false};
++// set by a game: how movie_display "fit" shows the movie on screen. kMovieFit: film bars above and below, its middle
++// 16:9 is shown; kMovieWide: a widescreen film squeezed into the 4:3 frame (anamorphic), the whole frame shown 16:9;
++// kMovie43: a 4:3 picture, shown 4:3
++constexpr uint32_t kMovieFit = 0, kMovieWide = 1, kMovie43 = 2;
++inline std::atomic<uint32_t> g_movie_shape{kMovieFit};
++// set by a game that shows its 4:3 frame wider (app::FrameAspect): render targets get that much more width, so the
++// frame is drawn at the screen's own resolution instead of stretched sideways. Off: targets keep the guest's shape.
++inline std::atomic<bool> g_wide_targets{false};
++// set by a game: called with each draw's state before it is drawn (to look at what the game draws). Null for none.
++using DrawObserver = void (*)(const State& s);
++inline DrawObserver g_draw_observer = nullptr;
++// set by a game: alpha to coverage for cut-outs (leaves, grass, fences) when anti-aliasing is on
++inline std::atomic<bool> g_alpha_edges{false};
++// set by a game: fixed function fog distances scaled by this (a longer draw distance), density divided by it
++inline std::atomic<float> g_fog_scale{1.0f};
+ // ] : the colour look shown, from [graphics] colour_look at start, the key steps through them while playing
+ inline std::atomic<uint32_t> g_colour_look{0};
+ constexpr uint32_t kColourLooks = 4;
+diff -ruN a/runtime/gpu/d3d12.cpp b/runtime/gpu/d3d12.cpp
+--- a/runtime/gpu/d3d12.cpp	2026-10-13 14:30:15.000000000 -0700
++++ b/runtime/gpu/d3d12.cpp	2026-10-13 23:22:29.031012303 -0700
+@@ -442,6 +442,7 @@
+     float zslope;
+     uint32_t rtfmt;
+     uint32_t samples;  // anti-aliasing: the bound targets' sample count, 0 or 1 without
++    uint32_t a2c;      // alpha to coverage for a cut-out (g_alpha_edges)
+ };
+ 
+ // Blit's settings past the source and its rectangle
+@@ -645,7 +646,7 @@
+     void CaptureShader(const char* kind, uint64_t key, const std::string& src);
+     void SetTextureViewsAndSamplers(const State& s, const Assembled& a, DrawTextures& stages);
+     uint32_t EnsureStageSamplers(const State& s, const DrawTextures& stages, bool clamp);
+-    void SetViewportScissor(const State& s, uint32_t gw);
++    void SetViewportScissor(const State& s, uint32_t gw, uint32_t gh);
+     void SetBlendFactorStencilRef(const State& s);
+     void DrawGeometry(const Assembled& a);
+     void UploadVertexBuffers(const Assembled& a);
+@@ -673,6 +674,8 @@
+     void DrawFrame(Target* t, uint32_t bi);
+     void BlitFrame(Target& t);
+     void KeepMovieFrame(Target& t);
++    void BlackSides(D3D12_CPU_DESCRIPTOR_HANDLE rh, uint32_t w, uint32_t h, float aspect);
++    float frame_sides_ = 1.0f;  // g_frame_sides for the frame being shown
+     bool BlitMovie(const Target& t);
+     void RenderUi();
+     void ReleaseOldTextures();
+@@ -781,12 +784,14 @@
+     // texture packs: textures/ beside the exe holds replacements named by content hash, textures/dump/ what
+     // texture_dump writes
+     pack::Library pack_lib_;
++    float place_a_ = 1.0f, place_b_ = 0.0f;  // this draw's sideways move (g_ortho_place)
+     std::unordered_map<uint64_t, PackTex> pack_cache_;
+     std::unordered_set<uint64_t> hud_logged_;  // textures already named as drawn in 2D
+     std::unordered_set<uint64_t> dumped_;
+     void TexturePack(Tex& tx, const TextureDesc& d, const uint8_t* p, const uint32_t* colours,
+                      const std::vector<std::vector<uint8_t>>& levels);
+     bool LoadPackTexture(const std::filesystem::path& file, PackTex& out);
++    bool CreatePackTexture(const pack::Image& img, const std::string& name, PackTex& out);
+     std::unordered_map<uint64_t, ComPtr<ID3D12PipelineState>> blit_psos_;
+     Extension* ext_ = nullptr;
+     // one frame capture: every draw in a text file, each target as the frame leaves it, the textures it read
+@@ -813,7 +818,7 @@
+     Target* bound_rt_ = nullptr;
+     Target* bound_ds_ = nullptr;
+     bool bound_ms_ = false;    // the bound targets are the multisampled twins
+-    // movies (g_movie): each presented frame kept at the console's size, the picture shown is the newest that is
++    // movies (g_movie): each presented frame kept at up to twice the console's size, the picture shown is the newest that is
+     // [graphics] cutscene_audio_delay old
+     struct MovieFrame {
+         ComPtr<ID3D12Resource> res;
+@@ -834,6 +839,8 @@
+     uint32_t bb_w_ = 0;
+     uint32_t bb_h_ = 0;
+     float scale_ = 1.0f;
++    float xmul_ = 1.0f;  // extra width of the targets (g_wide_targets)
++    float WideMul() const;
+     // surfaces locked without a wait: copies in flight, the newest finished one goes to guest memory
+     struct Late {
+         ComPtr<ID3D12Resource> rb[kFrames];
+@@ -900,7 +907,8 @@
+                         ui_heap_->GetCPUDescriptorHandleForHeapStart(), ui_heap_->GetGPUDescriptorHandleForHeapStart());
+     LoadSettings();
+     Begin();
+-    LOGI("d3d12: %ux%u guest, %ux%u window, render scale %.3f", width, height, bb_w_, bb_h_, scale_);
++    LOGI("d3d12: %ux%u guest, %ux%u window, render scale %.3f (%.2f across)", width, height, bb_w_, bb_h_, scale_,
++         scale_ * xmul_);
+     // packs anywhere under textures/replace (older ones straight in textures/), dumps in textures/dump
+     if (app::Get().texture_replace) pack_lib_.Scan(app::TextureDir(), "dump");
+     if (pack_lib_.Size()) LOGR("texture pack: %zu replacement files under %s", pack_lib_.Size(), app::TextureDir().string().c_str());
+@@ -1083,8 +1091,15 @@
+                                   IID_PPV_ARGS(&lut_));
+ }
+ 
++// g_wide_targets: the frame's shape over the guest's 4:3, so targets come out at the shape the frame is shown at
++float D3D12Backend::WideMul() const {
++    if (!g_wide_targets || !guest_h_ || std::fabs(float(guest_w_) / float(guest_h_) - 4.0f / 3.0f) > 0.01f) return 1.0f;
++    return std::max(1.0f, app::FrameAspect() / (4.0f / 3.0f));
++}
++
+ void D3D12Backend::LoadSettings() {
+     scale_ = app::RenderScale(guest_h_);
++    xmul_ = WideMul();
+     g_colour_look = std::min(app::Get().colour_look, kColourLooks - 1);
+     samples_ = PickSamples();
+     // brightness goes through the gamma ramp: a game that never sets one gets the identity ramp to carry it
+@@ -1130,13 +1145,17 @@
+ 
+ void D3D12Backend::Flush() { Submit(true); }
+ 
++// kMovieFit's shape: the screen's (app::FrameAspect), from 16:9 up to a letterboxed film's own, 1.84:1 (rows 65 to 413
++// of the 4:3 frame)
++float MovieFitAspect() { return std::clamp(app::FrameAspect(), 16.0f / 9.0f, (4.0f / 3.0f) * 480.0f / 348.0f); }
++
+ // the picture as shown: the frame at its render size, made as wide as the screen shows it (16:9 with widescreen),
+ // saved as <PREFIX>_<date>_<time>_<ms>.png as ROTK Fix names its own, on the texture pack writer's thread
+ void D3D12Backend::Screenshot(Target& t) {
+     // the frame through the same pass as the screen (brightness, sharpening, colour look), without HDR; a movie as
+     // movie_display shows it
+     const app::Settings& stg = app::Get();
+-    uint32_t h = t.h, w = app::Widescreen() ? (t.h * 16 + 4) / 9 : t.w;
++    uint32_t h = t.h, w = app::Widescreen() ? uint32_t(float(t.h) * app::FrameAspect() + 0.5f) : t.w;
+     ID3D12Resource* src = t.res.Get();
+     D3D12_RESOURCE_STATES* src_state = &t.state;
+     DXGI_FORMAT fmt = t.fmt;
+@@ -1150,9 +1169,13 @@
+         o.sharpen = std::min(stg.movie_sharpening, 100u) / 100.0f;
+         o.texel[0] = 1.0f / float(std::max(t.gw, 1u));
+         o.texel[1] = 1.0f / float(std::max(t.gh, 1u));
+-        if (stg.movie_display == 0) {
+-            uv[1] = 0.125f;
+-            uv[3] = 0.75f;
++        uint32_t shape = g_movie_shape;
++        if (stg.movie_display == 0 && shape == kMovieFit) {
++            float fa = MovieFitAspect();
++            uv[3] = (4.0f / 3.0f) / fa;
++            uv[1] = 0.5f - uv[3] / 2;
++            w = uint32_t(float(h) * fa + 0.5f);
++        } else if (stg.movie_display == 0 && shape == kMovieWide) {
+             w = (h * 16 + 4) / 9;
+         } else if (stg.movie_display == 1) {
+             w = uint32_t(uint64_t(h) * std::max(bb_w_, 1u) / std::max(bb_h_, 1u));
+@@ -1176,6 +1199,7 @@
+             Transition(src, *src_state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+             SetBlitTarget(rh, w, h);
+             Blit(src, fmt, uv, o);
++            if (src == t.res.Get()) BlackSides(rh, w, h, float(w) / float(std::max(h, 1u)));
+             D3D12_RESOURCE_STATES ds = D3D12_RESOURCE_STATE_RENDER_TARGET;
+             Transition(down.Get(), ds, D3D12_RESOURCE_STATE_COPY_SOURCE);
+         } else {
+@@ -1351,7 +1375,7 @@
+ bool D3D12Backend::CreateTargetResource(Target& t, const Surface& s) {
+     float sc = scale_;
+     if (ext_) ext_->MakeTarget(s, t.depth, t.gw, t.gh, sc, t.fmt);
+-    t.w = std::max(1u, uint32_t(std::lround(t.gw * sc)));
++    t.w = std::max(1u, uint32_t(std::lround(t.gw * sc * xmul_)));
+     t.h = std::max(1u, uint32_t(std::lround(t.gh * sc)));
+     D3D12_HEAP_PROPERTIES hp{D3D12_HEAP_TYPE_DEFAULT};
+     D3D12_RESOURCE_DESC td = Texture2DDesc(DXGI_FORMAT_UNKNOWN, t.w, t.h);
+@@ -2126,6 +2150,7 @@
+     d.RTVFormats[0] = k.has_rt ? DXGI_FORMAT(k.rtfmt) : DXGI_FORMAT_UNKNOWN;
+     d.DSVFormat = k.has_ds ? DXGI_FORMAT_D24_UNORM_S8_UINT : DXGI_FORMAT_UNKNOWN;
+     d.SampleDesc.Count = std::max(k.samples, 1u);
++    d.BlendState.AlphaToCoverageEnable = k.a2c != 0;
+ }
+ 
+ ID3D12PipelineState* D3D12Backend::EnsurePipeline(const PsoKey& k, ID3DBlob* vs, ID3DBlob* ps) {
+@@ -2267,14 +2292,15 @@
+     std::vector<uint8_t> px;
+     // a plain 2D texture in a format a DDS file holds can be dumped and replaced
+     pack::Format pf = pack::Format(tx.fmt);
+-    bool packable = !d.cube && d.depth == 1 && !d.linear && pack::Supported(pf) &&
+-                    (pack_lib_.Size() || app::Get().texture_dump);
++    // linear textures only for a game's own replacements (g_builtin_contents), never dumped
++    bool packable = !d.cube && d.depth == 1 && (!d.linear || pack::g_builtin_contents) && pack::Supported(pf) &&
++                    (pack_lib_.Size() || app::Get().texture_dump || pack::g_builtin || pack::g_builtin_contents);
+     std::vector<std::vector<uint8_t>> levels;
+     for (uint32_t f = 0; f < faces; f++) {
+         for (uint32_t l = 0; l < tx.levels; l++) {
+             uint32_t pitch;
+             DecodeLevel(d, l, f, p, colours, px, pitch);
+-            if (packable && app::Get().texture_dump && f == 0 && l == 0) {
++            if (packable && !d.linear && app::Get().texture_dump && f == 0 && l == 0) {
+                 // the level as decoded, before an extension changes it, rows tightly packed
+                 uint32_t lw = std::max(d.width >> l, 1u), lh = std::max(d.height >> l, 1u);
+                 uint32_t rb = pack::RowBytes(pf, lw), rows = pack::Rows(pf, lh);
+@@ -2313,9 +2339,20 @@
+     }
+     tx.pack_hash = h;
+     const std::filesystem::path* file = pack_lib_.Find(h);
+-    if (!file) return;
++    if (!file && !pack::g_builtin && !pack::g_builtin_contents) return;
+     auto [it, fresh] = pack_cache_.try_emplace(h);
+-    if (fresh && !LoadPackTexture(*file, it->second)) LOGW("texture pack: %s is not a PNG or DDS file the renderer takes", file->string().c_str());
++    if (fresh && file && !LoadPackTexture(*file, it->second)) LOGW("texture pack: %s is not a PNG or DDS file the renderer takes", file->string().c_str());
++    if (fresh && !file) {
++        pack::Image img;
++        bool got = pack::g_builtin_contents &&
++                   pack::g_builtin_contents({d.format, d.width, d.height, d.levels, p, TotalSize(d), colours}, img);
++        if (!got && pack::g_builtin) got = pack::g_builtin(h, d.width, d.height, img);
++        if (got) CreatePackTexture(img, pack::PngName(d.width, d.height, h), it->second);
++        if (!got && d.linear) {  // not kept: linear textures are often movie frames, each new
++            pack_cache_.erase(it);
++            return;
++        }
++    }
+     if (!it->second.res) return;
+     tx.repl = it->second.res;
+     tx.repl_fmt = it->second.fmt;
+@@ -2328,6 +2365,11 @@
+     std::string ext = file.extension().string();
+     std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return char(std::tolower(c)); });
+     if (!(ext == ".png" ? pack::ReadPng(file, img) : pack::ReadDds(file, img))) return false;
++    return CreatePackTexture(img, file.filename().string(), out);
++}
++
++// a picture, with its mip levels, into a texture of its own size
++bool D3D12Backend::CreatePackTexture(const pack::Image& img, const std::string& name, PackTex& out) {
+     bool block = img.format != pack::Format::BGRA8 && img.format != pack::Format::RGBA8;
+     if (block && ((img.width & 3) || (img.height & 3))) return false;  // BC level 0 must be whole blocks
+     D3D12_HEAP_PROPERTIES hp{D3D12_HEAP_TYPE_DEFAULT};
+@@ -2352,7 +2394,7 @@
+     out.res = t.res;
+     out.fmt = td.Format;
+     out.levels = t.levels;
+-    LOG_FIRST(16, "texture pack: %s, %ux%u, %u levels", file.filename().string().c_str(), img.width, img.height,
++    LOG_FIRST(16, "texture pack: %s, %ux%u, %u levels", name.c_str(), img.width, img.height,
+               t.levels);
+     return true;
+ }
+@@ -2682,6 +2724,11 @@
+     k.rtfmt = bound_rt_ ? bound_rt_->fmt : 0;
+     k.samples = bound_ms_ ? samples_ : 1;
+     KeyBlend(s, k);
++    // smooth cut-out edges: an alpha test passing above the reference, unblended, into anti-aliased targets
++    if (g_alpha_edges && k.samples > 1 && !k.blend && SimpleState(s, kMAlphaTestEnable)) {
++        int f = int(Cmp(SimpleState(s, kMAlphaFunc))) - 1;
++        k.a2c = f == 4 || f == 6;  // greater, greater or equal
++    }
+     if (k.has_ds) KeyDepthStencil(s, a, k);
+     KeyRasterizer(s, a, k);
+ }
+@@ -2703,9 +2750,10 @@
+         c.fog[3] = kFogTableLinear;
+         return;
+     }
+-    c.fog[0] = Bits(s.rs[kRsFogStart]);
+-    c.fog[1] = Bits(s.rs[kRsFogEnd]);
+-    c.fog[2] = Bits(s.rs[kRsFogDensity]);
++    float k = g_fog_scale;
++    c.fog[0] = Bits(s.rs[kRsFogStart]) * k;
++    c.fog[1] = Bits(s.rs[kRsFogEnd]) * k;
++    c.fog[2] = Bits(s.rs[kRsFogDensity]) / k;
+     c.fog[3] = float(s.rs[kRsFogTableMode]);
+ }
+ 
+@@ -2805,7 +2853,7 @@
+ constexpr size_t kTsTexture0 = 16;
+ constexpr size_t kTsWorld = 256;
+ 
+-void FillTransformConstants(const State& s, GuestExtent size, DrawConstants& c) {
++void FillTransformConstants(const State& s, GuestExtent size, DrawConstants& c, float place_a, float place_b) {
+     uint32_t gw = size.w;
+     uint32_t gh = size.h;
+     // world, view, projection, then the viewport inside the target
+@@ -2813,6 +2861,9 @@
+     float wvp[16];
+     MatMul(s.transforms[kTsWorld].data(), s.transforms[kTsView].data(), wv);
+     MatMul(wv, s.transforms[kTsProjection].data(), wvp);
++    // moved sideways by the game (g_ortho_place): clip x' = a * x + b * w
++    if (place_a != 1.0f || place_b != 0.0f)
++        for (int r = 0; r < 4; r++) wvp[r * 4] = place_a * wvp[r * 4] + place_b * wvp[r * 4 + 3];
+     const auto& v = s.viewport;
+     float sx = float(v.w) / gw;
+     float sy = float(v.h) / gh;
+@@ -2887,12 +2938,13 @@
+     std::memcpy(vc.cpu, s.vsc.data(), sizeof(s.vsc));
+     Alloc dc = Upload(sizeof(DrawConstants), 256);
+     FillSurfaceConstants(s, size, c);
++    c.surf[3] = k.a2c ? 1.0f : 0.0f;
+     FillFogConstants(s, sh.prog, c);
+     FillCombinerConstants(s, c);
+     if (ext_) ext_->Constants(reinterpret_cast<float(*)[4]>(vc.cpu), c.ext, bound_rt_, k.blend ? k.src : 1);
+     FillTextureConstants(s, stages, c);
+     if (sh.fixed_transform) {
+-        FillTransformConstants(s, size, c);
++        FillTransformConstants(s, size, c, place_a_, place_b_);
+         FillLightConstants(s, sh.fk, c);
+     }
+     std::memcpy(dc.cpu, &c, sizeof(c));
+@@ -3023,21 +3075,21 @@
+ }
+ 
+ // viewport covers the target, the guest viewport is in the shader; scissor clips to it
+-void D3D12Backend::SetViewportScissor(const State& s, uint32_t gw) {
++void D3D12Backend::SetViewportScissor(const State& s, uint32_t gw, uint32_t gh) {
+     float W = float(bound_rt_ ? bound_rt_->w : bound_ds_->w);
+     float H = float(bound_rt_ ? bound_rt_->h : bound_ds_->h);
+     D3D12_VIEWPORT vp{0, 0, W, H, 0, 1};
+     cl_->RSSetViewports(1, &vp);
+-    float sc = W / gw;
+-    LONG x0 = LONG(s.viewport.x * sc);
+-    LONG y0 = LONG(s.viewport.y * sc);
+-    LONG x1 = LONG((s.viewport.x + s.viewport.w) * sc);
+-    LONG y1 = LONG((s.viewport.y + s.viewport.h) * sc);
++    float sx = W / gw, sy = H / std::max(gh, 1u);  // across and down differ with g_wide_targets
++    LONG x0 = LONG(s.viewport.x * sx);
++    LONG y0 = LONG(s.viewport.y * sy);
++    LONG x1 = LONG((s.viewport.x + s.viewport.w) * sx);
++    LONG y1 = LONG((s.viewport.y + s.viewport.h) * sy);
+     if (s.scissor_count) {
+-        x0 = std::max(x0, LONG(s.scissors[0] * sc));
+-        y0 = std::max(y0, LONG(s.scissors[1] * sc));
+-        x1 = std::min(x1, LONG(s.scissors[2] * sc));
+-        y1 = std::min(y1, LONG(s.scissors[3] * sc));
++        x0 = std::max(x0, LONG(s.scissors[0] * sx));
++        y0 = std::max(y0, LONG(s.scissors[1] * sy));
++        x1 = std::min(x1, LONG(s.scissors[2] * sx));
++        y1 = std::min(y1, LONG(s.scissors[3] * sy));
+     }
+     D3D12_RECT rect{std::clamp<LONG>(x0, 0, LONG(W)), std::clamp<LONG>(y0, 0, LONG(H)),
+                     std::clamp<LONG>(x1, 0, LONG(W)), std::clamp<LONG>(y1, 0, LONG(H))};
+@@ -3107,12 +3159,22 @@
+ void D3D12Backend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t count, const uint8_t* indices) {
+     PerfScope perf_draw{g_perf.draw};
+     g_perf.draws++;
++    if (g_draw_observer) g_draw_observer(s);
+     if (cap_) CapStep(s.rt);
+     if (DepthCopy(s)) return;
+     DrawEnd draw_end{ext_};
+     if (ext_) ext_->BeginDraw(s);
+     Assembled& a = asm_;
+     if (!AssembleDraw(s, prim, start, count, indices, a)) return;
++    place_a_ = 1.0f;
++    place_b_ = 0.0f;
++    if (g_ortho_place) {
++        float x0, x1, y0, y1;
++        if (OrthoExtent(s, start, count, indices, x0, x1, y0, y1) && !g_ortho_place(s, x0, x1, y0, y1, place_a_, place_b_)) {
++            place_a_ = 1.0f;
++            place_b_ = 0.0f;
++        }
++    }
+     // past the ring every upload is a buffer of its own: seconds lost on a frame that draws a whole level once
+     if (CurrentFrame().used > kUploadSize - kUploadReserve) {
+         PerfScope perf_flush{g_perf.flush};
+@@ -3158,7 +3220,7 @@
+ 
+     // texture views and samplers, viewport and scissor, blend factor and stencil reference
+     SetTextureViewsAndSamplers(s, a, stages);
+-    SetViewportScissor(s, size.w);
++    SetViewportScissor(s, size.w, size.h);
+     SetBlendFactorStencilRef(s);
+ 
+     // geometry
+@@ -3167,9 +3229,9 @@
+ 
+ // a guest rect scaled to the target and clamped to it
+ D3D12_RECT ScaledRect(const Target& t, int x0, int y0, int x1, int y1) {
+-    float sc = float(t.w) / t.gw;
+-    return {std::clamp<LONG>(LONG(x0 * sc), 0, t.w), std::clamp<LONG>(LONG(y0 * sc), 0, t.h),
+-            std::clamp<LONG>(LONG(x1 * sc), 0, t.w), std::clamp<LONG>(LONG(y1 * sc), 0, t.h)};
++    float sx = float(t.w) / t.gw, sy = float(t.h) / t.gh;
++    return {std::clamp<LONG>(LONG(x0 * sx), 0, t.w), std::clamp<LONG>(LONG(y0 * sy), 0, t.h),
++            std::clamp<LONG>(LONG(x1 * sx), 0, t.w), std::clamp<LONG>(LONG(y1 * sy), 0, t.h)};
+ }
+ 
+ // rs: the rects buffer, reused across targets
+@@ -3334,7 +3396,7 @@
+     D3D12_CPU_DESCRIPTOR_HANDLE rh = Cpu(rtv_heap_.Get(), dst_t.view, rtv_inc_);
+     cl_->OMSetRenderTargets(1, &rh, FALSE, nullptr);
+     float src_scale = float(src_t.w) / src_t.gw;
+-    float dst_scale = float(dst_t.w) / dst_t.gw;
++    float dst_scale = float(dst_t.w) / dst_t.gw, dst_scale_y = float(dst_t.h) / dst_t.gh;
+     bool listed = l.count && l.src_rects;
+     uint32_t n = listed ? l.count : 1;
+     for (uint32_t i = 0; i < n; i++) {
+@@ -3343,7 +3405,7 @@
+         DrawnRect r{.x0 = 0, .y0 = 0, .x1 = whole_w, .y1 = whole_h};
+         if (listed) r = ReadDrawnRect(l.src_rects, l.dst_points, i);
+         if (r.x1 <= r.x0 || r.y1 <= r.y0) continue;
+-        D3D12_VIEWPORT vp{r.dx * dst_scale, r.dy * dst_scale, (r.x1 - r.x0) * dst_scale, (r.y1 - r.y0) * dst_scale,
++        D3D12_VIEWPORT vp{r.dx * dst_scale, r.dy * dst_scale_y, (r.x1 - r.x0) * dst_scale, (r.y1 - r.y0) * dst_scale_y,
+                           0, 1};
+         LONG right = std::min(LONG(vp.TopLeftX + vp.Width), LONG(dst_t.w));
+         LONG bottom = std::min(LONG(vp.TopLeftY + vp.Height), LONG(dst_t.h));
+@@ -3368,7 +3430,7 @@
+     Transition(dst_t.res.Get(), dst_t.state, D3D12_RESOURCE_STATE_COPY_DEST);
+     D3D12_TEXTURE_COPY_LOCATION dl{dst_t.res.Get(), D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX};
+     D3D12_TEXTURE_COPY_LOCATION sl{src_res, D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX};
+-    float dst_scale = float(dst_t.w) / dst_t.gw;
++    float dst_scale = float(dst_t.w) / dst_t.gw, dst_scale_y = float(dst_t.h) / dst_t.gh;
+     bool listed = l.count && l.src_rects;
+     uint32_t n = listed ? l.count : 1;
+     for (uint32_t i = 0; i < n; i++) {
+@@ -3378,15 +3440,15 @@
+         if (listed) {
+             GuestRect r = ReadGuestRect(l.src_rects, i);
+             b.left = ScaleUnsigned(r.left, dst_scale);
+-            b.top = ScaleUnsigned(r.top, dst_scale);
++            b.top = ScaleUnsigned(r.top, dst_scale_y);
+             b.right = std::min(ScaleUnsigned(r.right, dst_scale), src_t.w);
+-            b.bottom = std::min(ScaleUnsigned(r.bottom, dst_scale), src_t.h);
++            b.bottom = std::min(ScaleUnsigned(r.bottom, dst_scale_y), src_t.h);
+             dx = b.left;
+             dy = b.top;
+             if (l.dst_points) {
+                 GuestPoint p = ReadGuestPoint(l.dst_points, i);
+                 dx = ScaleUnsigned(p.x, dst_scale);
+-                dy = ScaleUnsigned(p.y, dst_scale);
++                dy = ScaleUnsigned(p.y, dst_scale_y);
+             }
+         }
+         if (b.right <= b.left || b.bottom <= b.top || dx >= dst_t.w || dy >= dst_t.h) continue;
+@@ -3519,10 +3581,19 @@
+     cl_->CopyTextureRegion(&dl, 0, 0, 0, &sl, nullptr);
+ }
+ 
++// g_frame_sides: the frame's sides painted black, in a w x h target the frame fills at aspect, centred
++void D3D12Backend::BlackSides(D3D12_CPU_DESCRIPTOR_HANDLE rh, uint32_t w, uint32_t h, float aspect) {
++    if (frame_sides_ >= 0.999f) return;
++    float vw = std::min(float(w), float(h) * aspect), keep = vw * frame_sides_;
++    LONG l = LONG((float(w) - keep) / 2), r = LONG((float(w) + keep) / 2);
++    D3D12_RECT rs[2] = {{0, 0, l, LONG(h)}, {r, 0, LONG(w), LONG(h)}};
++    float black[4] = {0, 0, 0, 1};
++    cl_->ClearRenderTargetView(rh, black, 2, rs);
++}
++
+ void D3D12Backend::BlitFrame(Target& t) {
+-    // 16:9 when the console reports a widescreen display, else 4:3
+-    bool wide = app::Widescreen();
+-    float aspect = wide ? 16.0f / 9.0f : 4.0f / 3.0f;
++    // 16:9 (or the wider screen's shape, app::FrameAspect) when the console reports a widescreen display, else 4:3
++    float aspect = app::FrameAspect();
+     float w = float(bb_w_);
+     float h = float(bb_h_);
+     float vw = std::min(w, h * aspect);
+@@ -3552,10 +3623,15 @@
+         movie_n_ = 0;
+     }
+     MovieFrame& f = movie_ring_[movie_n_ % kMovieFrames];
+-    float k = float(t.w) / float(std::max(t.gw, 1u));
+-    ShrinkOptions o{.taps = uint32_t(std::max(1.0f, std::ceil(k - 0.01f))), .into = f.res.Get(), .into_state = f.state,
++    // kept at up to twice the console's size: the movie's own detail (its pictures are about 700x500) survives to the
++    // screen, and movie_sharpening works one console pixel wide, about one movie pixel, before the scale to the screen
++    uint32_t kw = std::min(t.w, std::max(t.gw, 1u) * 2), kh = std::min(t.h, std::max(t.gh, 1u) * 2);
++    float k = float(t.w) / float(std::max(kw, 1u));
++    ID3D12Resource* into = f.res.Get();
++    if (into && (into->GetDesc().Width != kw || into->GetDesc().Height != kh)) into = nullptr;  // the screen changed
++    ShrinkOptions o{.taps = uint32_t(std::max(1.0f, std::ceil(k - 0.01f))), .into = into, .into_state = f.state,
+                     .mul = t.range};
+-    ComPtr<ID3D12Resource> down = Shrink(t.res.Get(), t.state, t.fmt, t.gw, t.gh, o);
++    ComPtr<ID3D12Resource> down = Shrink(t.res.Get(), t.state, t.fmt, kw, kh, o);
+     if (!down) return;
+     f.res = down;
+     f.state = D3D12_RESOURCE_STATE_COPY_SOURCE;
+@@ -3589,11 +3665,15 @@
+     float h = float(bb_h_);
+     float uv[4] = {0, 0, 1, 1};
+     float aspect = 4.0f / 3.0f;
+-    if (st.movie_display == 0) {
+-        // fit: the middle 16:9 of the 4:3 frame, where the films and logos are (their bars are outside it)
+-        uv[1] = 0.125f;
+-        uv[3] = 0.75f;
+-        aspect = 16.0f / 9.0f;
++    uint32_t shape = g_movie_shape;
++    if (st.movie_display == 0 && shape == kMovieFit) {
++        // fit: the middle of the 4:3 frame, where the films are (their bars are outside it): 16:9, or up to the
++        // films' own shape on wider screens, which then get bars at the sides rather than lose the film's top
++        aspect = MovieFitAspect();
++        uv[3] = (4.0f / 3.0f) / aspect;
++        uv[1] = 0.5f - uv[3] / 2;
++    } else if (st.movie_display == 0 && shape == kMovieWide) {
++        aspect = 16.0f / 9.0f;  // a widescreen film squeezed into the 4:3 frame: the whole frame, unsqueezed
+     }
+     float vw = std::min(w, h * aspect);
+     float vh = vw / aspect;
+@@ -3633,7 +3713,10 @@
+     cl_->ClearRenderTargetView(rh, black, 0, nullptr);
+     cl_->OMSetRenderTargets(1, &rh, FALSE, nullptr);
+     bound_rt_ = bound_ds_ = nullptr;
+-    if (t && !BlitMovie(*t)) BlitFrame(*t);
++    if (t && !BlitMovie(*t)) {
++        BlitFrame(*t);
++        BlackSides(rh, bb_w_, bb_h_, app::FrameAspect());
++    }
+     RenderUi();
+     Transition(bb_[bi].Get(), bs, D3D12_RESOURCE_STATE_PRESENT);
+ }
+@@ -3750,6 +3833,7 @@
+     Target* t = EnsureTarget(front, false);
+     if (t && LatchCpuWrite(*t)) UploadTarget(*t, front);
+     if (t) Resolve(*t);
++    frame_sides_ = g_frame_sides.exchange(1.0f);
+     if (t && g_screenshot.exchange(false)) Screenshot(*t);
+     if (t && g_movie) KeepMovieFrame(*t);
+     else movie_on_ = false;
+@@ -3775,10 +3859,10 @@
+ }
+ 
+ void D3D12Backend::ApplySettings() {
+-    float want = app::RenderScale(guest_h_);
++    float want = app::RenderScale(guest_h_), want_x = WideMul();
+     bool remake = ext_ && ext_->Settings();
+     uint32_t samples = PickSamples();
+-    if (std::fabs(want - scale_) > 1e-4f || remake || samples != samples_) {
++    if (std::fabs(want - scale_) > 1e-4f || std::fabs(want_x - xmul_) > 1e-4f || remake || samples != samples_) {
+         Flush();
+         for (auto& [key, tg] : targets_) {
+             (tg.depth ? free_dsv_ : free_rtv_).push_back(tg.view);
+@@ -3786,6 +3870,7 @@
+         }
+         targets_.clear();
+         scale_ = want;
++        xmul_ = want_x;
+         samples_ = samples;
+         ms_ok_.clear();
+         if (ext_) ext_->Reset(*this);
+diff -ruN a/runtime/gpu/shaders.cpp b/runtime/gpu/shaders.cpp
+--- a/runtime/gpu/shaders.cpp	2026-10-13 14:30:15.000000000 -0700
++++ b/runtime/gpu/shaders.cpp	2026-10-13 16:21:51.169529841 -0700
+@@ -474,11 +474,15 @@
+         }
+     return c / (n * n);
+ }
+-void alphatest(float a) {
++float alphatest(float a) {
+     int f = (int)misc.y;
++    // surf.w: alpha to coverage for a cut-out (alpha greater than the reference, no blending, anti-aliasing): the
++    // edge's alpha sharpened to a pixel wide ramp around the reference, which the samples cover in proportion
++    if (surf.w != 0) return saturate((a - misc.x / 255) / max(fwidth(a), 1e-4) + 0.5);
+     int v = (int)round(a * 255), r = (int)misc.x;
+     bool ok = f == 0 ? false : f == 1 ? v < r : f == 2 ? v == r : f == 3 ? v <= r : f == 4 ? v > r : f == 5 ? v != r : f == 6 ? v >= r : true;
+     if (!ok) discard;
++    return a;
+ }
+ )";
+ 
+@@ -884,7 +888,7 @@
+         body += "cur.rgb = saturate(cur.rgb + v1.rgb);\n";
+         body += "float4 outc = float4(lerp(fogin.rgb, cur.rgb, fogin.a), cur.a);\n";
+     }
+-    body += "alphatest(outc.a);\n" + Hooks().Output() + "return outc;\n}\n";
++    body += "outc.a = alphatest(outc.a);\n" + Hooks().Output() + "return outc;\n}\n";
+     s += body;
+     return k.quad ? QuadHlsl(std::move(s)) : s;
+ }
+diff -ruN a/runtime/gpu/texture_pack.cpp b/runtime/gpu/texture_pack.cpp
+--- a/runtime/gpu/texture_pack.cpp	2026-10-13 14:30:15.000000000 -0700
++++ b/runtime/gpu/texture_pack.cpp	2026-10-13 21:55:17.192285149 -0700
+@@ -206,8 +206,28 @@
+     img = Image{};
+     std::vector<uint8_t> bytes;
+     if (!ReadFile(file, bytes) || bytes.empty()) return false;
++    return DecodePng(bytes.data(), bytes.size(), img);
++}
++
++BuiltinTexture g_builtin = nullptr;
++BuiltinContents g_builtin_contents = nullptr;
++
++void MakeLevels(Image& img) {
++    if (img.levels.empty() || (img.format != Format::RGBA8 && img.format != Format::BGRA8)) return;
++    img.levels.resize(1);
++    for (uint32_t lw = img.width, lh = img.height; lw > 1 || lh > 1;) {
++        uint32_t nw, nh;
++        std::vector<uint8_t> next = Halve(img.levels.back(), lw, lh, nw, nh);
++        img.levels.push_back(std::move(next));
++        lw = nw;
++        lh = nh;
++    }
++}
++
++bool DecodePng(const uint8_t* data, size_t size, Image& img) {
++    img = Image{};
+     int w = 0, h = 0, comp = 0;
+-    stbi_uc* px = stbi_load_from_memory(bytes.data(), int(bytes.size()), &w, &h, &comp, 4);
++    stbi_uc* px = stbi_load_from_memory(data, int(size), &w, &h, &comp, 4);
+     if (!px) return false;
+     if (w <= 0 || h <= 0 || w > 16384 || h > 16384) {
+         stbi_image_free(px);
+diff -ruN a/runtime/gpu/texture_pack.h b/runtime/gpu/texture_pack.h
+--- a/runtime/gpu/texture_pack.h	2026-10-13 14:30:15.000000000 -0700
++++ b/runtime/gpu/texture_pack.h	2026-10-13 21:55:17.191953344 -0700
+@@ -34,6 +34,24 @@
+ 
+ // an RGBA picture as PNG: read with a full chain of mip levels made by halving (RGBA8), written from level 0
+ bool ReadPng(const std::filesystem::path& file, Image& img);
++// the same from PNG bytes in memory
++bool DecodePng(const uint8_t* data, size_t size, Image& img);
++// a game's own replacement for a texture, by the pack hash (a texture pack file of the same name wins): true with the
++// picture in out. Asked once per hash; set by game code, null for none.
++using BuiltinTexture = bool (*)(uint64_t hash, uint32_t width, uint32_t height, Image& out);
++extern BuiltinTexture g_builtin;
++// the same found from a texture's contents, asked before g_builtin: its Xbox format, size and levels, its guest
++// bytes (all levels, as stored, swizzled) and a P8 texture's 256 colours (D3DCOLOR), else null
++struct Contents {
++    uint32_t format, width, height, levels;
++    const uint8_t* data;
++    size_t size;
++    const uint32_t* palette;
++};
++using BuiltinContents = bool (*)(const Contents& tex, Image& out);
++extern BuiltinContents g_builtin_contents;
++// an RGBA8 or BGRA8 picture's mip levels below level 0, each made by halving
++void MakeLevels(Image& img);
+ bool WritePng(const std::filesystem::path& file, uint32_t width, uint32_t height, const std::vector<uint8_t>& rgba);
+ // written on a thread of its own, so a dump does not stall the frame; a file that exists is left alone
+ void WritePngLater(std::filesystem::path file, uint32_t width, uint32_t height, std::vector<uint8_t> rgba);
+diff -ruN a/runtime/gpu/vertex.cpp b/runtime/gpu/vertex.cpp
+--- a/runtime/gpu/vertex.cpp	2026-10-13 14:30:15.000000000 -0700
++++ b/runtime/gpu/vertex.cpp	2026-10-13 23:13:16.219612658 -0700
+@@ -8,6 +8,7 @@
+ #include "core/log.h"
+ #include "gpu/texture.h"
+ #include "kernel/kernel.h"
++#include "kernel/memory.h"
+ 
+ namespace gpu {
+ 
+@@ -443,6 +444,47 @@
+ 
+ ScreenSpaceHook g_screen_space_hook = nullptr;
+ ScreenSpaceTest g_screen_space_test = nullptr;
++ProjectionHook g_projection_hook = nullptr;
++OrthoPlace g_ortho_place = nullptr;
++std::atomic<float> g_frame_sides{1.0f};
++
++bool OrthoExtent(const State& s, uint32_t start, uint32_t count, const uint8_t* indices, float& x0, float& x1, float& y0,
++                 float& y1) {
++    // an FVF with XYZ, or the fixed pipeline fed from Begin/End or pushed vertices (a declaration without a program,
++    // the position a FLOAT3 or FLOAT4 in register 0 of stream 0)
++    uint32_t pos = 0;
++    if (s.vs_handle & 1) {
++        if (!s.vs || !s.vs->program.empty() || s.vs->inputs[0].stream != 0) return false;
++        if (s.vs->inputs[0].type != 0x32 && s.vs->inputs[0].type != 0x42) return false;
++        pos = s.vs->inputs[0].offset;
++    } else if ((s.vs_handle & 0xE) != 2) {
++        return false;
++    }
++    if (!s.streams[0].vb || !count) return false;
++    const float* p = s.transforms[3].data();
++    if (p[11] != 0.0f || p[15] != 1.0f) return false;  // orthographic
++    float wv[16], m[16];
++    auto mul = [](const float* a, const float* b, float* o) {
++        for (int r = 0; r < 4; r++)
++            for (int c = 0; c < 4; c++)
++                o[r * 4 + c] = a[r * 4] * b[c] + a[r * 4 + 1] * b[4 + c] + a[r * 4 + 2] * b[8 + c] + a[r * 4 + 3] * b[12 + c];
++    };
++    mul(s.transforms[256].data(), s.transforms[2].data(), wv);
++    mul(wv, p, m);
++    uint32_t stride = s.streams[0].stride;
++    uint32_t data = mem::VirtualFromPhysical(kernel::R32(s.streams[0].vb + 4));
++    x0 = y0 = 1e30f;
++    x1 = y1 = -1e30f;
++    for (uint32_t i = 0; i < count; i++) {
++        uint32_t v = indices ? uint32_t(indices[i * 2] | indices[i * 2 + 1] << 8) + s.base_vertex : start + i;
++        float q[3];
++        std::memcpy(q, kernel::HostPtr(data + v * stride + pos), 12);
++        float x = q[0] * m[0] + q[1] * m[4] + q[2] * m[8] + m[12];
++        float y = q[0] * m[1] + q[1] * m[5] + q[2] * m[9] + m[13];
++        x0 = std::min(x0, x), x1 = std::max(x1, x), y0 = std::min(y0, y), y1 = std::max(y1, y);
++    }
++    return true;
++}
+ ScreenSpacePlace g_screen_space_place = nullptr;
+ 
+ namespace {
+diff -ruN a/runtime/gpu/vertex.h b/runtime/gpu/vertex.h
+--- a/runtime/gpu/vertex.h	2026-10-13 14:30:15.000000000 -0700
++++ b/runtime/gpu/vertex.h	2026-10-13 23:13:16.218912670 -0700
+@@ -1,4 +1,5 @@
+ #pragma once
++#include <atomic>
+ #include <array>
+ #include <cstdint>
+ #include <vector>
+@@ -68,6 +69,22 @@
+ // in the log, so the pieces of a HUD are easy to find for a texture pack. Null for none.
+ using ScreenSpaceTest = bool (*)(const State& s);
+ extern ScreenSpaceTest g_screen_space_test;
++// the projection a game sets (SetTransform, Direct3D 8 layout, row major _11.._44), as the renderer will use it: the
++// game may change it (widescreen, field of view). The device copy GetTransform reads stays the game's. Null for none.
++using ProjectionHook = void (*)(float* m);
++extern ProjectionHook g_projection_hook;
++// a fixed function draw under an orthographic projection (the HUD and menus of a game that draws its 2D through one):
++// given its extent in clip space (x and y, -1 to 1), the game may move it sideways, x' = a * x + b. Return false to
++// leave it. Null for none.
++using OrthoPlace = bool (*)(const State& s, float x0, float x1, float y0, float y1, float& a, float& b);
++extern OrthoPlace g_ortho_place;
++// set by game code for the frame being drawn: the share of the frame's width, centred, that is shown; the sides are
++// painted black (a full-screen menu picture held narrower than an ultrawide screen, with a 3D scene behind it that
++// would show at the sides). 1 shows it all; put back to 1 after each frame is shown.
++extern std::atomic<float> g_frame_sides;
++// the clip space extent of a fixed function draw with XYZ positions in stream 0 (false when it has none)
++bool OrthoExtent(const State& s, uint32_t start, uint32_t count, const uint8_t* indices, float& x0, float& x1, float& y0,
++                 float& y1);
+ 
+ // false when there is nothing to draw
+ // indices: the title's 16 bit indices, null for an unindexed draw
+diff -ruN a/runtime/kernel/files.cpp b/runtime/kernel/files.cpp
+--- a/runtime/kernel/files.cpp	2026-10-13 15:10:44.773440522 -0700
++++ b/runtime/kernel/files.cpp	2026-10-13 12:21:43.000000000 -0700
+@@ -78,6 +78,7 @@
+     size_t next = 0;
+     bool listed = false;
+     bool delete_on_close = false;
++    bool async = false;  // opened without FILE_SYNCHRONOUS_IO_*: reads and writes report STATUS_PENDING, as the console's drivers do
+     std::mutex io;  // threads sharing a handle: seek and transfer stay together
+     File() : Object(ObjType::File) {}
+     ~File() override {
+@@ -296,6 +297,7 @@
+     f->xbox = Normalize(name);
+     f->entry = e;
+     f->dir = e->dir;
++    f->async = !(options & 0x30);
+     W32(handle_out, NewHandle(f));
+     IoStatus(iosb, kSuccess, 1);
+     LOG_FIRST(400, "open %s", name.c_str());
+@@ -418,6 +420,7 @@
+     f->xbox = Normalize(name);
+     f->fp = fp;
+     f->delete_on_close = options & 0x1000;  // FILE_DELETE_ON_CLOSE
++    f->async = !(options & 0x30);  // FILE_SYNCHRONOUS_IO_ALERT / _NONALERT
+     W32(handle_out, NewHandle(f));
+     IoStatus(iosb, kSuccess, info);
+     LOG_FIRST(400, "open %s", name.c_str());
+@@ -447,19 +450,23 @@
+         if (!f->fp) f->fp = std::fopen(host.c_str(), "rb");
+         if (!f->fp) return kAccessDenied;
+     }
+-    (void)options;
++    f->async = !(options & 0x30);
+     W32(handle_out, NewHandle(f));
+     IoStatus(iosb, kSuccess, 1);
+     return kSuccess;
+ }
+ 
+ // I/O completes before the call returns: the status block is written, then the file object, the event and the
+-// APC are signalled (GetOverlappedResult without an event waits on the file handle)
++// APC are signalled (GetOverlappedResult without an event waits on the file handle). On a handle opened for
++// asynchronous I/O the console's disc and disk drivers always queue the request, so the call reports
++// STATUS_PENDING and the result is read from the status block: titles that queue a request and also handle a
++// synchronous completion would otherwise complete it twice (ROTK's loader 0xBF410/0xBF4D0).
+ static uint32_t Finish(File& f, uint32_t status, uint32_t n, uint32_t event, uint32_t apc, uint32_t apc_ctx, uint32_t iosb) {
+     IoStatus(iosb, status, n);
+     SetEvent(f);
+     Complete(event, apc, apc_ctx, iosb);
+-    return status;
++    constexpr uint32_t kPending = 0x103;
++    return f.async && (status == kSuccess || status == kEndOfFile) ? kPending : status;
+ }
+ 
+ static uint64_t Offset(File& f, uint32_t off) {
+@@ -525,6 +532,12 @@
+             G<uint8_t>(out + 0x15) = f->dir;  // Directory, after DeletePending
+             IoStatus(iosb, kSuccess, 0x18);
+             return kSuccess;
++        case 6: {  // FileInternalInformation: a file index unique per file (XAPI GetFileInformationByHandle)
++            uint64_t index = std::hash<std::string>{}(f->xbox.empty() ? f->host.string() : f->xbox);
++            W64(out, index);
++            IoStatus(iosb, kSuccess, 8);
++            return kSuccess;
++        }
+         case 14:  // FilePositionInformation
+             W64(out, f->pos);
+             IoStatus(iosb, kSuccess, 8);
+diff -ruN a/runtime/xdk/d3d8.cpp b/runtime/xdk/d3d8.cpp
+--- a/runtime/xdk/d3d8.cpp	2026-10-13 15:10:44.773727470 -0700
++++ b/runtime/xdk/d3d8.cpp	2026-10-13 14:53:11.494935638 -0700
+@@ -1,6 +1,7 @@
+ // Direct3D 8 (XDK 5849) entry points the title calls, implemented on the host renderer.
+ // Resource creation, locking and the XG helpers stay recompiled: they only manage memory.
+ #include <algorithm>
++#include <array>
+ #include <cstdlib>
+ #include <atomic>
+ #include <chrono>
+@@ -86,6 +87,13 @@
+ std::recursive_mutex g_lock;
+ 
+ std::unordered_map<uint32_t, std::shared_ptr<gpu::VertexShader>> g_vs;
++// vertex program memory, see D3DDevice_LoadVertexShader
++struct LoadedProgram {
++    std::vector<uint32_t> program;  // 4 dwords per instruction, from the address to the program's end
++    uint32_t type = 0;
++};
++std::map<uint32_t, LoadedProgram> g_vs_memory;  // by start address
++std::map<std::pair<uint32_t, uint32_t>, std::shared_ptr<gpu::VertexShader>> g_vs_selected;  // (declaration, address)
+ std::unordered_map<uint32_t, std::shared_ptr<gpu::PixelShader>> g_ps;
+ std::array<uint32_t, 3> g_buffers{};  // front, back surfaces
+ uint32_t g_buffer_count = 2;
+@@ -689,6 +697,7 @@
+     std::memcpy(HostPtr(kDevice + kDevTransforms + t * 64), HostPtr(a[1]), 64);
+     uint32_t pc = t < 2 ? t + 2 : t < 6 ? t + 14 : t + 250;
+     std::memcpy(g_state.transforms[pc].data(), HostPtr(a[1]), 64);
++    if (t == 1 && gpu::g_projection_hook) gpu::g_projection_hook(g_state.transforms[pc].data());
+     return 0;
+ }
+ 
+@@ -819,6 +828,8 @@
+     if (it != g_vs.end()) {
+         mem::FreeSystem(a[0] & ~1u);
+         g_vs.erase(it);
++        for (auto sel = g_vs_selected.begin(); sel != g_vs_selected.end();)
++            sel = sel->first.first == a[0] ? g_vs_selected.erase(sel) : std::next(sel);
+     }
+     return 0;
+ }
+@@ -880,12 +891,73 @@
+     return 0;
+ }
+ 
++// Vertex program memory (136 instructions on the console). LoadVertexShader(handle, address) copies a shader's
++// program there; SelectVertexShader(handle, address) draws with the handle's declaration and the program that
++// starts at the address. The Return of the King loads its skinning programs at 12 and selects them per mesh.
++namespace d3d {
++namespace {
++
++void SelectVertexShader(uint32_t h, uint32_t address) {
++    std::shared_ptr<gpu::VertexShader> decl;
++    if (h & 1) {
++        auto it = g_vs.find(h);
++        if (it != g_vs.end()) decl = it->second;
++    } else if (!h) {
++        decl = g_state.vs;
++    }
++    if (!decl) {
++        LOG_FIRST(8, "d3d: SelectVertexShader with unknown handle %08X", h);
++        return;
++    }
++    auto key = std::make_pair(decl->handle, address);
++    auto sit = g_vs_selected.find(key);
++    if (sit == g_vs_selected.end()) {
++        // the program loaded at the address, or the tail of one loaded below it
++        const LoadedProgram* lp = nullptr;
++        uint32_t skip = 0;
++        for (auto& [at, p] : g_vs_memory)
++            if (at <= address && address < at + p.program.size() / 4) {
++                lp = &p;
++                skip = address - at;
++            }
++        auto vs = std::make_shared<gpu::VertexShader>(*decl);
++        vs->hash = 0;
++        if (lp) {
++            vs->program.assign(lp->program.begin() + skip * 4, lp->program.end());
++            vs->program_type = lp->type;
++        } else {
++            LOG_FIRST(8, "d3d: SelectVertexShader %08X at %u: nothing loaded there", h, address);
++        }
++        sit = g_vs_selected.emplace(key, vs).first;
++    }
++    g_state.vs = sit->second;
++    g_state.vs_handle = decl->handle;
++    for (auto& [reg, v] : decl->constants)
++        if (reg < 192) g_state.vsc[reg] = v;
++}
++}  // namespace
++}  // namespace d3d
++
+ HLE_STDCALL(D3DDevice_LoadVertexShader, 2) {
+-    LOG_FIRST(4, "d3d: LoadVertexShader %08X at %u is not supported", a[0], a[1]);
++    std::lock_guard<std::recursive_mutex> lock(g_lock);
++    auto it = g_vs.find(a[0]);
++    if (it == g_vs.end() || it->second->program.empty()) {
++        LOG_FIRST(8, "d3d: LoadVertexShader %08X at %u has no program", a[0], a[1]);
++        return 0;
++    }
++    uint32_t address = a[1], n = uint32_t(it->second->program.size() / 4);
++    // programs the new one overwrites go, and every selection made from that memory
++    for (auto m = g_vs_memory.begin(); m != g_vs_memory.end();)
++        m = m->first < address + n && address < m->first + m->second.program.size() / 4 ? g_vs_memory.erase(m) : std::next(m);
++    g_vs_memory[address] = {it->second->program, it->second->program_type};
++    for (auto sel = g_vs_selected.begin(); sel != g_vs_selected.end();)
++        sel = sel->first.second >= address && sel->first.second < address + n ? g_vs_selected.erase(sel) : std::next(sel);
++    LOG_FIRST(16, "d3d: LoadVertexShader %08X at %u, %u instructions", a[0], address, n);
+     return 0;
+ }
+ HLE_STDCALL(D3DDevice_SelectVertexShader, 2) {
+-    LOG_FIRST(4, "d3d: SelectVertexShader %08X at %u is not supported", a[0], a[1]);
++    std::lock_guard<std::recursive_mutex> lock(g_lock);
++    SelectVertexShader(a[0], a[1]);
+     return 0;
+ }
+ HLE_STDCALL(D3DDevice_SetShaderConstantMode, 1) {
+@@ -1199,9 +1271,41 @@
+ 
+ HLE_STDCALL(D3DDevice_EndPush, 1) {
+     std::lock_guard<std::recursive_mutex> lock(g_lock);
+-    constexpr uint32_t kBeginEnd = 0x17FC, kInlineArray = 0x1818;
++    constexpr uint32_t kBeginEnd = 0x17FC, kInlineArray = 0x1818, kArrayFormat = 0x1760;  // 16 formats, 4 bytes apart
+     static std::vector<uint32_t> vertices;
+     uint32_t prim = 0;
++    // vertex array formats the title pushed itself (count bits 4 to 7, type bits 0 to 3: the D3DVSDT code); its
++    // inline vertices carry the enabled ones packed in register order (The Return of the King's particles)
++    std::array<uint32_t, 16> formats{};
++    bool own_formats = false;
++    auto draw_own = [&](uint32_t prim, const std::vector<uint32_t>& v) {
++        auto vs = std::make_shared<gpu::VertexShader>();
++        if ((g_state.vs_handle & 1) && g_state.vs) {
++            vs->program = g_state.vs->program;
++            vs->program_type = g_state.vs->program_type;
++        }
++        uint32_t stride = 0;
++        for (uint32_t r = 0; r < 16; r++) {
++            uint32_t f = formats[r], type = f & 0xF, count = (f >> 4) & 0xF;
++            if (!count) continue;  // disabled
++            uint32_t bytes = type == 2 ? count * 4 : type == 1 || type == 5 ? count * 2 : type == 6 ? 4 : count;
++            vs->inputs[r] = {0, stride, f & 0xFF};
++            stride += bytes;
++        }
++        vs->stream_stride[0] = stride;
++        uint32_t total = uint32_t(v.size()) * 4;
++        if (!stride || total % stride) {
++            LOG_FIRST(8, "d3d: EndPush primitive %u dropped, %u bytes of vertices of %u (own formats)", prim, total, stride);
++            return;
++        }
++        auto bound = g_state.vs;
++        uint32_t handle = g_state.vs_handle;
++        g_state.vs = vs;
++        g_state.vs_handle = handle | 1;
++        DrawUp(prim, total / stride, v.data(), stride);
++        g_state.vs = bound;
++        g_state.vs_handle = handle;
++    };
+     for (uint32_t p = g_push_begin, end = a[0]; g_push_begin && p + 4 <= end;) {
+         // count in bits 18 to 28, bit 30 keeps the method for every value
+         uint32_t head = R32(p), method = head & 0x1FFC, n = (head >> 18) & 0x7FF;
+@@ -1214,11 +1318,18 @@
+             uint32_t m = head & 0x40000000 ? method : method + i * 4, v = R32(p);
+             if (m == kInlineArray) {
+                 if (prim) vertices.push_back(v);
++            } else if (m >= kArrayFormat && m < kArrayFormat + 16 * 4) {
++                formats[(m - kArrayFormat) / 4] = v;
++                own_formats = true;
++                if (m >> 2 < g_state.simple.size()) g_state.simple[m >> 2] = v;
+             } else if (m != kBeginEnd) {
+                 if (m >> 2 < g_state.simple.size()) g_state.simple[m >> 2] = v;
+             } else if (v) {
+                 prim = v;
+                 vertices.clear();
++            } else if (prim && own_formats) {
++                draw_own(prim, vertices);
++                prim = 0;
+             } else if (prim) {
+                 uint32_t stride = VertexBytes(), bytes = uint32_t(vertices.size()) * 4;
+                 if (stride && bytes % stride == 0) DrawUp(prim, bytes / stride, vertices.data(), stride);
+diff -ruN a/runtime/xdk/xapi.cpp b/runtime/xdk/xapi.cpp
+--- a/runtime/xdk/xapi.cpp	2026-10-13 15:10:44.773995128 -0700
++++ b/runtime/xdk/xapi.cpp	2026-10-13 12:21:43.000000000 -0700
+@@ -1,6 +1,7 @@
+ // XAPI functions that talk to hardware: controller ports and the hard disk cache partition
+ #include <chrono>
+ 
++#include "core/log.h"
+ #include "core/input.h"
+ #include "xdk/hle.h"
+ #include "xdk/layout.h"
+@@ -68,6 +69,7 @@
+ 
+ HLE_STDCALL(XInputOpen, 4) {
+     uint32_t type = a[0], port = a[1];
++    LOG_FIRST(8, "xapi: XInputOpen type %08X port %u", type, port);
+     if (type != kGamepadType || port > 3) return 0;
+     uint32_t h = mem::AllocSystem(16);
+     std::lock_guard<std::mutex> lock(g_ports_lock);
+diff -ruN a/xdk/5558/layout.toml b/xdk/5558/layout.toml
+--- a/xdk/5558/layout.toml	1969-12-31 16:00:00.000000000 -0800
++++ b/xdk/5558/layout.toml	2026-10-13 12:21:43.000000000 -0700
+@@ -0,0 +1,57 @@
++# XDK 5558 library data layouts the runtime reads or writes. Each value is proven by the
++# The Return of the King (title 4541003E) default.xbe code at the address given. Derived 2026-10-13.
++# Same keys as xdk/5849/layout.toml. 5558 sits close to 5849: most CDevice fields are 4 to 0x10 lower.
++[layout]
++# D3D8 CDevice, the static device D3D__pDevice (0x13A8C8) points at (0x13A8D0, Direct3D_CreateDevice 0x12F8D9)
++CDevice_Push          = 0x0     # D3DDevice_SetTexture 0x12D682 reads it, compares with +4, calls MakeSpace 0x130210 (= 5849)
++CDevice_PushThreshold = 0x4     # D3DDevice_SetTexture 0x12D685 compares the push pointer with it (= 5849)
++CDevice_BaseVertex    = 0x1C    # D3DDevice_SetIndices 0x12D8C9 stores BaseVertexIndex (= 5849)
++CDevice_IndexBuffer   = 0x79C   # D3DDevice_SetIndices 0x12D89A reads the old one, 0x12D8C2 stores the new one (5849: 0x7A0)
++CDevice_ZScale        = 0x944   # D3DDevice_GetViewportOffsetAndScale 0x12A814 scales the Z range by it (5849: 0x948)
++CDevice_SuperSampleX  = 0x958   # D3DDevice_GetViewportOffsetAndScale 0x12A76E scales viewport X by it (5849: 0x95C)
++CDevice_SuperSampleY  = 0x95C   # D3DDevice_GetViewportOffsetAndScale 0x12A790 scales viewport Y by it (5849: 0x960)
++CDevice_Transforms    = 0xC50   # D3DDevice_SetTransform 0x12CC76 copies 16 dwords to +0xC50 + type * 64 (5849: 0xC60)
++CDevice_Textures      = 0xF78   # D3DDevice_SetTexture 0x12D640 reads, 0x12D679 stores [stage] (5849: 0xF88)
++CDevice_Palettes      = 0xF88   # Textures + 0x10 as in 5849 and 4928 (the game sets palettes through D3DDevice_SetPalette 0x12D7E0)
++CDevice_RenderTarget  = 0x19F4  # D3DDevice_SetViewport 0x12D417 reads it and compares it with the back buffer (5849: 0x1A04)
++CDevice_Depth         = 0x19F8  # D3DDevice_GetDepthStencilSurface2 0x12D3E6 returns it (5849: 0x1A08)
++CDevice_BackBuffer    = 0x1A04  # D3DDevice_GetBackBuffer2 0x12D3C0 returns it for index 0 (5849: 0x1A14)
++CDevice_FrontBuffer   = 0x1A08  # D3DDevice_GetBackBuffer2 0x12D3A5 returns it for index -1 (5849: 0x1A18)
++CDevice_SwapCount     = 0x2468  # D3DDevice_Swap 0x12F730 increments it, 0x12F7AB reads it (5849: 0x2478)
++CDevice_Size          = 0x2490  # Direct3D_CreateDevice 0x12F91B clears 0x924 dwords of the device on failure (5849: 0x24A0)
++CDevice_Flags             = 0x8    # Direct3D_CreateDevice 0x12F8DE ors BehaviorFlags into it and stores it at 0x13A8D8 = device + 8 (= 5849)
++CDevice_Time              = 0x2C   # D3D_KickOffAndWaitForIdle 0x130275 reads it, D3D_SetFence 0x12FEC4 (= 5849)
++CDevice_PixelShader       = 0x780  # D3DDevice_SetPixelShader 0x1304E8 stores the handle (5849: 0x784)
++CDevice_VertexShader      = 0x790  # D3DDevice_SetVertexShader 0x12CA71 reads the current shader (5849: 0x794)
++CDevice_BackBufferScale   = 0x968  # the frame buffer init 0x131ECB stores the X scale as a float, 0x131EE4 the Y scale at +4 (SuperSampleX + 0x10 as in 5849)
++CDevice_Viewport          = 0xED0  # D3DDevice_GetViewportOffsetAndScale 0x12A755..0x12A81E reads X, Y, Width, Height, MinZ, MaxZ at +0..+0x14 (5849: 0xEE0)
++CDevice_ScreenSpaceOffset = 0xEE8  # D3DDevice_SetScreenSpaceOffset 0x12DD73 stores x + 0.53125, 0x12DD83 y + 0.53125 at +4 (5849: 0xEF8)
++CDevice_AutoDepth         = 0x1A10 # the frame buffer init 0x131FCA stores the depth buffer, D3D_InitDefaultState 0x131C57 reads it (BackBuffer + 0xC as in 5849)
++# the miniport is at +0x1C18 (D3DDevice_SetGammaRamp 0x12CBE3; 5849: +0x1C28); its own field offsets are unchanged from 5849
++CDevice_VBlankCallback    = 0x1DA8 # D3DDevice_SetVerticalBlankCallback 0x12CE1A stores it = miniport + 0x190
++CDevice_VBlankEvent       = 0x1DAC # D3DDevice_BlockUntilVerticalBlank 0x12CE47 waits on it, 0x12CE3B clears its SignalState
++CDevice_DisplayFlags      = 0x1DCC # miniport + 0x1B4: 0x12ED7B tests 0x1000000, D3DDevice_GetDisplayFieldStatus 0x12D942 tests 0x1200000
++CDevice_VBlankCount       = 0x1DD8 # miniport + 0x1C0: 0x12EDF7..0x12EE0B increments it, D3DDevice_GetDisplayFieldStatus 0x12D935 reads it
++CDevice_Field             = 0x1DE8 # miniport + 0x1D0: D3DDevice_GetDisplayFieldStatus 0x12D94F reads the field
++CDevice_GammaRamps        = 0x1DF4 # D3DDevice_SetGammaRamp 0x12CC00 copies to miniport + 0x1DC + index * 0x300
++CDevice_GammaPending      = 0x23F4 # D3DDevice_SetGammaRamp 0x12CC41 sets [miniport + 0x7DC + index * 4]
++# D3D8 globals
++DirtyFlags_Texture    = 0x4800  # D3DDevice_SetTexture 0x12D6B7 ors it into D3D__DirtyFlags (0x13A428) (= 5849)
++TextureState_Stage    = 32      # D3DDevice_SetTextureStageStateNotInline 0x12B14B: [stage * 32 + type] dwords (= 5849)
++Stream_Size           = 12      # D3DDevice_SetStreamSource 0x12C61A indexes the stream table (0x13CD60) by n * 12 (= 5849)
++Stream_Stride         = 0x0     # D3DDevice_SetStreamSource 0x12C662 stores Stride (= 5849)
++Stream_Buffer         = 0x8     # D3DDevice_SetStreamSource 0x12C668 stores the vertex buffer (= 5849)
++PixelShader_Definition = 0x8  # D3DDevice_CreatePixelShader 0x130444 stores the definition pointer (= 5849)
++# DSOUND
++CDirectSoundStream_Vtable  = 0x0  # = 5849; this title creates no DirectSound streams (no stream functions are linked)
++CDirectSoundStream_Vtable2 = 0x4  # = 5849; as above
++EffectsImage_Skip0    = 0x804   # 0x140AD5 adds this dword count (= 5849)
++EffectsImage_Skip1    = 0x80C   # 0x140ACF loads this dword count (= 5849)
++EffectsImage_Desc     = 0x818   # 0x140ADE: descriptor at image + 0x818 + (Skip0 + Skip1) * 4 (= 5849)
++# XAPI XPP device type record
++XPP_Current           = 0x0     # XGetDevices 0x148AC6 returns it (= 5849)
++XPP_Changed           = 0x4     # XGetDevices 0x148AC8 clears it, XGetDeviceChanges 0x148AE6 tests it (= 5849)
++XPP_Previous          = 0x8     # XGetDevices 0x148ACE copies Current into it (= 5849)
++
++# Render-state numbering: all 23 render states XbSymbolDatabase located (D3D_RenderState 0x13A630) have the same
++# index as the runtime's enum (deferred from 92, complex from 136).
+diff -ruN a/xdk/5558/signatures.toml b/xdk/5558/signatures.toml
+--- a/xdk/5558/signatures.toml	1969-12-31 16:00:00.000000000 -0800
++++ b/xdk/5558/signatures.toml	2026-10-13 12:21:43.000000000 -0700
+@@ -0,0 +1,273 @@
++# XDK library signatures read by xbe_symbols, written by xbe_symbols in sign mode. No library bytes stored.
++# [symbols] name = {sec, len, hash, calls, deep, count, nth}: hash of len bytes from the function start in
++# section sec, image addresses and rel32 targets masked; calls = [len, hash, calls] of each rel32 call or
++# jump target outside it, in order, two levels deep; deep = lookalikes exist, so the callees' callees must
++# match too; count and nth pick one of identical functions by link order; xtlid = its .XTLID export id,
++# used when the bytes match nothing. {} = no signature, stays 0.
++# k = its constants, sorted: immediates and displacements of instructions that do not use the stack, when
++# not an image address, a branch target or below 0x40; an address inside .text counts in a library section,
++# which holds no such pointer. ret = stack bytes its rets pop, regs = registers it reads before it writes
++# them. A function the bytes do not find is matched by k; ret and regs then show a changed convention.
++# [anchors] functions only used to find data. [data] in = function, insn = instruction index, op = operand,
++# xtlid = the id .XTLID lists the address under, used when in finds nothing.
++
++[symbols]
++BinkDoFrame = {}
++BinkGetSummary = {}
++BinkNextFrame = {}
++BinkWait = {}
++CDevice_KickOff = {sec = "D3D", len = 0xB0, hash = "0xC9801DB361BC6F1", calls = [[0x2F, "0x57A04D95FBC2B960", []]], k = [0x40, 0x40, 0x40, 0x44, 0x76C, 0x1C10, 0x1C10, 0x1C10, 0x1C18, 0x1DD4, 0x2000, 0x2468, 0x100410, 0x100410, 0x100410, 0xFFFFFFF, 0xFFFFFFF], ret = 0, regs = ["ecx"]}
++CDirectSoundStream_AddRef = {}
++CDirectSoundStream_Discontinuity = {}
++CDirectSoundStream_Flush = {}
++CDirectSoundStream_FlushEx = {}
++CDirectSoundStream_GetInfo = {}
++CDirectSoundStream_GetStatus = {}
++CDirectSoundStream_Pause = {}
++CDirectSoundStream_Process = {}
++CDirectSoundStream_Release = {}
++CDirectSoundStream_SetFilter = {}
++CDirectSoundStream_SetFormat = {}
++CDirectSoundStream_SetFrequency = {}
++CDirectSoundStream_SetHeadroom = {}
++CDirectSoundStream_SetI3DL2Source = {}
++CDirectSoundStream_SetMaxDistance = {}
++CDirectSoundStream_SetMinDistance = {}
++CDirectSoundStream_SetMixBinVolumes = {}
++CDirectSoundStream_SetMixBins = {}
++CDirectSoundStream_SetPosition = {}
++CDirectSoundStream_SetVelocity = {}
++CDirectSoundStream_SetVolume = {}
++D3DDevice_Begin = {sec = "D3D", len = 0x35, hash = "0xC578D9AD869E942C", calls = [[0x7E, "0xDE3584E8275D5E39", [[0x165, "0x793BD0B08424B910"], [0xBE, "0xE93F91BE58171ED6"], [0x37C, "0xBB8C913076EFD880"], [0x1E5, "0xAD0E034EBFA601BA"], [0x1DC, "0x2B63288784418244"], [0x380, "0x9EDFBF6D1C02B243"], [0x34E, "0x2B3646E7A9C1E7BA"], [0x1F3, "0x745CD8DCA7786D6D"]]], [0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x800, 0x417FC], ret = 4, regs = []}
++D3DDevice_BeginPush = {sec = "D3D", len = 0x1B, hash = "0xFCA0A491132966EC", calls = [[0x191, "0x3C8EEC3BDDAF8655", [[0x7E, "0xDE3584E8275D5E39"], [0xF, "0x992EC001666B3982"]]], [0x44, "0xE8F129F67AA5166E", [[0x136, "0xD793887F7358EC80"]]]], regs = []}
++D3DDevice_BlockOnFence = {sec = "D3D", len = 0xF, hash = "0xDF331DFBDFAAE40", calls = [[0x166, "0xF3BDAA6FE012ED8E", [[0xAB, "0xCC21394CADEBA5EF"], [0xFE, "0x7E39208E4974425D"], [0x78, "0xE1BF81B48009F9DA"], [0x78, "0xE1BF81B48009F9DA"], [0x2F, "0xADDEEE05B19EF026"], [0x2D, "0x1488B3B74605AC25"], [0x78, "0xE1BF81B48009F9DA"], [0x2F, "0xADDEEE05B19EF026"], [0x2D, "0x1488B3B74605AC25"]]]], ret = 4, regs = []}
++D3DDevice_BlockUntilVerticalBlank = {sec = "D3D", len = 0x24, hash = "0xD0AF5DDC2219AD35", k = [0x1DAC, 0x1DB0], ret = 0, regs = []}
++D3DDevice_Clear = {sec = "D3D", len = 0x39F, hash = "0x54A8713B4314A86", calls = [[0x16, "0x1DBD5577E019815D", []], [0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]], [0x9, "0x5AE13FDFB3B6A4DF", []], [0x9, "0x5AE13FDFB3B6A4DF", []], [0x9, "0x5AE13FDFB3B6A4DF", []], [0x9, "0x5AE13FDFB3B6A4DF", []], [0x9, "0x5AE13FDFB3B6A4DF", []], [0x9, "0x5AE13FDFB3B6A4DF", []], [0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]], [0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x100, 0x958, 0x958, 0x95C, 0x95C, 0xED0, 0xED4, 0xED8, 0xEDC, 0x19F4, 0x19F8, 0x40208, 0x40208, 0x81D98, 0xC1D8C, 0xFFFFFDFF], ret = 24, regs = []}
++D3DDevice_CopyRects = {}
++D3DDevice_CreatePixelShader = {sec = "D3D", len = 0x48, hash = "0xD43AB1D1E974739", calls = [[0xA0, "0x5A415716A87528E0", [[0x2D, "0x672A57EE43D616DF"], [0x43, "0x23930C92013A3C5F"], [0x1D, "0x345B18AE6CE600A0"]]]], k = [0x8007000E], ret = 8, regs = []}
++D3DDevice_CreateVertexShader = {sec = "D3D", len = 0x13E, hash = "0x94093081E0C2E6AA", calls = [[0xF7, "0xD1E6B62F3D388EE7", []], [0xA0, "0x5A415716A87528E0", [[0x2D, "0x672A57EE43D616DF"], [0x43, "0x23930C92013A3C5F"], [0x1D, "0x345B18AE6CE600A0"]]], [0x199, "0xEAFF2E1A5A27F36F", []], [0x68, "0x48B54173CEF6CCA6", []], [0xF7, "0xD1E6B62F3D388EE7", []]], k = [0x46, 0x7F, 0x114, 0x114, 0x114, 0x118, 0x2078, 0x7378, 0x8007000E], ret = 16, regs = []}
++D3DDevice_DeletePixelShader = {sec = "D3D", len = 0x1D, hash = "0x8C8E2ECA2E278752", calls = [[0x1A, "0x4912EEE9E91F1F15", [[0x6, "0x23A795BF0B32CC0E"], [0x1E, "0x25794508EBC6E332"]]]], ret = 4, regs = []}
++D3DDevice_DeleteVertexShader = {sec = "D3D", len = 0x1B, hash = "0x8F035A79AED4E616", calls = [[0x1A, "0x4912EEE9E91F1F15", [[0x6, "0x23A795BF0B32CC0E"], [0x1E, "0x25794508EBC6E332"]]]], ret = 4, regs = []}
++D3DDevice_DrawIndexedVertices = {sec = "D3D", len = 0x257, hash = "0xD2903132F5C5AE29", calls = [[0x191, "0x3C8EEC3BDDAF8655", [[0x7E, "0xDE3584E8275D5E39"], [0xF, "0x992EC001666B3982"]]], [0x44, "0xE8F129F67AA5166E", [[0x136, "0xD793887F7358EC80"]]], [0x44, "0xE8F129F67AA5166E", [[0x136, "0xD793887F7358EC80"]]], [0xAB, "0xCC21394CADEBA5EF", [[0xF, "0x992EC001666B3982"], [0xB0, "0xC9801DB361BC6F1"]]]], k = [0x40, 0x40, 0x40, 0x40, 0x5C, 0x60, 0x1FF, 0x1FF, 0x3FE, 0x3FE, 0x800, 0x417FC, 0x417FC, 0x41808, 0x40001800, 0x40001800, 0x40001800, 0xFFFFE7FF], ret = 12, regs = []}
++D3DDevice_DrawVertices = {sec = "D3D", len = 0x94, hash = "0x363A474339B60B7B", calls = [[0x191, "0x3C8EEC3BDDAF8655", [[0x7E, "0xDE3584E8275D5E39"], [0xF, "0x992EC001666B3982"]]], [0x44, "0xE8F129F67AA5166E", [[0x136, "0xD793887F7358EC80"]]]], k = [0x100, 0x100, 0x100, 0x417FC, 0x417FC, 0x40001810, 0xFF000000, 0xFFFFFEFF], ret = 12, regs = []}
++D3DDevice_DrawVerticesUP = {}
++D3DDevice_EnableOverlay = {}
++D3DDevice_End = {sec = "D3D", len = 0x41, hash = "0x9B5818B5D04AA66", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]], [0xAB, "0xCC21394CADEBA5EF", [[0xF, "0x992EC001666B3982"], [0xB0, "0xC9801DB361BC6F1"]]]], k = [0x417FC, 0xFFFFE7FF], ret = 0, regs = []}
++D3DDevice_EndPush = {sec = "D3D", len = 0xF, hash = "0x37C661E81F0F27D0", ret = 4, regs = []}
++D3DDevice_FlushVertexCache = {}
++D3DDevice_GetBackBuffer2 = {sec = "D3D", len = 0x43, hash = "0x23E4CC19296786D0", calls = [[0x37, "0x4DD4FEAA2A7C506E", []], [0x37, "0x4DD4FEAA2A7C506E", []]], k = [0x1A04, 0x1A04], ret = 4, regs = []}
++D3DDevice_GetDepthStencilSurface2 = {sec = "D3D", len = 0x1E, hash = "0x5C304AA58A5D3973", calls = [[0x37, "0x4DD4FEAA2A7C506E", []]], k = [0x19F8], ret = 0, regs = []}
++D3DDevice_GetRenderTarget2 = {}
++D3DDevice_GetVertexShaderFunction = {}
++D3DDevice_InsertCallback = {sec = "D3D", len = 0x6B, hash = "0xD9AB1CA9A29771F1", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x40100, 0x40100, 0x40110, 0x81D8C], ret = 12, regs = []}
++D3DDevice_InsertFence = {sec = "D3D", len = 0x8, hash = "0x31725F12AA8374B9", calls = [[0xAB, "0xCC21394CADEBA5EF", [[0xF, "0x992EC001666B3982"], [0xB0, "0xC9801DB361BC6F1"]]]], ret = 0, regs = []}
++D3DDevice_IsFencePending = {}
++D3DDevice_KickPushBuffer = {sec = "D3D", len = 0xB, hash = "0xDAEB5566798AE2A0", calls = [[0xB0, "0xC9801DB361BC6F1", [[0x2F, "0x57A04D95FBC2B960"]]]], regs = []}
++D3DDevice_LightEnable = {}
++D3DDevice_LoadVertexShader = {sec = "D3D", len = 0x54, hash = "0xB8308BF8A033EFAE", calls = [[0xAE, "0xA78B15FFEFF2AD11", []], [0x44, "0xE8F129F67AA5166E", [[0x136, "0xD793887F7358EC80"]]]], k = [0x114, 0x41E9C], ret = 8, regs = []}
++D3DDevice_MakeSpace = {sec = "D3D", len = 0xF, hash = "0x992EC001666B3982", calls = [[0x136, "0xD793887F7358EC80", [[0x49, "0x92FE8F574A61F335"], [0x166, "0xF3BDAA6FE012ED8E"], [0xB0, "0xC9801DB361BC6F1"], [0xAB, "0xCC21394CADEBA5EF"], [0xB0, "0xC9801DB361BC6F1"]]]], ret = 0, regs = []}
++D3DDevice_PersistDisplay = {}
++D3DDevice_Release = {}
++D3DDevice_RunPushBuffer = {sec = "D3D", len = 0x29C, hash = "0x4B84B5D307164643", calls = [[0x191, "0x3C8EEC3BDDAF8655", [[0x7E, "0xDE3584E8275D5E39"], [0xF, "0x992EC001666B3982"]]], [0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]], [0x91, "0xA55ECAC7ECCEA136", []], [0xAB, "0xCC21394CADEBA5EF", [[0xF, "0x992EC001666B3982"], [0xB0, "0xC9801DB361BC6F1"]]], [0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]], [0x44, "0xE8F129F67AA5166E", [[0x136, "0xD793887F7358EC80"]]], [0x90, "0x233EA7E2170F4E7B", []]], k = [0x48, 0x48, 0x4C, 0x4C, 0x50, 0x50, 0x50, 0x50, 0x54, 0x54, 0x260, 0x40100, 0x40100, 0xFFFFFFF, 0xFFFFFFF, 0xFFFFFFF, 0xFFFFFFF, 0xFFFFFFF, 0xFFFFFFF, 0xFFFFFFF, 0x40000000, 0xC0000000], ret = 8, regs = []}
++D3DDevice_SelectVertexShader = {sec = "D3D", len = 0x9C, hash = "0xE249CDCCC3C59055", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]], [0x1E5, "0x41FF7FD0C959BC75", [[0x122, "0xA656385547294F40"]]], [0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x70, 0x790, 0x790, 0x794, 0x798, 0x1000, 0x41EA0, 0x81E94], ret = 8, regs = []}
++D3DDevice_SetFlickerFilter = {sec = "D3D", len = 0x42, hash = "0xEAC8B3B49C7737F5", k = [0x1C18], ret = 4, regs = []}
++D3DDevice_SetGammaRamp = {sec = "D3D", len = 0x83, hash = "0xBE13BC64F389D174", calls = [[0x59, "0x8346A1C371490F0A", []]], k = [0xC0, 0xC0, 0x1DC, 0x1DC, 0x7DC, 0x7E4, 0x1C18, 0x23FC, 0x2468], ret = 8, regs = []}
++D3DDevice_SetIndices = {sec = "D3D", len = 0x84, hash = "0x81BD3EA895C17B0A", calls = [[0x91, "0x2B608654E08CF536", [[0x78, "0x435EB75785E123C"], [0x4B, "0xDB57BC295008F50C"], [0x1A, "0x4912EEE9E91F1F15"], [0x1A, "0x4912EEE9E91F1F15"]]]], k = [0x79C, 0x79C, 0x79C, 0x79C, 0x80000, 0xFFF80000], ret = 8, regs = []}
++D3DDevice_SetLight = {}
++D3DDevice_SetMaterial = {}
++D3DDevice_SetPalette = {sec = "D3D", len = 0x8D, hash = "0x5A1AEAE319C196A3", calls = [[0x91, "0x2B608654E08CF536", [[0x78, "0x435EB75785E123C"], [0x4B, "0xDB57BC295008F50C"], [0x1A, "0x4912EEE9E91F1F15"], [0x1A, "0x4912EEE9E91F1F15"]]], [0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0xF88, 0xF88, 0xF88, 0x41B20, 0x80000, 0xFFF80000], ret = 8, regs = []}
++D3DDevice_SetPixelShader = {sec = "D3D", len = 0x1F3, hash = "0x288B70E48EF1C35F", calls = [[0x51, "0x113C472742A66A98", [[0xF, "0x992EC001666B3982"]]], [0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]], [0x6A, "0xF1D5500953A982B7", []], [0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]], [0x6A, "0xF1D5500953A982B7", []]], k = [0xA8, 0xA8, 0xAC, 0xAC, 0xB0, 0xB0, 0xB4, 0xB4, 0xB8, 0xBC, 0xC0, 0xD8, 0xD8, 0xDC, 0xE0, 0xE4, 0xE8, 0xEC, 0xEC, 0xF0, 0xF0, 0xF4, 0xF8, 0xFC, 0x100, 0x780, 0x780, 0x784, 0x784, 0x784, 0x784, 0x788, 0x78C, 0x2000, 0x2000, 0x4000, 0x4800, 0x417F8, 0x41E78, 0x80288, 0x81E20, 0x81E74], ret = 4, regs = []}
++D3DDevice_SetPixelShaderConstant = {}
++D3DDevice_SetPixelShaderProgram = {sec = "D3D", len = 0x3F, hash = "0x268DE5987F78CC0E", calls = [[0x1F3, "0x288B70E48EF1C35F", [[0x51, "0x113C472742A66A98"], [0xF, "0x992EC001666B3982"], [0x6A, "0xF1D5500953A982B7"], [0xF, "0x992EC001666B3982"], [0x6A, "0xF1D5500953A982B7"]]], [0x1F3, "0x288B70E48EF1C35F", [[0x51, "0x113C472742A66A98"], [0xF, "0x992EC001666B3982"], [0x6A, "0xF1D5500953A982B7"], [0xF, "0x992EC001666B3982"], [0x6A, "0xF1D5500953A982B7"]]]], k = [0x920, 0x924, 0x928], regs = []}
++D3DDevice_SetRenderStateNotInline = {sec = "D3D", len = 0x5D, hash = "0xA914C7CD799F4C2E", calls = [[0x27, "0xFD83B1F6F3776DB0", [[0xF, "0x992EC001666B3982"]]]], k = [0x5C, 0x88], ret = 8, regs = []}
++D3DDevice_SetRenderState_BackFillMode = {sec = "D3D", len = 0x51, hash = "0xBC78C06F8285CC04", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x8038C], ret = 4, regs = []}
++D3DDevice_SetRenderState_CullMode = {sec = "D3D", len = 0x68, hash = "0x41E41F4067D70FAB", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x404, 0x40308, 0x4039C], ret = 4, regs = []}
++D3DDevice_SetRenderState_DoNotCullUncompressed = {sec = "D3D", len = 0x11, hash = "0x4F7F4A773101B2F1", count = 3, nth = 2, deep = true, calls = [[0xCE, "0x1D8C3FA32843A29F", [[0xF, "0x992EC001666B3982"]]]], ret = 4, regs = []}
++D3DDevice_SetRenderState_Dxt1NoiseEnable = {sec = "D3D", len = 0x77, hash = "0xFBFDDB78543BAFA7", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x19F4, 0x40100, 0x40110], ret = 4, regs = []}
++D3DDevice_SetRenderState_EdgeAntiAlias = {sec = "D3D", len = 0x32, hash = "0x730A89937FD22F33", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x80320], ret = 4, regs = []}
++D3DDevice_SetRenderState_FillMode = {sec = "D3D", len = 0x44, hash = "0xF4CFF32CF2609D44", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x8038C], ret = 4, regs = []}
++D3DDevice_SetRenderState_FogColor = {sec = "D3D", len = 0x4D, hash = "0x1B01BAE4601E76CF", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0xFF, 0x402A8, 0xFF00FF00], ret = 4, regs = []}
++D3DDevice_SetRenderState_FrontFace = {sec = "D3D", len = 0x3A, hash = "0x9BC97623E21CE0ED", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]], [0x68, "0x41E41F4067D70FAB", [[0xF, "0x992EC001666B3982"]]]], k = [0x403A0], regs = []}
++D3DDevice_SetRenderState_LineWidth = {sec = "D3D", len = 0x65, hash = "0xE7C69FA32A9BEB0F", calls = [[0x9, "0x5AE13FDFB3B6A4DF", []], [0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x1FF, 0x1FF, 0x960, 0x40380], ret = 4, regs = []}
++D3DDevice_SetRenderState_LogicOp = {sec = "D3D", len = 0x52, hash = "0x9B9DDE0E59AC0F69", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x417BC, 0x817BC], ret = 4, regs = []}
++D3DDevice_SetRenderState_MultiSampleAntiAlias = {sec = "D3D", len = 0x72, hash = "0x989803ED63A0611F", calls = [[0xEF, "0x56CD241D9A183A2E", [[0x44, "0xE8F129F67AA5166E"], [0x68, "0x48B54173CEF6CCA6"]]], [0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]], [0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]], [0x1E5, "0x41FF7FD0C959BC75", [[0x122, "0xA656385547294F40"]]]], k = [0x41D7C], ret = 4, regs = []}
++D3DDevice_SetRenderState_MultiSampleMask = {sec = "D3D", len = 0x50, hash = "0x7C55605975C92203", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x41D7C], ret = 4, regs = []}
++D3DDevice_SetRenderState_MultiSampleMode = {sec = "D3D", len = 0x27, hash = "0xA7E9D73954A02807", calls = [[0x355, "0xD4887EAE04D51EF9", [[0x9, "0x5AE13FDFB3B6A4DF"], [0x9, "0x5AE13FDFB3B6A4DF"], [0xF, "0x992EC001666B3982"], [0x9, "0x5AE13FDFB3B6A4DF"], [0x9, "0x5AE13FDFB3B6A4DF"], [0xF, "0x992EC001666B3982"], [0xEF, "0x56CD241D9A183A2E"], [0x222, "0x6A1EA3005318007E"]]]], k = [0x19F4, 0x1A04], ret = 4, regs = []}
++D3DDevice_SetRenderState_MultiSampleRenderTargetMode = {sec = "D3D", len = 0x27, hash = "0x773075413375E5FC", calls = [[0x355, "0xD4887EAE04D51EF9", [[0x9, "0x5AE13FDFB3B6A4DF"], [0x9, "0x5AE13FDFB3B6A4DF"], [0xF, "0x992EC001666B3982"], [0x9, "0x5AE13FDFB3B6A4DF"], [0x9, "0x5AE13FDFB3B6A4DF"], [0xF, "0x992EC001666B3982"], [0xEF, "0x56CD241D9A183A2E"], [0x222, "0x6A1EA3005318007E"]]]], k = [0x19F4, 0x1A04], ret = 4, regs = []}
++D3DDevice_SetRenderState_NormalizeNormals = {sec = "D3D", len = 0x39, hash = "0x1289F499D4F87D6B", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x200, 0x403A4], ret = 4, regs = []}
++D3DDevice_SetRenderState_OcclusionCullEnable = {sec = "D3D", len = 0x62, hash = "0x19BF8BE1EEFC19CA", count = 2, nth = 0, deep = true, calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x1E00, 0x41D84], ret = 4, regs = []}
++D3DDevice_SetRenderState_PSTextureModes = {sec = "D3D", len = 0x22, hash = "0x973E3C6AC500F98D", k = [0x78C, 0x4000], ret = 4, regs = []}
++D3DDevice_SetRenderState_RopZCmpAlwaysRead = {sec = "D3D", len = 0x11, hash = "0x4F7F4A773101B2F1", count = 3, nth = 0, deep = true, calls = [[0xCE, "0x1D8C3FA32843A29F", [[0xF, "0x992EC001666B3982"]]]], ret = 4, regs = []}
++D3DDevice_SetRenderState_RopZRead = {sec = "D3D", len = 0x11, hash = "0x4F7F4A773101B2F1", count = 3, nth = 1, deep = true, calls = [[0xCE, "0x1D8C3FA32843A29F", [[0xF, "0x992EC001666B3982"]]]], ret = 4, regs = []}
++D3DDevice_SetRenderState_SampleAlpha = {sec = "D3D", len = 0x4E, hash = "0x9D28589E68B988EC", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x41D7C], ret = 4, regs = []}
++D3DDevice_SetRenderState_ShadowFunc = {sec = "D3D", len = 0x35, hash = "0xF346C616C28FF5C3", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x41E6C, 0xFFFFFE00], ret = 4, regs = []}
++D3DDevice_SetRenderState_Simple = {sec = "D3D", len = 0x27, hash = "0xFD83B1F6F3776DB0", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], ret = 0, regs = ["ecx", "edx"]}
++D3DDevice_SetRenderState_StencilCullEnable = {sec = "D3D", len = 0x62, hash = "0x19BF8BE1EEFC19CA", count = 2, nth = 1, deep = true, calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x1E00, 0x41D84], ret = 4, regs = []}
++D3DDevice_SetRenderState_StencilEnable = {sec = "D3D", len = 0x84, hash = "0xEA0058ADF5EB1561", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x19F8, 0x1E00, 0x4032C, 0x41D84], ret = 4, regs = []}
++D3DDevice_SetRenderState_StencilFail = {sec = "D3D", len = 0x6D, hash = "0x1AC579E0A6FC138", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x1E00, 0x40370, 0x41D84], ret = 4, regs = []}
++D3DDevice_SetRenderState_TextureFactor = {sec = "D3D", len = 0x51, hash = "0x113C472742A66A98", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x780], ret = 4, regs = []}
++D3DDevice_SetRenderState_TwoSidedLighting = {sec = "D3D", len = 0x80, hash = "0x39AD22A0DC7D1BC3", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]], [0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x9000, 0x417C4, 0x8038C], ret = 4, regs = []}
++D3DDevice_SetRenderState_VertexBlend = {sec = "D3D", len = 0x41, hash = "0x9009C90948A65018", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x200, 0x40328], ret = 4, regs = []}
++D3DDevice_SetRenderState_YuvEnable = {sec = "D3D", len = 0x2B, hash = "0x9F44B45404A3EE4B", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]], [0x59, "0x4C637B76250200FF", []]], ret = 4, regs = []}
++D3DDevice_SetRenderState_ZEnable = {sec = "D3D", len = 0x8F, hash = "0x70FE372A518CA19C", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]], [0x140, "0xE7D0D459A6168D96", [[0xFA, "0xFB0FEB1CD8F3F37D"]]], [0xEF, "0x56CD241D9A183A2E", [[0x44, "0xE8F129F67AA5166E"], [0x68, "0x48B54173CEF6CCA6"]]], [0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]], [0x59, "0x4C637B76250200FF", []], [0x1E5, "0x41FF7FD0C959BC75", [[0x122, "0xA656385547294F40"]]]], k = [0x19F8, 0x4030C, 0x41D78], ret = 4, regs = []}
++D3DDevice_SetRenderTarget = {sec = "D3D", len = 0x274, hash = "0x8E3AE1F77F73351E", calls = [[0x32, "0x79A41FE5E122B9C", []], [0x62, "0x39DF67CEF83C99D2", [[0x91, "0x2B608654E08CF536"], [0x91, "0x2B608654E08CF536"]]], [0x62, "0x39DF67CEF83C99D2", [[0x91, "0x2B608654E08CF536"], [0x91, "0x2B608654E08CF536"]]], [0x32, "0x79A41FE5E122B9C", []], [0x12, "0x3CF97E0F4C449D89", []], [0x65, "0xC1AD19302E02169A", []], [0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]], [0x59, "0x4C637B76250200FF", []], [0x16, "0x1DBD5577E019815D", []], [0x355, "0xD4887EAE04D51EF9", [[0x9, "0x5AE13FDFB3B6A4DF"], [0x9, "0x5AE13FDFB3B6A4DF"], [0xF, "0x992EC001666B3982"], [0x9, "0x5AE13FDFB3B6A4DF"], [0x9, "0x5AE13FDFB3B6A4DF"], [0xF, "0x992EC001666B3982"], [0xEF, "0x56CD241D9A183A2E"], [0x222, "0x6A1EA3005318007E"]]], [0x77, "0xFBFDDB78543BAFA7", [[0xF, "0x992EC001666B3982"]]]], k = [0x944, 0x948, 0x948, 0x19F4, 0x19F4, 0x19F4, 0x19F4, 0x19F8, 0x19F8, 0x19F8, 0x19F8, 0x19F8, 0x19FC, 0x1A04, 0xFFFF, 0x40100, 0x40110, 0x40130, 0x4020C, 0x40210, 0x40214, 0x4030C, 0x4032C, 0xFFFFFEFF], ret = 8, regs = []}
++D3DDevice_SetScissors = {sec = "D3D", len = 0x300, hash = "0x72ABA04D47D208FB", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]], [0x9, "0x5AE13FDFB3B6A4DF", []], [0x9, "0x5AE13FDFB3B6A4DF", []], [0x9, "0x5AE13FDFB3B6A4DF", []], [0x9, "0x5AE13FDFB3B6A4DF", []], [0x9, "0x5AE13FDFB3B6A4DF", []], [0x9, "0x5AE13FDFB3B6A4DF", []], [0x9, "0x5AE13FDFB3B6A4DF", []], [0x9, "0x5AE13FDFB3B6A4DF", []], [0x9, "0x5AE13FDFB3B6A4DF", []], [0x9, "0x5AE13FDFB3B6A4DF", []], [0x9, "0x5AE13FDFB3B6A4DF", []], [0x9, "0x5AE13FDFB3B6A4DF", []]], k = [0x950, 0x950, 0x954, 0x954, 0x958, 0x95C, 0xED0, 0xED0, 0xED4, 0xED4, 0xED8, 0xED8, 0xEDC, 0xEDC, 0x1B70, 0x1BF0, 0x1BF4, 0x402B4, 0x402B4, 0x402C0, 0x402E0, 0x402E0, 0x80200, 0x80200], ret = 12, regs = []}
++D3DDevice_SetScreenSpaceOffset = {sec = "D3D", len = 0x49, hash = "0x1B7DEE10C8373042", calls = [[0xEF, "0x56CD241D9A183A2E", [[0x44, "0xE8F129F67AA5166E"], [0x68, "0x48B54173CEF6CCA6"]]], [0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]], [0x1E5, "0x41FF7FD0C959BC75", [[0x122, "0xA656385547294F40"]]]], k = [0xEE8, 0xEEC], ret = 8, regs = []}
++D3DDevice_SetShaderConstantMode = {sec = "D3D", len = 0x118, hash = "0x2CF5192385C30787", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]], [0x70, "0x7D9C5AF64969EA58", []], [0x70, "0x7D9C5AF64969EA58", []], [0x70, "0x7D9C5AF64969EA58", []], [0x70, "0x7D9C5AF64969EA58", []]], k = [0x44, 0x88, 0xCC, 0x110, 0x114, 0x118, 0x11C, 0x120, 0x124, 0x128, 0x12C, 0x130, 0x134, 0x138, 0x200, 0x1600, 0x1918, 0x41EA4, 0x1009D0, 0x100A50, 0x3F800000, 0xFFFFFDFF], ret = 4, regs = []}
++D3DDevice_SetSoftDisplayFilter = {sec = "D3D", len = 0x51, hash = "0x406A18ECA7EDB8BB", k = [0x1C18], ret = 4, regs = []}
++D3DDevice_SetStreamSource = {sec = "D3D", len = 0x8C, hash = "0xD74EC7BFECBC9B20", calls = [[0x91, "0x2B608654E08CF536", [[0x78, "0x435EB75785E123C"], [0x4B, "0xDB57BC295008F50C"], [0x1A, "0x4912EEE9E91F1F15"], [0x1A, "0x4912EEE9E91F1F15"]]]], k = [0x40, 0x70, 0x80000, 0xFFF80000], ret = 12, regs = []}
++D3DDevice_SetTexture = {sec = "D3D", len = 0x1A4, hash = "0xDDD090E2A67F1ACB", calls = [[0x91, "0x2B608654E08CF536", [[0x78, "0x435EB75785E123C"], [0x4B, "0xDB57BC295008F50C"], [0x1A, "0x4912EEE9E91F1F15"], [0x1A, "0x4912EEE9E91F1F15"]]], [0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]], [0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x770, 0x800, 0xF78, 0xF78, 0xFFF, 0xFFF, 0x206C, 0x20F4, 0x2A00, 0x3100, 0x4000, 0x4800, 0xFF00, 0x41B0C, 0x41B0C, 0x41B10, 0x41B1C, 0x80000, 0x40000000, 0x80000000, 0xFFF80000, 0xFFFFDFFF], ret = 8, regs = []}
++D3DDevice_SetTextureStageStateNotInline = {sec = "D3D", len = 0xEC, hash = "0x52377A3E3E06600C", calls = [[0x105, "0xAEE9434DB6BFC725", [[0xF, "0x992EC001666B3982"]]], [0x3D, "0xAD4A3146467D1DCD", [[0xF, "0x992EC001666B3982"]]], [0x39, "0xA293CC3B791733F7", [[0xF, "0x992EC001666B3982"]]], [0x63, "0xFDDE907FE002FE47", [[0xF, "0x992EC001666B3982"]]]], k = [0x480F, 0xFFFFBFF1], ret = 12, regs = []}
++D3DDevice_SetTextureState_BorderColor = {sec = "D3D", len = 0x3D, hash = "0xAD4A3146467D1DCD", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x41B24], ret = 8, regs = []}
++D3DDevice_SetTextureState_BumpEnv = {sec = "D3D", len = 0x63, hash = "0xFDDE907FE002FE47", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x780, 0x41AD0], ret = 12, regs = []}
++D3DDevice_SetTextureState_ColorKeyColor = {sec = "D3D", len = 0x39, hash = "0xA293CC3B791733F7", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x40AE0], ret = 8, regs = []}
++D3DDevice_SetTextureState_TexCoordIndex = {sec = "D3D", len = 0x105, hash = "0xAEE9434DB6BFC725", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x200, 0x47F, 0x94C, 0x94C, 0x94C, 0x2400, 0x2401, 0x8511, 0x8512, 0xC03C, 0x30000, 0x41964, 0xFF000000, 0xFFFF0000], ret = 8, regs = []}
++D3DDevice_SetTile = {sec = "D3D", len = 0xA, hash = "0x7C944E88CA48A4F5", calls = [[0x11, "0x8D6E8C4F5C3417EB", [[0x166, "0xF3BDAA6FE012ED8E"]]], [0xD1, "0xFC2BB11178F325CE", [[0x1EE, "0x607E4818957AF82D"], [0xC2, "0x337E037040022F7"]]]], regs = []}
++D3DDevice_SetTransform = {sec = "D3D", len = 0x118, hash = "0xD8A20756670F32FA", calls = [[0x140, "0xE7D0D459A6168D96", [[0xFA, "0xFB0FEB1CD8F3F37D"]]], [0xEF, "0x56CD241D9A183A2E", [[0x44, "0xE8F129F67AA5166E"], [0x68, "0x48B54173CEF6CCA6"]]]], k = [0x44, 0x44, 0x44, 0x44, 0x44, 0x938, 0x938, 0x93C, 0x93C, 0x93C, 0x940, 0xC50, 0x3F800000], ret = 8, regs = []}
++D3DDevice_SetVertexShader = {sec = "D3D", len = 0x163, hash = "0x1FD991BCFFC714C9", calls = [[0x54, "0xB8308BF8A033EFAE", [[0xAE, "0xA78B15FFEFF2AD11"], [0x44, "0xE8F129F67AA5166E"]]], [0x9C, "0xE249CDCCC3C59055", [[0xF, "0x992EC001666B3982"], [0x1E5, "0x41FF7FD0C959BC75"], [0xF, "0x992EC001666B3982"]]], [0x139, "0x59D35C41E6742F40", []], [0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]], [0x1E5, "0x41FF7FD0C959BC75", [[0x122, "0xA656385547294F40"]]], [0xEF, "0x56CD241D9A183A2E", [[0x44, "0xE8F129F67AA5166E"], [0x68, "0x48B54173CEF6CCA6"]]], [0x1E5, "0x41FF7FD0C959BC75", [[0x122, "0xA656385547294F40"]]]], k = [0x70, 0x400, 0x790, 0x790, 0x794, 0x798, 0x1600, 0x4194C, 0x41950, 0x4195C, 0x41960, 0x41E94, 0x41EA0, 0x81E94], ret = 4, regs = []}
++D3DDevice_SetVertexShaderConstant1 = {sec = "D3D", len = 0x5F, hash = "0x9E0CE9E5B849724D", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x41EA4, 0x100B80], ret = 0, regs = ["ecx", "edx"]}
++D3DDevice_SetVertexShaderConstant1Fast = {}
++D3DDevice_SetVertexShaderConstant4 = {sec = "D3D", len = 0xA2, hash = "0xB4864F9B11A50016", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x4C, 0x41EA4], ret = 0, regs = ["ecx", "edx"]}
++D3DDevice_SetVertexShaderConstantNotInlineFast = {sec = "D3D", len = 0xD0, hash = "0x7FB80A656C3E3607", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]], [0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]]], k = [0x40, 0x40, 0x44, 0x60, 0xB80, 0x41EA4], ret = 4, regs = ["ecx", "edx"]}
++D3DDevice_SetViewport = {sec = "D3D", len = 0x222, hash = "0x6A1EA3005318007E", calls = [[0x9, "0x5AE13FDFB3B6A4DF", []], [0x9, "0x5AE13FDFB3B6A4DF", []], [0x9, "0x5AE13FDFB3B6A4DF", []], [0x9, "0x5AE13FDFB3B6A4DF", []], [0x300, "0x72ABA04D47D208FB", [[0xF, "0x992EC001666B3982"], [0x9, "0x5AE13FDFB3B6A4DF"], [0x9, "0x5AE13FDFB3B6A4DF"], [0x9, "0x5AE13FDFB3B6A4DF"], [0x9, "0x5AE13FDFB3B6A4DF"], [0x9, "0x5AE13FDFB3B6A4DF"], [0x9, "0x5AE13FDFB3B6A4DF"], [0x9, "0x5AE13FDFB3B6A4DF"], [0x9, "0x5AE13FDFB3B6A4DF"], [0x9, "0x5AE13FDFB3B6A4DF"], [0x9, "0x5AE13FDFB3B6A4DF"], [0x9, "0x5AE13FDFB3B6A4DF"], [0x9, "0x5AE13FDFB3B6A4DF"]]], [0x140, "0xE7D0D459A6168D96", [[0xFA, "0xFB0FEB1CD8F3F37D"]]], [0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]], [0x1E5, "0x41FF7FD0C959BC75", [[0x122, "0xA656385547294F40"]]]], k = [0x100, 0x950, 0x954, 0x958, 0x958, 0x95C, 0x95C, 0xED0, 0xED4, 0xED8, 0xEDC, 0xEE0, 0xEE4, 0xFFF, 0xFFF, 0xFFF, 0xFFF, 0x19F4, 0x1A04, 0x1A08], ret = 4, regs = []}
++D3DDevice_Swap = {sec = "D3D", len = 0xE5, hash = "0x21335EE1D0DEC2CF", calls = [[0x8C, "0xE603E640D4031FC7", []], [0xAB, "0xCC21394CADEBA5EF", [[0xF, "0x992EC001666B3982"], [0xB0, "0xC9801DB361BC6F1"]]], [0x166, "0xF3BDAA6FE012ED8E", [[0xAB, "0xCC21394CADEBA5EF"], [0xFE, "0x7E39208E4974425D"], [0x78, "0xE1BF81B48009F9DA"], [0x78, "0xE1BF81B48009F9DA"], [0x2F, "0xADDEEE05B19EF026"], [0x2D, "0x1488B3B74605AC25"], [0x78, "0xE1BF81B48009F9DA"], [0x2F, "0xADDEEE05B19EF026"], [0x2D, "0x1488B3B74605AC25"]]], [0x1E5, "0xAD4C65DD5F49E5C5", [[0x8A, "0xDE16FEFFA2A7FE53"], [0x274, "0x8E3AE1F77F73351E"], [0x1A4, "0xDDD090E2A67F1ACB"], [0x1A4, "0xDDD090E2A67F1ACB"], [0x1A4, "0xDDD090E2A67F1ACB"], [0x1A4, "0xDDD090E2A67F1ACB"], [0xDF, "0x9D7B08F674E5B546"], [0x117, "0xEDE5BF2A1320C993"], [0xF, "0x992EC001666B3982"], [0x17B, "0x6D6C88E6FC98C79"], [0x17D, "0xDD27959FA5951C71"], [0x68, "0x96521783EE27586D"], [0xF, "0x992EC001666B3982"]]], [0xAB, "0xCC21394CADEBA5EF", [[0xF, "0x992EC001666B3982"], [0xB0, "0xC9801DB361BC6F1"]]], [0x166, "0xF3BDAA6FE012ED8E", [[0xAB, "0xCC21394CADEBA5EF"], [0xFE, "0x7E39208E4974425D"], [0x78, "0xE1BF81B48009F9DA"], [0x78, "0xE1BF81B48009F9DA"], [0x2F, "0xADDEEE05B19EF026"], [0x2D, "0x1488B3B74605AC25"], [0x78, "0xE1BF81B48009F9DA"], [0x2F, "0xADDEEE05B19EF026"], [0x2D, "0x1488B3B74605AC25"]]], [0x104, "0x5460A6903DBA24FA", [[0xF, "0x992EC001666B3982"]]], [0x40, "0x125E771871BD38FC", [[0xAB, "0xCC21394CADEBA5EF"], [0x11E, "0xF0A1443C155684E7"]]], [0x564, "0xD6B208FCBEEEA0F3", [[0x1A, "0x4912EEE9E91F1F15"], [0x14, "0x83E1D8D0BFEED376"], [0x34, "0xD5693061AEFA35A4"], [0xAA, "0x26810E04323EEB4A"], [0x43, "0x23E4CC19296786D0"], [0x4D, "0x793EFFDBA3CC3CA7"], [0x65, "0xC1AD19302E02169A"], [0x65, "0xC1AD19302E02169A"], [0x4E, "0x1F36E2BD67978483"], [0xA0, "0x5A415716A87528E0"], [0xF4, "0xC803051E6BD52F1B"], [0x28, "0x1E9DB1E0296AC893"], [0x33, "0x957C5B5C51604B83"], [0xC8, "0xCD9420209525A177"], [0x84, "0xE57A19FF2A1427E"], [0xC8, "0xCD9420209525A177"], [0xE, "0x972EB562F739465D"], [0x37B, "0x3E90DD4E773D204A"], [0x58, "0x699795E3607C7554"], [0x12, "0x756CE65CF0761A6"], [0x33, "0x957C5B5C51604B83"], [0x33, "0x957C5B5C51604B83"]]]], k = [0x40, 0x8D0, 0x8D0, 0x8D4, 0x8D4, 0x1964, 0x1964, 0x2468, 0x2468, 0x2468, 0x2468, 0x2468], ret = 4, regs = []}
++D3DDevice_SwitchTexture = {}
++D3DResource_BlockUntilNotBusy = {}
++D3DResource_IsBusy = {}
++D3D_BlockOnResource = {sec = "D3D", len = 0x78, hash = "0x435EB75785E123C", calls = [[0x35, "0xCBE7179F091C68C3", []], [0x166, "0xF3BDAA6FE012ED8E", [[0xAB, "0xCC21394CADEBA5EF"], [0xFE, "0x7E39208E4974425D"], [0x78, "0xE1BF81B48009F9DA"], [0x78, "0xE1BF81B48009F9DA"], [0x2F, "0xADDEEE05B19EF026"], [0x2D, "0x1488B3B74605AC25"], [0x78, "0xE1BF81B48009F9DA"], [0x2F, "0xADDEEE05B19EF026"], [0x2D, "0x1488B3B74605AC25"]]], [0x35, "0xCBE7179F091C68C3", []], [0x166, "0xF3BDAA6FE012ED8E", [[0xAB, "0xCC21394CADEBA5EF"], [0xFE, "0x7E39208E4974425D"], [0x78, "0xE1BF81B48009F9DA"], [0x78, "0xE1BF81B48009F9DA"], [0x2F, "0xADDEEE05B19EF026"], [0x2D, "0x1488B3B74605AC25"], [0x78, "0xE1BF81B48009F9DA"], [0x2F, "0xADDEEE05B19EF026"], [0x2D, "0x1488B3B74605AC25"]]], [0x166, "0xF3BDAA6FE012ED8E", [[0xAB, "0xCC21394CADEBA5EF"], [0xFE, "0x7E39208E4974425D"], [0x78, "0xE1BF81B48009F9DA"], [0x78, "0xE1BF81B48009F9DA"], [0x2F, "0xADDEEE05B19EF026"], [0x2D, "0x1488B3B74605AC25"], [0x78, "0xE1BF81B48009F9DA"], [0x2F, "0xADDEEE05B19EF026"], [0x2D, "0x1488B3B74605AC25"]]]], k = [0x50000, 0x70000], ret = 4, regs = []}
++D3D_BlockOnTime = {sec = "D3D", len = 0x166, hash = "0xF3BDAA6FE012ED8E", calls = [[0xAB, "0xCC21394CADEBA5EF", [[0xF, "0x992EC001666B3982"], [0xB0, "0xC9801DB361BC6F1"]]], [0xFE, "0x7E39208E4974425D", []], [0x78, "0xE1BF81B48009F9DA", [[0xFE, "0x7E39208E4974425D"]]], [0x78, "0xE1BF81B48009F9DA", [[0xFE, "0x7E39208E4974425D"]]], [0x2F, "0xADDEEE05B19EF026", []], [0x2D, "0x1488B3B74605AC25", []], [0x78, "0xE1BF81B48009F9DA", [[0xFE, "0x7E39208E4974425D"]]], [0x2F, "0xADDEEE05B19EF026", []], [0x2D, "0x1488B3B74605AC25", []]], k = [0x40, 0x40, 0x19EC, 0x19EC, 0x19F0, 0x19F0, 0x1DBC, 0x1DC0, 0x2000, 0x2000, 0x2400, 0x40100, 0x40100, 0x40110, 0x80000000], ret = 8, regs = []}
++D3D_InitDefaultState = {sec = "D3D", len = 0xC2, hash = "0xCF4442034909879D", calls = [[0x118, "0xD8A20756670F32FA", [[0x140, "0xE7D0D459A6168D96"], [0xEF, "0x56CD241D9A183A2E"]]], [0x5D, "0xA914C7CD799F4C2E", [[0x27, "0xFD83B1F6F3776DB0"]]], [0x5D, "0xA914C7CD799F4C2E", [[0x27, "0xFD83B1F6F3776DB0"]]], [0xEC, "0x52377A3E3E06600C", [[0x105, "0xAEE9434DB6BFC725"], [0x3D, "0xAD4A3146467D1DCD"], [0x39, "0xA293CC3B791733F7"], [0x63, "0xFDDE907FE002FE47"]]], [0xEC, "0x52377A3E3E06600C", [[0x105, "0xAEE9434DB6BFC725"], [0x3D, "0xAD4A3146467D1DCD"], [0x39, "0xA293CC3B791733F7"], [0x63, "0xFDDE907FE002FE47"]]], [0x1A4, "0xDDD090E2A67F1ACB", [[0x91, "0x2B608654E08CF536"], [0xF, "0x992EC001666B3982"], [0xF, "0x992EC001666B3982"]]], [0xEC, "0x52377A3E3E06600C", [[0x105, "0xAEE9434DB6BFC725"], [0x3D, "0xAD4A3146467D1DCD"], [0x39, "0xA293CC3B791733F7"], [0x63, "0xFDDE907FE002FE47"]]], [0xEC, "0x52377A3E3E06600C", [[0x105, "0xAEE9434DB6BFC725"], [0x3D, "0xAD4A3146467D1DCD"], [0x39, "0xA293CC3B791733F7"], [0x63, "0xFDDE907FE002FE47"]]], [0x49, "0x1B7DEE10C8373042", [[0xEF, "0x56CD241D9A183A2E"], [0xF, "0x992EC001666B3982"], [0x1E5, "0x41FF7FD0C959BC75"]]]], k = [0x7E, 0x7F, 0x9A, 0xA6, 0x1A10], ret = 0, regs = []}
++D3D_InternalAddRef = {sec = "D3D", len = 0x32, hash = "0x79A41FE5E122B9C", k = [0x50000, 0x70000, 0x80000, 0x80000], ret = 4, regs = []}
++D3D_InternalRelease = {sec = "D3D", len = 0x62, hash = "0x39DF67CEF83C99D2", calls = [[0x91, "0x2B608654E08CF536", [[0x78, "0x435EB75785E123C"], [0x4B, "0xDB57BC295008F50C"], [0x1A, "0x4912EEE9E91F1F15"], [0x1A, "0x4912EEE9E91F1F15"]]], [0x91, "0x2B608654E08CF536", [[0x78, "0x435EB75785E123C"], [0x4B, "0xDB57BC295008F50C"], [0x1A, "0x4912EEE9E91F1F15"], [0x1A, "0x4912EEE9E91F1F15"]]]], k = [0xFFFF, 0x50000, 0x70000, 0x80000, 0xFFF80000, 0xFFF80000], ret = 4, regs = []}
++D3D_KickOffAndWaitForIdle = {sec = "D3D", len = 0x11, hash = "0x8D6E8C4F5C3417EB", calls = [[0x166, "0xF3BDAA6FE012ED8E", [[0xAB, "0xCC21394CADEBA5EF"], [0xFE, "0x7E39208E4974425D"], [0x78, "0xE1BF81B48009F9DA"], [0x78, "0xE1BF81B48009F9DA"], [0x2F, "0xADDEEE05B19EF026"], [0x2D, "0x1488B3B74605AC25"], [0x78, "0xE1BF81B48009F9DA"], [0x2F, "0xADDEEE05B19EF026"], [0x2D, "0x1488B3B74605AC25"]]]], ret = 0, regs = []}
++D3D_MakeRequestedSpace = {sec = "D3D", len = 0x136, hash = "0xD793887F7358EC80", calls = [[0x49, "0x92FE8F574A61F335", []], [0x166, "0xF3BDAA6FE012ED8E", [[0xAB, "0xCC21394CADEBA5EF"], [0xFE, "0x7E39208E4974425D"], [0x78, "0xE1BF81B48009F9DA"], [0x78, "0xE1BF81B48009F9DA"], [0x2F, "0xADDEEE05B19EF026"], [0x2D, "0x1488B3B74605AC25"], [0x78, "0xE1BF81B48009F9DA"], [0x2F, "0xADDEEE05B19EF026"], [0x2D, "0x1488B3B74605AC25"]]], [0xB0, "0xC9801DB361BC6F1", [[0x2F, "0x57A04D95FBC2B960"]]], [0xAB, "0xCC21394CADEBA5EF", [[0xF, "0x992EC001666B3982"], [0xB0, "0xC9801DB361BC6F1"]]], [0xB0, "0xC9801DB361BC6F1", [[0x2F, "0x57A04D95FBC2B960"]]]], k = [0x40, 0x40, 0x44, 0x760, 0x764, 0x764, 0x1000, 0x4000, 0xFFFFFFF, 0xFFFFFDFC], ret = 8, regs = []}
++D3D_SetFence = {sec = "D3D", len = 0xAB, hash = "0xCC21394CADEBA5EF", calls = [[0xF, "0x992EC001666B3982", [[0x136, "0xD793887F7358EC80"]]], [0xB0, "0xC9801DB361BC6F1", [[0x2F, "0x57A04D95FBC2B960"]]]], k = [0x44, 0x44, 0x60, 0x64, 0x41D70, 0x41D90, 0x4A310], ret = 4, regs = []}
++Direct3D_CreateDevice = {sec = "D3D", len = 0xA4, hash = "0xEF5C595A360FB399", xtlid = 0x800C5, calls = [[0x4C5, "0xF650B2B8A7CD0710", [[0xA0, "0x5A415716A87528E0"], [0xA0, "0x358889557D097D1E"], [0x162, "0x4DFB94DDED45E91B"], [0xCF, "0x50F7888641891089"], [0xCF, "0x50F7888641891089"], [0xCF, "0x50F7888641891089"], [0xCF, "0x50F7888641891089"], [0xCF, "0x50F7888641891089"], [0xCF, "0x50F7888641891089"], [0xCF, "0x50F7888641891089"], [0xCF, "0x50F7888641891089"], [0xCF, "0x50F7888641891089"], [0xCF, "0x50F7888641891089"], [0xCF, "0x50F7888641891089"], [0x63, "0xEC7AF7FB749DEE2D"], [0x34, "0x7EB32B35DDE5C5BF"], [0x34, "0x7EB32B35DDE5C5BF"], [0x34, "0x7EB32B35DDE5C5BF"], [0x34, "0x7EB32B35DDE5C5BF"], [0x34, "0x7EB32B35DDE5C5BF"], [0x34, "0x7EB32B35DDE5C5BF"], [0x34, "0x7EB32B35DDE5C5BF"], [0x34, "0x7EB32B35DDE5C5BF"], [0x34, "0x7EB32B35DDE5C5BF"], [0x34, "0x7EB32B35DDE5C5BF"], [0x34, "0x7EB32B35DDE5C5BF"], [0x90, "0x827F948918F7AFC"], [0x90, "0x827F948918F7AFC"], [0x90, "0x827F948918F7AFC"], [0x90, "0x827F948918F7AFC"], [0x90, "0x827F948918F7AFC"], [0x90, "0x827F948918F7AFC"], [0x90, "0x827F948918F7AFC"], [0x90, "0x827F948918F7AFC"], [0x90, "0x827F948918F7AFC"], [0x90, "0x827F948918F7AFC"], [0x90, "0x827F948918F7AFC"], [0xB0, "0xC9801DB361BC6F1"], [0x13, "0x235EF259267EA24E"], [0x108, "0x450AD52B321F9B6F"], [0x596, "0xE819C12150D26A2D"], [0x65, "0xC1AD19302E02169A"], [0x265, "0x780CFAE836627E8D"], [0xAB, "0xCC21394CADEBA5EF"], [0x2F, "0x57A04D95FBC2B960"], [0x163, "0x1FD991BCFFC714C9"], [0x163, "0x1FD991BCFFC714C9"], [0x274, "0x8E3AE1F77F73351E"], [0xC2, "0xCF4442034909879D"], [0x39F, "0x54A8713B4314A86"], [0x42, "0xEAC8B3B49C7737F5"], [0x51, "0x406A18ECA7EDB8BB"]]], [0x1AC, "0xE5D40671DFEE1FD2", [[0x11, "0x8D6E8C4F5C3417EB"], [0xB0, "0xC9801DB361BC6F1"], [0x13, "0x235EF259267EA24E"], [0x11, "0xDF13E8CDCC5CA945"], [0x12F, "0xCD2E03AC37C61FBC"], [0x29, "0x319393B2F93CC9F9"], [0x91, "0x2B608654E08CF536"], [0x91, "0x2B608654E08CF536"], [0x91, "0x2B608654E08CF536"], [0x91, "0x2B608654E08CF536"], [0x1A, "0x4912EEE9E91F1F15"], [0x1A, "0x4912EEE9E91F1F15"], [0x1A, "0x4912EEE9E91F1F15"], [0x1BC, "0xB3BBA59ADBDB1500"]]]], k = [0x924, 0x8000, 0x80000], ret = 24, regs = []}
++DirectSoundCreate = {sec = "DSOUND", len = 0x47, hash = "0x3BBCDFE434237F24", xtlid = 0xB0002, calls = [[0x1E, "0x77CF69460E7107DD", []], [0x6D, "0x5B6DF29981072B31", [[0x15, "0xA06C401FA8F9EA12"], [0x11, "0x2B6130851883E06E"], [0x1D, "0x936A8E6B64B4B1F7"], [0x139, "0x2EA6C150A764F0C8"]]]], ret = 12, regs = []}
++DirectSoundCreateBuffer = {}
++DirectSoundCreateStream = {}
++DirectSoundDoWork = {sec = "DSOUND", len = 0x29, hash = "0x3F0CD1C7D0D542BB", xtlid = 0xB000F, calls = [[0x1E, "0x77CF69460E7107DD", []], [0x31, "0x5A90CBA1AACC1ADD", [[0x1E, "0x77CF69460E7107DD"], [0x92, "0xA27D3FDC1C6FC8BE"]]]], ret = 0, regs = []}
++DirectSoundUseFullHRTF = {}
++DirectSoundUseLightHRTF = {}
++IDirectSoundBuffer_GetCurrentPosition = {sec = "DSOUND", len = 0x20, hash = "0x58625E847EC088E7", xtlid = 0xB0053, calls = [[0x55, "0xE60F054C4E847816", [[0x1E, "0x77CF69460E7107DD"], [0xDF, "0xF5D997D8305769ED"]]]], ret = 12, regs = []}
++IDirectSoundBuffer_GetStatus = {sec = "DSOUND", len = 0x1C, hash = "0x3BA8DAE65E120FD6", xtlid = 0xB0054, calls = [[0x51, "0xBCCF9F0C46F7ABDF", [[0x1E, "0x77CF69460E7107DD"], [0x42, "0xAC82B5929C476085"]]]], ret = 8, regs = []}
++IDirectSoundBuffer_Lock = {}
++IDirectSoundBuffer_Play = {sec = "DSOUND", len = 0x24, hash = "0x16089413899A14CC", xtlid = 0xB0059, calls = [[0x51, "0x9C8E2BA2A67E258F", [[0x1E, "0x77CF69460E7107DD"], [0xB0, "0x5D41E5249A8F3D04"]]]], ret = 16, regs = []}
++IDirectSoundBuffer_Release = {sec = "DSOUND", len = 0x16, hash = "0x4FA5AC4A92DAE1E3", xtlid = 0xB005D, ret = 4, regs = []}
++IDirectSoundBuffer_SetAllParameters = {}
++IDirectSoundBuffer_SetBufferData = {sec = "DSOUND", len = 0x20, hash = "0x58625E847EC088E7", xtlid = 0xB0060, calls = [[0xAE, "0x69BB93C1FC1404CE", [[0x1E, "0x77CF69460E7107DD"], [0x31, "0xC96EAFC107098818"], [0x8C, "0x7CCE0F3D8E824EA6"], [0x1A, "0xBEAA27CDE7C45CEC"]]]], ret = 12, regs = []}
++IDirectSoundBuffer_SetCurrentPosition = {}
++IDirectSoundBuffer_SetFilter = {sec = "DSOUND", len = 0x1C, hash = "0x3BA8DAE65E120FD6", xtlid = 0xB0067, deep = true, calls = [[0x4E, "0xE46B8FDA6F8BD284", [[0x1E, "0x77CF69460E7107DD"], [0x13, "0xA418278C66399EC4"]]]], ret = 8, regs = []}
++IDirectSoundBuffer_SetFormat = {sec = "DSOUND", len = 0x1C, hash = "0x3BA8DAE65E120FD6", xtlid = 0xB0069, deep = true, calls = [[0x4E, "0xE46B8FDA6F8BD284", [[0x1E, "0x77CF69460E7107DD"], [0x44, "0xCBCFECA2475089F0"]]]], ret = 8, regs = []}
++IDirectSoundBuffer_SetFrequency = {sec = "DSOUND", len = 0x1C, hash = "0x3BA8DAE65E120FD6", xtlid = 0xB006A, deep = true, calls = [[0x4E, "0xE46B8FDA6F8BD284", [[0x1E, "0x77CF69460E7107DD"], [0x24, "0xC046BA53B861F640"]]]], ret = 8, regs = []}
++IDirectSoundBuffer_SetHeadroom = {sec = "DSOUND", len = 0x1C, hash = "0x3BA8DAE65E120FD6", xtlid = 0xB006B, deep = true, calls = [[0x4E, "0xE46B8FDA6F8BD284", [[0x1E, "0x77CF69460E7107DD"], [0x23, "0x7AD49519FCD1508B"]]]], ret = 8, regs = []}
++IDirectSoundBuffer_SetI3DL2Source = {}
++IDirectSoundBuffer_SetLoopRegion = {sec = "DSOUND", len = 0x20, hash = "0x58625E847EC088E7", xtlid = 0xB006E, calls = [[0x85, "0x92331966BB31BD20", [[0x1E, "0x77CF69460E7107DD"], [0x1E, "0x55A9B42BDFAA965A"]]]], ret = 12, regs = []}
++IDirectSoundBuffer_SetMaxDistance = {}
++IDirectSoundBuffer_SetMinDistance = {}
++IDirectSoundBuffer_SetMixBinVolumes = {sec = "DSOUND", len = 0x1C, hash = "0x3BA8DAE65E120FD6", xtlid = 0xB0072, count = 2, nth = 0, deep = true, calls = [[0x4E, "0xE46B8FDA6F8BD284", [[0x1E, "0x77CF69460E7107DD"], [0x1D, "0x47CDFFB8109088B7"]]]], ret = 8, regs = []}
++IDirectSoundBuffer_SetMixBins = {sec = "DSOUND", len = 0x1C, hash = "0x3BA8DAE65E120FD6", xtlid = 0xB0071, count = 2, nth = 1, deep = true, calls = [[0x4E, "0xE46B8FDA6F8BD284", [[0x1E, "0x77CF69460E7107DD"], [0x1D, "0x47CDFFB8109088B7"]]]], ret = 8, regs = []}
++IDirectSoundBuffer_SetOutputBuffer = {}
++IDirectSoundBuffer_SetPlayRegion = {}
++IDirectSoundBuffer_SetPosition = {}
++IDirectSoundBuffer_SetRolloffCurve = {}
++IDirectSoundBuffer_SetVelocity = {}
++IDirectSoundBuffer_SetVolume = {}
++IDirectSoundBuffer_Stop = {sec = "DSOUND", len = 0x18, hash = "0x6B88620E3F09B885", xtlid = 0xB007D, calls = [[0x4F, "0x8E32B086615BD924", [[0x1E, "0x77CF69460E7107DD"], [0x90, "0x2AE5DA762CB3B590"]]]], ret = 4, regs = []}
++IDirectSoundBuffer_StopEx = {sec = "DSOUND", len = 0x24, hash = "0x16089413899A14CC", xtlid = 0xB007E, calls = [[0x59, "0x3747B745B5CD70D5", [[0x1E, "0x77CF69460E7107DD"], [0x39, "0xA29AFE6C7C341632"]]]], ret = 16, regs = []}
++IDirectSoundBuffer_Unlock = {}
++IDirectSoundStream_SetEG = {}
++IDirectSound_CommitDeferredSettings = {sec = "DSOUND", len = 0x18, hash = "0x1170ED95F94B6D21", xtlid = 0xB0037, calls = [[0x9A, "0x46195814CF28FEA9", [[0x1E, "0x77CF69460E7107DD"], [0x25, "0x14163B51FDB298C"], [0x240, "0x65DA9BE004D93BEB"], [0xB7, "0x1DDF65497D36DFB3"], [0x11, "0x36322341293944C0"], [0x1E, "0x38D1F03FFD1B5C9C"]]]], ret = 4, regs = []}
++IDirectSound_CommitEffectData = {}
++IDirectSound_CreateSoundBuffer = {sec = "DSOUND", len = 0x24, hash = "0xBBF11F9B43DBC968", xtlid = 0xB003A, calls = [[0x9C, "0x71DC342A694E3431", [[0x1E, "0x77CF69460E7107DD"], [0x11, "0x2B6130851883E06E"], [0x18, "0x7267DDD0F33D17E1"], [0xE7, "0x4386FBCF796CD309"]]]], ret = 16, regs = []}
++IDirectSound_DownloadEffectsImage = {sec = "DSOUND", len = 0x27, hash = "0xE0165516ACA00EEE", xtlid = 0xB003C, calls = [[0x64, "0x38E54145D1415FCA", [[0x1E, "0x77CF69460E7107DD"], [0x22, "0x269F4DF9DEC8FBD2"], [0x2F, "0x9F4562C77D21CE82"]]]], ret = 20, regs = []}
++IDirectSound_EnableHeadphones = {}
++IDirectSound_GetEffectData = {}
++IDirectSound_GetOutputLevels = {}
++IDirectSound_GetSpeakerConfig = {}
++IDirectSound_Release = {sec = "DSOUND", len = 0x16, hash = "0xF58E37D24D1C967F", xtlid = 0xB0045, ret = 4, regs = []}
++IDirectSound_SetDistanceFactor = {}
++IDirectSound_SetDopplerFactor = {}
++IDirectSound_SetEffectData = {}
++IDirectSound_SetI3DL2Listener = {sec = "DSOUND", len = 0x20, hash = "0xFE4AEA0C39023D83", xtlid = 0xB004B, calls = [[0x108, "0xC701FEDC17EE4A4B", [[0x1E, "0x77CF69460E7107DD"], [0x9A, "0x46195814CF28FEA9"]]]], ret = 12, regs = []}
++IDirectSound_SetMixBinHeadroom = {}
++IDirectSound_SetOrientation = {}
++IDirectSound_SetPosition = {}
++IDirectSound_SetRolloffFactor = {}
++IDirectSound_SetVelocity = {}
++IDirectSound_SynchPlayback = {}
++Lock2DSurface = {sec = "D3D", len = 0x9B, hash = "0x2CFB04890FE9A81D", calls = [[0x78, "0x435EB75785E123C", [[0x35, "0xCBE7179F091C68C3"], [0x166, "0xF3BDAA6FE012ED8E"], [0x35, "0xCBE7179F091C68C3"], [0x166, "0xF3BDAA6FE012ED8E"], [0x166, "0xF3BDAA6FE012ED8E"]]], [0x223, "0xA77B0A5AB66CBDC1", []]], k = [0x40, 0xF0000000], ret = 24, regs = []}
++WSACancelOverlappedIO = {}
++WSAGetLastError = {}
++WSAGetOverlappedResult = {}
++WSARecv = {}
++WSARecvFrom = {}
++WSASend = {}
++WSASendTo = {}
++WSAStartup = {}
++XAudioDownloadEffectsImage = {}
++XInitDevices = {sec = "XPP", len = 0x79, hash = "0x8FBA4792BD64DE2A", calls = [[0x5A, "0xB67E5E9A66854898", []], [0x149, "0xAD2F6D73DCAC6586", []], [0xC, "0xE51B784F4912F43", [[0x1C5, "0x45EA4087BCF19DE1"]]], [0xA3, "0xAA0B4FA1D141A9FB", [[0x68, "0xD7FC8F6EE4431777"], [0x22, "0x66375A38C9CCB70E"]]], [0x42, "0x57440CC2F164E4C6", [[0x7D, "0xF16AEFD87941E4D2"]]]], k = [0x5C, 0x5D, 0x60, 0x70], ret = 8, regs = []}
++XInputClose = {sec = "XPP", len = 0xC, hash = "0xE51B784F4912F43", xtlid = 0x10037, calls = [[0x94, "0x5361F00A05946085", [[0x1E, "0xFF194F8C1EBD8CA5"]]]], ret = 4, regs = []}
++XInputGetCapabilities = {sec = "XPP", len = 0x1D8, hash = "0x1389E708FF8CB38D", xtlid = 0x1003B, calls = [[0xEA, "0x33297B3781D0CB77", [[0x6C, "0x4859CEEAD40FCC9C"], [0x86, "0x9F7A6A422F62690E"], [0x118, "0xCDBCDDD70EABF96A"]]], [0x4D, "0xB20D520F33AD3B2F", [[0x13, "0x38F170DE65894D97"]]], [0xEA, "0x33297B3781D0CB77", [[0x6C, "0x4859CEEAD40FCC9C"], [0x86, "0x9F7A6A422F62690E"], [0x118, "0xCDBCDDD70EABF96A"]]], [0x4D, "0xB20D520F33AD3B2F", [[0x13, "0x38F170DE65894D97"]]], [0x6E, "0x396F322CFE0035A0", []]], k = [0x40, 0x40, 0x100, 0x200, 0x48F], ret = 8, regs = []}
++XInputGetState = {sec = "XPP", len = 0x73, hash = "0xE17394FE8915A614", xtlid = 0x10038, k = [0xA2, 0xA3, 0xA3, 0x48F], ret = 8, regs = []}
++XInputOpen = {sec = "XPP", len = 0x56, hash = "0xADCB23E069376F62", xtlid = 0x10036, calls = [[0x2B, "0x3AFC17F845C76821", []], [0x2E, "0xA4B3020F0A3ABBE1", []], [0x250, "0x8DA7F66C32AA5A40", [[0x6A, "0xCC56D466B83A74CB"], [0xAB, "0x27AA026C805261A4"], [0xEA, "0x33297B3781D0CB77"], [0x4D, "0xB20D520F33AD3B2F"], [0xEA, "0x33297B3781D0CB77"], [0x6E, "0x396F322CFE0035A0"], [0x94, "0x5361F00A05946085"]]], [0x2E, "0xA4B3020F0A3ABBE1", []]], ret = 16, regs = []}
++XInputSetState = {sec = "XPP", len = 0x33, hash = "0xB8A1EA30C6441E92", xtlid = 0x1003A, calls = [[0x12E, "0x8CC2092C9971EA6C", [[0xEA, "0x33297B3781D0CB77"], [0x6E, "0x396F322CFE0035A0"]]]], k = [0x40, 0x41, 0xA3], ret = 8, regs = []}
++XLaunchNewImageA = {sec = ".text", len = 0x42, hash = "0x900544F31DC8414C", xtlid = 0x1005A, calls = [[0x181, "0x650CD2C0C11D9A25", [[0x47, "0xE2C71FA7B964262E"], [0x92, "0x2BD81DB9A9255D31"], [0x57, "0x4958D27C1B36AE0D"], [0xE1, "0xC9C936E44BC225AB"], [0x81, "0xD7C549D57DD59E5A"]]]], ret = 8, regs = []}
++XMountUtilityDrive = {sec = ".text", len = 0x105, hash = "0xAE7D3CB029BED347", xtlid = 0x10049, calls = [[0x22B, "0x56D39E8A39E2920", [[0x1EF, "0xA7DCC14E2199763F"]]], [0x57, "0x4958D27C1B36AE0D", [[0x767, "0xEDA17BCF9B61B7DE"], [0x116, "0x865EB383218951EF"]]], [0x324, "0xD90EEBF06A2E2D78", [[0x17, "0x5A64BF0410E06F62"], [0x4, "0x8D1AC00050A2EA5F"], [0xAA, "0x26810E04323EEB4A"], [0x2E, "0xA4B3020F0A3ABBE1"], [0xA0, "0x5A415716A87528E0"], [0x1A, "0x4912EEE9E91F1F15"], [0x1A, "0x4912EEE9E91F1F15"], [0x17, "0x5A64BF0410E06F62"]]], [0x78, "0x31DF218FE930CC6B", []], [0x324, "0xD90EEBF06A2E2D78", [[0x17, "0x5A64BF0410E06F62"], [0x4, "0x8D1AC00050A2EA5F"], [0xAA, "0x26810E04323EEB4A"], [0x2E, "0xA4B3020F0A3ABBE1"], [0xA0, "0x5A415716A87528E0"], [0x1A, "0x4912EEE9E91F1F15"], [0x1A, "0x4912EEE9E91F1F15"], [0x17, "0x5A64BF0410E06F62"]]], [0x78, "0x31DF218FE930CC6B", []], [0x17, "0x5A64BF0410E06F62", [[0x2E, "0xA4B3020F0A3ABBE1"]]]], k = [0x4000, 0xFFFFFEEC, 0xFFFFFEEC, 0xFFFFFEEC], ret = 4, regs = []}
++XNetCreateKey = {}
++XNetDnsLookup = {}
++XNetDnsRelease = {}
++XNetGetEthernetLinkStatus = {}
++XNetGetTitleXnAddr = {}
++XNetInAddrToXnAddr = {}
++XNetRandom = {}
++XNetRegisterKey = {}
++XNetStartup = {}
++XNetUnregisterKey = {}
++XNetXnAddrToInAddr = {}
++XOnlineCleanup = {}
++XOnlineStartup = {}
++_CIacos = {sec = ".text", len = 0x14, hash = "0x242CEA3CB8F35082", calls = [[0x16, "0xC97C95373548D0C1", []], [0xAE, "0xECA88B2666FCEC33", [[0x17, "0xF81CE75911DCA1F"], [0xD, "0x2C9670118DBFA776"], [0x2A, "0xFF8C47D71A6F8F0B"], [0x19, "0xE0ABAB34218B76AB"], [0xD, "0x2C9670118DBFA776"], [0x3C, "0x274B0770BF01B42F"]]]], ret = 0, regs = []}
++_CIasin = {sec = ".text", len = 0x14, hash = "0x242CEA3CB8F35082", calls = [[0x16, "0xC97C95373548D0C1", []], [0xAE, "0x67B152AC9353F8E6", [[0x17, "0xF81CE75911DCA1F"], [0xD, "0x2C9670118DBFA776"], [0x2A, "0xFF8C47D71A6F8F0B"], [0x19, "0xE0ABAB34218B76AB"], [0xD, "0x2C9670118DBFA776"], [0x3C, "0x274B0770BF01B42F"]]]], ret = 0, regs = []}
++accept = {}
++bind = {}
++closesocket = {}
++connect = {}
++crt_acos = {sec = ".text", len = 0xAE, hash = "0xECA88B2666FCEC33", calls = [[0x17, "0xF81CE75911DCA1F", []], [0xD, "0x2C9670118DBFA776", []], [0x2A, "0xFF8C47D71A6F8F0B", [[0x3C, "0x274B0770BF01B42F"]]], [0x19, "0xE0ABAB34218B76AB", []], [0xD, "0x2C9670118DBFA776", []], [0x3C, "0x274B0770BF01B42F", [[0xDD, "0xDC0DDB108AE82296"]]]], k = [0x3FF00000, 0x80000000], ret = 0, regs = ["eax"]}
++crt_asin = {sec = ".text", len = 0xAE, hash = "0x67B152AC9353F8E6", calls = [[0x17, "0xF81CE75911DCA1F", []], [0xD, "0x2C9670118DBFA776", []], [0x2A, "0xFF8C47D71A6F8F0B", [[0x3C, "0x274B0770BF01B42F"]]], [0x19, "0xE0ABAB34218B76AB", []], [0xD, "0x2C9670118DBFA776", []], [0x3C, "0x274B0770BF01B42F", [[0xDD, "0xDC0DDB108AE82296"]]]], k = [0x3FF00000, 0x80000000], ret = 0, regs = ["eax"]}
++crt_atan = {}
++crt_cos = {}
++crt_log = {}
++crt_log10 = {}
++crt_pow = {sec = ".text", len = 0x1C5, hash = "0x1FBDF1CEC7DD4478", calls = [[0x17, "0xF81CE75911DCA1F", []], [0x43, "0xC183DE6D8075AD7B", []], [0x15, "0x757C8F706D6E0101", []], [0xD, "0x2C9670118DBFA776", []], [0xA3, "0x9D93B46C954327E1", [[0x3C, "0x274B0770BF01B42F"], [0x17, "0x940B754406130E3A"]]], [0xD, "0x2C9670118DBFA776", []], [0x17, "0x940B754406130E3A", []], [0x43, "0xC183DE6D8075AD7B", []], [0x43, "0xC183DE6D8075AD7B", []], [0x152, "0x35E33A1ED25339AA", [[0x65, "0xF5EAA57EFAD8C882"]]], [0xD, "0x2C9670118DBFA776", []], [0x28, "0x6657862FD2372AE", []], [0xD, "0x2C9670118DBFA776", []], [0xD, "0x2C9670118DBFA776", []], [0xD, "0x2C9670118DBFA776", []], [0x28, "0x6657862FD2372AE", []]], k = [0x7FF00000, 0x7FF00000, 0x7FF00000, 0x7FF00000, 0x7FF00000, 0x7FFFFFFF], ret = 0, regs = ["eax"]}
++crt_sin = {}
++crt_sqrt = {}
++crt_tan = {}
++getsockname = {}
++getsockopt = {}
++ioctlsocket = {}
++listen = {}
++recv = {}
++recvfrom = {}
++select = {}
++send = {}
++sendto = {}
++setsockopt = {}
++shutdown = {}
++socket = {}
++
++[anchors]
++
++[data]
++D3D_DeferredTextureState = {in = "D3DDevice_SetTextureStageStateNotInline", insn = 13, op = "disp"}
++D3D_Device = {in = "D3DDevice_SetRenderState_Simple", insn = 0, op = "disp", xtlid = 0x80001}
++D3D_DirtyFlags = {in = "D3DDevice_SelectVertexShader", insn = 11, op = "disp"}
++D3D_IndexData = {in = "D3DDevice_SetIndices", insn = 8, op = "disp"}
++D3D_RenderState = {in = "D3DDevice_SetPixelShader", insn = 63, op = "imm"}
++D3D_SimpleRenderStateEncode = {in = "D3DDevice_SetRenderStateNotInline", insn = 4, op = "disp"}
++D3D_Streams = {in = "D3DDevice_SetStreamSource", insn = 24, op = "disp"}
++D3D_pDevice = {in = "CDevice_KickOff", insn = 10, op = "disp", xtlid = 0x80003}
++DSound_StreamVtable = {}
++DSound_StreamVtable2 = {}
++XPP_GamepadType = {xtlid = 0x1007C}
++XPP_MemoryUnitType = {xtlid = 0x1007E}

@@ -69,3 +69,62 @@ black on menus, from its Present.)
 it to its 16:9 share.
 
 ROTK patch v12.
+
+## HUD at the screen edges, working (hud_edges)
+
+**Grouping.** The HUD draws through Begin/End, a piece at a time:
+
+- bottom left: portrait, sword, bar segments, digits, ring
+- top right: the button prompt
+
+Each piece's box is kept. At the next frame (the game's counter [0x1E2F04]) they're joined into groups of touching
+boxes, with a gap of 0.04 in clip space:
+
+- A group from the left quarter to no further than 0.1 past the middle is a left group; the mirror is a right group.
+- Anything else is a middle group: the pause menu's panel, subtitles, messages.
+
+**Placing a piece.** Every piece keeps the HUD's 4:3 shape (a = (4/3)/frame) and follows:
+
+- the group its centre falls in, or
+- a group it overlaps (pieces new this frame, such as the flashing low-health bar), or
+- its own extent, judged by the strict rule.
+
+Left groups' left sides go to the screen's left, and the mirror for right groups. Middle groups stay centred.
+
+**Measured boxes** (test build, Helm's Deep):
+
+| Piece | Box |
+|---|---|
+| Portrait | −0.91 … −0.66 |
+| Bars | −0.62 … −0.09 |
+| Ring | −0.22 … 0.03 |
+| Prompt | 0.70 … 0.99 |
+| Pause panel | −0.42 … 0.44, with its ornaments touching it |
+
+**Menu frames.** A frame with a full-screen menu picture is a menu's frame: nothing moves to the edges, and on
+ultrawide screens it's held at 16:9 with black sides. Untextured draws: a full-screen fade keeps the full width;
+anything smaller is held at 16:9 on ultrawide screens.
+
+**Tested** at 16:9 and 2.37:1. The HUD sits at the left edge and the prompt at the right; the pause menu stays
+whole, including its opening frames.
+
+**Test build.** The null backend now asks `g_ortho_place` on every frame, as the renderer does, so state kept across
+frames matches Windows. `HUD_BOXES=1` logs each 2D draw's box.
+
+## Sharper picture across: render targets at the screen's width (SDK `gpu::g_wide_targets`)
+
+The game's 4:3 frame used to be rendered at 4:3 (1920x1440 at 1440p) and stretched to the screen's width. With
+`g_wide_targets` (ROTK sets it), targets get FrameAspect/(4/3) more width: 2560x1440 at 16:9, 2560x1080 at 21:9. The
+frame is drawn at the screen's own resolution, sharper across at 16:9 too.
+
+Per-axis scales where one was assumed:
+
+- SetViewportScissor (now given the guest height)
+- ScaledRect (clears)
+- CopyByDraw and CopyByRegion (y uses its own scale)
+
+ApplySettings remakes the targets when the width multiplier changes, and the log line gives the scale across.
+Projections, viewports and texture coordinates are in guest units, so nothing else changes. The test build has no
+D3D12 renderer, so this one is only proven on Windows.
+
+ROTK patch v13.

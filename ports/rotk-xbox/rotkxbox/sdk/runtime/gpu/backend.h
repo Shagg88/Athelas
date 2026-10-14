@@ -80,6 +80,9 @@ inline std::atomic<bool> g_movie{false};
 // kMovie43: a 4:3 picture, shown 4:3
 constexpr uint32_t kMovieFit = 0, kMovieWide = 1, kMovie43 = 2;
 inline std::atomic<uint32_t> g_movie_shape{kMovieFit};
+// set by a game that shows its 4:3 frame wider (app::FrameAspect): render targets get that much more width, so the
+// frame is drawn at the screen's own resolution instead of stretched sideways. Off: targets keep the guest's shape.
+inline std::atomic<bool> g_wide_targets{false};
 // set by a game: called with each draw's state before it is drawn (to look at what the game draws). Null for none.
 using DrawObserver = void (*)(const State& s);
 inline DrawObserver g_draw_observer = nullptr;

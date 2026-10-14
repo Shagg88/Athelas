@@ -38,10 +38,12 @@ public:
     void Draw(const State& s, uint32_t prim, uint32_t start, uint32_t count, const uint8_t* indices) override {
         draws_++;
         if (g_draw_observer) g_draw_observer(s);
+        // a 2D draw the game moves sideways (g_ortho_place), as the D3D12 renderer moves it; asked on every frame, as
+        // the renderer asks, since a game may keep state across frames
+        float x0, x1, y0, y1, a = 1, b = 0;
+        bool placed = g_ortho_place && OrthoExtent(s, start, count, indices, x0, x1, y0, y1) && g_ortho_place(s, x0, x1, y0, y1, a, b);
         if (drawing_) {
-            // a 2D draw the game moves sideways (g_ortho_place), as the D3D12 renderer moves it
-            float x0, x1, y0, y1, a = 1, b = 0;
-            if (g_ortho_place && OrthoExtent(s, start, count, indices, x0, x1, y0, y1) && g_ortho_place(s, x0, x1, y0, y1, a, b)) {
+            if (placed) {
                 auto moved = std::make_unique<State>(s);
                 auto& p = moved->transforms[3];
                 for (int r = 0; r < 4; r++) p[size_t(r * 4)] = a * p[size_t(r * 4)] + b * p[size_t(r * 4 + 3)];

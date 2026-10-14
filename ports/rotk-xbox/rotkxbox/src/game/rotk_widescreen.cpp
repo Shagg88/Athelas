@@ -17,8 +17,12 @@
 // (SDK gpu::g_ortho_place), with ROTK Fix's tests for what keeps the full width: untextured draws (fades), screen
 // copies, small textures stretched across, and bands along the top or bottom. A full-screen picture keeps its shape.
 #include <atomic>
+#include <algorithm>
+#include <vector>
+#include <functional>
 #include <cmath>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 
 #include "app/app.h"
@@ -40,6 +44,7 @@ bool g_safe_area = false;       // [graphics] safe_area: the console's black TV 
 // after the settings load
 void InitCamera() {
     app::g_max_frame_aspect = 32.0f / 9.0f;  // ultrawide screens get their full width (see Place2D)
+    gpu::g_wide_targets = true;              // drawn at the screen's own width, not stretched sideways
     gpu::g_alpha_edges = g_alpha_edges;
     gpu::g_fog_scale = float(g_draw_percent) / 100.0f;
     if (g_draw_percent != 100) LOGR("rotk: draw distance %u%%", g_draw_percent);
@@ -99,13 +104,52 @@ void Projection(float* m) {
 // app::FrameAspect: 16:9, or the screen's own shape on an ultrawide one. As ROTK Fix does on PC, menus, text and the
 // HUD fill the picture up to 16:9 and are held at 16:9 in the middle of a wider one (stretched further, text would be
 // more than twice as wide as it is tall). Left full width: untextured draws (fades, flat overlays), copies of the
-// screen, and movie frames (movie_display shapes those).
-// hud_edges: HUD pictures keep their 4:3 shape and the pieces near a side move out to that edge of the picture, the
-// rest stays centred. The last draw's box and placement: text is drawn a letter at a time and bars a piece at a time,
-// so a draw touching the one before (side by side, same rows) goes where that one went.
-struct Chain {
-    float x0 = 0, x1 = -1, y0 = 0, y1 = -1, b = 0;
-} g_chain;
+// screen, movie frames (movie_display shapes those), and gradients or shading bands stretched across.
+//
+// hud_edges: in play (frames without a full-screen menu picture), HUD pieces keep their 4:3 shape and each group of
+// pieces near a side moves out to that edge of the picture; groups in the middle (subtitles, messages) stay centred.
+// The game draws the HUD a piece at a time (portrait, bar segments, digits, the ring...), so a piece can't tell on its
+// own which group it belongs to: the pieces of the frame before are joined into groups of touching boxes, and each
+// piece follows the group its centre falls in (the HUD barely moves from one frame to the next). A group reaching
+// from the left quarter to no further than just past the middle goes left; the mirror goes right.
+struct Box {
+    float x0, x1, y0, y1;
+    int side = 0;  // groups: -1 left, 1 right, 0 middle
+};
+struct Groups {
+    uint32_t frame = ~0u;
+    std::vector<Box> drawn;  // this frame's pieces
+    std::vector<Box> groups;       // the frame before's groups
+    uint32_t menu_frame = ~0u;     // the last frame with a full-screen menu picture
+} g_groups;
+
+constexpr uint32_t kFrameCount = 0x1E2F04;  // the game's frame counter (0xBF1A0)
+
+// the frame before's pieces into groups of touching boxes, and which reach a side
+void MakeGroups() {
+    std::vector<Box>& d = g_groups.drawn;
+    std::vector<int> group(d.size());
+    for (size_t i = 0; i < d.size(); i++) group[i] = int(i);
+    std::function<int(int)> find = [&](int i) { return group[size_t(i)] == i ? i : group[size_t(i)] = find(group[size_t(i)]); };
+    constexpr float kGap = 0.04f;
+    for (size_t i = 0; i < d.size(); i++)
+        for (size_t j = i + 1; j < d.size(); j++)
+            if (d[i].x0 <= d[j].x1 + kGap && d[j].x0 <= d[i].x1 + kGap && d[i].y0 <= d[j].y1 + kGap && d[j].y0 <= d[i].y1 + kGap)
+                group[size_t(find(int(i)))] = find(int(j));
+    std::vector<Box> box(d.size(), Box{1e9f, -1e9f, 1e9f, -1e9f});
+    for (size_t i = 0; i < d.size(); i++) {
+        Box& g = box[size_t(find(int(i)))];
+        g = {std::min(g.x0, d[i].x0), std::max(g.x1, d[i].x1), std::min(g.y0, d[i].y0), std::max(g.y1, d[i].y1)};
+    }
+    g_groups.groups.clear();
+    for (size_t i = 0; i < d.size(); i++) {
+        if (find(int(i)) != int(i)) continue;
+        Box g = box[i];
+        g.side = g.x0 < -0.5f && g.x1 < 0.1f ? -1 : g.x1 > 0.5f && g.x0 > -0.1f ? 1 : 0;
+        g_groups.groups.push_back(g);
+    }
+    d.clear();
+}
 
 bool Place2D(const gpu::State& s, float x0, float x1, float y0, float y1, float& a, float& b) {
     if (!app::Widescreen()) return false;
@@ -115,55 +159,72 @@ bool Place2D(const gpu::State& s, float x0, float x1, float y0, float y1, float&
     uint32_t w, h;
     gpu::SurfaceSize(s.rt, w, h);
     if (w != 640 || h != 480) return false;  // the screen, not a texture the game draws into
+    uint32_t now = ::kernel::R32(kFrameCount);
+    if (now != g_groups.frame) {
+        g_groups.frame = now;
+        MakeGroups();
+    }
+    float wide = ultra ? (16.0f / 9.0f) / frame : 1.0f;  // 16:9 in the middle of an ultrawide picture
+#ifndef _WIN32
+    if (std::getenv("HUD_BOXES")) {  // test build: each 2D draw's box
+        gpu::TextureDesc t;
+        bool tex = s.textures[0] && gpu::Describe(s.textures[0], t);
+        LOGI("hud box %u %.3f %.3f %.3f %.3f tex %ux%u", now, x0, x1, y0, y1, tex ? t.width : 0, tex ? t.height : 0);
+    }
+#endif
     gpu::TextureDesc d;
-    if (!s.textures[0] || !gpu::Describe(s.textures[0], d)) return false;  // untextured: fades, flat overlays
+    if (!s.textures[0] || !gpu::Describe(s.textures[0], d)) {
+        // untextured: a fade over the whole screen keeps the whole width, anything smaller is held at 16:9 on an
+        // ultrawide screen
+        if (x0 <= -0.98f && x1 >= 0.98f) return false;
+        if (!ultra) return false;
+        a = wide;
+        b = 0;
+        return true;
+    }
     if (d.width >= 640 && d.height >= 480) return false;                  // a copy of the screen
     // a movie frame (its Y plane, 768x544, in stage 2): the movie keeps the whole frame, movie_display shapes it
     gpu::TextureDesc y;
     if (s.textures[2] && gpu::Describe(s.textures[2], y) && y.width == 768 && y.height == 544) return false;
-    float wide = ultra ? (16.0f / 9.0f) / frame : 1.0f;  // 16:9 in the middle of an ultrawide picture
     // gradients and shading bands stretched across the screen (small textures over the whole screen, bands along the
     // top or bottom) keep the whole width at any shape: held at 16:9 they would end in a visible edge
     bool spans = x0 <= -0.98f && x1 >= 0.98f;
+    bool tall = y0 <= -0.98f && y1 >= 0.98f;
     bool edge_y = y0 <= -0.98f || y1 >= 0.98f;
     bool band = (y1 - y0) < 0.5f && edge_y;
-    bool tall = y0 <= -0.98f && y1 >= 0.98f;
     if (spans && ((tall && (d.width <= 128 || d.height <= 128)) || band)) return false;  // not a light streak
     if (!spans && (x0 <= -0.98f || x1 >= 0.98f) && edge_y && band && (x1 - x0) >= 0.8f) return false;  // in pieces
-    // Begin/End draws (a declaration in place of an FVF: the menus, and the HUD too): held at 16:9 on an ultrawide
-    // screen, left alone otherwise. hud_edges' placement below only ever reached vertex-buffer draws (the SDK could
-    // not measure the others before), and moving the Begin/End ones breaks the HUD's pieces apart and squeezes the
-    // menus, so it keeps to them.
-    // On an ultrawide screen everything is held at 16:9 (hud_edges too: the vertex-buffer draws it reaches are mostly
-    // menu effects, the cursor sparkle and the rings round the arrows, which it threw out to the screen's edges).
-    bool begin_end = s.vs_handle & 1;
-    if (!rotk::g_hud_edges || begin_end || ultra) {
+    // a full-screen menu picture: held at 16:9 on an ultrawide screen, where the menus' 3D scenes, drawn behind it,
+    // would show beside it, so the sides are painted black
+    if (spans && tall) {
+        g_groups.menu_frame = now;
         if (!ultra) return false;
         a = wide;
         b = 0;
-        // a full-screen menu picture: the menus' 3D scenes are drawn behind it and would show beside it
-        if (spans && tall) gpu::g_frame_sides = wide;
+        gpu::g_frame_sides = wide;
         return true;
     }
+    if (!rotk::g_hud_edges || g_groups.menu_frame == now) {  // menus, or the HUD without hud_edges
+        if (!ultra) return false;
+        a = wide;
+        b = 0;
+        return true;
+    }
+    // hud_edges, in play
     a = (4.0f / 3.0f) / frame;
-    if (spans) {  // a full-screen picture: its shape, centred
-        b = 0;
-        g_chain = {};
-        return true;
-    }
-    constexpr float kGap = 0.05f, kRows = 0.035f, kEdge = 0.7f, kWide = 0.8f;
-    bool touches = x0 <= g_chain.x1 + kGap && x1 >= g_chain.x0 - kGap && y0 <= g_chain.y1 + kRows && y1 >= g_chain.y0 - kRows;
-    if (touches) {
-        b = g_chain.b;
-    } else if (x0 < -kEdge && x1 < 0) {
-        b = a - 1;  // its left side stays at the screen's left
-    } else if (x1 > kEdge && x0 > 0) {
-        b = 1 - a;
-    } else {
-        b = 0;
-    }
-    if (x1 - x0 > kWide) g_chain = {};
-    else g_chain = {x0, x1, y0, y1, b};
+
+    g_groups.drawn.push_back({x0, x1, y0, y1});
+    // the group its centre falls in, else one it overlaps (a piece new this frame, such as the flashing low-health
+    // bar, joins it), else its own extent by the same rule
+    float cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+    int side = 2;
+    for (const Box& g : g_groups.groups)
+        if (cx >= g.x0 && cx <= g.x1 && cy >= g.y0 && cy <= g.y1) side = g.side;
+    if (side == 2)
+        for (const Box& g : g_groups.groups)
+            if (x0 <= g.x1 && g.x0 <= x1 && y0 <= g.y1 && g.y0 <= y1) side = g.side;
+    if (side == 2) side = x0 < -0.5f && x1 < 0.1f ? -1 : x1 > 0.5f && x0 > -0.1f ? 1 : 0;
+    b = side < 0 ? a - 1 : side > 0 ? 1 - a : 0;  // a left group's left side stays at the screen's left
     return true;
 }
 
