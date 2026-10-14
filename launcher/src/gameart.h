@@ -12,10 +12,18 @@ struct ArtPic {
     std::vector<uint8_t> dxt;      // DXT1 blocks, as stored in the game
 };
 
-// The Return of the King (PC): the menu backgrounds in Data\Game\fro\fro03.scw
+// The Return of the King: the menu backgrounds in Data\Game\fro\fro03.scw (PC), or
+// fro03.scx in an extracted Xbox copy (same format, but only 4 of the pictures).
 // (film stills and paintings without any text or logos). Slow (reads ~100 MB);
 // call from a worker thread. Returns false if the file isn't there or can't be read.
 bool rotk_menu_art_load(const std::string &gameDir, std::vector<ArtPic> &out);
 
 // DXT1 -> RGBA (malloc'd; free with free()). w and h are multiples of 4.
 unsigned char *dxt1_to_rgba(const uint8_t *src, size_t srcLen, int w, int h);
+
+// The Two Towers (Xbox): the bonus gallery (UI\stills1-4.BFF, 39 film stills and
+// concept art) and two menu pictures plus the options background. Adds list
+// entries "\002tt:<header offset>:<file>" for the files that exist (cheap).
+void tt_art_list(const std::string &gameDir, std::vector<std::string> &out);
+// One of those pictures as RGBA (malloc'd), checking its header first.
+unsigned char *tt_picture_load(const std::string &entry, int &w, int &h);

@@ -79,7 +79,7 @@ static void take_textures(const std::vector<uint8_t> &d, std::vector<ArtPic> &ou
         bool want = false;
         for (const char *n : k_wanted) if (!strcmp(n, name)) want = true;
         for (auto &p : out) if (p.name == name) want = false;      // already have it
-        if (!want || d[e + 0x3c] != 1) continue;                    // DXT1 only
+        if (!want || (d[e + 0x3c] != 1 && d[e + 0x3c] != 0x0c)) continue;   // DXT1 only (1 on PC, 0x0c = Xbox D3DFMT_DXT1)
         int w = rd16(&d[e + 0x38]), h = rd16(&d[e + 0x3a]);
         size_t off = rd32(&d[e + 8]), need = (size_t)w * h / 2;
         if (w < 256 || h < 256 || w > 2048 || h > 2048 || (w | h) & 3) continue;
@@ -94,6 +94,7 @@ static void take_textures(const std::vector<uint8_t> &d, std::vector<ArtPic> &ou
 bool rotk_menu_art_load(const std::string &gameDir, std::vector<ArtPic> &out)
 {
     std::string path = gameDir + "\\Data\\Game\\fro\\fro03.scw";
+    if (GetFileAttributesA(path.c_str()) == INVALID_FILE_ATTRIBUTES) path.back() = 'x';   // the Xbox copy: fro03.scx
     HANDLE f = CreateFileA(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
     if (f == INVALID_HANDLE_VALUE) return false;
     LARGE_INTEGER fsz;
@@ -161,5 +162,57 @@ unsigned char *dxt1_to_rgba(const uint8_t *src, size_t srcLen, int w, int h)
                     d[0] = (unsigned char)c[0]; d[1] = (unsigned char)c[1]; d[2] = (unsigned char)c[2]; d[3] = 255;
                 }
         }
+    return px;
+}
+
+// ---------------------------------------------------------------------------
+// The Two Towers: UI\*.BFF. Each picture has a 0x80-byte header (magic 0x00056278,
+// width, height, type: 10 = 32-bit BGRA, 17 = DXT1) followed by its pixels.
+void tt_art_list(const std::string &gameDir, std::vector<std::string> &out)
+{
+    struct { const char *file; uint32_t hdr; } pics[48];
+    int n = 0;
+    static const char *stills[] = { "UI\\stills1.BFF", "UI\\stills2.BFF", "UI\\stills3.BFF", "UI\\stills4.BFF" };
+    for (int f = 0; f < 4; f++)
+        for (int k = 0; k < 10; k++)
+            if (!(f == 1 && k == 3)) pics[n++] = { stills[f], 0xF80u + (uint32_t)k * 0x119000u };   // stills2 #3 has black side bars
+    pics[n++] = { "UI\\mainmenu.BFF", 0xF80 };       // the parchment level-select map (no lettering)
+    pics[n++] = { "UI\\mainmenu.BFF", 0x170F80 };    // main menu art (not the title screens after it: logo)
+    pics[n++] = { "UI\\options.BFF", 0xF80 };        // the cave troll
+    for (int i = 0; i < n; i++) {
+        std::string p = gameDir + "\\" + pics[i].file;
+        if (GetFileAttributesA(p.c_str()) == INVALID_FILE_ATTRIBUTES) continue;
+        out.push_back("\002tt:" + std::to_string(pics[i].hdr) + ":" + p);
+    }
+}
+
+unsigned char *tt_picture_load(const std::string &entry, int &w, int &h)
+{
+    if (entry.compare(0, 4, "\002tt:")) return nullptr;
+    size_t colon = entry.find(':', 4);
+    if (colon == std::string::npos) return nullptr;
+    uint32_t hdrOff = (uint32_t)strtoul(entry.c_str() + 4, nullptr, 10);
+    HANDLE f = CreateFileA(entry.c_str() + colon + 1, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+    if (f == INVALID_HANDLE_VALUE) return nullptr;
+    uint8_t hd[0x80];
+    DWORD got = 0;
+    unsigned char *px = nullptr;
+    if (SetFilePointer(f, hdrOff, NULL, FILE_BEGIN) != INVALID_SET_FILE_POINTER && ReadFile(f, hd, sizeof hd, &got, NULL) && got == sizeof hd
+        && rd32(hd) == 0x00056278) {
+        uint32_t pw = rd32(hd + 4), ph = rd32(hd + 8), type = rd32(hd + 12);
+        if (pw >= 64 && ph >= 64 && pw <= 2048 && ph <= 2048 && !(pw & 3) && !(ph & 3) && (type == 10 || type == 17)) {
+            size_t len = type == 10 ? (size_t)pw * ph * 4 : (size_t)pw * ph / 2;
+            std::vector<uint8_t> raw(len);
+            if (ReadFile(f, raw.data(), (DWORD)len, &got, NULL) && got == len) {
+                if (type == 17) px = dxt1_to_rgba(raw.data(), len, (int)pw, (int)ph);
+                else if ((px = (unsigned char *)malloc(len)) != nullptr)
+                    for (size_t i = 0; i < len; i += 4) {        // BGRA -> RGBA
+                        px[i] = raw[i + 2]; px[i + 1] = raw[i + 1]; px[i + 2] = raw[i]; px[i + 3] = 255;
+                    }
+                w = (int)pw; h = (int)ph;
+            }
+        }
+    }
+    CloseHandle(f);
     return px;
 }

@@ -101,20 +101,22 @@ static void setup_style()
 // can be added back later), shown one at a time with a slow cross-fade. Without any
 // pictures, an original drawn landscape of misty mountains is used.
 
-struct Picture { SDL_Texture *tex = nullptr; int w = 0, h = 0; };
+struct Picture { SDL_Texture *tex = nullptr; int w = 0, h = 0; float lum = 0; };   // lum: average brightness 0-255
 
-// Game art: the menu pictures of the player's own Return of the King (PC), read
+// Game art: the menu pictures of the player's own Return of the King (PC, else Xbox), read
 // once on a worker thread (rotk_menu_art_load) and kept in memory as DXT1. In the
 // list of backgrounds they are entries "\001art:N". Both Return of the King pages
-// use them; The Two Towers will get its own (not yet).
+// use them. The Two Towers page has its own, read from its files when shown
+// (entries "\002tt:...", see tt_art_list).
 static std::vector<ArtPic> g_art;
 static SDL_AtomicInt g_artState;       // 0 not started, 1 reading, 2 done
-static std::string g_artDir;
+static std::vector<std::string> g_artDirs;   // ROTK copies to try, PC first
 
 static int SDLCALL art_worker(void *)
 {
     std::vector<ArtPic> pics;
-    rotk_menu_art_load(g_artDir, pics);
+    for (const std::string &d : g_artDirs)
+        if (rotk_menu_art_load(d, pics)) break;
     // a different order each time the launcher opens
     for (size_t i = pics.size(); i > 1; i--) std::swap(pics[i - 1], pics[(size_t)SDL_rand((Sint32)i)]);
     g_art = std::move(pics);
@@ -122,10 +124,10 @@ static int SDLCALL art_worker(void *)
     return 0;
 }
 
-static void art_start(const std::string &rotkPcDir)
+static void art_start(const std::vector<std::string> &dirs)
 {
-    if (SDL_GetAtomicInt(&g_artState) != 0 || rotkPcDir.empty()) return;
-    g_artDir = rotkPcDir;
+    if (SDL_GetAtomicInt(&g_artState) != 0 || dirs.empty()) return;
+    g_artDirs = dirs;
     SDL_SetAtomicInt(&g_artState, 1);
     SDL_Thread *t = SDL_CreateThread(art_worker, "art", nullptr);
     if (t) SDL_DetachThread(t); else SDL_SetAtomicInt(&g_artState, 2);
@@ -190,7 +192,8 @@ struct BgJob {
     int gen = 0;
     int start = 0, found = -1;
     unsigned char *px = nullptr;
-    int w = 0, h = 0, showH = 0;       // showH: the height to show it at (game art is square, shown at 4:3)
+    int w = 0, h = 0, showH = 0;
+    float lum = 0;                     // showH: the height to show it at (game art is square, shown at 4:3)
     SDL_AtomicInt done;
 };
 
@@ -228,11 +231,26 @@ static int SDLCALL bg_worker(void *p)
             j->px = px; j->w = ap.w; j->h = ap.h; j->showH = ap.w * 3 / 4; j->found = i;
             break;
         }
+        if (j->files[i].compare(0, 4, "\002tt:") == 0) {     // The Two Towers: 640x448 or 512x256, shown at 4:3
+            unsigned char *px = tt_picture_load(j->files[i], w, h);
+            if (!px) continue;
+            j->px = px; j->w = w; j->h = h; j->showH = w * 3 / 4; j->found = i;
+            break;
+        }
         unsigned char *px = stbi_load(j->files[i].c_str(), &w, &h, &c, 4);
         if (!px) continue;
         if (j->files[i].find("\\Screenshots\\") != std::string::npos && looks_like_text_screen(px, w, h)) { stbi_image_free(px); continue; }
         shrink_picture(px, w, h);
         j->px = px; j->w = w; j->h = h; j->showH = h; j->found = i;
+    }
+    if (j->px) {                       // how bright it is, so pale pictures (sketches, mist) can be darkened more
+        double sum = 0; int n = 0;
+        for (int y = 0; y < j->h; y += 8)
+            for (int x = 0; x < j->w; x += 8) {
+                const unsigned char *c = j->px + ((size_t)y * j->w + x) * 4;
+                sum += 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2]; n++;
+            }
+        j->lum = n ? (float)(sum / n) : 0;
     }
     SDL_SetAtomicInt(&j->done, 1);
     return 0;
@@ -272,7 +290,7 @@ static void backgrounds_poll(Backgrounds &b, SDL_Renderer *ren)
             SDL_SetTextureScaleMode(t, SDL_SCALEMODE_LINEAR);
             if (b.prev.tex) SDL_DestroyTexture(b.prev.tex);
             b.prev = b.cur;
-            b.cur.tex = t; b.cur.w = j->w; b.cur.h = j->showH;
+            b.cur.tex = t; b.cur.w = j->w; b.cur.h = j->showH; b.cur.lum = j->lum;
             b.changedAt = ImGui::GetTime();
         }
         b.index = j->found;
@@ -283,9 +301,10 @@ static void backgrounds_poll(Backgrounds &b, SDL_Renderer *ren)
     delete j;
 }
 
-// Make the list for the page shown: game art (The Return of the King only, for
-// now) and/or the player's own pictures in ROTKFix\backgrounds.
-static void backgrounds_rebuild(Backgrounds &b, int group, const std::string &launcherDir)
+// Make the list for the page shown: game art (The Return of the King's for both of
+// its pages, The Two Towers' own for its page) and/or the player's own pictures in
+// ROTKFix\backgrounds.
+static void backgrounds_rebuild(Backgrounds &b, int group, const std::string &launcherDir, const std::string &ttDir)
 {
     b.files.clear();
     b.gen++;
@@ -294,6 +313,12 @@ static void backgrounds_rebuild(Backgrounds &b, int group, const std::string &la
     b.index = -1;
     if ((g_bgShow == BG_ART_AND_MINE || g_bgShow == BG_ART) && group == 0 && b.artIn)
         for (size_t i = 0; i < g_art.size(); i++) b.files.push_back("\001art:" + std::to_string(i));
+    if ((g_bgShow == BG_ART_AND_MINE || g_bgShow == BG_ART) && group == 1 && !ttDir.empty()) {
+        size_t first = b.files.size();
+        tt_art_list(ttDir, b.files);
+        for (size_t i = b.files.size(); i > first + 1; i--)     // a different order each time
+            std::swap(b.files[i - 1], b.files[first + (size_t)SDL_rand((Sint32)(i - first))]);
+    }
     if (g_bgShow == BG_ART_AND_MINE || g_bgShow == BG_MINE)
         list_pictures(launcherDir + "\\ROTKFix\\backgrounds", b.files, 100);
     if (b.files.empty()) {         // nothing to show here: the drawn landscape
@@ -385,6 +410,12 @@ static void draw_background(ImDrawList *dl, ImVec2 size, Backgrounds &b)
     // darken for legibility: lighter at the top (banner), darker behind the settings
     bool pic = b.cur.tex != nullptr;   // pictures are brighter than the drawn landscape
     ImU32 a0 = IM_COL32(3, 9, 5, pic ? 120 : 50), a1 = IM_COL32(3, 9, 5, pic ? 160 : 130);
+    if (pic) {                         // and pale ones (sketches on white paper, mist) need more
+        auto extra = [](const Picture &p) { return p.tex ? std::min(130.0f, std::max(0.0f, (p.lum - 70.0f) * 1.4f)) : 0.0f; };
+        float fade = std::min(1.0f, (float)(ImGui::GetTime() - b.changedAt) / 1.5f);
+        float e = extra(b.prev) * (1 - fade) + extra(b.cur) * fade;
+        if (e > 0) dl->AddRectFilled(ImVec2(0, 0), size, IM_COL32(3, 9, 5, (int)e));
+    }
     dl->AddRectFilledMultiColor(ImVec2(0, 0), size, a0, a0, a1, a1);
     orn_window_frame(dl, size);   // carved stone border (ornament.cpp)
 }
@@ -1269,7 +1300,7 @@ static void games_section(App &a)
     section("Background pictures");
     ImGui::PushTextWrapPos(0);
     ImGui::TextColored(C_DIM, "Shown behind the launcher, changing every 10 seconds. Game art is read from your own copy of "
-                              "The Return of the King (PC) each time the launcher opens; nothing is copied. "
+                              "each game when the launcher shows it (for The Return of the King, the PC version has the most); nothing is copied. "
                               "My pictures are any PNG or JPG files you put in the backgrounds folder.");
     ImGui::PopTextWrapPos();
     ImGui::SetNextItemWidth(S(280));
@@ -2873,12 +2904,19 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
 {
     // change background every 15 s
     // Background pictures: the game art comes from the player's Return of the King (PC)
-    if (SDL_GetAtomicInt(&g_artState) == 0)
-        for (const LibGame &g : a.lib)
-            if (g.kind == GK_ROTK_PC && !g.iso) { art_start(g.path); break; }
+    // (or, without the PC version, from an extracted Xbox copy: fewer and smaller pictures)
+    if (SDL_GetAtomicInt(&g_artState) == 0) {
+        std::vector<std::string> dirs;
+        for (GameKind k : { GK_ROTK_PC, GK_ROTK_XBOX })
+            for (const LibGame &g : a.lib)
+                if (g.kind == k && !g.iso) dirs.push_back(g.path);
+        art_start(dirs);
+    }
     {
-        int group = a.cur >= 0 && a.cur < (int)a.lib.size() && a.lib[a.cur].kind == GK_TT_XBOX ? 1 : 0;
-        if (group != a.bg.group || (art_ready() && !a.bg.artIn)) backgrounds_rebuild(a.bg, group, a.dir);
+        bool tt = a.cur >= 0 && a.cur < (int)a.lib.size() && a.lib[a.cur].kind == GK_TT_XBOX;
+        int group = tt ? 1 : 0;
+        if (group != a.bg.group || (group == 0 && art_ready() && !a.bg.artIn))
+            backgrounds_rebuild(a.bg, group, a.dir, tt && !a.lib[a.cur].iso ? a.lib[a.cur].path : std::string());
     }
     backgrounds_poll(a.bg, ren);
     if (!a.bg.job && !a.bg.files.empty() &&
