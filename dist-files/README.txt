@@ -83,6 +83,29 @@ WHILE PLAYING
   ]                    Next colour look
 
 
+THE TWO TOWERS (XBOX)
+---------------------
+Played through its PC port, TwoTowers.exe (in the TwoTowers folder), started
+from the launcher.
+- Supported: the US Xbox release, as a disc image (.iso) or the extracted
+  files. Other releases are recognised, and you're warned before they start.
+- Controller only: there is no keyboard play.
+- No in-game settings menu: every setting is on the launcher's Two Towers
+  page (or in ROTKFix\TwoTowers\settings.toml next to the launcher).
+- The game's own files are only read, never changed.
+- Needs Windows 10 or 11 (64-bit) and a Direct3D 12 graphics card.
+
+Keys while playing:
+  \                    Screenshot (saved to the Screenshots folder)
+  F1                   Hide or show the HUD
+  [                    Sharpening off/on
+  ]                    Next colour look
+
+Reporting a problem: send the log, ROTKFix\TwoTowers\tt.log next to the
+launcher, and after a crash also the newest file in the TwoTowers\CrashDumps
+folder.
+
+
 TEXTURE PACKS
 -------------
 ROTK Fix can swap any of the game's textures for a PNG of your own. It

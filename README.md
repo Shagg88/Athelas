@@ -31,6 +31,19 @@ ROTK Fix, and also starts the PC ports of The Return of the King and The Two Tow
   leaf edges) turned off. The launcher's About tab shows which renderer you'll get.
 - **The Two Towers and The Return of the King (Xbox):** a DirectX 12 graphics card.
 
+## The Two Towers (Xbox)
+
+Played through its PC port, `TwoTowers.exe`, started from the launcher.
+
+- Supported: the US Xbox release, as a disc image (`.iso`) or the extracted files. Other releases are recognised,
+  with a warning before they start.
+- Controller only (no keyboard play), and no in-game settings menu: all settings are on the launcher's page or in
+  `settings.toml`.
+- The game's own files are only read, never changed.
+- Keys: `\` screenshot, `F1` hide the HUD, `[` sharpening off/on, `]` next colour look.
+- Problem reports: the log (`ROTKFix\TwoTowers\tt.log` next to the launcher), plus the newest file in
+  `TwoTowers\CrashDumps` after a crash.
+
 ## Antivirus and SmartScreen
 
 ROTK Fix replaces `d3d8.dll`/`dinput8.dll` in the game folder and patches the game in memory, the usual way
