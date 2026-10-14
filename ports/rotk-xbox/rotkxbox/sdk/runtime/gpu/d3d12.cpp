@@ -1133,13 +1133,17 @@ void D3D12Backend::Submit(bool wait) {
 
 void D3D12Backend::Flush() { Submit(true); }
 
+// kMovieFit's shape: the screen's (app::FrameAspect), from 16:9 up to a letterboxed film's own, 1.84:1 (rows 65 to 413
+// of the 4:3 frame)
+float MovieFitAspect() { return std::clamp(app::FrameAspect(), 16.0f / 9.0f, (4.0f / 3.0f) * 480.0f / 348.0f); }
+
 // the picture as shown: the frame at its render size, made as wide as the screen shows it (16:9 with widescreen),
 // saved as <PREFIX>_<date>_<time>_<ms>.png as ROTK Fix names its own, on the texture pack writer's thread
 void D3D12Backend::Screenshot(Target& t) {
     // the frame through the same pass as the screen (brightness, sharpening, colour look), without HDR; a movie as
     // movie_display shows it
     const app::Settings& stg = app::Get();
-    uint32_t h = t.h, w = app::Widescreen() ? (t.h * 16 + 4) / 9 : t.w;
+    uint32_t h = t.h, w = app::Widescreen() ? uint32_t(float(t.h) * app::FrameAspect() + 0.5f) : t.w;
     ID3D12Resource* src = t.res.Get();
     D3D12_RESOURCE_STATES* src_state = &t.state;
     DXGI_FORMAT fmt = t.fmt;
@@ -1155,9 +1159,10 @@ void D3D12Backend::Screenshot(Target& t) {
         o.texel[1] = 1.0f / float(std::max(t.gh, 1u));
         uint32_t shape = g_movie_shape;
         if (stg.movie_display == 0 && shape == kMovieFit) {
-            uv[1] = 0.125f;
-            uv[3] = 0.75f;
-            w = (h * 16 + 4) / 9;
+            float fa = MovieFitAspect();
+            uv[3] = (4.0f / 3.0f) / fa;
+            uv[1] = 0.5f - uv[3] / 2;
+            w = uint32_t(float(h) * fa + 0.5f);
         } else if (stg.movie_display == 0 && shape == kMovieWide) {
             w = (h * 16 + 4) / 9;
         } else if (stg.movie_display == 1) {
@@ -3564,9 +3569,8 @@ void D3D12Backend::UploadGammaRamp() {
 }
 
 void D3D12Backend::BlitFrame(Target& t) {
-    // 16:9 when the console reports a widescreen display, else 4:3
-    bool wide = app::Widescreen();
-    float aspect = wide ? 16.0f / 9.0f : 4.0f / 3.0f;
+    // 16:9 (or the wider screen's shape, app::FrameAspect) when the console reports a widescreen display, else 4:3
+    float aspect = app::FrameAspect();
     float w = float(bb_w_);
     float h = float(bb_h_);
     float vw = std::min(w, h * aspect);
@@ -3640,10 +3644,11 @@ bool D3D12Backend::BlitMovie(const Target& t) {
     float aspect = 4.0f / 3.0f;
     uint32_t shape = g_movie_shape;
     if (st.movie_display == 0 && shape == kMovieFit) {
-        // fit: the middle 16:9 of the 4:3 frame, where the films and logos are (their bars are outside it)
-        uv[1] = 0.125f;
-        uv[3] = 0.75f;
-        aspect = 16.0f / 9.0f;
+        // fit: the middle of the 4:3 frame, where the films are (their bars are outside it): 16:9, or up to the
+        // films' own shape on wider screens, which then get bars at the sides rather than lose the film's top
+        aspect = MovieFitAspect();
+        uv[3] = (4.0f / 3.0f) / aspect;
+        uv[1] = 0.5f - uv[3] / 2;
     } else if (st.movie_display == 0 && shape == kMovieWide) {
         aspect = 16.0f / 9.0f;  // a widescreen film squeezed into the 4:3 frame: the whole frame, unsqueezed
     }

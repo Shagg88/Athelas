@@ -1,11 +1,11 @@
 // ROTK Xbox: widescreen and field of view, as ROTK Fix does them on PC (graphics.c, SetTransform).
 // The game builds its perspective projections for 4:3. With widescreen on and a wide display the host shows the
-// frame at 16:9 (gpu BlitFrame), so the horizontal term _11 is scaled by 4:3 / 16:9: the same vertical view, more at
-// the sides. FieldOfView (70 to 150, percent of the game's own angle) widens the view angle through the tangent of
+// frame at 16:9, or at the screen's own shape on an ultrawide one (app::FrameAspect, up to 32:9; gpu BlitFrame), so the
+// horizontal term _11 is scaled by 4:3 / that shape: the same vertical view, more at the sides. FieldOfView (70 to 150, percent of the game's own angle) widens the view angle through the tangent of
 // the half angle; narrow cameras (zoomed shots under 25 degrees) are left alone. Only perspective matrices
 // (_34 = 1, _44 = 0) are changed, never the 2D ones, and only the renderer's copy (SDK gpu::g_projection_hook), as
-// ROTK Fix changes only what reaches Direct3D. Menus, text and the HUD fill the 16:9 picture, as on PC with ROTK Fix
-// (its HUD fills the screen up to 16:9 and is held at 16:9 only on wider screens; the SDK shows 16:9 at most).
+// ROTK Fix changes only what reaches Direct3D. Menus, text and the HUD fill the picture up to 16:9 and are held at
+// 16:9 in the middle of a wider one, as on PC with ROTK Fix (Place2D).
 //
 // DrawDistance (50 to 800, percent of the game's own): the far clip plane of the 3D cameras moves out, and the fog
 // distances with it (gpu::g_fog_scale), as ROTK Fix does. AlphaEdgeSmoothing: with anti-aliasing, cut-out textures
@@ -39,6 +39,7 @@ bool g_safe_area = false;       // [graphics] safe_area: the console's black TV 
 
 // after the settings load
 void InitCamera() {
+    app::g_max_frame_aspect = 32.0f / 9.0f;  // ultrawide screens get their full width (see Place2D)
     gpu::g_alpha_edges = g_alpha_edges;
     gpu::g_fog_scale = float(g_draw_percent) / 100.0f;
     if (g_draw_percent != 100) LOGR("rotk: draw distance %u%%", g_draw_percent);
@@ -57,7 +58,7 @@ void Projection(float* m) {
     // the gameplay camera can be mirrored (_11 negative): magnitudes, sign kept
     float game_aspect = std::fabs(m[5] / m[0]);
     if (app::Widescreen() && game_aspect > 1.30f && game_aspect < 1.36f) {
-        constexpr float screen = 16.0f / 9.0f;
+        float screen = app::FrameAspect();
         m[0] *= game_aspect / screen;
     }
     uint32_t pct = rotk::g_fov_percent;  // applied to the camera (CameraFov), so its culling follows
@@ -94,14 +95,23 @@ void Projection(float* m) {
              app::Widescreen() ? "on" : "off", pct, dd);
 }
 
-// hud_edges: where a 2D draw goes. The last draw's box and placement: text is drawn a letter at a time and bars a
-// piece at a time, so a draw touching the one before (side by side, same rows) goes where that one went.
+// Where a 2D draw goes (the game draws all its 2D through an orthographic projection). The frame is shown at
+// app::FrameAspect: 16:9, or the screen's own shape on an ultrawide one. As ROTK Fix does on PC, menus, text and the
+// HUD fill the picture up to 16:9 and are held at 16:9 in the middle of a wider one (stretched further, text would be
+// more than twice as wide as it is tall). Left full width: untextured draws (fades, flat overlays), copies of the
+// screen, and movie frames (movie_display shapes those).
+// hud_edges: HUD pictures keep their 4:3 shape and the pieces near a side move out to that edge of the picture, the
+// rest stays centred. The last draw's box and placement: text is drawn a letter at a time and bars a piece at a time,
+// so a draw touching the one before (side by side, same rows) goes where that one went.
 struct Chain {
     float x0 = 0, x1 = -1, y0 = 0, y1 = -1, b = 0;
 } g_chain;
 
-bool HudPlace(const gpu::State& s, float x0, float x1, float y0, float y1, float& a, float& b) {
-    if (!rotk::g_hud_edges || !app::Widescreen()) return false;
+bool Place2D(const gpu::State& s, float x0, float x1, float y0, float y1, float& a, float& b) {
+    if (!app::Widescreen()) return false;
+    float frame = app::FrameAspect();
+    bool ultra = frame > 16.0f / 9.0f + 0.01f;
+    if (!rotk::g_hud_edges && !ultra) return false;  // stretched with the frame, as on PC
     uint32_t w, h;
     gpu::SurfaceSize(s.rt, w, h);
     if (w != 640 || h != 480) return false;  // the screen, not a texture the game draws into
@@ -111,12 +121,26 @@ bool HudPlace(const gpu::State& s, float x0, float x1, float y0, float y1, float
     // a movie frame (its Y plane, 768x544, in stage 2): the movie keeps the whole frame, movie_display shapes it
     gpu::TextureDesc y;
     if (s.textures[2] && gpu::Describe(s.textures[2], y) && y.width == 768 && y.height == 544) return false;
+    float wide = ultra ? (16.0f / 9.0f) / frame : 1.0f;  // 16:9 in the middle of an ultrawide picture
+    // gradients and shading bands stretched across the screen (small textures, bands along the top or bottom) keep
+    // the whole width at any shape: held at 16:9 they would end in a visible edge
     bool spans = x0 <= -0.98f && x1 >= 0.98f;
     bool edge_y = y0 <= -0.98f || y1 >= 0.98f;
     bool band = (y1 - y0) < 0.5f && edge_y;
-    if (spans && (d.width <= 128 || d.height <= 128 || band)) return false;     // gradients, shading bands
-    if (!spans && (x0 <= -0.98f || x1 >= 0.98f) && edge_y && band && (x1 - x0) >= 0.8f) return false;  // a band in pieces
-    a = (4.0f / 3.0f) / (16.0f / 9.0f);
+    if (spans && (d.width <= 128 || d.height <= 128 || band)) return false;
+    if (!spans && (x0 <= -0.98f || x1 >= 0.98f) && edge_y && band && (x1 - x0) >= 0.8f) return false;  // in pieces
+    // Begin/End draws (a declaration in place of an FVF: the menus, and the HUD too): held at 16:9 on an ultrawide
+    // screen, left alone otherwise. hud_edges' placement below only ever reached vertex-buffer draws (the SDK could
+    // not measure the others before), and moving the Begin/End ones breaks the HUD's pieces apart and squeezes the
+    // menus, so it keeps to them.
+    bool begin_end = s.vs_handle & 1;
+    if (!rotk::g_hud_edges || begin_end) {
+        if (!ultra) return false;
+        a = wide;
+        b = 0;
+        return true;
+    }
+    a = (4.0f / 3.0f) / frame;
     if (spans) {  // a full-screen picture: its shape, centred
         b = 0;
         g_chain = {};
@@ -138,7 +162,7 @@ bool HudPlace(const gpu::State& s, float x0, float x1, float y0, float y1, float
     return true;
 }
 
-const int kRegistered = (gpu::g_projection_hook = Projection, gpu::g_ortho_place = HudPlace, 0);
+const int kRegistered = (gpu::g_projection_hook = Projection, gpu::g_ortho_place = Place2D, 0);
 }  // namespace
 
 // 0xA2B50 (Viewport.c) makes a viewport: its screen shape is 1 x 0.75 (+0x10/+0x14, +0x18/+0x1C) and its aspect 4:3
@@ -154,13 +178,13 @@ X86_FUNC(sub_000A2B50) {
         std::memcpy(&u, &v, 4);
         ::kernel::W32(ctx.eax + off, u);
     };
-    constexpr float kAspect = 16.0f / 9.0f;
+    float kAspect = app::FrameAspect();
     f(0x14, 1.0f / kAspect);
     f(0x1C, 1.0f / kAspect);
     f(0x24, kAspect);
     f(0x2C, kAspect);
     static std::atomic<int> logged{0};
-    if (!logged++) LOGR("rotk: viewports made 16:9 (widescreen)");
+    if (!logged++) LOGR("rotk: viewports made %.2f:1 (widescreen)", kAspect);
 }
 
 // 0xA32F0 (ctx): a camera's frustum and projection from its horizontal field of view (camera = [ctx + 4], angle in
@@ -182,7 +206,7 @@ X86_FUNC(sub_000A32F0) {
             float tv = std::tan(h * 0.5f) / (4.0f / 3.0f);  // the vertical half angle on the console's 4:3
             float v = std::atan(tv);
             if (pct != 100 && 2.0f * v > 25.0f / kDeg) v = std::fmin(v * float(pct) / 100.0f, 75.0f / kDeg);
-            float nh = 2.0f * std::atan(std::tan(v) * (wide ? 16.0f / 9.0f : 4.0f / 3.0f));
+            float nh = 2.0f * std::atan(std::tan(v) * (wide ? app::FrameAspect() : 4.0f / 3.0f));
             uint32_t u;
             std::memcpy(&u, &nh, 4);
             ::kernel::W32(at, u);

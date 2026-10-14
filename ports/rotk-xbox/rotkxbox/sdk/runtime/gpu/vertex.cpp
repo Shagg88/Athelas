@@ -449,7 +449,17 @@ OrthoPlace g_ortho_place = nullptr;
 
 bool OrthoExtent(const State& s, uint32_t start, uint32_t count, const uint8_t* indices, float& x0, float& x1, float& y0,
                  float& y1) {
-    if ((s.vs_handle & 1) || (s.vs_handle & 0xE) != 2 || !s.streams[0].vb || !count) return false;  // FVF with XYZ
+    // an FVF with XYZ, or the fixed pipeline fed from Begin/End or pushed vertices (a declaration without a program,
+    // the position a FLOAT3 or FLOAT4 in register 0 of stream 0)
+    uint32_t pos = 0;
+    if (s.vs_handle & 1) {
+        if (!s.vs || !s.vs->program.empty() || s.vs->inputs[0].stream != 0) return false;
+        if (s.vs->inputs[0].type != 0x32 && s.vs->inputs[0].type != 0x42) return false;
+        pos = s.vs->inputs[0].offset;
+    } else if ((s.vs_handle & 0xE) != 2) {
+        return false;
+    }
+    if (!s.streams[0].vb || !count) return false;
     const float* p = s.transforms[3].data();
     if (p[11] != 0.0f || p[15] != 1.0f) return false;  // orthographic
     float wv[16], m[16];
@@ -467,7 +477,7 @@ bool OrthoExtent(const State& s, uint32_t start, uint32_t count, const uint8_t* 
     for (uint32_t i = 0; i < count; i++) {
         uint32_t v = indices ? uint32_t(indices[i * 2] | indices[i * 2 + 1] << 8) + s.base_vertex : start + i;
         float q[3];
-        std::memcpy(q, kernel::HostPtr(data + v * stride), 12);
+        std::memcpy(q, kernel::HostPtr(data + v * stride + pos), 12);
         float x = q[0] * m[0] + q[1] * m[4] + q[2] * m[8] + m[12];
         float y = q[0] * m[1] + q[1] * m[5] + q[2] * m[9] + m[13];
         x0 = std::min(x0, x), x1 = std::max(x1, x), y0 = std::min(y0, y), y1 = std::max(y1, y);

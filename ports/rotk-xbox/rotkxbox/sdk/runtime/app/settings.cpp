@@ -155,6 +155,21 @@ bool Widescreen() {
     return wide;
 }
 
+float g_max_frame_aspect = 16.0f / 9.0f;
+
+float FrameAspect() {
+    if (!Widescreen()) return 4.0f / 3.0f;
+    static std::atomic<uint64_t> key{~0ull};
+    static std::atomic<float> aspect{16.0f / 9.0f};
+    const Settings& s = Get();
+    uint64_t k = uint64_t(s.width) << 32 | s.height;
+    if (key.exchange(k) != k) {
+        Mode m = Output();
+        aspect = m.height ? float(m.width) / float(m.height) : 16.0f / 9.0f;
+    }
+    return std::clamp(aspect.load(), 16.0f / 9.0f, std::max(g_max_frame_aspect, 16.0f / 9.0f));
+}
+
 float RenderScale(uint32_t guest_height) {
     float h = Output().height * (Get().render_percent / 100.0f);
     return guest_height ? std::max(h / guest_height, 0.1f) : 1.0f;

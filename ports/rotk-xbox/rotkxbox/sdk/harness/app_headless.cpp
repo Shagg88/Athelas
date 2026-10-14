@@ -1,5 +1,6 @@
 // the host side without a window: settings from settings.toml in the run folder when there is one (else the
 // defaults), the run folder as the exe folder
+#include <algorithm>
 #include <chrono>
 #include <cstdlib>
 #include <filesystem>
@@ -25,6 +26,13 @@ Mode Desktop() { return {1280, 720}; }
 Mode Output() { return Desktop(); }
 float RenderScale(uint32_t) { return 1.0f; }
 bool Widescreen() { return true; }
+float g_max_frame_aspect = 16.0f / 9.0f;
+// ASPECT=2.37 (in the environment) tests an ultrawide screen
+float FrameAspect() {
+    const char* e = std::getenv("ASPECT");
+    float a = e ? float(std::atof(e)) : 16.0f / 9.0f;
+    return std::clamp(a, 16.0f / 9.0f, std::max(g_max_frame_aspect, 16.0f / 9.0f));
+}
 
 std::filesystem::path ExeDir() {
     static const std::filesystem::path dir = std::filesystem::current_path();
