@@ -108,6 +108,9 @@ bool save_rotkfix_ini(const std::string &dir, const Settings &s, std::string &er
 bool install_input_profile(const std::string &dir, std::string &err);
 bool launch_game(const std::string &dir, std::string &err);
 std::string exe_dir();
+// A wide (Unicode) path as the 2003 game and this launcher's ANSI calls can use it: as is when every
+// character fits the system's code page, otherwise its short 8.3 form (all ASCII); "" if neither works.
+std::string ansi_path(const wchar_t *w);
 
 // First-run help when the launcher is not in the game folder
 struct FoundGame { std::string dir; GameInfo info; };

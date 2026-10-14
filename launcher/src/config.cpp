@@ -171,6 +171,22 @@ static bool write_file(const std::string &p, const std::string &data)
     return fclose(f) == 0 && ok;
 }
 
+std::string ansi_path(const wchar_t *w)
+{
+    if (!w || !*w) return "";
+    char buf[MAX_PATH * 2];
+    BOOL lossy = FALSE;
+    int n = WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, w, -1, buf, sizeof buf, NULL, &lossy);
+    if (n > 0 && !lossy) return buf;
+    // characters the code page can't hold (a Cyrillic or Japanese user name on English Windows, say):
+    // the short name has none of them
+    wchar_t sh[MAX_PATH * 2];
+    DWORD k = GetShortPathNameW(w, sh, MAX_PATH * 2);
+    if (k == 0 || k >= MAX_PATH * 2) return "";
+    n = WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, sh, -1, buf, sizeof buf, NULL, &lossy);
+    return n > 0 && !lossy ? std::string(buf) : std::string();
+}
+
 std::string exe_dir()
 {
     char p[MAX_PATH];
@@ -185,9 +201,7 @@ static std::string documents_dir()
     PWSTR w = nullptr;
     std::string out;
     if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_Documents, 0, NULL, &w)) && w) {
-        char buf[MAX_PATH * 2];
-        int n = WideCharToMultiByte(CP_ACP, 0, w, -1, buf, sizeof buf, NULL, NULL);
-        if (n > 0) out = buf;
+        out = ansi_path(w);
     }
     if (w) CoTaskMemFree(w);
     return out;
@@ -1046,8 +1060,8 @@ bool pick_folder(std::string &out, const wchar_t *title)
             if (SUCCEEDED(dlg->GetResult(&item))) {
                 PWSTR w = nullptr;
                 if (SUCCEEDED(item->GetDisplayName(SIGDN_FILESYSPATH, &w))) {
-                    char b[MAX_PATH * 2];
-                    if (WideCharToMultiByte(CP_ACP, 0, w, -1, b, sizeof b, NULL, NULL) > 0) { out = b; ok = true; }
+                    std::string p = ansi_path(w);
+                    if (!p.empty()) { out = p; ok = true; }
                     CoTaskMemFree(w);
                 }
                 item->Release();

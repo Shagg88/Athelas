@@ -23,6 +23,7 @@
  * Only this project's own code. No game code, no third-party code.
  */
 #include "rotkfix.h"
+#include <shlobj.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -366,6 +367,52 @@ static void *iat_hook(const char *dll, const char *fn, void *hook)
     }
     return NULL;
 }
+/* Documents with a name the 2003 game can't hold. The game asks for My Documents
+ * with SHGetSpecialFolderPathA and saves ROTK.ini and its progress below it. When
+ * the real name has characters outside the system's code page (a Cyrillic or
+ * Japanese user name on English Windows), the ANSI answer is mangled and nothing
+ * saves. Give it the folder's short 8.3 name instead, which is plain ASCII. */
+typedef BOOL (WINAPI *SHGetSpecialFolderPathA_t)(HWND, LPSTR, int, BOOL);
+static SHGetSpecialFolderPathA_t g_realSHGetSpecialFolderPathA;
+int safe_folder_path(int csidl, char *out, size_t n)
+{
+    wchar_t w[MAX_PATH], sh[MAX_PATH];
+    if (!SHGetSpecialFolderPathW(NULL, w, csidl, FALSE)) return 0;
+    BOOL lossy = FALSE;
+    char buf[MAX_PATH * 2];
+    int k = WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, w, -1, buf, sizeof buf, NULL, &lossy);
+    if (k <= 0 || lossy) {
+        DWORD m = GetShortPathNameW(w, sh, MAX_PATH);
+        lossy = FALSE;
+        k = m && m < MAX_PATH ? WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, sh, -1, buf, sizeof buf, NULL, &lossy) : 0;
+        if (k <= 0 || lossy) return 0;
+    }
+    if ((size_t)k > n) return 0;
+    memcpy(out, buf, (size_t)k);
+    return 1;
+}
+static BOOL WINAPI hook_SHGetSpecialFolderPathA(HWND h, LPSTR path, int csidl, BOOL create)
+{
+    BOOL r = g_realSHGetSpecialFolderPathA(h, path, csidl, create);
+    if (!path) return r;
+    wchar_t w[MAX_PATH];
+    if (!SHGetSpecialFolderPathW(h, w, csidl, create)) return r;
+    BOOL lossy = FALSE;
+    char tmp[MAX_PATH * 2];
+    int k = WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, w, -1, tmp, sizeof tmp, NULL, &lossy);
+    if (k > 0 && !lossy) return r;                        /* the game's own answer is fine */
+    char safe[MAX_PATH];
+    static int logged;
+    if (safe_folder_path(csidl & 0xff, safe, sizeof safe)) {
+        lstrcpynA(path, safe, MAX_PATH);
+        if (!logged++) logf_("files: the Documents folder's name has characters the game can't use; giving it the short name %s", safe);
+        return TRUE;
+    }
+    if (!logged++) logf_("files: WARNING the Documents folder's name has characters the game can't use, and it has no short name; "
+                         "the game may not save its settings and progress");
+    return r;
+}
+
 static void hitch_install(void)
 {
     g_realCreateFileA = (CreateFileA_t)iat_hook("kernel32.dll", "CreateFileA", (void *)hook_CreateFileA);
@@ -1026,6 +1073,8 @@ BOOL WINAPI DllMain(HINSTANCE inst, DWORD reason, LPVOID reserved)
         g_prevFilter = SetUnhandledExceptionFilter(crash_filter);
         AddVectoredExceptionHandler(1, null_call_logger);
         apply_patches();
+        g_realSHGetSpecialFolderPathA = (SHGetSpecialFolderPathA_t)iat_hook("shell32.dll", "SHGetSpecialFolderPathA",
+                                                                             (void *)hook_SHGetSpecialFolderPathA);
         if (g_logEnabled) hitch_install();
         if (g_logEnabled && g_detailLog) stall_start();
         code_seal();

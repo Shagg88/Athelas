@@ -263,8 +263,8 @@ bool pick_file(std::string &out, const wchar_t *title, const wchar_t *typeName, 
             if (SUCCEEDED(dlg->GetResult(&item))) {
                 PWSTR w = nullptr;
                 if (SUCCEEDED(item->GetDisplayName(SIGDN_FILESYSPATH, &w))) {
-                    char b[MAX_PATH * 2];
-                    if (WideCharToMultiByte(CP_ACP, 0, w, -1, b, sizeof b, NULL, NULL) > 0) { out = b; ok = true; }
+                    std::string p = ansi_path(w);
+                    if (!p.empty()) { out = p; ok = true; }
                     CoTaskMemFree(w);
                 }
                 item->Release();

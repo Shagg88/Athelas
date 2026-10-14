@@ -13,7 +13,8 @@ extern char g_dir[MAX_PATH];
 void path_in_dir(char *out, const char *name);
 int  write_code(void *addr, const void *bytes, size_t n);
 int  readable(const void *addr, size_t n);
-void *code_alloc(size_t n);   /* executable memory for trampolines; only during start-up patching */
+void *code_alloc(size_t n);
+int  safe_folder_path(int csidl, char *out, size_t n);   /* a special folder's path as ANSI, short-named if needed; 0 if none */   /* executable memory for trampolines; only during start-up patching */
 
 void limiter_present_backstop(void);
 /* slow-frame diagnostics: what happened during each slow frame */

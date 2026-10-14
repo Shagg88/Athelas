@@ -1032,7 +1032,7 @@ static IDirectInput8AVtbl g_di8Vtbl = {
 static void check_user_ini(void)
 {
     char ini[MAX_PATH];
-    if (!SHGetSpecialFolderPathA(NULL, ini, CSIDL_PERSONAL, FALSE)) return;
+    if (!safe_folder_path(CSIDL_PERSONAL, ini, sizeof ini)) return;
     /* the game keeps it in a subfolder named by string resource 1007 of
      * rotk.exe ("LOTR The Return of the King (tm) Data" in English copies) */
     char sub[160];
