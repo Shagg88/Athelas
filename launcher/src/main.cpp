@@ -661,12 +661,18 @@ static void tab_graphics(App &a)
     ImGui::SliderInt("##sharp", &s.sharpening, 0, 100, s.sharpening == 0 ? "Off" : "%d");
     ImGui::EndDisabled();
     row_end();
-    if (g_xboxPage) {   // the Xbox port draws its text with the PC version's fonts, read from the PC game's files here
-        static int pcFonts = -1;
-        if (pcFonts < 0) { DWORD at = GetFileAttributesA((a.dir + "\\Data\\Game\\GlobScen.scw").c_str()); pcFonts = at != INVALID_FILE_ATTRIBUTES && !(at & FILE_ATTRIBUTE_DIRECTORY); }
+    if (g_xboxPage) {   // the Xbox port draws text, title and main menu with the PC version's larger fonts and pictures, read from the PC game's files here
+        static int pcFonts = -1, pcMenus = -1;
+        auto there = [&](const char *rel) { DWORD at = GetFileAttributesA((a.dir + rel).c_str()); return (int)(at != INVALID_FILE_ATTRIBUTES && !(at & FILE_ATTRIBUTE_DIRECTORY)); };
+        if (pcFonts < 0) { pcFonts = there("\\Data\\Game\\GlobScen.scw"); pcMenus = there("\\Data\\Game\\fro\\fro03.scw"); }
         ImGui::BeginDisabled(!pcFonts);
-        row_begin("Sharper text", pcFonts ? "Draws the game's text with the PC version's larger, sharper fonts instead of the Xbox's small ones."
-                                          : "Needs the PC version: it uses the PC game's fonts (Data\\Game\\GlobScen.scw in this folder).");
+        row_begin("Sharper text and menus",
+                  !pcFonts ? "Needs the PC version: it uses the PC game's fonts and menu pictures (Data\\Game\\GlobScen.scw and "
+                             "Data\\Game\\fro\\fro03.scw in this folder)."
+                  : pcMenus ? "Draws the game's text with the PC version's larger, sharper fonts, and the title and main menu "
+                              "backgrounds with the PC's larger pictures."
+                            : "Draws the game's text with the PC version's larger, sharper fonts. (The PC's menu pictures, "
+                              "Data\\Game\\fro\\fro03.scw, weren't found, so the menus stay as on the Xbox.)");
         bool on = s.sharperText && pcFonts;
         if (ImGui::Checkbox("##sharptext", &on)) s.sharperText = on;
         row_end();
