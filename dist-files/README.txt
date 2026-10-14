@@ -110,6 +110,9 @@ The launcher writes ROTKFix.ini in the game folder. You can also edit it in Note
   DisplayMode            borderless, fullscreen or windowed (default borderless)
   Width                  Resolution; 0 = the screen's own (default 0)
   Height                 (default 0)
+  RenderScale            Render resolution: % of that resolution the game is drawn at, then fitted to the
+                         screen (50-200; above 100 = supersampling, costs speed). Fullscreen plays
+                         borderless when this isn't 100 (default 100)
   RefreshRate            Fullscreen only; 0 = the screen's own (default 0)
   VSync                  1 = no tearing (default 1)
   Renderer               dxvk = Vulkan (recommended), native = Windows' own Direct3D 8 (default dxvk)
@@ -125,6 +128,9 @@ The launcher writes ROTKFix.ini in the game folder. You can also edit it in Note
   WidescreenFix          1 = see more at the sides instead of a stretched picture (default 1)
   FieldOfView            Percent of the game's own view angle (70-150) (default 100)
   DrawDistance           Percent of the game's own (50-800) (default 100)
+  HUDEdges               Xbox version: 1 = HUD pieces at the screen edges, with WidescreenFix=1 (default 0)
+  SharperText            Xbox version: 1 = text, title and main menu with the PC version's larger fonts and
+                         pictures; needs the PC game's Data\Game files in this folder (default 0)
   UseGameBrightness      1 = the game's own brightness option works in every display mode
 
 [Frame]  Frame rate

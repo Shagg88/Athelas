@@ -129,8 +129,9 @@ The launcher also checks the region before Play, so code 3 is a backstop.
 | `controls`, `input` | Controls |
 | `audio`, `sound` | Audio |
 | `network` | Network |
+| `gameplay` | Gameplay (between Controls and Network; ROTK has no such tab) |
 
-An About tab always follows: location, version, port path, folder buttons, "Reset to defaults" and
+With six tabs the names are drawn without their extra spacing so they fit. An About tab always follows: location, version, port path, folder buttons, "Reset to defaults" and
 the games list. A tab with no settings isn't shown.
 
 **Presets.** The `presets` object (`{ "Name": { "section.key": value, … } }`) becomes a Preset menu at
@@ -153,7 +154,12 @@ the top of the Graphics tab.
 | `graphics.hud_edges` | Greyed out while `graphics.widescreen` is false. |
 | `graphics.anisotropic_filtering` | "0" shows as "As the game asks", others as "Nx". |
 | `graphics.msaa` | "0" shows as "Off", others as "Nx". |
-| `graphics.fov`, `display.render_percent` | The slider shows "%". |
+| `graphics.fov`, `display.render_percent` | The slider shows "%". `render_percent` choices also show the pixel size they draw at. |
+| `graphics.smooth_2d` | "Smooth menus and HUD", right after Sharpening (no ROTK counterpart). |
+| `graphics.floor_reflections` | Under a "Game detail" heading after View, as ROTK's Graphics tab has. |
+| `gameplay.damage_taken`, `gameplay.enemy_damage` | Gameplay tab, "Difficulty" heading; sliders with "100% (game's own)". |
+| `[controls]` (choice settings) | The Controls tab's Buttons list, worked like ROTK's: click a move, press the button; the move that had it swaps. Values must be `A B X Y LB RB LT RT LS RS none`. "Original layout" writes the defaults back. |
+| `input.vibration`, `input.stick_deadzone`, `input.trigger_threshold` | Controller options on the Controls tab, as ROTK's rows. |
 
 All other choices are shown with their first letter capitalised. New settings need no launcher
 change.
@@ -167,6 +173,17 @@ change.
     saves\   shadercache\
 <launcher>\Screenshots\TT_*.png   (ROTK's are ROTK_*.png in the same folder)
 ```
+
+## 5b. ROTK Xbox: ROTKFix.ini keys the launcher writes for the port
+
+The Xbox page shares ROTK PC's settings (one `ROTKFix.ini`), greys out the PC-only rows, and adds:
+
+| Key | Launcher row | Notes |
+|---|---|---|
+| `[Graphics] HUDEdges` 0/1 | "HUD at the screen edges" (View) | Xbox page only, shown only with Widescreen correction on. Default 0. |
+| `[Graphics] SharperText` 0/1 | "Sharper text and menus" (Image, after Sharpening) | Xbox page only. Greyed out unless `Data\Game\GlobScen.scw` is beside ROTKFix.ini; the help says so if `Data\Game\fro\fro03.scw` is missing. Default 0. |
+| `[Graphics] RenderScale` 50–200 | "Render resolution" (Display, under Resolution) | Both versions. % of the chosen resolution the game is drawn at, then fitted. Default 100. ROTK Fix (PC) shows fullscreen as borderless when it isn't 100. |
+| `[Gamepad] ButtonNames` | "Button names" (Controller options) | Both versions (auto, xbox, playstation, nintendo, original). |
 
 ## 6. ROTK PC (for comparison)
 
