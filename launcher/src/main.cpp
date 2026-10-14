@@ -25,6 +25,7 @@
 #include "port.h"
 #include "ornament.h"
 #include "gpu.h"
+#include "gameart.h"
 #include <shlobj.h>
 #include "font_cinzel.h"
 #include "font_garamond.h"
@@ -102,6 +103,35 @@ static void setup_style()
 
 struct Picture { SDL_Texture *tex = nullptr; int w = 0, h = 0; };
 
+// Game art: the menu pictures of the player's own Return of the King (PC), read
+// once on a worker thread (rotk_menu_art_load) and kept in memory as DXT1. In the
+// list of backgrounds they are entries "\001art:N". Both Return of the King pages
+// use them; The Two Towers will get its own (not yet).
+static std::vector<ArtPic> g_art;
+static SDL_AtomicInt g_artState;       // 0 not started, 1 reading, 2 done
+static std::string g_artDir;
+
+static int SDLCALL art_worker(void *)
+{
+    std::vector<ArtPic> pics;
+    rotk_menu_art_load(g_artDir, pics);
+    // a different order each time the launcher opens
+    for (size_t i = pics.size(); i > 1; i--) std::swap(pics[i - 1], pics[(size_t)SDL_rand((Sint32)i)]);
+    g_art = std::move(pics);
+    SDL_SetAtomicInt(&g_artState, 2);
+    return 0;
+}
+
+static void art_start(const std::string &rotkPcDir)
+{
+    if (SDL_GetAtomicInt(&g_artState) != 0 || rotkPcDir.empty()) return;
+    g_artDir = rotkPcDir;
+    SDL_SetAtomicInt(&g_artState, 1);
+    SDL_Thread *t = SDL_CreateThread(art_worker, "art", nullptr);
+    if (t) SDL_DetachThread(t); else SDL_SetAtomicInt(&g_artState, 2);
+}
+static bool art_ready() { return SDL_GetAtomicInt(&g_artState) == 2; }
+
 struct BgJob;
 struct Backgrounds {
     std::vector<std::string> files;
@@ -109,7 +139,16 @@ struct Backgrounds {
     Picture cur, prev;
     double changedAt = 0;
     BgJob *job = nullptr;          // picture being read in the background
+    int group = -1;                // whose pictures are listed: 0 The Return of the King, 1 The Two Towers
+    bool artIn = false;            // the game art was ready when the list was made
+    int gen = 0;                   // bumped when the list is made again (a picture still being read is dropped)
 };
+
+// [Background] Show in ROTKFix\launcher.ini: what is shown behind the launcher.
+enum { BG_ART_AND_MINE, BG_ART, BG_MINE, BG_NONE, BG_SHOW_COUNT };
+static int g_bgShow = BG_ART_AND_MINE;
+static const char *k_bgShowName[BG_SHOW_COUNT] = { "Game art and my pictures", "Game art", "My pictures", "None" };
+static const char *k_bgShowKey[BG_SHOW_COUNT] = { "both", "art", "mine", "none" };
 
 static void list_pictures(const std::string &dir, std::vector<std::string> &out, size_t maxCount)
 {
@@ -148,9 +187,10 @@ static bool looks_like_text_screen(const unsigned char *px, int w, int h)
 // 4K PNGs of 10 MB or more).
 struct BgJob {
     std::vector<std::string> files;
+    int gen = 0;
     int start = 0, found = -1;
     unsigned char *px = nullptr;
-    int w = 0, h = 0;
+    int w = 0, h = 0, showH = 0;       // showH: the height to show it at (game art is square, shown at 4:3)
     SDL_AtomicInt done;
 };
 
@@ -179,11 +219,20 @@ static int SDLCALL bg_worker(void *p)
     for (size_t tries = 0; tries < n && !j->px; tries++) {
         int i = (int)((j->start + tries) % n);
         int w, h, c;
+        if (j->files[i].compare(0, 5, "\001art:") == 0) {
+            size_t k = (size_t)atoi(j->files[i].c_str() + 5);
+            if (k >= g_art.size()) continue;
+            const ArtPic &ap = g_art[k];
+            unsigned char *px = dxt1_to_rgba(ap.dxt.data(), ap.dxt.size(), ap.w, ap.h);
+            if (!px) continue;
+            j->px = px; j->w = ap.w; j->h = ap.h; j->showH = ap.w * 3 / 4; j->found = i;
+            break;
+        }
         unsigned char *px = stbi_load(j->files[i].c_str(), &w, &h, &c, 4);
         if (!px) continue;
         if (j->files[i].find("\\Screenshots\\") != std::string::npos && looks_like_text_screen(px, w, h)) { stbi_image_free(px); continue; }
         shrink_picture(px, w, h);
-        j->px = px; j->w = w; j->h = h; j->found = i;
+        j->px = px; j->w = w; j->h = h; j->showH = h; j->found = i;
     }
     SDL_SetAtomicInt(&j->done, 1);
     return 0;
@@ -196,6 +245,7 @@ static void backgrounds_next(Backgrounds &b)
     BgJob *j = new BgJob();
     j->files = b.files;
     j->start = (b.index + 1) % (int)b.files.size();
+    j->gen = b.gen;
     SDL_SetAtomicInt(&j->done, 0);
     SDL_Thread *t = SDL_CreateThread(bg_worker, "bg", j);
     if (!t) { delete j; return; }
@@ -209,6 +259,11 @@ static void backgrounds_poll(Backgrounds &b, SDL_Renderer *ren)
     BgJob *j = b.job;
     if (!j || !SDL_GetAtomicInt(&j->done)) return;
     b.job = nullptr;
+    if (j->gen != b.gen) {         // the list changed while it was read
+        if (j->px) free(j->px);
+        delete j;
+        return;
+    }
     if (j->px) {
         SDL_Surface *s = SDL_CreateSurfaceFrom(j->w, j->h, SDL_PIXELFORMAT_RGBA32, j->px, j->w * 4);
         SDL_Texture *t = s ? SDL_CreateTextureFromSurface(ren, s) : nullptr;
@@ -217,7 +272,7 @@ static void backgrounds_poll(Backgrounds &b, SDL_Renderer *ren)
             SDL_SetTextureScaleMode(t, SDL_SCALEMODE_LINEAR);
             if (b.prev.tex) SDL_DestroyTexture(b.prev.tex);
             b.prev = b.cur;
-            b.cur.tex = t; b.cur.w = j->w; b.cur.h = j->h;
+            b.cur.tex = t; b.cur.w = j->w; b.cur.h = j->showH;
             b.changedAt = ImGui::GetTime();
         }
         b.index = j->found;
@@ -226,6 +281,39 @@ static void backgrounds_poll(Backgrounds &b, SDL_Renderer *ren)
         b.files.clear();          // nothing usable: keep the drawn landscape
     }
     delete j;
+}
+
+// Make the list for the page shown: game art (The Return of the King only, for
+// now) and/or the player's own pictures in ROTKFix\backgrounds.
+static void backgrounds_rebuild(Backgrounds &b, int group, const std::string &launcherDir)
+{
+    b.files.clear();
+    b.gen++;
+    b.group = group;
+    b.artIn = art_ready();
+    b.index = -1;
+    if ((g_bgShow == BG_ART_AND_MINE || g_bgShow == BG_ART) && group == 0 && b.artIn)
+        for (size_t i = 0; i < g_art.size(); i++) b.files.push_back("\001art:" + std::to_string(i));
+    if (g_bgShow == BG_ART_AND_MINE || g_bgShow == BG_MINE)
+        list_pictures(launcherDir + "\\ROTKFix\\backgrounds", b.files, 100);
+    if (b.files.empty()) {         // nothing to show here: the drawn landscape
+        if (b.cur.tex) SDL_DestroyTexture(b.cur.tex);
+        if (b.prev.tex) SDL_DestroyTexture(b.prev.tex);
+        b.cur = Picture(); b.prev = Picture();
+    }
+}
+
+static void bg_show_load()
+{
+    char v[16] = {};
+    GetPrivateProfileStringA("Background", "Show", "both", v, sizeof v, (exe_dir() + "\\ROTKFix\\launcher.ini").c_str());
+    for (int i = 0; i < BG_SHOW_COUNT; i++) if (!_stricmp(v, k_bgShowKey[i])) g_bgShow = i;
+}
+static void bg_show_save()
+{
+    std::string d = exe_dir() + "\\ROTKFix";
+    SHCreateDirectoryExA(NULL, d.c_str(), NULL);
+    WritePrivateProfileStringA("Background", "Show", k_bgShowKey[g_bgShow], (d + "\\launcher.ini").c_str());
 }
 
 // Draw a picture to cover the rect (cropping, never stretching).
@@ -295,7 +383,8 @@ static void draw_background(ImDrawList *dl, ImVec2 size, Backgrounds &b)
         draw_landscape(dl, size);
     }
     // darken for legibility: lighter at the top (banner), darker behind the settings
-    ImU32 a0 = IM_COL32(3, 9, 5, 50), a1 = IM_COL32(3, 9, 5, 130);
+    bool pic = b.cur.tex != nullptr;   // pictures are brighter than the drawn landscape
+    ImU32 a0 = IM_COL32(3, 9, 5, pic ? 120 : 50), a1 = IM_COL32(3, 9, 5, pic ? 160 : 130);
     dl->AddRectFilledMultiColor(ImVec2(0, 0), size, a0, a0, a1, a1);
     orn_window_frame(dl, size);   // carved stone border (ornament.cpp)
 }
@@ -1179,20 +1268,27 @@ static void games_section(App &a)
 
     section("Background pictures");
     ImGui::PushTextWrapPos(0);
-    ImGui::TextColored(C_DIM, "Pictures you put in this folder (PNG or JPG) are shown behind the launcher, changing every few seconds. "
-                              "They're your own: none come with the download.");
+    ImGui::TextColored(C_DIM, "Shown behind the launcher, changing every 10 seconds. Game art is read from your own copy of "
+                              "The Return of the King (PC) each time the launcher opens; nothing is copied. "
+                              "My pictures are any PNG or JPG files you put in the backgrounds folder.");
     ImGui::PopTextWrapPos();
+    ImGui::SetNextItemWidth(S(280));
+    if (ImGui::BeginCombo("##bgshow", k_bgShowName[g_bgShow])) {
+        for (int i = 0; i < BG_SHOW_COUNT; i++)
+            if (ImGui::Selectable(k_bgShowName[i], i == g_bgShow) && i != g_bgShow) {
+                g_bgShow = i;
+                bg_show_save();
+                a.bg.group = -1;           // list again on the next frame
+            }
+        ImGui::EndCombo();
+    }
     if (ImGui::Button("Open backgrounds folder")) {
         std::string d = exe_dir() + "\\ROTKFix\\backgrounds";
         SHCreateDirectoryExA(NULL, d.c_str(), NULL);
         ShellExecuteA(NULL, "open", d.c_str(), NULL, NULL, SW_SHOWNORMAL);
     }
     ImGui::SameLine();
-    if (ImGui::Button("Show new pictures")) {
-        a.bg.files.clear();
-        list_pictures(exe_dir() + "\\ROTKFix\\backgrounds", a.bg.files, 100);
-        backgrounds_next(a.bg);
-    }
+    if (ImGui::Button("Show new pictures")) a.bg.group = -1;   // list again on the next frame
 }
 
 static void rx_about(App &a);
@@ -1242,7 +1338,7 @@ static void tab_about(App &a)
                            "play their own copy on modern PCs with modern display, graphics and controller support.");
     ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
     ImGui::TextColored(C_DIM, "Not affiliated with or endorsed by Electronic Arts, New Line Cinema, Warner Bros. or the Tolkien Estate. "
-                              "No game files are included; you need your own copy of the game. Background paintings are in the public domain.");
+                              "No game files are included; you need your own copy of the game. Background art is read from your own copy.");
     ImGui::PopFont();
     section("Open-source components");
     static const char *lic[][2] = {
@@ -2776,8 +2872,17 @@ static void draw_setup(App &a)
 static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
 {
     // change background every 15 s
+    // Background pictures: the game art comes from the player's Return of the King (PC)
+    if (SDL_GetAtomicInt(&g_artState) == 0)
+        for (const LibGame &g : a.lib)
+            if (g.kind == GK_ROTK_PC && !g.iso) { art_start(g.path); break; }
+    {
+        int group = a.cur >= 0 && a.cur < (int)a.lib.size() && a.lib[a.cur].kind == GK_TT_XBOX ? 1 : 0;
+        if (group != a.bg.group || (art_ready() && !a.bg.artIn)) backgrounds_rebuild(a.bg, group, a.dir);
+    }
     backgrounds_poll(a.bg, ren);
-    if (a.bg.files.size() > 1 && a.bg.cur.tex && ImGui::GetTime() - a.bg.changedAt > 15.0) backgrounds_next(a.bg);
+    if (!a.bg.job && !a.bg.files.empty() &&
+        (!a.bg.cur.tex || (a.bg.files.size() > 1 && ImGui::GetTime() - a.bg.changedAt > 10.0))) backgrounds_next(a.bg);
 
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(size);
@@ -3164,9 +3269,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     if (a.s.displayMode == 1 && a.s.width > 0 && !mon(a).find(a.s.width, a.s.height)) a.s.width = a.s.height = 0;
     refresh_controllers(a);
 
-    list_pictures(a.dir + "\\ROTKFix\\backgrounds", a.bg.files, 100);
-    // (screenshots as backgrounds: turned off for now)
-    backgrounds_next(a.bg);
+    bg_show_load();   // the pictures themselves are listed on the first frame
     if (getenv("ROTKFIX_SAVE_AND_EXIT")) { save(a); return 0; }     // testing
     if (!hadIni) set_message(a, "Welcome! Settings are chosen for your PC - press Play, or adjust anything first.", false);
     if (protectedDir) set_message(a, "This game folder is protected by Windows, so settings can't be saved. "
