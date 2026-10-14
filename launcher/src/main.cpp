@@ -409,7 +409,7 @@ static void draw_background(ImDrawList *dl, ImVec2 size, Backgrounds &b)
     }
     // darken for legibility: lighter at the top (banner), darker behind the settings
     bool pic = b.cur.tex != nullptr;   // pictures are brighter than the drawn landscape
-    ImU32 a0 = IM_COL32(3, 9, 5, pic ? 120 : 50), a1 = IM_COL32(3, 9, 5, pic ? 160 : 130);
+    ImU32 a0 = IM_COL32(3, 9, 5, pic ? 120 : 50), a1 = IM_COL32(3, 9, 5, pic ? 110 : 130);
     if (pic) {                         // and pale ones (sketches on white paper, mist) need more
         auto extra = [](const Picture &p) { return p.tex ? std::min(130.0f, std::max(0.0f, (p.lum - 70.0f) * 1.4f)) : 0.0f; };
         float fade = std::min(1.0f, (float)(ImGui::GetTime() - b.changedAt) / 1.5f);
@@ -3158,7 +3158,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     const float frameT = S(9);
     ImVec2 panelA = ImGui::GetWindowPos() + ImVec2(pad, bannerH);
     ImVec2 panelB = panelA + ImVec2(size.x - pad * 2, size.y - bannerH - barH - S(30));
-    orn_panel_fill(ImGui::GetWindowDrawList(), panelA, panelB, ImGui::GetColorU32(rgb(15, 14, 13, 0.86f)));
+    orn_panel_fill(ImGui::GetWindowDrawList(), panelA, panelB, ImGui::GetColorU32(rgb(15, 14, 13, 0.70f)));
     const float inset = frameT * 0.5f + S(5);   // clear of the frame's lines
     ImGui::SetCursorPos(ImVec2(pad + inset, bannerH + inset));
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0, 0, 0, 0));
