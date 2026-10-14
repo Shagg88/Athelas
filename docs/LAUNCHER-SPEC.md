@@ -40,13 +40,18 @@ Game = rotk-xbox|D:\Discs\ROTK (USA).iso
 
 ## 2. Finding a port
 
-- The Two Towers port is looked for first at `<launcher>\TwoTowers\TwoTowers.exe`.
-- If it isn't there, the launcher uses the path in `<launcher>\ROTKFix\ports.ini`,
-  `[Ports] TwoTowers=<full path>`. The player sets this with "Locate TwoTowers.exe…".
-- **Proposed for ROTK Xbox:** the same pattern, with `<launcher>\ROTKXbox\ROTKXbox.exe` and the
-  ports.ini key `ROTKXbox`. The data folder would be `<launcher>\ROTKFix\ROTKXbox\`. Tell me the exe
-  name you choose, and I'll make the port code generic for both. Right now it is written for The
-  Two Towers only.
+Both ports are found the same way, in this order:
+
+1. The path in `<launcher>\ROTKFix\ports.ini`, `[Ports] TwoTowers=<full path>` or
+   `[Ports] ROTKXbox=<full path>`. The player sets it with "Locate TwoTowers.exe…" or
+   "Locate ROTKXbox.exe…", or by editing the file. Use it to point at a development build, such as
+   `C:\ROTKX\rotkxbox\out\build\release\ROTKXbox.exe`.
+2. Otherwise, the copy next to the launcher: `<launcher>\TwoTowers\TwoTowers.exe` or
+   `<launcher>\ROTKXbox\ROTKXbox.exe` (release copies).
+
+If the ports.ini path doesn't exist, the launcher falls back to step 2. Every write goes to the
+data folders, `<launcher>\ROTKFix\TwoTowers\` and `<launcher>\ROTKFix\ROTKXbox\`, never next to
+the port's exe.
 
 ## 3. What the launcher passes on start-up (exactly)
 

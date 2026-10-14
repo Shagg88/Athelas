@@ -1233,8 +1233,8 @@ static void setup_here(App &a, const std::string &dst)
 
 // ---------------------------------------------------------------------------
 // The Two Towers (Xbox), played through its PC port, TwoTowers.exe.
-// The port is found next to the launcher (TwoTowers\TwoTowers.exe), or where the
-// player pointed to it (remembered in ROTKFix\ports.ini). Its settings, texture
+// The port is where the player pointed to it (remembered in ROTKFix\ports.ini), or
+// else next to the launcher (TwoTowers\TwoTowers.exe). Its settings, texture
 // packs and log live in ROTKFix\TwoTowers next to the launcher.
 
 static std::string tt_data_dir() { return exe_dir() + "\\ROTKFix\\TwoTowers"; }
@@ -1249,10 +1249,12 @@ static void tt_find(App &a)
     a.ttLooked = true;
     a.tt = Port();
     std::string cand[2];
-    cand[0] = exe_dir() + "\\TwoTowers\\TwoTowers.exe";
+    // ports.ini first (a path the player set, e.g. a development build), then the
+    // TwoTowers folder next to the launcher (release copies)
     char b[MAX_PATH * 2] = "";
     GetPrivateProfileStringA("Ports", "TwoTowers", "", b, sizeof b, ports_ini().c_str());
-    cand[1] = b;
+    cand[0] = b;
+    cand[1] = exe_dir() + "\\TwoTowers\\TwoTowers.exe";
     for (auto &c : cand) if (!c.empty() && file_there(c)) { a.tt.exe = c; break; }
     if (a.tt.exe.empty()) return;
     port_query(a.tt);
@@ -2397,8 +2399,8 @@ static std::string tt_summary(const App &a)
 // ---------------------------------------------------------------------------
 // The Return of the King (Xbox), played through its PC port, ROTKXbox.exe. It reads
 // ROTK Fix's own ROTKFix.ini, so it shares the PC version's settings page.
-// The port is found next to the launcher (ROTKXbox\ROTKXbox.exe), or where the player
-// pointed to it (ROTKFix\ports.ini, [Ports] ROTKXbox=). Its log, saves and its own
+// The port is where the player pointed to it (ROTKFix\ports.ini, [Ports] ROTKXbox=), or
+// else next to the launcher (ROTKXbox\ROTKXbox.exe). Its log, saves and its own
 // texture packs (Xbox textures differ from the PC ones) live in ROTKFix\ROTKXbox.
 
 static std::string rx_data_dir() { return exe_dir() + "\\ROTKFix\\ROTKXbox"; }
@@ -2409,10 +2411,12 @@ static void rx_find(App &a)
     a.rxLooked = true;
     a.rx = Port();
     std::string cand[2];
-    cand[0] = exe_dir() + "\\ROTKXbox\\ROTKXbox.exe";
+    // ports.ini first (a path the player set, e.g. a development build), then the
+    // ROTKXbox folder next to the launcher (release copies)
     char b[MAX_PATH * 2] = "";
     GetPrivateProfileStringA("Ports", "ROTKXbox", "", b, sizeof b, ports_ini().c_str());
-    cand[1] = b;
+    cand[0] = b;
+    cand[1] = exe_dir() + "\\ROTKXbox\\ROTKXbox.exe";
     for (auto &c : cand) if (!c.empty() && file_there(c)) { a.rx.exe = c; break; }
     if (a.rx.exe.empty()) return;
     std::string out;
