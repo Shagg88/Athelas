@@ -12,11 +12,11 @@ void orn_set_scale(float s) { g_s = s; }
 static ImU32 col(int r, int g, int b, int a = 255) { return IM_COL32(r, g, b, a); }
 static ImVec2 V(float x, float y) { return ImVec2(x, y); }
 
-// pale stone (the white city), silver and pale gold (elven work)
-static const ImU32 SN_DEEP = col(30, 29, 28), SN_DARK = col(86, 82, 76), SN_MID = col(150, 144, 133),
-                   SN_LIGHT = col(196, 190, 176), SN_HI = col(234, 229, 216);
-static ImU32 SILVER(int a = 230) { return col(214, 212, 204, a); }
-static ImU32 PGOLD(int a = 230) { return col(218, 192, 128, a); }
+// weathered granite (the old stone of Gondor), pewter and antique bronze-gold
+static const ImU32 SN_DEEP = col(16, 15, 14), SN_DARK = col(24, 23, 21), SN_MID = col(62, 58, 52),
+                   SN_LIGHT = col(84, 79, 71), SN_HI = col(122, 114, 100);
+static ImU32 SILVER(int a = 230) { return col(150, 150, 144, a); }
+static ImU32 PGOLD(int a = 230) { return col(184, 144, 78, a); }
 
 // ---------------------------------------------------------------------------
 // Leaves (shared): a two-tone leaf with a midrib, like gilded carving
@@ -123,14 +123,14 @@ static void gothic_crest(ImDrawList *dl, float cx, float y, float w, float h)
         auto bez = [&](ImVec2 p0, ImVec2 p1, ImVec2 p2, ImVec2 p3) {
             return V(u*u*u*p0.x + 3*u*u*t*p1.x + 3*u*t*t*p2.x + t*t*t*p3.x, u*u*u*p0.y + 3*u*u*t*p1.y + 3*u*t*t*p2.y + t*t*t*p3.y); };
         ImVec2 pl = bez(L0, cl1, cl2, top), pr = bez(R0, cr1, cr2, top);
-        leaf2(dl, pl, O(8), 3.14159f + 0.9f + t * 0.5f, O(2.6f), g, col(250, 230, 170));
-        leaf2(dl, pr, O(8), -0.9f - t * 0.5f, O(2.6f), g, col(250, 230, 170));
+        leaf2(dl, pl, O(8), 3.14159f + 0.9f + t * 0.5f, O(2.6f), g, col(206, 168, 98));
+        leaf2(dl, pr, O(8), -0.9f - t * 0.5f, O(2.6f), g, col(206, 168, 98));
     }
     // the finial: three leaves on a short stem
     dl->AddLine(top, V(cx, y - h - O(5)), g, O(1.4f));
-    leaf2(dl, V(cx, y - h - O(4)), O(9), -1.5708f, O(3), g, col(250, 230, 170));
-    leaf2(dl, V(cx, y - h - O(2)), O(7), -1.5708f - 0.9f, O(2.4f), g, col(250, 230, 170));
-    leaf2(dl, V(cx, y - h - O(2)), O(7), -1.5708f + 0.9f, O(2.4f), g, col(250, 230, 170));
+    leaf2(dl, V(cx, y - h - O(4)), O(9), -1.5708f, O(3), g, col(206, 168, 98));
+    leaf2(dl, V(cx, y - h - O(2)), O(7), -1.5708f - 0.9f, O(2.4f), g, col(206, 168, 98));
+    leaf2(dl, V(cx, y - h - O(2)), O(7), -1.5708f + 0.9f, O(2.4f), g, col(206, 168, 98));
     // a trefoil of tracery inside the arch: three carved lobes with gilded edges
     float tr = w * 0.24f, ty = y - h * 0.36f;
     ImVec2 lc[3] = { V(cx, ty - tr * 0.62f), V(cx - tr * 0.62f, ty + tr * 0.4f), V(cx + tr * 0.62f, ty + tr * 0.4f) };
@@ -147,7 +147,7 @@ void orn_window_frame(ImDrawList *dl, ImVec2 size)
     float m = O(2), t = O(17);
     ImVec2 a(m, m), b(size.x - m, size.y - m);
     // the stone band: lit along its outer edge, softly shaded towards the inside
-    ImU32 lo = col(178, 171, 156), hiS = col(206, 199, 184);
+    ImU32 lo = col(40, 38, 35), hiS = col(66, 62, 56);
     dl->AddRectFilledMultiColor(a, V(b.x, a.y + t), hiS, hiS, lo, lo);
     dl->AddRectFilledMultiColor(V(a.x, b.y - t), b, lo, lo, hiS, hiS);
     dl->AddRectFilledMultiColor(V(a.x, a.y + t), V(a.x + t, b.y - t), hiS, lo, lo, hiS);
@@ -158,7 +158,7 @@ void orn_window_frame(ImDrawList *dl, ImVec2 size)
     dl->AddRect(V(a.x + t, a.y + t), V(b.x - t, b.y - t), SN_DARK, 0, O(1.3f));
     dl->AddRect(V(a.x + t - O(1.5f), a.y + t - O(1.5f)), V(b.x - t + O(1.5f), b.y - t + O(1.5f)), PGOLD(200), 0, O(1));
     // the gilded vine along each side, between the corner medallions
-    ImU32 stem = col(150, 112, 42), lf = col(176, 136, 58), lfHi = col(232, 202, 128);
+    ImU32 stem = col(124, 90, 40), lf = col(142, 104, 46), lfHi = col(190, 150, 82);
     float mid = t * 0.5f, R = O(15), gap = R + O(4);
     float amp = t * 0.2f, wave = O(44), leafLen = O(8);
     float cx = size.x * 0.5f, crestW = O(26);
@@ -198,8 +198,8 @@ static void leaf(ImDrawList *dl, ImVec2 base, float len, float ang, float wid, I
 // with leaves. sx, sy = +1/-1 say which way the edges run from the corner.
 static void corner_vine(ImDrawList *dl, ImVec2 c, float sx, float sy, float len)
 {
-    ImU32 g = PGOLD(245), gs = PGOLD(170), lf = col(206, 172, 96), lfHi = col(246, 226, 168);
-    ImU32 sl = col(178, 182, 186), slHi = col(236, 240, 244);
+    ImU32 g = PGOLD(245), gs = PGOLD(170), lf = col(156, 118, 56), lfHi = col(200, 162, 92);
+    ImU32 sl = col(96, 98, 96), slHi = col(146, 148, 142);
     auto P = [&](float x, float y) { return V(c.x + sx * x, c.y + sy * y); };
     float base = (sx > 0) ? 0.0f : 3.14159f;          // the horizontal stem's direction
     float vb = (sy > 0) ? 1.5708f : -1.5708f;         // the vertical stem's direction
@@ -283,7 +283,7 @@ void orn_panel_frame(ImDrawList *dl, ImVec2 a, ImVec2 b)
     dl->AddBezierCubic(V(cx - w * 0.6f, a.y), V(cx - w * 0.2f, a.y), V(cx - O(2), a.y - h * 0.3f), V(cx, a.y - h * 0.62f), SILVER(150), O(0.9f));
     dl->AddBezierCubic(V(cx + w * 0.6f, a.y), V(cx + w * 0.2f, a.y), V(cx + O(2), a.y - h * 0.3f), V(cx, a.y - h * 0.62f), SILVER(150), O(0.9f));
     leaf(dl, V(cx, a.y - h), O(9), -1.5708f, O(3), gl);
-    dl->AddCircleFilled(V(cx, a.y - h * 0.3f), O(2.6f), col(236, 240, 246), 12);
+    dl->AddCircleFilled(V(cx, a.y - h * 0.3f), O(2.6f), col(170, 164, 150), 12);
     dl->AddCircle(V(cx, a.y - h * 0.3f), O(4.2f), SILVER(120), 16, O(0.8f));
     // a pair of leaves hanging from the bottom centre
     leaf(dl, V(cx, b.y), O(10), 1.5708f - 0.5f, O(3), gl);
@@ -354,15 +354,15 @@ bool orn_arch_button(const char *label, ImVec2 size, ImFont *font, bool enabled)
     }
     pts[N + 1] = b; pts[N + 2] = V(a.x, b.y);
     in[N + 1] = V(b.x - O(5), b.y - O(5)); in[N + 2] = V(a.x + O(5), b.y - O(5));
-    ImU32 fill = !enabled ? col(74, 68, 58) : act ? col(176, 146, 82) : hov ? col(226, 196, 124) : col(204, 172, 102);
+    ImU32 fill = !enabled ? col(74, 68, 58) : act ? col(110, 80, 36) : hov ? col(166, 124, 60) : col(140, 102, 46);
     dl->AddConvexPolyFilled(pts, N + 3, fill);
     // a soft light from above
     dl->AddRectFilledMultiColor(V(a.x + O(2), a.y + archH), V(b.x - O(2), b.y - O(2)), col(255, 250, 230, 0), col(255, 250, 230, 0),
                                 col(60, 40, 10, 70), col(60, 40, 10, 70));
-    dl->AddPolyline(pts, N + 3, enabled ? col(246, 236, 210) : col(120, 112, 98), O(1.5f), ImDrawFlags_Closed);
-    dl->AddPolyline(in, N + 3, enabled ? col(110, 84, 36, 170) : col(50, 46, 40, 160), O(1), ImDrawFlags_Closed);
+    dl->AddPolyline(pts, N + 3, enabled ? col(206, 168, 98) : col(90, 84, 74), O(1.5f), ImDrawFlags_Closed);
+    dl->AddPolyline(in, N + 3, enabled ? col(70, 50, 20, 200) : col(50, 46, 40, 160), O(1), ImDrawFlags_Closed);
     // a gilded leaf finial at the top of the arch
-    ImU32 fg = enabled ? col(236, 210, 140) : col(110, 100, 84), fh = enabled ? col(255, 244, 210) : col(130, 120, 104);
+    ImU32 fg = enabled ? col(184, 144, 78) : col(110, 100, 84), fh = enabled ? col(214, 176, 106) : col(130, 120, 104);
     leaf2(dl, V(cx, a.y + O(2)), O(12), -1.5708f, O(3.6f), fg, fh);
     leaf2(dl, V(cx, a.y + O(3)), O(10), -1.5708f - 1.0f, O(3), fg, fh);
     leaf2(dl, V(cx, a.y + O(3)), O(10), -1.5708f + 1.0f, O(3), fg, fh);
@@ -370,8 +370,8 @@ bool orn_arch_button(const char *label, ImVec2 size, ImFont *font, bool enabled)
     ImGui::PushFont(font, font->LegacySize);
     ImVec2 ts = ImGui::CalcTextSize(label, nullptr, true);
     ImVec2 tp(cx - ts.x * 0.5f, a.y + archH * 0.5f + (size.y - archH * 0.5f - ts.y) * 0.5f);
-    dl->AddText(V(tp.x + O(1), tp.y + O(1)), col(255, 248, 225, enabled ? 110 : 30), label, ImGui::FindRenderedTextEnd(label));
-    dl->AddText(tp, enabled ? col(40, 28, 10) : col(34, 30, 26), label, ImGui::FindRenderedTextEnd(label));
+    dl->AddText(V(tp.x + O(1), tp.y + O(1.5f)), col(20, 12, 4, enabled ? 200 : 60), label, ImGui::FindRenderedTextEnd(label));
+    dl->AddText(tp, enabled ? col(240, 220, 170) : col(120, 112, 100), label, ImGui::FindRenderedTextEnd(label));
     ImGui::PopFont();
     return pressed && enabled;
 }
