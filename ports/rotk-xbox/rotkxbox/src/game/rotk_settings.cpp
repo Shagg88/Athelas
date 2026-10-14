@@ -29,6 +29,8 @@ void InitFrameRate();
 void InitCamera();
 void InitPrompts();
 extern uint32_t g_button_pictures;  // rotk_prompts.cpp
+extern bool g_sharp_text;           // rotk_fonts.cpp
+std::filesystem::path g_ini_file;   // the ROTKFix.ini read, for rotk_fonts.cpp (ROTK PC's Data folder is beside it)
 
 namespace {
 std::string Lower(std::string s) {
@@ -129,6 +131,7 @@ void ApplyIni() {
         LOGR("rotk: settings file %s not found, using settings.toml", file.string().c_str());
         return;
     }
+    g_ini_file = file;
     app::Settings& s = app::Get();
     Reader r{ini};
     // [Graphics]
@@ -155,7 +158,8 @@ void ApplyIni() {
     r.Int("Graphics", "FieldOfView", g_fov_percent, 70, 150);
     r.Int("Graphics", "DrawDistance", g_draw_percent, 50, 800);
     r.Bool("Graphics", "AlphaEdgeSmoothing", g_alpha_edges);
-    r.Bool("Graphics", "HUDEdges", g_hud_edges);  // the Xbox port's own key, for now
+    r.Bool("Graphics", "HUDEdges", g_hud_edges);       // the Xbox port's own keys, for now
+    r.Bool("Graphics", "SharperText", g_sharp_text);
     // [Frame]: ROTK Fix's limiter at TargetFPS (0 no cap); Limiter = 0 leaves the game's own pace, the console's 30
     uint32_t target = g_fps, limiter = 1;
     r.Int("Frame", "TargetFPS", target, 0, 1000);

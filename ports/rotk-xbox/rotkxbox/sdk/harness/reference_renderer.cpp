@@ -253,6 +253,20 @@ std::shared_ptr<Image> FindImage(uint32_t header) {
                 }
         }
     }
+    // a built-in replacement found from the contents (pack::g_builtin_contents), the same way, colours left to it
+    if (pack::g_builtin_contents && img->faces == 1 && !d.linear && d.depth == 1) {
+        pack::Image rep;
+        if (pack::g_builtin_contents({d.format, d.width, d.height, d.levels, guest, TotalSize(d), nullptr}, rep) &&
+            !rep.levels.empty() && (rep.format == pack::Format::RGBA8 || rep.format == pack::Format::BGRA8)) {
+            bool bgra = rep.format == pack::Format::BGRA8;
+            for (uint32_t y = 0; y < d.height; y++)
+                for (uint32_t x = 0; x < d.width; x++) {
+                    const uint8_t* q = &rep.levels[0][(size_t(y * rep.height / d.height) * rep.width + x * rep.width / d.width) * 4];
+                    float r = q[bgra ? 2 : 0] / 255.f, b = q[bgra ? 0 : 2] / 255.f;
+                    img->texels[0][size_t(y) * d.width + x] = V(r, q[1] / 255.f, b, q[3] / 255.f);
+                }
+        }
+    }
     g_images[key] = img;
     return img;
 }

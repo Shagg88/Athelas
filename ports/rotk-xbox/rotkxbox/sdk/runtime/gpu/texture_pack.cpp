@@ -210,6 +210,19 @@ bool ReadPng(const std::filesystem::path& file, Image& img) {
 }
 
 BuiltinTexture g_builtin = nullptr;
+BuiltinContents g_builtin_contents = nullptr;
+
+void MakeLevels(Image& img) {
+    if (img.levels.empty() || (img.format != Format::RGBA8 && img.format != Format::BGRA8)) return;
+    img.levels.resize(1);
+    for (uint32_t lw = img.width, lh = img.height; lw > 1 || lh > 1;) {
+        uint32_t nw, nh;
+        std::vector<uint8_t> next = Halve(img.levels.back(), lw, lh, nw, nh);
+        img.levels.push_back(std::move(next));
+        lw = nw;
+        lh = nh;
+    }
+}
 
 bool DecodePng(const uint8_t* data, size_t size, Image& img) {
     img = Image{};

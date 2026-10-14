@@ -5,6 +5,7 @@ extern bool g_skip_all_videos;                  // src/game/rotk_movies.cpp
 extern uint32_t g_fps;                          // src/game/rotk_framerate.cpp
 extern uint32_t g_fov_percent, g_draw_percent;  // src/game/rotk_widescreen.cpp
 extern bool g_alpha_edges, g_hud_edges, g_safe_area;  // src/game/rotk_widescreen.cpp
+extern bool g_sharp_text;                       // src/game/rotk_fonts.cpp
 void Pad(int port, input::Pad& pad);            // src/game/rotk_controls.cpp
 extern uint32_t g_button_pictures;              // src/game/rotk_prompts.cpp
 void Loaded();                                  // rotk_movies.cpp
@@ -45,6 +46,10 @@ const app::GameInfo app::kGame = {
                  "With widescreen on, the HUD keeps its shape and the health bar and counters sit at the edges of the "
                  "wide picture. Off, the HUD is stretched to fill it, as on PC.",
                  &rotk::g_hud_edges},
+                {"graphics", "sharp_text", cfg::Type::Bool, "Sharper text",
+                 "Menu and HUD text drawn from the PC version's larger fonts, so it stays sharp at high resolutions. "
+                 "Needs the PC version's Data folder beside ROTKFix.ini.",
+                 &rotk::g_sharp_text},
                 {"graphics", "safe_area", cfg::Type::Bool, "TV-safe border",
                  "The console kept a black border round the picture for old TVs, which cut off the edges. Off, the "
                  "picture fills the screen.",

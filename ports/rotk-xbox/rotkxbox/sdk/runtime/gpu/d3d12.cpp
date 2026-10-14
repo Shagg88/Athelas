@@ -2275,7 +2275,7 @@ void D3D12Backend::UploadTexture(Tex& tx, const TextureDesc& d, const FormatInfo
     // a plain 2D texture in a format a DDS file holds can be dumped and replaced
     pack::Format pf = pack::Format(tx.fmt);
     bool packable = !d.cube && d.depth == 1 && !d.linear && pack::Supported(pf) &&
-                    (pack_lib_.Size() || app::Get().texture_dump || pack::g_builtin);
+                    (pack_lib_.Size() || app::Get().texture_dump || pack::g_builtin || pack::g_builtin_contents);
     std::vector<std::vector<uint8_t>> levels;
     for (uint32_t f = 0; f < faces; f++) {
         for (uint32_t l = 0; l < tx.levels; l++) {
@@ -2320,12 +2320,15 @@ void D3D12Backend::TexturePack(Tex& tx, const TextureDesc& d, const uint8_t* p, 
     }
     tx.pack_hash = h;
     const std::filesystem::path* file = pack_lib_.Find(h);
-    if (!file && !pack::g_builtin) return;
+    if (!file && !pack::g_builtin && !pack::g_builtin_contents) return;
     auto [it, fresh] = pack_cache_.try_emplace(h);
     if (fresh && file && !LoadPackTexture(*file, it->second)) LOGW("texture pack: %s is not a PNG or DDS file the renderer takes", file->string().c_str());
     if (fresh && !file) {
         pack::Image img;
-        if (pack::g_builtin(h, d.width, d.height, img)) CreatePackTexture(img, pack::PngName(d.width, d.height, h), it->second);
+        bool got = pack::g_builtin_contents &&
+                   pack::g_builtin_contents({d.format, d.width, d.height, d.levels, p, TotalSize(d), colours}, img);
+        if (!got && pack::g_builtin) got = pack::g_builtin(h, d.width, d.height, img);
+        if (got) CreatePackTexture(img, pack::PngName(d.width, d.height, h), it->second);
     }
     if (!it->second.res) return;
     tx.repl = it->second.res;
