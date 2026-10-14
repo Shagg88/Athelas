@@ -3102,6 +3102,16 @@ void D3D12Backend::SetViewportScissor(const State& s, uint32_t gw, uint32_t gh) 
 void D3D12Backend::SetBlendFactorStencilRef(const State& s) {
     float bf[4];
     Color(SimpleState(s, kMBlendColor), bf);
+    // D3DBLEND_CONSTANTALPHA and its inverse (0x8003, 0x8004) weigh the colour by the blend colour's alpha, and are
+    // drawn with D3D12's blend factor, so the factor is that alpha in all four channels; with the colour itself the
+    // RGB weight was the colour's RGB (ROTK fades its characters with black ones, 0xF4000000 and so on: they vanished).
+    // Only when no blend in the draw takes the constant colour (0x8001, 0x8002) as well, which one factor can't serve.
+    auto constant_alpha = [](uint32_t f) { return f == 0x8003 || f == 0x8004; };
+    auto constant_color = [](uint32_t f) { return f == 0x8001 || f == 0x8002; };
+    uint32_t src = SimpleState(s, kMSrcBlend), dst = SimpleState(s, kMDestBlend);
+    if ((constant_alpha(src) || constant_alpha(dst)) && !constant_color(src) && !constant_color(dst)) {
+        bf[0] = bf[1] = bf[2] = bf[3];
+    }
     cl_->OMSetBlendFactor(bf);
     cl_->OMSetStencilRef(SimpleState(s, kMStencilRef) & 0xFF);
 }
