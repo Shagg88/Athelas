@@ -888,7 +888,10 @@ bool uninstall(const std::string &dir, std::vector<std::string> &done, std::stri
     }
 
     // 4. Everything else ROTK Fix added (Screenshots are kept: they are the player's)
-    // SDL3.dll is in use by this launcher; it goes with the launcher when it closes
+    // SDL3.dll: when the launcher lives in this folder it is using it, and it goes with the
+    // launcher when it closes; otherwise it is only ROTK Fix's, and goes now
+    if (_stricmp(dir.c_str(), exe_dir().c_str()) && file_exists(dir + "\\SDL3.dll") && DeleteFileA((dir + "\\SDL3.dll").c_str()))
+        done.push_back("Removed SDL3.dll");
     for (const char *f : { "ROTKFix.ini", "ROTKFix.log", LAUNCHER_EXE_OLD })
         if (file_exists(dir + "\\" + f) && DeleteFileA((dir + "\\" + f).c_str())) done.push_back(std::string("Removed ") + f);
     if (GetFileAttributesA((dir + "\\ROTKFix").c_str()) != INVALID_FILE_ATTRIBUTES) {
@@ -897,7 +900,7 @@ bool uninstall(const std::string &dir, std::vector<std::string> &done, std::stri
     }
 
     // 5. The launcher itself: removed by remove_launcher_after_exit() when it closes
-    done.push_back("The launcher removes itself when it closes");
+    if (!_stricmp(dir.c_str(), exe_dir().c_str())) done.push_back("The launcher removes itself when it closes");
     return true;
 }
 
@@ -1085,10 +1088,20 @@ static bool copy_tree(const std::string &from, const std::string &toDir, DWORD &
     return r == 0 && !op.fAnyOperationsAborted;
 }
 
+// Where the launcher keeps the files ROTK Fix puts in a PC game folder: ROTKFix\pcfix
+// in a release (the same layout as in the game folder: the DLLs, then ROTKFix\dxvk,
+// \sound, \licenses), or the launcher's own folder in older layouts and while testing.
+std::string pc_fix_source()
+{
+    std::string p = exe_dir() + "\\ROTKFix\\pcfix";
+    return file_exists(p + "\\ROTKFix.dll") ? p : exe_dir();
+}
+
+// Puts ROTK Fix into a PC game folder (only its own files; the launcher stays where it is).
 bool install_to(const std::string &src, const std::string &dst, std::string &err, bool &accessDenied)
 {
     accessDenied = false;
-    static const char *files[] = { LAUNCHER_EXE, "ROTKFix.dll", "d3d8.dll", "dinput8.dll", "SDL3.dll" };
+    static const char *files[] = { "ROTKFix.dll", "d3d8.dll", "dinput8.dll", "SDL3.dll" };
     for (const char *f : files)
         if (!file_exists(src + "\\" + f)) { err = std::string("ROTK Fix is incomplete here: ") + f + " is missing. Unzip the whole download again."; return false; }
     if (lower(src) == lower(dst)) { err = "That is already this folder."; return false; }
@@ -1115,9 +1128,13 @@ bool install_to(const std::string &src, const std::string &dst, std::string &err
     DeleteFileA((dst + "\\" LAUNCHER_EXE_OLD).c_str());     // the launcher's old name
     for (const char *f : { "README.txt", "ROTKFix.ini" })
         if (file_exists(src + "\\" + f) && !file_exists(dst + "\\" + f)) CopyFileA((src + "\\" + f).c_str(), (dst + "\\" + f).c_str(), TRUE);
-    if (GetFileAttributesA((src + "\\ROTKFix").c_str()) != INVALID_FILE_ATTRIBUTES) {
+    // the renderer, sound and licences (not the launcher's own data, which stays with it)
+    for (const char *sub : { "dxvk", "sound", "licenses" }) {
+        std::string from = src + "\\ROTKFix\\" + sub;
+        if (GetFileAttributesA(from.c_str()) == INVALID_FILE_ATTRIBUTES) continue;
         DWORD e = 0;
-        if (!copy_tree(src + "\\ROTKFix", dst, e)) { err = "Could not copy the ROTKFix folder (error " + std::to_string(e) + ")."; return false; }
+        CreateDirectoryA((dst + "\\ROTKFix").c_str(), NULL);
+        if (!copy_tree(from, dst + "\\ROTKFix", e)) { err = std::string("Could not copy ROTKFix\\") + sub + " (error " + std::to_string(e) + ")."; return false; }
     }
     return true;
 }

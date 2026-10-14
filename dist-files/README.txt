@@ -38,7 +38,7 @@ aren't code-signed (signing costs money every year), so Windows SmartScreen
 may say the launcher is "unrecognised" (click "More info", then "Run anyway").
 - Every release is built automatically from the published source code on
   GitHub, and each download has a .sha256 file next to it. To check your
-  download: in PowerShell, run  Get-FileHash ROTKFix-<version>.zip  and
+  download: in PowerShell, run  Get-FileHash Athelas-<version>.zip  and
   compare the result with the .sha256 file.
 - If your antivirus removes a file, restore it and add an exception for the
   game folder, or report the false positive to your antivirus maker.
@@ -48,12 +48,21 @@ folder (and the game's settings file in Documents, with a backup).
 
 INSTALL
 -------
-1. Unzip everything into your game folder (the folder with rotk.exe).
-   If Windows asks to replace d3d8.dll or dinput8.dll, those files belong to
-   another mod. Copy them somewhere safe first, then let ROTK Fix replace them.
-2. Run Athelas.exe (the launcher). Choose your settings and press PLAY.
-   Always start the game from the launcher from now on: it is where every
-   setting lives, and it saves them for the game each time.
+1. Unzip everything into a folder of its own, for example C:\Games\Athelas
+   (not into a game folder).
+2. Run Athelas.exe (the launcher) and show it where your games are:
+   - The Return of the King (PC): choose your installed game and press
+     "Set up ROTK Fix here". This puts ROTK Fix's files (ROTKFix.dll,
+     d3d8.dll, dinput8.dll, SDL3.dll and a ROTKFix folder) into the game's
+     folder, next to rotk.exe - the game's own files aren't changed. If
+     another mod's d3d8.dll or dinput8.dll is there, it is kept and put back
+     when you remove ROTK Fix. A game in Program Files asks for Windows'
+     permission.
+   - The Xbox games: choose the folder you extracted the game to, or its disc
+     image. Nothing is copied or changed there.
+3. Choose your settings and press PLAY. Always start the games from the
+   launcher from now on: it is where every setting lives, and it saves them
+   for the game each time.
 
 The first time you press Save or Play, the launcher adds the controller layout
 to the game's Input.ini (the original is kept as Input.ini.original) and
@@ -63,8 +72,8 @@ updates the game's settings file in Documents (a copy of yours is kept).
 UNINSTALL
 ---------
 Open the launcher, go to About, and press "Remove ROTK Fix". It removes every
-ROTK Fix file and puts the game's own files back. Saved games and screenshots
-are kept.
+ROTK Fix file from the game folder and puts the game's own files back. Saved
+games and screenshots are kept. Then delete the launcher's folder.
 
 
 WHILE PLAYING

@@ -581,7 +581,8 @@ static void refresh_controllers(App &a)
     SDL_free(ids);
 }
 
-static bool g_removeSelf;      // uninstalled: delete the launcher when it closes
+static bool g_removeSelf;      // uninstalled from the launcher's own folder: delete the launcher when it closes
+static bool g_fixRemoved;      // ROTK Fix was just removed from the PC game shown (Play and Save are off)
 static bool g_xboxPage;        // the Return of the King page is showing the Xbox version (PC-only options greyed out)
 
 // A note under a section whose options are the PC game's own and don't apply on Xbox
@@ -1237,10 +1238,57 @@ static void status_dot(bool ok, bool warn, const char *label, const char *tip)
 // ---------------------------------------------------------------------------
 // The player's games
 
-// Is the game shown the PC game in this launcher's own folder (the normal case)?
+// a.dir is the PC game folder whose ROTK Fix settings are loaded (ROTKFix.ini there), or the
+// launcher's own folder when there is none. The launcher itself can be anywhere: setting up
+// the PC game puts only ROTK Fix's files in the game's folder (install_to).
+// Is the game shown that PC game (or no game yet)?
 static bool own_game(const App &a)
 {
     return a.cur < 0 || (a.lib[a.cur].kind == GK_ROTK_PC && !_stricmp(a.lib[a.cur].path.c_str(), a.dir.c_str()));
+}
+
+// Load the settings of the PC game in 'dir' (or of the launcher's folder): at start, after
+// setting ROTK Fix up somewhere, and when the player switches to another PC copy.
+static bool load_pc_settings(App &a, const std::string &dir)
+{
+    a.dir = dir;
+    a.game = inspect_game(a.dir);
+    a.s = Settings();
+    bool hadIni = load_settings(a.dir, a.s);
+    if (!hadIni) { apply_preset(a.s, PRESET_HIGH); a.firstRunPreset = true; }
+    a.s.renderer = 0;   // Vulkan always; the DLL falls back to Direct3D 8 by itself if Vulkan is unavailable
+    // the saved screen by name (the order of screens can change)
+    for (size_t i = 0; i < a.monitors.size(); i++) {
+        const Monitor &m = a.monitors[i];
+        bool match = _stricmp(a.s.screen.c_str(), "main") ? m.device.size() > 4 && !_stricmp(m.device.c_str() + 4, a.s.screen.c_str())
+                                                          : m.primary;
+        if (match) { a.s.monitor = (int)i; break; }
+    }
+    if (a.s.monitor >= (int)a.monitors.size()) a.s.monitor = 0;
+    // a saved fullscreen size this screen doesn't offer (any more): back to the screen's own
+    if (!a.monitors.empty() && a.s.displayMode == 1 && a.s.width > 0 && !mon(a).find(a.s.width, a.s.height)) a.s.width = a.s.height = 0;
+    g_fixRemoved = false;
+    return hadIni;
+}
+
+static bool fix_installed(const GameInfo &g) { return g.hasDll && g.hasProxyD3D8; }
+
+// Saving a protected game folder (Program Files) needs administrator rights: start the
+// launcher again with Windows' permission prompt, on that game. False if declined.
+static bool restart_elevated_for(App &a, const std::string &dir)
+{
+    if (!start_launcher(exe_dir(), true, "--elevated --pc \"" + dir + "\"")) return false;
+    a.quit = true;
+    return true;
+}
+
+// Show another PC copy that has ROTK Fix: its settings are loaded from its folder.
+static void use_pc_game(App &a, const std::string &dir)
+{
+    if (!folder_writable(dir) && restart_elevated_for(a, dir)) return;
+    load_pc_settings(a, dir);
+    if (!folder_writable(dir)) set_message(a, "This game folder is protected by Windows, so settings can't be saved. "
+                                              "Open the launcher again and allow the permission prompt.", true);
 }
 
 static void add_game_from(App &a, const std::string &path)
@@ -1406,7 +1454,7 @@ static void tab_about(App &a)
         static bool finished;
         ImGui::PushTextWrapPos(0);
         if (!finished) {
-            ImGui::TextUnformatted("This removes ROTK Fix, its settings and this launcher from the game folder, "
+            ImGui::TextUnformatted("This removes ROTK Fix and its settings from the game folder, "
                                    "and restores the game's Input.ini and your ROTK.ini. "
                                    "The game will run as it did before ROTK Fix. Saved games and screenshots are kept.");
             if (!err.empty()) ImGui::TextColored(C_BAD, "%s", err.c_str());
@@ -1416,7 +1464,10 @@ static void tab_about(App &a)
             ImGui::PushStyleColor(ImGuiCol_Text, rgb(250, 228, 214));
             if (ImGui::Button("Remove", ImVec2(S(150), 0))) {
                 done.clear(); err.clear();
-                if (uninstall(a.dir, done, err)) { finished = true; g_removeSelf = true; }
+                if (uninstall(a.dir, done, err)) {
+                    finished = true; g_fixRemoved = true;
+                    g_removeSelf = !_stricmp(a.dir.c_str(), exe_dir().c_str());   // the launcher was in the game folder
+                }
             }
             ImGui::PopStyleColor(3);
             ImGui::SameLine();
@@ -1427,7 +1478,10 @@ static void tab_about(App &a)
             for (auto &d : done) ImGui::BulletText("%s", d.c_str());
             ImGui::PopFont();
             ImGui::Spacing();
-            if (ImGui::Button("Close", ImVec2(S(150), 0))) a.quit = true;
+            if (ImGui::Button("Close", ImVec2(S(150), 0))) {
+                if (g_removeSelf) a.quit = true;
+                else { ImGui::CloseCurrentPopup(); finished = false; a.game = inspect_game(a.dir); a.otherFor.clear(); }
+            }
         }
         ImGui::PopTextWrapPos();
         ImGui::EndPopup();
@@ -1435,15 +1489,42 @@ static void tab_about(App &a)
 }
 
 
-// Shown instead of the settings when the launcher is not next to rotk.exe
+// After ROTK Fix is in place in a PC game folder: remember that game and show it.
+static void pc_game_ready(App &a, const std::string &dir)
+{
+    LibGame g;
+    if (detect_game_at(dir, g) == GK_ROTK_PC) {
+        a.cur = library_add(a.lib, g);
+        library_save(exe_dir(), a.lib);
+    }
+    load_pc_settings(a, dir);
+    a.otherFor.clear(); a.searched = false;
+    set_message(a, "ROTK Fix is set up in " + dir + ". Choose your settings and press Play.", false);
+}
+
+// Puts ROTK Fix's files into a PC game folder (the launcher stays where it is)
 static void setup_here(App &a, const std::string &dst)
 {
     bool denied = false;
     a.setupErr.clear(); a.deniedDir.clear();
-    if (install_to(a.dir, dst, a.setupErr, denied)) {
-        if (start_launcher(dst, false, "")) a.quit = true;
-        else a.setupErr = "ROTK Fix was copied to " + dst + ". Open " LAUNCHER_EXE " there.";
-    } else if (denied) a.deniedDir = dst;
+    if (install_to(pc_fix_source(), dst, a.setupErr, denied)) pc_game_ready(a, dst);
+    else if (denied) a.deniedDir = dst;
+}
+
+// The game is in a protected folder (Program Files): the launcher starts again with
+// administrator rights, sets ROTK Fix up there and carries on as administrator
+// (needed to save that game's settings).
+static void admin_setup_prompt(App &a)
+{
+    if (a.deniedDir.empty()) return;
+    ImGui::PushTextWrapPos(0);
+    ImGui::TextUnformatted("The game is in a protected folder. Windows will ask for permission to put ROTK Fix there "
+                           "(and each time you change its settings).");
+    ImGui::PopTextWrapPos();
+    if (ImGui::Button("Set up with administrator permission")) {
+        if (start_launcher(exe_dir(), true, "--install-to \"" + a.deniedDir + "\"")) a.quit = true;
+        else a.setupErr = "Permission was not given.";
+    }
 }
 
 
@@ -2801,23 +2882,31 @@ static void draw_other_game(App &a)
     ImGui::TextUnformatted(o.versionText.c_str());
     row_end();
     ImGui::Spacing();
-    if (o.hasDll && o.hasProxyD3D8) {
-        ImGui::PushTextWrapPos(0);
-        ImGui::TextUnformatted("ROTK Fix is installed there, with its own settings.");
-        ImGui::PopTextWrapPos();
-        if (ImGui::Button("Open the launcher there")) { if (start_launcher(g.path, false, "")) a.quit = true; }
+    if (fix_installed(o)) {        // (normally switched to straight away in draw_ui)
+        if (ImGui::Button("Show its settings")) use_pc_game(a, g.path);
     } else {
         ImGui::PushTextWrapPos(0);
-        ImGui::TextUnformatted("ROTK Fix isn't installed in that folder yet.");
+        ImGui::TextUnformatted("ROTK Fix isn't set up for this copy yet. Setting it up puts ROTK Fix's files in the game's folder, "
+                               "next to rotk.exe (the game's own files aren't changed). Remove ROTK Fix on the About tab takes them out again.");
         ImGui::PopTextWrapPos();
         if (gold_button("Set up ROTK Fix there", ImVec2(S(240), S(36)), F_BODY)) { setup_here(a, g.path); a.otherFor.clear(); }
         if (!a.setupErr.empty()) { ImGui::PushTextWrapPos(0); ImGui::TextColored(C_BAD, "%s", a.setupErr.c_str()); ImGui::PopTextWrapPos(); }
+        admin_setup_prompt(a);
     }
 }
 
 static void draw_setup(App &a)
 {
-    if (!a.searched) { a.found = find_game_folders(); a.searched = true; }
+    if (!a.searched) {
+        a.found = find_game_folders();
+        for (const LibGame &g : a.lib)          // PC copies the player added before
+            if (g.kind == GK_ROTK_PC && !g.iso) {
+                bool have = false;
+                for (auto &f : a.found) if (!_stricmp(f.dir.c_str(), g.path.c_str())) have = true;
+                if (!have) a.found.insert(a.found.begin(), FoundGame{ g.path, inspect_game(g.path) });
+            }
+        a.searched = true;
+    }
     section("Let's find your games");
     ImGui::PushTextWrapPos(0);
     ImGui::TextUnformatted("This launcher plays your own copies of The Return of the King (PC or Xbox) and The Two Towers (Xbox). "
@@ -2842,8 +2931,8 @@ static void draw_setup(App &a)
 
     section("The Return of the King  -  PC");
     ImGui::PushTextWrapPos(0);
-    ImGui::TextUnformatted("For the PC version, ROTK Fix has to be in the game's own folder (the one with rotk.exe), "
-                           "and this launcher isn't there. Choose your game below and ROTK Fix will be set up there for you.");
+    ImGui::TextUnformatted("Choose your installed game below. ROTK Fix's files are put in the game's own folder; "
+                           "the game's files aren't changed, and the launcher stays where it is.");
     ImGui::PopTextWrapPos();
     ImGui::Spacing();
     if (a.found.empty()) {
@@ -2859,8 +2948,10 @@ static void draw_setup(App &a)
             ImGui::TextColored(f.info.versionOk ? C_GOOD : C_WARN, "%s%s", f.info.versionText.c_str(),
                                f.info.hasDll ? "  -  ROTK Fix already installed there" : "");
             ImGui::PopFont();
-            if (f.info.hasDll && f.info.hasProxyD3D8) {
-                if (ImGui::Button("Open the launcher there")) { if (start_launcher(f.dir, false, "")) a.quit = true; }
+            if (fix_installed(f.info)) {
+                if (gold_button("Use this game", ImVec2(S(240), S(36)), F_BODY)) {
+                    if (folder_writable(f.dir) || !restart_elevated_for(a, f.dir)) pc_game_ready(a, f.dir);
+                }
             } else if (gold_button("Set up ROTK Fix here", ImVec2(S(240), S(36)), F_BODY)) {
                 setup_here(a, f.dir);
             }
@@ -2883,15 +2974,7 @@ static void draw_setup(App &a)
         ImGui::TextColored(C_BAD, "%s", a.setupErr.c_str());
         ImGui::PopTextWrapPos();
     }
-    if (!a.deniedDir.empty()) {
-        ImGui::PushTextWrapPos(0);
-        ImGui::TextUnformatted("The game is in a protected folder. Windows will ask for permission once to copy ROTK Fix there.");
-        ImGui::PopTextWrapPos();
-        if (ImGui::Button("Set up with administrator permission")) {
-            if (start_launcher(a.dir, true, "--install-to \"" + a.deniedDir + "\"")) a.quit = true;
-            else a.setupErr = "Permission was not given.";
-        }
-    }
+    admin_setup_prompt(a);
     if (!a.lib.empty()) {
         ImGui::Dummy(ImVec2(0, S(10)));
         games_section(a);
@@ -2917,7 +3000,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
         bool tt = a.cur >= 0 && a.cur < (int)a.lib.size() && a.lib[a.cur].kind == GK_TT_XBOX;
         int group = tt ? 1 : 0;
         if (group != a.bg.group || (group == 0 && art_ready() && !a.bg.artIn))
-            backgrounds_rebuild(a.bg, group, a.dir, tt && !a.lib[a.cur].iso ? a.lib[a.cur].path : std::string());
+            backgrounds_rebuild(a.bg, group, exe_dir(), tt && !a.lib[a.cur].iso ? a.lib[a.cur].path : std::string());
     }
     backgrounds_poll(a.bg, ren);
     if (!a.bg.job && !a.bg.files.empty() &&
@@ -3010,6 +3093,11 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     }
     ImGui::PopStyleColor(2);
     ImGui::PopFont();
+    // another PC copy chosen that already has ROTK Fix: show its settings
+    if (a.cur >= 0 && a.lib[a.cur].kind == GK_ROTK_PC && !a.lib[a.cur].iso && _stricmp(a.lib[a.cur].path.c_str(), a.dir.c_str())) {
+        if (a.otherFor != a.lib[a.cur].path) { a.other = inspect_game(a.lib[a.cur].path); a.otherFor = a.lib[a.cur].path; }
+        if (fix_installed(a.other)) use_pc_game(a, a.lib[a.cur].path);
+    }
     const bool own = own_game(a);
     // The Two Towers shown, and its port ready: Play and Save work for it
     if (!own && a.lib[a.cur].kind == GK_TT_XBOX && !a.ttLooked) tt_find(a);
@@ -3024,7 +3112,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     std::vector<St> st;
     bool filesOk = g.hasDll && g.hasProxyD3D8 && g.hasProxyDinput && g.hasDxvk;
     st.push_back({ g.exeFound && g.versionOk, g.exeFound, g.exeFound ? (g.versionOk ? "Game v1.0" : g.discProtected ? "Disc version (protected)" : "Unknown game version") : "Game not found",
-                   g.exeFound ? g.versionText : "Put the launcher in the game folder (next to rotk.exe)." });
+                   g.exeFound ? g.versionText : "Add your game on the About tab." });
     st.push_back({ filesOk, false, filesOk ? "ROTK Fix ready" : "Files missing",
                    filesOk ? "ROTK Fix and the Vulkan renderer are installed." : "Some ROTK Fix files are missing - see the About tab." });
     if (g.otherD3D8 || g.otherDinput) {
@@ -3185,7 +3273,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     if (autoPlay && ttShown) { autoPlay = false; tt_play(a, a.lib[a.cur]); }
     if (autoPlay && rxShown && rx_ready(a)) { autoPlay = false; if (save(a)) rx_play(a, a.lib[a.cur]); }
     ImGui::SetCursorPos(ImVec2(bx, by));
-    bool playOk = !(ttShown ? a.running != NULL : rxShown ? (!rx_ready(a) || a.running != NULL) : (!own || !g.exeFound || g_removeSelf));
+    bool playOk = !(ttShown ? a.running != NULL : rxShown ? (!rx_ready(a) || a.running != NULL) : (!own || !g.exeFound || g_fixRemoved));
     if (orn_arch_button("PLAY", ImVec2(playW, playH), F_PLAY, playOk)) {
         if (ttShown) tt_play(a, a.lib[a.cur]);
         else if (rxShown) { if (save(a)) rx_play(a, a.lib[a.cur]); }
@@ -3197,7 +3285,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     }
     bx -= saveW + S(12);
     ImGui::SetCursorPos(ImVec2(bx, by + (playH - btnH) * 0.5f));
-    bool saveOk = ttShown || rxShown || !(!own || !g.exeFound || g_removeSelf);
+    bool saveOk = ttShown || rxShown || !(!own || !g.exeFound || g_fixRemoved);
     if (orn_plate_button("Save", ImVec2(saveW, btnH), saveOk)) { if (ttShown) tt_save(a); else save(a); }
 
     ImGui::End();
@@ -3209,27 +3297,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
 {
     if (cmdLine && strstr(cmdLine, "--vkprobe")) return gpu_probe_main();   // the background graphics check (gpu.cpp)
     if (!(cmdLine && strstr(cmdLine, "--install-to "))) gpu_probe_start();
-    // started with administrator rights to copy ROTK Fix into a protected game folder
-    if (const char *arg = strstr(cmdLine ? cmdLine : "", "--install-to ")) {
-        std::string dst = arg + 13;
-        while (!dst.empty() && (dst[0] == '"' || dst[0] == ' ')) dst.erase(0, 1);
-        while (!dst.empty() && (dst.back() == '"' || dst.back() == ' ')) dst.pop_back();
+    // "--install-to <dir>" (with administrator rights): put ROTK Fix into a protected game
+    // folder, then carry on as the launcher for that game. "--pc <dir>": show that PC game.
+    auto quoted_arg = [&](const char *name) {
+        const char *at = strstr(cmdLine ? cmdLine : "", name);
+        if (!at) return std::string();
+        at += strlen(name);
+        while (*at == ' ') at++;
+        std::string v;
+        if (*at == '"') { const char *e = strchr(at + 1, '"'); v.assign(at + 1, e ? e : at + strlen(at)); }
+        else { const char *e = strchr(at, ' '); v.assign(at, e ? e : at + strlen(at)); }
+        return v;
+    };
+    std::string pcArg = quoted_arg("--pc ");
+    bool justInstalled = false;
+    if (std::string dst = quoted_arg("--install-to "); !dst.empty()) {
         std::string err; bool denied = false;
-        if (!install_to(exe_dir(), dst, err, denied)) { MessageBoxA(NULL, err.c_str(), "Athelas", MB_ICONERROR); return 1; }
-        start_launcher(dst, false, "");
-        return 0;
-    }
-    // A game installed in a protected folder (Program Files - where the disc
-    // installs by default): settings and the controller layout can only be
-    // saved there with administrator rights. Restart once with Windows'
-    // permission prompt; if it is declined, carry on and explain.
-    bool protectedDir = false;
-    {
-        std::string d = exe_dir();
-        if (GetFileAttributesA((d + "\\rotk.exe").c_str()) != INVALID_FILE_ATTRIBUTES && !folder_writable(d)) {
-            if (!strstr(cmdLine ? cmdLine : "", "--elevated") && start_launcher(d, true, "--elevated")) return 0;
-            protectedDir = true;
-        }
+        if (!install_to(pc_fix_source(), dst, err, denied)) { MessageBoxA(NULL, err.c_str(), "Athelas", MB_ICONERROR); return 1; }
+        pcArg = dst; justInstalled = true;
     }
     SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
     SDL_SetHint(SDL_HINT_WINDOWS_INTRESOURCE_ICON, "1");
@@ -3271,19 +3356,32 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
 
     App a;
     a.win = win;
-    a.dir = exe_dir();
-    a.game = inspect_game(a.dir);
-    // the player's games: this folder's PC game first, then the remembered ones
-    a.lib = library_load(a.dir);
-    if (a.game.exeFound) {
+    // the player's games, remembered next to the launcher (ROTKFix\games.ini)
+    a.lib = library_load(exe_dir());
+    // Which PC game's settings to show: one named on the command line; else the launcher's own
+    // folder if it is a game folder (older layout); else the first remembered PC copy with ROTK Fix.
+    std::string pcDir;
+    {
         LibGame own;
-        if (detect_game_at(a.dir, own) == GK_ROTK_PC) {
-            for (size_t i = 0; i < a.lib.size(); i++)
-                if (!_stricmp(a.lib[i].path.c_str(), own.path.c_str())) { a.lib.erase(a.lib.begin() + i); break; }
-            a.lib.insert(a.lib.begin(), own);
-            a.cur = 0;
-            if (!protectedDir) library_save(a.dir, a.lib);
+        if (!pcArg.empty() && detect_game_at(pcArg, own) == GK_ROTK_PC) pcDir = own.path;
+        else if (detect_game_at(exe_dir(), own) == GK_ROTK_PC) pcDir = own.path;
+        else
+            for (const LibGame &g : a.lib)
+                if (g.kind == GK_ROTK_PC && !g.iso && fix_installed(inspect_game(g.path))) { pcDir = g.path; break; }
+        if (!pcDir.empty() && detect_game_at(pcDir, own) == GK_ROTK_PC) {
+            a.cur = library_add(a.lib, own);
+            library_save(exe_dir(), a.lib);
         }
+    }
+    // A game installed in a protected folder (Program Files - where the disc
+    // installs by default): settings and the controller layout can only be
+    // saved there with administrator rights. Restart once with Windows'
+    // permission prompt; if it is declined, carry on and explain.
+    bool protectedDir = false;
+    if (!pcDir.empty() && !folder_writable(pcDir)) {
+        if (!strstr(cmdLine ? cmdLine : "", "--elevated") && !justInstalled &&
+            start_launcher(exe_dir(), true, "--elevated --pc \"" + pcDir + "\"")) return 0;
+        protectedDir = true;
     }
     // Not in a PC game's folder, but the player has Xbox games: open on the first of them
     // (The Return of the King first) instead of the PC setup screen.
@@ -3293,24 +3391,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
                 if (a.lib[i].kind == k && game_region_supported(a.lib[i])) a.cur = (int)i;
     if (const char *t = getenv("ROTKFIX_GAME")) { int n = atoi(t); if (n >= 0 && n < (int)a.lib.size()) a.cur = n; }   // testing
     a.monitors = enum_monitors();
-    bool hadIni = load_settings(a.dir, a.s);
-    if (!hadIni) { apply_preset(a.s, PRESET_HIGH); a.firstRunPreset = true; }
-    a.s.renderer = 0;   // Vulkan always; the DLL falls back to Direct3D 8 by itself if Vulkan is unavailable
-    // the saved screen by name (the order of screens can change)
-    for (size_t i = 0; i < a.monitors.size(); i++) {
-        const Monitor &m = a.monitors[i];
-        bool match = _stricmp(a.s.screen.c_str(), "main") ? m.device.size() > 4 && !_stricmp(m.device.c_str() + 4, a.s.screen.c_str())
-                                                          : m.primary;
-        if (match) { a.s.monitor = (int)i; break; }
-    }
-    if (a.s.monitor >= (int)a.monitors.size()) a.s.monitor = 0;
-    // a saved fullscreen size this screen doesn't offer (any more): back to the screen's own
-    if (a.s.displayMode == 1 && a.s.width > 0 && !mon(a).find(a.s.width, a.s.height)) a.s.width = a.s.height = 0;
+    bool hadIni = load_pc_settings(a, pcDir.empty() ? exe_dir() : pcDir);
     refresh_controllers(a);
 
     bg_show_load();   // the pictures themselves are listed on the first frame
     if (getenv("ROTKFIX_SAVE_AND_EXIT")) { save(a); return 0; }     // testing
     if (!hadIni) set_message(a, "Welcome! Settings are chosen for your PC - press Play, or adjust anything first.", false);
+    if (justInstalled) set_message(a, "ROTK Fix is set up in " + pcDir + ". Choose your settings and press Play.", false);
     if (protectedDir) set_message(a, "This game folder is protected by Windows, so settings can't be saved. "
                                      "Open the launcher again and allow the permission prompt.", true);
 

@@ -41,10 +41,12 @@ has a `.sha256` next to it (`Get-FileHash` in PowerShell to compare). ROTK Fix m
 ## Install
 
 1. Download the zip from [Releases](../../releases).
-2. Unzip it into the game folder (the one with `rotk.exe`).
-3. Run `Athelas.exe` (the launcher) and press **Play**.
+2. Unzip it into a folder of its own (not a game folder).
+3. Run `Athelas.exe` (the launcher) and show it your games. For the PC game it puts ROTK Fix's files
+   (the DLLs and a `ROTKFix` folder) next to `rotk.exe`; the Xbox games are only read.
+4. Press **Play**.
 
-To uninstall, use **About → Remove ROTK Fix** in the launcher.
+To uninstall, use **About → Remove ROTK Fix** in the launcher, then delete the launcher's folder.
 
 ## How it works
 
