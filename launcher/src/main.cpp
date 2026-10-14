@@ -4,7 +4,7 @@
 // are set up, lets the player change every setting, writes ROTKFix.ini and
 // the game's own ROTK.ini, then starts rotk.exe.
 //
-// Dear ImGui (MIT) on SDL3 (zlib). Fonts: Cinzel and EB Garamond (SIL OFL).
+// Dear ImGui (MIT) on SDL3 (zlib). Fonts: Uncial Antiqua, Cinzel and EB Garamond (SIL OFL).
 // Pictures: stb_image (public domain / MIT).
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -29,6 +29,7 @@
 #include <shlobj.h>
 #include "font_cinzel.h"
 #include "font_garamond.h"
+#include "font_uncial.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ONLY_JPEG
@@ -1427,7 +1428,7 @@ static void tab_about(App &a)
         { "Dear ImGui", "Launcher interface - MIT licence" },
         { "stb_image, stb_image_write", "Pictures and screenshots - public domain / MIT" },
         { "DSOAL, OpenAL Soft", "3D sound and EAX reverb - LGPL" },
-        { "Cinzel, EB Garamond", "Fonts - SIL Open Font License" },
+        { "Uncial Antiqua, Cinzel, EB Garamond", "Fonts - SIL Open Font License" },
         { "Liberation Sans", "Button pictures - SIL Open Font License" } };
     for (auto &l : lic) { ImGui::TextColored(C_GOLD, "%s", l[0]); ImGui::SameLine(S(230)); ImGui::TextUnformatted(l[1]); }
     ImGui::PopTextWrapPos();
@@ -3022,8 +3023,8 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     ImVec2 tp = ImGui::GetCursorScreenPos();
     for (int dx = -1; dx <= 1; dx++)
         for (int dy = -1; dy <= 1; dy++)
-            if (dx || dy) dl->AddText(F_TITLE, F_TITLE->LegacySize, ImVec2(tp.x + dx * S(2), tp.y + dy * S(2)), IM_COL32(0, 0, 0, 110), "ATHELAS");
-    ImGui::TextColored(C_GOLD_H, "ATHELAS");
+            if (dx || dy) dl->AddText(F_TITLE, F_TITLE->LegacySize, ImVec2(tp.x + dx * S(2), tp.y + dy * S(2)), IM_COL32(0, 0, 0, 110), "Athelas");
+    ImGui::TextColored(C_GOLD_H, "Athelas");
     ImGui::PopFont();
     ImGui::SetCursorPosX(pad + S(2));
     ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
@@ -3345,7 +3346,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     F_BODY  = io.Fonts->AddFontFromMemoryTTF((void *)font_garamond_data, sizeof font_garamond_data, S(21), &fc);
     F_SMALL = io.Fonts->AddFontFromMemoryTTF((void *)font_garamond_data, sizeof font_garamond_data, S(18), &fc);
     F_HEAD  = io.Fonts->AddFontFromMemoryTTF((void *)font_cinzel_data, sizeof font_cinzel_data, S(19), &fc);
-    F_TITLE = io.Fonts->AddFontFromMemoryTTF((void *)font_cinzel_data, sizeof font_cinzel_data, S(60), &fc);
+    F_TITLE = io.Fonts->AddFontFromMemoryTTF((void *)font_uncial_data, sizeof font_uncial_data, S(64), &fc);   // the Athelas title
     F_PLAY  = io.Fonts->AddFontFromMemoryTTF((void *)font_cinzel_data, sizeof font_cinzel_data, S(34), &fc);
     io.FontDefault = F_BODY;
     ImGui::GetStyle().FontSizeBase = F_BODY->LegacySize;   // 1.92: size of the default font
