@@ -19,6 +19,22 @@ It lets people play their own copy on a modern PC.
 - **Screenshots:** `\` or Print Screen saves a PNG
 - **Launcher:** every setting in one place, with presets (Original, Balanced, High, Ultra)
 
+## Requirements
+
+- Windows 10 or 11 (64-bit). Older Windows and Linux/Steam Deck (Proton) may work but aren't tested.
+- Your own US copy of each game. No game files are included.
+- **The Return of the King (PC):** a Vulkan 1.3 graphics driver is recommended. Without one, the game runs
+  through Windows' Direct3D 8 with the DXVK-only options (sharpening, colour looks, texture filtering, smooth
+  leaf edges) turned off. The launcher's About tab shows which renderer you'll get.
+- **The Two Towers and The Return of the King (Xbox):** a DirectX 12 graphics card.
+
+## Antivirus and SmartScreen
+
+ROTK Fix replaces `d3d8.dll`/`dinput8.dll` in the game folder and patches the game in memory, the usual way
+for game mods, and its files aren't code-signed. So SmartScreen may call the launcher "unrecognised" and
+some antivirus programs may flag it. Releases are built by GitHub Actions from this source, and every zip
+has a `.sha256` next to it (`Get-FileHash` in PowerShell to compare). ROTK Fix makes no network connections.
+
 ## Install
 
 1. Download the zip from [Releases](../../releases).

@@ -10,6 +10,39 @@ Bros. or the Tolkien Estate. No game files are included: you need your own
 copy of the game, already installed and able to run.
 
 
+REQUIREMENTS
+------------
+- Windows 10 or 11 (64-bit). Older Windows and Linux/Steam Deck (Proton) may
+  work but aren't tested.
+- The Return of the King (PC): your own US copy, installed. A graphics card
+  with a Vulkan 1.3 driver is recommended (most cards from 2016 on, with a
+  current driver). Without one the game still runs through Windows' own
+  Direct3D 8, but sharpening, colour looks, texture filtering and smooth leaf
+  edges are off; the launcher's About tab shows which one you have.
+- The Two Towers and The Return of the King (Xbox): your own US Xbox copy,
+  and a DirectX 12 graphics card.
+- A controller is optional: Xbox, PlayStation, Switch and most others work.
+- Laptops and integrated graphics: on first start the launcher picks the
+  lighter Balanced preset for you.
+
+
+ANTIVIRUS WARNINGS
+------------------
+ROTK Fix works the way game mods have always worked: it puts its own
+d3d8.dll and dinput8.dll next to the game and adjusts the game in memory
+while it runs. Some antivirus programs distrust exactly that, and the files
+aren't code-signed (signing costs money every year), so Windows SmartScreen
+may say the launcher is "unrecognised" (click "More info", then "Run anyway").
+- Every release is built automatically from the published source code on
+  GitHub, and each download has a .sha256 file next to it. To check your
+  download: in PowerShell, run  Get-FileHash ROTKFix-<version>.zip  and
+  compare the result with the .sha256 file.
+- If your antivirus removes a file, restore it and add an exception for the
+  game folder, or report the false positive to your antivirus maker.
+ROTK Fix never connects to the internet and only changes files in the game
+folder (and the game's settings file in Documents, with a backup).
+
+
 INSTALL
 -------
 1. Unzip everything into your game folder (the folder with rotk.exe).
