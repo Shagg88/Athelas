@@ -106,3 +106,26 @@ X86_FUNC(sub_0009EB20) {
     ::kernel::Return(ctx, ctx.eax, 0);  // cdecl, no arguments: pops the return address
     (void)base;
 }
+
+// [[hook]] 0xFDB13, 0xFDC84, 0xFDDE3, 0xFDEC8: the menus (0xFD730) count frames while a direction is held
+// ([0x1DA4A8]: a step at 10, then every 2 frames), which on the console is a third of a second before repeating and
+// 15 steps a second after. Above 30 fps the count only goes up once per console frame (1/30 s of real time), so the
+// menus move at the console's speed at any frame rate.
+void ROTK_MenuRepeat(X86Context& ctx, uint8_t* base) {
+    (void)ctx;
+    (void)base;
+    if (!rotk::g_unlocked) return;
+    using clock = std::chrono::steady_clock;
+    static clock::time_point last = clock::now();
+    static float owed = 0;
+    clock::time_point now = clock::now();
+    float dt = std::chrono::duration<float>(now - last).count();
+    last = now;
+    owed += dt > 0.1f ? 1.0f / 30.0f : dt;  // a fresh hold (or a stall) counts as one console frame
+    if (owed >= 1.0f / 30.0f) {
+        owed -= 1.0f / 30.0f;
+        if (owed > 1.0f / 30.0f) owed = 1.0f / 30.0f;
+        return;  // the game counts this frame
+    }
+    W32(0x1DA4A8, R32(0x1DA4A8) - 1);  // undone by the game's own increment
+}

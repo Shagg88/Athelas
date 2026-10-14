@@ -1153,7 +1153,7 @@ void D3D12Backend::Screenshot(Target& t) {
         o.sharpen = std::min(stg.movie_sharpening, 100u) / 100.0f;
         o.texel[0] = 1.0f / float(std::max(t.gw, 1u));
         o.texel[1] = 1.0f / float(std::max(t.gh, 1u));
-        if (stg.movie_display == 0) {
+        if (stg.movie_display == 0 && g_movie_letterbox) {
             uv[1] = 0.125f;
             uv[3] = 0.75f;
             w = (h * 16 + 4) / 9;
@@ -3130,6 +3130,7 @@ bool D3D12Backend::AssembleDraw(const State& s, uint32_t prim, uint32_t start, u
 void D3D12Backend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t count, const uint8_t* indices) {
     PerfScope perf_draw{g_perf.draw};
     g_perf.draws++;
+    if (g_draw_observer) g_draw_observer(s);
     if (cap_) CapStep(s.rt);
     if (DepthCopy(s)) return;
     DrawEnd draw_end{ext_};
@@ -3621,7 +3622,7 @@ bool D3D12Backend::BlitMovie(const Target& t) {
     float h = float(bb_h_);
     float uv[4] = {0, 0, 1, 1};
     float aspect = 4.0f / 3.0f;
-    if (st.movie_display == 0) {
+    if (st.movie_display == 0 && g_movie_letterbox) {
         // fit: the middle 16:9 of the 4:3 frame, where the films and logos are (their bars are outside it)
         uv[1] = 0.125f;
         uv[3] = 0.75f;

@@ -9,3 +9,31 @@ on_true = 0x00121EC3
 at = 0x000D03D3
 call = "ROTK_FrameWait"
 on_true = 0x000D03F1
+
+[[hook]]                   # the screen's TV-safe border (64 x 32 pixels around the picture): none unless [graphics] safe_area
+at = 0x000BF143
+call = "ROTK_SafeArea"
+
+[[hook]]                   # the same, field rendering mode
+at = 0x000BF20E
+call = "ROTK_SafeArea"
+
+[[hook]]                   # the same, frame rendering mode
+at = 0x000BF26E
+call = "ROTK_SafeArea"
+
+[[hook]]                   # menus: held up, its repeat counter about to count a frame (at 10, a step; then every 2)
+at = 0x000FDB13
+call = "ROTK_MenuRepeat"
+
+[[hook]]                   # held down
+at = 0x000FDC84
+call = "ROTK_MenuRepeat"
+
+[[hook]]                   # held right
+at = 0x000FDDE3
+call = "ROTK_MenuRepeat"
+
+[[hook]]                   # held left
+at = 0x000FDEC8
+call = "ROTK_MenuRepeat"

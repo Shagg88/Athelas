@@ -19,6 +19,7 @@
 #include <atomic>
 #include <cmath>
 #include <cstdint>
+#include <cstring>
 
 #include "app/app.h"
 #include "core/log.h"
@@ -26,12 +27,15 @@
 #include "gpu/state.h"
 #include "gpu/texture.h"
 #include "gpu/vertex.h"
+#include "kernel/kernel.h"
+#include "xdk/hle.h"
 
 namespace rotk {
 uint32_t g_fov_percent = 100;   // [graphics] fov, ROTKFix.ini [Graphics] FieldOfView
 uint32_t g_draw_percent = 100;  // [graphics] draw_distance, ROTKFix.ini [Graphics] DrawDistance
 bool g_alpha_edges = false;     // [graphics] alpha_edges, ROTKFix.ini [Graphics] AlphaEdgeSmoothing
 bool g_hud_edges = false;       // [graphics] hud_edges, ROTKFix.ini [Graphics] HUDEdges
+bool g_safe_area = false;       // [graphics] safe_area: the console's black TV border around the picture
 
 // after the settings load
 void InitCamera() {
@@ -56,16 +60,7 @@ void Projection(float* m) {
         constexpr float screen = 16.0f / 9.0f;
         m[0] *= game_aspect / screen;
     }
-    uint32_t pct = rotk::g_fov_percent;
-    if (pct != 100) {
-        float vfov = 2.0f * std::atan(1.0f / m[5]);
-        if (vfov > 25.0f / kDeg) {
-            float nv = std::fmin(vfov * float(pct) / 100.0f, 150.0f / kDeg);
-            float k = std::tan(vfov * 0.5f) / std::tan(nv * 0.5f);
-            m[0] *= k;
-            m[5] *= k;
-        }
-    }
+    uint32_t pct = rotk::g_fov_percent;  // applied to the camera (CameraFov), so its culling follows
     // draw distance: the far plane f out to f * percent. Standard depth: _33 = f/(f-n), _43 = -n*f/(f-n); reversed
     // depth (z/w = _43/z + _33, 1 at the camera, 0 at f = -_43/_33): _33 divided by the percent
     uint32_t dd = rotk::g_draw_percent;
@@ -142,3 +137,72 @@ bool HudPlace(const gpu::State& s, float x0, float x1, float y0, float y1, float
 
 const int kRegistered = (gpu::g_projection_hook = Projection, gpu::g_ortho_place = HudPlace, 0);
 }  // namespace
+
+// 0xA2B50 (Viewport.c) makes a viewport: its screen shape is 1 x 0.75 (+0x10/+0x14, +0x18/+0x1C) and its aspect 4:3
+// (+0x24, +0x2C). The cameras build their projections and their visibility tests from it, so with widescreen the
+// viewport is made 16:9 here: the world is drawn and culled for the wide picture (only widening the projection
+// left the ground at the sides undrawn: black edges, objects floating). Projection() then sees 16:9 and leaves _11.
+X86_EXTERN_FUNC(__imp__sub_000A2B50);
+X86_FUNC(sub_000A2B50) {
+    __imp__sub_000A2B50(ctx, base);
+    if (!app::Widescreen() || !ctx.eax) return;
+    auto f = [&](uint32_t off, float v) {
+        uint32_t u;
+        std::memcpy(&u, &v, 4);
+        ::kernel::W32(ctx.eax + off, u);
+    };
+    constexpr float kAspect = 16.0f / 9.0f;
+    f(0x14, 1.0f / kAspect);
+    f(0x1C, 1.0f / kAspect);
+    f(0x24, kAspect);
+    f(0x2C, kAspect);
+    static std::atomic<int> logged{0};
+    if (!logged++) LOGR("rotk: viewports made 16:9 (widescreen)");
+}
+
+// 0xA32F0 (ctx): a camera's frustum and projection from its horizontal field of view (camera = [ctx + 4], angle in
+// radians at +0xE0) and its viewport's aspect. The game keeps the horizontal angle, so on a 16:9 viewport the view
+// would lose height; the angle is widened for the call so the vertical view stays the console's (more is seen at
+// the sides, and culled for), and FieldOfView scales the vertical angle as ROTK Fix does (cameras under 25 degrees
+// left alone, 150 at most). The camera's own value is put back afterwards.
+X86_EXTERN_FUNC(__imp__sub_000A32F0);
+X86_FUNC(sub_000A32F0) {
+    uint32_t cam = ::kernel::R32(::kernel::R32(ctx.esp + 4) + 4);
+    uint32_t at = cam + 0xE0, saved = 0;
+    bool wide = app::Widescreen();
+    uint32_t pct = rotk::g_fov_percent;
+    if (cam && (wide || pct != 100)) {
+        saved = ::kernel::R32(at);
+        float h;
+        std::memcpy(&h, &saved, 4);
+        if (h > 0.0f && h < 3.1f) {
+            float tv = std::tan(h * 0.5f) / (4.0f / 3.0f);  // the vertical half angle on the console's 4:3
+            float v = std::atan(tv);
+            if (pct != 100 && 2.0f * v > 25.0f / kDeg) v = std::fmin(v * float(pct) / 100.0f, 75.0f / kDeg);
+            float nh = 2.0f * std::atan(std::tan(v) * (wide ? 16.0f / 9.0f : 4.0f / 3.0f));
+            uint32_t u;
+            std::memcpy(&u, &nh, 4);
+            ::kernel::W32(at, u);
+        } else {
+            cam = 0;
+        }
+    } else {
+        cam = 0;
+    }
+    __imp__sub_000A32F0(ctx, base);
+    if (cam) ::kernel::W32(at, saved);
+}
+
+// [[hook]] 0xBF143, 0xBF20E, 0xBF26E: the game has just set its TV-safe border, 64 pixels across ([0x1E2F08]) and 32
+// down ([0x1E2F18]; 16 in field mode), which every viewport is inset by (0xBE720) and which leaves a black frame
+// round the picture on a monitor: 32 pixels at the sides and 16 at the top and bottom of the 640x480 frame. Without
+// [graphics] safe_area the border is zero, so the world, menus and movies fill the frame as on PC.
+void ROTK_SafeArea(X86Context& ctx, uint8_t* base) {
+    (void)ctx;
+    (void)base;
+    if (rotk::g_safe_area) return;
+    ::kernel::W16(0x1E2F08, 0);
+    ::kernel::W16(0x1E2F18, 0);
+    static std::atomic<int> logged{0};
+    if (!logged++) LOGR("rotk: no TV-safe border, the picture fills the screen");
+}

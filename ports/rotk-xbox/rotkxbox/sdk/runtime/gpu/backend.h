@@ -75,6 +75,12 @@ inline std::atomic<bool> g_sharpen_off{false};
 // the game shows a full-screen movie (its frame fills the back buffer): presented by [graphics] movie_display,
 // movie_sharpening and cutscene_audio_delay instead of as a game frame
 inline std::atomic<bool> g_movie{false};
+// set by a game: the movie on screen has film bars above and below (movie_display "fit" shows its middle 16:9);
+// false shows the whole 4:3 frame, as for logos
+inline std::atomic<bool> g_movie_letterbox{true};
+// set by a game: called with each draw's state before it is drawn (to look at what the game draws). Null for none.
+using DrawObserver = void (*)(const State& s);
+inline DrawObserver g_draw_observer = nullptr;
 // set by a game: alpha to coverage for cut-outs (leaves, grass, fences) when anti-aliasing is on
 inline std::atomic<bool> g_alpha_edges{false};
 // set by a game: fixed function fog distances scaled by this (a longer draw distance), density divided by it

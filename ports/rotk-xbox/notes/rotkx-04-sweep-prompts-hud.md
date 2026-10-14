@@ -54,7 +54,7 @@ picture turned up in Hel01, Min00 or Pal01.
 - xbox (also "original"): the game's own pictures.
 - playstation or nintendo: the port's own pictures (`tools/mkprompts.py`, written into `rotk_prompts_data.h` as PNG
   bytes). They are original art in the Xbox prompts' style:
-  - PlayStation: dark discs with coloured line symbols.
+  - PlayStation: dark discs with plain light line symbols.
   - Nintendo: dark discs with white letters, labelled by position.
   - L1/R1, L2/R2 (L/R, ZL/ZR on Nintendo) for the white and black buttons and the triggers.
 

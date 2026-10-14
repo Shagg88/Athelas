@@ -1,7 +1,7 @@
 """Draws the port's own button pictures for the game's on-screen prompts, in the Xbox prompts' style (a glossy disc,
 the same size and place in its 64x64 texture), for PlayStation and Nintendo controllers, and writes them as PNG
 bytes into src/game/rotk_prompts_data.h. Original artwork: no console maker's art is copied. The PlayStation face
-buttons are dark discs with coloured line symbols; Nintendo's are dark discs with white letters, labelled by
+buttons are dark discs with plain light line symbols (no console maker's colours); Nintendo's are dark discs with white letters, labelled by
 position (the bottom button reads B, the right A, the left Y, the top X).
 Letters: Liberation Sans Bold (SIL Open Font License 1.1), rendered into the pictures.
 usage: python3 tools/mkprompts.py src/game/rotk_prompts_data.h [preview.png]"""
@@ -78,13 +78,14 @@ def shape(kind, colour):
     return f
 
 DARK = (64, 64, 72)
+LIGHT = (236, 236, 240, 255)  # plain symbols: the console maker's colours are its trade dress (as ROTK Fix)
 PICTURES = {
     # Xbox button the game shows -> (style, picture)
     'playstation': {
-        'A': disc(DARK, shape('cross', (124, 178, 232, 255))),
-        'B': disc(DARK, shape('circle', (232, 98, 92, 255))),
-        'X': disc(DARK, shape('square', (226, 140, 196, 255))),
-        'Y': disc(DARK, shape('triangle', (64, 196, 160, 255))),
+        'A': disc(DARK, shape('cross', LIGHT)),
+        'B': disc(DARK, shape('circle', LIGHT)),
+        'X': disc(DARK, shape('square', LIGHT)),
+        'Y': disc(DARK, shape('triangle', LIGHT)),
         'WHITE': disc(DARK, word('L1')), 'BLACK': disc(DARK, word('R1')),
         'LT': disc(DARK, word('L2')), 'RT': disc(DARK, word('R2')),
         'START': disc(DARK, word('OPTIONS')), 'BACK': disc(DARK, word('SHARE')),

@@ -37,6 +37,7 @@ public:
     }
     void Draw(const State& s, uint32_t prim, uint32_t start, uint32_t count, const uint8_t* indices) override {
         draws_++;
+        if (g_draw_observer) g_draw_observer(s);
         if (drawing_) {
             // a 2D draw the game moves sideways (g_ortho_place), as the D3D12 renderer moves it
             float x0, x1, y0, y1, a = 1, b = 0;
