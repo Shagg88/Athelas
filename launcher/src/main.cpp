@@ -661,6 +661,17 @@ static void tab_graphics(App &a)
     ImGui::SliderInt("##sharp", &s.sharpening, 0, 100, s.sharpening == 0 ? "Off" : "%d");
     ImGui::EndDisabled();
     row_end();
+    if (g_xboxPage) {   // the Xbox port draws its text with the PC version's fonts, read from the PC game's files here
+        static int pcFonts = -1;
+        if (pcFonts < 0) { DWORD at = GetFileAttributesA((a.dir + "\\Data\\Game\\GlobScen.scw").c_str()); pcFonts = at != INVALID_FILE_ATTRIBUTES && !(at & FILE_ATTRIBUTE_DIRECTORY); }
+        ImGui::BeginDisabled(!pcFonts);
+        row_begin("Sharper text", pcFonts ? "Draws the game's text with the PC version's larger, sharper fonts instead of the Xbox's small ones."
+                                          : "Needs the PC version: it uses the PC game's fonts (Data\\Game\\GlobScen.scw in this folder).");
+        bool on = s.sharperText && pcFonts;
+        if (ImGui::Checkbox("##sharptext", &on)) s.sharperText = on;
+        row_end();
+        ImGui::EndDisabled();
+    }
     static const char *looks[] = { "Original", "Film", "Vivid", "Dark fantasy" };
     row_begin("Colour look", "Original: the game's own colours.\n"
                              "Film: richer contrast, cool shadows and warm highlights.\n"

@@ -372,6 +372,7 @@ bool load_settings(const std::string &dir, Settings &s)
     s.aniso = geti(ini, "Graphics", "AnisotropicFiltering", 16);
     s.widescreenFix = geti(ini, "Graphics", "WidescreenFix", 1) != 0;
     s.hudEdges = geti(ini, "Graphics", "HUDEdges", 0) != 0;
+    s.sharperText = geti(ini, "Graphics", "SharperText", 0) != 0;
     s.fovPct = clampi(geti(ini, "Graphics", "FieldOfView", 100), 70, 150);
     s.lodBias = std::min(0.0f, std::max(-1.0f, getf(ini, "Graphics", "TextureLODBias", -0.5f)));
     s.brightness = std::min(2.0f, std::max(0.5f, getf(ini, "Graphics", "Brightness", 1.0f)));
@@ -438,6 +439,7 @@ static const std::vector<IniSection> &ini_layout()
             { "ColourLookStrength", "100", "0-100" },
             { "WidescreenFix", "1", "1 = see more at the sides instead of a stretched picture" },
             { "HUDEdges", "0", "Xbox version: 1 = HUD pieces at the screen edges (with WidescreenFix=1)" },
+            { "SharperText", "0", "Xbox version: 1 = text drawn with the PC version's larger fonts (needs Data\\Game\\GlobScen.scw here)" },
             { "FieldOfView", "100", "Percent of the game's own view angle (70-150)" },
             { "DrawDistance", "100", "Percent of the game's own (50-800)" },
             { "UseGameBrightness", nullptr, "1 = the game's own brightness option works in every display mode" },
@@ -580,6 +582,7 @@ static bool write_rotkfix_ini(const std::string &p, const Settings &s, bool crea
     set("Graphics", "ColourLookStrength", std::to_string(s.lookStrength));
     set("Graphics", "WidescreenFix", std::to_string((int)s.widescreenFix));
     set("Graphics", "HUDEdges", std::to_string((int)s.hudEdges));
+    set("Graphics", "SharperText", std::to_string((int)s.sharperText));
     set("Graphics", "FieldOfView", std::to_string(s.fovPct));
     set("Frame", "TargetFPS", std::to_string(s.targetFps));
     set("Frame", "Limiter", "1");

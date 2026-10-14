@@ -34,7 +34,8 @@ struct Settings {
     bool alphaEdges = true;
     int  aniso = 16;              // 0 2 4 8 16
     bool widescreenFix = true;
-    bool hudEdges = false;             // [Graphics] HUDEdges: Xbox version only, HUD pieces at the 16:9 edges
+    bool hudEdges = false;
+    bool sharperText = false;          // [Graphics] SharperText: Xbox version only, the PC version's larger fonts             // [Graphics] HUDEdges: Xbox version only, HUD pieces at the 16:9 edges
     int  fovPct = 100;            // 70-150
     float lodBias = -0.5f;        // -1 .. 0
     float brightness = 1.0f;      // 0.5 - 2
