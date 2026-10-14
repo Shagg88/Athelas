@@ -24,6 +24,7 @@
 #include "library.h"
 #include "port.h"
 #include "ornament.h"
+#include "gpu.h"
 #include <shlobj.h>
 #include "font_cinzel.h"
 #include "font_garamond.h"
@@ -656,7 +657,11 @@ static float hfov_deg(const App &a, int pct)
 static void tab_graphics(App &a)
 {
     Settings &s = a.s;
-    bool vk = s.renderer == 0;
+    // DXVK-only options: off when the PC version will fall back to Windows' Direct3D 8
+    // (no usable Vulkan driver). The Xbox port draws with its own renderer.
+    GpuInfo gi = gpu_info();
+    bool noVulkan = !g_xboxPage && (gi.state == GPU_NO_VULKAN || gi.state == GPU_VULKAN_TOO_OLD);
+    bool vk = g_xboxPage || (s.renderer == 0 && !noVulkan);
     section("Quality");
     static const char *pnames[] = { "Original", "Balanced", "High", "Ultra", "Custom" };
     int p = detect_preset(s);
@@ -672,6 +677,17 @@ static void tab_graphics(App &a)
     row_end();
 
     section("Image");
+    if (noVulkan) {
+        ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
+        ImGui::PushTextWrapPos(0);
+        ImGui::TextColored(C_WARN, gi.state == GPU_VULKAN_TOO_OLD
+            ? "Your graphics driver's Vulkan is too old for the Vulkan renderer (DXVK needs Vulkan 1.3), so the game uses "
+              "Windows' own Direct3D 8 and the greyed-out options can't work. A newer graphics driver may fix this."
+            : "No Vulkan graphics driver was found, so the game uses Windows' own Direct3D 8 and the greyed-out options "
+              "can't work. Installing your graphics card maker's latest driver may fix this.");
+        ImGui::PopTextWrapPos();
+        ImGui::PopFont();
+    }
     static const char *aa[] = { "Off", "2x", "4x", "8x" };
     int aai = s.msaa == 2 ? 1 : s.msaa == 4 ? 2 : s.msaa == 8 ? 3 : 0;
     row_begin("Anti-aliasing", "Smooths jagged edges (MSAA). 8x together with smooth leaf edges is heavy:\n"
@@ -1188,6 +1204,16 @@ static void tab_about(App &a)
     status_dot(g.exeFound && g.versionOk, g.exeFound, g.exeFound ? g.versionText.c_str() : "rotk.exe not found - put the launcher in your game folder", nullptr);
     status_dot(g.hasDll && g.hasProxyD3D8 && g.hasProxyDinput, false, "ROTK Fix files", nullptr);
     status_dot(g.hasDxvk, false, "Vulkan renderer (DXVK)", nullptr);
+    {
+        GpuInfo gi = gpu_info();
+        std::string t = gi.state == GPU_CHECKING ? "Checking the graphics card..."
+                      : gi.state == GPU_VULKAN_OK ? "Graphics: " + gi.name + (gi.software ? " (software)" : gi.integrated ? " (integrated)" : "")
+                      : gi.state == GPU_VULKAN_TOO_OLD ? "Graphics: " + gi.name + " - Vulkan too old for DXVK; Direct3D 8 is used"
+                      : "No Vulkan driver - Direct3D 8 is used";
+        status_dot(gi.state == GPU_VULKAN_OK, gi.state == GPU_CHECKING, t.c_str(),
+                   gi.state == GPU_VULKAN_OK ? nullptr : "Sharpening, colour looks, texture filtering and smooth leaf edges need the "
+                                                         "Vulkan renderer. A newer graphics driver may make it available.");
+    }
     status_dot(g.hasSdl, false, "Controller support (SDL3)", nullptr);
     status_dot(g.rotkIniExists, true, g.rotkIniExists ? "Game settings file found" : "Game settings file will be created", g.rotkIniPath.c_str());
     ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
@@ -3033,6 +3059,8 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
 {
+    if (cmdLine && strstr(cmdLine, "--vkprobe")) return gpu_probe_main();   // the background graphics check (gpu.cpp)
+    if (!(cmdLine && strstr(cmdLine, "--install-to "))) gpu_probe_start();
     // started with administrator rights to copy ROTK Fix into a protected game folder
     if (const char *arg = strstr(cmdLine ? cmdLine : "", "--install-to ")) {
         std::string dst = arg + 13;
