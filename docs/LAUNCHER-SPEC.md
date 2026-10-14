@@ -96,6 +96,7 @@ TwoTowers.exe --describe-settings
 | 3 | "This copy isn't the US release. Only the US version is supported for now." |
 | 4 | "Direct3D 12 couldn't start. Update your graphics driver…" |
 | 5 | "The settings file is damaged (`<reason>`). Use "Reset to defaults"…" |
+| 6 | "The graphics driver stopped responding during play (reason). Try a lower Render resolution, Anti-aliasing off or a lower frame rate…, or update your graphics driver." |
 | other | "The game closed unexpectedly (0x…). Details are in tt.log in `<D>`." |
 
 The launcher also checks the region before Play, so code 3 is a backstop.

@@ -1443,6 +1443,9 @@ static void port_finished(App &a, DWORD code)
     case 2: m = "The game files couldn't be found there, or they aren't " + a.runningGame + ". Check the game's location in the About tab."; break;
     case 3: m = "This copy isn't the US release. Only the US version is supported for now."; break;
     case 4: m = "Direct3D 12 couldn't start. Update your graphics driver; the port needs a DirectX 12 graphics card."; break;
+    case 6: m = "The graphics driver stopped responding during play" + (why.empty() ? std::string("") : " (" + why + ")") +
+                ". Try a lower Render resolution, Anti-aliasing off or a lower frame rate on the Display and Graphics tabs, "
+                "or update your graphics driver."; break;
     case 5: m = "The settings file is damaged" + (why.empty() ? std::string("") : " (" + why + ")") + ". Use \"Reset to defaults\" below, then Play again."; break;
     case 0xC0000135:   // a DLL is missing, before the port could write its log (older builds need the VC++ runtime)
         m = "The game couldn't start because a Windows component is missing. Installing the \"Microsoft Visual C++ "
