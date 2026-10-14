@@ -254,7 +254,7 @@ std::shared_ptr<Image> FindImage(uint32_t header) {
         }
     }
     // a built-in replacement found from the contents (pack::g_builtin_contents), the same way, colours left to it
-    if (pack::g_builtin_contents && img->faces == 1 && !d.linear && d.depth == 1) {
+    if (pack::g_builtin_contents && img->faces == 1 && d.depth == 1) {
         pack::Image rep;
         if (pack::g_builtin_contents({d.format, d.width, d.height, d.levels, guest, TotalSize(d), nullptr}, rep) &&
             !rep.levels.empty() && (rep.format == pack::Format::RGBA8 || rep.format == pack::Format::BGRA8)) {

@@ -46,9 +46,10 @@ const app::GameInfo app::kGame = {
                  "With widescreen on, the HUD keeps its shape and the health bar and counters sit at the edges of the "
                  "wide picture. Off, the HUD is stretched to fill it, as on PC.",
                  &rotk::g_hud_edges},
-                {"graphics", "sharp_text", cfg::Type::Bool, "Sharper text",
-                 "Menu and HUD text drawn from the PC version's larger fonts, so it stays sharp at high resolutions. "
-                 "Needs the PC version's Data folder beside ROTKFix.ini.",
+                {"graphics", "sharp_text", cfg::Type::Bool, "Sharper text and menus",
+                 "Text drawn from the PC version's larger fonts, and the title and main menu pictures from its "
+                 "larger copies, so they stay sharp at high resolutions. Needs the PC version's Data folder beside "
+                 "ROTKFix.ini.",
                  &rotk::g_sharp_text},
                 {"graphics", "safe_area", cfg::Type::Bool, "TV-safe border",
                  "The console kept a black border round the picture for old TVs, which cut off the edges. Off, the "

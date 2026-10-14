@@ -44,6 +44,8 @@
 namespace rotk {
 bool g_sharp_text = false;                 // [graphics] sharp_text, ROTKFix.ini [Graphics] SharperText
 extern std::filesystem::path g_ini_file;  // rotk_settings.cpp: the ROTKFix.ini given, empty without one
+void PrepareMenuArt();                                                       // rotk_menu_art.cpp
+bool ReplaceMenuArt(const gpu::pack::Contents& t, gpu::pack::Image& out);  // rotk_menu_art.cpp
 
 namespace {
 constexpr uint32_t kScale = 4;  // the replacement atlas's size over the Xbox one
@@ -208,6 +210,7 @@ Sharp Build(const Font& xb, const std::vector<Font>& pc) {
 }
 
 std::vector<Sharp> Prepare() {
+    PrepareMenuArt();
     std::vector<uint8_t> xb_file, pc_file;
     // D: may be mounted a moment after the image loads
     bool read = false;
@@ -242,8 +245,10 @@ std::vector<Sharp> Prepare() {
 std::shared_future<std::vector<Sharp>> g_prepared;
 
 bool Replace(const gpu::pack::Contents& t, gpu::pack::Image& out) {
-    if (t.format != 0x0B || t.levels != 1 || !t.data || !g_prepared.valid()) return false;  // P8, one level
+    if (!t.data || !g_prepared.valid() || (t.format != 0x0B && t.format != 0x24)) return false;
     const std::vector<Sharp>& fonts = g_prepared.get();
+    if (t.format == 0x24) return ReplaceMenuArt(t, out);  // YUY2: the menu pictures
+    if (t.levels != 1) return false;                       // P8 fonts, one level
     for (const Sharp& s : fonts) {
         if (s.tex_w != t.width || s.tex_h != t.height || t.size < size_t(t.width) * t.height) continue;
         uint64_t sum = 0;

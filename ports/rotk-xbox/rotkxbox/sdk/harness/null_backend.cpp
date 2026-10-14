@@ -55,6 +55,12 @@ public:
         if (texdump) DumpTexture(s);
     }
     void Copy(const Surface& src, const Surface& dst, uint32_t n, uint32_t rects, uint32_t points) override {
+        if (harness::Env("TEXDUMP") == 2) {  // what is copied onto what, each pair once
+            static std::set<uint64_t> seen;
+            if (seen.insert(uint64_t(src.data) << 32 | dst.data).second)
+                LOGI("copy: %08x fmt %x size %08x -> %08x fmt %x size %08x, %u rects", src.data, src.format, src.size,
+                     dst.data, dst.format, dst.size, n);
+        }
         if (drawing_) reference::Copy(src, dst, n, rects, points);
         else CopySurfaceMemory(src, dst, n, rects, points);
     }
@@ -116,10 +122,13 @@ private:
     // cap/tex/<w>x<h>_<hash>.tga with the hash the renderer's texture packs use (no palette)
     void DumpTexture(const State& s) {
         const auto& pm = s.transforms[3];
-        if (!(pm[11] == 0.0f && pm[15] == 1.0f)) return;
-        uint32_t t = s.textures[0];
+        static const bool all = harness::Env("TEXDUMP") == 2;  // TEXDUMP=2: every draw, not only 2D
+        if (!all && !(pm[11] == 0.0f && pm[15] == 1.0f)) return;
+        for (int stage = 0; stage < (all ? 4 : 1); stage++) DumpStage(s.textures[stage], all);
+    }
+    void DumpStage(uint32_t t, bool all) {
         TextureDesc d;
-        if (!t || !Describe(t, d) || d.cube || d.depth > 1 || d.linear) return;
+        if (!t || !Describe(t, d) || d.cube || d.depth > 1 || (d.linear && !all)) return;
         uint64_t seed = uint64_t(d.format) | uint64_t(d.width) << 8 | uint64_t(d.height) << 24 | uint64_t(d.levels) << 40;
         uint64_t h = Hash(kernel::HostPtr(d.data), TotalSize(d), seed);
         if (!dumped_.insert(h).second) return;
@@ -127,6 +136,12 @@ private:
         char name[96];
         std::snprintf(name, sizeof name, "cap/tex/%ux%u_%016llx_f%X.tga", d.width, d.height, (unsigned long long)h, d.format);
         reference::WriteTextureTga(t, (app::ExeDir() / name).string().c_str());
+        // the guest bytes as stored (all levels), to find them in the game's files
+        std::snprintf(name, sizeof name, "cap/tex/%ux%u_%016llx_f%X.bin", d.width, d.height, (unsigned long long)h, d.format);
+        if (FILE* f = std::fopen((app::ExeDir() / name).string().c_str(), "wb")) {
+            std::fwrite(kernel::HostPtr(d.data), 1, TotalSize(d), f);
+            std::fclose(f);
+        }
     }
     std::set<uint64_t> dumped_;
     // TEXSCAN=<frame>: at that frame, every 64x64 DXT3 texture header in guest memory (Common type texture) is

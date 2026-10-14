@@ -2274,14 +2274,15 @@ void D3D12Backend::UploadTexture(Tex& tx, const TextureDesc& d, const FormatInfo
     std::vector<uint8_t> px;
     // a plain 2D texture in a format a DDS file holds can be dumped and replaced
     pack::Format pf = pack::Format(tx.fmt);
-    bool packable = !d.cube && d.depth == 1 && !d.linear && pack::Supported(pf) &&
+    // linear textures only for a game's own replacements (g_builtin_contents), never dumped
+    bool packable = !d.cube && d.depth == 1 && (!d.linear || pack::g_builtin_contents) && pack::Supported(pf) &&
                     (pack_lib_.Size() || app::Get().texture_dump || pack::g_builtin || pack::g_builtin_contents);
     std::vector<std::vector<uint8_t>> levels;
     for (uint32_t f = 0; f < faces; f++) {
         for (uint32_t l = 0; l < tx.levels; l++) {
             uint32_t pitch;
             DecodeLevel(d, l, f, p, colours, px, pitch);
-            if (packable && app::Get().texture_dump && f == 0 && l == 0) {
+            if (packable && !d.linear && app::Get().texture_dump && f == 0 && l == 0) {
                 // the level as decoded, before an extension changes it, rows tightly packed
                 uint32_t lw = std::max(d.width >> l, 1u), lh = std::max(d.height >> l, 1u);
                 uint32_t rb = pack::RowBytes(pf, lw), rows = pack::Rows(pf, lh);
@@ -2329,6 +2330,10 @@ void D3D12Backend::TexturePack(Tex& tx, const TextureDesc& d, const uint8_t* p, 
                    pack::g_builtin_contents({d.format, d.width, d.height, d.levels, p, TotalSize(d), colours}, img);
         if (!got && pack::g_builtin) got = pack::g_builtin(h, d.width, d.height, img);
         if (got) CreatePackTexture(img, pack::PngName(d.width, d.height, h), it->second);
+        if (!got && d.linear) {  // not kept: linear textures are often movie frames, each new
+            pack_cache_.erase(it);
+            return;
+        }
     }
     if (!it->second.res) return;
     tx.repl = it->second.res;
