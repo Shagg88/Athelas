@@ -12,6 +12,7 @@
 // - 0x29530: copies the difficulty table's damage multipliers (upgd "DIFF") to 0x17F550..0x17F57C at load: easy,
 //   normal, hard x single player, co-op x min, max (damage the player takes).
 #include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -85,26 +86,31 @@ X86_FUNC(sub_00029530) {
 // Live, gone), "Exit" and "PlayTrailer". The Xbox release cut Exit's text and action (its string table has no
 // "mainMenuExit", and no code handles the item); on PC it quits the game, so the port shows it again, always: its
 // label is the unused "Online" entry of the string table (GlobScen: "key\0text\0" pairs) renamed to "mainMenuExit" /
-// "Exit", and choosing it (see MainMenuChoice) ends the game.
+// "Exit" (again whenever the table is loaded anew), and choosing it (see 0xFE010 below) ends the game.
 namespace {
 void LabelExit() {
-    static bool done = false;
-    if (done) return;
-    done = true;
+    // the table is loaded again (elsewhere) with the front end after a level, so it is looked for each time the menu
+    // opens; the old copy may still hold the renamed entry, so only the unrenamed one counts
     static const char kFrom[] = "mainMenuOnline\0Online";
     static const char kTo[] = "mainMenuExit\0\0\0Exit\0\0";  // same length: the table's layout is kept
     static_assert(sizeof(kFrom) == sizeof(kTo));
-    for (uint32_t p = 0x10000; p + sizeof(kFrom) < 0x4000000; p += 0x1000) {
+    static uint32_t at = 0;
+    auto t0 = std::chrono::steady_clock::now();
+    for (uint32_t p = 0x10000; p < 0x4000000; p += 0x1000) {
         if (!mem::IsCommitted(p)) continue;
+        bool next = mem::IsCommitted(p + 0x1000);  // a match may run on into the next page
         const char* page = static_cast<const char*>(::kernel::HostPtr(p));
-        for (uint32_t i = 0; i < 0x1000; i++) {
+        uint32_t end = next ? 0x1000 : 0x1000 - uint32_t(sizeof(kFrom) - 1);
+        for (uint32_t i = 0; i < end; i++) {
             if (page[i] != 'm' || std::memcmp(page + i, kFrom, sizeof(kFrom) - 1) != 0) continue;
             std::memcpy(::kernel::HostPtr(p + i), kTo, sizeof(kTo) - 1);
-            LOGR("rotk: main menu Exit labelled (string table at %08X)", p + i);
+            LOGR("rotk: main menu Exit labelled (string table at %08X, %.1f ms)", p + i,
+                 std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count());
+            at = p + i;
             return;
         }
     }
-    LOGR("rotk: main menu Exit: the string table's Online entry was not found, the item has no label");
+    if (!at) LOGR("rotk: main menu Exit: the string table's Online entry was not found, the item has no label");
 }
 }  // namespace
 

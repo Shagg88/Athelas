@@ -4,9 +4,9 @@
 // sets which movies a button press may stop: type 0 never (LOGOS), 1 always (ATTRFMV1, the bonus videos), 2 only
 // after it has been seen once (every story movie). Same table and rules as ROTK PC (0x572E00, see ROTK Fix).
 // [graphics] skip_all_videos (off by default, as on the console) sets every entry to 1.
-// The opening logos (copyright, THX, New Line, EA) are not a movie of their own on the Xbox, as logos.avi is on PC:
-// they are the start of HELMFMV1.vid, the Helm's Deep intro, so they can only be skipped with the whole intro
-// (skip_all_videos). LOGOS (logos.vid) is never played at startup. ROTK Fix's SkipOpeningLogos has no Xbox match.
+// The opening logos: on a first start (no saved game) they are the start of HELMFMV1.vid, the Helm's Deep intro, so
+// they can only be skipped with the whole intro (skip_all_videos). Once there is a save the game starts with LOGOS
+// (logos.vid: EA, New Line) after the copyright page instead. ROTK Fix's SkipOpeningLogos has no Xbox match.
 //
 // Movie timing: while a movie plays the renderer shows it by the movie settings (gpu::g_movie), which is what
 // [graphics] cutscene_audio_delay needs to hold the picture back for Bluetooth sound. A movie frame is a draw from
@@ -81,8 +81,10 @@ void StartWatcher() {
 
 // movie_display "fit" (ROTK Fix's auto), by the movie's name as ROTK Fix does it: the story films (names with FMV,
 // HELMFMV1 with the opening logos at its start) are letterboxed in the 640x480 frame at rows 65 to 413, as the PC's
-// .avi files are (66 to 416), so their middle 16:9 is shown and they fill the width (gpu::kMovieFit). ATTRFMV1, the
-// *SPC* interviews and the rest are 4:3 pictures, shown 4:3. The name comes from the movie table lookup 0x111B90;
+// .avi files are (66 to 416), so their middle 16:9 is shown and they fill the width (gpu::kMovieFit). LOGOS fills
+// the width too: EA's logo sits in rows 94 to 433 of a blue glow and New Line's in film bars (65 to 413), so the
+// window ends at row 440 to keep EA's bottom line. ATTRFMV1, the *SPC* interviews and the rest are 4:3 pictures,
+// shown 4:3. The name comes from the movie table lookup 0x111B90;
 // the player draws each frame from three planes, Y the 768x544 one (stage 2, LIN_AL8).
 std::string g_movie_name;  // the movie starting, from the type lookup 0x111B90
 std::atomic<bool> g_movie_new{false};
@@ -104,8 +106,13 @@ void WatchMovie(const gpu::State& s) {
     }
     for (char& c : n) c = char(std::toupper(static_cast<unsigned char>(c)));
     bool film = n.find("FMV") != std::string::npos && n != "ATTRFMV1";
-    gpu::g_movie_shape = film ? gpu::kMovieFit : gpu::kMovie43;
-    LOGR("rotk: movie %s (%s)", n.c_str(), film ? "letterboxed film, fills the width" : "4:3");
+    bool logos = n == "LOGOS";
+    gpu::g_movie_fit_bottom = logos ? 440.0f / 480.0f : 0.0f;
+    gpu::g_movie_shape = film || logos ? gpu::kMovieFit : gpu::kMovie43;
+    LOGR("rotk: movie %s (%s)", n.c_str(),
+         logos  ? "logos, fill the width"
+         : film ? "letterboxed film, fills the width"
+                : "4:3");
 }
 const int kWatch = (gpu::g_draw_observer = WatchMovie, 0);
 }  // namespace

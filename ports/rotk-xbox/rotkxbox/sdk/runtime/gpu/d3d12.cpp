@@ -672,7 +672,7 @@ private:
     void ResizeSwap();
     void UploadGammaRamp();
     void DrawFrame(Target* t, uint32_t bi);
-    void BlitFrame(Target& t);
+    void BlitFrame(Target& t, D3D12_CPU_DESCRIPTOR_HANDLE rh);
     void KeepMovieFrame(Target& t);
     void BlackSides(D3D12_CPU_DESCRIPTOR_HANDLE rh, uint32_t w, uint32_t h, float aspect);
     float frame_sides_ = 1.0f;  // g_frame_sides for the frame being shown
@@ -829,6 +829,9 @@ private:
     std::array<MovieFrame, kMovieFrames> movie_ring_;
     uint32_t movie_n_ = 0;  // frames kept since the movie began
     bool movie_on_ = false;
+    // the frame averaged down to the size it is shown at, when it is drawn larger (render_percent over 100)
+    ComPtr<ID3D12Resource> shown_;
+    D3D12_RESOURCE_STATES shown_state_ = D3D12_RESOURCE_STATE_COPY_SOURCE;
     MovieFrame* PickMovieFrame();
     uint32_t samples_ = 1;     // anti-aliasing samples, 1 off
     std::unordered_map<uint32_t, bool> ms_ok_;  // formats that take samples_
@@ -1173,7 +1176,7 @@ void D3D12Backend::Screenshot(Target& t) {
         if (stg.movie_display == 0 && shape == kMovieFit) {
             float fa = MovieFitAspect();
             uv[3] = (4.0f / 3.0f) / fa;
-            uv[1] = 0.5f - uv[3] / 2;
+            uv[1] = MovieFitTop(uv[3]);
             w = uint32_t(float(h) * fa + 0.5f);
         } else if (stg.movie_display == 0 && shape == kMovieWide) {
             w = (h * 16 + 4) / 9;
@@ -3591,7 +3594,7 @@ void D3D12Backend::BlackSides(D3D12_CPU_DESCRIPTOR_HANDLE rh, uint32_t w, uint32
     cl_->ClearRenderTargetView(rh, black, 2, rs);
 }
 
-void D3D12Backend::BlitFrame(Target& t) {
+void D3D12Backend::BlitFrame(Target& t, D3D12_CPU_DESCRIPTOR_HANDLE rh) {
     // 16:9 (or the wider screen's shape, app::FrameAspect) when the console reports a widescreen display, else 4:3
     float aspect = app::FrameAspect();
     float w = float(bb_w_);
@@ -3599,16 +3602,43 @@ void D3D12Backend::BlitFrame(Target& t) {
     float vw = std::min(w, h * aspect);
     float vh = vw / aspect;
     float uv[4] = {0, 0, 1, 1};
+    ID3D12Resource* src = t.res.Get();
+    D3D12_RESOURCE_STATES* src_state = &t.state;
+    DXGI_FORMAT fmt = t.fmt;
+    float texel[2] = {1.0f / float(std::max(t.w, 1u)), 1.0f / float(std::max(t.h, 1u))};
+    // drawn larger than shown (render_percent over 100): averaged down first, every pixel shown the mean of the
+    // drawn pixels it covers. One bilinear tap per screen pixel would weigh the drawn pixels unevenly at 1.5x, so fine
+    // detail would pulse lighter and darker as the picture moves; sharpening then works on the shown pixels.
+    float k = std::max(float(t.w) / vw, float(t.h) / vh);
+    if (k > 1.01f) {
+        uint32_t sw = uint32_t(std::lround(vw)), sh = uint32_t(std::lround(vh));
+        ID3D12Resource* into = shown_.Get();
+        if (into && (into->GetDesc().Width != sw || into->GetDesc().Height != sh)) {
+            CurrentFrame().garbage.push_back(shown_);  // the screen changed; the GPU may still read the old one
+            shown_.Reset();
+            into = nullptr;
+        }
+        ShrinkOptions o{.taps = uint32_t(std::ceil(k - 0.01f)), .into = into, .into_state = shown_state_};
+        if (ComPtr<ID3D12Resource> down = Shrink(t.res.Get(), t.state, t.fmt, sw, sh, o)) {
+            shown_ = down;
+            shown_state_ = D3D12_RESOURCE_STATE_COPY_SOURCE;
+            src = shown_.Get();
+            src_state = &shown_state_;
+            fmt = kBgra;
+            texel[0] = 1.0f / float(sw);
+            texel[1] = 1.0f / float(sh);
+        }
+        cl_->OMSetRenderTargets(1, &rh, FALSE, nullptr);  // Shrink drew elsewhere
+    }
     D3D12_VIEWPORT vp{(w - vw) / 2, (h - vh) / 2, vw, vh, 0, 1};
     D3D12_RECT scissor{0, 0, LONG(bb_w_), LONG(bb_h_)};
     cl_->RSSetViewports(1, &vp);
     cl_->RSSetScissorRects(1, &scissor);
-    Transition(t.res.Get(), t.state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    Transition(src, *src_state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     // sharpening on the frame as shown: [graphics] sharpening, 0 the original picture
     float sharpen = g_sharpen_off ? 0.0f : std::min(app::Get().sharpening, 100u) / 100.0f;
-    Blit(t.res.Get(), t.fmt, uv,
-         {.gamma = gamma_, .rtv = bb_fmt_, .sharpen = sharpen,
-          .texel = {1.0f / float(std::max(t.w, 1u)), 1.0f / float(std::max(t.h, 1u))}, .hdr = hdr_, .look = true});
+    Blit(src, fmt, uv,
+         {.gamma = gamma_, .rtv = bb_fmt_, .sharpen = sharpen, .texel = {texel[0], texel[1]}, .hdr = hdr_, .look = true});
 }
 
 double MovieClock() {
@@ -3671,7 +3701,7 @@ bool D3D12Backend::BlitMovie(const Target& t) {
         // films' own shape on wider screens, which then get bars at the sides rather than lose the film's top
         aspect = MovieFitAspect();
         uv[3] = (4.0f / 3.0f) / aspect;
-        uv[1] = 0.5f - uv[3] / 2;
+        uv[1] = MovieFitTop(uv[3]);
     } else if (st.movie_display == 0 && shape == kMovieWide) {
         aspect = 16.0f / 9.0f;  // a widescreen film squeezed into the 4:3 frame: the whole frame, unsqueezed
     }
@@ -3714,7 +3744,7 @@ void D3D12Backend::DrawFrame(Target* t, uint32_t bi) {
     cl_->OMSetRenderTargets(1, &rh, FALSE, nullptr);
     bound_rt_ = bound_ds_ = nullptr;
     if (t && !BlitMovie(*t)) {
-        BlitFrame(*t);
+        BlitFrame(*t, rh);
         BlackSides(rh, bb_w_, bb_h_, app::FrameAspect());
     }
     RenderUi();

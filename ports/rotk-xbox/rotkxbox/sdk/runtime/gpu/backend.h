@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <atomic>
 #include <cstdint>
 #include <memory>
@@ -80,6 +81,15 @@ inline std::atomic<bool> g_movie{false};
 // kMovie43: a 4:3 picture, shown 4:3
 constexpr uint32_t kMovieFit = 0, kMovieWide = 1, kMovie43 = 2;
 inline std::atomic<uint32_t> g_movie_shape{kMovieFit};
+// set by a game: where kMovieFit's window sits, its bottom edge as a share of the frame's height (0: centred). A
+// movie whose picture runs lower than a film's bars (a logo with a line of text at the bottom) keeps that line.
+inline std::atomic<float> g_movie_fit_bottom{0.0f};
+// kMovieFit's window top for a window that is `share` of the frame's height
+inline float MovieFitTop(float share) {
+    float b = g_movie_fit_bottom;
+    if (b <= 0.0f) return 0.5f - share / 2;
+    return std::clamp(b - share, 0.0f, 1.0f - share);
+}
 // set by a game that shows its 4:3 frame wider (app::FrameAspect): render targets get that much more width, so the
 // frame is drawn at the screen's own resolution instead of stretched sideways. Off: targets keep the guest's shape.
 inline std::atomic<bool> g_wide_targets{false};

@@ -11,6 +11,7 @@
 // (Settings::fps_cap) pace the frames, and gives the game the real time since its last step.
 #include <chrono>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <string>
 
@@ -69,6 +70,13 @@ X86_FUNC(sub_0009EB20) {
     float dt = std::chrono::duration<float>(now - last).count();
     last = now;
     if (dt > 0.1f) dt = 0.1f;  // a load or a stall: at most a tenth of a second, as ROTK PC clamps it (0x3DCCCCCD)
+#ifndef _WIN32
+    static const float fixed_dt = [] {  // test build: ROTK_DT=180 steps 1/180 s a frame, however slow the harness is
+        const char* e = std::getenv("ROTK_DT");
+        return e ? 1.0f / float(std::atof(e)) : 0.0f;
+    }();
+    if (fixed_dt > 0) dt = fixed_dt;
+#endif
     constexpr uint32_t kBlanks = 0x1E2F14, kLastBlank = 0x1E3340, kStep = 0x1E3344, kReset = 0x1E3348,
                        kTicks = 0x1E334C, kTickRest = 0x1E3350;
     W32(kLastBlank, R32(kBlanks));  // the frame end and others still compare blank counts

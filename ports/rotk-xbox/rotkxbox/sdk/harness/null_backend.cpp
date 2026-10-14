@@ -89,8 +89,9 @@ public:
         }
         static const long scan_at = harness::Env("TEXSCAN");
         if (scan_at && long(frames_) == scan_at) ScanTextures();
-        static const long every = harness::Env("REF"), cap = harness::Env("CAP");
-        drawing_ = snap_ || (every && (frames_ + 1) % every == 0);
+        // REF_FROM=n: no frames drawn before frame n (a run of consecutive frames later on, with REF=1)
+        static const long every = harness::Env("REF"), cap = harness::Env("CAP"), from = harness::Env("REF_FROM");
+        drawing_ = snap_ || (every && long(frames_ + 1) >= from && (frames_ + 1) % every == 0);
         if (drawing_) reference::BeginFrame();
         harness::g_frames = frames_ + 1;
         if (++frames_ % 60 == 0) LOGI("renderer: frame %llu, %llu draws, %llu empty frames", frames_, draws_, empty_);
@@ -101,7 +102,7 @@ public:
     void Flush() override {}
     void SetGamma(const uint8_t*) override {}
     // counted only when every frame is drawn (REF=1); otherwise the SDK reads everything as visible
-    bool Queries() const override { return harness::Env("REF") == 1; }
+    bool Queries() const override { return harness::Env("REF") == 1 && !harness::Env("REF_FROM"); }
     void BeginQuery() override {
         query_from_ = reference::Passed();
         if (++tests_ == 1 || tests_ % 1000 == 0) LOGI("query: %llu visibility tests by frame %llu", tests_, frames_);

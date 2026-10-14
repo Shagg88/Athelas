@@ -76,8 +76,9 @@ The user wants Exit as part of the game, not an option. `rotk_secrets.cpp`:
 
 - After 0x102D50 hides its items, 0x10A550(0, "MainMenuScreen.Exit", 1) shows Exit again. It sits below Credits,
   as on PC.
-- Label: GlobScen's string table ("key\0text\0" pairs, loaded once into guest memory) has the unused
-  "mainMenuOnline\0Online"; it is renamed in place to "mainMenuExit\0\0\0Exit\0\0" (same length).
+- Label: GlobScen's string table ("key\0text\0" pairs in guest memory) has the unused "mainMenuOnline\0Online"; it
+  is renamed in place to "mainMenuExit\0\0\0Exit\0\0" (same length). The table is loaded again after a level,
+  so this is redone each time the menu opens (notes 09).
 - Action: 0xFE010(event) is the menus' input handler (jump table 0xFE0B8: 2/3 down, 6 START, 7 accept). The focus
   is [0x1DB2E0]. Accept runs the element's script at +0x8C; Exit's is an "rpn!" program whose quit does nothing on
   Xbox. When event 6 or 7 arrives with the focus on Exit, the port ends with exit code 0.
