@@ -1,7 +1,7 @@
 // ROTK Fix Launcher - drawn ornaments in the spirit of the architecture of the Free Peoples
 // (all original, drawn with lines and shapes; no artwork):
-//   men (Gondor, Gondolin) - pale stone with classical mouldings, corner blocks with carved
-//                            rosettes, round arches and keystones
+//   men (Gondor, Gondolin) - pale stone with a gilded Renaissance vine scroll, Gothic
+//                            quatrefoil medallions, a pointed arch gable with crockets
 //   elves (Rivendell, Lothlorien, the Noldor) - slender silver-gold lines, vine tendrils with
 //                            leaves, pointed arches, leaf scrolls
 #pragma once
@@ -9,7 +9,7 @@
 
 void orn_set_scale(float s);
 
-// The whole window: a pale stone border with mouldings, corner blocks and a keystone (men)
+// The whole window: a pale stone border with a gilded vine, quatrefoils and a Gothic gable (men)
 void orn_window_frame(ImDrawList *dl, ImVec2 size);
 // The settings panel: slender double lines, vine tendrils at the corners, a pointed arch crest (elves)
 void orn_panel_frame(ImDrawList *dl, ImVec2 a, ImVec2 b);
