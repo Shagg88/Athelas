@@ -63,3 +63,16 @@ which is the line ROTK Fix drew.
 
 `gpu/backend.h`: `g_movie_letterbox` and `g_draw_observer`. `gpu/d3d12.cpp`: the observer call, and fit only for
 letterboxed movies. The test build's null backend calls the observer too.
+
+## Second play (20:48): movies
+
+- **Paths of the Dead film shows 4:3.** That is right for this file. PAT1FMV1.vid is a full-height 4:3 picture: the
+  PC's pat1fmv1.avi is the letterboxed film, and the Xbox copy is cut down to 4:3. Proportions match, so it is not
+  squeezed. HELMFMV1's film part is letterboxed and fills the width. The bar check shows each file as it is.
+- **Movies blurrier than PC.** ROTK Fix (its own notes, 2026-10-13) does not upscale the PC movies. It sharpens at
+  the movie's own texel size before the bilinear scale to the screen. The SDK kept each movie frame at 640x480, which
+  is smaller than the decoded picture (about 704x512), then scaled it up 3x. Frames are now kept at up to twice the
+  console's size (1280x960), so movie_sharpening works at about one movie pixel, as ROTK Fix's does.
+- **Movie flag.** Before the movie flag fix, the flag dropped between the reader's bursts. So movies sometimes
+  skipped the movie path (sharpening, fit, audio delay) altogether.
+- **SDK.** ROTK patch v7 (`KeepMovieFrame`) replaces v6.

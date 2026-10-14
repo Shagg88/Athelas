@@ -816,7 +816,7 @@ private:
     Target* bound_rt_ = nullptr;
     Target* bound_ds_ = nullptr;
     bool bound_ms_ = false;    // the bound targets are the multisampled twins
-    // movies (g_movie): each presented frame kept at the console's size, the picture shown is the newest that is
+    // movies (g_movie): each presented frame kept at up to twice the console's size, the picture shown is the newest that is
     // [graphics] cutscene_audio_delay old
     struct MovieFrame {
         ComPtr<ID3D12Resource> res;
@@ -3585,10 +3585,15 @@ void D3D12Backend::KeepMovieFrame(Target& t) {
         movie_n_ = 0;
     }
     MovieFrame& f = movie_ring_[movie_n_ % kMovieFrames];
-    float k = float(t.w) / float(std::max(t.gw, 1u));
-    ShrinkOptions o{.taps = uint32_t(std::max(1.0f, std::ceil(k - 0.01f))), .into = f.res.Get(), .into_state = f.state,
+    // kept at up to twice the console's size: the movie's own detail (its pictures are about 700x500) survives to the
+    // screen, and movie_sharpening works one console pixel wide, about one movie pixel, before the scale to the screen
+    uint32_t kw = std::min(t.w, std::max(t.gw, 1u) * 2), kh = std::min(t.h, std::max(t.gh, 1u) * 2);
+    float k = float(t.w) / float(std::max(kw, 1u));
+    ID3D12Resource* into = f.res.Get();
+    if (into && (into->GetDesc().Width != kw || into->GetDesc().Height != kh)) into = nullptr;  // the screen changed
+    ShrinkOptions o{.taps = uint32_t(std::max(1.0f, std::ceil(k - 0.01f))), .into = into, .into_state = f.state,
                     .mul = t.range};
-    ComPtr<ID3D12Resource> down = Shrink(t.res.Get(), t.state, t.fmt, t.gw, t.gh, o);
+    ComPtr<ID3D12Resource> down = Shrink(t.res.Get(), t.state, t.fmt, kw, kh, o);
     if (!down) return;
     f.res = down;
     f.state = D3D12_RESOURCE_STATE_COPY_SOURCE;
