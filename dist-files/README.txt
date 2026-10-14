@@ -102,8 +102,8 @@ Keys while playing:
   ]                    Next colour look
 
 Reporting a problem: send the log, ROTKFix\TwoTowers\tt.log next to the
-launcher, and after a crash also the newest file in the TwoTowers\CrashDumps
-folder.
+launcher, and after a crash also the newest Game.<date>_<time>.dmp in
+ROTKFix\TwoTowers\CrashDumps.
 
 
 TEXTURE PACKS

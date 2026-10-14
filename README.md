@@ -41,8 +41,8 @@ Played through its PC port, `TwoTowers.exe`, started from the launcher.
   `settings.toml`.
 - The game's own files are only read, never changed.
 - Keys: `\` screenshot, `F1` hide the HUD, `[` sharpening off/on, `]` next colour look.
-- Problem reports: the log (`ROTKFix\TwoTowers\tt.log` next to the launcher), plus the newest file in
-  `TwoTowers\CrashDumps` after a crash.
+- Problem reports: the log (`ROTKFix\TwoTowers\tt.log` next to the launcher), plus the newest `.dmp` in
+  `ROTKFix\TwoTowers\CrashDumps` after a crash.
 
 ## Antivirus and SmartScreen
 
