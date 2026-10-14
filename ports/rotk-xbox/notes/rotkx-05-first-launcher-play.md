@@ -76,3 +76,23 @@ letterboxed movies. The test build's null backend calls the observer too.
 - **Movie flag.** Before the movie flag fix, the flag dropped between the reader's bursts. So movies sometimes
   skipped the movie path (sharpening, fit, audio delay) altogether.
 - **SDK.** ROTK patch v7 (`KeepMovieFrame`) replaces v6.
+
+## Third play (21:13): movies squeezed, logos wrong. The cause was hud_edges
+
+The films showed pillarboxed at 4:3 with the picture squeezed sideways, and the logos were cut. In the test build
+with `widescreen` and `hud_edges` both on, the game's own 640x480 frame had the movie in cols 80 to 560 only. The
+player draws each movie frame as a full-screen textured quad through the orthographic 2D path, and `HudPlace` kept
+it at 4:3 as a "full-screen picture". movie_display then cropped and stretched that squeezed frame. The test runs
+before this one had hud_edges off, so they never showed it.
+
+- **Fix.** `HudPlace` leaves movie draws alone (Y plane 768x544 in stage 2).
+- **What the movies really are.** With that fixed, HELMFMV1 (logos and film) and PAT1FMV1 are both letterboxed at
+  rows 65 to 413 across the full width, the same as the PC's .avi files. The earlier readings in this note were made
+  from squeezed frames and were wrong: PAT1FMV1 is not a 4:3 cut, and no film is anamorphic.
+- **Shape by name, as ROTK Fix does it.** Names with FMV (except ATTRFMV1) use fit: the middle 16:9, filling the
+  width. Everything else is 4:3. The bar-row check and kMovieWide's use are gone. The SDK keeps `kMovieWide` as an
+  option for other games.
+- **Logos.** They're inside the band too, so they now fill the width. The small "EA GAMES is an Electronic Arts
+  brand" line sits at row 428, just under the 16:9 cut (rows 60 to 420).
+- **SDK.** ROTK patch v8 (`g_movie_shape` with kMovieFit, kMovieWide and kMovie43, replacing `g_movie_letterbox`)
+  replaces v7.

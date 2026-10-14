@@ -1153,9 +1153,12 @@ void D3D12Backend::Screenshot(Target& t) {
         o.sharpen = std::min(stg.movie_sharpening, 100u) / 100.0f;
         o.texel[0] = 1.0f / float(std::max(t.gw, 1u));
         o.texel[1] = 1.0f / float(std::max(t.gh, 1u));
-        if (stg.movie_display == 0 && g_movie_letterbox) {
+        uint32_t shape = g_movie_shape;
+        if (stg.movie_display == 0 && shape == kMovieFit) {
             uv[1] = 0.125f;
             uv[3] = 0.75f;
+            w = (h * 16 + 4) / 9;
+        } else if (stg.movie_display == 0 && shape == kMovieWide) {
             w = (h * 16 + 4) / 9;
         } else if (stg.movie_display == 1) {
             w = uint32_t(uint64_t(h) * std::max(bb_w_, 1u) / std::max(bb_h_, 1u));
@@ -3627,11 +3630,14 @@ bool D3D12Backend::BlitMovie(const Target& t) {
     float h = float(bb_h_);
     float uv[4] = {0, 0, 1, 1};
     float aspect = 4.0f / 3.0f;
-    if (st.movie_display == 0 && g_movie_letterbox) {
+    uint32_t shape = g_movie_shape;
+    if (st.movie_display == 0 && shape == kMovieFit) {
         // fit: the middle 16:9 of the 4:3 frame, where the films and logos are (their bars are outside it)
         uv[1] = 0.125f;
         uv[3] = 0.75f;
         aspect = 16.0f / 9.0f;
+    } else if (st.movie_display == 0 && shape == kMovieWide) {
+        aspect = 16.0f / 9.0f;  // a widescreen film squeezed into the 4:3 frame: the whole frame, unsqueezed
     }
     float vw = std::min(w, h * aspect);
     float vh = vw / aspect;

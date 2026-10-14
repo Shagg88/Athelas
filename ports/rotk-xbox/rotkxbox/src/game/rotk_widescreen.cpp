@@ -108,6 +108,9 @@ bool HudPlace(const gpu::State& s, float x0, float x1, float y0, float y1, float
     gpu::TextureDesc d;
     if (!s.textures[0] || !gpu::Describe(s.textures[0], d)) return false;  // untextured: fades, flat overlays
     if (d.width >= 640 && d.height >= 480) return false;                  // a copy of the screen
+    // a movie frame (its Y plane, 768x544, in stage 2): the movie keeps the whole frame, movie_display shapes it
+    gpu::TextureDesc y;
+    if (s.textures[2] && gpu::Describe(s.textures[2], y) && y.width == 768 && y.height == 544) return false;
     bool spans = x0 <= -0.98f && x1 >= 0.98f;
     bool edge_y = y0 <= -0.98f || y1 >= 0.98f;
     bool band = (y1 - y0) < 0.5f && edge_y;

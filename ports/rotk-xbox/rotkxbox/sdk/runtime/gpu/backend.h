@@ -75,9 +75,11 @@ inline std::atomic<bool> g_sharpen_off{false};
 // the game shows a full-screen movie (its frame fills the back buffer): presented by [graphics] movie_display,
 // movie_sharpening and cutscene_audio_delay instead of as a game frame
 inline std::atomic<bool> g_movie{false};
-// set by a game: the movie on screen has film bars above and below (movie_display "fit" shows its middle 16:9);
-// false shows the whole 4:3 frame, as for logos
-inline std::atomic<bool> g_movie_letterbox{true};
+// set by a game: how movie_display "fit" shows the movie on screen. kMovieFit: film bars above and below, its middle
+// 16:9 is shown; kMovieWide: a widescreen film squeezed into the 4:3 frame (anamorphic), the whole frame shown 16:9;
+// kMovie43: a 4:3 picture, shown 4:3
+constexpr uint32_t kMovieFit = 0, kMovieWide = 1, kMovie43 = 2;
+inline std::atomic<uint32_t> g_movie_shape{kMovieFit};
 // set by a game: called with each draw's state before it is drawn (to look at what the game draws). Null for none.
 using DrawObserver = void (*)(const State& s);
 inline DrawObserver g_draw_observer = nullptr;

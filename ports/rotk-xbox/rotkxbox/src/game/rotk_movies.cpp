@@ -17,7 +17,9 @@
 #include <mutex>
 #include <thread>
 
+#include <cctype>
 #include <cstring>
+#include <string>
 
 #include "core/log.h"
 #include "gpu/backend.h"
@@ -75,11 +77,15 @@ void StartWatcher() {
     });
 }
 
-// movie_display "fit" (ROTK Fix's auto): the story films carry black bars above and below (rows 66 to 416 of 480, as
-// on PC), so their middle 16:9 is shown; the opening logos fill the 4:3 frame and are shown whole. The player draws
-// each frame from three planes, Y the 768x544 one (stage 2, LIN_AL8, the picture in rows 16 to 528); a row inside
-// each bar is looked at: black in both (Y 16) is a film. Bars bright switches to the whole frame at once; back to
-// the film's 16:9 after six seconds of black bars (the logos have dark moments).
+// movie_display "fit" (ROTK Fix's auto), by the movie's name as ROTK Fix does it: the story films (names with FMV,
+// HELMFMV1 with the opening logos at its start) are letterboxed in the 640x480 frame at rows 65 to 413, as the PC's
+// .avi files are (66 to 416), so their middle 16:9 is shown and they fill the width (gpu::kMovieFit). ATTRFMV1, the
+// *SPC* interviews and the rest are 4:3 pictures, shown 4:3. The name comes from the movie table lookup 0x111B90;
+// the player draws each frame from three planes, Y the 768x544 one (stage 2, LIN_AL8).
+std::string g_movie_name;  // the movie starting, from the type lookup 0x111B90
+std::atomic<bool> g_movie_new{false};
+std::mutex g_name_lock;
+
 void WatchMovie(const gpu::State& s) {
     if (!s.textures[2] || !s.ps) return;
     gpu::TextureDesc d;
@@ -88,27 +94,27 @@ void WatchMovie(const gpu::State& s) {
     StartWatcher();
     rotk::g_movie_drawn = rotk::NowMs();
     gpu::g_movie = true;
-    auto dark = [&](uint32_t row) {
-        const uint8_t* p = static_cast<const uint8_t*>(::kernel::HostPtr(d.data + row * d.pitch));
-        for (uint32_t x = 40; x < 728; x += 8)
-            if (p[x] > 40) return false;
-        return true;
-    };
-    static int64_t black_since = 0;
-    int64_t now = rotk::NowMs();
-    bool bars = dark(69) && dark(475);  // screen rows 50 and 430: inside the bars (they end at 65 and 415), just outside the 16:9 shown
-    bool was = gpu::g_movie_letterbox;
-    if (!bars) {
-        black_since = 0;
-        gpu::g_movie_letterbox = false;
-    } else {
-        if (!black_since) black_since = now;
-        if (now - black_since >= 6000) gpu::g_movie_letterbox = true;
+    if (!g_movie_new.exchange(false)) return;
+    std::string n;
+    {
+        std::lock_guard l(g_name_lock);
+        n = g_movie_name;
     }
-    static std::atomic<int> logged{0};
-    if (was != gpu::g_movie_letterbox && logged++ < 20)
-        LOGI("rotk: movie %s", gpu::g_movie_letterbox ? "has film bars: its middle 16:9 shown" : "fills the frame: shown whole");
+    for (char& c : n) c = char(std::toupper(static_cast<unsigned char>(c)));
+    bool film = n.find("FMV") != std::string::npos && n != "ATTRFMV1";
+    gpu::g_movie_shape = film ? gpu::kMovieFit : gpu::kMovie43;
+    LOGR("rotk: movie %s (%s)", n.c_str(), film ? "letterboxed film, fills the width" : "4:3");
 }
 const int kWatch = (gpu::g_draw_observer = WatchMovie, 0);
 }  // namespace
 
+// 0x111B90 (name in ebx): the movie table's type for a movie, asked once as each movie starts (0x111C89)
+X86_EXTERN_FUNC(__imp__sub_00111B90);
+X86_FUNC(sub_00111B90) {
+    if (ctx.ebx) {
+        std::lock_guard l(g_name_lock);
+        g_movie_name = static_cast<const char*>(::kernel::HostPtr(ctx.ebx));
+        g_movie_new = true;
+    }
+    __imp__sub_00111B90(ctx, base);
+}
