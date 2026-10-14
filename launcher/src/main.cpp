@@ -2081,6 +2081,25 @@ static void tt_tab_graphics(App &a)
 static void tt_tab_controls(App &a)
 {
     std::vector<std::string> done;
+    // Buttons first, as on ROTK's Controls tab: which button on the player's controller presses each Xbox button
+    bool anyBtn = false;
+    for (auto &ps : a.tt.settings) if (ps.section == "controls") anyBtn = true;
+    if (anyBtn) {
+        section("Buttons");
+        ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
+        ImGui::PushTextWrapPos(0);
+        ImGui::TextColored(C_DIM, "Choose the button on your controller for each of the game's buttons. One layout is used for every controller.");
+        ImGui::PopTextWrapPos();
+        ImGui::PopFont();
+        for (auto &ps : a.tt.settings) {
+            if (ps.section != "controls") continue;
+            done.push_back(ps.section + "." + ps.key);
+            tt_setting_row(a, ps);
+        }
+        if (ImGui::Button("Original layout##ttbtn")) {
+            for (auto &ps : a.tt.settings) if (ps.section == "controls") a.ttFile.set(ps.section, ps.key, ps.def);
+        }
+    }
     section("Controller options");
     if (const PortSetting *ps = tt_setting(a, "input", "vibration")) {
         done.push_back("input.vibration");
