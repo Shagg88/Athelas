@@ -54,21 +54,36 @@
   stay off with it.
 - `ROTK_DT=180`: the game's step fixed at 1/180 s (Linux test build).
 
-## Above 60 fps the player catches on walls: capped at 60
+## Above 60 fps the player slowed as if at invisible walls: fixed as ROTK PC does it
 
-- The user's run at TargetFPS 180 (VSync on, 180 Hz screen, 2560x1440) had a light/dark flicker while moving,
-  occasional slowdowns as if at an invisible wall, and gameplay that felt slightly fast. 90 brought the slowdowns
-  back. At 60 none of this happens.
-- Harness, Pat01, the same walk from the start at fixed steps (`ROTK_DT`, settings fps 60 so the unlocked path
-  runs):
-  - 1/30: past the skull by 4 s (reference).
-  - 1/60: about half a second behind it.
-  - 1/90 and 1/120: stuck on the first rock of the cave for over three seconds.
-  - 1/180: matches 1/30 on this stretch.
-- The game moves by its time step (0xF82A0 / 0xF81F0 channels), not per frame, but its collision depends on the
-  step's length. Some lengths catch the player on geometry.
-- ROTK PC caps itself at 62 (0x562ADC; ROTK Fix: "the game was made for 60").
-- The port now caps the rate at 60 (`kMaxFps` in rotk_framerate.cpp): TargetFPS or fps above 60, or 0, becomes
-  60 with a log line. The settings choices are 30 and 60.
-- Test build: `ROTK_DT_JITTER=1` alternates steps of 0.5 and 1.5 times ROTK_DT.
-- Raising the cap would need the collision's step dependence found and fixed first.
+- The user's runs at 90 and 180 fps (180 Hz screen, VSync on) had occasional slowdowns while running, plus a
+  light/dark flicker. At 60 neither showed. ROTK PC plays correctly at 180.
+- Harness: Pat01, the same walk at fixed steps (`ROTK_DT`, settings fps above 30 so the unlocked path runs). The
+  player's position is logged with `ROTK_WATCH=13D08A0` (src/game/rotk_harness_probe.cpp, test build only).
+  Without the fix, the path covered in the first 8 s was:
+
+  | Step | Path in 8 s |
+  |---|---|
+  | 1/30 | 23.4 |
+  | 1/120 | 18.5 (about 1.3 u/s where 1/30 does 3 to 5) |
+
+- Narrowing it down by watching the position across nested calls: the character list 0x2EAF0 → player 0x5E310 →
+  0x255D0 → locomotion state 0x4E6C0 → [[owner+0xD0]+0x390] = 0x59210 → 0x5F340 → move and slide **0x5EBD0**
+  (owner in esi, its step at owner+0x6CC, the move at +0x420, 5 passes).
+- ROTK PC's copy of 0x5EBD0 is 0x440CE0 (found by its 20.0 and 0.7071 constants). Comparing their constant
+  sequences, PC replaced:
+  - the three tests against a fixed 0.001 (Xbox 0x5EC2D/0x5EC3E, 0x5F14D/0x5F15E, 0x5F1D0) with
+    `eps = clamp(step, 0.001, 0.1) × 0.03`
+  - the test against a fixed 0.1 (0x5F0E2) with `clamp(step, 0.001, 0.1) × 3`
+
+  Both equal the old values at 1/30. Nothing else in the function differs, apart from x87 against SSE code.
+- The port does the same with six instruction hooks (config/hooks.toml, `ROTK_Slide*` in rotk_framerate.cpp).
+  They are active only when unlocked (fps other than 30), so 30 fps runs the console's code.
+- After the fix, the path in 8 s is 24.3 at 1/60, 24.3 at 1/90, 23.3 at 1/120 and 24.4 at 1/180 (23.4 at 1/30).
+  Every rate reaches the same spot (-138.4, 7.1) and stops there.
+- The 60 fps cap (commit ab34b33) is removed again; the fps choices are back to 30 to 240.
+- The only other clamp of the step to 0.001..0.1 in ROTK PC (0x4B8195) is vertex generation, not timing.
+- The flicker: not reproduced in the harness (it draws with the reference renderer). It may have come from the
+  same stutter. To be checked on Windows at 120/180.
+- Test-build tools added: `ROTK_DT_JITTER=1` (steps alternate 0.5 and 1.5 × ROTK_DT) and
+  `ROTK_MEMDUMP=dir,step,...` (guest memory below 64 MB at those time steps, for finding values).

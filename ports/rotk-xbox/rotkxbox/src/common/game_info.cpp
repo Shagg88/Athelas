@@ -30,9 +30,9 @@ const app::GameInfo app::kGame = {
                  "once. This lets a button press skip any of them.",
                  &rotk::g_skip_all_videos},
                 {"graphics", "fps", cfg::Type::Choice, "Frame rate",
-                 "The game was made for 30 on the Xbox. 60 plays at normal speed; above 60 the game catches the "
-                 "player on walls, so 60 is the highest. Movies keep their own pace.",
-                 nullptr, &rotk::g_fps, nullptr, 0, 0, {"30", "60"}, nullptr, nullptr, {"30 fps", "60 fps"}},
+                 "The game was made for 30 on the Xbox. Higher rates play at normal speed; movies keep their own pace.",
+                 nullptr, &rotk::g_fps, nullptr, 0, 0, {"30", "60", "90", "120", "144", "165", "180", "240"}, nullptr,
+                 nullptr, {"30 fps", "60 fps", "90 fps", "120 fps", "144 fps", "165 fps", "180 fps", "240 fps"}},
                 {"graphics", "fov", cfg::Type::Int, "Field of view",
                  "How wide the camera sees, as a share of the game's own (100). Wider shows more of the battle but "
                  "makes characters look further away.",

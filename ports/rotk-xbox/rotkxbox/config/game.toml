@@ -314,3 +314,33 @@ call = "ROTK_MenuRepeat"
 [[hook]]                   # held left
 at = 0x000FDEC8
 call = "ROTK_MenuRepeat"
+
+[[hook]]                   # player move and slide: fcom [0.001] -> clamp(step) x 0.03 above 30 fps, as ROTK PC
+at = 0x0005EC2D
+call = "ROTK_SlideCompare"
+on_true = 0x0005EC33
+
+[[hook]]                   # the same, fld [0.001]
+at = 0x0005EC3E
+call = "ROTK_SlideLoad"
+on_true = 0x0005EC44
+
+[[hook]]                   # the same, fcomp [0.1] -> clamp(step) x 3
+at = 0x0005F0E2
+call = "ROTK_SlideRest"
+on_true = 0x0005F0E8
+
+[[hook]]                   # the same, fcom [0.001]
+at = 0x0005F14D
+call = "ROTK_SlideCompare"
+on_true = 0x0005F153
+
+[[hook]]                   # the same, fld [0.001]
+at = 0x0005F15E
+call = "ROTK_SlideLoad"
+on_true = 0x0005F164
+
+[[hook]]                   # the same, fcomp [0.001]
+at = 0x0005F1D0
+call = "ROTK_SlideComparePop"
+on_true = 0x0005F1D6

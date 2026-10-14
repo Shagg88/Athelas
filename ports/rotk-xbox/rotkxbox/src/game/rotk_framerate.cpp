@@ -7,7 +7,7 @@
 // with a 1200 Hz tick count ([0x1E334C], remainder [0x1E3350]) beside it; ROTK PC has the same design on a real
 // clock (0x4828E0), which is why it runs at any frame rate at the right speed.
 //
-// [graphics] fps (30, the console's, by default; at most 60, see kMaxFps): any other rate skips both waits, lets the window's frame cap
+// [graphics] fps (30, the console's, by default): any other rate skips both waits, lets the window's frame cap
 // (Settings::fps_cap) pace the frames, and gives the game the real time since its last step.
 #include <chrono>
 #include <cstdint>
@@ -18,30 +18,20 @@
 #include "app/app.h"
 #include "core/log.h"
 #include "cpu/x86_context.h"
+#include "cpu/x86_ops.h"
 #include "kernel/kernel.h"
+#include "kernel/memory.h"
 #include "xdk/hle.h"
 
 namespace rotk {
 uint32_t g_fps = 30;  // settings.toml [graphics] fps; 0 no cap
 bool g_unlocked = false;
 
-// The highest rate the game moves right at. Its movement and collision take each step's length, and some step lengths
-// catch the player on walls: Path of the Wizard's opening cave at fixed steps (test build ROTK_DT) gets through at
-// 1/30 and 1/60, sticks on the first rock for over three seconds at 1/90 and 1/120, and passes at 1/180. Played at 90
-// and 180 the player slows now and then as if at an invisible wall and the picture flickers; at 60 neither happens.
-// ROTK PC itself caps at 62 (0x562ADC).
-constexpr uint32_t kMaxFps = 60;
-
 void InitFrameRate() {
-    if (g_fps == 0 || g_fps > kMaxFps) {
-        LOGR("rotk: frame rate %s asked; %u is the highest the game moves right at",
-             g_fps ? std::to_string(g_fps).c_str() : "unlimited", kMaxFps);
-        g_fps = kMaxFps;
-    }
     g_unlocked = g_fps != 30;
     if (g_unlocked) {
         app::Get().fps_cap = g_fps;
-        LOGR("rotk: frame rate %u (the console's is 30)", g_fps);
+        LOGR("rotk: frame rate %s (the console's is 30)", g_fps ? std::to_string(g_fps).c_str() : "unlimited");
     }
 }
 }  // namespace rotk
@@ -91,6 +81,23 @@ X86_FUNC(sub_0009EB20) {
     static const bool jitter = std::getenv("ROTK_DT_JITTER") != nullptr;  // steps alternate 0.5 and 1.5 times it
     static uint32_t step_n = 0;
     if (fixed_dt > 0 && jitter) dt = fixed_dt * ((step_n++ & 1) ? 1.5f : 0.5f);
+    // test build: ROTK_MEMDUMP="dir,step,step,..." writes the guest's memory below 64 MB at those time steps
+    static uint32_t steps = 0;
+    steps++;
+    if (const char* md = std::getenv("ROTK_MEMDUMP")) {
+        std::string spec = md, dir = spec.substr(0, spec.find(','));
+        if (steps % 100 == 0) LOGR("rotk: step %u", steps);
+        for (size_t at = spec.find(','); at != std::string::npos; at = spec.find(',', at + 1)) {
+            if (uint32_t(std::atoi(spec.c_str() + at + 1)) != steps) continue;
+            if (FILE* f = std::fopen((dir + "/mem_" + std::to_string(steps) + ".bin").c_str(), "wb")) {
+                static const char zero[0x1000] = {};
+                for (uint32_t p = 0; p < 0x4000000; p += 0x1000)
+                    std::fwrite(p >= 0x10000 && mem::IsCommitted(p) ? ::kernel::HostPtr(p) : zero, 1, 0x1000, f);
+                std::fclose(f);
+                LOGR("rotk: memory dump at step %u", steps);
+            }
+        }
+    }
 #endif
     constexpr uint32_t kBlanks = 0x1E2F14, kLastBlank = 0x1E3340, kStep = 0x1E3344, kReset = 0x1E3348,
                        kTicks = 0x1E334C, kTickRest = 0x1E3350;
@@ -151,4 +158,51 @@ void ROTK_MenuRepeat(X86Context& ctx, uint8_t* base) {
         return;  // the game counts this frame
     }
     W32(0x1DA4A8, R32(0x1DA4A8) - 1);  // undone by the game's own increment
+}
+
+// The player's move and slide (0x5EBD0: owner in esi, the frame's step at owner+0x6CC) tests its moves against fixed
+// 0.001 and 0.1, sized for the console's 1/30 s steps. ROTK PC (0x440CE0, the same function) takes them from the step
+// instead: 0.001 becomes clamp(step, 0.001, 0.1) x 0.03, 0.1 becomes clamp(step, 0.001, 0.1) x 3; both the same at
+// 1/30. With the fixed ones, shorter steps catch the player on walls and slow him (Path of the Wizard's opening cave
+// at fixed 1/90 and 1/120 steps). Unlocked, these hooks take the place of the six instructions, as ROTK PC has them;
+// at 30 fps the game's own run.
+namespace {
+float SlideStep(const X86Context& ctx) {
+    uint32_t u = R32(ctx.esi + 0x6CC);
+    float dt;
+    std::memcpy(&dt, &u, 4);
+    return dt < 0.001f ? 0.001f : dt > 0.1f ? 0.1f : dt;
+}
+float SlideEps(const X86Context& ctx) { return SlideStep(ctx) * 0.03f; }
+}  // namespace
+
+// [[hook]] 0x5EC2D, 0x5F14D: fcom [0.001] -> against the step's epsilon
+bool ROTK_SlideCompare(X86Context& ctx, uint8_t* base) {
+    (void)base;
+    if (!rotk::g_unlocked) return false;
+    x87_compare(ctx, X87_ST(0), double(SlideEps(ctx)));
+    return true;
+}
+// [[hook]] 0x5F1D0: fcomp [0.001]
+bool ROTK_SlideComparePop(X86Context& ctx, uint8_t* base) {
+    (void)base;
+    if (!rotk::g_unlocked) return false;
+    x87_compare(ctx, X87_ST(0), double(SlideEps(ctx)));
+    x87_pop(ctx);
+    return true;
+}
+// [[hook]] 0x5EC3E, 0x5F15E: fld [0.001]
+bool ROTK_SlideLoad(X86Context& ctx, uint8_t* base) {
+    (void)base;
+    if (!rotk::g_unlocked) return false;
+    x87_push(ctx, double(SlideEps(ctx)));
+    return true;
+}
+// [[hook]] 0x5F0E2: fcomp [0.1] -> against the step x 3
+bool ROTK_SlideRest(X86Context& ctx, uint8_t* base) {
+    (void)base;
+    if (!rotk::g_unlocked) return false;
+    x87_compare(ctx, X87_ST(0), double(SlideStep(ctx) * 3.0f));
+    x87_pop(ctx);
+    return true;
 }
