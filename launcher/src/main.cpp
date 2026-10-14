@@ -543,6 +543,7 @@ static void tab_display(App &a)
         if (s.displayMode == 2) {
             // a window can be any size that fits the screen, including shapes the monitor doesn't have
             static const struct { int w, h; const char *tag; } extra[] = {
+                { 3840, 1080, "  32:9 super ultrawide" }, { 2560, 720, "  32:9 super ultrawide" },
                 { 3440, 1440, "  21:9 ultrawide" }, { 2560, 1080, "  21:9 ultrawide" }, { 2560, 1440, "  16:9" },
                 { 1920, 1080, "  16:9" }, { 1600, 900, "  16:9" }, { 1280, 720, "  16:9" }, { 1440, 1080, "  4:3" } };
             ImGui::SeparatorText("Window sizes");
@@ -1766,6 +1767,7 @@ static void tt_tab_display(App &a)
         }
         if (mode == 2) {
             static const struct { int w, h; const char *tag; } extra[] = {
+                { 3840, 1080, "  32:9 super ultrawide" }, { 2560, 720, "  32:9 super ultrawide" },
                 { 3440, 1440, "  21:9 ultrawide" }, { 2560, 1080, "  21:9 ultrawide" }, { 2560, 1440, "  16:9" },
                 { 1920, 1080, "  16:9" }, { 1600, 900, "  16:9" }, { 1280, 720, "  16:9" }, { 1440, 1080, "  4:3" } };
             ImGui::SeparatorText("Window sizes");
