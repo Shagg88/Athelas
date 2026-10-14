@@ -1594,6 +1594,7 @@ static int tt_tab_of(const std::string &sec)
     if (sec == "controls" || sec == "input") return 2;
     if (sec == "audio" || sec == "sound") return 3;
     if (sec == "network") return 4;
+    if (sec == "gameplay") return 5;
     return 1;   // graphics, textures and anything else
 }
 
@@ -2044,6 +2045,16 @@ static void tt_tab_graphics(App &a)
         row_end();
     }
 
+    if (const PortSetting *ps = tt_setting(a, "graphics", "floor_reflections")) {
+        // as ROTK's Graphics tab: Game detail after View
+        section("Game detail");
+        mark("graphics", "floor_reflections");
+        bool v = tt_val(a, *ps) == "true";
+        row_begin(ps->label.empty() ? "Floor reflections (experimental)" : ps->label.c_str(), ps->help.c_str());
+        if (ImGui::Checkbox("##ttfloorrefl", &v)) a.ttFile.set(ps->section, ps->key, v ? "true" : "false");
+        row_end();
+    }
+
     const PortSetting *prep = tt_setting(a, "textures", "replace"), *pdump = tt_setting(a, "textures", "dump");
     if (prep || pdump) {
         section("Texture packs");
@@ -2290,6 +2301,31 @@ static void tt_tab_controls(App &a)
     }
 }
 
+// ---- The Two Towers' Gameplay tab (ROTK has none): difficulty adjustments, then anything else in [gameplay]
+static void tt_tab_gameplay(App &a)
+{
+    std::vector<std::string> done;
+    bool head = false;
+    for (const char *key : { "damage_taken", "enemy_damage" }) {
+        const PortSetting *ps = tt_setting(a, "gameplay", key);
+        if (!ps) continue;
+        if (!head) { section("Difficulty"); head = true; }
+        done.push_back(std::string("gameplay.") + key);
+        int v = atoi(tt_val(a, *ps).c_str());
+        row_begin(ps->label.c_str(), ps->help.c_str());
+        if (ImGui::SliderInt((std::string("##tt") + key).c_str(), &v, (int)ps->min, (int)ps->max, v == 100 ? "100%%  (game's own)" : "%d%%"))
+            a.ttFile.set(ps->section, ps->key, std::to_string(v));
+        row_end();
+    }
+    bool more = false;
+    for (auto &ps : a.tt.settings) {
+        if (tt_tab_of_setting(ps) != 5 || tt_hidden(ps)) continue;
+        if (std::find(done.begin(), done.end(), ps.section + "." + ps.key) != done.end()) continue;
+        if (!more) { section(head ? "More" : "Gameplay"); more = true; }
+        tt_setting_row(a, ps);
+    }
+}
+
 // The settings on one tab, in the port's own order, grouped by section
 static void tt_settings_on_tab(App &a, int tab)
 {
@@ -2364,23 +2400,32 @@ static void tt_about(App &a)
 // The Two Towers' page when its port is ready: tabs like ROTK's
 static void tt_tabs(App &a, const LibGame &)
 {
-    static const char *names[] = { "  Display  ", "  Graphics  ", "  Controls  ", "  Audio  ", "  Network  " };
-    bool has[5] = {};
+    // tab ids: 0 Display, 1 Graphics, 2 Controls, 3 Audio, 4 Network, 5 Gameplay; shown in ROTK's order
+    // with Gameplay after Controls, then About (6)
+    static const char *wide[] = { "  Display  ", "  Graphics  ", "  Controls  ", "  Audio  ", "  Network  ", "  Gameplay  ", "  About  " };
+    static const char *tight[] = { "Display", "Graphics", "Controls", "Audio", "Network", "Gameplay", "About" };
+    static const int order[] = { 0, 1, 2, 5, 3, 4, 6 };
+    bool has[7] = {};
     for (auto &ps : a.tt.settings) has[tt_tab_of_setting(ps)] = true;
     has[1] = true;   // the preset lives there
+    has[6] = true;
+    int count = 0;
+    for (bool h : has) count += h;
+    const char *const *names = count > 5 ? tight : wide;   // six tabs only fit without the extra spaces
     ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
     if (ImGui::BeginTabBar("tttabs")) {
         static int startTab = getenv("ROTKFIX_TAB") ? atoi(getenv("ROTKFIX_TAB")) : -1;
         int shown = 0;
-        for (int t = 0; t < 6; t++) {
-            if (t < 5 && !has[t]) continue;
+        for (int t : order) {
+            if (!has[t]) continue;
             ImGuiTabItemFlags tf = shown++ == startTab ? ImGuiTabItemFlags_SetSelected : 0;
-            if (ImGui::BeginTabItem(t < 5 ? names[t] : "  About  ", nullptr, tf)) {
+            if (ImGui::BeginTabItem(names[t], nullptr, tf)) {
                 ImGui::PopFont();
                 ImGui::BeginChild("tttab", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_NoBackground);
                 if (t == 0) tt_tab_display(a); else if (t == 1) tt_tab_graphics(a); else if (t == 2) tt_tab_controls(a);
-                else if (t < 5) tt_settings_on_tab(a, t); else tt_about(a);
+                else if (t == 5) tt_tab_gameplay(a); else if (t < 5) tt_settings_on_tab(a, t); else tt_about(a);
                 if (getenv("ROTKFIX_SCROLL_END")) ImGui::SetScrollY(ImGui::GetScrollMaxY());   // testing
+                else if (const char *sy = getenv("ROTKFIX_SCROLL_Y")) ImGui::SetScrollY(std::min((float)atof(sy) * g_scale, ImGui::GetScrollMaxY()));   // testing
                 ImGui::Dummy(ImVec2(0, S(6)));
                 ImGui::EndChild();
                 ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
