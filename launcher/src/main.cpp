@@ -1943,6 +1943,15 @@ static void tt_tab_graphics(App &a)
         if (ImGui::SliderInt("##ttsharp", &v, (int)ps->min, (int)ps->max, v == 0 ? "Off" : "%d")) a.ttFile.set(ps->section, ps->key, std::to_string(v));
         row_end();
     }
+    // the port's own (no ROTK Fix counterpart): right after Sharpening; presets set it
+    if (const PortSetting *ps = tt_setting(a, "graphics", "smooth_2d")) {
+        mark("graphics", "smooth_2d");
+        bool v = tt_val(a, *ps) == "true";
+        row_begin(ps->label.empty() ? "Smooth menus and HUD" : ps->label.c_str(),
+                  ps->help.empty() ? "Smooths menus, text and the HUD when they are drawn larger than the console's screen." : ps->help.c_str());
+        if (ImGui::Checkbox("##ttsmooth2d", &v)) a.ttFile.set(ps->section, ps->key, v ? "true" : "false");
+        row_end();
+    }
     if (const PortSetting *ps = tt_setting(a, "graphics", "colour_look")) {
         mark("graphics", "colour_look");
         std::string cur = toml_unquote(tt_val(a, *ps));
