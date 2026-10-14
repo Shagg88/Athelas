@@ -372,7 +372,7 @@ bool load_settings(const std::string &dir, Settings &s)
     s.aniso = geti(ini, "Graphics", "AnisotropicFiltering", 16);
     s.widescreenFix = geti(ini, "Graphics", "WidescreenFix", 1) != 0;
     s.renderScale = geti(ini, "Graphics", "RenderScale", 100);
-    if (s.renderScale < 50 || s.renderScale > 200) s.renderScale = 100;
+    s.renderScale = s.renderScale < 50 ? 50 : s.renderScale > 200 ? 200 : s.renderScale;   // as ROTK Fix clamps it
     s.hudEdges = geti(ini, "Graphics", "HUDEdges", 0) != 0;
     s.sharperText = geti(ini, "Graphics", "SharperText", 0) != 0;
     s.fovPct = clampi(geti(ini, "Graphics", "FieldOfView", 100), 70, 150);

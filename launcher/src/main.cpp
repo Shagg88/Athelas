@@ -402,6 +402,7 @@ struct App {
     std::vector<FoundGame> found;
     std::string setupErr, deniedDir;
     double captureAt = 0;
+    int captureFrame = 0;              // last frame a Controls tab was drawn (a capture ends when it isn't)
     bool captureTT = false;            // the move waiting is on The Two Towers' Controls tab (its [controls] buttons)
     std::string message;
     bool messageBad = false;
@@ -564,8 +565,11 @@ static void tab_display(App &a)
         static const int pcts[] = { 50, 75, 100, 125, 150, 200 };
         auto sized = [&](int pct) {
             char b[64];
-            snprintf(b, sizeof b, "%d%%%s  (%d x %d)", pct, pct == 100 ? " (screen's own)" : pct > 100 ? "" : "",
-                     (int)lround(rw * pct / 100.0) & ~1, (int)lround(rh * pct / 100.0) & ~1);
+            // ROTK Fix keeps the picture within twice 4K's pixels (a 32-bit game); larger choices are reduced
+            double cap = 3840.0 * 2160.0 * 2.0, px = (double)rw * rh * pct * pct / 10000.0;
+            int use = px > cap ? (int)(100.0 * sqrt(cap / ((double)rw * rh))) : pct;
+            snprintf(b, sizeof b, "%d%%%s  (%d x %d)%s", pct, pct == 100 && s.width <= 0 ? " (screen's own)" : "",
+                     (int)lround(rw * use / 100.0) & ~1, (int)lround(rh * use / 100.0) & ~1, use != pct ? "  - the most this game can use" : "");
             return std::string(b);
         };
         std::string help = "The game is drawn at this share of the resolution above, then fitted to the screen. "
@@ -580,10 +584,14 @@ static void tab_display(App &a)
         }
         row_end();
         if (s.renderScale != 100 && s.displayMode == 1 && !g_xboxPage) {   // ROTK Fix's way; the Xbox port draws its own picture
+            bool own = s.width <= 0 || (s.width == m.deskW && s.height == m.deskH);
+            bool ownHz = s.refresh <= 0 || s.refresh == m.deskHz;
             ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
             ImGui::SetCursorPosX(g_labelW);
             ImGui::PushTextWrapPos(0);
-            ImGui::TextColored(C_DIM, "Shown borderless at this render resolution: fullscreen can't scale the picture.");
+            if (own && ownHz) ImGui::TextColored(C_DIM, "Shown borderless at this render resolution: fullscreen can't scale the picture.");
+            else ImGui::TextColored(C_WARN, "In fullscreen this only works at the screen's own resolution and refresh rate; "
+                                            "otherwise the game stays at 100%%.");
             ImGui::PopTextWrapPos();
             ImGui::PopFont();
         }
@@ -696,6 +704,8 @@ static void tab_graphics(App &a)
     row_end();
     if (g_xboxPage) {   // the Xbox port draws text, title and main menu with the PC version's larger fonts and pictures, read from the PC game's files here
         static int pcFonts = -1, pcMenus = -1;
+        static std::string checkedDir;
+        if (checkedDir != a.dir) { checkedDir = a.dir; pcFonts = -1; }   // per game folder
         auto there = [&](const char *rel) { DWORD at = GetFileAttributesA((a.dir + rel).c_str()); return (int)(at != INVALID_FILE_ATTRIBUTES && !(at & FILE_ATTRIBUTE_DIRECTORY)); };
         if (pcFonts < 0) { pcFonts = there("\\Data\\Game\\GlobScen.scw"); pcMenus = there("\\Data\\Game\\fro\\fro03.scw"); }
         ImGui::BeginDisabled(!pcFonts);
@@ -855,7 +865,7 @@ static void assign_button(Settings &s, int pl, int action, int ph)
 }
 
 static int  tt_button_count(App &a);
-static void tt_assign_button(App &a, int idx, int ph);
+static bool tt_assign_button(App &a, int idx, int ph);
 
 // Called for every SDL event while a move waits for a button press. After a
 // press the next move waits, like the mapping screens of Dolphin and RPCS3.
@@ -886,7 +896,7 @@ static void capture_event(App &a, const SDL_Event &e)
     // ignore the press that started it (A on a controller clicking the slot)
     if (ImGui::GetTime() - a.captureAt < 0.25) return;
     int count = PAD_ACTION_COUNT;
-    if (a.captureTT) { count = tt_button_count(a); tt_assign_button(a, a.capture, ph); }
+    if (a.captureTT) { count = tt_button_count(a); if (!tt_assign_button(a, a.capture, ph)) return; }   // a button this move can't use: keep waiting
     else assign_button(a.s, a.padPlayer, a.capture, ph);
     a.capture = a.capture + 1 < count ? a.capture + 1 : -1;
     a.captureAt = ImGui::GetTime();
@@ -934,6 +944,7 @@ static void tab_controls(App &a)
     int style = label_style(a);
     if (a.captureTT) a.capture = -1;
     a.captureTT = false;
+    a.captureFrame = ImGui::GetFrameCount();
     if (a.capture >= 0 && (ImGui::GetTime() - a.captureAt > 8.0 || !a.controllers)) a.capture = -1;
 
     // left: the moves; right: the controller
@@ -2191,15 +2202,21 @@ static std::vector<const PortSetting *> tt_buttons(App &a)
 }
 static int tt_button_count(App &a) { return (int)tt_buttons(a).size(); }
 // As on ROTK: the move that had the button gets this move's old one.
-static void tt_assign_button(App &a, int idx, int ph)
+static bool tt_assign_button(App &a, int idx, int ph)
 {
     auto b = tt_buttons(a);
-    if (idx < 0 || idx >= (int)b.size() || ph < 0 || !k_ttPhys[ph][0]) return;
+    if (idx < 0 || idx >= (int)b.size() || ph < 0 || !k_ttPhys[ph][0]) return false;
     std::string nv = k_ttPhys[ph], old = toml_unquote(tt_val(a, *b[idx]));
-    if (std::find(b[idx]->choices.begin(), b[idx]->choices.end(), nv) == b[idx]->choices.end()) return;
+    auto allows = [](const PortSetting *ps, const std::string &v) { return std::find(ps->choices.begin(), ps->choices.end(), v) != ps->choices.end(); };
+    if (!allows(b[idx], nv)) return false;
     for (int i = 0; i < (int)b.size(); i++)
-        if (i != idx && toml_unquote(tt_val(a, *b[i])) == nv) a.ttFile.set(b[i]->section, b[i]->key, toml_quote(old));
+        if (i != idx && toml_unquote(tt_val(a, *b[i])) == nv) {
+            // the other move gets this one's old button - or nothing, if it can't take that one
+            std::string give = allows(b[i], old) ? old : allows(b[i], "none") ? std::string("none") : toml_unquote(b[i]->def);
+            a.ttFile.set(b[i]->section, b[i]->key, toml_quote(give));
+        }
     a.ttFile.set(b[idx]->section, b[idx]->key, toml_quote(nv));
+    return true;
 }
 // "Speed Attack / Fire" -> "Speed attack / fire", as ROTK writes its moves; "Xbox B" stays
 static std::string tt_move_name(const std::string &l)
@@ -2248,6 +2265,7 @@ static void tt_tab_controls(App &a)
     if (!a.captureTT) a.capture = -1;
     a.captureTT = true;
     if (a.capture >= (int)btn.size()) a.capture = -1;
+    a.captureFrame = ImGui::GetFrameCount();
     if (a.capture >= 0 && (ImGui::GetTime() - a.captureAt > 8.0 || !a.controllers)) a.capture = -1;
     if (!btn.empty()) {
         section("Buttons");
@@ -2326,7 +2344,7 @@ static void tt_tab_controls(App &a)
     // anything else the port puts on this tab
     bool more = false;
     for (auto &ps : a.tt.settings) {
-        if (tt_tab_of_setting(ps) != 2 || tt_hidden(ps) || ps.section == "controls") continue;
+        if (tt_tab_of_setting(ps) != 2 || tt_hidden(ps) || (ps.section == "controls" && ps.type == "choice")) continue;
         if (ps.section == "input" && (ps.key == "vibration" || ps.key == "stick_deadzone" || ps.key == "trigger_threshold")) continue;
         if (!more) { section("More"); more = true; }
         tt_setting_row(a, ps);
@@ -3151,6 +3169,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
         }
         if (SDL_GetWindowFlags(win) & SDL_WINDOW_MINIMIZED) { SDL_Delay(50); continue; }
         // while mapping (and just after), controller presses must not also click things here
+        if (a.capture >= 0 && ImGui::GetFrameCount() - a.captureFrame > 2) a.capture = -1;   // left the Controls tab or the page
         if (a.capture >= 0 || ImGui::GetTime() - a.captureAt < 0.5) io.ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
         else io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
         ImGui_ImplSDLRenderer3_NewFrame();

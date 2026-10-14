@@ -54,8 +54,8 @@ static int  g_hudSharpPct = 0;      /* HUD and menu pictures sharpened at their 
 static int  g_sharpenOn = 1;        /* [Graphics] Sharpening > 0 */
 static int  g_projPersp;      /* current projection is perspective (3D) */
 static int  g_alphaEdges = 1;  /* smooth cut-out (alpha-tested) edges with MSAA: per-sample shading */
-static int  g_drawPct = 100;
-static int  g_renderPct = 100;  /* [Graphics] RenderScale: the game draws at this share of the chosen size; DXVK fits it to the screen */   /* [Graphics] DrawDistance: far clip plane and fog, percent of the game's */
+static int  g_drawPct = 100;    /* [Graphics] DrawDistance: far clip plane and fog, percent of the game's */
+static int  g_renderPct = 100;  /* [Graphics] RenderScale: the game draws at this share of the chosen size; DXVK fits it to the screen */
 
 static int parse_choice(const char *v, const char *const *names, int n, int def)
 {
@@ -180,6 +180,7 @@ static HMODULE load_backend(void)
 
 static UINT g_modeW, g_modeH, g_modeRefresh;   /* the size the game draws at (its only display mode) */
 static UINT g_outW, g_outH;                    /* the size shown: a window's size, or the screen's in borderless */
+static UINT g_deskW, g_deskH, g_deskHz;        /* the desktop's own mode */
 static D3DFORMAT g_deskFormat = D3DFMT_X8R8G8B8;
 static int  g_modeReady;
 static int  g_modeIsReal;   /* the monitor supports it as a real mode */
@@ -191,6 +192,7 @@ static void choose_mode(IDirect3D8 *real, UINT adapter)
     D3DDISPLAYMODE desk;
     if (FAILED(IDirect3D8_GetAdapterDisplayMode(real, adapter, &desk))) { desk.Width = 1920; desk.Height = 1080; desk.RefreshRate = 60; desk.Format = D3DFMT_X8R8G8B8; }
     g_deskFormat = desk.Format;
+    g_deskW = desk.Width; g_deskH = desk.Height; g_deskHz = desk.RefreshRate;
     UINT w = g_width > 0 ? (UINT)g_width : desk.Width;
     UINT h = g_height > 0 ? (UINT)g_height : desk.Height;
 
@@ -236,20 +238,38 @@ static void choose_mode(IDirect3D8 *real, UINT adapter)
     if (g_modeRefresh == 0) g_modeRefresh = desk.RefreshRate;
     /* Render resolution: the game is offered (and draws at) a larger or smaller
      * size; the picture is presented into the window or screen and scaled to
-     * fit. Fullscreen needs the picture to be the screen mode's own size, so
-     * it is shown borderless on the same screen instead. */
+     * fit. Fullscreen can't scale, so it is shown borderless instead - but only
+     * when fullscreen was at the desktop's own size and refresh rate, so nothing
+     * is stretched or slowed; otherwise fullscreen stays as chosen, at 100%. */
     if (g_renderPct != 100 && g_gfxEnabled) {
+        int pct = g_renderPct;
         if (g_dispMode == DM_FULLSCREEN) {
-            logf_("graphics: render resolution %d%%: shown borderless instead of fullscreen (fullscreen can't scale the picture)", g_renderPct);
-            g_dispMode = DM_BORDERLESS;
-            g_outW = desk.Width; g_outH = desk.Height;
+            if (w == desk.Width && h == desk.Height && g_modeRefresh == desk.RefreshRate) {
+                logf_("graphics: render resolution %d%%: shown borderless instead of fullscreen (fullscreen can't scale the picture)", pct);
+                g_dispMode = DM_BORDERLESS;
+            } else {
+                logf_("graphics: render resolution %d%% needs fullscreen at the desktop's own %ux%u @ %uHz; staying fullscreen at 100%%",
+                      pct, desk.Width, desk.Height, desk.RefreshRate);
+                pct = 100;
+            }
         }
-        if (g_dispMode == DM_BORDERLESS) { g_outW = desk.Width; g_outH = desk.Height; }
-        g_modeW = ((UINT)((double)w * g_renderPct / 100.0 + 0.5)) & ~1u;
-        g_modeH = ((UINT)((double)h * g_renderPct / 100.0 + 0.5)) & ~1u;
-        if (g_modeW < 320) g_modeW = 320;
-        if (g_modeH < 240) g_modeH = 240;
-        logf_("graphics: render resolution %d%%: drawn at %ux%u, shown at %ux%u", g_renderPct, g_modeW, g_modeH, g_outW, g_outH);
+        if (pct != 100) {
+            if (g_dispMode == DM_BORDERLESS) { g_outW = desk.Width; g_outH = desk.Height; }
+            /* a 32-bit game: keep the picture within twice 4K's pixels (with MSAA, the
+             * post-processing copy and screenshots it all has to fit in 2 GB) */
+            const double maxPx = 3840.0 * 2160.0 * 2.0;
+            double px = (double)w * h * pct * pct / 10000.0;
+            if (px > maxPx) {
+                int fit = (int)(100.0 * sqrt(maxPx / ((double)w * h)));
+                logf_("graphics: render resolution %d%% of %ux%u is too large for this 32-bit game; using %d%%", pct, w, h, fit);
+                pct = fit;
+            }
+            g_modeW = ((UINT)((double)w * pct / 100.0 + 0.5)) & ~1u;
+            g_modeH = ((UINT)((double)h * pct / 100.0 + 0.5)) & ~1u;
+            if (g_modeW < 320) g_modeW = 320;
+            if (g_modeH < 240) g_modeH = 240;
+            logf_("graphics: render resolution %d%%: drawn at %ux%u, shown at %ux%u", pct, g_modeW, g_modeH, g_outW, g_outH);
+        }
     }
     static const char *const dn[] = { "borderless", "fullscreen", "windowed" };
     logf_("graphics: game will render at %ux%u, %s", g_modeW, g_modeH, dn[g_dispMode]);
@@ -439,7 +459,8 @@ static HRESULT WINAPI hook_SetTransform(IDirect3DDevice8 *dev, D3DTRANSFORMSTATE
         float vfov = m->_22 > 0 ? 2.0f * atanf(1.0f / m->_22) * 57.29578f : 0.0f;
         float asp = m->_11 != 0 ? fabsf(m->_22 / m->_11) : 0.0f;
         int known = 0;
-        for (int i = 0; i < g_nCamSeen; i++) if (fabsf(g_camSeen[i][0] - vfov) < 0.5f && fabsf(g_camSeen[i][1] - asp) < 0.01f) known = 1;
+        /* within 5 degrees of one already logged: an animated zoom (the level-select ring), not a new camera */
+        for (int i = 0; i < g_nCamSeen; i++) if (fabsf(g_camSeen[i][0] - vfov) < 5.0f && fabsf(g_camSeen[i][1] - asp) < 0.01f) known = 1;
         if (!known && g_nCamSeen < 16) {
             g_camSeen[g_nCamSeen][0] = vfov; g_camSeen[g_nCamSeen][1] = asp; g_nCamSeen++;
             float sa = screen_aspect();
@@ -986,7 +1007,7 @@ static int hud_sharpen_ok(IDirect3DDevice8 *dev)
 {
     g_hudSharpPct = hud_sharpen_strength();
     static int logged;
-    if (g_hudSharpPct && !logged++) logf_("graphics: sharper HUD on (%d%% for %u lines)", g_hudSharpPct, g_modeH);
+    if (g_hudSharpPct && !logged++) logf_("graphics: sharper HUD on (%d%% for %u lines)", g_hudSharpPct, g_outH ? g_outH : g_modeH);
     if (g_curFVF == FVF_2D && g_tex0 && !is_rt(g_tex0) && !icons_is_font_texture(g_tex0)) textures_note_2d(g_tex0);
     if (!g_hudSharpPct || g_moviePSFailed) return 0;
     if (g_curFVF != FVF_2D) return hs_note(HS_FVF);
@@ -1345,6 +1366,8 @@ static HRESULT WINAPI w_CreateDevice(IDirect3D8 *This, UINT a, D3DDEVTYPE t, HWN
     if (FAILED(hr) && pp && g_dispMode == DM_FULLSCREEN) {
         logf_("graphics: fullscreen device failed (%#lx), retrying borderless", (unsigned long)hr);
         g_dispMode = DM_BORDERLESS;
+        if (g_deskW) { g_outW = g_deskW; g_outH = g_deskH; }                 /* borderless shows the whole screen */
+        if (g_vsync && g_deskHz) limiter_cap_to_refresh(g_deskHz);
         setup_window(pp->hDeviceWindow, RD(This), a);
         fix_present_params(pp, RD(This), a, focus);
         hr = IDirect3D8_CreateDevice(RD(This), a, t, focus, flags, pp, dev);
