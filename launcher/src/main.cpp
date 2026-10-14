@@ -419,6 +419,7 @@ struct App {
     // The Return of the King (Xbox) port: same settings page as the PC version (ROTKFix.ini)
     Port rx;
     bool rxLooked = false;
+    bool firstRunPreset = false;       // no ROTKFix.ini yet: the preset may still follow the graphics card
     HANDLE running = NULL;             // a port that is playing; the launcher waits, hidden
     std::string runningLog, runningGame;
 };
@@ -3146,7 +3147,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     if (const char *t = getenv("ROTKFIX_GAME")) { int n = atoi(t); if (n >= 0 && n < (int)a.lib.size()) a.cur = n; }   // testing
     a.monitors = enum_monitors();
     bool hadIni = load_settings(a.dir, a.s);
-    if (!hadIni) apply_preset(a.s, PRESET_HIGH);
+    if (!hadIni) { apply_preset(a.s, PRESET_HIGH); a.firstRunPreset = true; }
     a.s.renderer = 0;   // Vulkan always; the DLL falls back to Direct3D 8 by itself if Vulkan is unavailable
     // the saved screen by name (the order of screens can change)
     for (size_t i = 0; i < a.monitors.size(); i++) {
@@ -3188,6 +3189,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
         if (SDL_GetWindowFlags(win) & SDL_WINDOW_MINIMIZED) { SDL_Delay(50); continue; }
         // while mapping (and just after), controller presses must not also click things here
         if (a.capture >= 0 && ImGui::GetFrameCount() - a.captureFrame > 2) a.capture = -1;   // left the Controls tab or the page
+        if (a.firstRunPreset) {
+            // first run: High suits a gaming graphics card; integrated graphics (most laptops), software
+            // Vulkan and PCs without Vulkan get Balanced instead - unless the player already changed something
+            GpuInfo gi = gpu_info();
+            if (gi.state != GPU_CHECKING) {
+                a.firstRunPreset = false;
+                bool weak = gi.integrated || gi.state != GPU_VULKAN_OK;
+                if (weak && detect_preset(a.s) == PRESET_HIGH) {
+                    apply_preset(a.s, PRESET_BALANCED);
+                    set_message(a, "Balanced graphics chosen to suit this PC's graphics - change it on the Graphics tab", false);
+                }
+            }
+        }
         if (a.capture >= 0 || ImGui::GetTime() - a.captureAt < 0.5) io.ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
         else io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
         ImGui_ImplSDLRenderer3_NewFrame();
