@@ -2088,16 +2088,6 @@ static void tt_tab_graphics(App &a)
         row_end();
     }
 
-    if (const PortSetting *ps = tt_setting(a, "graphics", "floor_reflections")) {
-        // as ROTK's Graphics tab: Game detail after View
-        section("Game detail");
-        mark("graphics", "floor_reflections");
-        bool v = tt_val(a, *ps) == "true";
-        row_begin(ps->label.empty() ? "Floor reflections (experimental)" : ps->label.c_str(), ps->help.c_str());
-        if (ImGui::Checkbox("##ttfloorrefl", &v)) a.ttFile.set(ps->section, ps->key, v ? "true" : "false");
-        row_end();
-    }
-
     const PortSetting *prep = tt_setting(a, "textures", "replace"), *pdump = tt_setting(a, "textures", "dump");
     if (prep || pdump) {
         section("Texture packs");

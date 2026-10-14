@@ -156,7 +156,6 @@ the top of the Graphics tab.
 | `graphics.msaa` | "0" shows as "Off", others as "Nx". |
 | `graphics.fov`, `display.render_percent` | The slider shows "%". `render_percent` choices also show the pixel size they draw at. |
 | `graphics.smooth_2d` | "Smooth menus and HUD", right after Sharpening (no ROTK counterpart). |
-| `graphics.floor_reflections` | Under a "Game detail" heading after View, as ROTK's Graphics tab has. |
 | `gameplay.damage_taken`, `gameplay.enemy_damage` | Gameplay tab, "Difficulty" heading; sliders with "100% (game's own)". |
 | `[controls]` (choice settings) | The Controls tab's Buttons list, worked like ROTK's: click a move, press the button; the move that had it swaps. Values must be `A B X Y LB RB LT RT LS RS none`. "Original layout" writes the defaults back. |
 | `input.vibration`, `input.stick_deadzone`, `input.trigger_threshold` | Controller options on the Controls tab, as ROTK's rows. |
