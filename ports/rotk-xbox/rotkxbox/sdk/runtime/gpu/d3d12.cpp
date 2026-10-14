@@ -674,6 +674,8 @@ private:
     void DrawFrame(Target* t, uint32_t bi);
     void BlitFrame(Target& t);
     void KeepMovieFrame(Target& t);
+    void BlackSides(D3D12_CPU_DESCRIPTOR_HANDLE rh, uint32_t w, uint32_t h, float aspect);
+    float frame_sides_ = 1.0f;  // g_frame_sides for the frame being shown
     bool BlitMovie(const Target& t);
     void RenderUi();
     void ReleaseOldTextures();
@@ -1187,6 +1189,7 @@ void D3D12Backend::Screenshot(Target& t) {
             Transition(src, *src_state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
             SetBlitTarget(rh, w, h);
             Blit(src, fmt, uv, o);
+            if (src == t.res.Get()) BlackSides(rh, w, h, float(w) / float(std::max(h, 1u)));
             D3D12_RESOURCE_STATES ds = D3D12_RESOURCE_STATE_RENDER_TARGET;
             Transition(down.Get(), ds, D3D12_RESOURCE_STATE_COPY_SOURCE);
         } else {
@@ -3568,6 +3571,16 @@ void D3D12Backend::UploadGammaRamp() {
     cl_->CopyTextureRegion(&dl, 0, 0, 0, &sl, nullptr);
 }
 
+// g_frame_sides: the frame's sides painted black, in a w x h target the frame fills at aspect, centred
+void D3D12Backend::BlackSides(D3D12_CPU_DESCRIPTOR_HANDLE rh, uint32_t w, uint32_t h, float aspect) {
+    if (frame_sides_ >= 0.999f) return;
+    float vw = std::min(float(w), float(h) * aspect), keep = vw * frame_sides_;
+    LONG l = LONG((float(w) - keep) / 2), r = LONG((float(w) + keep) / 2);
+    D3D12_RECT rs[2] = {{0, 0, l, LONG(h)}, {r, 0, LONG(w), LONG(h)}};
+    float black[4] = {0, 0, 0, 1};
+    cl_->ClearRenderTargetView(rh, black, 2, rs);
+}
+
 void D3D12Backend::BlitFrame(Target& t) {
     // 16:9 (or the wider screen's shape, app::FrameAspect) when the console reports a widescreen display, else 4:3
     float aspect = app::FrameAspect();
@@ -3690,7 +3703,10 @@ void D3D12Backend::DrawFrame(Target* t, uint32_t bi) {
     cl_->ClearRenderTargetView(rh, black, 0, nullptr);
     cl_->OMSetRenderTargets(1, &rh, FALSE, nullptr);
     bound_rt_ = bound_ds_ = nullptr;
-    if (t && !BlitMovie(*t)) BlitFrame(*t);
+    if (t && !BlitMovie(*t)) {
+        BlitFrame(*t);
+        BlackSides(rh, bb_w_, bb_h_, app::FrameAspect());
+    }
     RenderUi();
     Transition(bb_[bi].Get(), bs, D3D12_RESOURCE_STATE_PRESENT);
 }
@@ -3807,6 +3823,7 @@ void D3D12Backend::Present(const Surface& front) {
     Target* t = EnsureTarget(front, false);
     if (t && LatchCpuWrite(*t)) UploadTarget(*t, front);
     if (t) Resolve(*t);
+    frame_sides_ = g_frame_sides.exchange(1.0f);
     if (t && g_screenshot.exchange(false)) Screenshot(*t);
     if (t && g_movie) KeepMovieFrame(*t);
     else movie_on_ = false;

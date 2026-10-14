@@ -1,4 +1,5 @@
 #pragma once
+#include <atomic>
 #include <array>
 #include <cstdint>
 #include <vector>
@@ -77,6 +78,10 @@ extern ProjectionHook g_projection_hook;
 // leave it. Null for none.
 using OrthoPlace = bool (*)(const State& s, float x0, float x1, float y0, float y1, float& a, float& b);
 extern OrthoPlace g_ortho_place;
+// set by game code for the frame being drawn: the share of the frame's width, centred, that is shown; the sides are
+// painted black (a full-screen menu picture held narrower than an ultrawide screen, with a 3D scene behind it that
+// would show at the sides). 1 shows it all; put back to 1 after each frame is shown.
+extern std::atomic<float> g_frame_sides;
 // the clip space extent of a fixed function draw with XYZ positions in stream 0 (false when it has none)
 bool OrthoExtent(const State& s, uint32_t start, uint32_t count, const uint8_t* indices, float& x0, float& x1, float& y0,
                  float& y1);

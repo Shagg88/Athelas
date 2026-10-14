@@ -446,6 +446,7 @@ ScreenSpaceHook g_screen_space_hook = nullptr;
 ScreenSpaceTest g_screen_space_test = nullptr;
 ProjectionHook g_projection_hook = nullptr;
 OrthoPlace g_ortho_place = nullptr;
+std::atomic<float> g_frame_sides{1.0f};
 
 bool OrthoExtent(const State& s, uint32_t start, uint32_t count, const uint8_t* indices, float& x0, float& x1, float& y0,
                  float& y1) {

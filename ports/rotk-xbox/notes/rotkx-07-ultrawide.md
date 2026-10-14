@@ -54,3 +54,18 @@ The game still renders a 4:3 frame that is stretched sideways. At 2560x1080 that
     screens everything is now held at 16:9, hud_edges included.
   - The streak is a wide quad of a small texture that was kept full width as a "gradient". Only small textures over
     the whole screen height keep the full width now.
+
+## Second play at 2560x1080 (23:10): blue glows beside the main menu
+
+The blue blobs outside the menu picture weren't 2D. They were the level-select hall's magic effects: the menus draw
+their 3D scenes behind the full-screen picture, and once the picture is held at 16:9 the scene shows at the sides. The
+test build's reference renderer doesn't draw those effects, which is why it never showed them.
+
+**SDK `gpu::g_frame_sides`.** A game can ask for the frame's sides to be painted black, as a centred share of the
+width. It's reset after each frame. BlitFrame and Screenshot clear the side columns. (ROTK Fix also paints the bars
+black on menus, from its Present.)
+
+**Game.** On an ultrawide screen, a full-screen menu picture (spanning the width and the height, large texture) sets
+it to its 16:9 share.
+
+ROTK patch v12.

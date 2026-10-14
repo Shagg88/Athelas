@@ -141,6 +141,8 @@ bool Place2D(const gpu::State& s, float x0, float x1, float y0, float y1, float&
         if (!ultra) return false;
         a = wide;
         b = 0;
+        // a full-screen menu picture: the menus' 3D scenes are drawn behind it and would show beside it
+        if (spans && tall) gpu::g_frame_sides = wide;
         return true;
     }
     a = (4.0f / 3.0f) / frame;
