@@ -557,6 +557,38 @@ static void tab_display(App &a)
     }
     row_end();
 
+    // Render resolution, as on The Two Towers: the game is drawn at a share of the size above and
+    // fitted to the screen. Each choice shows the size it draws at. Fullscreen shows it borderless.
+    {
+        int rw = s.width > 0 ? s.width : m.deskW, rh = s.width > 0 ? s.height : m.deskH;
+        static const int pcts[] = { 50, 75, 100, 125, 150, 200 };
+        auto sized = [&](int pct) {
+            char b[64];
+            snprintf(b, sizeof b, "%d%%%s  (%d x %d)", pct, pct == 100 ? " (screen's own)" : pct > 100 ? "" : "",
+                     (int)lround(rw * pct / 100.0) & ~1, (int)lround(rh * pct / 100.0) & ~1);
+            return std::string(b);
+        };
+        std::string help = "The game is drawn at this share of the resolution above, then fitted to the screen. "
+                           "Above 100% gives a cleaner, steadier picture (supersampling) and costs speed; below 100% is "
+                           "faster but softer.";
+        if (!g_xboxPage) help += "\nIn fullscreen, anything but 100% is shown borderless on the same screen.";
+        row_begin("Render resolution", help.c_str());
+        if (ImGui::BeginCombo("##render", sized(s.renderScale).c_str())) {
+            for (int p : pcts)
+                if (ImGui::Selectable(sized(p).c_str(), s.renderScale == p)) s.renderScale = p;
+            ImGui::EndCombo();
+        }
+        row_end();
+        if (s.renderScale != 100 && s.displayMode == 1 && !g_xboxPage) {   // ROTK Fix's way; the Xbox port draws its own picture
+            ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
+            ImGui::SetCursorPosX(g_labelW);
+            ImGui::PushTextWrapPos(0);
+            ImGui::TextColored(C_DIM, "Shown borderless at this render resolution: fullscreen can't scale the picture.");
+            ImGui::PopTextWrapPos();
+            ImGui::PopFont();
+        }
+    }
+
     section("Smoothness");
     row_begin("V-Sync", "Prevents tearing. The frame rate can't go above the screen's refresh rate.");
     ImGui::Checkbox("##vsync", &s.vsync);

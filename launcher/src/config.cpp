@@ -371,6 +371,8 @@ bool load_settings(const std::string &dir, Settings &s)
     s.alphaEdges = geti(ini, "Graphics", "AlphaEdgeSmoothing", 1) != 0;
     s.aniso = geti(ini, "Graphics", "AnisotropicFiltering", 16);
     s.widescreenFix = geti(ini, "Graphics", "WidescreenFix", 1) != 0;
+    s.renderScale = geti(ini, "Graphics", "RenderScale", 100);
+    if (s.renderScale < 50 || s.renderScale > 200) s.renderScale = 100;
     s.hudEdges = geti(ini, "Graphics", "HUDEdges", 0) != 0;
     s.sharperText = geti(ini, "Graphics", "SharperText", 0) != 0;
     s.fovPct = clampi(geti(ini, "Graphics", "FieldOfView", 100), 70, 150);
@@ -438,6 +440,7 @@ static const std::vector<IniSection> &ini_layout()
             { "ColourLook", "original", "original, film, vivid or dark. ] switches while playing" },
             { "ColourLookStrength", "100", "0-100" },
             { "WidescreenFix", "1", "1 = see more at the sides instead of a stretched picture" },
+            { "RenderScale", "100", "Render resolution: % of the resolution the game is drawn at, then fitted to the screen (50-200; above 100 = supersampling)" },
             { "HUDEdges", "0", "Xbox version: 1 = HUD pieces at the screen edges (with WidescreenFix=1)" },
             { "SharperText", "0", "Xbox version: 1 = text, title and main menu with the PC version's larger fonts and pictures (needs the PC game's Data\\Game files here)" },
             { "FieldOfView", "100", "Percent of the game's own view angle (70-150)" },
@@ -581,6 +584,7 @@ static bool write_rotkfix_ini(const std::string &p, const Settings &s, bool crea
     set("Graphics", "ColourLook", looks[s.colourLook]);
     set("Graphics", "ColourLookStrength", std::to_string(s.lookStrength));
     set("Graphics", "WidescreenFix", std::to_string((int)s.widescreenFix));
+    set("Graphics", "RenderScale", std::to_string(s.renderScale));
     set("Graphics", "HUDEdges", std::to_string((int)s.hudEdges));
     set("Graphics", "SharperText", std::to_string((int)s.sharperText));
     set("Graphics", "FieldOfView", std::to_string(s.fovPct));

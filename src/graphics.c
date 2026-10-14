@@ -54,7 +54,8 @@ static int  g_hudSharpPct = 0;      /* HUD and menu pictures sharpened at their 
 static int  g_sharpenOn = 1;        /* [Graphics] Sharpening > 0 */
 static int  g_projPersp;      /* current projection is perspective (3D) */
 static int  g_alphaEdges = 1;  /* smooth cut-out (alpha-tested) edges with MSAA: per-sample shading */
-static int  g_drawPct = 100;   /* [Graphics] DrawDistance: far clip plane and fog, percent of the game's */
+static int  g_drawPct = 100;
+static int  g_renderPct = 100;  /* [Graphics] RenderScale: the game draws at this share of the chosen size; DXVK fits it to the screen */   /* [Graphics] DrawDistance: far clip plane and fog, percent of the game's */
 
 static int parse_choice(const char *v, const char *const *names, int n, int def)
 {
@@ -101,6 +102,9 @@ void graphics_load_settings(const char *ini)
     if (g_fovPct < 70) g_fovPct = 70;
     if (g_fovPct > 150) g_fovPct = 150;
     g_alphaEdges = GetPrivateProfileIntA("Graphics", "AlphaEdgeSmoothing", 1, ini);
+    g_renderPct = GetPrivateProfileIntA("Graphics", "RenderScale", 100, ini);
+    if (g_renderPct < 50) g_renderPct = 50;
+    if (g_renderPct > 200) g_renderPct = 200;      /* a 32-bit game: larger pictures risk running out of memory */
     g_drawPct = GetPrivateProfileIntA("Graphics", "DrawDistance", 100, ini);
     if (g_drawPct < 50) g_drawPct = 50;
     if (g_drawPct > 800) g_drawPct = 800;
@@ -174,7 +178,8 @@ static HMODULE load_backend(void)
 /* ------------------------------------------------------------------ */
 /* Chosen mode                                                          */
 
-static UINT g_modeW, g_modeH, g_modeRefresh;
+static UINT g_modeW, g_modeH, g_modeRefresh;   /* the size the game draws at (its only display mode) */
+static UINT g_outW, g_outH;                    /* the size shown: a window's size, or the screen's in borderless */
 static D3DFORMAT g_deskFormat = D3DFMT_X8R8G8B8;
 static int  g_modeReady;
 static int  g_modeIsReal;   /* the monitor supports it as a real mode */
@@ -214,6 +219,7 @@ static void choose_mode(IDirect3D8 *real, UINT adapter)
         best = desk.RefreshRate;
     }
     g_modeW = w; g_modeH = h;
+    g_outW = w; g_outH = h;
     /* the saved refresh rate belongs to the saved resolution: use it only
      * if this monitor really offers it at the size the game will use */
     int rateOk = 0;
@@ -228,6 +234,23 @@ static void choose_mode(IDirect3D8 *real, UINT adapter)
               w == desk.Width && h == desk.Height ? desk.RefreshRate : best);
     g_modeRefresh = rateOk ? (UINT)g_refresh : (w == desk.Width && h == desk.Height ? desk.RefreshRate : best);
     if (g_modeRefresh == 0) g_modeRefresh = desk.RefreshRate;
+    /* Render resolution: the game is offered (and draws at) a larger or smaller
+     * size; the picture is presented into the window or screen and scaled to
+     * fit. Fullscreen needs the picture to be the screen mode's own size, so
+     * it is shown borderless on the same screen instead. */
+    if (g_renderPct != 100 && g_gfxEnabled) {
+        if (g_dispMode == DM_FULLSCREEN) {
+            logf_("graphics: render resolution %d%%: shown borderless instead of fullscreen (fullscreen can't scale the picture)", g_renderPct);
+            g_dispMode = DM_BORDERLESS;
+            g_outW = desk.Width; g_outH = desk.Height;
+        }
+        if (g_dispMode == DM_BORDERLESS) { g_outW = desk.Width; g_outH = desk.Height; }
+        g_modeW = ((UINT)((double)w * g_renderPct / 100.0 + 0.5)) & ~1u;
+        g_modeH = ((UINT)((double)h * g_renderPct / 100.0 + 0.5)) & ~1u;
+        if (g_modeW < 320) g_modeW = 320;
+        if (g_modeH < 240) g_modeH = 240;
+        logf_("graphics: render resolution %d%%: drawn at %ux%u, shown at %ux%u", g_renderPct, g_modeW, g_modeH, g_outW, g_outH);
+    }
     static const char *const dn[] = { "borderless", "fullscreen", "windowed" };
     logf_("graphics: game will render at %ux%u, %s", g_modeW, g_modeH, dn[g_dispMode]);
     if (g_dispMode == DM_FULLSCREEN) logf_("graphics: fullscreen refresh rate %uHz", g_modeRefresh);
@@ -260,7 +283,7 @@ static void setup_window(HWND w, IDirect3D8 *real, UINT adapter)
         SetWindowPos(w, HWND_TOP, mr.left, mr.top, mr.right - mr.left, mr.bottom - mr.top, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
     } else if (g_dispMode == DM_WINDOWED) {
         DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE;
-        RECT r = { 0, 0, (LONG)g_modeW, (LONG)g_modeH };
+        RECT r = { 0, 0, (LONG)g_outW, (LONG)g_outH };
         AdjustWindowRect(&r, style, FALSE);
         int ww = r.right - r.left, wh = r.bottom - r.top;
         int x = mr.left + ((mr.right - mr.left) - ww) / 2, y = mr.top + ((mr.bottom - mr.top) - wh) / 2;
@@ -925,8 +948,9 @@ static int movie_sharpen_draw(IDirect3DDevice8 *dev, UINT start, UINT count)
  * the player has turned sharpening off. */
 static int hud_sharpen_strength(void)
 {
-    if (!g_sharpenOn || !g_modeH) return 0;
-    int pct = (int)(40.0f * ((float)g_modeH / 480.0f - 1.0f));
+    UINT shownH = g_outH ? g_outH : g_modeH;   /* the shown size, not the render size */
+    if (!g_sharpenOn || !shownH) return 0;
+    int pct = (int)(40.0f * ((float)shownH / 480.0f - 1.0f));
     return pct < 0 ? 0 : pct > 90 ? 90 : pct;
 }
 

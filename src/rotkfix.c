@@ -1,5 +1,5 @@
 /*
- * ROTK Fix - core (test build 79)
+ * ROTK Fix - core (test build 80)
  *
  * Loaded into The Lord of the Rings: The Return of the King (PC, 2003)
  * through the d3d8.dll and dinput8.dll forwarders in the game folder (the
@@ -1010,7 +1010,7 @@ BOOL WINAPI DllMain(HINSTANCE inst, DWORD reason, LPVOID reserved)
             char lp[MAX_PATH]; path_in_dir(lp, "ROTKFix.log");
             g_log = fopen(lp, "w");
         }
-        logf_("ROTK Fix test build 79 loaded (Limiter=%d TargetFPS=%d Spin=%dus)",
+        logf_("ROTK Fix test build 80 loaded (Limiter=%d TargetFPS=%d Spin=%dus)",
               g_limiterMode, g_targetFps, g_spinUs);
 
         QueryPerformanceFrequency(&g_freq);
