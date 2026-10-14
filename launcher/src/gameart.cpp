@@ -5,6 +5,7 @@
 // entries: name[8], data offset u32 at +8, size/16 u16 at +12, width and height
 // u16 at +0x38, format at +0x3c: 1 = DXT1), CLHE, TXDA (the pixels), CLDA.
 #include "gameart.h"
+#include "library.h"
 #include <windows.h>
 #include <string.h>
 #include <stdlib.h>
@@ -93,19 +94,33 @@ static void take_textures(const std::vector<uint8_t> &d, std::vector<ArtPic> &ou
 
 bool rotk_menu_art_load(const std::string &gameDir, std::vector<ArtPic> &out)
 {
+    // the file, or where it is inside an Xbox disc image (gameDir is then the .iso)
     std::string path = gameDir + "\\Data\\Game\\fro\\fro03.scw";
-    if (GetFileAttributesA(path.c_str()) == INVALID_FILE_ATTRIBUTES) path.back() = 'x';   // the Xbox copy: fro03.scx
+    unsigned long long start = 0, len = 0;
+    DWORD at = GetFileAttributesA(gameDir.c_str());
+    if (at != INVALID_FILE_ATTRIBUTES && !(at & FILE_ATTRIBUTE_DIRECTORY)) {
+        uint32_t sz32 = 0;
+        if (!iso_locate(gameDir, "Data\\Game\\fro\\fro03.scx", start, sz32)) return false;
+        path = gameDir; len = sz32;
+    } else if (GetFileAttributesA(path.c_str()) == INVALID_FILE_ATTRIBUTES) path.back() = 'x';   // an extracted Xbox copy: fro03.scx
     HANDLE f = CreateFileA(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
     if (f == INVALID_HANDLE_VALUE) return false;
     LARGE_INTEGER fsz;
-    if (!GetFileSizeEx(f, &fsz) || fsz.QuadPart < 64 || fsz.QuadPart > (512ll << 20)) { CloseHandle(f); return false; }
+    if (!GetFileSizeEx(f, &fsz)) { CloseHandle(f); return false; }
+    if (!len) len = (unsigned long long)fsz.QuadPart;
+    if (len < 64 || len > (512ull << 20) || start + len > (unsigned long long)fsz.QuadPart) { CloseHandle(f); return false; }
     HANDLE m = CreateFileMappingA(f, NULL, PAGE_READONLY, 0, 0, NULL);
     CloseHandle(f);
     if (!m) return false;
-    const uint8_t *d = (const uint8_t *)MapViewOfFile(m, FILE_MAP_READ, 0, 0, 0);
+    // views start on a 64 KB boundary
+    SYSTEM_INFO si; GetSystemInfo(&si);
+    unsigned long long viewAt = start - start % si.dwAllocationGranularity;
+    size_t skip = (size_t)(start - viewAt);
+    uint8_t *view = (uint8_t *)MapViewOfFile(m, FILE_MAP_READ, (DWORD)(viewAt >> 32), (DWORD)viewAt, (SIZE_T)(skip + len));
     CloseHandle(m);
-    if (!d) return false;
-    size_t n = (size_t)fsz.QuadPart, o = 0;
+    if (!view) return false;
+    const uint8_t *d = view + skip;
+    size_t n = (size_t)len, o = 0;
     bool cur = false;                  // inside a texture resource we want
     std::vector<uint8_t> res;
     while (o + 16 <= n) {
@@ -126,7 +141,7 @@ bool rotk_menu_art_load(const std::string &gameDir, std::vector<ArtPic> &out)
         o += sz >= 16 ? sz : 16;
     }
     if (cur) take_textures(res, out);
-    UnmapViewOfFile(d);
+    UnmapViewOfFile(view);
     return !out.empty();
 }
 
@@ -179,7 +194,21 @@ void tt_art_list(const std::string &gameDir, std::vector<std::string> &out)
     pics[n++] = { "UI\\mainmenu.BFF", 0xF80 };       // the parchment level-select map (no lettering)
     pics[n++] = { "UI\\mainmenu.BFF", 0x170F80 };    // main menu art (not the title screens after it: logo)
     pics[n++] = { "UI\\options.BFF", 0xF80 };        // the cave troll
+    DWORD at = GetFileAttributesA(gameDir.c_str());
+    bool iso = at != INVALID_FILE_ATTRIBUTES && !(at & FILE_ATTRIBUTE_DIRECTORY);
+    std::string lastFile;
+    unsigned long long fileAt = 0;
+    bool fileOk = false;
     for (int i = 0; i < n; i++) {
+        if (iso) {                     // a disc image: the same files, found inside it
+            if (lastFile != pics[i].file) {
+                uint32_t sz = 0;
+                lastFile = pics[i].file;
+                fileOk = iso_locate(gameDir, pics[i].file, fileAt, sz);
+            }
+            if (fileOk) out.push_back("\002tt:" + std::to_string(fileAt + pics[i].hdr) + ":" + gameDir);
+            continue;
+        }
         std::string p = gameDir + "\\" + pics[i].file;
         if (GetFileAttributesA(p.c_str()) == INVALID_FILE_ATTRIBUTES) continue;
         out.push_back("\002tt:" + std::to_string(pics[i].hdr) + ":" + p);
@@ -191,13 +220,14 @@ unsigned char *tt_picture_load(const std::string &entry, int &w, int &h)
     if (entry.compare(0, 4, "\002tt:")) return nullptr;
     size_t colon = entry.find(':', 4);
     if (colon == std::string::npos) return nullptr;
-    uint32_t hdrOff = (uint32_t)strtoul(entry.c_str() + 4, nullptr, 10);
+    unsigned long long hdrOff = strtoull(entry.c_str() + 4, nullptr, 10);
     HANDLE f = CreateFileA(entry.c_str() + colon + 1, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
     if (f == INVALID_HANDLE_VALUE) return nullptr;
     uint8_t hd[0x80];
     DWORD got = 0;
     unsigned char *px = nullptr;
-    if (SetFilePointer(f, hdrOff, NULL, FILE_BEGIN) != INVALID_SET_FILE_POINTER && ReadFile(f, hd, sizeof hd, &got, NULL) && got == sizeof hd
+    LARGE_INTEGER pos; pos.QuadPart = (LONGLONG)hdrOff;
+    if (SetFilePointerEx(f, pos, NULL, FILE_BEGIN) && ReadFile(f, hd, sizeof hd, &got, NULL) && got == sizeof hd
         && rd32(hd) == 0x00056278) {
         uint32_t pw = rd32(hd + 4), ph = rd32(hd + 8), type = rd32(hd + 12);
         if (pw >= 64 && ph >= 64 && pw <= 2048 && ph <= 2048 && !(pw & 3) && !(ph & 3) && (type == 10 || type == 17)) {

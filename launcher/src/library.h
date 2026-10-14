@@ -34,5 +34,8 @@ bool library_save(const std::string &launcherDir, const std::vector<LibGame> &ga
 // Adds (or refreshes) a game; returns its index.
 int library_add(std::vector<LibGame> &games, const LibGame &g);
 
+// A file inside an Xbox disc image, e.g. "UI\\stills1.BFF": where it starts in the image and its size.
+bool iso_locate(const std::string &iso, const char *path, unsigned long long &offset, uint32_t &size);
+
 bool pick_disc_image(std::string &out);      // Windows' file box, for .iso files
 bool pick_file(std::string &out, const wchar_t *title, const wchar_t *typeName, const wchar_t *pattern);

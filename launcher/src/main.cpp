@@ -2993,14 +2993,14 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
         std::vector<std::string> dirs;
         for (GameKind k : { GK_ROTK_PC, GK_ROTK_XBOX })
             for (const LibGame &g : a.lib)
-                if (g.kind == k && !g.iso) dirs.push_back(g.path);
+                if (g.kind == k) dirs.push_back(g.path);     // (a folder, or an Xbox disc image)
         art_start(dirs);
     }
     {
         bool tt = a.cur >= 0 && a.cur < (int)a.lib.size() && a.lib[a.cur].kind == GK_TT_XBOX;
         int group = tt ? 1 : 0;
         if (group != a.bg.group || (group == 0 && art_ready() && !a.bg.artIn))
-            backgrounds_rebuild(a.bg, group, exe_dir(), tt && !a.lib[a.cur].iso ? a.lib[a.cur].path : std::string());
+            backgrounds_rebuild(a.bg, group, exe_dir(), tt ? a.lib[a.cur].path : std::string());
     }
     backgrounds_poll(a.bg, ren);
     if (!a.bg.job && !a.bg.files.empty() &&

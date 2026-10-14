@@ -133,6 +133,59 @@ static bool iso_find(Reader &r, const char *name, uint32_t &sector, uint32_t &si
     return found;
 }
 
+// One directory table: find 'name' in it (binary tree, as above).
+static bool iso_dir_find(Reader &r, uint32_t dirSec, uint32_t dirSize, const std::string &name, uint32_t &sec, uint32_t &size, bool &isDir)
+{
+    if (!dirSize || dirSize > 4 * 1024 * 1024) return false;
+    std::vector<unsigned char> t(dirSize);
+    if (!r.read(dirSec * 2048ull, t.data(), dirSize)) return false;
+    std::vector<uint32_t> todo{ 0 };
+    int guard = 0;
+    while (!todo.empty() && guard++ < 100000) {
+        uint32_t o = todo.back(); todo.pop_back();
+        if (o + 14 > dirSize) continue;
+        uint16_t l, rt; uint32_t s, z;
+        memcpy(&l, &t[o], 2); memcpy(&rt, &t[o + 2], 2);
+        if (l == 0xFFFF) continue;
+        memcpy(&s, &t[o + 4], 4); memcpy(&z, &t[o + 8], 4);
+        unsigned n = t[o + 13];
+        if (o + 14 + n > dirSize) continue;
+        std::string nm((const char *)&t[o + 14], n);
+        if (!_stricmp(nm.c_str(), name.c_str())) { sec = s; size = z; isDir = (t[o + 12] & 0x10) != 0; return true; }
+        if (l) todo.push_back(l * 4u);
+        if (rt) todo.push_back(rt * 4u);
+    }
+    return false;
+}
+
+bool iso_locate(const std::string &iso, const char *path, unsigned long long &offset, uint32_t &size)
+{
+    Reader r;
+    r.f = fopen(iso.c_str(), "rb");
+    if (!r.f) return false;
+    static const unsigned long long starts[] = { 0, 0x18300000ull, 0xFD90000ull, 0x89D80000ull };
+    bool ok = false;
+    for (unsigned long long st : starts) {
+        r.base = st;
+        unsigned char vd[28];
+        if (!r.read(32 * 2048ull, vd, sizeof vd) || memcmp(vd, "MICROSOFT*XBOX*MEDIA", 20)) continue;
+        uint32_t sec, sz;
+        memcpy(&sec, vd + 20, 4); memcpy(&sz, vd + 24, 4);
+        std::string rest = path;
+        bool isDir = true, found = true;
+        while (!rest.empty()) {
+            size_t cut = rest.find('\\');
+            std::string part = rest.substr(0, cut);
+            rest = cut == std::string::npos ? "" : rest.substr(cut + 1);
+            if (!isDir || !iso_dir_find(r, sec, sz, part, sec, sz, isDir)) { found = false; break; }
+        }
+        if (found && !isDir) { offset = st + sec * 2048ull; size = sz; ok = true; }
+        break;
+    }
+    fclose(r.f);
+    return ok;
+}
+
 static GameKind detect_iso(const std::string &path, LibGame &out)
 {
     Reader r;
