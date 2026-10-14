@@ -3,6 +3,9 @@
 An unofficial, free fan project for **The Lord of the Rings: The Return of the King** (PC, 2003).
 It lets people play their own copy on a modern PC.
 
+The launcher that comes with it is called **Athelas** (after kingsfoil, the healing herb). It sets up and starts
+ROTK Fix, and also starts the PC ports of The Return of the King and The Two Towers for players' own Xbox copies.
+
 > Not affiliated with or endorsed by Electronic Arts, New Line Cinema, Warner Bros. or the Tolkien Estate.
 > No game files are included or distributed. You need your own copy of the game, already installed and able to run.
 > ROTK Fix does not change or bypass the game's copy protection.
@@ -39,7 +42,7 @@ has a `.sha256` next to it (`Get-FileHash` in PowerShell to compare). ROTK Fix m
 
 1. Download the zip from [Releases](../../releases).
 2. Unzip it into the game folder (the one with `rotk.exe`).
-3. Run `ROTKFixLauncher.exe` and press **Play**.
+3. Run `Athelas.exe` (the launcher) and press **Play**.
 
 To uninstall, use **About → Remove ROTK Fix** in the launcher.
 

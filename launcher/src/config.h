@@ -1,5 +1,10 @@
-// ROTK Fix Launcher - settings, game files and system information
+// Athelas (the launcher) - settings, game files and system information
 #pragma once
+
+// The launcher is called Athelas; it runs ROTK Fix (PC) and the Xbox ports.
+// ROTKFixLauncher.exe was its name before (removed when a new copy is installed).
+#define LAUNCHER_EXE "Athelas.exe"
+#define LAUNCHER_EXE_OLD "ROTKFixLauncher.exe"
 #include <string>
 #include <vector>
 

@@ -18,7 +18,7 @@ for m in secre.finditer(lay):
         keys.append((key, d, c))
     secs.append((name, title, keys))
 # 1. DLL template
-out = ['; ROTK Fix settings - easiest to change with ROTKFixLauncher.exe.',
+out = ['; ROTK Fix settings - easiest to change with Athelas.exe.',
        '; Edits made here are kept. README.txt explains every setting.']
 for name, title, keys in secs:
     rows = [(k, d) for k, d, c in keys if d is not None]

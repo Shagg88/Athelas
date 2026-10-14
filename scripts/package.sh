@@ -13,7 +13,7 @@ sh launcher/build.sh
 OUT=dist/ROTKFix-$VER
 rm -rf "$OUT" "$OUT.zip"
 mkdir -p "$OUT/ROTKFix/dxvk" "$OUT/ROTKFix/licenses"
-cp build/ROTKFix.dll build/d3d8.dll build/dinput8.dll launcher/build/ROTKFixLauncher.exe "$OUT/"
+cp build/ROTKFix.dll build/d3d8.dll build/dinput8.dll launcher/build/Athelas.exe "$OUT/"
 cp "$SDL_DIR/i686-w64-mingw32/bin/SDL3.dll" "$OUT/"
 cp "$DXVK_DIR/x32/d3d8.dll" "$DXVK_DIR/x32/d3d9.dll" "$OUT/ROTKFix/dxvk/"
 cp licenses/* "$OUT/ROTKFix/licenses/"

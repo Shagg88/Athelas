@@ -107,7 +107,7 @@ static void load_settings(void)
     if (GetFileAttributesA(ini) == INVALID_FILE_ATTRIBUTES) {
         FILE *f = fopen(ini, "w");
         if (f) {
-            fputs("; ROTK Fix settings - easiest to change with ROTKFixLauncher.exe.\n"
+            fputs("; ROTK Fix settings - easiest to change with Athelas.exe.\n"
                   "; Edits made here are kept. README.txt explains every setting.\n"
                   "\n"
                   "[Graphics]\n"

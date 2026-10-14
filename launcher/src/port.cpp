@@ -1,4 +1,4 @@
-// ROTK Fix Launcher - starting a game's PC port and editing its settings (see port.h)
+// Athelas (the launcher) - starting a game's PC port and editing its settings (see port.h)
 #include "port.h"
 #include <stdio.h>
 #include <stdlib.h>

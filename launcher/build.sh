@@ -1,5 +1,5 @@
 #!/bin/sh
-# ROTK Fix Launcher (32-bit, uses the SDL3.dll shipped with ROTK Fix)
+# Athelas, the launcher (32-bit, uses the SDL3.dll shipped with ROTK Fix)
 set -e
 cd "$(dirname "$0")"
 SDL=${SDL_DIR:-/tmp/claude-0/sdl/SDL3-3.4.18}/i686-w64-mingw32   # SDL3 mingw development package
@@ -17,5 +17,5 @@ $CXX -Wall -Wextra -Wno-missing-field-initializers -c src/gpu.cpp -o build/obj/g
 $CXX -Wall -Wextra -Wno-missing-field-initializers -c src/gameart.cpp -o build/obj/gameart.o
 $CXX -Wall -Wextra -Wno-missing-field-initializers -c src/main.cpp -o build/obj/main.o
 i686-w64-mingw32-windres src/launcher.rc -O coff -o build/obj/launcher_res.o
-i686-w64-mingw32-g++ -mwindows -static-libgcc -static-libstdc++ -s -o build/ROTKFixLauncher.exe build/obj/*.o \
+i686-w64-mingw32-g++ -mwindows -static-libgcc -static-libstdc++ -s -o build/Athelas.exe build/obj/*.o \
   $SDL/lib/libSDL3.dll.a -lshell32 -lole32 -luuid

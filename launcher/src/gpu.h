@@ -1,5 +1,5 @@
 // ROTK Fix Launcher - is there a Vulkan driver DXVK can use, and what kind of graphics card?
-// The check runs in a separate copy of the launcher (ROTKFixLauncher.exe --vkprobe), so a
+// The check runs in a separate copy of the launcher (Athelas.exe --vkprobe), so a
 // broken driver can never take the launcher down; the answer arrives a moment after start.
 #pragma once
 #include <string>

@@ -1,4 +1,4 @@
-// ROTK Fix Launcher - settings, game files and system information
+// Athelas (the launcher) - settings, game files and system information
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
@@ -634,7 +634,7 @@ static bool write_rotkfix_ini(const std::string &p, const Settings &s, bool crea
         return false;
     };
     std::string out =
-        "; ROTK Fix settings - easiest to change with ROTKFixLauncher.exe.\r\n"
+        "; ROTK Fix settings - easiest to change with Athelas.exe.\r\n"
         "; Edits made here are kept. README.txt explains every setting.\r\n";
     std::vector<std::pair<std::string, std::string>> rows;
     auto flush = [&]() {
@@ -889,7 +889,7 @@ bool uninstall(const std::string &dir, std::vector<std::string> &done, std::stri
 
     // 4. Everything else ROTK Fix added (Screenshots are kept: they are the player's)
     // SDL3.dll is in use by this launcher; it goes with the launcher when it closes
-    for (const char *f : { "ROTKFix.ini", "ROTKFix.log" })
+    for (const char *f : { "ROTKFix.ini", "ROTKFix.log", LAUNCHER_EXE_OLD })
         if (file_exists(dir + "\\" + f) && DeleteFileA((dir + "\\" + f).c_str())) done.push_back(std::string("Removed ") + f);
     if (GetFileAttributesA((dir + "\\ROTKFix").c_str()) != INVALID_FILE_ATTRIBUTES) {
         if (delete_tree(dir + "\\ROTKFix")) done.push_back("Removed the ROTKFix folder");
@@ -1088,7 +1088,7 @@ static bool copy_tree(const std::string &from, const std::string &toDir, DWORD &
 bool install_to(const std::string &src, const std::string &dst, std::string &err, bool &accessDenied)
 {
     accessDenied = false;
-    static const char *files[] = { "ROTKFixLauncher.exe", "ROTKFix.dll", "d3d8.dll", "dinput8.dll", "SDL3.dll" };
+    static const char *files[] = { LAUNCHER_EXE, "ROTKFix.dll", "d3d8.dll", "dinput8.dll", "SDL3.dll" };
     for (const char *f : files)
         if (!file_exists(src + "\\" + f)) { err = std::string("ROTK Fix is incomplete here: ") + f + " is missing. Unzip the whole download again."; return false; }
     if (lower(src) == lower(dst)) { err = "That is already this folder."; return false; }
@@ -1112,6 +1112,7 @@ bool install_to(const std::string &src, const std::string &dst, std::string &err
             return false;
         }
     }
+    DeleteFileA((dst + "\\" LAUNCHER_EXE_OLD).c_str());     // the launcher's old name
     for (const char *f : { "README.txt", "ROTKFix.ini" })
         if (file_exists(src + "\\" + f) && !file_exists(dst + "\\" + f)) CopyFileA((src + "\\" + f).c_str(), (dst + "\\" + f).c_str(), TRUE);
     if (GetFileAttributesA((src + "\\ROTKFix").c_str()) != INVALID_FILE_ATTRIBUTES) {
@@ -1133,7 +1134,7 @@ bool folder_writable(const std::string &dir)
 
 bool start_launcher(const std::string &dir, bool elevated, const std::string &args)
 {
-    std::string exe = dir + "\\ROTKFixLauncher.exe";
+    std::string exe = dir + "\\" LAUNCHER_EXE;
     HINSTANCE r = ShellExecuteA(NULL, elevated ? "runas" : "open", exe.c_str(), args.empty() ? NULL : args.c_str(), dir.c_str(), SW_SHOWNORMAL);
     return (INT_PTR)r > 32;
 }

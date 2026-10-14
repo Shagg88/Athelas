@@ -1,4 +1,4 @@
-// ROTK Fix Launcher
+// Athelas - the launcher for ROTK Fix (PC) and the Xbox ports
 //
 // The one place to start the game from: shows whether the game and ROTK Fix
 // are set up, lets the player change every setting, writes ROTKFix.ini and
@@ -1365,8 +1365,9 @@ static void tab_about(App &a)
 
     section("ROTK Fix");
     ImGui::PushTextWrapPos(0);
-    ImGui::TextUnformatted("An unofficial, free fan project that lets owners of The Lord of the Rings: The Return of the King (PC, 2003) "
-                           "play their own copy on modern PCs with modern display, graphics and controller support.");
+    ImGui::TextUnformatted("Athelas is an unofficial, free fan launcher. With ROTK Fix it lets owners of The Lord of the Rings: The Return of the King "
+                           "(PC, 2003) play their own copy on modern PCs with modern display, graphics and controller support, and it starts "
+                           "the PC ports of their own Xbox copies too.");
     ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
     ImGui::TextColored(C_DIM, "Not affiliated with or endorsed by Electronic Arts, New Line Cinema, Warner Bros. or the Tolkien Estate. "
                               "No game files are included; you need your own copy of the game. Background art is read from your own copy.");
@@ -1441,7 +1442,7 @@ static void setup_here(App &a, const std::string &dst)
     a.setupErr.clear(); a.deniedDir.clear();
     if (install_to(a.dir, dst, a.setupErr, denied)) {
         if (start_launcher(dst, false, "")) a.quit = true;
-        else a.setupErr = "ROTK Fix was copied to " + dst + ". Open ROTKFixLauncher.exe there.";
+        else a.setupErr = "ROTK Fix was copied to " + dst + ". Open " LAUNCHER_EXE " there.";
     } else if (denied) a.deniedDir = dst;
 }
 
@@ -2938,8 +2939,8 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     ImVec2 tp = ImGui::GetCursorScreenPos();
     for (int dx = -1; dx <= 1; dx++)
         for (int dy = -1; dy <= 1; dy++)
-            if (dx || dy) dl->AddText(F_TITLE, F_TITLE->LegacySize, ImVec2(tp.x + dx * S(2), tp.y + dy * S(2)), IM_COL32(0, 0, 0, 110), "ROTK FIX");
-    ImGui::TextColored(C_GOLD_H, "ROTK FIX");
+            if (dx || dy) dl->AddText(F_TITLE, F_TITLE->LegacySize, ImVec2(tp.x + dx * S(2), tp.y + dy * S(2)), IM_COL32(0, 0, 0, 110), "ATHELAS");
+    ImGui::TextColored(C_GOLD_H, "ATHELAS");
     ImGui::PopFont();
     ImGui::SetCursorPosX(pad + S(2));
     ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
@@ -3214,7 +3215,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
         while (!dst.empty() && (dst[0] == '"' || dst[0] == ' ')) dst.erase(0, 1);
         while (!dst.empty() && (dst.back() == '"' || dst.back() == ' ')) dst.pop_back();
         std::string err; bool denied = false;
-        if (!install_to(exe_dir(), dst, err, denied)) { MessageBoxA(NULL, err.c_str(), "ROTK Fix", MB_ICONERROR); return 1; }
+        if (!install_to(exe_dir(), dst, err, denied)) { MessageBoxA(NULL, err.c_str(), "Athelas", MB_ICONERROR); return 1; }
         start_launcher(dst, false, "");
         return 0;
     }
@@ -3234,7 +3235,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     SDL_SetHint(SDL_HINT_WINDOWS_INTRESOURCE_ICON, "1");
     SDL_SetHint(SDL_HINT_WINDOWS_INTRESOURCE_ICON_SMALL, "1");
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
-        MessageBoxA(NULL, SDL_GetError(), "ROTK Fix Launcher", MB_ICONERROR);
+        MessageBoxA(NULL, SDL_GetError(), "Athelas", MB_ICONERROR);
         return 1;
     }
     g_scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
@@ -3245,9 +3246,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
         float f = std::min(dmode->w * 0.95f / ww, dmode->h * 0.9f / wh);
         g_scale *= f; ww = (int)(ww * f); wh = (int)(wh * f);
     }
-    SDL_Window *win = SDL_CreateWindow("ROTK Fix", ww, wh, 0);
+    SDL_Window *win = SDL_CreateWindow("Athelas", ww, wh, 0);
     SDL_Renderer *ren = win ? SDL_CreateRenderer(win, NULL) : nullptr;
-    if (!ren) { MessageBoxA(NULL, SDL_GetError(), "ROTK Fix Launcher", MB_ICONERROR); return 1; }
+    if (!ren) { MessageBoxA(NULL, SDL_GetError(), "Athelas", MB_ICONERROR); return 1; }
     SDL_SetRenderVSync(ren, 1);
 
     IMGUI_CHECKVERSION();

@@ -1,4 +1,4 @@
-// ROTK Fix Launcher - the player's games (see library.h)
+// Athelas (the launcher) - the player's games (see library.h)
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>

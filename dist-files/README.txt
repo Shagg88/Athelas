@@ -5,6 +5,9 @@ King (PC, 2003). It lets you play your own copy on a modern PC: any screen
 size and refresh rate, smooth high frame rates, sharper graphics, and modern
 Xbox, PlayStation and Switch controllers.
 
+The launcher is called Athelas (Athelas.exe), after kingsfoil, the healing
+herb. Settings, playing, and your other games are all there.
+
 Not affiliated with or endorsed by Electronic Arts, New Line Cinema, Warner
 Bros. or the Tolkien Estate. No game files are included: you need your own
 copy of the game, already installed and able to run.
@@ -48,7 +51,7 @@ INSTALL
 1. Unzip everything into your game folder (the folder with rotk.exe).
    If Windows asks to replace d3d8.dll or dinput8.dll, those files belong to
    another mod. Copy them somewhere safe first, then let ROTK Fix replace them.
-2. Run ROTKFixLauncher.exe. Choose your settings and press PLAY.
+2. Run Athelas.exe (the launcher). Choose your settings and press PLAY.
    Always start the game from the launcher from now on: it is where every
    setting lives, and it saves them for the game each time.
 
@@ -101,7 +104,7 @@ controller arrives as a second controller and plays player 2.
   game.
 - Parsec (parsec.app): both of you install it. Your friend connects to your
   PC, and you allow their controller.
-Start the game as usual from ROTKFixLauncher.exe or Steam, then pick Co-op.
+Start the game as usual from Athelas.exe or Steam, then pick Co-op.
 Your friend sees your screen with a short delay. In the launcher's Controls
 tab, set "Player 2 (co-op)" to "Second controller".
 
