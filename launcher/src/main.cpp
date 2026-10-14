@@ -402,6 +402,7 @@ struct App {
     std::vector<FoundGame> found;
     std::string setupErr, deniedDir;
     double captureAt = 0;
+    bool captureTT = false;            // the move waiting is on The Two Towers' Controls tab (its [controls] buttons)
     std::string message;
     bool messageBad = false;
     double messageAt = 0;
@@ -687,6 +688,12 @@ static void tab_graphics(App &a)
     row_begin("Widescreen correction", "Shows more at the sides instead of stretching the 4:3 picture.");
     ImGui::Checkbox("##ws", &s.widescreenFix);
     row_end();
+    if (g_xboxPage && s.widescreenFix) {   // the Xbox port's own option; the PC version keeps the HUD in the middle 16:9
+        row_begin("HUD at the screen edges", "With widescreen correction on: health bars and other HUD pieces sit at the screen's edges "
+                                             "instead of in the middle 4:3 area.");
+        ImGui::Checkbox("##hudedges", &s.hudEdges);
+        row_end();
+    }
     char fov[48];
     snprintf(fov, sizeof fov, s.fovPct == 100 ? "%.0f%s  (game's own)" : "%.0f%s", hfov_deg(a, s.fovPct), "\xC2\xB0");
     row_begin("Field of view", "How wide the camera sees, in horizontal degrees. Wider shows more of the battle but makes characters look further away.");
@@ -797,6 +804,9 @@ static void assign_button(Settings &s, int pl, int action, int ph)
     s.padMap[pl][action] = ph;
 }
 
+static int  tt_button_count(App &a);
+static void tt_assign_button(App &a, int idx, int ph);
+
 // Called for every SDL event while a move waits for a button press. After a
 // press the next move waits, like the mapping screens of Dolphin and RPCS3.
 static void capture_event(App &a, const SDL_Event &e)
@@ -825,8 +835,10 @@ static void capture_event(App &a, const SDL_Event &e)
     else return;
     // ignore the press that started it (A on a controller clicking the slot)
     if (ImGui::GetTime() - a.captureAt < 0.25) return;
-    assign_button(a.s, a.padPlayer, a.capture, ph);
-    a.capture = a.capture + 1 < PAD_ACTION_COUNT ? a.capture + 1 : -1;
+    int count = PAD_ACTION_COUNT;
+    if (a.captureTT) { count = tt_button_count(a); tt_assign_button(a, a.capture, ph); }
+    else assign_button(a.s, a.padPlayer, a.capture, ph);
+    a.capture = a.capture + 1 < count ? a.capture + 1 : -1;
     a.captureAt = ImGui::GetTime();
 }
 
@@ -870,6 +882,8 @@ static void tab_controls(App &a)
         "Also shows level info in menus.", nullptr, "Opens doors, pulls levers and picks things up.",
         "Can also be done by pressing Ranged attack and Killing move together.", "Hold to aim; press Speed attack to fire.", nullptr };
     int style = label_style(a);
+    if (a.captureTT) a.capture = -1;
+    a.captureTT = false;
     if (a.capture >= 0 && (ImGui::GetTime() - a.captureAt > 8.0 || !a.controllers)) a.capture = -1;
 
     // left: the moves; right: the controller
@@ -946,12 +960,12 @@ static void tab_controls(App &a)
     segmented("p2", &s.player2, p2, 2);
     row_end();
     static const char *bn[] = { "Automatic", "Xbox", "PlayStation", "Nintendo", "Original (\"Button 7\")" };
-    ImGui::BeginDisabled(g_xboxPage);   // the Xbox game already shows Xbox buttons
-    row_begin("Button names", "Which controller's buttons the game's hints and tutorials show, as pictures.\n"
-                              "Automatic follows the controller you play with. \"Original\" keeps the game's own text.");
+    row_begin("Button names", g_xboxPage ? "Which controller's buttons the game's hints and tutorials show, as pictures.\n"
+                                           "Automatic follows the controller you play with. \"Original\" keeps the Xbox pictures."
+                                         : "Which controller's buttons the game's hints and tutorials show, as pictures.\n"
+                                           "Automatic follows the controller you play with. \"Original\" keeps the game's own text.");
     segmented("names", &s.buttonNames, bn, 5);
     row_end();
-    ImGui::EndDisabled();
     row_begin("Vibration", "Controller rumble from the original Xbox version, switched back on. 0 turns it off.");
     ImGui::SliderInt("##rumble", &s.vibration, 0, 100, s.vibration == 0 ? "Off" : "%d%%");
     row_end();
@@ -2086,55 +2100,161 @@ static void tt_tab_graphics(App &a)
 }
 
 
-// ---- The Two Towers' Controls tab: ROTK's "Controller options" rows the port has
+// ---- The Two Towers' Controls tab, laid out and worked like ROTK's: Controller, Buttons
+// (click a move, press the button; it moves on by itself), Controller options.
+// The port's [controls] settings say which button on the player's controller does each
+// Xbox button; their values are the same names ROTK uses (A, B, X, Y, LB, RB, LT, RT, LS, RS).
+static const char *const k_ttPhys[PAD_PHYS_COUNT] = { "A", "B", "X", "Y", "LB", "RB", "", "", "LS", "RS", "LT", "RT" };
+static int tt_phys_of(const std::string &v)
+{
+    for (int i = 0; i < PAD_PHYS_COUNT; i++) if (k_ttPhys[i][0] && v == k_ttPhys[i]) return i;
+    return -1;   // "none"
+}
+static std::vector<const PortSetting *> tt_buttons(App &a)
+{
+    std::vector<const PortSetting *> v;
+    for (auto &ps : a.tt.settings) if (ps.section == "controls" && ps.type == "choice") v.push_back(&ps);
+    return v;
+}
+static int tt_button_count(App &a) { return (int)tt_buttons(a).size(); }
+// As on ROTK: the move that had the button gets this move's old one.
+static void tt_assign_button(App &a, int idx, int ph)
+{
+    auto b = tt_buttons(a);
+    if (idx < 0 || idx >= (int)b.size() || ph < 0 || !k_ttPhys[ph][0]) return;
+    std::string nv = k_ttPhys[ph], old = toml_unquote(tt_val(a, *b[idx]));
+    if (std::find(b[idx]->choices.begin(), b[idx]->choices.end(), nv) == b[idx]->choices.end()) return;
+    for (int i = 0; i < (int)b.size(); i++)
+        if (i != idx && toml_unquote(tt_val(a, *b[i])) == nv) a.ttFile.set(b[i]->section, b[i]->key, toml_quote(old));
+    a.ttFile.set(b[idx]->section, b[idx]->key, toml_quote(nv));
+}
+// "Speed Attack / Fire" -> "Speed attack / fire", as ROTK writes its moves; "Xbox B" stays
+static std::string tt_move_name(const std::string &l)
+{
+    std::string r = l;
+    bool first = true, afterXbox = false;
+    for (size_t i = 0; i < r.size(); i++) {
+        if (r[i] == ' ' || r[i] == '/') continue;
+        size_t e = r.find_first_of(" /", i);
+        if (e == std::string::npos) e = r.size();
+        std::string w = r.substr(i, e - i);
+        bool keep = first || afterXbox || w == "Xbox" || (w.size() <= 2 && isupper((unsigned char)w[0]));   // "Xbox Black" is a button's name
+        afterXbox = w == "Xbox";
+        if (!keep && isupper((unsigned char)w[0]) && (w.size() < 2 || islower((unsigned char)w[1]))) r[i] = (char)tolower((unsigned char)r[i]);
+        first = false;
+        i = e;
+    }
+    return r;
+}
+static void tt_slider_row(App &a, const char *key, const char *label, const char *help, const char *id, const char *zero)
+{
+    const PortSetting *ps = tt_setting(a, "input", key);
+    if (!ps) return;
+    int v = atoi(tt_val(a, *ps).c_str());
+    row_begin(label, help);
+    if (ImGui::SliderInt(id, &v, (int)ps->min, (int)ps->max, v == 0 ? zero : "%d%%")) a.ttFile.set(ps->section, ps->key, std::to_string(v));
+    row_end();
+}
 static void tt_tab_controls(App &a)
 {
-    std::vector<std::string> done;
-    // Buttons first, as on ROTK's Controls tab: which button on the player's controller presses each Xbox button
-    bool anyBtn = false;
-    for (auto &ps : a.tt.settings) if (ps.section == "controls") anyBtn = true;
-    if (anyBtn) {
+    section("Controller");
+    row_begin("Use a controller", "Always on: the controller is the game's own input, as on the Xbox.");
+    ImGui::BeginDisabled();
+    bool on = true;
+    ImGui::Checkbox("##ttpad", &on);
+    ImGui::EndDisabled();
+    ImGui::SameLine(0, S(16));
+    ImGui::AlignTextToFramePadding();
+    if (a.controllers > 1) ImGui::TextColored(C_GOOD, "%d controllers connected", a.controllers);
+    else if (a.controllers) ImGui::TextColored(C_GOOD, "Connected");
+    else ImGui::TextColored(C_WARN, "None connected");
+    row_end();
+
+    auto btn = tt_buttons(a);
+    int style = label_style(a);
+    if (!a.captureTT) a.capture = -1;
+    a.captureTT = true;
+    if (a.capture >= (int)btn.size()) a.capture = -1;
+    if (a.capture >= 0 && (ImGui::GetTime() - a.captureAt > 8.0 || !a.controllers)) a.capture = -1;
+    if (!btn.empty()) {
         section("Buttons");
+        float slotW = S(170);
+        ImGui::BeginGroup();
+        for (int m = 0; m < (int)btn.size(); m++) {
+            const PortSetting &ps = *btn[m];
+            ImGui::PushID(m);
+            ImGui::AlignTextToFramePadding();
+            std::string name = tt_move_name(ps.label.empty() ? ps.key : ps.label);
+            ImGui::TextUnformatted(name.c_str());
+            ImGui::SameLine(g_labelW);
+            bool waiting = a.capture == m;
+            int ph = tt_phys_of(toml_unquote(tt_val(a, ps)));
+            char lab[64];
+            snprintf(lab, sizeof lab, "%s##slot", waiting ? "Press a button..." : ph < 0 ? "Nothing" : phys_label(ph, style));
+            if (waiting) {
+                float pulse = 0.5f + 0.5f * (float)sin(ImGui::GetTime() * 6.0);
+                ImGui::PushStyleColor(ImGuiCol_Button, rgb(110 + (int)(40 * pulse), 82 + (int)(30 * pulse), 36));
+                ImGui::PushStyleColor(ImGuiCol_Border, C_GOLD_H);
+            } else {
+                ImGui::PushStyleColor(ImGuiCol_Button, rgb(34, 27, 20));
+                ImGui::PushStyleColor(ImGuiCol_Border, C_LINE);
+            }
+            if (ImGui::Button(lab, ImVec2(slotW, 0))) {
+                if (waiting) a.capture = -1;
+                else if (a.controllers) { a.capture = m; a.captureAt = ImGui::GetTime(); }
+                else ImGui::OpenPopup("pick");
+            }
+            ImGui::PopStyleColor(2);
+            if (ImGui::BeginPopup("pick")) {
+                static const int choices[] = { PH_A, PH_B, PH_X, PH_Y, PH_LB, PH_RB, PH_LT, PH_RT, PH_LS, PH_RS };
+                for (int c : choices)
+                    if (ImGui::Selectable(phys_label(c, style), ph == c)) tt_assign_button(a, m, c);
+                if (std::find(ps.choices.begin(), ps.choices.end(), "none") != ps.choices.end() &&
+                    ImGui::Selectable("Nothing", ph < 0)) a.ttFile.set(ps.section, ps.key, toml_quote("none"));
+                ImGui::EndPopup();
+            }
+            ImGui::PopID();
+        }
+        ImGui::EndGroup();
         ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
         ImGui::PushTextWrapPos(0);
-        ImGui::TextColored(C_DIM, "Choose the button on your controller for each of the game's buttons. One layout is used for every controller.");
+        if (a.capture >= 0)
+            ImGui::TextColored(C_GOLD_H, "Press the button for \"%s\". Start, Back or Esc stops.",
+                               tt_move_name(btn[a.capture]->label.empty() ? btn[a.capture]->key : btn[a.capture]->label).c_str());
+        else if (a.controllers)
+            ImGui::TextColored(C_DIM, "Click a move, then press the button you want on the controller. It moves on to the next move by itself.");
+        else
+            ImGui::TextColored(C_DIM, "Connect a controller to set buttons by pressing them, or click a move to pick from a list.");
         ImGui::PopTextWrapPos();
         ImGui::PopFont();
-        for (auto &ps : a.tt.settings) {
-            if (ps.section != "controls") continue;
-            done.push_back(ps.section + "." + ps.key);
-            tt_setting_row(a, ps);
-        }
-        if (ImGui::Button("Original layout##ttbtn")) {
-            for (auto &ps : a.tt.settings) if (ps.section == "controls") a.ttFile.set(ps.section, ps.key, ps.def);
-        }
+
+        ImGui::Spacing();
+        ImGui::BeginDisabled(!a.controllers);
+        if (ImGui::Button("Set all, one by one")) { a.capture = 0; a.captureAt = ImGui::GetTime(); }
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+        bool isDefault = true;
+        for (auto *ps : btn) if (toml_unquote(tt_val(a, *ps)) != toml_unquote(ps->def)) isDefault = false;
+        ImGui::BeginDisabled(isDefault);
+        if (ImGui::Button("Original layout")) { for (auto *ps : btn) a.ttFile.set(ps->section, ps->key, ps->def); a.capture = -1; }
+        ImGui::EndDisabled();
+        ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
+        ImGui::PushTextWrapPos(0);
+        ImGui::TextColored(C_DIM, "%s pauses and skips movies, %s is Back. The D-pad and left stick move through menus. One layout is used for every controller.",
+                           phys_label(PH_START, style), phys_label(PH_BACK, style));
+        ImGui::PopTextWrapPos();
+        ImGui::PopFont();
     }
+
     section("Controller options");
-    if (const PortSetting *ps = tt_setting(a, "input", "vibration")) {
-        done.push_back("input.vibration");
-        int v = atoi(tt_val(a, *ps).c_str());
-        row_begin("Vibration", "Controller rumble from the original Xbox game. 0 turns it off.");
-        if (ImGui::SliderInt("##ttrumble", &v, (int)ps->min, (int)ps->max, v == 0 ? "Off" : "%d%%")) a.ttFile.set(ps->section, ps->key, std::to_string(v));
-        row_end();
-    }
-    if (const PortSetting *ps = tt_setting(a, "input", "stick_deadzone")) {
-        done.push_back("input.stick_deadzone");
-        int v = atoi(tt_val(a, *ps).c_str());
-        row_begin("Stick deadzone", "How far a stick must move before it counts. 0 keeps the game's own, as on the Xbox.");
-        if (ImGui::SliderInt("##ttdz", &v, (int)ps->min, (int)ps->max, v == 0 ? "Game's own" : "%d%%")) a.ttFile.set(ps->section, ps->key, std::to_string(v));
-        row_end();
-    }
-    if (const PortSetting *ps = tt_setting(a, "input", "trigger_threshold")) {
-        done.push_back("input.trigger_threshold");
-        int v = atoi(tt_val(a, *ps).c_str());
-        row_begin("Trigger sensitivity", "How far the triggers must be pulled to count as pressed. 0 keeps the game's own.");
-        if (ImGui::SliderInt("##tttrig", &v, (int)ps->min, (int)ps->max, v == 0 ? "Game's own" : "%d%%")) a.ttFile.set(ps->section, ps->key, std::to_string(v));
-        row_end();
-    }
+    tt_slider_row(a, "vibration", "Vibration", "Controller rumble from the original Xbox version. 0 turns it off.", "##ttrumble", "Off");
+    tt_slider_row(a, "stick_deadzone", "Stick deadzone", "How far a stick must move before it counts. 0 keeps the game's own, as on the Xbox.", "##ttdz", "Game's own");
+    tt_slider_row(a, "trigger_threshold", "Trigger sensitivity", "How far the triggers must be pulled to count as pressed. 0 keeps the game's own, as on the Xbox.", "##tttrig", "Game's own");
+    // anything else the port puts on this tab
     bool more = false;
     for (auto &ps : a.tt.settings) {
-        if (tt_tab_of_setting(ps) != 2 || tt_hidden(ps)) continue;
-        if (std::find(done.begin(), done.end(), ps.section + "." + ps.key) != done.end()) continue;
+        if (tt_tab_of_setting(ps) != 2 || tt_hidden(ps) || ps.section == "controls") continue;
+        if (ps.section == "input" && (ps.key == "vibration" || ps.key == "stick_deadzone" || ps.key == "trigger_threshold")) continue;
         if (!more) { section("More"); more = true; }
         tt_setting_row(a, ps);
     }
@@ -2695,6 +2815,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
                 t.fn(a);
                 ImGui::Dummy(ImVec2(0, S(6)));
                 if (getenv("ROTKFIX_SCROLL_END")) ImGui::SetScrollY(ImGui::GetScrollMaxY());   // testing
+                else if (const char *sy = getenv("ROTKFIX_SCROLL_Y")) ImGui::SetScrollY(std::min((float)atof(sy) * g_scale, ImGui::GetScrollMaxY()));   // testing
                 ImGui::EndChild();
                 ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
                 ImGui::EndTabItem();
