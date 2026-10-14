@@ -54,13 +54,21 @@
   stay off with it.
 - `ROTK_DT=180`: the game's step fixed at 1/180 s (Linux test build).
 
-## 180 fps: flicker and "invisible walls", gone at 60
+## Above 60 fps the player catches on walls: capped at 60
 
-- The user's run at TargetFPS 180 (VSync on, 2560x1440) had a light/dark flicker while moving, occasional slowdowns
-  when running, and gameplay that felt slightly fast. At 60 all three are gone, and the pace feels regular.
-- Harness, Pat01, the same 10 s walk at a fixed 1/180 s step (1800 frames) and at a fixed 1/30 s step (300
-  frames): the frames at equal game times match exactly. The game simulates by its time step (0xF82A0 /
-  0xF81F0 channels), not per frame, so the cause is in how real time reaches it at high rates (frame pacing
-  against VSync, uneven steps) and was not reproduced here.
-- For now: 60 is the highest rate known to play right. Ask the launcher to offer at most 60 for ROTK Xbox until
-  this is found.
+- The user's run at TargetFPS 180 (VSync on, 180 Hz screen, 2560x1440) had a light/dark flicker while moving,
+  occasional slowdowns as if at an invisible wall, and gameplay that felt slightly fast. 90 brought the slowdowns
+  back. At 60 none of this happens.
+- Harness, Pat01, the same walk from the start at fixed steps (`ROTK_DT`, settings fps 60 so the unlocked path
+  runs):
+  - 1/30: past the skull by 4 s (reference).
+  - 1/60: about half a second behind it.
+  - 1/90 and 1/120: stuck on the first rock of the cave for over three seconds.
+  - 1/180: matches 1/30 on this stretch.
+- The game moves by its time step (0xF82A0 / 0xF81F0 channels), not per frame, but its collision depends on the
+  step's length. Some lengths catch the player on geometry.
+- ROTK PC caps itself at 62 (0x562ADC; ROTK Fix: "the game was made for 60").
+- The port now caps the rate at 60 (`kMaxFps` in rotk_framerate.cpp): TargetFPS or fps above 60, or 0, becomes
+  60 with a log line. The settings choices are 30 and 60.
+- Test build: `ROTK_DT_JITTER=1` alternates steps of 0.5 and 1.5 times ROTK_DT.
+- Raising the cap would need the collision's step dependence found and fixed first.
