@@ -18,6 +18,7 @@
 
 #include "core/log.h"
 #include "kernel/kernel.h"
+#include "kernel/memory.h"
 #include "xdk/hle.h"
 
 namespace rotk {
@@ -78,4 +79,56 @@ X86_FUNC(sub_00029530) {
         ::kernel::W32(0x17F550 + i * 4, u);
     }
     LOGR("rotk: damage taken scaled to %u%%", rotk::g_damage_percent);
+}
+
+// 0x102D50: the main menu, as it opens, hides three of its items with 0x10A550(0, name, visible = 0): "Online" (Xbox
+// Live, gone), "Exit" and "PlayTrailer". The Xbox release cut Exit's text and action (its string table has no
+// "mainMenuExit", and no code handles the item); on PC it quits the game, so the port shows it again, always: its
+// label is the unused "Online" entry of the string table (GlobScen: "key\0text\0" pairs) renamed to "mainMenuExit" /
+// "Exit", and choosing it (see MainMenuChoice) ends the game.
+namespace {
+void LabelExit() {
+    static bool done = false;
+    if (done) return;
+    done = true;
+    static const char kFrom[] = "mainMenuOnline\0Online";
+    static const char kTo[] = "mainMenuExit\0\0\0Exit\0\0";  // same length: the table's layout is kept
+    static_assert(sizeof(kFrom) == sizeof(kTo));
+    for (uint32_t p = 0x10000; p + sizeof(kFrom) < 0x4000000; p += 0x1000) {
+        if (!mem::IsCommitted(p)) continue;
+        const char* page = static_cast<const char*>(::kernel::HostPtr(p));
+        for (uint32_t i = 0; i < 0x1000; i++) {
+            if (page[i] != 'm' || std::memcmp(page + i, kFrom, sizeof(kFrom) - 1) != 0) continue;
+            std::memcpy(::kernel::HostPtr(p + i), kTo, sizeof(kTo) - 1);
+            LOGR("rotk: main menu Exit labelled (string table at %08X)", p + i);
+            return;
+        }
+    }
+    LOGR("rotk: main menu Exit: the string table's Online entry was not found, the item has no label");
+}
+}  // namespace
+
+X86_EXTERN_FUNC(__imp__sub_00102D50);
+X86_FUNC(sub_00102D50) {
+    __imp__sub_00102D50(ctx, base);
+    LabelExit();
+    ::kernel::CallGuest(ctx, 0x10A550, {0u, 0x15A318u, 1u});  // MainMenuScreen.Exit
+    static std::atomic<int> logged{0};
+    if (!logged++) LOGR("rotk: main menu shows Exit");
+}
+
+// 0xFE010(event): the menus' input events (jump table 0xFE0B8; 2/3 down, 7 accept, 6 START). Accept runs the focused
+// element's script (+0x8C; Exit's is an "rpn!" program whose quit does nothing on Xbox), then the page's; START falls
+// back to the same. On the main menu's Exit item both end the game, as on PC.
+X86_EXTERN_FUNC(__imp__sub_000FE010);
+X86_FUNC(sub_000FE010) {
+    uint32_t event = ::kernel::R32(ctx.esp + 4);
+    if (event == 6 || event == 7) {
+        uint32_t focus = ::kernel::R32(0x1DB2E0);
+        if (focus && focus == ::kernel::CallGuest(ctx, 0x1017F0, {0u, 0x15A318u})) {  // MainMenuScreen.Exit
+            LOGR("rotk: Exit chosen on the main menu");
+            ::kernel::Shutdown(0);
+        }
+    }
+    __imp__sub_000FE010(ctx, base);
 }
