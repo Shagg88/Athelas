@@ -69,25 +69,25 @@ static void setup_style()
     st.DisabledAlpha = 0.5f;
     ImVec4 *c = st.Colors;
     c[ImGuiCol_Text] = C_TEXT;                    c[ImGuiCol_TextDisabled] = C_DIM;
-    c[ImGuiCol_WindowBg] = rgb(0, 0, 0, 0);       c[ImGuiCol_ChildBg] = rgb(16, 12, 9, 0.80f);
-    c[ImGuiCol_PopupBg] = rgb(24, 19, 14, 0.98f); c[ImGuiCol_Border] = rgb(150, 118, 60, 0.55f);
-    c[ImGuiCol_FrameBg] = rgb(34, 27, 20);        c[ImGuiCol_FrameBgHovered] = rgb(48, 38, 27);
-    c[ImGuiCol_FrameBgActive] = rgb(58, 46, 32);
-    c[ImGuiCol_Button] = rgb(44, 35, 25);         c[ImGuiCol_ButtonHovered] = rgb(70, 55, 34);
-    c[ImGuiCol_ButtonActive] = rgb(92, 72, 40);
-    c[ImGuiCol_Header] = rgb(70, 55, 34);         c[ImGuiCol_HeaderHovered] = rgb(92, 72, 40);
-    c[ImGuiCol_HeaderActive] = rgb(110, 86, 46);
+    c[ImGuiCol_WindowBg] = rgb(0, 0, 0, 0);       c[ImGuiCol_ChildBg] = rgb(12, 27, 18, 0.80f);
+    c[ImGuiCol_PopupBg] = rgb(13, 24, 17, 0.98f); c[ImGuiCol_Border] = rgb(150, 118, 60, 0.55f);
+    c[ImGuiCol_FrameBg] = rgb(20, 34, 25);        c[ImGuiCol_FrameBgHovered] = rgb(28, 46, 34);
+    c[ImGuiCol_FrameBgActive] = rgb(36, 58, 43);
+    c[ImGuiCol_Button] = rgb(24, 40, 30);         c[ImGuiCol_ButtonHovered] = rgb(38, 60, 44);
+    c[ImGuiCol_ButtonActive] = rgb(50, 76, 56);
+    c[ImGuiCol_Header] = rgb(38, 60, 44);         c[ImGuiCol_HeaderHovered] = rgb(50, 76, 56);
+    c[ImGuiCol_HeaderActive] = rgb(62, 92, 66);
     c[ImGuiCol_CheckMark] = C_GOLD_H;             c[ImGuiCol_SliderGrab] = C_GOLD; c[ImGuiCol_SliderGrabActive] = C_GOLD_H;
-    c[ImGuiCol_Tab] = rgb(30, 24, 18);            c[ImGuiCol_TabHovered] = rgb(80, 62, 36);
-    c[ImGuiCol_TabSelected] = rgb(64, 49, 29);    c[ImGuiCol_TabSelectedOverline] = C_GOLD;
-    c[ImGuiCol_TabDimmed] = rgb(30, 24, 18);      c[ImGuiCol_TabDimmedSelected] = rgb(64, 49, 29);
+    c[ImGuiCol_Tab] = rgb(16, 28, 20);            c[ImGuiCol_TabHovered] = rgb(44, 68, 50);
+    c[ImGuiCol_TabSelected] = rgb(34, 56, 40);    c[ImGuiCol_TabSelectedOverline] = C_GOLD;
+    c[ImGuiCol_TabDimmed] = rgb(16, 28, 20);      c[ImGuiCol_TabDimmedSelected] = rgb(34, 56, 40);
     c[ImGuiCol_Separator] = rgb(150, 118, 60, 0.45f);
     c[ImGuiCol_ScrollbarBg] = rgb(0, 0, 0, 0.2f); c[ImGuiCol_ScrollbarGrab] = rgb(90, 72, 44);
     c[ImGuiCol_ScrollbarGrabHovered] = rgb(120, 96, 56); c[ImGuiCol_ScrollbarGrabActive] = C_GOLD;
     c[ImGuiCol_TableRowBg] = rgb(0, 0, 0, 0);     c[ImGuiCol_TableRowBgAlt] = rgb(255, 230, 180, 0.04f);
-    c[ImGuiCol_NavCursor] = C_GOLD_H;             c[ImGuiCol_TextSelectedBg] = rgb(110, 86, 46);
+    c[ImGuiCol_NavCursor] = C_GOLD_H;             c[ImGuiCol_TextSelectedBg] = rgb(62, 92, 66);
     c[ImGuiCol_ModalWindowDimBg] = rgb(0, 0, 0, 0.55f);
-    c[ImGuiCol_CheckboxSelectedBg] = rgb(34, 27, 20);   c[ImGuiCol_InputTextCursor] = C_TEXT;
+    c[ImGuiCol_CheckboxSelectedBg] = rgb(20, 34, 25);   c[ImGuiCol_InputTextCursor] = C_TEXT;
     c[ImGuiCol_TextLink] = C_GOLD_H;                    c[ImGuiCol_TabDimmedSelectedOverline] = C_GOLD;
     c[ImGuiCol_SeparatorHovered] = C_GOLD;              c[ImGuiCol_SeparatorActive] = C_GOLD_H;
     c[ImGuiCol_ResizeGrip] = rgb(0, 0, 0, 0);           c[ImGuiCol_ResizeGripHovered] = rgb(0, 0, 0, 0);
@@ -246,17 +246,17 @@ static float ridge(float x, float seed)
 }
 static void draw_landscape(ImDrawList *dl, ImVec2 size)
 {
-    ImU32 top = IM_COL32(26, 24, 28, 255), mid = IM_COL32(58, 46, 36, 255);
+    ImU32 top = IM_COL32(12, 28, 19, 255), mid = IM_COL32(40, 72, 50, 255);
     dl->AddRectFilledMultiColor(ImVec2(0, 0), ImVec2(size.x, size.y * 0.62f), top, top, mid, mid);
-    dl->AddRectFilled(ImVec2(0, size.y * 0.62f), size, IM_COL32(14, 11, 9, 255));
+    dl->AddRectFilled(ImVec2(0, size.y * 0.62f), size, IM_COL32(6, 13, 9, 255));
     ImVec2 moon(size.x * 0.74f, size.y * 0.2f);
-    for (int i = 10; i > 0; i--) dl->AddCircleFilled(moon, S(26) + i * S(14), IM_COL32(230, 210, 170, 5));
-    dl->AddCircleFilled(moon, S(26), IM_COL32(236, 224, 196, 200));
+    for (int i = 10; i > 0; i--) dl->AddCircleFilled(moon, S(26) + i * S(14), IM_COL32(200, 220, 190, 5));
+    dl->AddCircleFilled(moon, S(26), IM_COL32(214, 226, 204, 190));
     struct L { float base, amp, seed; ImU32 col; } layers[] = {
-        { 0.40f, 0.16f, 1.3f, IM_COL32(52, 44, 40, 255) },
-        { 0.50f, 0.13f, 4.1f, IM_COL32(38, 32, 28, 255) },
-        { 0.62f, 0.10f, 7.7f, IM_COL32(24, 19, 15, 255) },
-        { 0.74f, 0.07f, 2.9f, IM_COL32(14, 11, 9, 255) } };
+        { 0.40f, 0.16f, 1.3f, IM_COL32(30, 50, 37, 255) },
+        { 0.50f, 0.13f, 4.1f, IM_COL32(21, 38, 27, 255) },
+        { 0.62f, 0.10f, 7.7f, IM_COL32(13, 27, 18, 255) },
+        { 0.74f, 0.07f, 2.9f, IM_COL32(6, 15, 10, 255) } };
     float step = S(6);
     for (auto &l : layers) {
         for (float x = 0; x < size.x; x += step) {
@@ -264,10 +264,19 @@ static void draw_landscape(ImDrawList *dl, ImVec2 size)
             float y1 = size.y * (l.base - l.amp * ridge((x + step) / g_scale, l.seed));
             dl->AddQuadFilled(ImVec2(x, y0), ImVec2(x + step + 1, y1), ImVec2(x + step + 1, size.y), ImVec2(x, size.y), l.col);
         }
+        // pines along the nearer ridges
+        if (l.base > 0.55f) {
+            for (float x = 0; x < size.x; x += S(7)) {
+                float r = fabsf(sinf(x / g_scale * 12.9898f + l.seed * 78.233f));
+                float y = size.y * (l.base - l.amp * ridge(x / g_scale, l.seed)) + S(2);
+                float h = S(10) + S(18) * r, w = h * 0.32f;
+                dl->AddTriangleFilled(ImVec2(x - w, y), ImVec2(x, y - h), ImVec2(x + w, y), l.col);
+            }
+        }
         // mist above each ridge line
         float my = size.y * l.base;
         dl->AddRectFilledMultiColor(ImVec2(0, my - size.y * 0.06f), ImVec2(size.x, my + size.y * 0.02f),
-                                    IM_COL32(150, 140, 130, 0), IM_COL32(150, 140, 130, 0), IM_COL32(150, 140, 130, 22), IM_COL32(150, 140, 130, 22));
+                                    IM_COL32(140, 170, 145, 0), IM_COL32(140, 170, 145, 0), IM_COL32(140, 170, 145, 20), IM_COL32(140, 170, 145, 20));
     }
 }
 
@@ -275,7 +284,7 @@ static void draw_background(ImDrawList *dl, ImVec2 size, Backgrounds &b)
 {
     if (b.cur.tex) {
         float t = (float)(ImGui::GetTime() - b.changedAt), fade = std::min(1.0f, t / 1.5f);
-        dl->AddRectFilled(ImVec2(0, 0), size, IM_COL32(10, 8, 6, 255));
+        dl->AddRectFilled(ImVec2(0, 0), size, IM_COL32(6, 13, 9, 255));
         if (fade < 1.0f) {
             if (b.prev.tex) draw_cover(dl, b.prev, size, 1.0f);
             else draw_landscape(dl, size);      // the first picture fades in over the drawn backdrop
@@ -285,7 +294,7 @@ static void draw_background(ImDrawList *dl, ImVec2 size, Backgrounds &b)
         draw_landscape(dl, size);
     }
     // darken for legibility: lighter at the top (banner), darker behind the settings
-    ImU32 a0 = IM_COL32(8, 6, 4, 50), a1 = IM_COL32(8, 6, 4, 165);
+    ImU32 a0 = IM_COL32(3, 9, 5, 50), a1 = IM_COL32(3, 9, 5, 130);
     dl->AddRectFilledMultiColor(ImVec2(0, 0), size, a0, a0, a1, a1);
     orn_window_frame(dl, size);   // carved stone border (ornament.cpp)
 }
@@ -848,7 +857,7 @@ static void tab_controls(App &a)
         if (pl) ImGui::SameLine(0, S(6));
         bool on = a.padPlayer == pl;
         ImGui::BeginDisabled(pl == 1 && !s.player2);
-        ImGui::PushStyleColor(ImGuiCol_Button, on ? rgb(92, 72, 40) : rgb(44, 35, 25));
+        ImGui::PushStyleColor(ImGuiCol_Button, on ? rgb(50, 76, 56) : rgb(24, 40, 30));
         if (ImGui::Button(pl ? "Player 2" : "Player 1", ImVec2(S(110), 0)) && !on) { a.padPlayer = pl; a.capture = -1; }
         ImGui::PopStyleColor();
         ImGui::EndDisabled();
@@ -880,7 +889,7 @@ static void tab_controls(App &a)
             ImGui::PushStyleColor(ImGuiCol_Button, rgb(110 + (int)(40 * pulse), 82 + (int)(30 * pulse), 36));
             ImGui::PushStyleColor(ImGuiCol_Border, C_GOLD_H);
         } else {
-            ImGui::PushStyleColor(ImGuiCol_Button, rgb(34, 27, 20));
+            ImGui::PushStyleColor(ImGuiCol_Button, rgb(20, 34, 25));
             ImGui::PushStyleColor(ImGuiCol_Border, C_LINE);
         }
         if (ImGui::Button(lab, ImVec2(slotW, 0))) {
@@ -2650,7 +2659,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     const float frameT = S(9);
     ImVec2 panelA = ImGui::GetWindowPos() + ImVec2(pad, bannerH);
     ImVec2 panelB = panelA + ImVec2(size.x - pad * 2, size.y - bannerH - barH - S(30));
-    orn_panel_fill(ImGui::GetWindowDrawList(), panelA, panelB, ImGui::GetColorU32(rgb(15, 14, 13, 0.86f)));
+    orn_panel_fill(ImGui::GetWindowDrawList(), panelA, panelB, ImGui::GetColorU32(rgb(12, 27, 18, 0.86f)));
     const float inset = frameT * 0.5f + S(5);   // clear of the frame's lines
     ImGui::SetCursorPos(ImVec2(pad + inset, bannerH + inset));
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0, 0, 0, 0));
@@ -2719,7 +2728,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
             ImGui::PopFont();
         }
         ImVec2 c0 = ImGui::GetWindowPos() + ImVec2(pad, by + (playH - cardH) * 0.5f), c1 = c0 + ImVec2(cardW, cardH);
-        orn_plate(ImGui::GetWindowDrawList(), c0, c1, ImGui::GetColorU32(rgb(15, 14, 13, 0.86f)), false);
+        orn_plate(ImGui::GetWindowDrawList(), c0, c1, ImGui::GetColorU32(rgb(12, 27, 18, 0.86f)), false);
         ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
         ImGui::SetCursorPos(ImVec2(pad + S(10), by + (playH - cardH) * 0.5f + S(5)));
         ImGui::PushTextWrapPos(pad + cardW - S(8));
