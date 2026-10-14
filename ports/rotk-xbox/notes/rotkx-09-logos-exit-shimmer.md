@@ -53,3 +53,14 @@
 - `REF_FROM=n`: no frames drawn before frame n, so REF=1 gives a run of consecutive frames late in a run. Queries
   stay off with it.
 - `ROTK_DT=180`: the game's step fixed at 1/180 s (Linux test build).
+
+## 180 fps: flicker and "invisible walls", gone at 60
+
+- The user's run at TargetFPS 180 (VSync on, 2560x1440) had a light/dark flicker while moving, occasional slowdowns
+  when running, and gameplay that felt slightly fast. At 60 all three are gone, and the pace feels regular.
+- Harness, Pat01, the same 10 s walk at a fixed 1/180 s step (1800 frames) and at a fixed 1/30 s step (300
+  frames): the frames at equal game times match exactly. The game simulates by its time step (0xF82A0 /
+  0xF81F0 channels), not per frame, so the cause is in how real time reaches it at high rates (frame pacing
+  against VSync, uneven steps) and was not reproduced here.
+- For now: 60 is the highest rate known to play right. Ask the launcher to offer at most 60 for ROTK Xbox until
+  this is found.
