@@ -146,6 +146,8 @@ void ApplyIni() {
     r.Int("Graphics", "Height", s.height, 0, 16384);
     r.Int("Graphics", "RefreshRate", s.refresh, 0, 500);
     r.Bool("Graphics", "VSync", s.vsync);
+    // RenderScale: percent of the chosen resolution drawn, fitted to the screen (render_percent, 50 to 300)
+    r.Int("Graphics", "RenderScale", s.render_percent, 50, 300);
     r.Int("Graphics", "MSAA", s.msaa, 0, 8);
     if (s.msaa != 2 && s.msaa != 4 && s.msaa != 8) s.msaa = 0;
     r.Int("Graphics", "AnisotropicFiltering", s.aniso, 0, 16);

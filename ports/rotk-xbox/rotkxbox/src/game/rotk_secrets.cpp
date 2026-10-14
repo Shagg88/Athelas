@@ -1,0 +1,81 @@
+// ROTK Xbox: the game's own hidden switches (found 2026-10-13, notes/rotkx-08-hidden-settings.md). All off unless set;
+// in the test build each can be turned on from the environment (ROTK_UNLOCK, ROTK_DEVBUTTONS, ROTK_CODES,
+// ROTK_DAMAGE=<percent>) to compare captures.
+//
+// - 0xF9660 (not used): the player-damage function (0x2A1E0) asks it whether to skip the hit, compiled down to "no";
+//   answering yes crashes the game a few seconds into a fight (the code behind it is gone), so it is left alone.
+// - 0x10AA10: reads the developer "unlock all" byte 0x1DFD40 (the front end's boot script sets it to 0): every level
+//   and character selectable (0x9E560, 0x9E870).
+// - 0x10AA40: each frame hides the pause pages' developer buttons "Debug Game", "Debug Win", "Try Again" (word +0x74
+//   of the three elements it looks up once).
+// - 0x9E4D0: whether a progress flag is set (0xC: the final level beaten), asked before secret codes are accepted.
+// - 0x29530: copies the difficulty table's damage multipliers (upgd "DIFF") to 0x17F550..0x17F57C at load: easy,
+//   normal, hard x single player, co-op x min, max (damage the player takes).
+#include <atomic>
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
+
+#include "core/log.h"
+#include "kernel/kernel.h"
+#include "xdk/hle.h"
+
+namespace rotk {
+bool g_unlock_all = false, g_dev_buttons = false, g_codes_anytime = false;
+uint32_t g_damage_percent = 100;
+
+namespace {
+#ifndef _WIN32
+const bool kEnvRead = [] {
+    auto on = [](const char* n) { return std::getenv(n) != nullptr; };
+    g_unlock_all |= on("ROTK_UNLOCK");
+    g_dev_buttons |= on("ROTK_DEVBUTTONS");
+    g_codes_anytime |= on("ROTK_CODES");
+    if (const char* d = std::getenv("ROTK_DAMAGE")) g_damage_percent = uint32_t(std::atoi(d));
+    return true;
+}();
+#endif
+}  // namespace
+}  // namespace rotk
+
+X86_EXTERN_FUNC(__imp__sub_0010AA10);
+X86_FUNC(sub_0010AA10) {
+    __imp__sub_0010AA10(ctx, base);
+    LOG_FIRST(1, "rotk: unlock-all byte 0x1DFD40 = %u, debug respawn byte 0x1DFD41 = %u", ctx.eax & 0xFF,
+              ::kernel::R32(0x1DFD40) >> 8 & 0xFF);
+    if (rotk::g_unlock_all) ctx.eax = (ctx.eax & ~0xFFu) | 1;
+}
+
+X86_EXTERN_FUNC(__imp__sub_0010AA40);
+X86_FUNC(sub_0010AA40) {
+    __imp__sub_0010AA40(ctx, base);
+    if (!rotk::g_dev_buttons) return;
+    for (uint32_t slot : {0x1DB32Cu, 0x1DB330u, 0x1DB334u})
+        if (uint32_t e = ::kernel::R32(slot)) ::kernel::W16(e + 0x74, 1);
+}
+
+X86_EXTERN_FUNC(__imp__sub_0009E4D0);
+X86_FUNC(sub_0009E4D0) {
+    __imp__sub_0009E4D0(ctx, base);
+    if (rotk::g_codes_anytime && ::kernel::R32(ctx.esp + 4) == 0xC) ctx.eax = (ctx.eax & ~0xFFu) | 1;
+}
+
+X86_EXTERN_FUNC(__imp__sub_00029530);
+X86_FUNC(sub_00029530) {
+    __imp__sub_00029530(ctx, base);
+    float v[12];
+    for (int i = 0; i < 12; i++) {
+        uint32_t u = ::kernel::R32(0x17F550 + i * 4);
+        std::memcpy(&v[i], &u, 4);
+    }
+    LOGR("rotk: damage taken: easy %.2f-%.2f (co-op %.2f-%.2f), normal %.2f-%.2f (%.2f-%.2f), hard %.2f-%.2f (%.2f-%.2f)",
+         v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], v[9], v[10], v[11]);
+    if (rotk::g_damage_percent == 100) return;
+    for (int i = 0; i < 12; i++) {
+        float f = v[i] * float(rotk::g_damage_percent) / 100.0f;
+        uint32_t u;
+        std::memcpy(&u, &f, 4);
+        ::kernel::W32(0x17F550 + i * 4, u);
+    }
+    LOGR("rotk: damage taken scaled to %u%%", rotk::g_damage_percent);
+}
