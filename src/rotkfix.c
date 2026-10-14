@@ -1,5 +1,5 @@
 /*
- * ROTK Fix - core (test build 78)
+ * ROTK Fix - core (test build 79)
  *
  * Loaded into The Lord of the Rings: The Return of the King (PC, 2003)
  * through the d3d8.dll and dinput8.dll forwarders in the game folder (the
@@ -306,9 +306,30 @@ typedef BOOL (WINAPI *ReadFile_t)(HANDLE, LPVOID, DWORD, LPDWORD, LPOVERLAPPED);
 static CreateFileA_t g_realCreateFileA;
 static ReadFile_t g_realReadFile;
 static char g_lastFile[96];
+/* Level files: Data\Game\<lvl>\<lvl>NN.scw. Each new one opened is logged, so the
+ * rest of the log can be read level by level. */
+volatile LONG g_levelSeq;
+static void note_level_file(const char *n)
+{
+    static char cur[32];
+    const char *b = n;
+    for (const char *q = n; *q; q++) if (*q == '/' || *q == '\\') b = q + 1;
+    size_t len = strlen(b);
+    if (len < 5 || len >= sizeof cur || lstrcmpiA(b + len - 4, ".scw") != 0) return;
+    int inGame = 0;                                                  /* Data\Game\..., not Data\Player */
+    for (const char *q = n; *q && !inGame; q++)                       /* a folder named exactly Game ("C:\\Games" is not) */
+        inGame = (*q == '/' || *q == '\\') && !_strnicmp(q + 1, "game", 4) && (q[5] == '/' || q[5] == '\\');
+    if (!inGame) return;
+    if (!lstrcmpiA(b, "GlobScen.scw") || !lstrcmpiA(b, "LoadOnce.scw")) return;
+    if (!lstrcmpiA(b, cur)) return;
+    lstrcpynA(cur, b, sizeof cur);
+    InterlockedIncrement(&g_levelSeq);
+    logf_("level: loading %s", b);
+}
 static HANDLE WINAPI hook_CreateFileA(LPCSTR n, DWORD a, DWORD sh, LPSECURITY_ATTRIBUTES sa, DWORD cd, DWORD fl, HANDLE t)
 {
     InterlockedIncrement(&g_hitch[HITCH_FILES]);
+    if (n && !IsBadStringPtrA(n, MAX_PATH)) note_level_file(n);
     if (n) { const char *b = strrchr(n, '\\'); lstrcpynA(g_lastFile, b ? b + 1 : n, sizeof g_lastFile); }
     return g_realCreateFileA(n, a, sh, sa, cd, fl, t);
 }
@@ -989,7 +1010,7 @@ BOOL WINAPI DllMain(HINSTANCE inst, DWORD reason, LPVOID reserved)
             char lp[MAX_PATH]; path_in_dir(lp, "ROTKFix.log");
             g_log = fopen(lp, "w");
         }
-        logf_("ROTK Fix test build 78 loaded (Limiter=%d TargetFPS=%d Spin=%dus)",
+        logf_("ROTK Fix test build 79 loaded (Limiter=%d TargetFPS=%d Spin=%dus)",
               g_limiterMode, g_targetFps, g_spinUs);
 
         QueryPerformanceFrequency(&g_freq);

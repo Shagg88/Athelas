@@ -23,6 +23,7 @@ void hitch_present(LONGLONG t0, LONGLONG t1);   /* QPC ticks around the real Pre
 void limiter_cap_to_refresh(unsigned hz);
 enum { MOVIE_FIT_STRETCH, MOVIE_FIT_FILM, MOVIE_FIT_43 };
 int  movie_fit(void);
+extern volatile LONG g_levelSeq;   /* changes when the game opens a new level file (for per-level log lines) */
 
 /* graphics.c */
 void    graphics_load_settings(const char *ini);

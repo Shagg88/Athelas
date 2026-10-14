@@ -350,6 +350,9 @@ static float g_camVfov, g_camAspectIn, g_camAspectOut;   /* last 3D camera, for 
 static float g_camVfovOut;
 static float g_camNear, g_camFar, g_camFarOut;
 static float g_camRaw33, g_camRaw43;
+static float g_camSeen[16][2];   /* cameras logged in this level: vertical FOV, aspect */
+static int   g_nCamSeen;
+static int   g_depthUnknown;     /* a 3D camera whose depth terms the draw distance could not read */
 
 /* Fog, as the game sets it (render states) */
 typedef HRESULT (WINAPI *SetRS_t)(IDirect3DDevice8 *, D3DRENDERSTATETYPE, DWORD);
@@ -407,17 +410,25 @@ static HRESULT WINAPI hook_SetTransform(IDirect3DDevice8 *dev, D3DTRANSFORMSTATE
     g_projPersp = 0;
     int persp = m->_34 > 0.99f && m->_34 < 1.01f && m->_44 > -0.001f && m->_44 < 0.001f;
     int ortho = m->_34 > -0.001f && m->_34 < 0.001f && m->_44 > 0.99f && m->_44 < 1.01f;
-    static int nPersp, nOrtho; (void)nPersp;
+    static int nOrtho;
     if (persp) {
-        /* log each distinct camera angle once (first 20) */
-        static float seen[20]; (void)nPersp;
-        static int nseen;
+        /* log each distinct camera (angle and shape) once per level, with what ROTK Fix does to it */
         float vfov = m->_22 > 0 ? 2.0f * atanf(1.0f / m->_22) * 57.29578f : 0.0f;
+        float asp = m->_11 != 0 ? fabsf(m->_22 / m->_11) : 0.0f;
         int known = 0;
-        for (int i = 0; i < nseen; i++) if (fabsf(seen[i] - vfov) < 0.5f) known = 1;
-        if (!known && nseen < 20) {
-            seen[nseen++] = vfov;
-            dlogf_("graphics: 3D camera: vertical FOV %.1f deg, aspect %.4f", vfov, m->_11 != 0 ? m->_22 / m->_11 : 0.0f);
+        for (int i = 0; i < g_nCamSeen; i++) if (fabsf(g_camSeen[i][0] - vfov) < 0.5f && fabsf(g_camSeen[i][1] - asp) < 0.01f) known = 1;
+        if (!known && g_nCamSeen < 16) {
+            g_camSeen[g_nCamSeen][0] = vfov; g_camSeen[g_nCamSeen][1] = asp; g_nCamSeen++;
+            float sa = screen_aspect();
+            int is43 = asp > 1.30f && asp < 1.36f;
+            const char *what = !g_aspectFix ? "left as is (WidescreenFix off)"
+                             : is43 && fabsf(sa - asp) > 0.01f ? "widened to the screen"
+                             : is43 || fabsf(sa - asp) < 0.02f ? "already the screen's shape"
+                             : "NOT widened";
+            logf_("graphics: camera: vertical FOV %.1f deg, aspect %.3f -> %s%s", vfov, asp, what,
+                  g_fovPct != 100 && vfov <= 25.0f ? "; zoom camera, FieldOfView not applied" : "");
+            if (g_aspectFix && !is43 && fabsf(sa - asp) >= 0.02f && vfov > 1.0f)
+                logf_("graphics: WARNING camera at aspect %.3f is neither 4:3 nor the screen's %.3f: this view may look stretched or squeezed", asp, sa);
         }
     }
     if (ortho && nOrtho < 3) { nOrtho++; dlogf_("graphics: 2D matrix _11=%.6f _22=%.6f _41=%.4f _42=%.4f", m->_11, m->_22, m->_41, m->_42); }
@@ -484,6 +495,8 @@ static HRESULT WINAPI hook_SetTransform(IDirect3DDevice8 *dev, D3DTRANSFORMSTATE
                 g_camFarOut = f2;
                 changed = 1;
             }
+        } else if (g_drawPct != 100 && !g_depthUnknown++) {
+            logf_("graphics: WARNING draw distance: a camera's depth terms were not recognised (_33=%.6f _43=%.4f); its far plane is unchanged", m->_33, m->_43);
         }
         if (changed) return g_realSetTransform(dev, st, &fixed);
     }
@@ -563,7 +576,9 @@ static IDirect3DVertexBuffer8 *g_stream0;
 static UINT g_stream0Stride, g_baseVertex;
 static int g_draws3D;          /* perspective draws this frame */
 static int g_copyDrawn;        /* a screen copy (pause backdrop) was drawn this frame */
-static int g_pictureDraw;      /* this 2D draw is a full-screen picture kept at 16:9 */
+static int g_pictureDraw;
+static DWORD g_2dSeen[24];   /* full-screen 2D kinds logged in this level */
+static int g_n2dSeen;      /* this 2D draw is a full-screen picture kept at 16:9 */
 
 static TrackedVB *find_vb(IDirect3DVertexBuffer8 *vb)
 {
@@ -921,14 +936,15 @@ enum { HS_DONE, HS_FVF, HS_NOTEX, HS_COPY, HS_FONT, HS_PS, HS_STATE, HS_PROJ, HS
 static DWORD g_hsCount[HS_COUNT];
 static DWORD g_hsState[4][9];   /* most recent refused stage setups: cop ca1 ca2 aop aa1 aa2 c1op count */
 static int hs_note(int why) { g_hsCount[why]++; return why == HS_DONE; }
+static DWORD g_hsT0; static int g_hsReports;   /* three reports per level */
 static void hud_sharpen_report(void)
 {
-    static DWORD t0; static int reports;
+    DWORD t0 = g_hsT0; int reports = g_hsReports;
     DWORD now = GetTickCount();
     if (reports >= 3 || !g_hudSharpPct) return;
-    if (!t0) { t0 = now; return; }
+    if (!t0) { g_hsT0 = now; return; }
     if (now - t0 < 60000) return;
-    t0 = now; reports++;
+    g_hsT0 = now; g_hsReports = reports + 1;
     logf_("graphics: HUD pictures in the last minute: %lu sharpened; not: %lu other vertex type, %lu untextured, "
           "%lu screen copies, %lu text, %lu own shader, %lu other blending, %lu other projection",
           g_hsCount[HS_DONE], g_hsCount[HS_FVF], g_hsCount[HS_NOTEX], g_hsCount[HS_COPY], g_hsCount[HS_FONT],
@@ -1045,12 +1061,11 @@ static int draw_full_width(UINT first, UINT count)
     int band = (ymx - ymn) < 0.5f && (ymn <= -0.98f || ymx >= 0.98f);
     int full = (w <= 128 || h <= 128) || band;
     /* log each distinct kind once (for checking on ultrawide screens) */
-    static DWORD seen[24]; static int nseen;
     DWORD key = (w << 20) ^ (h << 8) ^ (DWORD)((ymx - ymn) * 50.0f);
     int known = 0;
-    for (int i = 0; i < nseen; i++) if (seen[i] == key) known = 1;
+    for (int i = 0; i < g_n2dSeen; i++) if (g_2dSeen[i] == key) known = 1;
     if (full) g_pictureDraw = 0;
-    if (!known && nseen < 24) { seen[nseen++] = key; logf_("graphics: full-screen 2D draw, texture %ux%u, height %.2f -> %s", w, h, (ymx - ymn) * 0.5f, full ? "full width" : "16:9 (picture)"); }
+    if (!known && g_n2dSeen < 24) { g_2dSeen[g_n2dSeen++] = key; logf_("graphics: full-screen 2D draw, texture %ux%u, height %.2f -> %s", w, h, (ymx - ymn) * 0.5f, full ? "full width" : "16:9 (picture)"); }
     return full;
 }
 
@@ -1155,6 +1170,21 @@ static HRESULT WINAPI hook_Present(IDirect3DDevice8 *dev, const RECT *a, const R
             D3DRECT rc[2] = { { 0, 0, barW, (LONG)g_modeH }, { (LONG)g_modeW - barW, 0, (LONG)g_modeW, (LONG)g_modeH } };
             ((Clear_t)(*(void ***)dev)[36])(dev, 2, rc, D3DCLEAR_TARGET, 0xFF000000, 1.0f, 0);
         }
+    }
+    /* a new level: log its cameras, 2D pictures and HUD again, then a summary
+     * once gameplay has been on screen for 300 frames (a few seconds) */
+    static LONG levelSeq; static int summaryIn;
+    if (g_levelSeq != levelSeq) {
+        levelSeq = g_levelSeq;
+        g_nCamSeen = 0; g_n2dSeen = 0; g_hsT0 = 0; g_hsReports = 0; g_depthUnknown = 0;
+        memset(g_hsCount, 0, sizeof g_hsCount); memset(g_hsState, 0, sizeof g_hsState);
+        summaryIn = 300;
+    }
+    if (summaryIn > 0 && g_draws3D >= 40 && g_camVfov > 0 && !graphics_movie_playing() && --summaryIn == 0) {
+        logf_("level view: game camera %.1f deg vertical at %.3f -> shown %.1f deg at %.3f; near %.2f far %.0f -> %.0f (draw distance %d%%); "
+              "fog %s start %.0f end %.0f density %.5f; %d 3D draws",
+              g_camVfov, g_camAspectIn, g_camVfovOut, g_camAspectOut, g_camNear, g_camFar, g_camFarOut, g_drawPct,
+              g_fogEnable ? (g_fogTable ? "table" : g_fogVertex ? "vertex" : "on") : "off", g_fogStart, g_fogEnd, g_fogDensity, g_draws3D);
     }
     /* every ~10 s, log the live 3D camera when a 3D scene is on screen */
     static unsigned presents;
