@@ -2627,15 +2627,15 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     ImGui::PopFont();
 
     // ---- settings panel
-    // a dwarf-made bronze frame around it; the panel itself sits just inside the frame
+    // an elven frame around it; the panel itself sits just inside the frame
     const float frameT = S(9);
     ImVec2 panelA = ImGui::GetWindowPos() + ImVec2(pad, bannerH);
     ImVec2 panelB = panelA + ImVec2(size.x - pad * 2, size.y - bannerH - barH - S(30));
-    orn_dwarf_fill(ImGui::GetWindowDrawList(), panelA, panelB, ImGui::GetColorU32(rgb(16, 12, 9, 0.84f)));
-    const float inset = frameT * 0.5f + S(7);   // clear of the frame and its corner brackets
+    orn_panel_fill(ImGui::GetWindowDrawList(), panelA, panelB, ImGui::GetColorU32(rgb(15, 14, 13, 0.86f)));
+    const float inset = frameT * 0.5f + S(5);   // clear of the frame's lines
     ImGui::SetCursorPos(ImVec2(pad + inset, bannerH + inset));
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0, 0, 0, 0));
-    ImGui::BeginChild("panel", ImVec2(size.x - pad * 2 - inset * 2, size.y - bannerH - barH - S(30) - inset * 2), ImGuiChildFlags_None);
+    ImGui::BeginChild("panel", ImVec2(size.x - pad * 2 - inset * 2, size.y - bannerH - barH - S(30) - inset * 2), ImGuiChildFlags_AlwaysUseWindowPadding);
     g_labelW = std::max(S(230), ImGui::GetContentRegionAvail().x * 0.36f);
     if (ttShown) {
         if (!a.ttLoaded) tt_load_settings(a);
@@ -2679,7 +2679,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     }
     ImGui::EndChild();
     ImGui::PopStyleColor();
-    orn_dwarf_frame(ImGui::GetWindowDrawList(), panelA, panelB, frameT);
+    orn_panel_frame(ImGui::GetWindowDrawList(), panelA, panelB);
 
     // ---- bottom bar: summary on the left, buttons on the right
     float by = size.y - barH - S(16);
@@ -2700,7 +2700,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
             ImGui::PopFont();
         }
         ImVec2 c0 = ImGui::GetWindowPos() + ImVec2(pad, by + (playH - cardH) * 0.5f), c1 = c0 + ImVec2(cardW, cardH);
-        orn_dwarf_plate(ImGui::GetWindowDrawList(), c0, c1, ImGui::GetColorU32(C_PANEL), false);
+        orn_plate(ImGui::GetWindowDrawList(), c0, c1, ImGui::GetColorU32(rgb(15, 14, 13, 0.86f)), false);
         ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
         ImGui::SetCursorPos(ImVec2(pad + S(10), by + (playH - cardH) * 0.5f + S(5)));
         ImGui::PushTextWrapPos(pad + cardW - S(8));
