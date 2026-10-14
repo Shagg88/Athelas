@@ -68,7 +68,7 @@ X86_FUNC(sub_0009EB20) {
     clock::time_point now = clock::now();
     float dt = std::chrono::duration<float>(now - last).count();
     last = now;
-    if (dt > 0.25f) dt = 0.25f;  // a load or a stall: as a few dozen blanks at most
+    if (dt > 0.1f) dt = 0.1f;  // a load or a stall: at most a tenth of a second, as ROTK PC clamps it (0x3DCCCCCD)
     constexpr uint32_t kBlanks = 0x1E2F14, kLastBlank = 0x1E3340, kStep = 0x1E3344, kReset = 0x1E3348,
                        kTicks = 0x1E334C, kTickRest = 0x1E3350;
     W32(kLastBlank, R32(kBlanks));  // the frame end and others still compare blank counts

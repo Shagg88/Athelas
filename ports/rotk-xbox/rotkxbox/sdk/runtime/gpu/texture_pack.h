@@ -34,6 +34,12 @@ std::string PngName(uint32_t width, uint32_t height, uint64_t hash);
 
 // an RGBA picture as PNG: read with a full chain of mip levels made by halving (RGBA8), written from level 0
 bool ReadPng(const std::filesystem::path& file, Image& img);
+// the same from PNG bytes in memory
+bool DecodePng(const uint8_t* data, size_t size, Image& img);
+// a game's own replacement for a texture, by the pack hash (a texture pack file of the same name wins): true with the
+// picture in out. Asked once per hash; set by game code, null for none.
+using BuiltinTexture = bool (*)(uint64_t hash, uint32_t width, uint32_t height, Image& out);
+extern BuiltinTexture g_builtin;
 bool WritePng(const std::filesystem::path& file, uint32_t width, uint32_t height, const std::vector<uint8_t>& rgba);
 // written on a thread of its own, so a dump does not stall the frame; a file that exists is left alone
 void WritePngLater(std::filesystem::path file, uint32_t width, uint32_t height, std::vector<uint8_t> rgba);

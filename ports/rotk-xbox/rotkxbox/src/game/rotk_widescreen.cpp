@@ -10,6 +10,12 @@
 // DrawDistance (50 to 800, percent of the game's own): the far clip plane of the 3D cameras moves out, and the fog
 // distances with it (gpu::g_fog_scale), as ROTK Fix does. AlphaEdgeSmoothing: with anti-aliasing, cut-out textures
 // (leaves, grass, fences) get smooth edges (alpha to coverage, gpu::g_alpha_edges).
+//
+// hud_edges (off by default; ROTKFix.ini [Graphics] HUDEdges): with widescreen, HUD pictures keep their 4:3 shape and
+// the pieces near a side move out to that side of the 16:9 picture, the rest stays centred. The game draws its 2D
+// through an orthographic projection (FVF XYZ|DIFFUSE|TEX1), so each draw is placed by its extent in clip space
+// (SDK gpu::g_ortho_place), with ROTK Fix's tests for what keeps the full width: untextured draws (fades), screen
+// copies, small textures stretched across, and bands along the top or bottom. A full-screen picture keeps its shape.
 #include <atomic>
 #include <cmath>
 #include <cstdint>
@@ -17,12 +23,15 @@
 #include "app/app.h"
 #include "core/log.h"
 #include "gpu/backend.h"
+#include "gpu/state.h"
+#include "gpu/texture.h"
 #include "gpu/vertex.h"
 
 namespace rotk {
 uint32_t g_fov_percent = 100;   // [graphics] fov, ROTKFix.ini [Graphics] FieldOfView
 uint32_t g_draw_percent = 100;  // [graphics] draw_distance, ROTKFix.ini [Graphics] DrawDistance
 bool g_alpha_edges = false;     // [graphics] alpha_edges, ROTKFix.ini [Graphics] AlphaEdgeSmoothing
+bool g_hud_edges = false;       // [graphics] hud_edges, ROTKFix.ini [Graphics] HUDEdges
 
 // after the settings load
 void InitCamera() {
@@ -30,6 +39,7 @@ void InitCamera() {
     gpu::g_fog_scale = float(g_draw_percent) / 100.0f;
     if (g_draw_percent != 100) LOGR("rotk: draw distance %u%%", g_draw_percent);
     if (g_alpha_edges) LOGR("rotk: smooth cut-out edges with anti-aliasing");
+    if (g_hud_edges) LOGR("rotk: HUD at 4:3 with its pieces at the screen edges (with widescreen)");
 }
 }
 
@@ -89,5 +99,46 @@ void Projection(float* m) {
              app::Widescreen() ? "on" : "off", pct, dd);
 }
 
-const int kRegistered = (gpu::g_projection_hook = Projection, 0);
+// hud_edges: where a 2D draw goes. The last draw's box and placement: text is drawn a letter at a time and bars a
+// piece at a time, so a draw touching the one before (side by side, same rows) goes where that one went.
+struct Chain {
+    float x0 = 0, x1 = -1, y0 = 0, y1 = -1, b = 0;
+} g_chain;
+
+bool HudPlace(const gpu::State& s, float x0, float x1, float y0, float y1, float& a, float& b) {
+    if (!rotk::g_hud_edges || !app::Widescreen()) return false;
+    uint32_t w, h;
+    gpu::SurfaceSize(s.rt, w, h);
+    if (w != 640 || h != 480) return false;  // the screen, not a texture the game draws into
+    gpu::TextureDesc d;
+    if (!s.textures[0] || !gpu::Describe(s.textures[0], d)) return false;  // untextured: fades, flat overlays
+    if (d.width >= 640 && d.height >= 480) return false;                  // a copy of the screen
+    bool spans = x0 <= -0.98f && x1 >= 0.98f;
+    bool edge_y = y0 <= -0.98f || y1 >= 0.98f;
+    bool band = (y1 - y0) < 0.5f && edge_y;
+    if (spans && (d.width <= 128 || d.height <= 128 || band)) return false;     // gradients, shading bands
+    if (!spans && (x0 <= -0.98f || x1 >= 0.98f) && edge_y && band && (x1 - x0) >= 0.8f) return false;  // a band in pieces
+    a = (4.0f / 3.0f) / (16.0f / 9.0f);
+    if (spans) {  // a full-screen picture: its shape, centred
+        b = 0;
+        g_chain = {};
+        return true;
+    }
+    constexpr float kGap = 0.05f, kRows = 0.035f, kEdge = 0.7f, kWide = 0.8f;
+    bool touches = x0 <= g_chain.x1 + kGap && x1 >= g_chain.x0 - kGap && y0 <= g_chain.y1 + kRows && y1 >= g_chain.y0 - kRows;
+    if (touches) {
+        b = g_chain.b;
+    } else if (x0 < -kEdge && x1 < 0) {
+        b = a - 1;  // its left side stays at the screen's left
+    } else if (x1 > kEdge && x0 > 0) {
+        b = 1 - a;
+    } else {
+        b = 0;
+    }
+    if (x1 - x0 > kWide) g_chain = {};
+    else g_chain = {x0, x1, y0, y1, b};
+    return true;
+}
+
+const int kRegistered = (gpu::g_projection_hook = Projection, gpu::g_ortho_place = HudPlace, 0);
 }  // namespace

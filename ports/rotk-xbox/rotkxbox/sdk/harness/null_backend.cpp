@@ -6,12 +6,16 @@
 #include <cstring>
 #include <filesystem>
 #include <map>
+#include <memory>
+#include <set>
 #include <string>
 
 #include "app/app.h"
 #include "core/log.h"
 #include "gpu/backend.h"
+#include "gpu/shaders.h"
 #include "gpu/texture.h"
+#include "gpu/vertex.h"
 #include "harness.h"
 #include "kernel/kernel.h"
 #include "kernel/memory.h"
@@ -33,8 +37,21 @@ public:
     }
     void Draw(const State& s, uint32_t prim, uint32_t start, uint32_t count, const uint8_t* indices) override {
         draws_++;
-        if (drawing_) reference::Draw(s, prim, start, count, indices);
+        if (drawing_) {
+            // a 2D draw the game moves sideways (g_ortho_place), as the D3D12 renderer moves it
+            float x0, x1, y0, y1, a = 1, b = 0;
+            if (g_ortho_place && OrthoExtent(s, start, count, indices, x0, x1, y0, y1) && g_ortho_place(s, x0, x1, y0, y1, a, b)) {
+                auto moved = std::make_unique<State>(s);
+                auto& p = moved->transforms[3];
+                for (int r = 0; r < 4; r++) p[size_t(r * 4)] = a * p[size_t(r * 4)] + b * p[size_t(r * 4 + 3)];
+                reference::Draw(*moved, prim, start, count, indices);
+            } else {
+                reference::Draw(s, prim, start, count, indices);
+            }
+        }
         if (list_) List(s, prim, start, count);
+        static const bool texdump = harness::Env("TEXDUMP");
+        if (texdump) DumpTexture(s);
     }
     void Copy(const Surface& src, const Surface& dst, uint32_t n, uint32_t rects, uint32_t points) override {
         if (drawing_) reference::Copy(src, dst, n, rects, points);
@@ -61,6 +78,8 @@ public:
             std::fclose(f);
             snap_ = 1;
         }
+        static const long scan_at = harness::Env("TEXSCAN");
+        if (scan_at && long(frames_) == scan_at) ScanTextures();
         static const long every = harness::Env("REF"), cap = harness::Env("CAP");
         drawing_ = snap_ || (every && (frames_ + 1) % every == 0);
         if (drawing_) reference::BeginFrame();
@@ -92,6 +111,51 @@ public:
     }
 
 private:
+    // TEXDUMP=1: each texture drawn under an orthographic projection (HUD, menus, prompts) once, as
+    // cap/tex/<w>x<h>_<hash>.tga with the hash the renderer's texture packs use (no palette)
+    void DumpTexture(const State& s) {
+        const auto& pm = s.transforms[3];
+        if (!(pm[11] == 0.0f && pm[15] == 1.0f)) return;
+        uint32_t t = s.textures[0];
+        TextureDesc d;
+        if (!t || !Describe(t, d) || d.cube || d.depth > 1 || d.linear) return;
+        uint64_t seed = uint64_t(d.format) | uint64_t(d.width) << 8 | uint64_t(d.height) << 24 | uint64_t(d.levels) << 40;
+        uint64_t h = Hash(kernel::HostPtr(d.data), TotalSize(d), seed);
+        if (!dumped_.insert(h).second) return;
+        std::filesystem::create_directories(app::ExeDir() / "cap" / "tex");
+        char name[96];
+        std::snprintf(name, sizeof name, "cap/tex/%ux%u_%016llx_f%X.tga", d.width, d.height, (unsigned long long)h, d.format);
+        reference::WriteTextureTga(t, (app::ExeDir() / name).string().c_str());
+    }
+    std::set<uint64_t> dumped_;
+    // TEXSCAN=<frame>: at that frame, every 64x64 DXT3 texture header in guest memory (Common type texture) is
+    // dumped as by TEXDUMP: textures loaded but not yet drawn, such as button pictures the game shows only sometimes
+    void ScanTextures() {
+        int n = 0;
+        for (uint32_t p = 0x10000; p + 20 < 0x4000000; p += 4) {
+            if ((p & 0xFFF) == 0 && !mem::IsCommitted(p)) {  // whole pages the game never touched
+                p += 0xFFC;
+                continue;
+            }
+            if ((p & 0xFFF) > 0xFEC && !mem::IsCommitted((p + 20) & ~0xFFFu)) continue;
+            uint32_t common = kernel::R32(p);
+            if ((common & 0x70000) != 0x40000) continue;
+            TextureDesc d;
+            // the button pictures' kind: 64x64, format 0xE (DXT3)
+            if (!Describe(p, d) || d.cube || d.depth > 1 || d.linear || d.width != 64 || d.height != 64 || d.format != 0xE) continue;
+            if (!mem::IsCommitted(d.data) || !mem::IsCommitted(d.data + TotalSize(d) - 1)) continue;
+            uint64_t seed = uint64_t(d.format) | uint64_t(d.width) << 8 | uint64_t(d.height) << 24 | uint64_t(d.levels) << 40;
+            uint64_t h = Hash(kernel::HostPtr(d.data), TotalSize(d), seed);
+            if (!dumped_.insert(h).second) continue;
+            std::filesystem::create_directories(app::ExeDir() / "cap" / "scan");
+            char name[96];
+            std::snprintf(name, sizeof name, "cap/scan/%ux%u_%016llx_f%X.tga", d.width, d.height, (unsigned long long)h, d.format);
+            if (reference::WriteTextureTga(p, (app::ExeDir() / name).string().c_str())) n++;
+        }
+        LOGI("harness: %d textures found in memory", n);
+        logx::Flush();
+    }
+
     static std::string File(const char* fmt, unsigned long long n) {
         char name[64];
         std::snprintf(name, sizeof name, fmt, n);

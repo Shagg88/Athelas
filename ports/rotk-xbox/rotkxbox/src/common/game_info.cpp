@@ -4,8 +4,9 @@ namespace rotk {
 extern bool g_skip_all_videos;                  // src/game/rotk_movies.cpp
 extern uint32_t g_fps;                          // src/game/rotk_framerate.cpp
 extern uint32_t g_fov_percent, g_draw_percent;  // src/game/rotk_widescreen.cpp
-extern bool g_alpha_edges;                      // src/game/rotk_widescreen.cpp
+extern bool g_alpha_edges, g_hud_edges;         // src/game/rotk_widescreen.cpp
 void Pad(int port, input::Pad& pad);            // src/game/rotk_controls.cpp
+extern uint32_t g_button_pictures;              // src/game/rotk_prompts.cpp
 void Loaded();                                  // rotk_movies.cpp
 void Init();                                    // rotk_settings.cpp: ROTKFix.ini, then the frame rate
 }
@@ -39,7 +40,15 @@ const app::GameInfo app::kGame = {
                  "How far the camera sees, as a share of the game's own (100); the fog moves out with it.",
                  nullptr, &rotk::g_draw_percent, nullptr, 50, 800, {}},
                 {"graphics", "alpha_edges", cfg::Type::Bool, "Smooth leaf edges",
-                 "With anti-aliasing on, smooths the edges of leaves, grass and fences.", &rotk::g_alpha_edges}},
+                 "With anti-aliasing on, smooths the edges of leaves, grass and fences.", &rotk::g_alpha_edges},
+                {"graphics", "hud_edges", cfg::Type::Bool, "HUD at the screen edges",
+                 "With widescreen on, the HUD keeps its shape and the health bar and counters sit at the edges of the "
+                 "wide picture. Off, the HUD is stretched to fill it, as on PC.",
+                 &rotk::g_hud_edges},
+                {"graphics", "button_pictures", cfg::Type::Choice, "Button pictures",
+                 "Which controller's buttons the game's hints show. Auto follows the controller you play with.",
+                 nullptr, &rotk::g_button_pictures, nullptr, 0, 0, {"auto", "xbox", "playstation", "nintendo"}, nullptr,
+                 nullptr, {"Auto", "Xbox", "PlayStation", "Nintendo"}}},
     .presets = {},
     .load = nullptr,                      // reads more from the settings file's toml::table
     .save = nullptr,                      // writes more into it

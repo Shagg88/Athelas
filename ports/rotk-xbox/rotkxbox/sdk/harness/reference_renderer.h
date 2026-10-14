@@ -15,5 +15,7 @@ void Draw(const gpu::State& s, uint32_t prim, uint32_t start, uint32_t count, co
 uint64_t Passed();
 // 24 bit TGA of a surface's colour
 bool WriteTga(const gpu::Surface& s, const char* path);
+// a texture's level 0 as a 32 bit TGA (testing: which texture a pack file replaces)
+bool WriteTextureTga(uint32_t header, const char* path);
 
 }  // namespace reference

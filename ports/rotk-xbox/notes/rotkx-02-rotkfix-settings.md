@@ -40,7 +40,7 @@ With any setting other than 30:
 
 - The 0xD03D3 wait is skipped (a `[[hook]]`).
 - 0xBF1A0 runs without the wait when the frame end calls it. Loading screens keep the wait.
-- The step is the real time since the last step, clamped to 0.25 s, with the same 1200 Hz tick bookkeeping.
+- The step is the real time since the last step, clamped to 0.1 s as on ROTK PC, with the same 1200 Hz tick bookkeeping.
 - The window's frame cap paces the frames.
 
 Movies keep their own pace. In the test build the logos and movie played at normal speed with 1,600 fps uncapped.

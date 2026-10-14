@@ -782,12 +782,14 @@ private:
     // texture packs: textures/ beside the exe holds replacements named by content hash, textures/dump/ what
     // texture_dump writes
     pack::Library pack_lib_;
+    float place_a_ = 1.0f, place_b_ = 0.0f;  // this draw's sideways move (g_ortho_place)
     std::unordered_map<uint64_t, PackTex> pack_cache_;
     std::unordered_set<uint64_t> hud_logged_;  // textures already named as drawn in 2D
     std::unordered_set<uint64_t> dumped_;
     void TexturePack(Tex& tx, const TextureDesc& d, const uint8_t* p, const uint32_t* colours,
                      const std::vector<std::vector<uint8_t>>& levels);
     bool LoadPackTexture(const std::filesystem::path& file, PackTex& out);
+    bool CreatePackTexture(const pack::Image& img, const std::string& name, PackTex& out);
     std::unordered_map<uint64_t, ComPtr<ID3D12PipelineState>> blit_psos_;
     Extension* ext_ = nullptr;
     // one frame capture: every draw in a text file, each target as the frame leaves it, the textures it read
@@ -2270,7 +2272,7 @@ void D3D12Backend::UploadTexture(Tex& tx, const TextureDesc& d, const FormatInfo
     // a plain 2D texture in a format a DDS file holds can be dumped and replaced
     pack::Format pf = pack::Format(tx.fmt);
     bool packable = !d.cube && d.depth == 1 && !d.linear && pack::Supported(pf) &&
-                    (pack_lib_.Size() || app::Get().texture_dump);
+                    (pack_lib_.Size() || app::Get().texture_dump || pack::g_builtin);
     std::vector<std::vector<uint8_t>> levels;
     for (uint32_t f = 0; f < faces; f++) {
         for (uint32_t l = 0; l < tx.levels; l++) {
@@ -2315,9 +2317,13 @@ void D3D12Backend::TexturePack(Tex& tx, const TextureDesc& d, const uint8_t* p, 
     }
     tx.pack_hash = h;
     const std::filesystem::path* file = pack_lib_.Find(h);
-    if (!file) return;
+    if (!file && !pack::g_builtin) return;
     auto [it, fresh] = pack_cache_.try_emplace(h);
-    if (fresh && !LoadPackTexture(*file, it->second)) LOGW("texture pack: %s is not a PNG or DDS file the renderer takes", file->string().c_str());
+    if (fresh && file && !LoadPackTexture(*file, it->second)) LOGW("texture pack: %s is not a PNG or DDS file the renderer takes", file->string().c_str());
+    if (fresh && !file) {
+        pack::Image img;
+        if (pack::g_builtin(h, d.width, d.height, img)) CreatePackTexture(img, pack::PngName(d.width, d.height, h), it->second);
+    }
     if (!it->second.res) return;
     tx.repl = it->second.res;
     tx.repl_fmt = it->second.fmt;
@@ -2330,6 +2336,11 @@ bool D3D12Backend::LoadPackTexture(const std::filesystem::path& file, PackTex& o
     std::string ext = file.extension().string();
     std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return char(std::tolower(c)); });
     if (!(ext == ".png" ? pack::ReadPng(file, img) : pack::ReadDds(file, img))) return false;
+    return CreatePackTexture(img, file.filename().string(), out);
+}
+
+// a picture, with its mip levels, into a texture of its own size
+bool D3D12Backend::CreatePackTexture(const pack::Image& img, const std::string& name, PackTex& out) {
     bool block = img.format != pack::Format::BGRA8 && img.format != pack::Format::RGBA8;
     if (block && ((img.width & 3) || (img.height & 3))) return false;  // BC level 0 must be whole blocks
     D3D12_HEAP_PROPERTIES hp{D3D12_HEAP_TYPE_DEFAULT};
@@ -2354,7 +2365,7 @@ bool D3D12Backend::LoadPackTexture(const std::filesystem::path& file, PackTex& o
     out.res = t.res;
     out.fmt = td.Format;
     out.levels = t.levels;
-    LOG_FIRST(16, "texture pack: %s, %ux%u, %u levels", file.filename().string().c_str(), img.width, img.height,
+    LOG_FIRST(16, "texture pack: %s, %ux%u, %u levels", name.c_str(), img.width, img.height,
               t.levels);
     return true;
 }
@@ -2813,7 +2824,7 @@ constexpr size_t kTsProjection = 3;
 constexpr size_t kTsTexture0 = 16;
 constexpr size_t kTsWorld = 256;
 
-void FillTransformConstants(const State& s, GuestExtent size, DrawConstants& c) {
+void FillTransformConstants(const State& s, GuestExtent size, DrawConstants& c, float place_a, float place_b) {
     uint32_t gw = size.w;
     uint32_t gh = size.h;
     // world, view, projection, then the viewport inside the target
@@ -2821,6 +2832,9 @@ void FillTransformConstants(const State& s, GuestExtent size, DrawConstants& c) 
     float wvp[16];
     MatMul(s.transforms[kTsWorld].data(), s.transforms[kTsView].data(), wv);
     MatMul(wv, s.transforms[kTsProjection].data(), wvp);
+    // moved sideways by the game (g_ortho_place): clip x' = a * x + b * w
+    if (place_a != 1.0f || place_b != 0.0f)
+        for (int r = 0; r < 4; r++) wvp[r * 4] = place_a * wvp[r * 4] + place_b * wvp[r * 4 + 3];
     const auto& v = s.viewport;
     float sx = float(v.w) / gw;
     float sy = float(v.h) / gh;
@@ -2901,7 +2915,7 @@ void D3D12Backend::UploadConstants(const State& s, const DrawShaders& sh, const 
     if (ext_) ext_->Constants(reinterpret_cast<float(*)[4]>(vc.cpu), c.ext, bound_rt_, k.blend ? k.src : 1);
     FillTextureConstants(s, stages, c);
     if (sh.fixed_transform) {
-        FillTransformConstants(s, size, c);
+        FillTransformConstants(s, size, c, place_a_, place_b_);
         FillLightConstants(s, sh.fk, c);
     }
     std::memcpy(dc.cpu, &c, sizeof(c));
@@ -3122,6 +3136,15 @@ void D3D12Backend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t 
     if (ext_) ext_->BeginDraw(s);
     Assembled& a = asm_;
     if (!AssembleDraw(s, prim, start, count, indices, a)) return;
+    place_a_ = 1.0f;
+    place_b_ = 0.0f;
+    if (g_ortho_place) {
+        float x0, x1, y0, y1;
+        if (OrthoExtent(s, start, count, indices, x0, x1, y0, y1) && !g_ortho_place(s, x0, x1, y0, y1, place_a_, place_b_)) {
+            place_a_ = 1.0f;
+            place_b_ = 0.0f;
+        }
+    }
     // past the ring every upload is a buffer of its own: seconds lost on a frame that draws a whole level once
     if (CurrentFrame().used > kUploadSize - kUploadReserve) {
         PerfScope perf_flush{g_perf.flush};

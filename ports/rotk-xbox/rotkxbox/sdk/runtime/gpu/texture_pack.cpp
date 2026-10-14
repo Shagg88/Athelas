@@ -206,8 +206,15 @@ bool ReadPng(const std::filesystem::path& file, Image& img) {
     img = Image{};
     std::vector<uint8_t> bytes;
     if (!ReadFile(file, bytes) || bytes.empty()) return false;
+    return DecodePng(bytes.data(), bytes.size(), img);
+}
+
+BuiltinTexture g_builtin = nullptr;
+
+bool DecodePng(const uint8_t* data, size_t size, Image& img) {
+    img = Image{};
     int w = 0, h = 0, comp = 0;
-    stbi_uc* px = stbi_load_from_memory(bytes.data(), int(bytes.size()), &w, &h, &comp, 4);
+    stbi_uc* px = stbi_load_from_memory(data, int(size), &w, &h, &comp, 4);
     if (!px) return false;
     if (w <= 0 || h <= 0 || w > 16384 || h > 16384) {
         stbi_image_free(px);

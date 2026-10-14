@@ -1,7 +1,7 @@
 // ROTK Xbox: ROTK Fix's settings file. The launcher keeps one Return of the King page for the PC and Xbox versions;
 // started with --ini <ROTKFix.ini> (ROTK_INI on the headless harness) the port reads that file's keys, the same ones
 // ROTK Fix reads on PC, over its own settings.toml. Keys the Xbox version has no use for (Renderer, DxvkFolder,
-// HideRealControllers, HideMousePointer, ButtonNames, LogInput, [Gamepad] Enabled, SkipOpeningLogos) are left alone.
+// HideRealControllers, HideMousePointer, LogInput, [Gamepad] Enabled, SkipOpeningLogos) are left alone.
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
@@ -22,11 +22,13 @@ namespace rotk {
 extern bool g_skip_all_videos;                // rotk_movies.cpp
 extern uint32_t g_fps;                         // rotk_framerate.cpp
 extern uint32_t g_fov_percent, g_draw_percent;  // rotk_widescreen.cpp
-extern bool g_alpha_edges;                       // rotk_widescreen.cpp
+extern bool g_alpha_edges, g_hud_edges;          // rotk_widescreen.cpp
 extern bool g_second_controller;                 // rotk_controls.cpp
 void LoadControls(const std::string* (*get)(void*, const char*, const char*), void* ctx);
 void InitFrameRate();
 void InitCamera();
+void InitPrompts();
+extern uint32_t g_button_pictures;  // rotk_prompts.cpp
 
 namespace {
 std::string Lower(std::string s) {
@@ -153,6 +155,7 @@ void ApplyIni() {
     r.Int("Graphics", "FieldOfView", g_fov_percent, 70, 150);
     r.Int("Graphics", "DrawDistance", g_draw_percent, 50, 800);
     r.Bool("Graphics", "AlphaEdgeSmoothing", g_alpha_edges);
+    r.Bool("Graphics", "HUDEdges", g_hud_edges);  // the Xbox port's own key, for now
     // [Frame]: ROTK Fix's limiter at TargetFPS (0 no cap); Limiter = 0 leaves the game's own pace, the console's 30
     uint32_t target = g_fps, limiter = 1;
     r.Int("Frame", "TargetFPS", target, 0, 1000);
@@ -169,6 +172,12 @@ void ApplyIni() {
     r.Int("Gamepad", "StickDeadzone", s.stick_deadzone, 0, 50);
     r.Int("Gamepad", "TriggerThreshold", s.trigger_threshold, 0, 90);
     r.Bool("Gamepad", "SecondController", g_second_controller);
+    // ButtonNames: auto, xbox, playstation, nintendo; original is the game's own pictures, the Xbox ones
+    if (const std::string* v = r.Get("Gamepad", "ButtonNames")) {
+        std::string w = Lower(*v);
+        g_button_pictures = w == "xbox" || w == "original" ? 1 : w == "playstation" ? 2 : w == "nintendo" ? 3 : 0;
+        r.applied++;
+    }
     // [Gamepad] Enabled is the PC's DirectInput gamepad layer; the Xbox version always reads the controller
     LoadControls([](void* c, const char* section, const char* key) { return static_cast<Reader*>(c)->Get(section, key); }, &r);
     // [Textures]
@@ -183,5 +192,6 @@ void Init() {
     ApplyIni();
     InitFrameRate();
     InitCamera();
+    InitPrompts();
 }
 }  // namespace rotk

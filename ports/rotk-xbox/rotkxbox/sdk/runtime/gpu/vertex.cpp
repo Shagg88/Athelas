@@ -8,6 +8,7 @@
 #include "core/log.h"
 #include "gpu/texture.h"
 #include "kernel/kernel.h"
+#include "kernel/memory.h"
 
 namespace gpu {
 
@@ -444,6 +445,35 @@ void FvfInputs(uint32_t fvf, VertexShader& vs) {
 ScreenSpaceHook g_screen_space_hook = nullptr;
 ScreenSpaceTest g_screen_space_test = nullptr;
 ProjectionHook g_projection_hook = nullptr;
+OrthoPlace g_ortho_place = nullptr;
+
+bool OrthoExtent(const State& s, uint32_t start, uint32_t count, const uint8_t* indices, float& x0, float& x1, float& y0,
+                 float& y1) {
+    if ((s.vs_handle & 1) || (s.vs_handle & 0xE) != 2 || !s.streams[0].vb || !count) return false;  // FVF with XYZ
+    const float* p = s.transforms[3].data();
+    if (p[11] != 0.0f || p[15] != 1.0f) return false;  // orthographic
+    float wv[16], m[16];
+    auto mul = [](const float* a, const float* b, float* o) {
+        for (int r = 0; r < 4; r++)
+            for (int c = 0; c < 4; c++)
+                o[r * 4 + c] = a[r * 4] * b[c] + a[r * 4 + 1] * b[4 + c] + a[r * 4 + 2] * b[8 + c] + a[r * 4 + 3] * b[12 + c];
+    };
+    mul(s.transforms[256].data(), s.transforms[2].data(), wv);
+    mul(wv, p, m);
+    uint32_t stride = s.streams[0].stride;
+    uint32_t data = mem::VirtualFromPhysical(kernel::R32(s.streams[0].vb + 4));
+    x0 = y0 = 1e30f;
+    x1 = y1 = -1e30f;
+    for (uint32_t i = 0; i < count; i++) {
+        uint32_t v = indices ? uint32_t(indices[i * 2] | indices[i * 2 + 1] << 8) + s.base_vertex : start + i;
+        float q[3];
+        std::memcpy(q, kernel::HostPtr(data + v * stride), 12);
+        float x = q[0] * m[0] + q[1] * m[4] + q[2] * m[8] + m[12];
+        float y = q[0] * m[1] + q[1] * m[5] + q[2] * m[9] + m[13];
+        x0 = std::min(x0, x), x1 = std::max(x1, x), y0 = std::min(y0, y), y1 = std::max(y1, y);
+    }
+    return true;
+}
 ScreenSpacePlace g_screen_space_place = nullptr;
 
 namespace {
