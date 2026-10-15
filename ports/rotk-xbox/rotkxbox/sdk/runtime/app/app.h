@@ -156,6 +156,8 @@ struct GameInfo {
     void (*ui)(double fps);        // each frame inside the ImGui frame, UiLock held
     void (*pad)(int port, input::Pad& pad);  // a polled pad before the game gets it
     void (*rumble)(int port, uint16_t& left, uint16_t& right);
+    // [controls] in the settings (the overlay, --describe-settings): off for a game that remaps its buttons another way
+    bool remap_controls = true;
 };
 extern const GameInfo kGame;
 

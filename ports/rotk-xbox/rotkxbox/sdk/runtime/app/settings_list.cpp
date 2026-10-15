@@ -126,7 +126,7 @@ std::vector<cfg::Desc> SettingsList() {
                                          "Xbox left trigger", "Xbox right trigger"};
     std::vector<const char*> sources(std::begin(input::kSources), std::end(input::kSources));
     std::vector<const char*> names(std::begin(input::kSourceNames), std::end(input::kSourceNames));
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < (kGame.remap_controls ? 8 : 0); i++) {
         const char* action = size_t(i) < kGame.button_actions.size() ? kGame.button_actions[size_t(i)] : nullptr;
         cfg::Desc d{"controls", kKeys[i], Type::Choice, action ? action : kXbox[i],
                     "The button on your controller that does this. As on the Xbox by default (the Xbox's Black and "

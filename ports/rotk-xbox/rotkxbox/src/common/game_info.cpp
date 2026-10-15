@@ -70,4 +70,5 @@ const app::GameInfo app::kGame = {
     .ui = nullptr,                        // ImGui drawing each frame
     .pad = rotk::Pad,                     // changes a polled pad
     .rumble = nullptr,                    // changes a rumble before it is set
+    .remap_controls = false,              // buttons are remapped through ROTKFix.ini ([Gamepad], rotk_controls.cpp)
 };
