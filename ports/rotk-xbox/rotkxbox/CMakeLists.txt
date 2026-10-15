@@ -38,5 +38,8 @@ endif()
 # target name = GAME_EXE in build.bat, xbe = GAME_XBE
 # Draw on the title's thread, as The Two Towers' port and the headless harness do; the threaded renderer can be
 # tried once the game runs.
+# the version and name Windows shows in the exe's properties (keep in step with src/common/game_info.cpp)
+set(XBE_VERSION 1.0.1)
+set(XBE_PRODUCT "ROTK Xbox PC port")
 add_xbe_image(ROTKXbox default.xbe game.toml ${GAME_PARTITIONS} game)
 target_compile_definitions(ROTKXbox PRIVATE XBE_RENDER_THREAD=0)
