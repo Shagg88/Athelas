@@ -1,6 +1,6 @@
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/THIRD_PARTY.txt /home/claude/sdkm/merged/THIRD_PARTY.txt
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/THIRD_PARTY.txt /home/claude/tt-port/game/sdk/THIRD_PARTY.txt
 --- upstream/THIRD_PARTY.txt	2026-10-14 22:35:04.213019977 -0700
-+++ /home/claude/sdkm/merged/THIRD_PARTY.txt	2026-10-14 22:13:00.503085819 -0700
++++ /home/claude/tt-port/game/sdk/THIRD_PARTY.txt	2026-10-14 22:14:56.908923066 -0700
 @@ -45,7 +45,7 @@
  SOFTWARE.
  
@@ -34,9 +34,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/THIRD_PA
 +WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
 +COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 +OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/cmake/XbeRecomp.cmake /home/claude/sdkm/merged/cmake/XbeRecomp.cmake
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/cmake/XbeRecomp.cmake /home/claude/tt-port/game/sdk/cmake/XbeRecomp.cmake
 --- upstream/cmake/XbeRecomp.cmake	2026-10-14 22:35:04.213019977 -0700
-+++ /home/claude/sdkm/merged/cmake/XbeRecomp.cmake	2026-10-14 22:13:00.429257869 -0700
++++ /home/claude/tt-port/game/sdk/cmake/XbeRecomp.cmake	2026-10-14 22:14:56.908952454 -0700
 @@ -6,7 +6,26 @@
  file(TO_NATIVE_PATH "${XBE_SDK_DIR}" XBE_SDK_DIR_NATIVE)
  file(WRITE ${CMAKE_BINARY_DIR}/sdk_dir.txt "${XBE_SDK_DIR_NATIVE}\n")
@@ -106,9 +106,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/cmake/Xb
      target_link_libraries(${target} PRIVATE tomlplusplus::tomlplusplus $<LINK_ONLY:SDL3::SDL3-static> d3d12 dxgi dxguid d3dcompiler xaudio2 ole32 windowscodecs dbghelp winmm dwmapi ws2_32)
      # lld keeps the recompiled weak functions overridable by the host ones
      target_link_options(${target} PRIVATE -fuse-ld=lld -g)
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/app_headless.cpp /home/claude/sdkm/merged/harness/app_headless.cpp
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/app_headless.cpp /home/claude/tt-port/game/sdk/harness/app_headless.cpp
 --- upstream/harness/app_headless.cpp	2026-10-14 22:35:04.214332397 -0700
-+++ /home/claude/sdkm/merged/harness/app_headless.cpp	2026-10-14 22:14:06.029087977 -0700
++++ /home/claude/tt-port/game/sdk/harness/app_headless.cpp	2026-10-14 22:14:56.909004275 -0700
 @@ -1,4 +1,6 @@
 -// the host side without a window: settings at their defaults, the run folder as the exe folder
 +// the host side without a window: settings from settings.toml in the run folder when there is one (else the
@@ -207,9 +207,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/
 +}
  
  }  // namespace app
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/build.sh /home/claude/sdkm/merged/harness/build.sh
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/build.sh /home/claude/tt-port/game/sdk/harness/build.sh
 --- upstream/harness/build.sh	2026-10-14 22:35:04.214332397 -0700
-+++ /home/claude/sdkm/merged/harness/build.sh	2026-10-14 22:13:00.299960774 -0700
++++ /home/claude/tt-port/game/sdk/harness/build.sh	2026-10-14 22:14:56.909015195 -0700
 @@ -22,7 +22,9 @@
  H=$(dirname "$(realpath "$0")"); RT=$REPO/sdk/runtime
  CXX=${CXX:-clang++}; JOBS=${JOBS:-$(nproc)}
@@ -229,9 +229,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/
  SRC="$SRC $(ls "$REPO"/src/*/*.cpp | grep -Ev "/src/(${others:-^$})/" || true)"
  SRC="$SRC $(ls "$H"/*.cpp) ${EXTRA[*]}"
  for x in "${EXCL[@]}"; do SRC=$(echo $SRC | tr ' ' '\n' | grep -Ev -- "$x"); done
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/main_test.cpp /home/claude/sdkm/merged/harness/main_test.cpp
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/main_test.cpp /home/claude/tt-port/game/sdk/harness/main_test.cpp
 --- upstream/harness/main_test.cpp	2026-10-14 22:35:04.214451573 -0700
-+++ /home/claude/sdkm/merged/harness/main_test.cpp	2026-10-14 22:13:00.433169062 -0700
++++ /home/claude/tt-port/game/sdk/harness/main_test.cpp	2026-10-14 22:14:56.909103014 -0700
 @@ -10,6 +10,7 @@
  #include <vector>
  
@@ -265,9 +265,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/
      if (!kernel::Boot(std::move(xbe), IMAGE_XBE, game, (app::ExeDir() / hdd).string())) return 1;
      for (;;) {
          std::this_thread::sleep_for(std::chrono::seconds(1));
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/null_audio.cpp /home/claude/sdkm/merged/harness/null_audio.cpp
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/null_audio.cpp /home/claude/tt-port/game/sdk/harness/null_audio.cpp
 --- upstream/harness/null_audio.cpp	2026-10-14 22:35:04.214451573 -0700
-+++ /home/claude/sdkm/merged/harness/null_audio.cpp	2026-10-14 22:13:00.300100355 -0700
++++ /home/claude/tt-port/game/sdk/harness/null_audio.cpp	2026-10-14 22:14:56.909113379 -0700
 @@ -1,5 +1,8 @@
 -// the mixer pulled every 10 ms by the clock, its output dropped
 +// the mixer pulled every 10 ms by the clock, its output dropped, or written to AUDIO_WAV as 16 bit stereo
@@ -324,9 +324,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/
              std::this_thread::sleep_for(std::chrono::milliseconds(10));
          }
      }).detach();
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/null_backend.cpp /home/claude/sdkm/merged/harness/null_backend.cpp
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/null_backend.cpp /home/claude/tt-port/game/sdk/harness/null_backend.cpp
 --- upstream/harness/null_backend.cpp	2026-10-14 22:35:04.214451573 -0700
-+++ /home/claude/sdkm/merged/harness/null_backend.cpp	2026-10-14 22:13:59.849008909 -0700
++++ /home/claude/tt-port/game/sdk/harness/null_backend.cpp	2026-10-14 22:14:56.909125185 -0700
 @@ -1,16 +1,22 @@
  // headless renderer: counts frames and draws, logs draw lists, draws chosen frames with the reference renderer
 -// REF=N: every Nth frame drawn on the CPU into guest memory and saved as cap/ref_<frame>.tga
@@ -506,9 +506,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/
  };
  
  }  // namespace
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/pad_script.cpp /home/claude/sdkm/merged/harness/pad_script.cpp
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/pad_script.cpp /home/claude/tt-port/game/sdk/harness/pad_script.cpp
 --- upstream/harness/pad_script.cpp	2026-10-14 22:35:04.214451573 -0700
-+++ /home/claude/sdkm/merged/harness/pad_script.cpp	2026-10-14 22:13:00.300140715 -0700
++++ /home/claude/tt-port/game/sdk/harness/pad_script.cpp	2026-10-14 22:14:56.909143063 -0700
 @@ -1,6 +1,6 @@
  // pad 0 from a script, then GameInfo::pad as on Windows
  // SCRIPT file: lines of "frame buttons [frames held]", held 8 frames by default, # comments; buttons joined by +:
@@ -536,9 +536,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/
  void Rumble(int port, uint16_t left, uint16_t right) {
      if (app::kGame.rumble) app::kGame.rumble(port, left, right);
  }
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/reference_renderer.cpp /home/claude/sdkm/merged/harness/reference_renderer.cpp
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/reference_renderer.cpp /home/claude/tt-port/game/sdk/harness/reference_renderer.cpp
 --- upstream/harness/reference_renderer.cpp	2026-10-14 22:35:04.214451573 -0700
-+++ /home/claude/sdkm/merged/harness/reference_renderer.cpp	2026-10-14 22:13:00.445080826 -0700
++++ /home/claude/tt-port/game/sdk/harness/reference_renderer.cpp	2026-10-14 22:14:56.909154783 -0700
 @@ -11,18 +11,23 @@
  #include <cstdlib>
  #include <cstring>
@@ -689,9 +689,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/
  }
  
  }  // namespace reference
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/reference_renderer.h /home/claude/sdkm/merged/harness/reference_renderer.h
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/reference_renderer.h /home/claude/tt-port/game/sdk/harness/reference_renderer.h
 --- upstream/harness/reference_renderer.h	2026-10-14 22:35:04.214451573 -0700
-+++ /home/claude/sdkm/merged/harness/reference_renderer.h	2026-10-14 22:13:00.300189263 -0700
++++ /home/claude/tt-port/game/sdk/harness/reference_renderer.h	2026-10-14 22:14:56.909184898 -0700
 @@ -11,7 +11,11 @@
  void Clear(const gpu::State& s, uint32_t count, const uint8_t* rects, uint32_t flags, uint32_t color, float z, uint32_t stencil);
  void Copy(const gpu::Surface& src, const gpu::Surface& dst, uint32_t count, uint32_t rects_va, uint32_t points_va);
@@ -704,9 +704,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/
 +bool WriteTextureTga(uint32_t header, const char* path);
  
  }  // namespace reference
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/app.h /home/claude/sdkm/merged/runtime/app/app.h
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/app.h /home/claude/tt-port/game/sdk/runtime/app/app.h
 --- upstream/runtime/app/app.h	2026-10-14 22:35:04.215216692 -0700
-+++ /home/claude/sdkm/merged/runtime/app/app.h	2026-10-14 22:13:59.786161711 -0700
++++ /home/claude/tt-port/game/sdk/runtime/app/app.h	2026-10-14 22:14:56.909239695 -0700
 @@ -6,6 +6,8 @@
  #include <utility>
  #include <vector>
@@ -849,9 +849,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      // the settings file's toml::table, for what options cannot hold
      void (*load)(const void* table);
      void (*save)(void* table);
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/app.manifest /home/claude/sdkm/merged/runtime/app/app.manifest
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/app.manifest /home/claude/tt-port/game/sdk/runtime/app/app.manifest
 --- upstream/runtime/app/app.manifest	1969-12-31 16:00:00.000000000 -0800
-+++ /home/claude/sdkm/merged/runtime/app/app.manifest	2026-10-14 22:13:00.504898175 -0700
++++ /home/claude/tt-port/game/sdk/runtime/app/app.manifest	2026-10-14 22:14:56.909354527 -0700
 @@ -0,0 +1,27 @@
 +<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 +<!-- Every executable the SDK builds:
@@ -880,9 +880,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +    </dependentAssembly>
 +  </dependency>
 +</assembly>
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/game_files.cpp /home/claude/sdkm/merged/runtime/app/game_files.cpp
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/game_files.cpp /home/claude/tt-port/game/sdk/runtime/app/game_files.cpp
 --- upstream/runtime/app/game_files.cpp	2026-10-14 22:35:04.215370614 -0700
-+++ /home/claude/sdkm/merged/runtime/app/game_files.cpp	2026-10-14 22:13:00.300268300 -0700
++++ /home/claude/tt-port/game/sdk/runtime/app/game_files.cpp	2026-10-14 22:14:56.909254571 -0700
 @@ -10,6 +10,7 @@
  
  #include <algorithm>
@@ -1018,18 +1018,21 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      game = std::move(other);
      kernel::MountDisc(std::move(other_disc));
      return true;
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/main.cpp /home/claude/sdkm/merged/runtime/app/main.cpp
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/main.cpp /home/claude/tt-port/game/sdk/runtime/app/main.cpp
 --- upstream/runtime/app/main.cpp	2026-10-14 22:35:04.215370614 -0700
-+++ /home/claude/sdkm/merged/runtime/app/main.cpp	2026-10-14 22:13:00.330966745 -0700
-@@ -7,6 +7,7 @@
++++ /home/claude/tt-port/game/sdk/runtime/app/main.cpp	2026-10-14 22:35:37.266446277 -0700
+@@ -5,8 +5,10 @@
+ #ifndef NOMINMAX
+ #define NOMINMAX
  #endif
++#include <cstdlib>
  #include <windows.h>
  #include <dbghelp.h>
 +#include <shellapi.h>
  #include <timeapi.h>
  
  #include <algorithm>
-@@ -36,7 +37,9 @@
+@@ -36,7 +38,9 @@
  bool g_mode_changed = false;
  bool g_apply_posted = false;  // a display apply is waiting in the queue or running
  
@@ -1040,7 +1043,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  LONG WINAPI WriteCrashDump(EXCEPTION_POINTERS* e) {
      // the dump holds no guest memory: the guest registers and return addresses go to the log
      if (kernel::Thread* t = kernel::Current(); e && t && t->ctx) {
-@@ -49,7 +52,7 @@
+@@ -49,7 +53,7 @@
          }
          kernel::LogGuestStack(*t->ctx, 256);
      }
@@ -1049,7 +1052,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      CreateDirectoryW(dir.c_str(), nullptr);
      SYSTEMTIME t;
      GetLocalTime(&t);
-@@ -78,9 +81,20 @@
+@@ -78,9 +82,20 @@
  }
  
  // window thread only
@@ -1071,7 +1074,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      MONITORINFOEXW mi{};
      mi.cbSize = sizeof(mi);
      GetMonitorInfoW(mon, &mi);
-@@ -93,20 +107,35 @@
+@@ -93,20 +108,35 @@
      DEVMODEW desktop{};
      desktop.dmSize = sizeof(desktop);
      EnumDisplaySettingsW(mi.szDevice, ENUM_REGISTRY_SETTINGS, &desktop);
@@ -1114,10 +1117,14 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
          int w = r.right - r.left, h = r.bottom - r.top;
          const RECT& a = mi.rcWork;
          SetWindowLongPtrW(g_hwnd, GWL_STYLE, WS_OVERLAPPEDWINDOW | visible);
-@@ -128,6 +157,21 @@
+@@ -127,7 +157,24 @@
+     if (intptr_t result = 0; kGame.message && kGame.message(hwnd, msg, wp, lp, &result)) return result;
      switch (msg) {
          case WM_KEYDOWN:
-             if (wp == VK_F3) DumpThreads();
+-            if (wp == VK_F3) DumpThreads();
++            // F3: a frame capture and a thread dump, for testing only (XBE_CAPTURE_DIR set, capture.bat): a player who
++            // presses it by accident would otherwise find alarming "error:" lines in the log
++            if (wp == VK_F3 && std::getenv("XBE_CAPTURE_DIR")) DumpThreads();
 +            // \, the key above Enter on a US keyboard (VK_OEM_5): a screenshot, once a press
 +            if (wp == VK_OEM_5 && !(lp & (1 << 30))) gpu::g_screenshot = true;
 +            // ] (VK_OEM_6): the next colour look, as ROTK Fix
@@ -1136,7 +1143,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
              return 0;
          case WM_ACTIVATE:
              if (LOWORD(wp) == WA_INACTIVE) {
-@@ -179,12 +223,64 @@
+@@ -179,12 +226,64 @@
      return std::filesystem::path(p).parent_path();
  }
  
@@ -1206,7 +1213,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  }
  
  void* Window() { return g_hwnd; }
-@@ -215,7 +311,31 @@
+@@ -215,7 +314,31 @@
  
  }  // namespace app
  
@@ -1238,7 +1245,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      SetUnhandledExceptionFilter(app::WriteCrashDump);
      std::signal(SIGABRT, [](int) { app::WriteCrashDump(nullptr); });
      timeBeginPeriod(1);
-@@ -224,14 +344,15 @@
+@@ -224,14 +347,15 @@
      bool relaunched = std::wcsstr(GetCommandLineW(), L"--relaunched") != nullptr;
      std::string log = app::kGame.log;
      if (app::Instance() > 1) log += "-" + std::to_string(app::Instance());
@@ -1256,7 +1263,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  
      bool splash = app::OpenSplash(), handover = app::StartHandover();
  
-@@ -262,10 +383,9 @@
+@@ -262,10 +386,9 @@
  
      input::Init();
      if (app::kGame.window) app::kGame.window(app::g_hwnd);
@@ -1268,9 +1275,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
          MessageBoxW(app::g_hwnd, L"The game failed to start, see the log in the logs folder.", app::kGame.short_title,
                      MB_ICONERROR);
          return 1;
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/settings.cpp /home/claude/sdkm/merged/runtime/app/settings.cpp
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/settings.cpp /home/claude/tt-port/game/sdk/runtime/app/settings.cpp
 --- upstream/runtime/app/settings.cpp	2026-10-14 22:35:04.215370614 -0700
-+++ /home/claude/sdkm/merged/runtime/app/settings.cpp	2026-10-14 22:14:06.027610669 -0700
++++ /home/claude/tt-port/game/sdk/runtime/app/settings.cpp	2026-10-14 22:14:56.909302994 -0700
 @@ -1,4 +1,4 @@
 -// the settings file beside the exe
 +// the settings file: beside the exe, or where --config says (core/settings_file.h for its form)
@@ -1470,9 +1477,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  float RenderScale(uint32_t guest_height) {
      float h = Output().height * (Get().render_percent / 100.0f);
      return guest_height ? std::max(h / guest_height, 0.1f) : 1.0f;
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/settings_list.cpp /home/claude/sdkm/merged/runtime/app/settings_list.cpp
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/settings_list.cpp /home/claude/tt-port/game/sdk/runtime/app/settings_list.cpp
 --- upstream/runtime/app/settings_list.cpp	1969-12-31 16:00:00.000000000 -0800
-+++ /home/claude/sdkm/merged/runtime/app/settings_list.cpp	2026-10-14 22:13:00.314537555 -0700
++++ /home/claude/tt-port/game/sdk/runtime/app/settings_list.cpp	2026-10-14 22:14:56.909316398 -0700
 @@ -0,0 +1,143 @@
 +// every setting the settings file holds, described once: the host's here, the game's in GameInfo::options. No
 +// platform code, so the list can be checked anywhere.
@@ -1617,9 +1624,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +}
 +
 +}  // namespace app
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/audio/reverb.cpp /home/claude/sdkm/merged/runtime/audio/reverb.cpp
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/audio/reverb.cpp /home/claude/tt-port/game/sdk/runtime/audio/reverb.cpp
 --- upstream/runtime/audio/reverb.cpp	1969-12-31 16:00:00.000000000 -0800
-+++ /home/claude/sdkm/merged/runtime/audio/reverb.cpp	2026-10-14 22:13:00.300404864 -0700
++++ /home/claude/tt-port/game/sdk/runtime/audio/reverb.cpp	2026-10-14 22:14:56.909390886 -0700
 @@ -0,0 +1,145 @@
 +#include "audio/reverb.h"
 +
@@ -1766,9 +1773,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +}
 +
 +}  // namespace audio
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/audio/reverb.h /home/claude/sdkm/merged/runtime/audio/reverb.h
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/audio/reverb.h /home/claude/tt-port/game/sdk/runtime/audio/reverb.h
 --- upstream/runtime/audio/reverb.h	1969-12-31 16:00:00.000000000 -0800
-+++ /home/claude/sdkm/merged/runtime/audio/reverb.h	2026-10-14 22:13:00.300417476 -0700
++++ /home/claude/tt-port/game/sdk/runtime/audio/reverb.h	2026-10-14 22:14:56.909403195 -0700
 @@ -0,0 +1,54 @@
 +#pragma once
 +// An I3DL2 environmental reverb: the room effect the console's audio DSP ran on the I3DL2 mix bin. Takes the mono
@@ -1824,9 +1831,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +};
 +
 +}  // namespace audio
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/core/input.cpp /home/claude/sdkm/merged/runtime/core/input.cpp
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/core/input.cpp /home/claude/tt-port/game/sdk/runtime/core/input.cpp
 --- upstream/runtime/core/input.cpp	2026-10-14 22:35:04.215861406 -0700
-+++ /home/claude/sdkm/merged/runtime/core/input.cpp	2026-10-14 22:13:00.415205165 -0700
++++ /home/claude/tt-port/game/sdk/runtime/core/input.cpp	2026-10-14 22:14:56.909452819 -0700
 @@ -2,6 +2,7 @@
  #include "core/input.h"
  
@@ -1975,9 +1982,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +}
 +
  }  // namespace input
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/core/input.h /home/claude/sdkm/merged/runtime/core/input.h
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/core/input.h /home/claude/tt-port/game/sdk/runtime/core/input.h
 --- upstream/runtime/core/input.h	2026-10-14 22:35:04.215861406 -0700
-+++ /home/claude/sdkm/merged/runtime/core/input.h	2026-10-14 22:13:00.422528293 -0700
++++ /home/claude/tt-port/game/sdk/runtime/core/input.h	2026-10-14 22:14:56.909466731 -0700
 @@ -11,9 +11,16 @@
      int16_t lx = 0, ly = 0, rx = 0, ry = 0;
  };
@@ -1995,9 +2002,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +int Style(int port);
  
  }  // namespace input
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/core/settings_file.cpp /home/claude/sdkm/merged/runtime/core/settings_file.cpp
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/core/settings_file.cpp /home/claude/tt-port/game/sdk/runtime/core/settings_file.cpp
 --- upstream/runtime/core/settings_file.cpp	1969-12-31 16:00:00.000000000 -0800
-+++ /home/claude/sdkm/merged/runtime/core/settings_file.cpp	2026-10-14 22:13:00.300513848 -0700
++++ /home/claude/tt-port/game/sdk/runtime/core/settings_file.cpp	2026-10-14 22:14:56.909511980 -0700
 @@ -0,0 +1,295 @@
 +#include "core/settings_file.h"
 +
@@ -2294,9 +2301,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +}
 +
 +}  // namespace cfg
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/core/settings_file.h /home/claude/sdkm/merged/runtime/core/settings_file.h
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/core/settings_file.h /home/claude/tt-port/game/sdk/runtime/core/settings_file.h
 --- upstream/runtime/core/settings_file.h	1969-12-31 16:00:00.000000000 -0800
-+++ /home/claude/sdkm/merged/runtime/core/settings_file.h	2026-10-14 22:13:00.300527960 -0700
++++ /home/claude/tt-port/game/sdk/runtime/core/settings_file.h	2026-10-14 22:14:56.909526501 -0700
 @@ -0,0 +1,55 @@
 +#pragma once
 +// The settings file as a launcher can edit it: plain [section] and key = value lines, one setting a line, kept to
@@ -2353,9 +2360,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +std::string Describe(const std::vector<Desc>& list, const std::vector<Preset>& presets = {});
 +
 +}  // namespace cfg
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/gpu/backend.h /home/claude/sdkm/merged/runtime/gpu/backend.h
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/gpu/backend.h /home/claude/tt-port/game/sdk/runtime/gpu/backend.h
 --- upstream/runtime/gpu/backend.h	2026-10-14 22:35:04.238549991 -0700
-+++ /home/claude/sdkm/merged/runtime/gpu/backend.h	2026-10-14 22:14:36.159565840 -0700
++++ /home/claude/tt-port/game/sdk/runtime/gpu/backend.h	2026-10-14 22:14:56.909745901 -0700
 @@ -1,4 +1,5 @@
  #pragma once
 +#include <algorithm>
@@ -2419,9 +2426,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +constexpr uint32_t kColourLooks = 4;
  
  }  // namespace gpu
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/gpu/d3d12.cpp /home/claude/sdkm/merged/runtime/gpu/d3d12.cpp
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/gpu/d3d12.cpp /home/claude/tt-port/game/sdk/runtime/gpu/d3d12.cpp
 --- upstream/runtime/gpu/d3d12.cpp	2026-10-14 22:35:04.242549991 -0700
-+++ /home/claude/sdkm/merged/runtime/gpu/d3d12.cpp	2026-10-14 22:14:36.158899388 -0700
++++ /home/claude/tt-port/game/sdk/runtime/gpu/d3d12.cpp	2026-10-14 22:14:56.909617313 -0700
 @@ -13,11 +13,13 @@
  #include <wrl/client.h>
  
@@ -4402,9 +4409,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      ramp_dirty_ = true;
  }
  
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/gpu/ext.h /home/claude/sdkm/merged/runtime/gpu/ext.h
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/gpu/ext.h /home/claude/tt-port/game/sdk/runtime/gpu/ext.h
 --- upstream/runtime/gpu/ext.h	2026-10-14 22:35:04.217354990 -0700
-+++ /home/claude/sdkm/merged/runtime/gpu/ext.h	2026-10-14 22:13:00.300736284 -0700
++++ /home/claude/tt-port/game/sdk/runtime/gpu/ext.h	2026-10-14 22:14:56.909760273 -0700
 @@ -36,6 +36,13 @@
      DXGI_FORMAT fmt = DXGI_FORMAT_B8G8R8A8_UNORM;
      float range = 1;         // colour held divided by it until the extension resolves the target
@@ -4419,9 +4426,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  };
  
  // what the renderer lends an extension, on the render thread
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/gpu/png.cpp /home/claude/sdkm/merged/runtime/gpu/png.cpp
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/gpu/png.cpp /home/claude/tt-port/game/sdk/runtime/gpu/png.cpp
 --- upstream/runtime/gpu/png.cpp	1969-12-31 16:00:00.000000000 -0800
-+++ /home/claude/sdkm/merged/runtime/gpu/png.cpp	2026-10-14 22:13:00.300756255 -0700
++++ /home/claude/tt-port/game/sdk/runtime/gpu/png.cpp	2026-10-14 22:14:56.909773243 -0700
 @@ -0,0 +1,19 @@
 +// stb_image and stb_image_write for texture packs: PNG only
 +#define STB_IMAGE_IMPLEMENTATION
@@ -4442,9 +4449,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +#if defined(__clang__) || defined(__GNUC__)
 +#pragma GCC diagnostic pop
 +#endif
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/gpu/render_thread.cpp /home/claude/sdkm/merged/runtime/gpu/render_thread.cpp
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/gpu/render_thread.cpp /home/claude/tt-port/game/sdk/runtime/gpu/render_thread.cpp
 --- upstream/runtime/gpu/render_thread.cpp	2026-10-14 22:35:04.242549991 -0700
-+++ /home/claude/sdkm/merged/runtime/gpu/render_thread.cpp	2026-10-14 22:13:00.300772892 -0700
++++ /home/claude/tt-port/game/sdk/runtime/gpu/render_thread.cpp	2026-10-14 22:14:56.909785515 -0700
 @@ -41,7 +41,7 @@
  
  enum class WaitFor : uint8_t { ReadBack, Resource, Fence, Flush, Copy, Frame, Count };
@@ -4492,9 +4499,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
          }
      }
  
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/gpu/shaders.cpp /home/claude/sdkm/merged/runtime/gpu/shaders.cpp
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/gpu/shaders.cpp /home/claude/tt-port/game/sdk/runtime/gpu/shaders.cpp
 --- upstream/runtime/gpu/shaders.cpp	2026-10-14 22:35:04.242549991 -0700
-+++ /home/claude/sdkm/merged/runtime/gpu/shaders.cpp	2026-10-14 22:13:00.376310764 -0700
++++ /home/claude/tt-port/game/sdk/runtime/gpu/shaders.cpp	2026-10-14 22:14:56.909806731 -0700
 @@ -392,6 +392,8 @@
      };
      auto tex2d = [&](const std::string& uv) {
@@ -4575,9 +4582,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      s += body;
      return k.quad ? QuadHlsl(std::move(s)) : s;
  }
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/gpu/shaders.h /home/claude/sdkm/merged/runtime/gpu/shaders.h
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/gpu/shaders.h /home/claude/tt-port/game/sdk/runtime/gpu/shaders.h
 --- upstream/runtime/gpu/shaders.h	2026-10-14 22:35:04.242549991 -0700
-+++ /home/claude/sdkm/merged/runtime/gpu/shaders.h	2026-10-14 22:13:00.383989177 -0700
++++ /home/claude/tt-port/game/sdk/runtime/gpu/shaders.h	2026-10-14 22:14:56.909832811 -0700
 @@ -18,6 +18,9 @@
  };
  enum : uint8_t {
@@ -4597,9 +4604,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      // fixed function, lit in view space
      float wv[16];
      float wvn[16];       // normals: inverse transpose of wv
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/gpu/texture_pack.cpp /home/claude/sdkm/merged/runtime/gpu/texture_pack.cpp
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/gpu/texture_pack.cpp /home/claude/tt-port/game/sdk/runtime/gpu/texture_pack.cpp
 --- upstream/runtime/gpu/texture_pack.cpp	1969-12-31 16:00:00.000000000 -0800
-+++ /home/claude/sdkm/merged/runtime/gpu/texture_pack.cpp	2026-10-14 22:13:00.301054420 -0700
++++ /home/claude/tt-port/game/sdk/runtime/gpu/texture_pack.cpp	2026-10-14 22:14:56.910164050 -0700
 @@ -0,0 +1,427 @@
 +#include "gpu/texture_pack.h"
 +
@@ -5028,9 +5035,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +}
 +
 +}  // namespace gpu::pack
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/gpu/texture_pack.h /home/claude/sdkm/merged/runtime/gpu/texture_pack.h
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/gpu/texture_pack.h /home/claude/tt-port/game/sdk/runtime/gpu/texture_pack.h
 --- upstream/runtime/gpu/texture_pack.h	1969-12-31 16:00:00.000000000 -0800
-+++ /home/claude/sdkm/merged/runtime/gpu/texture_pack.h	2026-10-14 22:13:00.301071270 -0700
++++ /home/claude/tt-port/game/sdk/runtime/gpu/texture_pack.h	2026-10-14 22:14:56.910183161 -0700
 @@ -0,0 +1,72 @@
 +#pragma once
 +// Texture packs: the game's textures written out as PNG files named by a hash of their contents, and PNG or DDS
@@ -5104,9 +5111,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +};
 +
 +}  // namespace gpu::pack
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/gpu/vertex.cpp /home/claude/sdkm/merged/runtime/gpu/vertex.cpp
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/gpu/vertex.cpp /home/claude/tt-port/game/sdk/runtime/gpu/vertex.cpp
 --- upstream/runtime/gpu/vertex.cpp	2026-10-14 22:35:04.217354990 -0700
-+++ /home/claude/sdkm/merged/runtime/gpu/vertex.cpp	2026-10-14 22:13:00.401180046 -0700
++++ /home/claude/tt-port/game/sdk/runtime/gpu/vertex.cpp	2026-10-14 22:14:56.910194664 -0700
 @@ -6,7 +6,9 @@
  #include <dxgiformat.h>
  
@@ -5217,9 +5224,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  }
  
  }  // namespace gpu
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/gpu/vertex.h /home/claude/sdkm/merged/runtime/gpu/vertex.h
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/gpu/vertex.h /home/claude/tt-port/game/sdk/runtime/gpu/vertex.h
 --- upstream/runtime/gpu/vertex.h	2026-10-14 22:35:04.217354990 -0700
-+++ /home/claude/sdkm/merged/runtime/gpu/vertex.h	2026-10-14 22:13:00.389290210 -0700
++++ /home/claude/tt-port/game/sdk/runtime/gpu/vertex.h	2026-10-14 22:14:56.910212544 -0700
 @@ -1,4 +1,5 @@
  #pragma once
 +#include <atomic>
@@ -5265,9 +5272,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  // false when there is nothing to draw
  // indices: the title's 16 bit indices, null for an unindexed draw
  bool Assemble(const State& s, uint32_t prim, uint32_t start, uint32_t count, const uint8_t* indices, Assembled& out);
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/kernel/files.cpp /home/claude/sdkm/merged/runtime/kernel/files.cpp
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/kernel/files.cpp /home/claude/tt-port/game/sdk/runtime/kernel/files.cpp
 --- upstream/runtime/kernel/files.cpp	2026-10-14 22:35:04.218722056 -0700
-+++ /home/claude/sdkm/merged/runtime/kernel/files.cpp	2026-10-14 22:13:00.301217389 -0700
++++ /home/claude/tt-port/game/sdk/runtime/kernel/files.cpp	2026-10-14 22:14:56.910331553 -0700
 @@ -78,6 +78,7 @@
      size_t next = 0;
      bool listed = false;
@@ -5332,9 +5339,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
          case 14:  // FilePositionInformation
              W64(out, f->pos);
              IoStatus(iosb, kSuccess, 8);
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/xdk/bink.cpp /home/claude/sdkm/merged/runtime/xdk/bink.cpp
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/xdk/bink.cpp /home/claude/tt-port/game/sdk/runtime/xdk/bink.cpp
 --- upstream/runtime/xdk/bink.cpp	2026-10-14 22:35:04.218722056 -0700
-+++ /home/claude/sdkm/merged/runtime/xdk/bink.cpp	2026-10-14 22:13:00.301447801 -0700
++++ /home/claude/tt-port/game/sdk/runtime/xdk/bink.cpp	2026-10-14 22:14:56.910538221 -0700
 @@ -32,7 +32,8 @@
  X86_EXTERN_FUNC(GUEST_ORIG(BinkDoFrame));
  X86_FUNC(GUEST(BinkDoFrame)) {
@@ -5345,9 +5352,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
          std::lock_guard<std::mutex> lock(g_held_lock);
          g_held.insert(bink);
          ctx.eax = 0;
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/xdk/d3d8.cpp /home/claude/sdkm/merged/runtime/xdk/d3d8.cpp
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/xdk/d3d8.cpp /home/claude/tt-port/game/sdk/runtime/xdk/d3d8.cpp
 --- upstream/runtime/xdk/d3d8.cpp	2026-10-14 22:35:04.242549991 -0700
-+++ /home/claude/sdkm/merged/runtime/xdk/d3d8.cpp	2026-10-14 22:13:00.301473409 -0700
++++ /home/claude/tt-port/game/sdk/runtime/xdk/d3d8.cpp	2026-10-14 22:14:56.910567108 -0700
 @@ -1,6 +1,8 @@
  // Direct3D 8 (XDK 5849) entry points the title calls, implemented on the host renderer.
  // Resource creation, locking and the XG helpers stay recompiled: they only manage memory.
@@ -5684,9 +5691,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
              } else if (prim) {
                  uint32_t stride = VertexBytes(), bytes = uint32_t(vertices.size()) * 4;
                  if (stride && bytes % stride == 0) DrawUp(prim, bytes / stride, vertices.data(), stride);
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/xdk/dsound.cpp /home/claude/sdkm/merged/runtime/xdk/dsound.cpp
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/xdk/dsound.cpp /home/claude/tt-port/game/sdk/runtime/xdk/dsound.cpp
 --- upstream/runtime/xdk/dsound.cpp	2026-10-14 22:35:04.220250374 -0700
-+++ /home/claude/sdkm/merged/runtime/xdk/dsound.cpp	2026-10-14 22:13:00.301511025 -0700
++++ /home/claude/tt-port/game/sdk/runtime/xdk/dsound.cpp	2026-10-14 22:14:56.910611215 -0700
 @@ -6,9 +6,13 @@
  #include <condition_variable>
  #include <deque>
@@ -6074,9 +6081,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +STREAM(SetOutputBuffer, 2) { return 0; }
 +// (this, desc, stream out, outer unknown): the device method form of DirectSoundCreateStream
 +HLE_STDCALL(IDirectSound_CreateSoundStream, 4) { return NewStream(a[1], a[2]); }
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/xdk/xapi.cpp /home/claude/sdkm/merged/runtime/xdk/xapi.cpp
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/xdk/xapi.cpp /home/claude/tt-port/game/sdk/runtime/xdk/xapi.cpp
 --- upstream/runtime/xdk/xapi.cpp	2026-10-14 22:35:04.220250374 -0700
-+++ /home/claude/sdkm/merged/runtime/xdk/xapi.cpp	2026-10-14 22:13:00.301564465 -0700
++++ /home/claude/tt-port/game/sdk/runtime/xdk/xapi.cpp	2026-10-14 22:14:56.910698441 -0700
 @@ -1,6 +1,7 @@
  // XAPI functions that talk to hardware: controller ports and the hard disk cache partition
  #include <chrono>
@@ -6093,9 +6100,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      if (type != kGamepadType || port > 3) return 0;
      uint32_t h = mem::AllocSystem(16);
      std::lock_guard<std::mutex> lock(g_ports_lock);
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/xdk/4928/layout.toml /home/claude/sdkm/merged/xdk/4928/layout.toml
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/xdk/4928/layout.toml /home/claude/tt-port/game/sdk/xdk/4928/layout.toml
 --- upstream/xdk/4928/layout.toml	1969-12-31 16:00:00.000000000 -0800
-+++ /home/claude/sdkm/merged/xdk/4928/layout.toml	2026-10-14 22:13:00.302235945 -0700
++++ /home/claude/tt-port/game/sdk/xdk/4928/layout.toml	2026-10-14 22:14:56.911269801 -0700
 @@ -0,0 +1,59 @@
 +# XDK 4928 library data layouts the runtime reads or writes. Each value is proven by the
 +# The Two Towers (title 45410010) default.xbe code at the address given. Derived 2026-10-12.
@@ -6156,9 +6163,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/xdk/4928
 +# CDevice + 0x350..0x35C  push-buffer recording state: D3DDevice_BeginPushBuffer 0x11AFDB stores the buffer at +0x350,
 +#                         clears +0x354, saves the push pointer/threshold at +0x35C/+0x358; EndPushBuffer 0x11B04B restores them
 +# CDevice + 0x2550        = miniport + 0x190 (vertical blank callback slot)
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/xdk/5558/layout.toml /home/claude/sdkm/merged/xdk/5558/layout.toml
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/xdk/5558/layout.toml /home/claude/tt-port/game/sdk/xdk/5558/layout.toml
 --- upstream/xdk/5558/layout.toml	1969-12-31 16:00:00.000000000 -0800
-+++ /home/claude/sdkm/merged/xdk/5558/layout.toml	2026-10-14 22:13:00.302262291 -0700
++++ /home/claude/tt-port/game/sdk/xdk/5558/layout.toml	2026-10-14 22:14:56.911292692 -0700
 @@ -0,0 +1,57 @@
 +# XDK 5558 library data layouts the runtime reads or writes. Each value is proven by the
 +# The Return of the King (title 4541003E) default.xbe code at the address given. Derived 2026-10-13.
@@ -6217,9 +6224,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/xdk/5558
 +
 +# Render-state numbering: all 23 render states XbSymbolDatabase located (D3D_RenderState 0x13A630) have the same
 +# index as the runtime's enum (deferred from 92, complex from 136).
-diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/xdk/5558/signatures.toml /home/claude/sdkm/merged/xdk/5558/signatures.toml
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/xdk/5558/signatures.toml /home/claude/tt-port/game/sdk/xdk/5558/signatures.toml
 --- upstream/xdk/5558/signatures.toml	1969-12-31 16:00:00.000000000 -0800
-+++ /home/claude/sdkm/merged/xdk/5558/signatures.toml	2026-10-14 22:13:00.302282807 -0700
++++ /home/claude/tt-port/game/sdk/xdk/5558/signatures.toml	2026-10-14 22:14:56.911310103 -0700
 @@ -0,0 +1,273 @@
 +# XDK library signatures read by xbe_symbols, written by xbe_symbols in sign mode. No library bytes stored.
 +# [symbols] name = {sec, len, hash, calls, deep, count, nth}: hash of len bytes from the function start in
