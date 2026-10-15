@@ -6111,6 +6111,24 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      if (type != kGamepadType || port > 3) return 0;
      uint32_t h = mem::AllocSystem(16);
      std::lock_guard<std::mutex> lock(g_ports_lock);
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/tools/recomp/codegen_int.cpp /home/claude/tt-port/game/sdk/tools/recomp/codegen_int.cpp
+--- upstream/tools/recomp/codegen_int.cpp	2026-10-14 22:35:04.222305162 -0700
++++ /home/claude/tt-port/game/sdk/tools/recomp/codegen_int.cpp	2026-10-15 06:26:32.562724624 -0700
+@@ -416,7 +416,13 @@
+         case ZYDIS_MNEMONIC_STD: Line("\tctx.df = 1;"); return true;
+ 
+         case ZYDIS_MNEMONIC_PUSH:
+-            if (ops[0].size == 16 && ops[0].type != ZYDIS_OPERAND_TYPE_IMMEDIATE) {
++            // a segment register (Zydis reports it as 16 bits) takes a full dword, as POP below takes 4: the 16-bit
++            // path left the stack 2 bytes off per push (found in Hunter: The Reckoning's Bink MMX check). The selector
++            // value is never read.
++            if (ops[0].type == ZYDIS_OPERAND_TYPE_REGISTER && ops[0].reg.value >= ZYDIS_REGISTER_ES &&
++                ops[0].reg.value <= ZYDIS_REGISTER_GS) {
++                Line("\tX86_PUSH32(0u);");
++            } else if (ops[0].size == 16 && ops[0].type != ZYDIS_OPERAND_TYPE_IMMEDIATE) {
+                 emit(F("uint16_t v = (uint16_t)(%s); ctx.esp -= 2; X86_MEM16(ctx.esp) = v;", Read(ops[0], ea).c_str()));
+             } else {
+                 emit(F("uint32_t v = (uint32_t)(%s); X86_PUSH32(v);", Read(ops[0], ea).c_str()));
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/xdk/4928/layout.toml /home/claude/tt-port/game/sdk/xdk/4928/layout.toml
 --- upstream/xdk/4928/layout.toml	1969-12-31 16:00:00.000000000 -0800
 +++ /home/claude/tt-port/game/sdk/xdk/4928/layout.toml	2026-10-14 22:14:56.911269801 -0700
