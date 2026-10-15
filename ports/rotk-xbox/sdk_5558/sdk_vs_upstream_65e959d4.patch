@@ -5283,9 +5283,20 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  // false when there is nothing to draw
  // indices: the title's 16 bit indices, null for an unindexed draw
  bool Assemble(const State& s, uint32_t prim, uint32_t start, uint32_t count, const uint8_t* indices, Assembled& out);
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/kernel/boot.cpp /home/claude/tt-port/game/sdk/runtime/kernel/boot.cpp
+--- upstream/runtime/kernel/boot.cpp	2026-10-14 22:35:04.217354990 -0700
++++ /home/claude/tt-port/game/sdk/runtime/kernel/boot.cpp	2026-10-15 10:23:30.984742721 -0700
+@@ -211,6 +211,7 @@
+ }
+ 
+ void Shutdown(int code) {
++    TidyHardDisk();
+     LOGR("Exit (%d)", code);
+     logx::Flush();
+     std::_Exit(code);
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/kernel/files.cpp /home/claude/tt-port/game/sdk/runtime/kernel/files.cpp
 --- upstream/runtime/kernel/files.cpp	2026-10-14 22:35:04.218722056 -0700
-+++ /home/claude/tt-port/game/sdk/runtime/kernel/files.cpp	2026-10-14 22:14:56.910331553 -0700
++++ /home/claude/tt-port/game/sdk/runtime/kernel/files.cpp	2026-10-15 10:23:30.984477311 -0700
 @@ -78,6 +78,7 @@
      size_t next = 0;
      bool listed = false;
@@ -5294,7 +5305,37 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      std::mutex io;  // threads sharing a handle: seek and transfer stay together
      File() : Object(ObjType::File) {}
      ~File() override {
-@@ -296,6 +297,7 @@
+@@ -208,6 +209,29 @@
+     LOGI("files: D: is %s, hard disk under %s", disc ? disc->Path().string().c_str() : game_dir.c_str(), data_dir.c_str());
+ }
+ 
++namespace {
++// removes the empty folders under dir, then dir itself when it ends up empty; true when it was removed
++bool RemoveEmpty(const fs::path& dir) {
++    std::error_code ec;
++    bool empty = true;
++    for (fs::directory_iterator it(dir, ec), end; !ec && it != end; it.increment(ec)) {
++        if (it->is_directory(ec) && !it->is_symlink(ec)) {
++            if (!RemoveEmpty(it->path())) empty = false;
++        } else {
++            empty = false;
++        }
++    }
++    if (ec || !empty) return false;
++    return fs::remove(dir, ec);
++}
++}  // namespace
++
++void TidyHardDisk() {
++    std::lock_guard<std::mutex> lock(g_links_lock);
++    for (auto& [k, v] : g_devices)
++        if (k.rfind("\\DEVICE\\HARDDISK0\\", 0) == 0) RemoveEmpty(v);
++}
++
+ bool CreateSymbolicLink(const std::string& link, const std::string& target) {
+     std::lock_guard<std::mutex> lock(g_links_lock);
+     g_links[Upper(Normalize(link))] = Normalize(target);
+@@ -296,6 +320,7 @@
      f->xbox = Normalize(name);
      f->entry = e;
      f->dir = e->dir;
@@ -5302,7 +5343,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      W32(handle_out, NewHandle(f));
      IoStatus(iosb, kSuccess, 1);
      LOG_FIRST(400, "open %s", name.c_str());
-@@ -418,6 +420,7 @@
+@@ -418,6 +443,7 @@
      f->xbox = Normalize(name);
      f->fp = fp;
      f->delete_on_close = options & 0x1000;  // FILE_DELETE_ON_CLOSE
@@ -5310,7 +5351,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      W32(handle_out, NewHandle(f));
      IoStatus(iosb, kSuccess, info);
      LOG_FIRST(400, "open %s", name.c_str());
-@@ -447,19 +450,23 @@
+@@ -447,19 +473,23 @@
          if (!f->fp) f->fp = std::fopen(host.c_str(), "rb");
          if (!f->fp) return kAccessDenied;
      }
@@ -5337,7 +5378,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  }
  
  static uint64_t Offset(File& f, uint32_t off) {
-@@ -525,6 +532,12 @@
+@@ -525,6 +555,12 @@
              G<uint8_t>(out + 0x15) = f->dir;  // Directory, after DeletePending
              IoStatus(iosb, kSuccess, 0x18);
              return kSuccess;
@@ -5350,6 +5391,19 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
          case 14:  // FilePositionInformation
              W64(out, f->pos);
              IoStatus(iosb, kSuccess, 8);
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/kernel/kernel.h /home/claude/tt-port/game/sdk/runtime/kernel/kernel.h
+--- upstream/runtime/kernel/kernel.h	2026-10-14 22:35:04.218722056 -0700
++++ /home/claude/tt-port/game/sdk/runtime/kernel/kernel.h	2026-10-15 10:23:30.984059088 -0700
+@@ -180,6 +180,9 @@
+ 
+ // files
+ void MountDefaults(const std::string& game_dir, const std::string& data_dir);
++// at exit: the hard disk's folders the title left empty are removed (the partitions the console has but the game
++// never wrote to), so the saves folder holds only what was saved. They are made again at the next start.
++void TidyHardDisk();
+ bool CreateSymbolicLink(const std::string& link, const std::string& target);
+ bool DeleteSymbolicLink(const std::string& link);
+ std::string QuerySymbolicLink(const std::string& link);
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/xdk/bink.cpp /home/claude/tt-port/game/sdk/runtime/xdk/bink.cpp
 --- upstream/runtime/xdk/bink.cpp	2026-10-14 22:35:04.218722056 -0700
 +++ /home/claude/tt-port/game/sdk/runtime/xdk/bink.cpp	2026-10-14 22:14:56.910538221 -0700
