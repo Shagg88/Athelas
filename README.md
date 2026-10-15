@@ -41,8 +41,19 @@ Played through its PC port, `TwoTowers.exe`, started from the launcher.
   `settings.toml`.
 - The game's own files are only read, never changed.
 - Keys: `\` screenshot, `F1` hide the HUD, `[` sharpening off/on, `]` next colour look.
-- Problem reports: the log (`ROTKFix\TwoTowers\tt.log` next to the launcher), plus the newest `.dmp` in
-  `ROTKFix\TwoTowers\CrashDumps` after a crash.
+- Problem reports: the log (`TT-Xbox\tt.log` next to the launcher), plus the newest `.dmp` in
+  `TT-Xbox\CrashDumps` after a crash.
+
+## The Return of the King (Xbox)
+
+Played through its PC port, `ROTKXbox.exe`, started from the launcher with the same settings page as the PC game.
+
+- Supported: the US Xbox release, as a disc image (`.iso`) or the extracted files.
+- Frame rates up to 240, widescreen and ultrawide, fixes for slowdowns and vanishing enemies at high frame rates.
+- Sharper text and menus: with the PC game installed too, its larger fonts and menu pictures are used; other menu
+  pictures are scaled up sharply.
+- Two-player co-op on one PC, or online by streaming (Parsec, or Steam Remote Play Together).
+- Problem reports: `ROTK-Xbox\rotkx.log`, plus the newest `.dmp` in `ROTK-Xbox\CrashDumps` after a crash.
 
 ## Antivirus and SmartScreen
 
@@ -91,7 +102,7 @@ ROTK Fix is MIT licensed (see `LICENSE`). Bundled components keep their own lice
 - SDL3 (zlib)
 - Dear ImGui (MIT)
 - stb (MIT / public domain)
-- DSOAL and OpenAL Soft (LGPL; source note in `licenses/`)
+- DSOAL and OpenAL Soft (LGPL; their source at the shipped commits is in the download's `licenses\source`)
 - Uncial Antiqua, Cinzel and EB Garamond fonts (SIL OFL)
 - Liberation Sans (SIL OFL), used to draw the letters in the button pictures
 - XboxXBE-Recomp (MIT, © 2026 TGP482) and toml++ (MIT), inside the bundled Xbox ports

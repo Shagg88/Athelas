@@ -24,7 +24,8 @@ REQUIREMENTS
 - The Return of the King (PC): your own US copy, installed. A graphics card
   with a Vulkan 1.3 driver is recommended (most cards from 2016 on, with a
   current driver). Without one the game still runs through Windows' own
-  Direct3D 8, but sharpening, colour looks and texture filtering are off; the launcher's About tab shows which one you have.
+  Direct3D 8, but sharpening, colour looks and texture filtering are off;
+  the launcher's About tab shows which one you have.
 - The Two Towers and The Return of the King (Xbox): your own US Xbox copy,
   and a DirectX 12 graphics card.
 - ROTK (PC) 3D sound and EAX need Microsoft's free "Visual C++ Redistributable
@@ -127,10 +128,8 @@ enemies at high frame rates.
 - Sharper text and menus: if you also have The Return of the King (PC), its
   larger fonts and menu pictures are used (Graphics tab). Not required.
 - Needs Windows 10 or 11 (64-bit) and a Direct3D 12 graphics card.
-- Co-op: two players on one screen, with two controllers. To play it online,
-  one player runs the game and shares it with Parsec (parsec.app) or Steam
-  Remote Play Together (add ROTKXbox.exe to Steam as a non-Steam game); the
-  friend's controller then counts as player 2.
+- Co-op: two players on one screen, with two controllers; it can also be
+  played online (see PLAYING CO-OP ONLINE).
 - Known issue: the picture is darker than the PC version because it keeps the
   Xbox's brightness curve: raise Brightness to about 1.2-1.3 to match.
 
@@ -144,8 +143,8 @@ TEXTURE PACKS
 -------------
 ROTK Fix can swap any of the game's textures for a PNG of your own. It
 includes no game art: packs are made from your own copy.
-- Making a pack: on the launcher's Graphics tab, tick Save game textures, and play.
-  Every texture is saved once as a PNG in ROTKFix\textures\dump as the game
+- Making a pack: on the launcher's Graphics tab, tick Save game textures, and
+  play. Every texture is saved once as a PNG in ROTKFix\textures\dump as the game
   loads it, named <width>x<height>_<16-character code>.png. A level loads all
   its textures when it starts, so starting each level once is enough.
   Untick it when you have what you need. While saving, the log lists the
@@ -161,18 +160,20 @@ Text, the movie picture and the screen effects cannot be replaced.
 
 PLAYING CO-OP ONLINE
 --------------------
-The game's co-op is for two players on one PC, but a friend can join over the
-internet by streaming it. Only your PC needs the game; your friend's
-controller arrives as a second controller and plays player 2.
-- Steam Remote Play Together: in Steam, add rotk.exe as a non-Steam game
+Both Return of the King games have two-player co-op on one PC (The Two Towers
+is single-player). A friend can join over the internet by streaming it: only
+your PC needs the game, and your friend's controller arrives as a second
+controller and plays player 2.
+- Parsec (parsec.app): both of you install it. Your friend connects to your
+  PC, and you allow their controller. Works with both games.
+- Steam Remote Play Together: in Steam, add Athelas.exe as a non-Steam game
   ("Add a Game" > "Add a Non-Steam Game"), start it from Steam, then invite a
   friend from the Steam overlay (Shift+Tab). Your friend needs Steam, not the
-  game.
-- Parsec (parsec.app): both of you install it. Your friend connects to your
-  PC, and you allow their controller.
-Start the game as usual from Athelas.exe or Steam, then pick Co-op.
-Your friend sees your screen with a short delay. In the launcher's Controls
-tab, set "Player 2 (co-op)" to "Second controller".
+  game. Steam only promises this for its own games, so if the invite option
+  doesn't appear, use Parsec.
+Then pick Co-op in the game's menu. Your friend sees your screen with a short
+delay. For the PC game, check that "Player 2 (co-op)" on the launcher's
+Controls tab is set to "Second controller" (the default).
 
 
 WIDE AND ULTRAWIDE SCREENS
@@ -231,7 +232,8 @@ The launcher writes ROTKFix.ini in the game folder. You can also edit it in Note
   DrawDistance           Percent of the game's own (50-800) (default 100)
   HUDEdges               Xbox version: 1 = HUD pieces at the screen edges, with WidescreenFix=1 (default 0)
   SharperText            Xbox version: 1 = text, title and main menu with the PC version's larger fonts and
-                         pictures; needs the PC game's Data\Game files in this folder (default 0)
+                         pictures (needs the PC game's Data\Game files in this folder); other menu
+                         pictures scaled up sharply (default 0)
   UseGameBrightness      1 = the game's own brightness option works in every display mode
 
 [Frame]  Frame rate
@@ -311,5 +313,5 @@ ROTKFix\licenses in the game folder once ROTK Fix is set up there)
   Liberation Sans (SIL Open Font License)  letters in the button pictures
   XboxXBE-Recomp (MIT, (c) 2026 TGP482)  runtime in TwoTowers.exe and ROTKXbox.exe
   toml++ (MIT)         settings files in the Xbox ports
-  (the Xbox ports' own lists are in TwoTowers\THIRD_PARTY.txt and ROTKXbox\THIRD_PARTY.txt)
+  (the Xbox ports' own lists are in TT-Xbox\THIRD_PARTY.txt and ROTK-Xbox\THIRD_PARTY.txt)
 ROTK Fix and Athelas are MIT licensed.

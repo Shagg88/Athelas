@@ -23,11 +23,12 @@ This is the first public release.
 - Sharper picture: render scaling, anti-aliasing, texture filtering, sharpening and colour looks (Vulkan through DXVK)
 - The game's 3D sound and EAX reverb restored
 - Modern Xbox, PlayStation and Switch controllers, with remapping and matching button pictures
+- Two-player co-op with two controllers, and online by streaming it with Parsec (or Steam Remote Play Together)
 
 **The Return of the King (Xbox) 1.0.1**
 - Runs natively on PC, up to 240 fps, widescreen and ultrawide
 - Sharp text and menus, using the PC version's larger fonts and pictures when you have it installed
-- Two-player co-op on one screen; online through Parsec or Steam Remote Play Together
+- Two-player co-op on one screen, and online by streaming it with Parsec (or Steam Remote Play Together)
 - Fixes for slowdowns and for enemies vanishing instead of fading at high frame rates
 
 **The Two Towers (Xbox) 1.0.1**

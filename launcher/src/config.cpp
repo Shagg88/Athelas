@@ -456,7 +456,7 @@ static const std::vector<IniSection> &ini_layout()
             { "WidescreenFix", "1", "1 = see more at the sides instead of a stretched picture" },
             { "RenderScale", "100", "Render resolution: % of the resolution the game is drawn at, then fitted to the screen (50-200; above 100 = supersampling)" },
             { "HUDEdges", "0", "Xbox version: 1 = HUD pieces at the screen edges (with WidescreenFix=1)" },
-            { "SharperText", "0", "Xbox version: 1 = text, title and main menu with the PC version's larger fonts and pictures (needs the PC game's Data\\Game files here)" },
+            { "SharperText", "0", "Xbox version: 1 = text, title and main menu with the PC version's larger fonts and pictures (needs the PC game's Data\\Game files here); other menu pictures scaled up sharply" },
             { "FieldOfView", "100", "Percent of the game's own view angle (70-150)" },
             { "DrawDistance", "100", "Percent of the game's own (50-800)" },
             { "UseGameBrightness", nullptr, "1 = the game's own brightness option works in every display mode" },
