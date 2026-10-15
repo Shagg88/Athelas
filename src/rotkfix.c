@@ -1,5 +1,5 @@
 /*
- * ROTK Fix - core (test build 88)
+ * ROTK Fix - core (test build 89)
  *
  * Loaded into The Lord of the Rings: The Return of the King (PC, 2003)
  * through the d3d8.dll and dinput8.dll forwarders in the game folder (the
@@ -314,6 +314,7 @@ static char g_lastFile[96];
 /* Level files: Data\Game\<lvl>\<lvl>NN.scw. Each new one opened is logged, so the
  * rest of the log can be read level by level. */
 volatile LONG g_levelSeq;
+volatile LONG g_inMenuLevel = 1;   /* the front end (Fro03.scw) is loaded, not a playable level */
 static void note_level_file(const char *n)
 {
     static char cur[32];
@@ -329,6 +330,7 @@ static void note_level_file(const char *n)
     if (!lstrcmpiA(b, cur)) return;
     lstrcpynA(cur, b, sizeof cur);
     InterlockedIncrement(&g_levelSeq);
+    g_inMenuLevel = !_strnicmp(b, "fro", 3);
     logf_("level: loading %s", b);
 }
 static HANDLE WINAPI hook_CreateFileA(LPCSTR n, DWORD a, DWORD sh, LPSECURITY_ATTRIBUTES sa, DWORD cd, DWORD fl, HANDLE t)
@@ -1071,7 +1073,7 @@ BOOL WINAPI DllMain(HINSTANCE inst, DWORD reason, LPVOID reserved)
             char lp[MAX_PATH]; path_in_dir(lp, "ROTKFix.log");
             g_log = fopen(lp, "w");
         }
-        logf_("ROTK Fix test build 88 loaded (Limiter=%d TargetFPS=%d Spin=%dus)",
+        logf_("ROTK Fix test build 89 loaded (Limiter=%d TargetFPS=%d Spin=%dus)",
               g_limiterMode, g_targetFps, g_spinUs);
 
         QueryPerformanceFrequency(&g_freq);

@@ -1225,9 +1225,19 @@ static void fade_report(IDirect3DDevice8 *dev, UINT prims, UINT firstV, UINT num
                 cx += xyz[0]; cy += xyz[1]; cz += xyz[2];
             }
             IDirect3DVertexBuffer8_Unlock(g_stream0);
-            if (n && amin < 124 && g_levelSeq > 0) {   /* below the normal 128 (x2 = solid): fading; in a level */
+            /* a fade changes a character's alpha from frame to frame; soft edges (hair, cloaks)
+             * keep theirs. So: in a level (not the menus), log a mesh (same vertex format, vertex
+             * and triangle count) when its average alpha differs from the last time it was drawn. */
+            static DWORD mk[256]; static float ma[256]; static int nm;
+            DWORD mkey = (DWORD)f ^ numV * 977u ^ prims * 131u;
+            float avg = (float)(asum / (n ? n : 1));
+            int changed = 0, slot = -1;
+            for (int i = 0; i < nm; i++) if (mk[i] == mkey) { slot = i; break; }
+            if (slot < 0 && nm < 256) { slot = nm++; mk[slot] = mkey; ma[slot] = avg; changed = amin < 124; }
+            else if (slot >= 0) { changed = fabsf(avg - ma[slot]) >= 0.5f; ma[slot] = avg; }
+            if (n && changed && !g_inMenuLevel) {
                 if (vertFrame != g_presentNo) { vertFrame = g_presentNo; vertInFrame = 0; }
-                if (vertInFrame++ < 4) {
+                if (vertInFrame++ < 6) {
                     cx /= n; cy /= n; cz /= n;
                     /* the vertices may already be in world space; else move the centre by the world matrix */
                     const D3DMATRIX *w = &g_worldM;
