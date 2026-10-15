@@ -108,7 +108,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/cmake/Xb
      target_link_options(${target} PRIVATE -fuse-ld=lld -g)
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/app_headless.cpp /home/claude/tt-port/game/sdk/harness/app_headless.cpp
 --- upstream/harness/app_headless.cpp	2026-10-14 22:35:04.214332397 -0700
-+++ /home/claude/tt-port/game/sdk/harness/app_headless.cpp	2026-10-14 22:14:56.909004275 -0700
++++ /home/claude/tt-port/game/sdk/harness/app_headless.cpp	2026-10-14 22:48:25.439799983 -0700
 @@ -1,4 +1,6 @@
 -// the host side without a window: settings at their defaults, the run folder as the exe folder
 +// the host side without a window: settings from settings.toml in the run folder when there is one (else the
@@ -125,7 +125,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/
  
  namespace app {
  
-@@ -13,13 +16,24 @@
+@@ -13,13 +16,26 @@
      static Settings s;
      return s;
  }
@@ -143,15 +143,17 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/
 +float g_max_frame_aspect = 16.0f / 9.0f;
 +// ASPECT=2.37 (in the environment; TT_ASPECT in older scripts) tests an ultrawide screen
 +float FrameAspect() {
-+    const char* e = std::getenv("ASPECT");
-+    if (!e) e = std::getenv("TT_ASPECT");
-+    float a = e ? float(std::atof(e)) : 16.0f / 9.0f;
++    static const float a = [] {  // read once: this is asked per HUD quad
++        const char* e = std::getenv("ASPECT");
++        if (!e) e = std::getenv("TT_ASPECT");
++        return e ? float(std::atof(e)) : 16.0f / 9.0f;
++    }();
 +    return std::clamp(a, 16.0f / 9.0f, std::max(g_max_frame_aspect, 16.0f / 9.0f));
 +}
  
  std::filesystem::path ExeDir() {
      static const std::filesystem::path dir = std::filesystem::current_path();
-@@ -34,6 +48,33 @@
+@@ -34,6 +50,33 @@
  }
  void* Window() { return nullptr; }
  
@@ -185,7 +187,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/
  bool OpenSplash() { return false; }
  void SplashFirstFrame() {}
  void CloseSplash() {}
-@@ -47,6 +88,20 @@
+@@ -47,6 +90,20 @@
      return m;
  }
  
