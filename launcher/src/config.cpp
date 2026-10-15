@@ -15,12 +15,13 @@
 // ---------------------------------------------------------------------------
 // Presets (graphics quality only; display, frame rate and FOV are left alone)
 
-struct PresetValues { int msaa; int aniso; float lod; int sharpen; int shadows; bool charHigh; int sfx; };
+// sharpText: the Xbox version's sharper text and menus (the PC version's fonts and pictures), on past Original
+struct PresetValues { int msaa; int aniso; float lod; int sharpen; int shadows; bool charHigh; int sfx; bool sharpText; };
 static const PresetValues k_presets[4] = {
-    /* Original */ { 0,  0,  0.0f,  0, 2, true, 2 },
-    /* Balanced */ { 2,  8,  0.0f, 40, 2, true, 2 },
-    /* High     */ { 4, 16, -0.5f, 60, 2, true, 2 },
-    /* Ultra    */ { 8, 16, -0.5f, 80, 2, true, 2 },
+    /* Original */ { 0,  0,  0.0f,  0, 2, true, 2, false },
+    /* Balanced */ { 2,  8,  0.0f, 40, 2, true, 2, true },
+    /* High     */ { 4, 16, -0.5f, 60, 2, true, 2, true },
+    /* Ultra    */ { 8, 16, -0.5f, 80, 2, true, 2, true },
 };
 
 void apply_preset(Settings &s, int p)
@@ -28,7 +29,7 @@ void apply_preset(Settings &s, int p)
     if (p < 0 || p > 3) return;
     const PresetValues &v = k_presets[p];
     s.msaa = v.msaa; s.aniso = v.aniso; s.lodBias = v.lod; s.sharpening = v.sharpen;
-    s.shadows = v.shadows; s.charDetailHigh = v.charHigh; s.sfx = v.sfx;
+    s.shadows = v.shadows; s.charDetailHigh = v.charHigh; s.sfx = v.sfx; s.sharperText = v.sharpText;
     s.preset = p;
 }
 
@@ -37,7 +38,8 @@ int detect_preset(const Settings &s)
     for (int p = 0; p < 4; p++) {
         const PresetValues &v = k_presets[p];
         if (s.msaa == v.msaa && s.aniso == v.aniso && s.lodBias == v.lod &&
-            s.sharpening == v.sharpen && s.shadows == v.shadows && s.charDetailHigh == v.charHigh && s.sfx == v.sfx)
+            s.sharpening == v.sharpen && s.shadows == v.shadows && s.charDetailHigh == v.charHigh && s.sfx == v.sfx &&
+            s.sharperText == v.sharpText)
             return p;
     }
     return PRESET_CUSTOM;
