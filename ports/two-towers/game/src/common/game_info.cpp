@@ -1,7 +1,7 @@
 #include "app/app.h"
 
 #ifndef GAME_VERSION
-#define GAME_VERSION "1.0.0"  // CMakeLists.txt sets it (XBE_VERSION); the headless harness does not
+#define GAME_VERSION "1.0.1"  // CMakeLists.txt sets it (XBE_VERSION); the headless harness does not
 #endif
 
 namespace tt {
