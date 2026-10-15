@@ -88,7 +88,7 @@ WHILE PLAYING
   ]                    Next colour look
 
 
-THE TWO TOWERS (XBOX) - port 1.0.0
+THE TWO TOWERS (XBOX) - port 1.0.1
 ----------------------------------
 An unofficial native PC port of the original Xbox game (US release),
 recompiled for Windows, in the TT-Xbox folder and started from Athelas.
@@ -116,7 +116,7 @@ Reporting a problem: send the log, TT-Xbox\tt.log, and after a crash also
 the newest Game.<date>_<time>.dmp in TT-Xbox\CrashDumps.
 
 
-THE RETURN OF THE KING (XBOX) - port 1.0.0
+THE RETURN OF THE KING (XBOX) - port 1.0.1
 ------------------------------------------
 An unofficial native PC port of the Xbox version, in the ROTK-Xbox folder and
 started from Athelas. It uses the same settings page as the PC version, with
@@ -127,10 +127,12 @@ enemies at high frame rates.
 - Sharper text and menus: if you also have The Return of the King (PC), its
   larger fonts and menu pictures are used (Graphics tab). Not required.
 - Needs Windows 10 or 11 (64-bit) and a Direct3D 12 graphics card.
-- Known issues: loading from an .iso hasn't been tested with a real ROTK disc
-  image yet (extracted folders are). The picture is darker than the PC
-  version because it keeps the Xbox's brightness curve: raise Brightness to
-  about 1.2-1.3 to match.
+- Co-op: two players on one screen, with two controllers. To play it online,
+  one player runs the game and shares it with Parsec (parsec.app) or Steam
+  Remote Play Together (add ROTKXbox.exe to Steam as a non-Steam game); the
+  friend's controller then counts as player 2.
+- Known issue: the picture is darker than the PC version because it keeps the
+  Xbox's brightness curve: raise Brightness to about 1.2-1.3 to match.
 
 Its saves are in ROTK-Xbox\saves.
 

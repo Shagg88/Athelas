@@ -24,12 +24,13 @@ This is the first public release.
 - The game's 3D sound and EAX reverb restored
 - Modern Xbox, PlayStation and Switch controllers, with remapping and matching button pictures
 
-**The Return of the King (Xbox) 1.0.0**
+**The Return of the King (Xbox) 1.0.1**
 - Runs natively on PC, up to 240 fps, widescreen and ultrawide
 - Sharp text and menus, using the PC version's larger fonts and pictures when you have it installed
+- Two-player co-op on one screen; online through Parsec or Steam Remote Play Together
 - Fixes for slowdowns and for enemies vanishing instead of fading at high frame rates
 
-**The Two Towers (Xbox) 1.0.0**
+**The Two Towers (Xbox) 1.0.1**
 - Runs natively on PC: widescreen up to 32:9, up to 240 fps, higher resolutions, HDR
 - Controller remapping and adjustable difficulty
 - Plays as on the Xbox by default; every enhancement is a setting
@@ -58,8 +59,6 @@ The README in the zip has the details.
 
 - Only the US releases are supported. Others warn before starting and will most likely not work.
 - ROTK (Xbox) looks darker than the PC version. That's faithful to the console; Brightness 1.2 to 1.3 matches the PC.
-- Loading a ROTK (Xbox) disc image (`.iso`) hasn't been tested with a real disc image yet; an extracted folder is
-  tested.
 - The files aren't code-signed, so Windows SmartScreen may say "unrecognised app": choose "More info", then
   "Run anyway".
 
