@@ -1,0 +1,114 @@
+--- /home/claude/tt/d3d8.orig.cpp	2026-10-12 12:14:36.578538469 -0700
++++ xdk/d3d8.cpp	2026-10-12 16:57:30.763155471 -0700
+@@ -1,6 +1,7 @@
+ // Direct3D 8 (XDK 5849) entry points the title calls, implemented on the host renderer.
+ // Resource creation, locking and the XG helpers stay recompiled: they only manage memory.
+ #include <algorithm>
++#include <cstdlib>
+ #include <atomic>
+ #include <chrono>
+ #include <map>
+@@ -20,6 +21,10 @@
+ using namespace kernel;
+ 
+ // configs written before the SDK knew the name
++#ifndef SYM_D3DDevice_DrawIndexedVerticesUP
++#define SYM_D3DDevice_DrawIndexedVerticesUP FFFFFE10
++#define HAS_D3DDevice_DrawIndexedVerticesUP 0
++#endif
+ #ifndef SYM_D3DDevice_BeginPush
+ #define SYM_D3DDevice_BeginPush FFFFFE00
+ #define HAS_D3DDevice_BeginPush 0
+@@ -48,7 +53,11 @@
+ #ifndef XBE_RENDER_THREAD
+ #define XBE_RENDER_THREAD 1
+ #endif
+-constexpr bool kRenderThread = XBE_RENDER_THREAD;
++// XBE_RENDER_THREAD=0 or 1 in the environment overrides the build's choice, to compare the two without a rebuild
++const bool kRenderThread = [] {
++    const char* e = std::getenv("XBE_RENDER_THREAD");
++    return e ? e[0] != '0' : bool(XBE_RENDER_THREAD);
++}();
+ 
+ // D3D globals of this build
+ constexpr uint32_t kDevice = SYM(D3D_Device);        // the static CDevice, g_pDevice points at it
+@@ -79,6 +88,7 @@
+ std::unordered_map<uint32_t, std::shared_ptr<gpu::PixelShader>> g_ps;
+ std::array<uint32_t, 3> g_buffers{};  // front, back surfaces
+ uint32_t g_buffer_count = 2;
++bool g_title_surfaces = false;  // the color buffers came from the title's present params
+ uint32_t g_depth = 0;
+ uint32_t g_scratch_push = 0, g_scratch_size = 0;
+ uint32_t g_walk = 0;  // first scratch command not read yet
+@@ -274,12 +284,21 @@
+ 
+     uint32_t color_fmt = gpu::LinearColorFormat(fmt);
+     g_buffer_count = std::min<uint32_t>(count + 1, 3);
+-    for (uint32_t i = 0; i < g_buffer_count; i++) g_buffers[i] = NewSurface(w, h, color_fmt, 4);
+-    g_depth = 0;
+-    if (auto_depth) {
++    // BufferSurfaces[3] (+0x34) and DepthStencilSurface (+0x40): a title may hand the device its own surfaces, which
++    // it then draws into and keeps pointers to (The Two Towers, XDK 4928); the XDK uses them instead of allocating
++    uint32_t own = 0;
++    for (uint32_t i = 0; i < g_buffer_count; i++) {
++        uint32_t t = R32(pp + 0x34 + 4 * i);
++        g_buffers[i] = t ? t : NewSurface(w, h, color_fmt, 4);
++        own += t != 0;
++    }
++    g_title_surfaces = own == g_buffer_count;
++    g_depth = R32(pp + 0x40);
++    if (!g_depth && auto_depth) {
+         uint32_t zf = gpu::LinearDepthFormat(depth_fmt);
+         g_depth = NewSurface(w, h, zf, zf == 0x30 || zf == 0x31 ? 2 : 4);  // 0x30 LIN_D16, 0x31 LIN_F16
+     }
++    if (own || R32(pp + 0x40)) LOGI("d3d: title surfaces: %u color buffers, depth %08X", own, R32(pp + 0x40));
+     if (!g_backend) {
+         g_backend = gpu::CreateBackend();
+         if (!g_backend->Init(w, h)) LOGE("d3d: renderer init failed");
+@@ -511,6 +530,22 @@
+     }
+     if (g_backend) g_backend->Present(SurfaceOf(g_buffers[1]));
+     app::Pace();
++    if (g_title_surfaces) {
++        // surfaces the title supplied (present params +0x34): the title tracks which one is the back buffer itself
++        // (The Two Towers flips an index at each Swap and picks its surface by it), so the surfaces rotate, not their
++        // memory. The presented back buffer becomes the front buffer, and a render target set to the old
++        // back buffer follows to the new one, as the XDK does.
++        uint32_t old_back = g_buffers[1], first = g_buffers[0];
++        for (uint32_t i = 0; i + 1 < g_buffer_count; i++) g_buffers[i] = g_buffers[i + 1];
++        g_buffers[g_buffer_count - 1] = first;
++        if (Dev(kDevRenderTarget) == old_back) SetDev(kDevRenderTarget, g_buffers[1]);
++        SetDev(kDevBackBuffer, g_buffers[1]);
++        SetDev(kDevFrontBuffer, g_buffers[0]);
++        g_state.rt = SurfaceOf(Dev(kDevRenderTarget));
++        uint32_t n = Dev(kDevSwapCount) + 1;
++        SetDev(kDevSwapCount, n);
++        return n;
++    }
+     // like the XDK, the surfaces stay put and their memory rotates: titles keep back buffer pointers and copy its data
+     uint32_t last = g_buffers[g_buffer_count - 1], data = R32(last + 4), lk = R32(last + 8);
+     for (uint32_t i = g_buffer_count - 1; i > 0; i--) {
+@@ -1097,6 +1132,23 @@
+     return 0;
+ }
+ 
++// DrawIndexedVerticesUP(prim, index count, 16-bit indices, vertices, stride): the vertices the indices reach are
++// copied to the UP ring like DrawVerticesUP's, then drawn indexed (XDK 4928, The Two Towers)
++HLE_STDCALL(D3DDevice_DrawIndexedVerticesUP, 5) {
++    std::lock_guard<std::recursive_mutex> lock(g_lock);
++    uint32_t count = a[1], stride = a[4];
++    if (!g_backend || !count || !stride || !a[2] || !a[3]) return 0;
++    const uint16_t* idx = static_cast<const uint16_t*>(HostPtr(a[2]));
++    uint32_t top = 0;
++    for (uint32_t i = 0; i < count; i++) top = std::max<uint32_t>(top, idx[i]);
++    SyncDeferred();
++    auto stream = g_state.streams[0];
++    g_state.streams[0] = {UpVertices(HostPtr(a[3]), (top + 1) * stride), stride};
++    g_backend->Draw(g_state, a[0], 0, count, reinterpret_cast<const uint8_t*>(idx));
++    g_state.streams[0] = stream;
++    return 0;
++}
++
+ // BeginPush(dwords) hands out room for raw hardware commands, EndPush(end) runs what the title wrote there:
+ // a primitive between two begin/end writes with its vertices inline, any other method as a simple state.
+ HLE_STDCALL(D3DDevice_BeginPush, 1) {

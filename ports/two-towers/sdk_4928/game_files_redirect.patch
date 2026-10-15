@@ -1,0 +1,20 @@
+--- /home/claude/tt/game_files.orig.cpp	2026-10-12 12:48:00.868168897 -0700
++++ sdk/runtime/app/game_files.cpp	2026-10-12 12:48:00.923163641 -0700
+@@ -31,7 +31,16 @@
+     auto dir = ExeDir();
+     std::error_code ec;
+     for (int i = 0; i < 6; i++) {
+-        if (fs::is_directory(dir / "assets", ec)) return dir / "assets";
++        if (fs::is_directory(dir / "assets", ec)) {
++            // assets/redirect.txt: one line naming the folder that holds the game, so a dump elsewhere is used in place
++            std::ifstream r(dir / "assets" / "redirect.txt");
++            std::string line;
++            if (r && std::getline(r, line)) {
++                while (!line.empty() && (line.back() == '\r' || line.back() == ' ')) line.pop_back();
++                if (!line.empty() && fs::is_directory(fs::path(line), ec)) return fs::path(line);
++            }
++            return dir / "assets";
++        }
+         if (!dir.has_parent_path() || dir.parent_path() == dir) break;
+         dir = dir.parent_path();
+     }

@@ -1,0 +1,338 @@
+--- a/xdk/d3d8.cpp
++++ b/xdk/d3d8.cpp
+@@ -82,6 +82,7 @@
+ 
+ gpu::State g_state;
+ std::unique_ptr<gpu::Backend> g_backend;
++uint32_t g_screen_pixels = 640 * 480;  // the back buffer's, for visibility tests a backend cannot count
+ std::recursive_mutex g_lock;
+ 
+ std::unordered_map<uint32_t, std::shared_ptr<gpu::VertexShader>> g_vs;
+@@ -306,6 +307,7 @@
+     }
+     g_state = gpu::State{};
+     g_state.viewport = {0, 0, w, h, 0.0f, 1.0f};
++    g_screen_pixels = w * h;
+     SetDev(kDevRenderTarget, g_buffers[1]);
+     SetDev(kDevDepth, g_depth);
+     SetDev(kDevBackBuffer, g_buffers[1]);
+@@ -963,6 +965,42 @@
+ 
+ // drawing
+ 
++// Visibility tests: the pixels drawn between Begin and End(index) that pass the depth and stencil tests, read back a
++// frame or more later by index, as the console's GPU reports them. Before a test has finished it reads as nothing
++// visible, with D3DERR_TESTINCOMPLETE, so a flare or glow fades in rather than flashing on.
++HLE_STDCALL(D3DDevice_BeginVisibilityTest, 0) {
++    std::lock_guard<std::recursive_mutex> lock(g_lock);
++    SyncDeferred();
++    if (g_backend) g_backend->BeginQuery();
++    return 0;
++}
++HLE_STDCALL(D3DDevice_EndVisibilityTest, 1) {
++    std::lock_guard<std::recursive_mutex> lock(g_lock);
++    if (g_backend) g_backend->EndQuery(a[0]);
++    return 0;
++}
++// (index, pixel count out, timestamp out)
++HLE_STDCALL(D3DDevice_GetVisibilityTestResult, 3) {
++    constexpr uint32_t kTestIncomplete = 0x88760834;  // MAKE_D3DHRESULT(2100)
++    uint32_t pixels = 0;
++    bool done;
++    {
++        std::lock_guard<std::recursive_mutex> lock(g_lock);
++        // a backend without queries: everything visible, as before tests were counted
++        done = g_backend && g_backend->QueryResult(a[0], pixels);
++        if (!g_backend || !g_backend->Queries()) {
++            pixels = g_screen_pixels;
++            done = true;
++        }
++    }
++    if (a[1]) W32(a[1], pixels);
++    if (a[2]) {
++        W32(a[2], 0);
++        W32(a[2] + 4, 0);
++    }
++    return done ? 0 : kTestIncomplete;
++}
++
+ HLE_STDCALL(D3DDevice_DrawVertices, 3) {
+     std::lock_guard<std::recursive_mutex> lock(g_lock);
+     SyncDeferred();
+--- a/gpu/d3d12.cpp
++++ b/gpu/d3d12.cpp
+@@ -441,6 +441,10 @@
+     void RecordLate(uint32_t data) override;
+     void Flush() override;
+     void SetGamma(const uint8_t* ramp) override;
++    void BeginQuery() override;
++    void EndQuery(uint32_t index) override;
++    bool QueryResult(uint32_t index, uint32_t& pixels) override;
++    bool Queries() const override { return !query_failed_; }
+ 
+     ID3D12Device* Device() override { return dev_.Get(); }
+     ID3D12GraphicsCommandList* List() override { return cl_.Get(); }
+@@ -729,6 +733,27 @@
+     };
+     std::unordered_map<uint32_t, Late> late_;
+     std::mutex late_lock_;                      // DeliverLate runs on the title's thread
++
++    // visibility tests: occlusion queries from a ring of entries, resolved into one readback buffer, 8 bytes an
++    // entry. Each title index keeps its last few entries, so a result a few frames old is there while newer ones run.
++    static constexpr uint32_t kQueryEntries = 1024, kQueryIndexes = 256, kQueryRing = 4;
++    struct QuerySlot {
++        uint32_t entry[kQueryRing] = {};
++        uint64_t fence[kQueryRing] = {};  // the submit that carries the entry's resolve, 0 for none
++        float ratio[kQueryRing] = {};     // the title's pixels over ours on the target drawn to
++        uint32_t next = 0, pixels = 0;
++        uint64_t got = 0;  // the fence of the result in pixels
++        bool have = false;
++    };
++    bool EnsureQueries();
++    ComPtr<ID3D12QueryHeap> query_heap_;
++    ComPtr<ID3D12Resource> query_rb_;
++    const uint64_t* query_map_ = nullptr;
++    bool query_failed_ = false;
++    QuerySlot queries_[kQueryIndexes];
++    uint32_t query_next_ = 0;    // the entry the next test takes
++    int64_t query_active_ = -1;  // the entry begun on the open command list
++    std::mutex query_lock_;      // QueryResult runs on the title's thread
+     std::atomic<uint64_t> presents_seen_{0};    // presents_ for DeliverLate
+     Assembled asm_;  // kept between draws for its buffers
+     bool tearing_ = false;
+@@ -905,9 +930,12 @@
+     cl_->SetDescriptorHeaps(2, heaps);
+     cl_->SetGraphicsRootSignature(root_.Get());
+     bound_rt_ = bound_ds_ = nullptr;
++    // a test open when the last list was closed goes on in this one; what it counted there is dropped
++    if (query_active_ >= 0) cl_->BeginQuery(query_heap_.Get(), D3D12_QUERY_TYPE_OCCLUSION, UINT(query_active_));
+ }
+ 
+ void D3D12Backend::Submit(bool wait) {
++    if (query_active_ >= 0) cl_->EndQuery(query_heap_.Get(), D3D12_QUERY_TYPE_OCCLUSION, UINT(query_active_));
+     cl_->Close();
+     ID3D12CommandList* lists[] = {cl_.Get()};
+     queue_->ExecuteCommandLists(1, lists);
+@@ -927,6 +955,71 @@
+ 
+ void D3D12Backend::Flush() { Submit(true); }
+ 
++bool D3D12Backend::EnsureQueries() {
++    if (query_heap_) return true;
++    if (query_failed_) return false;
++    D3D12_QUERY_HEAP_DESC qd{D3D12_QUERY_HEAP_TYPE_OCCLUSION, kQueryEntries, 0};
++    D3D12_HEAP_PROPERTIES hp{D3D12_HEAP_TYPE_READBACK};
++    D3D12_RESOURCE_DESC bd = BufferDesc(uint64_t(kQueryEntries) * 8);
++    void* map = nullptr;
++    D3D12_RANGE all{0, size_t(kQueryEntries) * 8};
++    if (FAILED(dev_->CreateQueryHeap(&qd, IID_PPV_ARGS(&query_heap_))) ||
++        FAILED(dev_->CreateCommittedResource(&hp, D3D12_HEAP_FLAG_NONE, &bd, D3D12_RESOURCE_STATE_COPY_DEST, nullptr,
++                                             IID_PPV_ARGS(&query_rb_))) ||
++        FAILED(query_rb_->Map(0, &all, &map))) {
++        LOGE("d3d12: occlusion queries unavailable, visibility tests read as fully visible");
++        query_heap_.Reset();
++        query_rb_.Reset();
++        query_failed_ = true;
++        return false;
++    }
++    query_map_ = static_cast<const uint64_t*>(map);
++    return true;
++}
++
++void D3D12Backend::BeginQuery() {
++    if (!EnsureQueries()) return;
++    if (query_active_ >= 0) cl_->EndQuery(query_heap_.Get(), D3D12_QUERY_TYPE_OCCLUSION, UINT(query_active_));  // left unnamed
++    query_active_ = query_next_;
++    query_next_ = (query_next_ + 1) % kQueryEntries;
++    cl_->BeginQuery(query_heap_.Get(), D3D12_QUERY_TYPE_OCCLUSION, UINT(query_active_));
++}
++
++void D3D12Backend::EndQuery(uint32_t index) {
++    if (query_active_ < 0) return;
++    UINT e = UINT(query_active_);
++    cl_->EndQuery(query_heap_.Get(), D3D12_QUERY_TYPE_OCCLUSION, e);
++    cl_->ResolveQueryData(query_heap_.Get(), D3D12_QUERY_TYPE_OCCLUSION, e, 1, query_rb_.Get(), uint64_t(e) * 8);
++    query_active_ = -1;
++    // counted at our resolution on the target the test drew to, given back in the title's
++    const Target* t = bound_ds_ ? bound_ds_ : bound_rt_;
++    float ratio = t && t->w && t->h ? float(t->gw) * t->gh / (float(t->w) * t->h) : 1 / (scale_ * scale_);
++    std::lock_guard lock(query_lock_);
++    QuerySlot& q = queries_[index % kQueryIndexes];
++    q.entry[q.next] = e;
++    q.fence[q.next] = fence_value_ + 1;  // the next Submit carries it
++    q.ratio[q.next] = ratio;
++    q.next = (q.next + 1) % kQueryRing;
++}
++
++bool D3D12Backend::QueryResult(uint32_t index, uint32_t& pixels) {
++    if (!query_map_) return false;
++    uint64_t done = fence_->GetCompletedValue();
++    std::lock_guard lock(query_lock_);
++    QuerySlot& q = queries_[index % kQueryIndexes];
++    int best = -1;
++    for (uint32_t i = 0; i < kQueryRing; i++)
++        if (q.fence[i] && q.fence[i] <= done && q.fence[i] > q.got && (best < 0 || q.fence[i] > q.fence[best])) best = int(i);
++    if (best >= 0) {
++        uint64_t raw = query_map_[q.entry[best]];
++        q.pixels = uint32_t(std::min<double>(std::round(double(raw) * q.ratio[best]), 4294967295.0));
++        q.got = q.fence[best];
++        q.have = true;
++    }
++    pixels = q.pixels;
++    return q.have;
++}
++
+ void D3D12Backend::WaitFence(uint64_t value) {
+     fence_->SetEventOnCompletion(value, event_);
+     WaitForSingleObject(event_, INFINITE);
+--- a/gpu/backend.h
++++ b/gpu/backend.h
+@@ -38,6 +38,14 @@
+     virtual void Flush() = 0;
+     virtual void SetGamma(const uint8_t* ramp /*3 x 256*/) = 0;
+ 
++    // the XDK's visibility tests: the pixels drawn that pass the depth and stencil tests between Begin and End, which
++    // names the test. QueryResult gives the newest finished count for the index, in the title's pixels; false while
++    // none has finished. Read from the title's thread while the draws go on.
++    virtual void BeginQuery() {}
++    virtual void EndQuery(uint32_t /*index*/) {}
++    virtual bool QueryResult(uint32_t /*index*/, uint32_t& /*pixels*/) { return false; }
++    virtual bool Queries() const { return false; }  // counts them at all
++
+     // the XDK's fences and busy checks against the render thread; a backend that draws at once is never behind
+     virtual uint32_t Fence() { return ++fence_; }
+     virtual bool FencePending(uint32_t) { return false; }
+--- a/gpu/render_thread.cpp
++++ b/gpu/render_thread.cpp
+@@ -41,7 +41,7 @@
+ 
+ enum class WaitFor : uint8_t { ReadBack, Resource, Fence, Flush, Copy, Frame, Count };
+ 
+-enum class Op : uint8_t { State, Draw, Clear, Copy, Present, Sync, RecordLate, Flush, Gamma };
++enum class Op : uint8_t { State, Draw, Clear, Copy, Present, Sync, RecordLate, Flush, Gamma, Query };
+ 
+ struct Cmd {
+     Op op;
+@@ -212,6 +212,12 @@
+         cur_->cmds.push_back(c);
+     }
+ 
++    // in order with the draws; the result straight from the inner backend, which keeps its own lock for it
++    void BeginQuery() override { Query(0, 1); }
++    void EndQuery(uint32_t index) override { Query(index, 0); }
++    bool QueryResult(uint32_t index, uint32_t& pixels) override { return inner_->QueryResult(index, pixels); }
++    bool Queries() const override { return inner_->Queries(); }
++
+     uint32_t Fence() override { return uint32_t(cur_->id); }
+     bool FencePending(uint32_t fence) override { return fence > done_.load(); }
+     void WaitFence(uint32_t fence) override { Wait(fence, WaitFor::Fence, "fence"); }
+@@ -225,6 +231,13 @@
+     }
+ 
+ private:
++    void Query(uint32_t index, uint32_t begin) {
++        Cmd c{Op::Query};
++        c.a = index;
++        c.b = begin;
++        cur_->cmds.push_back(c);
++    }
++
+     Batch* NewBatch() {
+         Batch* b;
+         {
+@@ -431,6 +444,10 @@
+             case Op::RecordLate: inner_->RecordLate(c.a); break;
+             case Op::Flush: inner_->Flush(); break;
+             case Op::Gamma: inner_->SetGamma(data); break;
++            case Op::Query:
++                if (c.b) inner_->BeginQuery();
++                else inner_->EndQuery(c.a);
++                break;
+         }
+     }
+ 
+--- a/harness/null_backend.cpp
++++ b/harness/null_backend.cpp
+@@ -5,6 +5,7 @@
+ #include <cstdio>
+ #include <cstring>
+ #include <filesystem>
++#include <map>
+ #include <string>
+ 
+ #include "app/app.h"
+@@ -71,6 +72,24 @@
+     void SyncLate(uint32_t) override {}
+     void Flush() override {}
+     void SetGamma(const uint8_t*) override {}
++    // counted only when every frame is drawn (REF=1); otherwise the SDK reads everything as visible
++    bool Queries() const override { return harness::Env("REF") == 1; }
++    void BeginQuery() override {
++        query_from_ = reference::Passed();
++        if (++tests_ == 1 || tests_ % 1000 == 0) LOGI("query: %llu visibility tests by frame %llu", tests_, frames_);
++    }
++    void EndQuery(uint32_t index) override {
++        uint32_t n = uint32_t(reference::Passed() - query_from_);
++        results_[index] = n;
++        static const bool log = harness::Env("QUERY_LOG");
++        if (log) LOGI("query: frame %llu test %u: %u pixels", frames_, index, n);
++    }
++    bool QueryResult(uint32_t index, uint32_t& pixels) override {
++        auto it = results_.find(index);
++        if (it == results_.end()) return false;
++        pixels = it->second;
++        return true;
++    }
+ 
+ private:
+     static std::string File(const char* fmt, unsigned long long n) {
+@@ -128,6 +147,9 @@
+     bool drawing_ = false;
+     int snap_ = 0;
+     FILE* list_ = nullptr;
++    uint64_t query_from_ = 0;
++    unsigned long long tests_ = 0;
++    std::map<uint32_t, uint32_t> results_;
+ };
+ 
+ }  // namespace
+--- a/harness/reference_renderer.cpp
++++ b/harness/reference_renderer.cpp
+@@ -23,6 +23,9 @@
+ 
+ namespace reference {
+ 
++uint64_t g_passed = 0;  // pixels past the depth and stencil tests, for visibility tests
++
++
+ using namespace gpu;
+ 
+ namespace {
+@@ -992,6 +995,8 @@
+     g_draws = 0;
+ }
+ 
++uint64_t Passed() { return g_passed; }
++
+ void Clear(const State& s, uint32_t count, const uint8_t* rects, uint32_t flags, uint32_t color, float z, uint32_t stencil) {
+     Plane rt = OpenPlane(s.rt), zs = OpenPlane(s.zs);
+     // the given rects, else the viewport
+@@ -1272,6 +1277,7 @@
+                         if (stencil) zs.StoreDepth(uint32_t(x), uint32_t(y), oz, stencil_op(op_zfail));
+                         continue;
+                     }
++                    g_passed++;
+                     if (zs.ok && (zwrite || stencil)) zs.StoreDepth(uint32_t(x), uint32_t(y), zwrite ? zi : oz, stencil ? stencil_op(op_pass) : os);
+                     if (!rt.ok || !cmask) continue;
+                     for (int j = 0; j < 4; j++) col[j] = Sat(col[j]);
+--- a/harness/reference_renderer.h
++++ b/harness/reference_renderer.h
+@@ -11,6 +11,8 @@
+ void Clear(const gpu::State& s, uint32_t count, const uint8_t* rects, uint32_t flags, uint32_t color, float z, uint32_t stencil);
+ void Copy(const gpu::Surface& src, const gpu::Surface& dst, uint32_t count, uint32_t rects_va, uint32_t points_va);
+ void Draw(const gpu::State& s, uint32_t prim, uint32_t start, uint32_t count, const uint8_t* indices);
++// pixels drawn so far that passed the depth and stencil tests
++uint64_t Passed();
+ // 24 bit TGA of a surface's colour
+ bool WriteTga(const gpu::Surface& s, const char* path);
+ 

@@ -1,0 +1,10 @@
+# gameplay from about frame 400 with the fast data; hold each candidate and press A partway
+600 LT 90
+640 LT+A 8
+800 BLACK 90
+840 BLACK+A 8
+1000 WHITE 90
+1040 WHITE+A 8
+1200 RT 90
+1240 RT+A 8
+1400 Y 8

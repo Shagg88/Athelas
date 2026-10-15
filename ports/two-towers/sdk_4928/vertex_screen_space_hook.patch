@@ -1,0 +1,83 @@
+--- /home/claude/tt/vertex.orig.cpp	2026-10-12 15:08:23.934192617 -0700
++++ gpu/vertex.cpp	2026-10-12 16:19:52.571814010 -0700
+@@ -6,6 +6,7 @@
+ #include <dxgiformat.h>
+ 
+ #include "core/log.h"
++#include "gpu/texture.h"
+ #include "kernel/kernel.h"
+ 
+ namespace gpu {
+@@ -440,6 +441,36 @@
+     vs.stream_stride[0] = off;
+ }
+ 
++ScreenSpaceHook g_screen_space_hook = nullptr;
++ScreenSpacePlace g_screen_space_place = nullptr;
++
++namespace {
++// x of the position register (v0, screen pixels) pulled towards the target's centre by f; a draw as wide as the
++// target (fades, full screen passes, backgrounds) is left alone
++void SqueezeScreenX(const State& s, const int* regs, int nregs, float f, Assembled& out) {
++    int k = 0;
++    while (k < nregs && regs[k] != 0) k++;
++    if (k == nregs || !out.vertex_count) return;
++    uint32_t w, h;
++    SurfaceSize(s.rt, w, h);
++    float lo = 1e30f, hi = -1e30f, ylo = 1e30f, yhi = -1e30f;
++    for (uint32_t v = 0; v < out.vertex_count; v++) {
++        const float* p = &out.vertices[(size_t(v) * nregs + k) * 4];
++        lo = std::min(lo, p[0]);
++        hi = std::max(hi, p[0]);
++        ylo = std::min(ylo, p[1]);
++        yhi = std::max(yhi, p[1]);
++    }
++    if (hi - lo >= 0.9f * float(w)) return;
++    float a = f, b = float(w) / 2 * (1 - f);
++    if (g_screen_space_place) g_screen_space_place(lo, hi, ylo, yhi, float(w), f, a, b);
++    for (uint32_t v = 0; v < out.vertex_count; v++) {
++        float& x = out.vertices[(size_t(v) * nregs + k) * 4];
++        x = a * x + b;
++    }
++}
++}  // namespace
++
+ bool Assemble(const State& s, uint32_t prim, uint32_t start, uint32_t count, const uint8_t* ip, Assembled& out) {
+     ResetAssembled(out);
+     if (!count || prim < 1 || prim > 10) return false;
+@@ -466,10 +497,14 @@
+     if (!nregs) return false;
+     Inputs inputs = {*layout, regs, nregs};
+ 
++    // a game's screen space squeeze (a 4:3 HUD kept in proportion on a 16:9 display) needs its own copy to change
++    float squeeze = g_screen_space_hook ? g_screen_space_hook(s) : 1.0f;
+     // the guest's own vertices when the input assembler can read every element of them
+-    bool raw = kRawVertices && RawReadable(s, inputs);
++    bool raw = kRawVertices && squeeze == 1.0f && RawReadable(s, inputs);
+     if (raw) return AssembleRaw(s, inputs, d, out);
+-    return AssembleConverted(s, inputs, d, out);
++    bool ok = AssembleConverted(s, inputs, d, out);
++    if (ok && squeeze != 1.0f) SqueezeScreenX(s, regs, nregs, squeeze, out);
++    return ok;
+ }
+ 
+ }  // namespace gpu
+--- /home/claude/tt/vertex.orig.h	2026-10-12 15:13:58.030132264 -0700
++++ gpu/vertex.h	2026-10-12 16:19:52.571394013 -0700
+@@ -55,6 +55,16 @@
+ // the FVF bits translated to the register layout the XDK's declarations use
+ void FvfInputs(uint32_t fvf, VertexShader& out);
+ 
++// for a draw, how much a game wants its screen space x (v0, pixels) pulled towards the target's centre: 1 leaves
++// it, 0.75 fits a 4:3 layout into the middle of a 16:9 picture. Set by game code; null for none.
++using ScreenSpaceHook = float (*)(const State& s);
++extern ScreenSpaceHook g_screen_space_hook;
++// where a squeezed draw goes: given its x and y extent (pixels), the target width and the squeeze, the game sets
++// x' = a * x + b. Null, or not set: pulled towards the centre (a = squeeze, b = width / 2 * (1 - squeeze)).
++using ScreenSpacePlace = void (*)(float x0, float x1, float y0, float y1, float width, float squeeze, float& a,
++                                  float& b);
++extern ScreenSpacePlace g_screen_space_place;
++
+ // false when there is nothing to draw
+ // indices: the title's 16 bit indices, null for an unindexed draw
+ bool Assemble(const State& s, uint32_t prim, uint32_t start, uint32_t count, const uint8_t* indices, Assembled& out);

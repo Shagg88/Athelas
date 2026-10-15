@@ -1,0 +1,11 @@
+
+# ---- The Two Towers hooks (appended to game.toml by the config build) ----
+[[hook]]                   # XACT clock: APU sample counter read [0xFE80200C]
+at = 0x00137B30
+call = "TT_ApuSampleCounter"
+on_true = 0x00137B35
+
+[[hook]]                   # XapiInitProcess: failed disc authentication -> continue instead of rebooting to dashboard
+at = 0x000FE4C4
+call = "TT_DiscCheckFailed"
+on_true = 0x000FE4C9

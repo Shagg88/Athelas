@@ -1,0 +1,41 @@
+--- /home/claude/tt/app.orig.h	2026-10-12 15:42:23.382190283 -0700
++++ app/app.h	2026-10-12 18:19:27.203303880 -0700
+@@ -23,6 +23,8 @@
+     bool vsync = true;
+     uint32_t aniso = 0;              // 0 as the game asks
+     std::string join_ip;                   // co-op: a host past the LAN the system link search also asks
++    bool widescreen = false;               // 16:9 picture on a wide display; false keeps the console's 4:3 with side bars
++    bool texture_dump = false;             // write each texture as it is first seen to textures/dump (texture packs)
+ };
+ 
+ Settings& Get();
+--- /home/claude/tt/settings.orig.cpp	2026-10-12 15:42:23.383939941 -0700
++++ app/settings.cpp	2026-10-12 18:19:27.203567881 -0700
+@@ -50,6 +50,8 @@
+     s.vsync = t["vsync"].value_or(s.vsync);
+     s.aniso = t["anisotropic_filtering"].value_or(s.aniso);
+     s.join_ip = t["join_ip"].value_or(s.join_ip);
++    s.texture_dump = t["texture_dump"].value_or(s.texture_dump);
++    s.widescreen = t["widescreen"].value_or(s.widescreen);
+     for (const Option& o : kGame.options) {
+         if (o.flag) *o.flag = t[o.key].value_or(*o.flag);
+         else *o.value = t[o.key].value_or(*o.value);
+@@ -68,7 +70,9 @@
+                   {"fps_cap", int64_t(s.fps_cap)},
+                   {"vsync", s.vsync},
+                   {"anisotropic_filtering", int64_t(s.aniso)},
+-                  {"join_ip", s.join_ip}};
++                  {"join_ip", s.join_ip},
++                  {"texture_dump", s.texture_dump},
++                  {"widescreen", s.widescreen}};
+     for (const Option& o : kGame.options) {
+         if (o.flag) t.insert(o.key, *o.flag);
+         else t.insert(o.key, int64_t(*o.value));
+@@ -115,6 +119,7 @@
+     static std::atomic<uint64_t> key{~0ull};
+     static std::atomic<bool> wide{true};
+     const Settings& s = Get();
++    if (!s.widescreen) return false;  // the console's 4:3, side bars on a wide display
+     uint64_t k = uint64_t(s.width) << 32 | s.height;
+     if (key.exchange(k) != k) {
+         Mode m = Output();
