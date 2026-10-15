@@ -53,7 +53,9 @@ static int  g_movieSharpPct = 70;   /* [Video] SharperMovies: cutscene sharpenin
 static int  g_hudSharpPct = 0;      /* HUD and menu pictures sharpened at their own pixel size; set from the resolution */
 static int  g_sharpenOn = 1;        /* [Graphics] Sharpening > 0 */
 static int  g_projPersp;      /* current projection is perspective (3D) */
-static int  g_alphaEdges = 1;  /* smooth cut-out (alpha-tested) edges with MSAA: per-sample shading */
+static int  g_alphaEdges = 1;  /* smooth cut-out (alpha-tested) edges with MSAA (see coverage_draw) */
+static int  g_edgesPerSample;  /* [Graphics] AlphaEdgeMethod = persample: the older way, every pixel shaded per sample */
+static int  g_msActive;        /* MSAA samples the device really has (0 = none) */
 static int  g_drawPct = 100;    /* [Graphics] DrawDistance: far clip plane and fog, percent of the game's */
 static int  g_renderPct = 100;  /* [Graphics] RenderScale: the game draws at this share of the chosen size; DXVK fits it to the screen */
 
@@ -102,6 +104,11 @@ void graphics_load_settings(const char *ini)
     if (g_fovPct < 70) g_fovPct = 70;
     if (g_fovPct > 150) g_fovPct = 150;
     g_alphaEdges = GetPrivateProfileIntA("Graphics", "AlphaEdgeSmoothing", 1, ini);
+    {
+        char m[16];
+        GetPrivateProfileStringA("Graphics", "AlphaEdgeMethod", "coverage", m, sizeof m, ini);
+        g_edgesPerSample = !_stricmp(m, "persample");
+    }
     g_renderPct = GetPrivateProfileIntA("Graphics", "RenderScale", 100, ini);
     if (g_renderPct < 50) g_renderPct = 50;
     if (g_renderPct > 200) g_renderPct = 200;      /* a 32-bit game: larger pictures risk running out of memory */
@@ -133,12 +140,18 @@ static void write_dxvk_conf(const char *dir)
     fputs("# Written by ROTK Fix at every launch from ROTKFix.ini - edit ROTKFix.ini instead.\n", f);
     if (g_aniso > 0) fprintf(f, "d3d9.samplerAnisotropy = %d\n", g_aniso);
     if (g_lodBias != 0.0f) fprintf(f, "d3d9.samplerLodBias = %.2f\n", g_lodBias);
-    /* With MSAA, shade every sample so cut-out textures (leaves, grass,
-     * fences) get smooth edges too. Direct3D 8 games can't use DXVK's
-     * alpha-to-coverage, but this works for them. */
+    /* Smooth edges on cut-out textures (leaves, grass, fences) with MSAA. Direct3D 8
+     * games can't use DXVK's alpha-to-coverage, so ROTK Fix draws those (and only
+     * those) in a few passes over groups of samples instead (coverage_draw). The
+     * older way shades every sample of every pixel: the same edges at several
+     * times the GPU work. */
     if (g_alphaEdges && g_msaa > 0) {
-        fputs("d3d9.forceSampleRateShading = True\n", f);
-        logf_("graphics: smoothing cut-out edges (per-sample shading with %dx MSAA)", g_msaa);
+        if (g_edgesPerSample) {
+            fputs("d3d9.forceSampleRateShading = True\n", f);
+            logf_("graphics: smoothing cut-out edges (per-sample shading with %dx MSAA)", g_msaa);
+        } else {
+            logf_("graphics: smoothing cut-out edges (coverage passes with %dx MSAA, cut-out draws only)", g_msaa);
+        }
     }
     /* V-Sync in every display mode (borderless/windowed included) */
     fprintf(f, "d3d9.presentInterval = %d\n", g_vsync ? 1 : 0);
@@ -337,10 +350,12 @@ static void fix_present_params(D3DPRESENT_PARAMETERS *pp, IDirect3D8 *real, UINT
         pp->FullScreen_PresentationInterval = 0;   /* must be 0 when windowed */
         if (pp->SwapEffect == D3DSWAPEFFECT_FLIP) pp->SwapEffect = D3DSWAPEFFECT_DISCARD;
     }
+    g_msActive = 0;
     if (g_msaa) {
         D3DMULTISAMPLE_TYPE t = (D3DMULTISAMPLE_TYPE)g_msaa;
         if (SUCCEEDED(IDirect3D8_CheckDeviceMultiSampleType(real, adapter, D3DDEVTYPE_HAL, pp->BackBufferFormat, pp->Windowed, t))) {
             pp->MultiSampleType = t;
+            g_msActive = g_msaa;
             pp->SwapEffect = D3DSWAPEFFECT_DISCARD;
             pp->Flags &= ~D3DPRESENTFLAG_LOCKABLE_BACKBUFFER;
         } else {
@@ -416,9 +431,18 @@ static DWORD fog_scaled(D3DRENDERSTATETYPE s, DWORD v)
     return v;
 }
 
+/* alpha test and blend state, for coverage_draw */
+static DWORD g_aTest, g_aBlend, g_aRef, g_aFunc = D3DCMP_ALWAYS, g_msMask = 0xFFFFFFFF;
+static int   g_rtMS = 1;           /* the current render target is the multisampled screen */
+
 static HRESULT WINAPI hook_SetRS(IDirect3DDevice8 *dev, D3DRENDERSTATETYPE s, DWORD v)
 {
     switch (s) {
+    case D3DRS_ALPHATESTENABLE:  g_aTest = v; break;
+    case D3DRS_ALPHABLENDENABLE: g_aBlend = v; break;
+    case D3DRS_ALPHAREF:         g_aRef = v; break;
+    case D3DRS_ALPHAFUNC:        g_aFunc = v; break;
+    case D3DRS_MULTISAMPLEMASK:  g_msMask = v; break;
     case D3DRS_FOGENABLE:       g_fogEnable = v; break;
     case D3DRS_FOGTABLEMODE:    g_fogTable = v; break;
     case D3DRS_FOGVERTEXMODE:   g_fogVertex = v; break;
@@ -773,6 +797,7 @@ static HRESULT WINAPI hook_SetVS(IDirect3DDevice8 *dev, DWORD h)
  * bound or created in video memory survives, so drop every pointer to it. */
 static void forget_device_state(void)
 {
+    g_aTest = g_aBlend = g_aRef = 0; g_aFunc = D3DCMP_ALWAYS; g_msMask = 0xFFFFFFFF; g_rtMS = 1;
     g_tex0 = NULL;
     g_tex0Bound = NULL;
     g_stream0 = NULL;
@@ -1149,6 +1174,40 @@ static void set_narrow(IDirect3DDevice8 *dev)
     g_realSetTransform(dev, D3DTS_PROJECTION, &f);
 }
 
+/* ---- Smooth cut-out edges: "alpha to coverage" by hand ----
+ * A cut-out draw (alpha test on, no blending: leaves, grass, fences, hair) is drawn
+ * in 4 passes (2 at 2x MSAA). Each pass writes only its own group of samples
+ * (D3DRS_MULTISAMPLEMASK) with its own alpha cut-off, spread around the game's
+ * own cut-off. A pixel at the edge, where the texture's alpha fades, is covered by
+ * as many groups as its alpha allows: a soft edge, like alpha-to-coverage. Only
+ * these draws cost more (their vertices are drawn 4 times, their pixels shaded at
+ * pixel rate); everything else is shaded once per pixel, not once per sample. */
+static int coverage_ok(void)
+{
+    return g_alphaEdges && !g_edgesPerSample && g_msActive >= 2 && g_rtMS && g_projPersp &&
+           g_aTest && !g_aBlend && (g_aFunc == D3DCMP_GREATER || g_aFunc == D3DCMP_GREATEREQUAL) && g_aRef > 0;
+}
+static HRESULT coverage_draw(IDirect3DDevice8 *dev, int indexed, D3DPRIMITIVETYPE pt, UINT a, UINT b, UINT c, UINT d)
+{
+    int groups = g_msActive >= 4 ? 4 : 2;
+    HRESULT hr = D3D_OK;
+    for (int k = 0; k < groups; k++) {
+        DWORD mask = 0;
+        for (int smp = 0; smp < g_msActive; smp++) if (smp % groups == k) mask |= 1u << smp;
+        /* cut-offs at (2k+1)/groups of the game's: on average the edge stays where it was */
+        DWORD ref = (DWORD)((g_aRef * (2 * k + 1)) / groups);
+        if (ref > 255) ref = 255;
+        if (ref < 1) ref = 1;
+        g_realSetRS(dev, D3DRS_MULTISAMPLEMASK, mask & g_msMask);
+        g_realSetRS(dev, D3DRS_ALPHAREF, ref);
+        HRESULT r = indexed ? g_realDrawIdx(dev, pt, a, b, c, d) : g_realDrawPrim(dev, pt, a, b);
+        if (FAILED(r)) hr = r;
+    }
+    g_realSetRS(dev, D3DRS_MULTISAMPLEMASK, g_msMask);
+    g_realSetRS(dev, D3DRS_ALPHAREF, g_aRef);
+    return hr;
+}
+
 static HRESULT WINAPI hook_DrawPrimitive(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE pt, UINT start, UINT count)
 {
     g_hitch[HITCH_DRAWS]++;
@@ -1165,6 +1224,7 @@ static HRESULT WINAPI hook_DrawPrimitive(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE
                 sharpen_draw(dev, g_hudSharpPct, pt, 0, start, count, 0, 0)) return D3D_OK;
         }
         else if (!g_projPersp && g_curFVF == FVF_2D && g_hudSharpPct) hs_note(HS_PROJ);
+        if (coverage_ok()) return coverage_draw(dev, 0, pt, start, count, 0, 0);
         return g_realDrawPrim(dev, pt, start, count);
     }
     g_pictureDraw = 0;
@@ -1190,6 +1250,7 @@ static HRESULT WINAPI hook_DrawIndexedPrimitive(IDirect3DDevice8 *dev, D3DPRIMIT
                 sharpen_draw(dev, g_hudSharpPct, pt, 1, mi, nv, si, pc)) return D3D_OK;
         }
         else if (!g_projPersp && g_curFVF == FVF_2D && g_hudSharpPct) hs_note(HS_PROJ);
+        if (coverage_ok()) return coverage_draw(dev, 1, pt, mi, nv, si, pc);
         return g_realDrawIdx(dev, pt, mi, nv, si, pc);
     }
     g_pictureDraw = 0;
@@ -1254,6 +1315,20 @@ static HRESULT WINAPI hook_Present(IDirect3DDevice8 *dev, const RECT *a, const R
     return hr;
 }
 
+/* ---- SetRenderTarget (vtable 31): is the game drawing to the multisampled screen?
+ * (Offscreen targets have no samples to split, so coverage_draw stays off there.) */
+typedef HRESULT (WINAPI *SetRT8_t)(IDirect3DDevice8 *, IDirect3DSurface8 *, IDirect3DSurface8 *);
+static SetRT8_t g_realSetRT;
+static HRESULT WINAPI hook_SetRT(IDirect3DDevice8 *dev, IDirect3DSurface8 *rt, IDirect3DSurface8 *ds)
+{
+    HRESULT hr = g_realSetRT(dev, rt, ds);
+    if (SUCCEEDED(hr) && rt) {
+        D3DSURFACE_DESC d;
+        g_rtMS = SUCCEEDED(IDirect3DSurface8_GetDesc(rt, &d)) && d.MultiSampleType >= D3DMULTISAMPLE_2_SAMPLES;
+    }
+    return hr;
+}
+
 static void hook_device(IDirect3DDevice8 *dev)
 {
     void **vt = *(void ***)dev;
@@ -1262,6 +1337,7 @@ static void hook_device(IDirect3DDevice8 *dev)
     patch_vtbl(vt, 20, (void *)hook_CreateTex, (void **)&g_realCreateTex);
     patch_vtbl(vt, 23, (void *)hook_CreateVB, (void **)&g_realCreateVB);
     patch_vtbl(vt, 28, (void *)hook_CopyRects, (void **)&g_realCopyRects);
+    patch_vtbl(vt, 31, (void *)hook_SetRT, (void **)&g_realSetRT);
     patch_vtbl(vt, 37, (void *)hook_SetTransform, (void **)&g_realSetTransform);
     patch_vtbl(vt, 50, (void *)hook_SetRS, (void **)&g_realSetRS);
     patch_vtbl(vt, 76, (void *)hook_SetVS, (void **)&g_realSetVS);

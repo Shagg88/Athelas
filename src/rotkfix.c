@@ -1,5 +1,5 @@
 /*
- * ROTK Fix - core (test build 82)
+ * ROTK Fix - core (test build 83)
  *
  * Loaded into The Lord of the Rings: The Return of the King (PC, 2003)
  * through the d3d8.dll and dinput8.dll forwarders in the game folder (the
@@ -61,6 +61,10 @@ static LONGLONG      g_period;       /* ticks per frame */
 static LONGLONG      g_deadline;     /* next frame deadline (ticks) */
 static HANDLE        g_timer;
 static int           g_timerHiRes;
+/* How late the timer wakes (worst recent case, in QPC ticks). The final busy-wait
+ * only needs to cover that, so with a precise timer it is much shorter than the
+ * SpinMicroseconds setting (which stays the upper limit): less CPU for the same timing. */
+static LONGLONG g_wakeLate = -1;
 static DWORD         g_frameThread;
 enum { MD_AUTO, MD_STRETCH, MD_43 };
 static int  g_movieDisplay = MD_AUTO;   /* [Video] MovieDisplay */
@@ -270,8 +274,9 @@ static void flush_stats(LONGLONG now)
     unsigned p99 = g_samples[(g_nSamples * 99) / 100 < g_nSamples ? (g_nSamples * 99) / 100 : g_nSamples - 1];
     unsigned avg = (unsigned)(sum / g_nSamples);
     double secs = (double)(now - g_windowStart) / (double)g_freq.QuadPart;
-    logf_("frames=%d fps=%.2f avg=%.3fms min=%.3fms max=%.3fms p99=%.3fms off-by-2ms=%d late=%d slow=%d",
-          g_nFrames, g_nFrames / secs, avg / 1000.0, mn / 1000.0, mx / 1000.0, p99 / 1000.0, off2ms, g_lateFrames, g_slowFrames);
+    logf_("frames=%d fps=%.2f avg=%.3fms min=%.3fms max=%.3fms p99=%.3fms off-by-2ms=%d late=%d slow=%d timer-late=%.2fms",
+          g_nFrames, g_nFrames / secs, avg / 1000.0, mn / 1000.0, mx / 1000.0, p99 / 1000.0, off2ms, g_lateFrames, g_slowFrames,
+          g_wakeLate > 0 ? g_wakeLate * 1000.0 / g_freq.QuadPart : 0.0);
     if (g_hitchLogged >= 20 && g_slowFrames > 20) logf_("(%d more slow frames not listed)", g_slowFrames - 20);
     g_hitchLogged = 0; g_slowFrames = 0;
     g_lateFrames = 0;
@@ -569,18 +574,28 @@ static void record_frame(LONGLONG now)
 
 static void wait_until(LONGLONG deadline)
 {
-    LONGLONG spinTicks = g_freq.QuadPart * g_spinUs / 1000000;
+    LONGLONG maxSpin = g_freq.QuadPart * g_spinUs / 1000000;
+    if (g_wakeLate < 0) g_wakeLate = maxSpin;
+    LONGLONG margin = g_freq.QuadPart / 10000;              /* +0.1 ms */
+    LONGLONG spinTicks = g_timerHiRes ? g_wakeLate + margin : maxSpin;
+    if (spinTicks > maxSpin) spinTicks = maxSpin;
     for (;;) {
-        LONGLONG remaining = deadline - now_ticks();
+        LONGLONG t0 = now_ticks(), remaining = deadline - t0;
         if (remaining <= spinTicks) break;
         LONGLONG sleepTicks = remaining - spinTicks;
         /* due time in 100 ns units, negative = relative */
         LARGE_INTEGER due;
         due.QuadPart = -(sleepTicks * 10000000 / g_freq.QuadPart);
         if (due.QuadPart >= 0) break;
-        if (g_timer && SetWaitableTimer(g_timer, &due, 0, NULL, NULL, FALSE))
+        if (g_timer && SetWaitableTimer(g_timer, &due, 0, NULL, NULL, FALSE)) {
             WaitForSingleObject(g_timer, 100);
-        else
+            /* learn the lateness: jump up at once, come down slowly (about 1% a wait) */
+            LONGLONG late = now_ticks() - (t0 + sleepTicks);
+            if (late < 0) late = 0;
+            if (late > g_wakeLate) g_wakeLate = late;
+            else g_wakeLate -= (g_wakeLate - late) / 100 + 1;
+            if (g_wakeLate < 0) g_wakeLate = 0;
+        } else
             Sleep(1);
     }
     while (now_ticks() < deadline)
@@ -1057,7 +1072,7 @@ BOOL WINAPI DllMain(HINSTANCE inst, DWORD reason, LPVOID reserved)
             char lp[MAX_PATH]; path_in_dir(lp, "ROTKFix.log");
             g_log = fopen(lp, "w");
         }
-        logf_("ROTK Fix test build 82 loaded (Limiter=%d TargetFPS=%d Spin=%dus)",
+        logf_("ROTK Fix test build 83 loaded (Limiter=%d TargetFPS=%d Spin=%dus)",
               g_limiterMode, g_targetFps, g_spinUs);
 
         QueryPerformanceFrequency(&g_freq);

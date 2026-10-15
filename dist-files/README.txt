@@ -186,7 +186,9 @@ The launcher writes ROTKFix.ini in the game folder. You can also edit it in Note
   Renderer               dxvk = Vulkan (recommended), native = Windows' own Direct3D 8 (default dxvk)
   DxvkFolder             Which DXVK inside the ROTKFix folder draws the game (default dxvk)
   MSAA                   Anti-aliasing: 0, 2, 4 or 8 (default 4)
-  AlphaEdgeSmoothing     1 = also smooth leaves, grass and fences (needs MSAA; costs speed) (default 1)
+  AlphaEdgeSmoothing     1 = also smooth leaves, grass and fences (needs MSAA) (default 1)
+  AlphaEdgeMethod        coverage = only those draws cost extra (fast); persample = every pixel
+                         shaded per sample (the older way, much slower) (default coverage)
   AnisotropicFiltering   Texture filtering: 0, 2, 4, 8 or 16 (default 16)
   TextureLODBias         Texture sharpness: 0 = game's own, down to -1.0 = sharpest (default -0.50)
   Sharpening             0-100, 0 = off (also turns off the automatic HUD sharpening). [ switches it on and off while playing (default 60)
