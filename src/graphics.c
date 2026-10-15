@@ -54,6 +54,7 @@ static int  g_hudSharpPct = 0;      /* HUD and menu pictures sharpened at their 
 static int  g_sharpenOn = 1;        /* [Graphics] Sharpening > 0 */
 static int  g_projPersp;      /* current projection is perspective (3D) */
 static int  g_drawPct = 100;    /* [Graphics] DrawDistance: far clip plane and fog, percent of the game's */
+static int  g_fadeReport;     /* [Log] FadeReport = 1: log how blended 3D draws are set up (for the Xbox port) */
 static int  g_renderPct = 100;  /* [Graphics] RenderScale: the game draws at this share of the chosen size; DXVK fits it to the screen */
 
 static int parse_choice(const char *v, const char *const *names, int n, int def)
@@ -69,6 +70,7 @@ static char    g_dxvkFolder[64] = "dxvk";   /* [Graphics] DxvkFolder, inside ROT
 
 void graphics_load_settings(const char *ini)
 {
+    g_fadeReport = GetPrivateProfileIntA("Log", "FadeReport", 0, ini);
     char buf[64];
     static const char *const rn[] = { "dxvk", "native" };
     static const char *const dn[] = { "borderless", "fullscreen", "windowed" };
@@ -1140,6 +1142,49 @@ static void set_narrow(IDirect3DDevice8 *dev)
     g_realSetTransform(dev, D3DTS_PROJECTION, &f);
 }
 
+/* ---- FadeReport: how the game draws see-through 3D things ----
+ * Characters between the camera and the player fade out. The Xbox port shows them
+ * either solid or gone, so this logs the exact states the PC version uses for each
+ * different kind of blended 3D draw (same engine code): blend factors, where the alpha
+ * comes from (texture factor, material, vertex colour, texture stages) and its value.
+ * Each different set is logged once (alpha in steps of 1/16), up to 200 lines. */
+typedef HRESULT (WINAPI *GetRS8_t)(IDirect3DDevice8 *, D3DRENDERSTATETYPE, DWORD *);
+typedef HRESULT (WINAPI *GetMat8_t)(IDirect3DDevice8 *, D3DMATERIAL8 *);
+static void fade_report(IDirect3DDevice8 *dev, UINT prims)
+{
+    static DWORD seen[512]; static int nSeen, nLogged;
+    if (nLogged >= 200) return;
+    void **vt = *(void ***)dev;
+    GetRS8_t grs = (GetRS8_t)vt[51];
+    DWORD blend = 0, atest = 0;
+    grs(dev, D3DRS_ALPHABLENDENABLE, &blend);
+    grs(dev, D3DRS_ALPHATESTENABLE, &atest);
+    if (!blend) return;
+    DWORD src = 0, dst = 0, zw = 0, aref = 0, lit = 0, dms = 0, tf = 0, cv = 0;
+    grs(dev, D3DRS_SRCBLEND, &src); grs(dev, D3DRS_DESTBLEND, &dst); grs(dev, D3DRS_ZWRITEENABLE, &zw);
+    grs(dev, D3DRS_ALPHAREF, &aref); grs(dev, D3DRS_LIGHTING, &lit); grs(dev, D3DRS_DIFFUSEMATERIALSOURCE, &dms);
+    grs(dev, D3DRS_TEXTUREFACTOR, &tf); grs(dev, D3DRS_COLORVERTEX, &cv);
+    DWORD t[2][4];
+    static const D3DTEXTURESTAGESTATETYPE ts[4] = { D3DTSS_COLOROP, D3DTSS_ALPHAOP, D3DTSS_ALPHAARG1, D3DTSS_ALPHAARG2 };
+    for (int st = 0; st < 2; st++) for (int k = 0; k < 4; k++) ((GetTSS8_t)vt[62])(dev, st, ts[k], &t[st][k]);
+    D3DMATERIAL8 m; memset(&m, 0, sizeof m);
+    ((GetMat8_t)vt[43])(dev, &m);
+    int matA = (int)(m.Diffuse.a * 255.0f + 0.5f), tfA = (int)(tf >> 24);
+    DWORD key = src * 131u ^ dst * 7919u ^ zw * 3u ^ atest * 5u ^ lit * 11u ^ dms * 13u ^ cv * 17u ^ (DWORD)g_curFVF * 31u;
+    for (int st = 0; st < 2; st++) for (int k = 0; k < 4; k++) key = key * 33u ^ t[st][k];
+    key = key * 33u ^ (DWORD)(tfA >> 4) ^ (DWORD)((matA >> 4) << 8);
+    for (int i = 0; i < nSeen; i++) if (seen[i] == key) return;
+    if (nSeen < 512) seen[nSeen++] = key;
+    nLogged++;
+    logf_("fade: blend src=%lu dst=%lu zwrite=%lu alphatest=%lu ref=%lu | lighting=%lu colorvertex=%lu diffusesource=%lu "
+          "material alpha=%d | texturefactor alpha=%d | stage0 color=%lu alpha=%lu(%lu,%lu) stage1 color=%lu alpha=%lu(%lu,%lu) | fvf=%#lx prims=%u",
+          (unsigned long)src, (unsigned long)dst, (unsigned long)zw, (unsigned long)atest, (unsigned long)aref,
+          (unsigned long)lit, (unsigned long)cv, (unsigned long)dms, matA, tfA,
+          (unsigned long)t[0][0], (unsigned long)t[0][1], (unsigned long)t[0][2], (unsigned long)t[0][3],
+          (unsigned long)t[1][0], (unsigned long)t[1][1], (unsigned long)t[1][2], (unsigned long)t[1][3],
+          (unsigned long)g_curFVF, prims);
+}
+
 static HRESULT WINAPI hook_DrawPrimitive(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE pt, UINT start, UINT count)
 {
     g_hitch[HITCH_DRAWS]++;
@@ -1149,7 +1194,7 @@ static HRESULT WINAPI hook_DrawPrimitive(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE
         if (movie_sharpen_draw(dev, start, count)) return D3D_OK;
     }
     if (!g_orthoFixed) {
-        if (g_projPersp) { g_draws3D++; g_hitch[HITCH_DRAWS3D]++; }
+        if (g_projPersp) { g_draws3D++; g_hitch[HITCH_DRAWS3D]++; if (g_fadeReport) fade_report(dev, count); }
         else if (g_projOrtho && g_sharpenOn) {            /* 2D at its normal width (16:9 or narrower) */
             g_pictureDraw = 0;
             if (!draw_full_width(start, prim_verts(pt, count)) && !g_pictureDraw && hud_sharpen_ok(dev) &&
@@ -1174,7 +1219,7 @@ static HRESULT WINAPI hook_DrawIndexedPrimitive(IDirect3DDevice8 *dev, D3DPRIMIT
 {
     g_hitch[HITCH_DRAWS]++;
     if (!g_orthoFixed) {
-        if (g_projPersp) { g_draws3D++; g_hitch[HITCH_DRAWS3D]++; }
+        if (g_projPersp) { g_draws3D++; g_hitch[HITCH_DRAWS3D]++; if (g_fadeReport) fade_report(dev, pc); }
         else if (g_projOrtho && g_sharpenOn) {
             g_pictureDraw = 0;
             if (!draw_full_width(g_baseVertex + mi, nv) && !g_pictureDraw && hud_sharpen_ok(dev) &&
