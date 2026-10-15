@@ -90,10 +90,23 @@ std::string g_movie_name;  // the movie starting, from the type lookup 0x111B90
 std::atomic<bool> g_movie_new{false};
 std::mutex g_name_lock;
 
+// A movie frame is one draw. When the game draws much else as well, the picture is the game's: a skipped or ending
+// movie fades out over the level for half a second or so. Those frames, and what follows, are shown as the game,
+// not by the movie settings (cropped to the film's middle, held back by cutscene_audio_delay), so nothing on screen
+// jumps when the movie ends; the flag drops at once instead of a quarter second after the last movie frame.
+constexpr int kOtherDrawsMixed = 48;
+std::atomic<int> g_other_draws{0};
+
 void WatchMovie(const gpu::State& s) {
-    if (!s.textures[2] || !s.ps) return;
     gpu::TextureDesc d;
-    if (!gpu::Describe(s.textures[2], d) || d.width != 768 || d.height != 544 || !d.linear || !d.pitch) return;
+    bool movie = s.textures[2] && s.ps && gpu::Describe(s.textures[2], d) && d.width == 768 && d.height == 544 &&
+                 d.linear && d.pitch;
+    if (!movie) {
+        if (++g_other_draws > kOtherDrawsMixed && gpu::g_movie.exchange(false))
+            LOGI("rotk: movie over or fading into the game (%d ms after its last frame)", int(rotk::NowMs() - rotk::g_movie_drawn));
+        return;
+    }
+    if (g_other_draws.exchange(0) > kOtherDrawsMixed) return;  // drawn over the game: the game's picture
     // a movie frame drawn: the movie settings apply while frames keep coming (the watcher drops the flag after them)
     StartWatcher();
     rotk::g_movie_drawn = rotk::NowMs();
