@@ -708,7 +708,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/
  }  // namespace reference
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/app.h /home/claude/tt-port/game/sdk/runtime/app/app.h
 --- upstream/runtime/app/app.h	2026-10-14 22:35:04.215216692 -0700
-+++ /home/claude/tt-port/game/sdk/runtime/app/app.h	2026-10-14 22:14:56.909239695 -0700
++++ /home/claude/tt-port/game/sdk/runtime/app/app.h	2026-10-14 22:49:37.405052308 -0700
 @@ -6,6 +6,8 @@
  #include <utility>
  #include <vector>
@@ -851,6 +851,15 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      // the settings file's toml::table, for what options cannot hold
      void (*load)(const void* table);
      void (*save)(void* table);
+@@ -90,6 +156,8 @@
+     void (*ui)(double fps);        // each frame inside the ImGui frame, UiLock held
+     void (*pad)(int port, input::Pad& pad);  // a polled pad before the game gets it
+     void (*rumble)(int port, uint16_t& left, uint16_t& right);
++    // [controls] in the settings (the overlay, --describe-settings): off for a game that remaps its buttons another way
++    bool remap_controls = true;
+ };
+ extern const GameInfo kGame;
+ 
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/app.manifest /home/claude/tt-port/game/sdk/runtime/app/app.manifest
 --- upstream/runtime/app/app.manifest	1969-12-31 16:00:00.000000000 -0800
 +++ /home/claude/tt-port/game/sdk/runtime/app/app.manifest	2026-10-14 22:14:56.909354527 -0700
@@ -1481,7 +1490,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      return guest_height ? std::max(h / guest_height, 0.1f) : 1.0f;
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/settings_list.cpp /home/claude/tt-port/game/sdk/runtime/app/settings_list.cpp
 --- upstream/runtime/app/settings_list.cpp	1969-12-31 16:00:00.000000000 -0800
-+++ /home/claude/tt-port/game/sdk/runtime/app/settings_list.cpp	2026-10-14 22:14:56.909316398 -0700
++++ /home/claude/tt-port/game/sdk/runtime/app/settings_list.cpp	2026-10-14 22:49:37.406095556 -0700
 @@ -0,0 +1,143 @@
 +// every setting the settings file holds, described once: the host's here, the game's in GameInfo::options. No
 +// platform code, so the list can be checked anywhere.
@@ -1611,7 +1620,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +                                         "Xbox left trigger", "Xbox right trigger"};
 +    std::vector<const char*> sources(std::begin(input::kSources), std::end(input::kSources));
 +    std::vector<const char*> names(std::begin(input::kSourceNames), std::end(input::kSourceNames));
-+    for (int i = 0; i < 8; i++) {
++    for (int i = 0; i < (kGame.remap_controls ? 8 : 0); i++) {
 +        const char* action = size_t(i) < kGame.button_actions.size() ? kGame.button_actions[size_t(i)] : nullptr;
 +        cfg::Desc d{"controls", kKeys[i], Type::Choice, action ? action : kXbox[i],
 +                    "The button on your controller that does this. As on the Xbox by default (the Xbox's Black and "
