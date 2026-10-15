@@ -1154,7 +1154,7 @@ static void set_narrow(IDirect3DDevice8 *dev)
  * Each different set is logged once (alpha in steps of 1/16), up to 200 lines. */
 typedef HRESULT (WINAPI *GetRS8_t)(IDirect3DDevice8 *, D3DRENDERSTATETYPE, DWORD *);
 typedef HRESULT (WINAPI *GetMat8_t)(IDirect3DDevice8 *, D3DMATERIAL8 *);
-static void fade_report(IDirect3DDevice8 *dev, UINT prims)
+static void fade_report(IDirect3DDevice8 *dev, UINT prims, UINT firstV, UINT numV)
 {
     static DWORD seen[512]; static int nSeen, nLogged;
     void **vt = *(void ***)dev;
@@ -1175,7 +1175,7 @@ static void fade_report(IDirect3DDevice8 *dev, UINT prims)
     int matA = (int)(m.Diffuse.a * 255.0f + 0.5f), tfA = (int)(tf >> 24);
     DWORD key = src * 131u ^ dst * 7919u ^ zw * 3u ^ atest * 5u ^ lit * 11u ^ dms * 13u ^ cv * 17u ^ (DWORD)g_curFVF * 31u;
     for (int st = 0; st < 2; st++) for (int k = 0; k < 4; k++) key = key * 33u ^ t[st][k];
-    key = key * 33u ^ (DWORD)(tfA >> 4) ^ (DWORD)((matA >> 4) << 8);
+    key = key * 33u ^ (DWORD)((matA >> 4) << 8);
     /* the fade itself: alpha below 255 from the texture factor (used by a stage's alpha)
      * or from the material (lighting on, diffuse from the material). Logged every frame,
      * with how far the object is from the camera, to see the fade over time and what
@@ -1185,7 +1185,7 @@ static void fade_report(IDirect3DDevice8 *dev, UINT prims)
         if (t[st][1] != D3DTOP_DISABLE && ((t[st][2] & 7) == D3DTA_TFACTOR || (t[st][3] & 7) == D3DTA_TFACTOR)) usesTF = 1;
     int fadeA = usesTF && tfA < 255 ? tfA : (lit && dms == D3DMCS_MATERIAL && matA < 255) ? matA : -1;
     static int nFade; static unsigned fadeFrame; static int fadeInFrame;
-    if (fadeA >= 0 && nFade < 1500) {
+    if (fadeA >= 0 && nFade < 200) {
         if (fadeFrame != g_presentNo) { fadeFrame = g_presentNo; fadeInFrame = 0; }
         if (fadeInFrame++ < 4) {
             const D3DMATRIX *v = &g_viewM;
@@ -1197,6 +1197,55 @@ static void fade_report(IDirect3DDevice8 *dev, UINT prims)
             logf_("fade frame %u: alpha %d (%s) | object at (%.1f, %.1f, %.1f), %.2f from the camera | prims %u",
                   g_presentNo, fadeA, fadeA == tfA && usesTF ? "texture factor" : "material", g_worldM._41, g_worldM._42, g_worldM._43,
                   sqrtf(dx * dx + dy * dy + dz * dz), prims);
+        }
+    }
+    /* characters: lighting off, the game writes each vertex's colour (and alpha) itself,
+     * and stage 0 multiplies the texture's alpha by it. Read the vertices of this draw:
+     * their alpha range, and their centre's distance from the camera. */
+    static int nVert; static unsigned vertFrame; static int vertInFrame;
+    int diffuseAlpha = t[0][1] != D3DTOP_DISABLE && ((t[0][2] & 7) == D3DTA_DIFFUSE || (t[0][3] & 7) == D3DTA_DIFFUSE);
+    if (diffuseAlpha && src == D3DBLEND_SRCALPHA && dst == D3DBLEND_INVSRCALPHA && nVert < 2000 && g_stream0 && g_stream0Stride &&
+        g_curFVF < 0x10000 && (g_curFVF & D3DFVF_DIFFUSE) && numV > 0) {
+        DWORD f = (DWORD)g_curFVF, pos = f & D3DFVF_POSITION_MASK;
+        UINT off = pos == D3DFVF_XYZ ? 12 : pos == D3DFVF_XYZRHW ? 16 : pos >= D3DFVF_XYZB1 ? 12 + 4 * ((pos - D3DFVF_XYZB1) / 2 + 1) : 0;
+        if (f & D3DFVF_NORMAL) off += 12;
+        if (f & D3DFVF_PSIZE) off += 4;
+        BYTE *p = NULL;
+        if (off && off + 4 <= g_stream0Stride &&
+            SUCCEEDED(IDirect3DVertexBuffer8_Lock(g_stream0, firstV * g_stream0Stride, numV * g_stream0Stride, &p, D3DLOCK_READONLY)) && p) {
+            int amin = 255, amax = 0; double asum = 0, cx = 0, cy = 0, cz = 0; int n = 0;
+            UINT stepV = numV > 256 ? numV / 256 : 1;
+            for (UINT i = 0; i < numV; i += stepV, n++) {
+                const BYTE *vx = p + (size_t)i * g_stream0Stride;
+                int a = vx[off + 3];
+                if (a < amin) amin = a;
+                if (a > amax) amax = a;
+                asum += a;
+                const float *xyz = (const float *)vx;
+                cx += xyz[0]; cy += xyz[1]; cz += xyz[2];
+            }
+            IDirect3DVertexBuffer8_Unlock(g_stream0);
+            if (n && amax < 255) {
+                if (vertFrame != g_presentNo) { vertFrame = g_presentNo; vertInFrame = 0; }
+                if (vertInFrame++ < 4) {
+                    cx /= n; cy /= n; cz /= n;
+                    /* the vertices may already be in world space; else move the centre by the world matrix */
+                    const D3DMATRIX *w = &g_worldM;
+                    float wx = (float)(cx * w->_11 + cy * w->_21 + cz * w->_31 + w->_41);
+                    float wy = (float)(cx * w->_12 + cy * w->_22 + cz * w->_32 + w->_42);
+                    float wz = (float)(cx * w->_13 + cy * w->_23 + cz * w->_33 + w->_43);
+                    const D3DMATRIX *v = &g_viewM;
+                    float ex = -(v->_41 * v->_11 + v->_42 * v->_12 + v->_43 * v->_13);
+                    float ey = -(v->_41 * v->_21 + v->_42 * v->_22 + v->_43 * v->_23);
+                    float ez = -(v->_41 * v->_31 + v->_42 * v->_32 + v->_43 * v->_33);
+                    float dx = wx - ex, dy = wy - ey, dz = wz - ez;
+                    nVert++;
+                    logf_("fade frame %u: vertex alpha %d-%d (avg %.0f) | centre (%.1f, %.1f, %.1f), %.2f from the camera at (%.1f, %.1f, %.1f) | "
+                          "zwrite=%lu alphatest=%lu ref=%lu | fvf=%#lx prims=%u verts=%u",
+                          g_presentNo, amin, amax, asum / n, wx, wy, wz, sqrtf(dx * dx + dy * dy + dz * dz), ex, ey, ez,
+                          (unsigned long)zw, (unsigned long)atest, (unsigned long)aref, (unsigned long)f, prims, numV);
+                }
+            }
         }
     }
     for (int i = 0; i < nSeen; i++) if (seen[i] == key) return;
@@ -1221,7 +1270,7 @@ static HRESULT WINAPI hook_DrawPrimitive(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE
         if (movie_sharpen_draw(dev, start, count)) return D3D_OK;
     }
     if (!g_orthoFixed) {
-        if (g_projPersp) { g_draws3D++; g_hitch[HITCH_DRAWS3D]++; if (g_fadeReport) fade_report(dev, count); }
+        if (g_projPersp) { g_draws3D++; g_hitch[HITCH_DRAWS3D]++; if (g_fadeReport) fade_report(dev, count, start, prim_verts(pt, count)); }
         else if (g_projOrtho && g_sharpenOn) {            /* 2D at its normal width (16:9 or narrower) */
             g_pictureDraw = 0;
             if (!draw_full_width(start, prim_verts(pt, count)) && !g_pictureDraw && hud_sharpen_ok(dev) &&
@@ -1246,7 +1295,7 @@ static HRESULT WINAPI hook_DrawIndexedPrimitive(IDirect3DDevice8 *dev, D3DPRIMIT
 {
     g_hitch[HITCH_DRAWS]++;
     if (!g_orthoFixed) {
-        if (g_projPersp) { g_draws3D++; g_hitch[HITCH_DRAWS3D]++; if (g_fadeReport) fade_report(dev, pc); }
+        if (g_projPersp) { g_draws3D++; g_hitch[HITCH_DRAWS3D]++; if (g_fadeReport) fade_report(dev, pc, g_baseVertex + mi, nv); }
         else if (g_projOrtho && g_sharpenOn) {
             g_pictureDraw = 0;
             if (!draw_full_width(g_baseVertex + mi, nv) && !g_pictureDraw && hud_sharpen_ok(dev) &&
