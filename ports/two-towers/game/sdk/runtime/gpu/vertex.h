@@ -1,4 +1,5 @@
 #pragma once
+#include <atomic>
 #include <array>
 #include <cstdint>
 #include <vector>
@@ -70,6 +71,22 @@ extern ScreenSpacePlace g_screen_space_place;
 // in the log, so the pieces of a HUD are easy to find for a texture pack. Null for none.
 using ScreenSpaceTest = bool (*)(const State& s);
 extern ScreenSpaceTest g_screen_space_test;
+// the projection a game sets (SetTransform, Direct3D 8 layout, row major _11.._44), as the renderer will use it: the
+// game may change it (widescreen, field of view). The device copy GetTransform reads stays the game's. Null for none.
+using ProjectionHook = void (*)(float* m);
+extern ProjectionHook g_projection_hook;
+// a fixed function draw under an orthographic projection (the HUD and menus of a game that draws its 2D through one):
+// given its extent in clip space (x and y, -1 to 1), the game may move it sideways, x' = a * x + b. Return false to
+// leave it. Null for none.
+using OrthoPlace = bool (*)(const State& s, float x0, float x1, float y0, float y1, float& a, float& b);
+extern OrthoPlace g_ortho_place;
+// set by game code for the frame being drawn: the share of the frame's width, centred, that is shown; the sides are
+// painted black (a full-screen menu picture held narrower than an ultrawide screen, with a 3D scene behind it that
+// would show at the sides). 1 shows it all; put back to 1 after each frame is shown.
+extern std::atomic<float> g_frame_sides;
+// the clip space extent of a fixed function draw with XYZ positions in stream 0 (false when it has none)
+bool OrthoExtent(const State& s, uint32_t start, uint32_t count, const uint8_t* indices, float& x0, float& x1, float& y0,
+                 float& y1);
 
 // false when there is nothing to draw
 // indices: the title's 16 bit indices, null for an unindexed draw

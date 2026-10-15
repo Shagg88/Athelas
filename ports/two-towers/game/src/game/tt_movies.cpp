@@ -35,7 +35,8 @@ X86_FUNC(sub_000E8B70) {
     // the idle movie) opens with letterboxed film, then shows gameplay in the full frame; the player chose to have it
     // fill the screen throughout, losing the top and bottom of the gameplay part
     std::string_view nm(what);
-    gpu::g_movie_full = (nm.size() > 3 && nm.substr(nm.size() - 3) == "int") || nm == "makingof" || nm == "death";
+    bool full = (nm.size() > 3 && nm.substr(nm.size() - 3) == "int") || nm == "makingof" || nm == "death";
+    gpu::g_movie_shape = full ? gpu::kMovie43 : gpu::kMovieFit;
     tt::g_movie_playing++;
     gpu::g_movie = true;
     __imp__sub_000E8B70(ctx, base);

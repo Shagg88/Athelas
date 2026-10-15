@@ -241,6 +241,33 @@ std::shared_ptr<Image> FindImage(uint32_t header) {
                 out[size_t(y) * d.width + x] = V(p[2] / 255.f, p[1] / 255.f, p[0] / 255.f, p[3] / 255.f);
             }
     }
+    // a game's built-in replacement (pack::g_builtin), sampled down to the texture's size, as the renderer would draw it
+    if (pack::g_builtin && img->faces == 1 && !d.linear && d.depth == 1) {
+        uint64_t seed = uint64_t(d.format) | uint64_t(d.width) << 8 | uint64_t(d.height) << 24 | uint64_t(d.levels) << 40;
+        uint64_t h = Hash(guest, TotalSize(d), seed);
+        pack::Image rep;
+        if (pack::g_builtin(h, d.width, d.height, rep) && !rep.levels.empty() && rep.format == pack::Format::RGBA8) {
+            for (uint32_t y = 0; y < d.height; y++)
+                for (uint32_t x = 0; x < d.width; x++) {
+                    const uint8_t* q = &rep.levels[0][(size_t(y * rep.height / d.height) * rep.width + x * rep.width / d.width) * 4];
+                    img->texels[0][size_t(y) * d.width + x] = V(q[0] / 255.f, q[1] / 255.f, q[2] / 255.f, q[3] / 255.f);
+                }
+        }
+    }
+    // a built-in replacement found from the contents (pack::g_builtin_contents), the same way, colours left to it
+    if (pack::g_builtin_contents && img->faces == 1 && d.depth == 1) {
+        pack::Image rep;
+        if (pack::g_builtin_contents({d.format, d.width, d.height, d.levels, guest, TotalSize(d), nullptr}, rep) &&
+            !rep.levels.empty() && (rep.format == pack::Format::RGBA8 || rep.format == pack::Format::BGRA8)) {
+            bool bgra = rep.format == pack::Format::BGRA8;
+            for (uint32_t y = 0; y < d.height; y++)
+                for (uint32_t x = 0; x < d.width; x++) {
+                    const uint8_t* q = &rep.levels[0][(size_t(y * rep.height / d.height) * rep.width + x * rep.width / d.width) * 4];
+                    float r = q[bgra ? 2 : 0] / 255.f, b = q[bgra ? 0 : 2] / 255.f;
+                    img->texels[0][size_t(y) * d.width + x] = V(r, q[1] / 255.f, b, q[3] / 255.f);
+                }
+        }
+    }
     g_images[key] = img;
     return img;
 }
@@ -1184,7 +1211,11 @@ void Draw(const State& s, uint32_t prim, uint32_t start, uint32_t count, const u
             o.attr[kB0] = o.attr[kD0];
             o.attr[kB1] = o.attr[kD1];
             o.attr[kFog] = Splat(FogAmount(s, std::fabs(o.pos[2] / s.zscale)));
-            for (int t = 0; t < 4; t++) o.attr[kT0 + t] = slot[9 + t] >= 0 ? vp.in[9 + t] : V(0, 0, 0, 1);
+            // each stage reads the coordinate set its TEXCOORDINDEX names, as the D3D12 path's fixed key does
+            for (int t = 0; t < 4; t++) {
+                int set = int(s.tss[size_t(t)][kTssTexCoordIndex] & 3);
+                o.attr[kT0 + t] = slot[9 + set] >= 0 ? vp.in[9 + set] : V(0, 0, 0, 1);
+            }
         }
         for (int a : {kD0, kD1, kB0, kB1})
             for (int j = 0; j < 4; j++) o.attr[a][j] = Sat(o.attr[a][j]);
@@ -1366,6 +1397,24 @@ bool WriteTga(const Surface& s, const char* path) {
             for (int i = 0; i < 3; i++) row[x * 3 + i] = uint8_t(Sat(c[2 - i]) * 255);
         }
         std::fwrite(row.data(), 1, row.size(), f);
+    }
+    std::fclose(f);
+    return true;
+}
+
+bool WriteTextureTga(uint32_t header, const char* path) {
+    std::shared_ptr<Image> img = FindImage(header);
+    if (!img || img->texels[0].empty()) return false;
+    FILE* f = std::fopen(path, "wb");
+    if (!f) return false;
+    uint8_t head[18] = {0, 0, 2};
+    head[12] = uint8_t(img->w), head[13] = uint8_t(img->w >> 8), head[14] = uint8_t(img->h), head[15] = uint8_t(img->h >> 8);
+    head[16] = 32;
+    head[17] = 0x28;  // top row first, 8 alpha bits
+    std::fwrite(head, 1, 18, f);
+    for (const Vec& c : img->texels[0]) {
+        uint8_t px[4] = {uint8_t(Sat(c[2]) * 255), uint8_t(Sat(c[1]) * 255), uint8_t(Sat(c[0]) * 255), uint8_t(Sat(c[3]) * 255)};
+        std::fwrite(px, 1, 4, f);
     }
     std::fclose(f);
     return true;

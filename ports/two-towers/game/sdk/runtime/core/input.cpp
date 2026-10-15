@@ -185,4 +185,19 @@ void Rumble(int port, uint16_t left, uint16_t right) {
     if (port >= 0 && port < 4 && g_pads[port]) SDL_RumbleGamepad(g_pads[port], left, right, 0);
 }
 
+int Style(int port) {
+    std::lock_guard lock(g_lock);
+    if (port < 0 || port >= 4 || !g_pads[port]) return 0;
+    switch (SDL_GetGamepadType(g_pads[port])) {
+        case SDL_GAMEPAD_TYPE_PS3:
+        case SDL_GAMEPAD_TYPE_PS4:
+        case SDL_GAMEPAD_TYPE_PS5: return 1;
+        case SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_PRO:
+        case SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_JOYCON_LEFT:
+        case SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT:
+        case SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_JOYCON_PAIR: return 2;
+        default: return 0;
+    }
+}
+
 }  // namespace input

@@ -206,8 +206,28 @@ bool ReadPng(const std::filesystem::path& file, Image& img) {
     img = Image{};
     std::vector<uint8_t> bytes;
     if (!ReadFile(file, bytes) || bytes.empty()) return false;
+    return DecodePng(bytes.data(), bytes.size(), img);
+}
+
+BuiltinTexture g_builtin = nullptr;
+BuiltinContents g_builtin_contents = nullptr;
+
+void MakeLevels(Image& img) {
+    if (img.levels.empty() || (img.format != Format::RGBA8 && img.format != Format::BGRA8)) return;
+    img.levels.resize(1);
+    for (uint32_t lw = img.width, lh = img.height; lw > 1 || lh > 1;) {
+        uint32_t nw, nh;
+        std::vector<uint8_t> next = Halve(img.levels.back(), lw, lh, nw, nh);
+        img.levels.push_back(std::move(next));
+        lw = nw;
+        lh = nh;
+    }
+}
+
+bool DecodePng(const uint8_t* data, size_t size, Image& img) {
+    img = Image{};
     int w = 0, h = 0, comp = 0;
-    stbi_uc* px = stbi_load_from_memory(bytes.data(), int(bytes.size()), &w, &h, &comp, 4);
+    stbi_uc* px = stbi_load_from_memory(data, int(size), &w, &h, &comp, 4);
     if (!px) return false;
     if (w <= 0 || h <= 0 || w > 16384 || h > 16384) {
         stbi_image_free(px);

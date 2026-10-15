@@ -493,11 +493,15 @@ float4 spreadtap(Texture2D t, SamplerState s, float2 uv, float4 w, float m) {
         }
     return c / (n * n);
 }
-void alphatest(float a) {
+float alphatest(float a) {
     int f = (int)misc.y;
+    // surf.w: alpha to coverage for a cut-out (alpha greater than the reference, no blending, anti-aliasing): the
+    // edge's alpha sharpened to a pixel wide ramp around the reference, which the samples cover in proportion
+    if (surf.w != 0) return saturate((a - misc.x / 255) / max(fwidth(a), 1e-4) + 0.5);
     int v = (int)round(a * 255), r = (int)misc.x;
     bool ok = f == 0 ? false : f == 1 ? v < r : f == 2 ? v == r : f == 3 ? v <= r : f == 4 ? v > r : f == 5 ? v != r : f == 6 ? v >= r : true;
     if (!ok) discard;
+    return a;
 }
 )";
 
@@ -905,7 +909,7 @@ std::string PixelHlsl(const PixelKey& k) {
         body += "cur.rgb = saturate(cur.rgb + v1.rgb);\n";
         body += "float4 outc = float4(lerp(fogin.rgb, cur.rgb, fogin.a), cur.a);\n";
     }
-    body += "alphatest(outc.a);\n" + Hooks().Output() + "return outc;\n}\n";
+    body += "outc.a = alphatest(outc.a);\n" + Hooks().Output() + "return outc;\n}\n";
     s += body;
     return k.quad ? QuadHlsl(std::move(s)) : s;
 }

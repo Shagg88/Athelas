@@ -90,6 +90,9 @@ Pad Poll(int port) {
     return p;
 }
 
+// PAD_STYLE=1 (PlayStation) or 2 (Nintendo): the kind of controller the test plays with
+int Style(int) { return int(harness::Env("PAD_STYLE")); }
+
 void Rumble(int port, uint16_t left, uint16_t right) {
     if (app::kGame.rumble) app::kGame.rumble(port, left, right);
 }

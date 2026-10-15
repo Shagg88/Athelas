@@ -17,6 +17,7 @@
 
 #include "app/app.h"
 #include "core/log.h"
+#include "gpu/backend.h"
 #include "gpu/state.h"
 #include "gpu/texture.h"
 #include "gpu/vertex.h"
@@ -30,7 +31,7 @@ X86_FUNC(sub_0004E890) {
         float aspect;
         std::memcpy(&aspect, ::kernel::HostPtr(at), 4);
         if (std::fabs(aspect - 4.0f / 3.0f) < 0.01f) {
-            aspect = app::WideAspect();
+            aspect = app::FrameAspect();
             std::memcpy(::kernel::HostPtr(at), &aspect, 4);
         }
     }
@@ -39,6 +40,16 @@ X86_FUNC(sub_0004E890) {
 
 namespace tt {
 bool g_hud_edges = true;  // settings.toml [graphics] hud_edges
+}
+
+namespace {
+// the shared SDK draws wider frames only for a game that handles them: this one does, up to 32:9 (menus at 16:9
+// with side bars, see the panel zoom below), drawn at the screen's own width rather than stretched sideways
+const bool g_wide_setup = [] {
+    app::g_max_frame_aspect = 32.0f / 9.0f;
+    gpu::g_wide_targets = true;
+    return true;
+}();
 }
 
 namespace {
@@ -84,7 +95,7 @@ float HudSqueeze(const gpu::State& s) {
         gpu::TextureDesc d;
         if (t && gpu::Describe(t, d) && d.width >= 640 && d.height >= 480) return 1.0f;
     }
-    return (4.0f / 3.0f) / app::WideAspect();
+    return (4.0f / 3.0f) / app::FrameAspect();
 }
 
 // hud_edges: a HUD piece near the left or right edge keeps its distance to that edge of the 16:9 picture (in
@@ -118,7 +129,7 @@ void HudPlace(float x0, float x1, float y0, float y1, float w, float f, float& a
             float h = w * 3 / 4;
             // wider than 16:9 (ultrawide): the menu as on a 16:9 screen, in the middle with bars at the sides, as
             // filling the width would stretch the art far more or cut off the menu's top and bottom
-            float wide = (16.0f / 9.0f) / app::WideAspect();
+            float wide = (16.0f / 9.0f) / app::FrameAspect();
             a = (f == 1 ? wide : f) * kZoom;
             // the screen-wide shade over the panel stays within the 16:9 part (on 16:9 its enlarged edges are off
             // the screen)

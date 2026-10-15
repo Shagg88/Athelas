@@ -1,6 +1,7 @@
 // XAPI functions that talk to hardware: controller ports and the hard disk cache partition
 #include <chrono>
 
+#include "core/log.h"
 #include "core/input.h"
 #include "xdk/hle.h"
 #include "xdk/layout.h"
@@ -68,6 +69,7 @@ HLE_STDCALL(XInitDevices, 2) {
 
 HLE_STDCALL(XInputOpen, 4) {
     uint32_t type = a[0], port = a[1];
+    LOG_FIRST(8, "xapi: XInputOpen type %08X port %u", type, port);
     if (type != kGamepadType || port > 3) return 0;
     uint32_t h = mem::AllocSystem(16);
     std::lock_guard<std::mutex> lock(g_ports_lock);

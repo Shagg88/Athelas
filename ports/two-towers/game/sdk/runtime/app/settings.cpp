@@ -141,10 +141,6 @@ Mode Output() {
     return Desktop();
 }
 
-namespace {
-std::atomic<float> g_wide_aspect{16.0f / 9.0f};
-}
-
 bool Widescreen() {
     // asked per frame and per HUD quad: the desktop mode lookup only runs when the resolution setting changes
     static std::atomic<uint64_t> key{~0ull};
@@ -155,15 +151,23 @@ bool Widescreen() {
     if (key.exchange(k) != k) {
         Mode m = Output();
         wide = m.width * 2 >= m.height * 3;  // 3:2 or wider
-        float a = float(m.width) / float(std::max(m.height, 1u));
-        g_wide_aspect = std::clamp(a, 16.0f / 9.0f, 32.0f / 9.0f);
     }
     return wide;
 }
 
-float WideAspect() {
-    Widescreen();  // brings the aspect up to date
-    return g_wide_aspect.load();
+float g_max_frame_aspect = 16.0f / 9.0f;
+
+float FrameAspect() {
+    if (!Widescreen()) return 4.0f / 3.0f;
+    static std::atomic<uint64_t> key{~0ull};
+    static std::atomic<float> aspect{16.0f / 9.0f};
+    const Settings& s = Get();
+    uint64_t k = uint64_t(s.width) << 32 | s.height;
+    if (key.exchange(k) != k) {
+        Mode m = Output();
+        aspect = m.height ? float(m.width) / float(m.height) : 16.0f / 9.0f;
+    }
+    return std::clamp(aspect.load(), 16.0f / 9.0f, std::max(g_max_frame_aspect, 16.0f / 9.0f));
 }
 
 float RenderScale(uint32_t guest_height) {

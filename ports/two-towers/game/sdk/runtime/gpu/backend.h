@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <atomic>
 #include <cstdint>
 #include <memory>
@@ -75,8 +76,32 @@ inline std::atomic<bool> g_sharpen_off{false};
 // the game shows a full-screen movie (its frame fills the back buffer): presented by [graphics] movie_display,
 // movie_sharpening and cutscene_audio_delay instead of as a game frame
 inline std::atomic<bool> g_movie{false};
-// the movie fills its whole 4:3 frame (an interview or trailer, not letterboxed film): movie_display fit shows it 4:3
-inline std::atomic<bool> g_movie_full{false};
+// set by a game: how movie_display "fit" shows the movie on screen. kMovieFit: film bars above and below, its middle
+// 16:9 is shown; kMovieWide: a widescreen film squeezed into the 4:3 frame (anamorphic), the whole frame shown 16:9;
+// kMovie43: a 4:3 picture, shown 4:3
+constexpr uint32_t kMovieFit = 0, kMovieWide = 1, kMovie43 = 2;
+inline std::atomic<uint32_t> g_movie_shape{kMovieFit};
+// set by a game: where kMovieFit's window sits, its bottom edge as a share of the frame's height (0: centred). A
+// movie whose picture runs lower than a film's bars (a logo with a line of text at the bottom) keeps that line.
+inline std::atomic<float> g_movie_fit_bottom{0.0f};
+// set by a game: the widest kMovieFit goes on a wider screen, its films' own shape (16:9 unless set; ROTK's are 1.84:1)
+inline std::atomic<float> g_movie_fit_max{16.0f / 9.0f};
+// kMovieFit's window top for a window that is `share` of the frame's height
+inline float MovieFitTop(float share) {
+    float b = g_movie_fit_bottom;
+    if (b <= 0.0f) return 0.5f - share / 2;
+    return std::clamp(b - share, 0.0f, 1.0f - share);
+}
+// set by a game that shows its 4:3 frame wider (app::FrameAspect): render targets get that much more width, so the
+// frame is drawn at the screen's own resolution instead of stretched sideways. Off: targets keep the guest's shape.
+inline std::atomic<bool> g_wide_targets{false};
+// set by a game: called with each draw's state before it is drawn (to look at what the game draws). Null for none.
+using DrawObserver = void (*)(const State& s);
+inline DrawObserver g_draw_observer = nullptr;
+// set by a game: alpha to coverage for cut-outs (leaves, grass, fences) when anti-aliasing is on
+inline std::atomic<bool> g_alpha_edges{false};
+// set by a game: fixed function fog distances scaled by this (a longer draw distance), density divided by it
+inline std::atomic<float> g_fog_scale{1.0f};
 // ] : the colour look shown, from [graphics] colour_look at start, the key steps through them while playing
 inline std::atomic<uint32_t> g_colour_look{0};
 constexpr uint32_t kColourLooks = 4;

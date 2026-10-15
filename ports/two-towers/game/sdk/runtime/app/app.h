@@ -99,9 +99,10 @@ Mode Output();
 float RenderScale(uint32_t guest_height);
 // the output is 3:2 or wider: the console reports a widescreen TV and the frame is shown 16:9, else 4:3 as on a 4:3 TV
 bool Widescreen();
-// the widescreen picture's shape: the output's own from 16:9 (narrower ones, 16:10, show 16:9 with bars above and
-// below) up to 32:9, so an ultrawide screen is filled
-float WideAspect();
+// the shape the frame is shown at: 4:3 without widescreen, else the output's shape, at least 16:9 and at most
+// g_max_frame_aspect (16:9 unless the game handles wider screens: its 3D, 2D and movies then follow FrameAspect)
+float FrameAspect();
+extern float g_max_frame_aspect;
 
 std::filesystem::path ExeDir();
 // the game in assets (game_files.cpp): its folder and this executable's xbe, from the extracted files or a disc

@@ -34,6 +34,24 @@ std::string PngName(uint32_t width, uint32_t height, uint64_t hash);
 
 // an RGBA picture as PNG: read with a full chain of mip levels made by halving (RGBA8), written from level 0
 bool ReadPng(const std::filesystem::path& file, Image& img);
+// the same from PNG bytes in memory
+bool DecodePng(const uint8_t* data, size_t size, Image& img);
+// a game's own replacement for a texture, by the pack hash (a texture pack file of the same name wins): true with the
+// picture in out. Asked once per hash; set by game code, null for none.
+using BuiltinTexture = bool (*)(uint64_t hash, uint32_t width, uint32_t height, Image& out);
+extern BuiltinTexture g_builtin;
+// the same found from a texture's contents, asked before g_builtin: its Xbox format, size and levels, its guest
+// bytes (all levels, as stored, swizzled) and a P8 texture's 256 colours (D3DCOLOR), else null
+struct Contents {
+    uint32_t format, width, height, levels;
+    const uint8_t* data;
+    size_t size;
+    const uint32_t* palette;
+};
+using BuiltinContents = bool (*)(const Contents& tex, Image& out);
+extern BuiltinContents g_builtin_contents;
+// an RGBA8 or BGRA8 picture's mip levels below level 0, each made by halving
+void MakeLevels(Image& img);
 bool WritePng(const std::filesystem::path& file, uint32_t width, uint32_t height, const std::vector<uint8_t>& rgba);
 // written on a thread of its own, so a dump does not stall the frame; a file that exists is left alone
 void WritePngLater(std::filesystem::path file, uint32_t width, uint32_t height, std::vector<uint8_t> rgba);

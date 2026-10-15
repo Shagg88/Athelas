@@ -78,6 +78,7 @@ struct File : Object {
     size_t next = 0;
     bool listed = false;
     bool delete_on_close = false;
+    bool async = false;  // opened without FILE_SYNCHRONOUS_IO_*: reads and writes report STATUS_PENDING, as the console's drivers do
     std::mutex io;  // threads sharing a handle: seek and transfer stay together
     File() : Object(ObjType::File) {}
     ~File() override {
@@ -296,6 +297,7 @@ uint32_t OpenOnDisc(const Disc::Entry* e, const std::string& name, uint32_t hand
     f->xbox = Normalize(name);
     f->entry = e;
     f->dir = e->dir;
+    f->async = !(options & 0x30);
     W32(handle_out, NewHandle(f));
     IoStatus(iosb, kSuccess, 1);
     LOG_FIRST(400, "open %s", name.c_str());
@@ -418,6 +420,7 @@ KERNEL_EXPORT(190, NtCreateFile, 9) {
     f->xbox = Normalize(name);
     f->fp = fp;
     f->delete_on_close = options & 0x1000;  // FILE_DELETE_ON_CLOSE
+    f->async = !(options & 0x30);  // FILE_SYNCHRONOUS_IO_ALERT / _NONALERT
     W32(handle_out, NewHandle(f));
     IoStatus(iosb, kSuccess, info);
     LOG_FIRST(400, "open %s", name.c_str());
@@ -447,19 +450,23 @@ KERNEL_EXPORT(202, NtOpenFile, 6) {
         if (!f->fp) f->fp = std::fopen(host.c_str(), "rb");
         if (!f->fp) return kAccessDenied;
     }
-    (void)options;
+    f->async = !(options & 0x30);
     W32(handle_out, NewHandle(f));
     IoStatus(iosb, kSuccess, 1);
     return kSuccess;
 }
 
 // I/O completes before the call returns: the status block is written, then the file object, the event and the
-// APC are signalled (GetOverlappedResult without an event waits on the file handle)
+// APC are signalled (GetOverlappedResult without an event waits on the file handle). On a handle opened for
+// asynchronous I/O the console's disc and disk drivers always queue the request, so the call reports
+// STATUS_PENDING and the result is read from the status block: titles that queue a request and also handle a
+// synchronous completion would otherwise complete it twice (ROTK's loader 0xBF410/0xBF4D0).
 static uint32_t Finish(File& f, uint32_t status, uint32_t n, uint32_t event, uint32_t apc, uint32_t apc_ctx, uint32_t iosb) {
     IoStatus(iosb, status, n);
     SetEvent(f);
     Complete(event, apc, apc_ctx, iosb);
-    return status;
+    constexpr uint32_t kPending = 0x103;
+    return f.async && (status == kSuccess || status == kEndOfFile) ? kPending : status;
 }
 
 static uint64_t Offset(File& f, uint32_t off) {
@@ -525,6 +532,12 @@ KERNEL_EXPORT(211, NtQueryInformationFile, 5) {
             G<uint8_t>(out + 0x15) = f->dir;  // Directory, after DeletePending
             IoStatus(iosb, kSuccess, 0x18);
             return kSuccess;
+        case 6: {  // FileInternalInformation: a file index unique per file (XAPI GetFileInformationByHandle)
+            uint64_t index = std::hash<std::string>{}(f->xbox.empty() ? f->host.string() : f->xbox);
+            W64(out, index);
+            IoStatus(iosb, kSuccess, 8);
+            return kSuccess;
+        }
         case 14:  // FilePositionInformation
             W64(out, f->pos);
             IoStatus(iosb, kSuccess, 8);

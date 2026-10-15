@@ -26,9 +26,13 @@ Mode Desktop() { return {1280, 720}; }
 Mode Output() { return Desktop(); }
 float RenderScale(uint32_t) { return 1.0f; }
 bool Widescreen() { return true; }
-float WideAspect() {  // TT_ASPECT=2.37 tries an ultrawide shape
-    static float a = getenv("TT_ASPECT") ? std::clamp(float(atof(getenv("TT_ASPECT"))), 16.0f / 9.0f, 32.0f / 9.0f) : 16.0f / 9.0f;
-    return a;
+float g_max_frame_aspect = 16.0f / 9.0f;
+// ASPECT=2.37 (in the environment; TT_ASPECT in older scripts) tests an ultrawide screen
+float FrameAspect() {
+    const char* e = std::getenv("ASPECT");
+    if (!e) e = std::getenv("TT_ASPECT");
+    float a = e ? float(std::atof(e)) : 16.0f / 9.0f;
+    return std::clamp(a, 16.0f / 9.0f, std::max(g_max_frame_aspect, 16.0f / 9.0f));
 }
 
 std::filesystem::path ExeDir() {
@@ -84,6 +88,20 @@ std::recursive_mutex& UiLock() {
     return m;
 }
 
-void Pace() {}
+// as the window's: frames at most fps_cap a second (a game's frame rate setting), so game time can be checked
+void Pace() {
+    using clock = std::chrono::steady_clock;
+    static clock::time_point next = clock::now();
+    uint32_t cap = Get().fps_cap;
+    auto now = clock::now();
+    if (!cap) {
+        next = now;
+        return;
+    }
+    auto period = std::chrono::nanoseconds(1000000000ull / cap);
+    next += period;
+    if (next < now - period) next = now;
+    std::this_thread::sleep_until(next);
+}
 
 }  // namespace app

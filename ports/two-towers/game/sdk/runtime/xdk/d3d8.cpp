@@ -1,6 +1,7 @@
 // Direct3D 8 (XDK 5849) entry points the title calls, implemented on the host renderer.
 // Resource creation, locking and the XG helpers stay recompiled: they only manage memory.
 #include <algorithm>
+#include <array>
 #include <cstdlib>
 #include <atomic>
 #include <chrono>
@@ -86,6 +87,13 @@ uint32_t g_screen_pixels = 640 * 480;  // the back buffer's, for visibility test
 std::recursive_mutex g_lock;
 
 std::unordered_map<uint32_t, std::shared_ptr<gpu::VertexShader>> g_vs;
+// vertex program memory, see D3DDevice_LoadVertexShader
+struct LoadedProgram {
+    std::vector<uint32_t> program;  // 4 dwords per instruction, from the address to the program's end
+    uint32_t type = 0;
+};
+std::map<uint32_t, LoadedProgram> g_vs_memory;  // by start address
+std::map<std::pair<uint32_t, uint32_t>, std::shared_ptr<gpu::VertexShader>> g_vs_selected;  // (declaration, address)
 std::unordered_map<uint32_t, std::shared_ptr<gpu::PixelShader>> g_ps;
 std::array<uint32_t, 3> g_buffers{};  // front, back surfaces
 uint32_t g_buffer_count = 2;
@@ -689,6 +697,7 @@ HLE_STDCALL(D3DDevice_SetTransform, 2) {
     std::memcpy(HostPtr(kDevice + kDevTransforms + t * 64), HostPtr(a[1]), 64);
     uint32_t pc = t < 2 ? t + 2 : t < 6 ? t + 14 : t + 250;
     std::memcpy(g_state.transforms[pc].data(), HostPtr(a[1]), 64);
+    if (t == 1 && gpu::g_projection_hook) gpu::g_projection_hook(g_state.transforms[pc].data());
     return 0;
 }
 
@@ -819,6 +828,8 @@ HLE_STDCALL(D3DDevice_DeleteVertexShader, 1) {
     if (it != g_vs.end()) {
         mem::FreeSystem(a[0] & ~1u);
         g_vs.erase(it);
+        for (auto sel = g_vs_selected.begin(); sel != g_vs_selected.end();)
+            sel = sel->first.first == a[0] ? g_vs_selected.erase(sel) : std::next(sel);
     }
     return 0;
 }
@@ -880,12 +891,73 @@ HLE_FASTCALL(D3DDevice_SetVertexShaderConstantNotInlineFast, 1) {
     return 0;
 }
 
+// Vertex program memory (136 instructions on the console). LoadVertexShader(handle, address) copies a shader's
+// program there; SelectVertexShader(handle, address) draws with the handle's declaration and the program that
+// starts at the address. The Return of the King loads its skinning programs at 12 and selects them per mesh.
+namespace d3d {
+namespace {
+
+void SelectVertexShader(uint32_t h, uint32_t address) {
+    std::shared_ptr<gpu::VertexShader> decl;
+    if (h & 1) {
+        auto it = g_vs.find(h);
+        if (it != g_vs.end()) decl = it->second;
+    } else if (!h) {
+        decl = g_state.vs;
+    }
+    if (!decl) {
+        LOG_FIRST(8, "d3d: SelectVertexShader with unknown handle %08X", h);
+        return;
+    }
+    auto key = std::make_pair(decl->handle, address);
+    auto sit = g_vs_selected.find(key);
+    if (sit == g_vs_selected.end()) {
+        // the program loaded at the address, or the tail of one loaded below it
+        const LoadedProgram* lp = nullptr;
+        uint32_t skip = 0;
+        for (auto& [at, p] : g_vs_memory)
+            if (at <= address && address < at + p.program.size() / 4) {
+                lp = &p;
+                skip = address - at;
+            }
+        auto vs = std::make_shared<gpu::VertexShader>(*decl);
+        vs->hash = 0;
+        if (lp) {
+            vs->program.assign(lp->program.begin() + skip * 4, lp->program.end());
+            vs->program_type = lp->type;
+        } else {
+            LOG_FIRST(8, "d3d: SelectVertexShader %08X at %u: nothing loaded there", h, address);
+        }
+        sit = g_vs_selected.emplace(key, vs).first;
+    }
+    g_state.vs = sit->second;
+    g_state.vs_handle = decl->handle;
+    for (auto& [reg, v] : decl->constants)
+        if (reg < 192) g_state.vsc[reg] = v;
+}
+}  // namespace
+}  // namespace d3d
+
 HLE_STDCALL(D3DDevice_LoadVertexShader, 2) {
-    LOG_FIRST(4, "d3d: LoadVertexShader %08X at %u is not supported", a[0], a[1]);
+    std::lock_guard<std::recursive_mutex> lock(g_lock);
+    auto it = g_vs.find(a[0]);
+    if (it == g_vs.end() || it->second->program.empty()) {
+        LOG_FIRST(8, "d3d: LoadVertexShader %08X at %u has no program", a[0], a[1]);
+        return 0;
+    }
+    uint32_t address = a[1], n = uint32_t(it->second->program.size() / 4);
+    // programs the new one overwrites go, and every selection made from that memory
+    for (auto m = g_vs_memory.begin(); m != g_vs_memory.end();)
+        m = m->first < address + n && address < m->first + m->second.program.size() / 4 ? g_vs_memory.erase(m) : std::next(m);
+    g_vs_memory[address] = {it->second->program, it->second->program_type};
+    for (auto sel = g_vs_selected.begin(); sel != g_vs_selected.end();)
+        sel = sel->first.second >= address && sel->first.second < address + n ? g_vs_selected.erase(sel) : std::next(sel);
+    LOG_FIRST(16, "d3d: LoadVertexShader %08X at %u, %u instructions", a[0], address, n);
     return 0;
 }
 HLE_STDCALL(D3DDevice_SelectVertexShader, 2) {
-    LOG_FIRST(4, "d3d: SelectVertexShader %08X at %u is not supported", a[0], a[1]);
+    std::lock_guard<std::recursive_mutex> lock(g_lock);
+    SelectVertexShader(a[0], a[1]);
     return 0;
 }
 HLE_STDCALL(D3DDevice_SetShaderConstantMode, 1) {
@@ -1199,9 +1271,41 @@ HLE_STDCALL(D3DDevice_BeginPush, 1) {
 
 HLE_STDCALL(D3DDevice_EndPush, 1) {
     std::lock_guard<std::recursive_mutex> lock(g_lock);
-    constexpr uint32_t kBeginEnd = 0x17FC, kInlineArray = 0x1818;
+    constexpr uint32_t kBeginEnd = 0x17FC, kInlineArray = 0x1818, kArrayFormat = 0x1760;  // 16 formats, 4 bytes apart
     static std::vector<uint32_t> vertices;
     uint32_t prim = 0;
+    // vertex array formats the title pushed itself (count bits 4 to 7, type bits 0 to 3: the D3DVSDT code); its
+    // inline vertices carry the enabled ones packed in register order (The Return of the King's particles)
+    std::array<uint32_t, 16> formats{};
+    bool own_formats = false;
+    auto draw_own = [&](uint32_t prim, const std::vector<uint32_t>& v) {
+        auto vs = std::make_shared<gpu::VertexShader>();
+        if ((g_state.vs_handle & 1) && g_state.vs) {
+            vs->program = g_state.vs->program;
+            vs->program_type = g_state.vs->program_type;
+        }
+        uint32_t stride = 0;
+        for (uint32_t r = 0; r < 16; r++) {
+            uint32_t f = formats[r], type = f & 0xF, count = (f >> 4) & 0xF;
+            if (!count) continue;  // disabled
+            uint32_t bytes = type == 2 ? count * 4 : type == 1 || type == 5 ? count * 2 : type == 6 ? 4 : count;
+            vs->inputs[r] = {0, stride, f & 0xFF};
+            stride += bytes;
+        }
+        vs->stream_stride[0] = stride;
+        uint32_t total = uint32_t(v.size()) * 4;
+        if (!stride || total % stride) {
+            LOG_FIRST(8, "d3d: EndPush primitive %u dropped, %u bytes of vertices of %u (own formats)", prim, total, stride);
+            return;
+        }
+        auto bound = g_state.vs;
+        uint32_t handle = g_state.vs_handle;
+        g_state.vs = vs;
+        g_state.vs_handle = handle | 1;
+        DrawUp(prim, total / stride, v.data(), stride);
+        g_state.vs = bound;
+        g_state.vs_handle = handle;
+    };
     for (uint32_t p = g_push_begin, end = a[0]; g_push_begin && p + 4 <= end;) {
         // count in bits 18 to 28, bit 30 keeps the method for every value
         uint32_t head = R32(p), method = head & 0x1FFC, n = (head >> 18) & 0x7FF;
@@ -1214,11 +1318,18 @@ HLE_STDCALL(D3DDevice_EndPush, 1) {
             uint32_t m = head & 0x40000000 ? method : method + i * 4, v = R32(p);
             if (m == kInlineArray) {
                 if (prim) vertices.push_back(v);
+            } else if (m >= kArrayFormat && m < kArrayFormat + 16 * 4) {
+                formats[(m - kArrayFormat) / 4] = v;
+                own_formats = true;
+                if (m >> 2 < g_state.simple.size()) g_state.simple[m >> 2] = v;
             } else if (m != kBeginEnd) {
                 if (m >> 2 < g_state.simple.size()) g_state.simple[m >> 2] = v;
             } else if (v) {
                 prim = v;
                 vertices.clear();
+            } else if (prim && own_formats) {
+                draw_own(prim, vertices);
+                prim = 0;
             } else if (prim) {
                 uint32_t stride = VertexBytes(), bytes = uint32_t(vertices.size()) * 4;
                 if (stride && bytes % stride == 0) DrawUp(prim, bytes / stride, vertices.data(), stride);
