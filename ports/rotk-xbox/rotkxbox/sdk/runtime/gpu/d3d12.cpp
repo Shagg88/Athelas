@@ -153,7 +153,8 @@ float4 psmain(O i) : SV_Target {
         float3 in0 = saturate(c.rgb);
         float3 x = look.y + (pow(in0, look2.x) - look.y) * look.x;
         x = max(x, 0);
-        x = lerp(x, 0.9 + 0.1 * tanh((x - 0.9) / 0.1), step(0.9, x));
+        // 0.9 + 0.1 * tanh((x - 0.9) / 0.1), tanh spelled out: Wine's and Proton's HLSL compiler lacks it
+        x = lerp(x, 0.9 + 0.1 * (1 - 2 / (exp(min((x - 0.9) / 0.05, 60)) + 1)), step(0.9, x));
         float l = dot(x, float3(0.2126, 0.7152, 0.0722));
         float mx = max(x.r, max(x.g, x.b)), mn = min(x.r, min(x.g, x.b));
         float sat = look.z * (1 + look.w * (1 - (mx - mn) / (mx + 1e-4)));

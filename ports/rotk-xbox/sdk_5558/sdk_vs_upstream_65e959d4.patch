@@ -2478,7 +2478,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  }  // namespace gpu
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/gpu/d3d12.cpp /home/claude/tt-port/game/sdk/runtime/gpu/d3d12.cpp
 --- upstream/runtime/gpu/d3d12.cpp	2026-10-14 22:35:04.242549991 -0700
-+++ /home/claude/tt-port/game/sdk/runtime/gpu/d3d12.cpp	2026-10-14 22:14:56.909617313 -0700
++++ /home/claude/tt-port/game/sdk/runtime/gpu/d3d12.cpp	2026-10-15 15:58:41.376633338 -0700
 @@ -13,11 +13,13 @@
  #include <wrl/client.h>
  
@@ -2521,7 +2521,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  Texture2D img : register(t0);
  Texture2D lut : register(t1);
  SamplerState ls : register(s0);
-@@ -126,12 +133,58 @@
+@@ -126,12 +133,59 @@
      for (int y = 0; y < n; y++)
          for (int x = 0; x < n; x++) c += img.SampleLevel(ls, i.uv + px * ((float2(x, y) + 0.5) / n - 0.5), 0);
      c /= n * n;
@@ -2545,7 +2545,8 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +        float3 in0 = saturate(c.rgb);
 +        float3 x = look.y + (pow(in0, look2.x) - look.y) * look.x;
 +        x = max(x, 0);
-+        x = lerp(x, 0.9 + 0.1 * tanh((x - 0.9) / 0.1), step(0.9, x));
++        // 0.9 + 0.1 * tanh((x - 0.9) / 0.1), tanh spelled out: Wine's and Proton's HLSL compiler lacks it
++        x = lerp(x, 0.9 + 0.1 * (1 - 2 / (exp(min((x - 0.9) / 0.05, 60)) + 1)), step(0.9, x));
 +        float l = dot(x, float3(0.2126, 0.7152, 0.0722));
 +        float mx = max(x.r, max(x.g, x.b)), mn = min(x.r, min(x.g, x.b));
 +        float sat = look.z * (1 + look.w * (1 - (mx - mn) / (mx + 1e-4)));
@@ -2580,7 +2581,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  const char* kDepthHlsl = R"(
  Texture2D<float> img : register(t0);
  SamplerState ps : register(s1);
-@@ -145,6 +198,33 @@
+@@ -145,6 +199,33 @@
  float psmain(O i) : SV_Depth { return img.SampleLevel(ps, i.uv, 0); }
  )";
  
@@ -2614,7 +2615,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  float Bits(uint32_t v) {
      float f;
      std::memcpy(&f, &v, 4);
-@@ -318,6 +398,18 @@
+@@ -318,6 +399,18 @@
      uint64_t frame = 0;
      uint64_t palette = 0;  // hash of the colours a P8 texture was decoded with
      uint8_t flags = 0;  // Extension::Decoded's
@@ -2633,7 +2634,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  };
  
  struct PsoKey {
-@@ -349,6 +441,8 @@
+@@ -349,6 +442,8 @@
      int32_t zbias;
      float zslope;
      uint32_t rtfmt;
@@ -2642,7 +2643,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  };
  
  // Blit's settings past the source and its rectangle
-@@ -359,6 +453,21 @@
+@@ -359,6 +454,21 @@
      float mul = 1;            // colour scale
      DXGI_FORMAT rtv = kBgra;  // the target's format
      bool over = false;        // premultiplied over the target, which keeps its alpha
@@ -2664,7 +2665,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  };
  
  // Shrink's settings past the source and the size
-@@ -378,6 +487,8 @@
+@@ -378,6 +488,8 @@
      bool rt[4] = {};            // stage samples a render target
      float k[4] = {1, 1, 1, 1};  // Extension::Sample's k
      float wide[4] = {};         // host texels per console texel of a target read into a smaller one, 0 otherwise
@@ -2673,7 +2674,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  };
  
  // a draw's shaders: what they are made from, their cache keys, the hashes Compile returned and the compiled blobs
-@@ -414,6 +525,12 @@
+@@ -414,6 +526,12 @@
      void RecordLate(uint32_t data) override;
      void Flush() override;
      void SetGamma(const uint8_t* ramp) override;
@@ -2686,7 +2687,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  
      ID3D12Device* Device() override { return dev_.Get(); }
      ID3D12GraphicsCommandList* List() override { return cl_.Get(); }
-@@ -474,8 +591,21 @@
+@@ -474,8 +592,21 @@
                          std::optional<uint32_t> sampler_slot = {});
      ID3D12Resource* Feedback(Target& t) override;
      void Resolve(Target& t) {
@@ -2708,7 +2709,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      // Pass, then its step
      void Pass(const char* hlsl, const char* entry, DXGI_FORMAT rtv, D3D12_CPU_DESCRIPTOR_HANDLE rh, uint32_t w,
                uint32_t h, ID3D12Resource* const src[3], const DXGI_FORMAT fmt[3], const float p[8],
-@@ -517,7 +647,7 @@
+@@ -517,7 +648,7 @@
      void CaptureShader(const char* kind, uint64_t key, const std::string& src);
      void SetTextureViewsAndSamplers(const State& s, const Assembled& a, DrawTextures& stages);
      uint32_t EnsureStageSamplers(const State& s, const DrawTextures& stages, bool clamp);
@@ -2717,7 +2718,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      void SetBlendFactorStencilRef(const State& s);
      void DrawGeometry(const Assembled& a);
      void UploadVertexBuffers(const Assembled& a);
-@@ -525,6 +655,7 @@
+@@ -525,6 +656,7 @@
      ID3DBlob* Compile(const std::string& src, const char* entry, const char* profile, uint64_t& hash);
      // Blit's pipeline
      ID3D12PipelineState* EnsureBlitPipeline(DXGI_FORMAT rtv, bool over = false);
@@ -2725,7 +2726,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      D3D12_GRAPHICS_PIPELINE_STATE_DESC FullScreenPipelineDesc(ID3DBlob* vs, ID3DBlob* ps, DXGI_FORMAT rtv) const;
      // Init, in order, each callee right after its caller
      bool CreateDevice();
-@@ -542,7 +673,11 @@
+@@ -542,7 +674,11 @@
      void ResizeSwap();
      void UploadGammaRamp();
      void DrawFrame(Target* t, uint32_t bi);
@@ -2738,7 +2739,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      void RenderUi();
      void ReleaseOldTextures();
      void ResetFrame();
-@@ -647,6 +782,17 @@
+@@ -647,6 +783,17 @@
      std::unordered_map<uint64_t, Target> targets_;
      std::unordered_map<uint32_t, uint64_t> target_used_;  // target address to the frame it was last used
      std::unordered_map<uint64_t, Tex> textures_;  // by data address, a P8 texture's with its palette's above
@@ -2756,7 +2757,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      std::unordered_map<uint64_t, ComPtr<ID3D12PipelineState>> blit_psos_;
      Extension* ext_ = nullptr;
      // one frame capture: every draw in a text file, each target as the frame leaves it, the textures it read
-@@ -668,9 +814,28 @@
+@@ -668,9 +815,28 @@
      D3D12_RESOURCE_STATES lut_state_ = D3D12_RESOURCE_STATE_COPY_DEST;
      uint8_t ramp_[768] = {};
      bool ramp_dirty_ = false;
@@ -2785,7 +2786,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      Target* draw_rt_ = nullptr;  // the draw's targets, the bound ones go when a texture's copy is drawn
      Target* draw_ds_ = nullptr;
      uint32_t guest_w_ = 640;
-@@ -678,6 +843,8 @@
+@@ -678,6 +844,8 @@
      uint32_t bb_w_ = 0;
      uint32_t bb_h_ = 0;
      float scale_ = 1.0f;
@@ -2794,7 +2795,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      // surfaces locked without a wait: copies in flight, the newest finished one goes to guest memory
      struct Late {
          ComPtr<ID3D12Resource> rb[kFrames];
-@@ -693,9 +860,36 @@
+@@ -693,9 +861,36 @@
      };
      std::unordered_map<uint32_t, Late> late_;
      std::mutex late_lock_;                      // DeliverLate runs on the title's thread
@@ -2831,7 +2832,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      uint64_t presents_ = 0;
      double fps_ = 0;
      std::chrono::steady_clock::time_point fps_t_ = std::chrono::steady_clock::now();
-@@ -713,11 +907,16 @@
+@@ -713,11 +908,16 @@
      if (!CreateRootSignature()) return false;
      CreateFrames();
      CreateGammaLut();
@@ -2850,7 +2851,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      return true;
  }
  
-@@ -743,7 +942,10 @@
+@@ -743,7 +943,10 @@
      LOGR("D3D12 adapter: %ls", adapter ? ad.Description : L"default");
      D3D12_COMMAND_QUEUE_DESC qd{};
      qd.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
@@ -2862,7 +2863,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      ComPtr<IDXGIFactory5> f5;
      BOOL tear = FALSE;
      if (SUCCEEDED(factory_.As(&f5))) f5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &tear, sizeof(tear));
-@@ -759,7 +961,11 @@
+@@ -759,7 +962,11 @@
      DXGI_SWAP_CHAIN_DESC1 sd{};
      sd.Width = bb_w_;
      sd.Height = bb_h_;
@@ -2875,7 +2876,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      sd.SampleDesc.Count = 1;
      sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
      sd.BufferCount = kFrames;
-@@ -772,9 +978,49 @@
+@@ -772,9 +979,49 @@
      }
      factory_->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER);
      sc1.As(&swap_);
@@ -2925,7 +2926,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  uint32_t D3D12Backend::CreateHeap(D3D12_DESCRIPTOR_HEAP_TYPE t, uint32_t n, bool visible,
                                    ComPtr<ID3D12DescriptorHeap>& out) {
      D3D12_DESCRIPTOR_HEAP_DESC hd{};
-@@ -852,8 +1098,23 @@
+@@ -852,8 +1099,23 @@
                                    IID_PPV_ARGS(&lut_));
  }
  
@@ -2949,7 +2950,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      ext_ = g_extension.get();
      if (ext_) {
          ext_->Settings();
-@@ -866,9 +1127,12 @@
+@@ -866,9 +1128,12 @@
      cl_->SetDescriptorHeaps(2, heaps);
      cl_->SetGraphicsRootSignature(root_.Get());
      bound_rt_ = bound_ds_ = nullptr;
@@ -2962,7 +2963,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      cl_->Close();
      ID3D12CommandList* lists[] = {cl_.Get()};
      queue_->ExecuteCommandLists(1, lists);
-@@ -888,6 +1152,167 @@
+@@ -888,6 +1153,167 @@
  
  void D3D12Backend::Flush() { Submit(true); }
  
@@ -3130,7 +3131,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  void D3D12Backend::WaitFence(uint64_t value) {
      fence_->SetEventOnCompletion(value, event_);
      WaitForSingleObject(event_, INFINITE);
-@@ -958,6 +1383,10 @@
+@@ -958,6 +1384,10 @@
      if (bound_rt_ == &it->second || bound_ds_ == &it->second) bound_rt_ = bound_ds_ = nullptr;
      (it->second.depth ? free_dsv_ : free_rtv_).push_back(it->second.view);
      CurrentFrame().garbage.push_back(it->second.res);
@@ -3141,7 +3142,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      if (it->second.fb) CurrentFrame().garbage.push_back(it->second.fb);
      targets_.erase(it);
  }
-@@ -966,7 +1395,9 @@
+@@ -966,7 +1396,9 @@
  bool D3D12Backend::CreateTargetResource(Target& t, const Surface& s) {
      float sc = scale_;
      if (ext_) ext_->MakeTarget(s, t.depth, t.gw, t.gh, sc, t.fmt);
@@ -3152,7 +3153,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      t.h = std::max(1u, uint32_t(std::lround(t.gh * sc)));
      D3D12_HEAP_PROPERTIES hp{D3D12_HEAP_TYPE_DEFAULT};
      D3D12_RESOURCE_DESC td = Texture2DDesc(DXGI_FORMAT_UNKNOWN, t.w, t.h);
-@@ -983,8 +1414,10 @@
+@@ -983,8 +1415,10 @@
          cv.Format = td.Format;
          t.state = D3D12_RESOURCE_STATE_RENDER_TARGET;
      }
@@ -3165,7 +3166,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  }
  
  // a view from the free pool, cleared; false when the pool is empty
-@@ -1006,6 +1439,7 @@
+@@ -1006,6 +1440,7 @@
          float black[4] = {0, 0, 0, 0};
          cl_->ClearRenderTargetView(Cpu(rtv_heap_.Get(), t.view, rtv_inc_), black, 0, nullptr);
      }
@@ -3173,7 +3174,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      return true;
  }
  
-@@ -1059,7 +1493,10 @@
+@@ -1059,7 +1494,10 @@
      t.depth = depth;
      t.gw = slot.gw;
      t.gh = slot.gh;
@@ -3185,7 +3186,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      g_perf.targets++;
      // an empty pool drops the new resource with t
      if (!CreateTargetView(t)) return nullptr;
-@@ -1077,25 +1514,225 @@
+@@ -1077,25 +1515,225 @@
      Target* ds = s.rs[kRsZEnable] || s.rs[kRsStencilEnable] ? EnsureTarget(s.zs, true) : nullptr;
      if (rt && ds && (rt->w != ds->w || rt->h != ds->h)) ds = nullptr;
      if (!rt && !ds) return false;
@@ -3423,7 +3424,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  constexpr uint64_t kDepthCopyKey = ~0ull;  // DepthCopy's pipeline in blit_psos_
  
  // DepthCopy's pipeline, kept in blit_psos_: writes depth only, always passing; null when it can't be made
-@@ -1127,6 +1764,8 @@
+@@ -1127,6 +1765,8 @@
  // src's depth drawn into dst's depth buffer
  void D3D12Backend::DrawDepthCopy(Target& src, Target& dst, ID3D12PipelineState* pso) {
      if (cap_) fprintf(cap_, "%04u depth copy %08X to %08X\n", cap_i_++, src.data, dst.data);
@@ -3432,7 +3433,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      Transition(src.res.Get(), src.state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
      Transition(dst.res.Get(), dst.state, D3D12_RESOURCE_STATE_DEPTH_WRITE);
      D3D12_CPU_DESCRIPTOR_HANDLE dh = Cpu(dsv_heap_.Get(), dst.view, dsv_inc_);
-@@ -1142,6 +1781,7 @@
+@@ -1142,6 +1782,7 @@
      Alloc cb = Upload(256, 256);
      DrawFullScreen(pso, cb.gpu, slot);
      dst.drawn = true;
@@ -3440,7 +3441,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      bound_rt_ = bound_ds_ = nullptr;
  }
  
-@@ -1210,6 +1850,7 @@
+@@ -1210,6 +1851,7 @@
      g_perf.rtups++;
      TextureDesc d;
      if (!Describe(s.header, d) || Format(d.format).depth) return;
@@ -3448,7 +3449,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      std::vector<uint8_t> px;
      uint32_t pitch;
      // after a Sync only the pixels the CPU changed go over the picture, which stays at render scale
-@@ -1228,6 +1869,7 @@
+@@ -1228,6 +1870,7 @@
      float mul = 1 / t.range;
      Blit(tex.Get(), kBgra, uv, {.alpha = true, .mul = mul, .rtv = t.fmt, .over = over});
      CurrentFrame().garbage.push_back(tex);
@@ -3456,7 +3457,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      t.epoch = DirtyEpoch(t.data);
      t.sig = MemSig(t.data, t.bytes);
  }
-@@ -1287,10 +1929,22 @@
+@@ -1287,10 +1930,22 @@
      dev_->CreateShaderResourceView(lut_.Get(), &sv, Cpu(srv_heap_.Get(), slot + 1, srv_inc_));
      uint32_t si = EnsureBlitSamplers();
      Alloc cb = Upload(256, 256);
@@ -3482,7 +3483,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  }
  
  ID3DBlob* D3D12Backend::Compile(const std::string& src, const char* entry, const char* profile, uint64_t& hash) {
-@@ -1300,7 +1954,27 @@
+@@ -1300,7 +1955,27 @@
      hash = Hash(src.data(), src.size(), entry_seed);
      auto it = blobs_.find(hash);
      if (it != blobs_.end()) return it->second.Get();
@@ -3510,7 +3511,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      ComPtr<ID3DBlob> err;
      PerfScope perf_compile{g_perf.compile};
      g_perf.shaders++;
-@@ -1313,6 +1987,10 @@
+@@ -1313,6 +1988,10 @@
          return nullptr;
      }
      blobs_[hash] = code;
@@ -3521,7 +3522,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      return code.Get();
  }
  
-@@ -1335,12 +2013,31 @@
+@@ -1335,12 +2014,31 @@
      return d;
  }
  
@@ -3553,7 +3554,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      D3D12_GRAPHICS_PIPELINE_STATE_DESC d = FullScreenPipelineDesc(vs, ps, rtv);
      if (over) {
          auto& blend = d.BlendState.RenderTarget[0];
-@@ -1352,7 +2049,10 @@
+@@ -1352,7 +2050,10 @@
          blend.DestBlendAlpha = D3D12_BLEND_ONE;
          blend.BlendOp = blend.BlendOpAlpha = D3D12_BLEND_OP_ADD;
      }
@@ -3565,7 +3566,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      return pso.Get();
  }
  
-@@ -1407,6 +2107,7 @@
+@@ -1407,6 +2108,7 @@
  
  // a copy of the target to read while drawing to it
  ID3D12Resource* D3D12Backend::Feedback(Target& t) {
@@ -3573,7 +3574,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      if (!t.fb) {
          D3D12_HEAP_PROPERTIES hp{D3D12_HEAP_TYPE_DEFAULT};
          D3D12_RESOURCE_DESC td = t.res->GetDesc();
-@@ -1485,7 +2186,8 @@
+@@ -1485,7 +2187,8 @@
      d.NumRenderTargets = k.has_rt ? 1 : 0;
      d.RTVFormats[0] = k.has_rt ? DXGI_FORMAT(k.rtfmt) : DXGI_FORMAT_UNKNOWN;
      d.DSVFormat = k.has_ds ? DXGI_FORMAT_D24_UNORM_S8_UINT : DXGI_FORMAT_UNKNOWN;
@@ -3583,7 +3584,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  }
  
  ID3D12PipelineState* D3D12Backend::EnsurePipeline(const PsoKey& k, ID3DBlob* vs, ID3DBlob* ps) {
-@@ -1499,7 +2201,9 @@
+@@ -1499,7 +2202,9 @@
      FillPipelineDesc(k, vs, ps, d);
      ComPtr<ID3D12PipelineState> pso;
      g_perf.psos++;
@@ -3593,7 +3594,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      psos_[h] = pso;
      return pso.Get();
  }
-@@ -1536,6 +2240,7 @@
+@@ -1536,6 +2241,7 @@
      sv.Format = t.depth ? DXGI_FORMAT_R24_UNORM_X8_TYPELESS : t.fmt;
      // the console reads the pixels it is about to overwrite: give the draw a copy
      if (feedback) return Feedback(t);
@@ -3601,7 +3602,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      Transition(t.res.Get(), t.state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
      if (t.depth) info.shadow = ShadowDepthKind(d.format);
      info.kind = kTex2D;
-@@ -1550,6 +2255,7 @@
+@@ -1550,6 +2256,7 @@
  // false when the texture could not be made, its entry dropped
  bool D3D12Backend::CreateTexture(Tex& tx, const TextureDesc& d, const FormatInfo& fi, uint64_t key) {
      g_perf.newtex++;
@@ -3609,7 +3610,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      if (tx.res) CurrentFrame().garbage.push_back(tx.res);
      tx = Tex{};
      tx.d = d;
-@@ -1621,15 +2327,113 @@
+@@ -1621,15 +2328,113 @@
      Transition(tx.res.Get(), st, D3D12_RESOURCE_STATE_COPY_DEST);
      uint32_t faces = d.cube ? 6 : 1;
      std::vector<uint8_t> px;
@@ -3723,7 +3724,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  }
  
  void FillTextureView(const Tex& tx, const TextureDesc& d, D3D12_SHADER_RESOURCE_VIEW_DESC& sv) {
-@@ -1697,6 +2501,17 @@
+@@ -1697,6 +2502,17 @@
      FillTextureView(tx, d, stages.sv[stage]);
      if (fi.depth) info.shadow = ShadowDepthKind(d.format);
      if (ext_) ext_->Sampled(d, nullptr, tx.flags, info);
@@ -3741,7 +3742,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      return tx.res.Get();
  }
  
-@@ -1755,11 +2570,13 @@
+@@ -1755,11 +2571,13 @@
          sd.Filter = D3D12_FILTER_ANISOTROPIC;
          sd.MaxAnisotropy = std::min<uint32_t>(an, 16);
      }
@@ -3756,7 +3757,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      sd.MinLOD = float(t[kTssMaxMipLevel]);
      sd.MaxLOD = mip ? D3D12_FLOAT32_MAX : sd.MinLOD;
      Color(t[kTssBorderColor], sd.BorderColor);
-@@ -1851,6 +2668,44 @@
+@@ -1851,6 +2669,44 @@
      draw_rt_ = bound_rt_;
      draw_ds_ = bound_ds_;
      for (int i = 0; i < 4; i++) stages.res[i] = BindTexture(s, i, stages);
@@ -3801,7 +3802,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      g_perf.bind += PerfMs(perf_t);
      // textures may have recorded copies that unbound the targets
      return BindTargets(s);
-@@ -1930,7 +2785,13 @@
+@@ -1930,7 +2786,13 @@
      k.has_rt = bound_rt_ != nullptr;
      k.has_ds = bound_ds_ != nullptr;
      k.rtfmt = bound_rt_ ? bound_rt_->fmt : 0;
@@ -3815,7 +3816,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      if (k.has_ds) KeyDepthStencil(s, a, k);
      KeyRasterizer(s, a, k);
  }
-@@ -1952,9 +2813,10 @@
+@@ -1952,9 +2814,10 @@
          c.fog[3] = kFogTableLinear;
          return;
      }
@@ -3829,7 +3830,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      c.fog[3] = float(s.rs[kRsFogTableMode]);
  }
  
-@@ -1984,6 +2846,11 @@
+@@ -1984,6 +2847,11 @@
  void D3D12Backend::FillTexelConstants(int i, const TextureDesc& d, const DrawTextures& stages, DrawConstants& c) {
      c.texsize[i][0] = float(d.width);
      c.texsize[i][1] = float(d.height);
@@ -3841,7 +3842,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      // the console samples pixels at integer positions, D3D12 half a pixel on: targets are read half a texel back
      if (!stages.rt[i]) return;
      float k = stages.k[i];
-@@ -2049,7 +2916,7 @@
+@@ -2049,7 +2917,7 @@
  constexpr size_t kTsTexture0 = 16;
  constexpr size_t kTsWorld = 256;
  
@@ -3850,7 +3851,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      uint32_t gw = size.w;
      uint32_t gh = size.h;
      // world, view, projection, then the viewport inside the target
-@@ -2057,6 +2924,9 @@
+@@ -2057,6 +2925,9 @@
      float wvp[16];
      MatMul(s.transforms[kTsWorld].data(), s.transforms[kTsView].data(), wv);
      MatMul(wv, s.transforms[kTsProjection].data(), wvp);
@@ -3860,7 +3861,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      const auto& v = s.viewport;
      float sx = float(v.w) / gw;
      float sy = float(v.h) / gh;
-@@ -2131,12 +3001,13 @@
+@@ -2131,12 +3002,13 @@
      std::memcpy(vc.cpu, s.vsc.data(), sizeof(s.vsc));
      Alloc dc = Upload(sizeof(DrawConstants), 256);
      FillSurfaceConstants(s, size, c);
@@ -3875,7 +3876,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
          FillLightConstants(s, sh.fk, c);
      }
      std::memcpy(dc.cpu, &c, sizeof(c));
-@@ -2267,21 +3138,21 @@
+@@ -2267,21 +3139,21 @@
  }
  
  // viewport covers the target, the guest viewport is in the shader; scissor clips to it
@@ -3907,7 +3908,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      }
      D3D12_RECT rect{std::clamp<LONG>(x0, 0, LONG(W)), std::clamp<LONG>(y0, 0, LONG(H)),
                      std::clamp<LONG>(x1, 0, LONG(W)), std::clamp<LONG>(y1, 0, LONG(H))};
-@@ -2291,6 +3162,16 @@
+@@ -2291,6 +3163,16 @@
  void D3D12Backend::SetBlendFactorStencilRef(const State& s) {
      float bf[4];
      Color(SimpleState(s, kMBlendColor), bf);
@@ -3924,7 +3925,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      cl_->OMSetBlendFactor(bf);
      cl_->OMSetStencilRef(SimpleState(s, kMStencilRef) & 0xFF);
  }
-@@ -2351,14 +3232,28 @@
+@@ -2351,14 +3233,28 @@
  void D3D12Backend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t count, const uint8_t* indices) {
      PerfScope perf_draw{g_perf.draw};
      g_perf.draws++;
@@ -3954,7 +3955,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      if (!BindTargets(s)) return;
      if (ext_ && ext_->Bound(*this, s, bound_rt_, bound_ds_, a.pretransformed) && !BindTargets(s)) return;
  
-@@ -2398,7 +3293,7 @@
+@@ -2398,7 +3294,7 @@
  
      // texture views and samplers, viewport and scissor, blend factor and stencil reference
      SetTextureViewsAndSamplers(s, a, stages);
@@ -3963,7 +3964,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      SetBlendFactorStencilRef(s);
  
      // geometry
-@@ -2407,9 +3302,9 @@
+@@ -2407,9 +3303,9 @@
  
  // a guest rect scaled to the target and clamped to it
  D3D12_RECT ScaledRect(const Target& t, int x0, int y0, int x1, int y1) {
@@ -3976,7 +3977,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  }
  
  // rs: the rects buffer, reused across targets
-@@ -2425,20 +3320,49 @@
+@@ -2425,20 +3321,49 @@
          const auto& v = s.viewport;
          rs.push_back(ScaledRect(t, int(v.x), int(v.y), int(v.x + v.w), int(v.y + v.h)));
      }
@@ -4031,7 +4032,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      }
      t.drawn = true;
  }
-@@ -2544,8 +3468,8 @@
+@@ -2544,8 +3469,8 @@
      Transition(dst_t.res.Get(), dst_t.state, D3D12_RESOURCE_STATE_RENDER_TARGET);
      D3D12_CPU_DESCRIPTOR_HANDLE rh = Cpu(rtv_heap_.Get(), dst_t.view, rtv_inc_);
      cl_->OMSetRenderTargets(1, &rh, FALSE, nullptr);
@@ -4042,7 +4043,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      bool listed = l.count && l.src_rects;
      uint32_t n = listed ? l.count : 1;
      for (uint32_t i = 0; i < n; i++) {
-@@ -2554,8 +3478,7 @@
+@@ -2554,8 +3479,7 @@
          DrawnRect r{.x0 = 0, .y0 = 0, .x1 = whole_w, .y1 = whole_h};
          if (listed) r = ReadDrawnRect(l.src_rects, l.dst_points, i);
          if (r.x1 <= r.x0 || r.y1 <= r.y0) continue;
@@ -4052,7 +4053,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
          LONG right = std::min(LONG(vp.TopLeftX + vp.Width), LONG(dst_t.w));
          LONG bottom = std::min(LONG(vp.TopLeftY + vp.Height), LONG(dst_t.h));
          D3D12_RECT scissor{LONG(vp.TopLeftX), LONG(vp.TopLeftY), right, bottom};
-@@ -2563,7 +3486,7 @@
+@@ -2563,7 +3487,7 @@
          cl_->RSSetViewports(1, &vp);
          cl_->RSSetScissorRects(1, &scissor);
          float uv[4] = {r.x0 / src_t.gw, r.y0 / src_t.gh, (r.x1 - r.x0) / src_t.gw, (r.y1 - r.y0) / src_t.gh};
@@ -4061,7 +4062,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
          float mul = 1 / dst_t.range;
          BlitOptions o{.alpha = true, .taps = taps, .mul = mul, .rtv = dst_t.fmt};
          Blit(src_res, src_t.fmt, uv, o);
-@@ -2579,7 +3502,7 @@
+@@ -2579,7 +3503,7 @@
      Transition(dst_t.res.Get(), dst_t.state, D3D12_RESOURCE_STATE_COPY_DEST);
      D3D12_TEXTURE_COPY_LOCATION dl{dst_t.res.Get(), D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX};
      D3D12_TEXTURE_COPY_LOCATION sl{src_res, D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX};
@@ -4070,7 +4071,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      bool listed = l.count && l.src_rects;
      uint32_t n = listed ? l.count : 1;
      for (uint32_t i = 0; i < n; i++) {
-@@ -2589,15 +3512,15 @@
+@@ -2589,15 +3513,15 @@
          if (listed) {
              GuestRect r = ReadGuestRect(l.src_rects, i);
              b.left = ScaleUnsigned(r.left, dst_scale);
@@ -4089,7 +4090,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
              }
          }
          if (b.right <= b.left || b.bottom <= b.top || dx >= dst_t.w || dy >= dst_t.h) continue;
-@@ -2631,12 +3554,15 @@
+@@ -2631,12 +3555,15 @@
      Target* dst_t = EnsureTarget(dst, false);
      if (!dst_t || src_t == dst_t) return;
      CopyList l{.count = count, .src_rects = src_rects, .dst_points = dst_points};
@@ -4105,7 +4106,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      if (cap_) {
          char name[32];
          snprintf(name, sizeof(name), "%04u_copy_%08X", cap_i_, dst_t->data);
-@@ -2656,7 +3582,7 @@
+@@ -2656,7 +3583,7 @@
          if (f.fence) WaitFence(f.fence);
      }
      for (auto& b : bb_) b.Reset();
@@ -4114,7 +4115,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      CreateBackBufferViews();
      bb_w_ = w;
      bb_h_ = h;
-@@ -2683,7 +3609,9 @@
+@@ -2683,7 +3610,9 @@
      char stamp[32];
      snprintf(stamp, sizeof(stamp), "%02u%02u%02u", tm.wHour, tm.wMinute, tm.wSecond);
      std::error_code ec;
@@ -4125,7 +4126,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      std::filesystem::create_directories(cap_dir_, ec);
      cap_ = _wfopen((cap_dir_ / "frame.txt").c_str(), L"w");
      cap_i_ = cap_rt_ = 0;
-@@ -2696,6 +3624,13 @@
+@@ -2696,6 +3625,13 @@
  constexpr int kRampGreen = 256;
  constexpr int kRampBlue = 512;
  
@@ -4139,7 +4140,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  void D3D12Backend::UploadGammaRamp() {
      constexpr uint32_t kRampBytes = 256 * 4;  // one BGRA texel per ramp entry
      ramp_dirty_ = false;
-@@ -2703,11 +3638,11 @@
+@@ -2703,11 +3639,11 @@
      bool identity = true;
      for (int i = 0; i < 256; i++) {
          uint8_t* p = a.cpu + i * 4;
@@ -4155,7 +4156,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      }
      gamma_ = !identity;
      Transition(lut_.Get(), lut_state_, D3D12_RESOURCE_STATE_COPY_DEST);
-@@ -2718,21 +3653,145 @@
+@@ -2718,21 +3654,145 @@
      cl_->CopyTextureRegion(&dl, 0, 0, 0, &sl, nullptr);
  }
  
@@ -4307,7 +4308,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  }
  
  void D3D12Backend::RenderUi() {
-@@ -2755,7 +3814,10 @@
+@@ -2755,7 +3815,10 @@
      cl_->ClearRenderTargetView(rh, black, 0, nullptr);
      cl_->OMSetRenderTargets(1, &rh, FALSE, nullptr);
      bound_rt_ = bound_ds_ = nullptr;
@@ -4319,7 +4320,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      RenderUi();
      Transition(bb_[bi].Get(), bs, D3D12_RESOURCE_STATE_PRESENT);
  }
-@@ -2805,18 +3867,40 @@
+@@ -2805,18 +3868,40 @@
  void LogPerf() {
      static PerfClock::time_point perf_start = PerfClock::now();
      static uint64_t perf_frames = 0;
@@ -4362,7 +4363,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
               "resource %.2f fence %.2f flush %.2f copy %.2f, next frame %.2f) | read-backs waited for: %.1f lock, "
               "%.1f NOOVERWRITE",
               g_perf_capture_ns.exchange(0) / n / 1e6, g_perf_wait_ns.exchange(0) / n / 1e6,
-@@ -2825,7 +3909,7 @@
+@@ -2825,7 +3910,7 @@
               g_perf_wait_kind_ns[3].exchange(0) / n / 1e6, g_perf_wait_kind_ns[4].exchange(0) / n / 1e6,
               g_perf_wait_kind_ns[5].exchange(0) / n / 1e6, g_perf_sync_block.exchange(0) / n,
               g_perf_sync_late.exchange(0) / n);
@@ -4371,7 +4372,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
               "hashed | %.1f tex uploads %.2f MB, %.1f new tex, %.1f new targets, %.1f target uploads, %.1f shrinks, "
               "%.1f read-backs %.1f late | %llu shaders %llu psos this second",
               p.draws / n, p.raw / n, p.verts / n / 1000.0, p.upload / n / 1048576.0, p.overflow / n, p.sigs / n,
-@@ -2833,6 +3917,7 @@
+@@ -2833,6 +3918,7 @@
               p.targets / n, p.rtups / n, p.shrinks / n, p.syncs / n, p.lates / n,
               (unsigned long long)p.shaders, (unsigned long long)p.psos);
          g_perf = Perf{};
@@ -4379,7 +4380,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
          perf_start = PerfClock::now();
          perf_frames = 0;
      }
-@@ -2849,6 +3934,10 @@
+@@ -2849,6 +3935,10 @@
      Target* t = EnsureTarget(front, false);
      if (t && LatchCpuWrite(*t)) UploadTarget(*t, front);
      if (t) Resolve(*t);
@@ -4390,7 +4391,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      if (ramp_dirty_) UploadGammaRamp();
      Transition(lut_.Get(), lut_state_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
  
-@@ -2857,8 +3946,19 @@
+@@ -2857,8 +3947,19 @@
      Submit(false);
      bool vsync = app::Get().vsync;
      auto perf_swap = PerfClock::now();
@@ -4411,7 +4412,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  
      presents_++;
      presents_seen_.store(presents_);
-@@ -2871,13 +3971,20 @@
+@@ -2871,13 +3972,20 @@
  }
  
  void D3D12Backend::ApplySettings() {
@@ -4435,7 +4436,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
          if (ext_) ext_->Reset(*this);
          bound_rt_ = bound_ds_ = nullptr;
      }
-@@ -3136,6 +4243,7 @@
+@@ -3136,6 +4244,7 @@
  }
  
  void D3D12Backend::CapSave(Target& t, const char* name) {
@@ -4443,7 +4444,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      DXGI_FORMAT fmt = t.depth ? DXGI_FORMAT_R24_UNORM_X8_TYPELESS : t.fmt;
      float mul = t.depth ? 1 : t.range;
      CapSave({.res = t.res.Get(), .state = &t.state, .fmt = fmt, .w = t.gw, .h = t.gh, .mul = mul}, name);
-@@ -3162,6 +4270,7 @@
+@@ -3162,6 +4271,7 @@
  
  void D3D12Backend::Capture(Target& t, const char* tag, float mul) {
      if (!cap_) return;
@@ -4451,7 +4452,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      char name[32];
      snprintf(name, sizeof(name), "%04u_%s_%08X", cap_i_, tag, t.data);
      CapSave({.res = t.res.Get(), .state = &t.state, .fmt = t.fmt, .w = t.gw, .h = t.gh, .mul = mul}, name);
-@@ -3169,6 +4278,7 @@
+@@ -3169,6 +4279,7 @@
  
  void D3D12Backend::SetGamma(const uint8_t* ramp) {
      std::memcpy(ramp_, ramp, sizeof(ramp_));
@@ -4551,7 +4552,25 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/gpu/shaders.cpp /home/claude/tt-port/game/sdk/runtime/gpu/shaders.cpp
 --- upstream/runtime/gpu/shaders.cpp	2026-10-14 22:35:04.242549991 -0700
-+++ /home/claude/tt-port/game/sdk/runtime/gpu/shaders.cpp	2026-10-14 22:14:56.909806731 -0700
++++ /home/claude/tt-port/game/sdk/runtime/gpu/shaders.cpp	2026-10-15 16:04:54.035540344 -0700
+@@ -72,7 +72,7 @@
+ float magclamp(float v) { float m = clamp(abs(v), 5.42101e-20, 1.84467e+19); return v < 0 ? -m : m; }
+ float4 ilu_rcp(float v) { return (1.0 / v).xxxx; }
+ float4 ilu_rcc(float v) { return magclamp(1.0 / v).xxxx; }
+-float4 ilu_rsq(float v) { return v == 0 ? (1.#INF).xxxx : (rsqrt(abs(v))).xxxx; }
++float4 ilu_rsq(float v) { return v == 0 ? asfloat(0x7f800000).xxxx : (rsqrt(abs(v))).xxxx; }
+ // 2^floor(v), fraction, 2^v
+ float4 ilu_exp(float v) {
+     float whole = floor(v);
+@@ -81,7 +81,7 @@
+ // exponent, mantissa, log2 of |v|; zero logs to negative infinity
+ float4 ilu_log(float v) {
+     float mag = abs(v), l2 = log2(mag), ex = floor(l2);
+-    return mag == 0 ? float4(-1.#INF, 1, -1.#INF, 1) : float4(ex, mag / exp2(ex), l2, 1);
++    return mag == 0 ? float4(-asfloat(0x7f800000), 1, -asfloat(0x7f800000), 1) : float4(ex, mag / exp2(ex), l2, 1);
+ }
+ // power clamped to 128 less 1/256
+ float4 ilu_lit(float4 s) {
 @@ -392,6 +392,8 @@
      };
      auto tex2d = [&](const std::string& uv) {
