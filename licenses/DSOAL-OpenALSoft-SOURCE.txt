@@ -6,4 +6,7 @@ Source code for the exact versions shipped:
   OpenAL Soft  https://github.com/kcat/openal-soft    commit 9ca7d05e4f1b16897104c913be7553891f0d027d (r10817)
 Binaries: https://github.com/kcat/dsoal/releases/tag/latest-master (DSOAL_r697.zip)
 
+The source of both, at exactly those commits, is included in the Athelas download: licenses\source\
+dsoal-r697-e111282.zip and openal-soft-r10817-9ca7d05.zip.
+
 You may replace these two files with your own builds of the same libraries.
