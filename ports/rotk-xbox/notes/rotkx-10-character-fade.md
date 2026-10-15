@@ -51,6 +51,26 @@ The faded orcs mostly have alphas from 0.8 to 0.98, so on the console they're ne
   ROTK never does this.
 - Checked by a MinGW syntax check only: the harness has no D3D12. It needs a run on Windows in Road to Isengard.
 
+## Fade speed is time-based, not per frame
+
+The user and the ROTK PC chat asked whether the fade is tied to the frame rate, as the D-pad was. The harness ran
+the same Road to Isengard fight at 30, 60 and 120 fps and logged each orc's fade alpha every frame.
+
+| Frame rate | Alpha step per frame | Falling (median, per s) | Rising (median, per s) |
+|---|---|---|---|
+| 30 | 2 to 8 | 40 | 72 |
+| 60 | 2 to 4 | 56 | 104 |
+| 120 | 2 (or 0) | 48 | 104 |
+
+- The step per frame shrinks as the frame rate rises, and the speed per second stays about the same, so the game
+  scales the fade by its time step. It needs no frame-rate fix.
+- ROTK PC's fade falls about 50 per second (the ROTK PC chat's log at 180 fps), the same speed.
+- Live orcs dip to about 150 to 175 (60 to 70% visible) and come back to 255; a dip and return takes about 1.5 s.
+- Dead bodies weren't caught fading in these logs. On PC they fade out slowly; on the port they vanished at once,
+  which fits the blend bug (invisible for the whole fade), not the frame rate.
+- On ROTK PC the same fade is ordinary SRCALPHA/INVSRCALPHA blending with the alpha from TFACTOR (stage 1 ALPHAOP
+  SELECTARG2, ALPHAARG2 = TFACTOR), on a separate FVF 0x1C2 draw.
+
 ## Left as they are (faithful)
 
 - Gandalf grey or ghostly in shade: in the reference renderer (harness, Ise01) he comes out the same grey in the
