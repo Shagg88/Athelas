@@ -5,6 +5,12 @@
 // ROTKFixLauncher.exe was its name before (removed when a new copy is installed).
 #define LAUNCHER_EXE "Athelas.exe"
 #define LAUNCHER_EXE_OLD "ROTKFixLauncher.exe"
+// The release's folders beside Athelas.exe: each game's own (the Xbox ports keep their settings, saves and logs in
+// theirs), and Athelas.ini with the list of games. The older names are still read once, to carry settings over.
+#define DIR_ROTK_PC   "ROTK-PC"
+#define DIR_ROTK_XBOX "ROTK-Xbox"
+#define DIR_TT_XBOX   "TT-Xbox"
+#define ATHELAS_INI   "Athelas.ini"
 #include <string>
 #include <vector>
 
@@ -126,3 +132,6 @@ std::string pc_fix_source();
 bool install_to(const std::string &src, const std::string &dst, std::string &err, bool &accessDenied);
 bool start_launcher(const std::string &dir, bool elevated, const std::string &args);
 bool folder_writable(const std::string &dir);   // false = Windows needs administrator rights there
+
+// Copies a folder's contents (and subfolders) into another; files of the same name are replaced. False on an error.
+bool copy_folder(const std::string &from, const std::string &to);

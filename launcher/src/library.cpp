@@ -248,12 +248,14 @@ GameKind detect_game_at(const std::string &path, LibGame &out)
 
 // ---- the remembered list ---------------------------------------------------------
 
-static std::string lib_file(const std::string &launcherDir) { return launcherDir + "\\ROTKFix\\games.ini"; }
+static std::string lib_file(const std::string &launcherDir) { return launcherDir + "\\" ATHELAS_INI; }
+static std::string lib_file_old(const std::string &launcherDir) { return launcherDir + "\\ROTKFix\\games.ini"; }
 
 std::vector<LibGame> library_load(const std::string &launcherDir)
 {
     std::vector<LibGame> out;
     FILE *f = fopen(lib_file(launcherDir).c_str(), "rb");
+    if (!f) f = fopen(lib_file_old(launcherDir).c_str(), "rb");   // an earlier test build's list
     if (!f) return out;
     char line[1024];
     while (fgets(line, sizeof line, f)) {
@@ -277,9 +279,23 @@ std::vector<LibGame> library_load(const std::string &launcherDir)
 
 bool library_save(const std::string &launcherDir, const std::vector<LibGame> &games)
 {
-    CreateDirectoryA((launcherDir + "\\ROTKFix").c_str(), NULL);
-    std::string s = "; Games Athelas knows about (Game = kind|location). Edited by the launcher.\r\n[Games]\r\n";
+    // Athelas.ini: [Games] is rewritten here; its other sections ([Ports]) are kept as they are
+    std::string keep;
+    if (FILE *r = fopen(lib_file(launcherDir).c_str(), "rb")) {
+        char line[2048];
+        bool inGames = false;
+        while (fgets(line, sizeof line, r)) {
+            if (line[0] == ';') continue;
+            if (line[0] == '[') inGames = !_strnicmp(line, "[Games]", 7);
+            if (!inGames) keep += line;
+        }
+        fclose(r);
+        if (!keep.empty() && keep.back() != '\n') keep += "\r\n";
+    }
+    std::string s = "; Athelas's settings: the games it knows about (Game = kind|location) and, under [Ports], a port\r\n"
+                    "; program chosen by hand. Edited by Athelas.\r\n[Games]\r\n";
     for (auto &g : games) s += std::string("Game = ") + kind_key(g.kind) + "|" + g.path + "\r\n";
+    s += keep;
     FILE *f = fopen(lib_file(launcherDir).c_str(), "wb");
     if (!f) return false;
     bool ok = fwrite(s.data(), 1, s.size(), f) == s.size();

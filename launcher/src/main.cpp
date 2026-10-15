@@ -1606,10 +1606,34 @@ static void admin_setup_prompt(App &a)
 // else next to the launcher (TwoTowers\TwoTowers.exe). Its settings, texture
 // packs and log live in ROTKFix\TwoTowers next to the launcher.
 
-static std::string tt_data_dir() { return exe_dir() + "\\ROTKFix\\TwoTowers"; }
+// The Xbox ports keep their settings, saves, logs and texture packs in their own folders beside Athelas
+// (TT-Xbox, ROTK-Xbox). Earlier test builds kept them in ROTKFix\TwoTowers and ROTKFix\ROTKXbox: those are
+// carried over once, when the new folder has no settings yet.
+static std::string port_data_dir(const char *dir, const char *oldDir)
+{
+    std::string d = exe_dir() + "\\" + dir;
+    std::string old = exe_dir() + "\\ROTKFix\\" + oldDir;
+    static bool moved[2];
+    bool &done = moved[dir[1] == 'T' ? 0 : 1];   // "TT-Xbox" / "ROTK-Xbox"
+    if (!done) {
+        done = true;
+        bool fresh = GetFileAttributesA((d + "\\settings.toml").c_str()) == INVALID_FILE_ATTRIBUTES;
+        if (fresh && GetFileAttributesA(old.c_str()) != INVALID_FILE_ATTRIBUTES) copy_folder(old, d);
+    }
+    return d;
+}
+static std::string tt_data_dir() { return port_data_dir(DIR_TT_XBOX, "TwoTowers"); }
 static std::string tt_settings_path() { return tt_data_dir() + "\\settings.toml"; }
 static std::string tt_log_path() { return tt_data_dir() + "\\tt.log"; }
-static std::string ports_ini() { return exe_dir() + "\\ROTKFix\\ports.ini"; }
+static std::string ports_ini() { return exe_dir() + "\\" ATHELAS_INI; }
+// [Ports] in Athelas.ini, or the older ROTKFix\ports.ini
+static std::string port_override(const char *key)
+{
+    char b[MAX_PATH * 2] = "";
+    GetPrivateProfileStringA("Ports", key, "", b, sizeof b, ports_ini().c_str());
+    if (!b[0]) GetPrivateProfileStringA("Ports", key, "", b, sizeof b, (exe_dir() + "\\ROTKFix\\ports.ini").c_str());
+    return b;
+}
 
 static bool file_there(const std::string &p) { DWORD a = GetFileAttributesA(p.c_str()); return a != INVALID_FILE_ATTRIBUTES && !(a & FILE_ATTRIBUTE_DIRECTORY); }
 
@@ -1617,13 +1641,10 @@ static void tt_find(App &a)
 {
     a.ttLooked = true;
     a.tt = Port();
-    std::string cand[2];
-    // ports.ini first (a path the player set, e.g. a development build), then the
-    // TwoTowers folder next to the launcher (release copies)
-    char b[MAX_PATH * 2] = "";
-    GetPrivateProfileStringA("Ports", "TwoTowers", "", b, sizeof b, ports_ini().c_str());
-    cand[0] = b;
-    cand[1] = exe_dir() + "\\TwoTowers\\TwoTowers.exe";
+    // [Ports] first (a program the player chose, e.g. a development build), then the TT-Xbox
+    // folder next to the launcher (the release copy; TwoTowers in earlier test builds)
+    std::string cand[3] = { port_override("TwoTowers"), exe_dir() + "\\" DIR_TT_XBOX "\\TwoTowers.exe",
+                            exe_dir() + "\\TwoTowers\\TwoTowers.exe" };
     for (auto &c : cand) if (!c.empty() && file_there(c)) { a.tt.exe = c; break; }
     if (a.tt.exe.empty()) return;
     port_query(a.tt);
@@ -1907,7 +1928,7 @@ static void draw_tt(App &a, const LibGame &g)
     if (a.tt.exe.empty()) {
         ImGui::Spacing();
         ImGui::TextColored(C_WARN, "The Two Towers port (TwoTowers.exe) wasn't found.");
-        ImGui::TextUnformatted("It is normally in a TwoTowers folder next to this launcher. If you have it somewhere else, show the launcher where.");
+        ImGui::TextUnformatted("It is normally in the TT-Xbox folder next to Athelas.exe. If you have it somewhere else, show the launcher where.");
         ImGui::PopTextWrapPos();
         if (ImGui::Button("Locate TwoTowers.exe...")) {
             std::string f;
@@ -2407,7 +2428,7 @@ static void tt_tab_graphics(App &a)
             mark("textures", "replace");
             bool v = tt_val(a, *prep) == "true";
             std::string h = "Shows sharper or remade pictures from texture packs. A pack goes in its own folder inside "
-                            "ROTKFix\\TwoTowers\\textures\\replace; remove the folder to go back to the original pictures.";
+                            "TT-Xbox\\textures\\replace; remove the folder to go back to the original pictures.";
             row_begin("Use texture packs", h.c_str());
             if (ImGui::Checkbox("##tttexrepl", &v)) a.ttFile.set(prep->section, prep->key, v ? "true" : "false");
             row_end();
@@ -2416,12 +2437,12 @@ static void tt_tab_graphics(App &a)
             mark("textures", "dump");
             bool v = tt_val(a, *pdump) == "true";
             row_begin("Save game textures", "For making texture packs: every picture the game uses is saved as a PNG in "
-                                            "ROTKFix\\TwoTowers\\textures\\dump as you play. Levels load a little slower the first time. "
+                                            "TT-Xbox\\textures\\dump as you play. Levels load a little slower the first time. "
                                             "Turn it off when you have what you need.");
             if (ImGui::Checkbox("##tttexdump", &v)) a.ttFile.set(pdump->section, pdump->key, v ? "true" : "false");
             row_end();
         }
-        row_begin("Textures folder", "Opens ROTKFix\\TwoTowers\\textures, where the replace and dump folders are.");
+        row_begin("Textures folder", "Opens TT-Xbox\\textures, where the replace and dump folders are.");
         if (ImGui::Button("Open folder##tttex")) tt_open_textures();
         row_end();
     }
@@ -2871,20 +2892,17 @@ static std::string tt_summary(const App &a)
 // else next to the launcher (ROTKXbox\ROTKXbox.exe). Its log, saves and its own
 // texture packs (Xbox textures differ from the PC ones) live in ROTKFix\ROTKXbox.
 
-static std::string rx_data_dir() { return exe_dir() + "\\ROTKFix\\ROTKXbox"; }
+static std::string rx_data_dir() { return port_data_dir(DIR_ROTK_XBOX, "ROTKXbox"); }
 static std::string rx_log_path() { return rx_data_dir() + "\\rotkx.log"; }
 
 static void rx_find(App &a)
 {
     a.rxLooked = true;
     a.rx = Port();
-    std::string cand[2];
-    // ports.ini first (a path the player set, e.g. a development build), then the
-    // ROTKXbox folder next to the launcher (release copies)
-    char b[MAX_PATH * 2] = "";
-    GetPrivateProfileStringA("Ports", "ROTKXbox", "", b, sizeof b, ports_ini().c_str());
-    cand[0] = b;
-    cand[1] = exe_dir() + "\\ROTKXbox\\ROTKXbox.exe";
+    // [Ports] first (a program the player chose, e.g. a development build), then the ROTK-Xbox
+    // folder next to the launcher (the release copy; ROTKXbox in earlier test builds)
+    std::string cand[3] = { port_override("ROTKXbox"), exe_dir() + "\\" DIR_ROTK_XBOX "\\ROTKXbox.exe",
+                            exe_dir() + "\\ROTKXbox\\ROTKXbox.exe" };
     for (auto &c : cand) if (!c.empty() && file_there(c)) { a.rx.exe = c; break; }
     if (a.rx.exe.empty()) return;
     std::string out;
@@ -2954,7 +2972,7 @@ static void rx_about(App &a)
         rx_locate_button(a);
     } else {
         ImGui::TextColored(C_WARN, "The Return of the King Xbox port (ROTKXbox.exe) wasn't found.");
-        ImGui::TextUnformatted("It is normally in a ROTKXbox folder next to this launcher. If you have it somewhere else, show the launcher where.");
+        ImGui::TextUnformatted("It is normally in the ROTK-Xbox folder next to Athelas.exe. If you have it somewhere else, show the launcher where.");
         ImGui::PopTextWrapPos();
         rx_locate_button(a);
     }

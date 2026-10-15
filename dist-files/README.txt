@@ -88,7 +88,7 @@ WHILE PLAYING
 THE TWO TOWERS (XBOX) - port 1.0.0
 ----------------------------------
 An unofficial native PC port of the original Xbox game (US release),
-recompiled for Windows, in the TwoTowers folder and started from Athelas.
+recompiled for Windows, in the TT-Xbox folder and started from Athelas.
 It plays as on the Xbox by default. Options include widescreen up to 32:9
 ultrawide, frame rates up to 240, render resolution up to 300%,
 anti-aliasing, texture filtering, sharpening and HDR, menus that fill the
@@ -99,7 +99,7 @@ adjustable damage for each side.
   they will most likely crash.
 - Controller only: there is no keyboard play.
 - No in-game settings menu: every setting is on the launcher's Two Towers
-  page (or in ROTKFix\TwoTowers\settings.toml next to the launcher).
+  page (or in TT-Xbox\settings.toml). Its saves are in TT-Xbox\saves.
 - The game's own files are only read, never changed.
 - Needs Windows 10 or 11 (64-bit) and a Direct3D 12 graphics card.
 
@@ -109,14 +109,13 @@ Keys while playing:
   [                    Sharpening off/on
   ]                    Next colour look
 
-Reporting a problem: send the log, ROTKFix\TwoTowers\tt.log next to the
-launcher, and after a crash also the newest Game.<date>_<time>.dmp in
-ROTKFix\TwoTowers\CrashDumps.
+Reporting a problem: send the log, TT-Xbox\tt.log, and after a crash also
+the newest Game.<date>_<time>.dmp in TT-Xbox\CrashDumps.
 
 
 THE RETURN OF THE KING (XBOX) - port 1.0.0
 ------------------------------------------
-An unofficial native PC port of the Xbox version, in the ROTKXbox folder and
+An unofficial native PC port of the Xbox version, in the ROTK-Xbox folder and
 started from Athelas. It uses the same settings page as the PC version, with
 frame rates up to 240, widescreen, and fixes for slowdowns and vanishing
 enemies at high frame rates.
@@ -130,8 +129,10 @@ enemies at high frame rates.
   version because it keeps the Xbox's brightness curve: raise Brightness to
   about 1.2-1.3 to match.
 
-Reporting a problem: send the log, ROTKFix\ROTKXbox\rotkx.log next to the
-launcher.
+Its saves are in ROTK-Xbox\saves.
+
+Reporting a problem: send the log, ROTK-Xbox\rotkx.log, and after a crash
+also the newest .dmp file in ROTK-Xbox\CrashDumps.
 
 
 TEXTURE PACKS
@@ -293,7 +294,8 @@ The launcher writes ROTKFix.ini in the game folder. You can also edit it in Note
   CreatedGameSettings    1 = the launcher made the game's ROTK.ini (removed again when uninstalling)
 
 
-INCLUDED OPEN-SOURCE SOFTWARE (licences in the licenses folder, and ROTKFix\licenses in the game folder)
+INCLUDED OPEN-SOURCE SOFTWARE (licences in the licenses folder, and in
+ROTKFix\licenses in the game folder once ROTK Fix is set up there)
 -----------------------------------------------------------
   DXVK 3.1.1 (zlib)    Vulkan renderer          ROTKFix\dxvk
   SDL3 (zlib)          controllers, launcher    SDL3.dll

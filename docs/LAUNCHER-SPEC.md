@@ -29,7 +29,7 @@ is in `rotkfix-source-2026-10-12b.zip` next to this file; the relevant code is i
 - It then finds `default.xbe` in the directory tree. Each tree entry is
   `u16 left, u16 right, u32 sector, u32 size, u8 attr, u8 namelen, name`.
 
-**The games list** is kept in `<launcher>\ROTKFix\games.ini`:
+**The games list** is kept in `<launcher>\Athelas.ini` (earlier test builds: `<launcher>\ROTKFix\games.ini`, still read):
 
 ```
 [Games]
@@ -42,16 +42,17 @@ Game = rotk-xbox|D:\Discs\ROTK (USA).iso
 
 Both ports are found the same way, in this order:
 
-1. The path in `<launcher>\ROTKFix\ports.ini`, `[Ports] TwoTowers=<full path>` or
+1. The path in `<launcher>\Athelas.ini` (or the older `ROTKFix\ports.ini`), `[Ports] TwoTowers=<full path>` or
    `[Ports] ROTKXbox=<full path>`. The player sets it with "Locate TwoTowers.exe…" or
    "Locate ROTKXbox.exe…", or by editing the file. Use it to point at a development build, such as
    `C:\ROTKX\rotkxbox\out\build\release\ROTKXbox.exe`.
-2. Otherwise, the copy next to the launcher: `<launcher>\TwoTowers\TwoTowers.exe` or
-   `<launcher>\ROTKXbox\ROTKXbox.exe` (release copies).
+2. Otherwise, the copy next to the launcher: `<launcher>\TT-Xbox\TwoTowers.exe` or
+   `<launcher>\ROTK-Xbox\ROTKXbox.exe` (release copies; `TwoTowers\` and `ROTKXbox\` in earlier test builds).
 
-If the ports.ini path doesn't exist, the launcher falls back to step 2. Every write goes to the
-data folders, `<launcher>\ROTKFix\TwoTowers\` and `<launcher>\ROTKFix\ROTKXbox\`, never next to
-the port's exe.
+If the [Ports] path doesn't exist, the launcher falls back to step 2. Every write goes to the
+data folders, `<launcher>\TT-Xbox\` and `<launcher>\ROTK-Xbox\` (settings.toml, the log, CrashDumps, saves,
+shadercache, textures), whichever exe is used. The older `<launcher>\ROTKFix\TwoTowers\` and `ROTKXbox\` are
+copied over once when the new folder has no settings.toml.
 
 ## 3. What the launcher passes on start-up (exactly)
 

@@ -1086,13 +1086,24 @@ static bool copy_tree(const std::string &from, const std::string &toDir, DWORD &
     return r == 0 && !op.fAnyOperationsAborted;
 }
 
-// Where the launcher keeps the files ROTK Fix puts in a PC game folder: ROTKFix\pcfix
+// Where the launcher keeps the files ROTK Fix puts in a PC game folder: ROTK-PC\pcfix
 // in a release (the same layout as in the game folder: the DLLs, then ROTKFix\dxvk,
-// \sound, \licenses), or the launcher's own folder in older layouts and while testing.
+// \sound, \licenses; ROTKFix\pcfix in earlier test builds), or the launcher's own folder
+// in older layouts and while testing.
 std::string pc_fix_source()
 {
-    std::string p = exe_dir() + "\\ROTKFix\\pcfix";
-    return file_exists(p + "\\ROTKFix.dll") ? p : exe_dir();
+    for (const char *d : { "\\" DIR_ROTK_PC "\\pcfix", "\\ROTKFix\\pcfix" }) {
+        std::string p = exe_dir() + d;
+        if (file_exists(p + "\\ROTKFix.dll")) return p;
+    }
+    return exe_dir();
+}
+
+bool copy_folder(const std::string &from, const std::string &to)
+{
+    DWORD e = 0;
+    SHCreateDirectoryExA(NULL, to.c_str(), NULL);
+    return copy_tree(from + "\\*", to, e);   // the folder's contents, not the folder itself
 }
 
 // Puts ROTK Fix into a PC game folder (only its own files; the launcher stays where it is).
