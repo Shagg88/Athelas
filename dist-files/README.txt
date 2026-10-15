@@ -294,13 +294,16 @@ The launcher writes ROTKFix.ini in the game folder. You can also edit it in Note
   CreatedGameSettings    1 = the launcher made the game's ROTK.ini (removed again when uninstalling)
 
 
-INCLUDED OPEN-SOURCE SOFTWARE (licences in ROTKFix\licenses)
+INCLUDED OPEN-SOURCE SOFTWARE (licences in the licenses folder, and ROTKFix\licenses in the game folder)
 -----------------------------------------------------------
   DXVK 3.1.1 (zlib)    Vulkan renderer          ROTKFix\dxvk
   SDL3 (zlib)          controllers, launcher    SDL3.dll
   DSOAL, OpenAL Soft (LGPL)  3D sound and reverb  ROTKFix\sound
   Dear ImGui (MIT)     launcher interface
   stb_image, stb_image_write (MIT / public domain)
-  Cinzel, EB Garamond fonts (SIL Open Font License)  launcher
+  Uncial Antiqua, Cinzel, EB Garamond fonts (SIL Open Font License)  launcher
   Liberation Sans (SIL Open Font License)  letters in the button pictures
-ROTK Fix itself is MIT licensed.
+  XboxXBE-Recomp (MIT, (c) 2026 TGP482)  runtime in TwoTowers.exe and ROTKXbox.exe
+  toml++ (MIT)         settings files in the Xbox ports
+  (the Xbox ports' own lists are in TwoTowers\THIRD_PARTY.txt and ROTKXbox\THIRD_PARTY.txt)
+ROTK Fix and Athelas are MIT licensed.

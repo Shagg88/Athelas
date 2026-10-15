@@ -93,5 +93,6 @@ ROTK Fix is MIT licensed (see `LICENSE`). Bundled components keep their own lice
 - Dear ImGui (MIT)
 - stb (MIT / public domain)
 - DSOAL and OpenAL Soft (LGPL; source note in `licenses/`)
-- Cinzel and EB Garamond fonts (SIL OFL)
+- Uncial Antiqua, Cinzel and EB Garamond fonts (SIL OFL)
 - Liberation Sans (SIL OFL), used to draw the letters in the button pictures
+- XboxXBE-Recomp (MIT, © 2026 TGP482) and toml++ (MIT), inside the bundled Xbox ports

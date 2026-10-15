@@ -35,6 +35,8 @@ cp licenses/* "$OUT/licenses/"
 if [ -n "$DSOAL_DIR" ]; then mkdir -p "$FIX/ROTKFix/sound"; cp "$DSOAL_DIR/dsound.dll" "$DSOAL_DIR/dsoal-aldrv.dll" "$FIX/ROTKFix/sound/"; fi
 if [ -n "$TT_DIR" ]; then mkdir -p "$OUT/TwoTowers"; cp -r "$TT_DIR"/. "$OUT/TwoTowers/"; fi
 if [ -n "$RX_DIR" ]; then mkdir -p "$OUT/ROTKXbox"; cp -r "$RX_DIR"/. "$OUT/ROTKXbox/"; fi
+# the Xbox ports are built on XboxXBE-Recomp (MIT): one copy of its licence with the others
+for f in "$OUT"/TwoTowers/LICENSE-XboxXBE-Recomp.txt "$OUT"/ROTKXbox/LICENSE.txt; do [ -f "$f" ] && cp "$f" "$OUT/licenses/XboxXBE-Recomp-LICENSE.txt" && break; done
 (cd "$OUT" && zip -qr9 "../Athelas-$VER.zip" .)
 (cd dist && sha256sum "Athelas-$VER.zip" > "Athelas-$VER.zip.sha256")
 echo "built dist/Athelas-$VER.zip"
