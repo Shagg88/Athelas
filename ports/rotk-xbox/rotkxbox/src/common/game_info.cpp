@@ -10,6 +10,7 @@ void Pad(int port, input::Pad& pad);            // src/game/rotk_controls.cpp
 extern uint32_t g_button_pictures;              // src/game/rotk_prompts.cpp
 void Loaded();                                  // rotk_movies.cpp
 void Init();                                    // rotk_settings.cpp: ROTKFix.ini, then the frame rate
+void LoadTable(const void* table);              // rotk_settings.cpp: 1.0.0's defaults for settings the file lacks
 }
 
 // what the runtime asks of the game; strings must be set, hooks may stay null
@@ -60,7 +61,7 @@ const app::GameInfo app::kGame = {
                  nullptr, &rotk::g_button_pictures, nullptr, 0, 0, {"auto", "xbox", "playstation", "nintendo"}, nullptr,
                  nullptr, {"Auto", "Xbox", "PlayStation", "Nintendo"}}},
     .presets = {},
-    .load = nullptr,                      // reads more from the settings file's toml::table
+    .load = rotk::LoadTable,              // reads more from the settings file's toml::table
     .save = nullptr,                      // writes more into it
     .init = rotk::Init,                   // after the settings load, before the window and boot
     .loaded = rotk::Loaded,               // image in memory, before its entry point runs

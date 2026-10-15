@@ -29,9 +29,11 @@ bool Widescreen() { return true; }
 float g_max_frame_aspect = 16.0f / 9.0f;
 // ASPECT=2.37 (in the environment; TT_ASPECT in older scripts) tests an ultrawide screen
 float FrameAspect() {
-    const char* e = std::getenv("ASPECT");
-    if (!e) e = std::getenv("TT_ASPECT");
-    float a = e ? float(std::atof(e)) : 16.0f / 9.0f;
+    static const float a = [] {  // read once: this is asked per HUD quad
+        const char* e = std::getenv("ASPECT");
+        if (!e) e = std::getenv("TT_ASPECT");
+        return e ? float(std::atof(e)) : 16.0f / 9.0f;
+    }();
     return std::clamp(a, 16.0f / 9.0f, std::max(g_max_frame_aspect, 16.0f / 9.0f));
 }
 

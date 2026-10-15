@@ -10,6 +10,8 @@
 #include <map>
 #include <string>
 
+#include <toml++/toml.hpp>
+
 #include "app/app.h"
 #include "core/log.h"
 
@@ -195,6 +197,15 @@ void ApplyIni() {
     LOGR("rotk: %d settings from %s (ROTK Fix's file)", r.applied, file.string().c_str());
 }
 }  // namespace
+
+// GameInfo::load: settings.toml as read. Two shared-SDK settings default on for The Two Towers but were not in this
+// port's 1.0.0, so a file that doesn't set them keeps 1.0.0's picture: smooth_2d off, movie_sharpening 0.
+void LoadTable(const void* table) {
+    const toml::table& t = *static_cast<const toml::table*>(table);
+    app::Settings& s = app::Get();
+    if (!t["graphics"]["smooth_2d"]) s.smooth_2d = false;
+    if (!t["graphics"]["movie_sharpening"]) s.movie_sharpening = 0;
+}
 
 // GameInfo::init: after settings.toml loads, before the window and boot
 void Init() {
