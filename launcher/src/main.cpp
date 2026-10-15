@@ -3016,9 +3016,12 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     float pad = S(30), bannerH = S(142), barH = S(66);
     const GameInfo &g = a.game;
 
-    // ---- banner: the title in the middle, status on the right, the game picker below on the left
+    // ---- banner: the game picker on the left (game, and below it the version), the title in
+    // the middle (centred between the crest at the top and the ornament on the settings panel),
+    // status on the right
     ImGui::PushFont(F_TITLE, F_TITLE->LegacySize);
-    ImGui::SetCursorPos(ImVec2((size.x - ImGui::CalcTextSize("Athelas").x) * 0.5f, S(32)));
+    const float titleW = ImGui::CalcTextSize("Athelas").x, titleX = (size.x - titleW) * 0.5f;
+    ImGui::SetCursorPos(ImVec2(titleX, S(52)));
     ImDrawList *dl = ImGui::GetWindowDrawList();
     ImVec2 tp = ImGui::GetCursorScreenPos();
     for (int dx = -1; dx <= 1; dx++)
@@ -3026,8 +3029,18 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
             if (dx || dy) dl->AddText(F_TITLE, F_TITLE->LegacySize, ImVec2(tp.x + dx * S(2), tp.y + dy * S(2)), IM_COL32(0, 0, 0, 110), "Athelas");
     ImGui::TextColored(C_GOLD_H, "Athelas");
     ImGui::PopFont();
-    ImGui::SetCursorPos(ImVec2(pad + S(2), S(98)));
-    ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
+    ImGui::PushFont(F_BODY, F_BODY->LegacySize);   // (narrower than the headings, so the names fit beside the title)
+    const float pickW = titleX - pad - S(18);   // the menus stay clear of the title
+    // (two rows when there's a version to choose, else one, centred on the title)
+    bool twoRows = false;
+    {
+        int nRotk = 0;
+        for (const LibGame &lg : a.lib) if (lg.kind == GK_ROTK_PC || lg.kind == GK_ROTK_XBOX) nRotk++;
+        twoRows = nRotk > 1 && (a.cur < 0 || a.lib[a.cur].kind == GK_ROTK_PC || a.lib[a.cur].kind == GK_ROTK_XBOX);
+    }
+    const float rowH = ImGui::GetFrameHeight() + S(4);
+    const float pickY = S(84) - (twoRows ? rowH : rowH * 0.5f);
+    ImGui::SetCursorPos(ImVec2(pad + S(2), pickY));
     // The Return of the King is one entry whatever versions the player has (PC, Xbox or
     // both); with more than one, a second menu picks the version. Other games are listed as they are.
     auto isRotk = [](GameKind k) { return k == GK_ROTK_PC || k == GK_ROTK_XBOX; };
@@ -3042,7 +3055,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
     if (entries > 1) {
         // more than one game: the subtitle picks which one is shown
-        ImGui::SetNextItemWidth(ImGui::CalcTextSize(curName.c_str()).x + ImGui::GetFrameHeight() + S(24));
+        ImGui::SetNextItemWidth(std::min(pickW, ImGui::CalcTextSize(curName.c_str()).x + ImGui::GetFrameHeight() + S(24)));
         if (ImGui::BeginCombo("##game", curName.c_str())) {
             bool rotkListed = false;
             for (size_t i = 0; i < a.lib.size(); i++) {
@@ -3065,7 +3078,9 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
             ImGui::EndCombo();
         }
     } else {
+        ImGui::PushTextWrapPos(pad + S(2) + pickW);
         ImGui::TextColored(C_TEXT, "%s", curName.c_str());
+        ImGui::PopTextWrapPos();
     }
     // the version picker: PC / Xbox (with the folder when there are two copies of one)
     if (curRotk && rotkIdx.size() > 1) {
@@ -3079,10 +3094,8 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
         };
         int shown = a.cur >= 0 ? a.cur : rotkIdx[0];
         std::string vcur = verName(shown);
-        ImGui::SameLine(0, S(4));
-        ImGui::TextColored(C_DIM, "-");
-        ImGui::SameLine(0, S(4));
-        ImGui::SetNextItemWidth(ImGui::CalcTextSize(vcur.c_str()).x + ImGui::GetFrameHeight() + S(24));
+        ImGui::SetCursorPos(ImVec2(pad + S(2), pickY + rowH));
+        ImGui::SetNextItemWidth(std::min(pickW, ImGui::CalcTextSize(vcur.c_str()).x + ImGui::GetFrameHeight() + S(24)));
         if (ImGui::BeginCombo("##version", vcur.c_str())) {
             for (int i : rotkIdx) {
                 ImGui::PushID(i);
