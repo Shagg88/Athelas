@@ -1,4 +1,5 @@
-// pad 0 from a script, then GameInfo::pad as on Windows
+// pad 0 from a script (SCRIPT), pad 1 from a second one (SCRIPT2: plugged in only then), then GameInfo::pad as on
+// Windows
 // SCRIPT file: lines of "frame buttons [frames held]", held 8 frames by default, # comments; buttons joined by +:
 // UP DOWN LEFT RIGHT START BACK A B X Y BLACK WHITE LT RT LS LSD LSL LSR (left stick up, down, left, right)
 // cmd in the run folder: "buttons [frames held]" pressed once from the frame it is read, then removed
@@ -21,9 +22,9 @@ struct Press {
     double len;
 };
 
-std::vector<Press> LoadScript() {
+std::vector<Press> LoadScript(const char* env) {
     std::vector<Press> v;
-    const char* p = std::getenv("SCRIPT");
+    const char* p = std::getenv(env);
     if (FILE* f = p ? std::fopen(p, "r") : nullptr) {
         char line[160];
         while (std::fgets(line, sizeof line, f)) {
@@ -68,12 +69,13 @@ void Apply(const std::string& s, Pad& p) {
 }  // namespace
 
 Pad Poll(int port) {
-    static const std::vector<Press> script = LoadScript();
+    static const std::vector<Press> script = LoadScript("SCRIPT"), script2 = LoadScript("SCRIPT2");
+    static const bool second = std::getenv("SCRIPT2") != nullptr;
     static Press live{-1, "", 0};
     Pad p;
-    p.connected = port == 0;
+    p.connected = port == 0 || (port == 1 && second);
+    double t = double(harness::g_frames.load());
     if (port == 0) {
-        double t = double(harness::g_frames.load());
         std::string cmd = (app::ExeDir() / "cmd").string();
         if (FILE* f = std::fopen(cmd.c_str(), "r")) {
             char b[64] = {};
@@ -85,6 +87,9 @@ Pad Poll(int port) {
         for (const Press& s : script)
             if (t >= s.at && t <= s.at + s.len) Apply(s.buttons, p);
         if (live.at >= 0 && t >= live.at && t <= live.at + live.len) Apply(live.buttons, p);
+    } else if (port == 1 && second) {
+        for (const Press& s : script2)
+            if (t >= s.at && t <= s.at + s.len) Apply(s.buttons, p);
     }
     if (app::kGame.pad) app::kGame.pad(port, p);
     return p;
