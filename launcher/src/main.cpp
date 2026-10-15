@@ -1648,6 +1648,10 @@ static void tt_find(App &a)
     for (auto &c : cand) if (!c.empty() && file_there(c)) { a.tt.exe = c; break; }
     if (a.tt.exe.empty()) return;
     port_query(a.tt);
+    // movies "fit" (the film filling the width) for a new settings file, as ROTK's MovieDisplay = auto; the port's
+    // own default is the console's 4:3
+    for (auto &ps : a.tt.settings)
+        if (ps.section == "graphics" && ps.key == "movie_display") ps.def = "\"fit\"";
     // Frame rate is the player's own choice on the Display tab: only the Original preset
     // (the game as it was, 30 fps) sets it. Other presets are picture quality only, as in ROTK.
     for (auto &pr : a.tt.presets) {
