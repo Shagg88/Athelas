@@ -783,9 +783,24 @@ bool install_input_profile(const std::string &dir, std::string &err)
     return true;
 }
 
+// Running under Wine or Proton (Linux, Steam Deck): Wine loads its own d3d8, dinput8 and dsound unless told to prefer
+// the game folder's, so ROTK Fix's loaders and DSOAL are named here for the game's process, after any overrides the
+// user or Proton set (an entry of ours wins over theirs for these three only).
+static void wine_prefer_fix_dlls()
+{
+    HMODULE nt = GetModuleHandleA("ntdll.dll");
+    if (!nt || !GetProcAddress(nt, "wine_get_version")) return;
+    char cur[2048] = "";
+    DWORD n = GetEnvironmentVariableA("WINEDLLOVERRIDES", cur, sizeof cur);
+    std::string v = n && n < sizeof cur ? std::string(cur) + ";" : std::string();
+    v += "d3d8,dinput8,dsound=n,b";
+    SetEnvironmentVariableA("WINEDLLOVERRIDES", v.c_str());
+}
+
 bool launch_game(const std::string &dir, std::string &err)
 {
     std::string exe = dir + "\\rotk.exe";
+    wine_prefer_fix_dlls();
     STARTUPINFOA si; memset(&si, 0, sizeof si); si.cb = sizeof si;
     PROCESS_INFORMATION pi;
     std::string cmd = "\"" + exe + "\"";
