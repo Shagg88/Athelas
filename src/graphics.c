@@ -1225,7 +1225,7 @@ static void fade_report(IDirect3DDevice8 *dev, UINT prims, UINT firstV, UINT num
                 cx += xyz[0]; cy += xyz[1]; cz += xyz[2];
             }
             IDirect3DVertexBuffer8_Unlock(g_stream0);
-            if (n && amax < 255) {
+            if (n && amin < 124 && g_levelSeq > 0) {   /* below the normal 128 (x2 = solid): fading; in a level */
                 if (vertFrame != g_presentNo) { vertFrame = g_presentNo; vertInFrame = 0; }
                 if (vertInFrame++ < 4) {
                     cx /= n; cy /= n; cz /= n;
