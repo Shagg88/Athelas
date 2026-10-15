@@ -439,8 +439,12 @@ static float hud_aspect(void)
     return sa > t + 0.01f ? t : 0.0f;
 }
 
+static D3DMATRIX g_viewM, g_worldM;     /* for FadeReport: where the camera and the object being drawn are */
+static unsigned  g_presentNo;           /* frames shown so far */
 static HRESULT WINAPI hook_SetTransform(IDirect3DDevice8 *dev, D3DTRANSFORMSTATETYPE st, const D3DMATRIX *m)
 {
+    if (m && st == D3DTS_VIEW) g_viewM = *m;
+    if (m && st == D3DTS_WORLD) g_worldM = *m;
     if (st != D3DTS_PROJECTION || !m) return g_realSetTransform(dev, st, m);
     g_orthoFixed = 0;
     g_projPersp = 0;
@@ -1153,7 +1157,6 @@ typedef HRESULT (WINAPI *GetMat8_t)(IDirect3DDevice8 *, D3DMATERIAL8 *);
 static void fade_report(IDirect3DDevice8 *dev, UINT prims)
 {
     static DWORD seen[512]; static int nSeen, nLogged;
-    if (nLogged >= 200) return;
     void **vt = *(void ***)dev;
     GetRS8_t grs = (GetRS8_t)vt[51];
     DWORD blend = 0, atest = 0;
@@ -1173,8 +1176,32 @@ static void fade_report(IDirect3DDevice8 *dev, UINT prims)
     DWORD key = src * 131u ^ dst * 7919u ^ zw * 3u ^ atest * 5u ^ lit * 11u ^ dms * 13u ^ cv * 17u ^ (DWORD)g_curFVF * 31u;
     for (int st = 0; st < 2; st++) for (int k = 0; k < 4; k++) key = key * 33u ^ t[st][k];
     key = key * 33u ^ (DWORD)(tfA >> 4) ^ (DWORD)((matA >> 4) << 8);
+    /* the fade itself: alpha below 255 from the texture factor (used by a stage's alpha)
+     * or from the material (lighting on, diffuse from the material). Logged every frame,
+     * with how far the object is from the camera, to see the fade over time and what
+     * starts it. */
+    int usesTF = 0;
+    for (int st = 0; st < 2; st++)
+        if (t[st][1] != D3DTOP_DISABLE && ((t[st][2] & 7) == D3DTA_TFACTOR || (t[st][3] & 7) == D3DTA_TFACTOR)) usesTF = 1;
+    int fadeA = usesTF && tfA < 255 ? tfA : (lit && dms == D3DMCS_MATERIAL && matA < 255) ? matA : -1;
+    static int nFade; static unsigned fadeFrame; static int fadeInFrame;
+    if (fadeA >= 0 && nFade < 1500) {
+        if (fadeFrame != g_presentNo) { fadeFrame = g_presentNo; fadeInFrame = 0; }
+        if (fadeInFrame++ < 4) {
+            const D3DMATRIX *v = &g_viewM;
+            float cx = -(v->_41 * v->_11 + v->_42 * v->_12 + v->_43 * v->_13);
+            float cy = -(v->_41 * v->_21 + v->_42 * v->_22 + v->_43 * v->_23);
+            float cz = -(v->_41 * v->_31 + v->_42 * v->_32 + v->_43 * v->_33);
+            float dx = g_worldM._41 - cx, dy = g_worldM._42 - cy, dz = g_worldM._43 - cz;
+            nFade++;
+            logf_("fade frame %u: alpha %d (%s) | object at (%.1f, %.1f, %.1f), %.2f from the camera | prims %u",
+                  g_presentNo, fadeA, fadeA == tfA && usesTF ? "texture factor" : "material", g_worldM._41, g_worldM._42, g_worldM._43,
+                  sqrtf(dx * dx + dy * dy + dz * dz), prims);
+        }
+    }
     for (int i = 0; i < nSeen; i++) if (seen[i] == key) return;
     if (nSeen < 512) seen[nSeen++] = key;
+    if (nLogged >= 200) return;
     nLogged++;
     logf_("fade: blend src=%lu dst=%lu zwrite=%lu alphatest=%lu ref=%lu | lighting=%lu colorvertex=%lu diffusesource=%lu "
           "material alpha=%d | texturefactor alpha=%d | stage0 color=%lu alpha=%lu(%lu,%lu) stage1 color=%lu alpha=%lu(%lu,%lu) | fvf=%#lx prims=%u",
@@ -1245,6 +1272,7 @@ static HRESULT WINAPI hook_DrawIndexedPrimitive(IDirect3DDevice8 *dev, D3DPRIMIT
  * images from earlier screens show there. Paint them black before showing. */
 static HRESULT WINAPI hook_Present(IDirect3DDevice8 *dev, const RECT *a, const RECT *b, HWND w, const RGNDATA *r)
 {
+    g_presentNo++;
     if (hud_aspect() > 0.0f && g_draws3D < 40 && !g_copyDrawn) {
         LONG barW = (LONG)((g_modeW - g_modeH * hud_aspect()) / 2);
         if (barW > 0) {
