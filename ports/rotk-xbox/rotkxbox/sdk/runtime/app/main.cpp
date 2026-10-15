@@ -134,7 +134,8 @@ void ApplyNow() {
     }
     if (s.display_mode == DisplayMode::Windowed) {
         RECT r{0, 0, LONG(out.width), LONG(out.height)};
-        AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE);
+        // the frame at the window's own scaling (150%, 200%), so the picture inside is the size asked for
+        AdjustWindowRectExForDpi(&r, WS_OVERLAPPEDWINDOW, FALSE, 0, GetDpiForWindow(g_hwnd));
         int w = r.right - r.left, h = r.bottom - r.top;
         const RECT& a = mi.rcWork;
         SetWindowLongPtrW(g_hwnd, GWL_STYLE, WS_OVERLAPPEDWINDOW | visible);

@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <map>
+#include <set>
 #include <memory>
 #include <vector>
 
@@ -1091,7 +1092,36 @@ void Copy(const Surface& src, const Surface& dst, uint32_t count, uint32_t rects
     Written(b.data, b.End());
 }
 
+// TEX2D_DUMP=<folder>: every texture a 2D draw (HUD, menus, prompts) uses, once, as a PNG named as texture packs
+// name them (8-bit palette textures left out: their name takes the palette)
+void DumpScreenTextures(const State& s) {
+    static const char* dir = std::getenv("TEX2D_DUMP");
+    static std::set<uint64_t> seen;
+    if (!dir || !g_screen_space_test || !g_screen_space_test(s)) return;
+    for (int i = 0; i < 4; i++) {
+        TextureDesc d;
+        if (!s.textures[size_t(i)] || !Describe(s.textures[size_t(i)], d) || d.cube || d.depth > 1) continue;
+        if (d.format == 0x0B) continue;  // P8
+        uint64_t seed = uint64_t(d.format) | uint64_t(d.width) << 8 | uint64_t(d.height) << 24 | uint64_t(d.levels) << 40;
+        uint64_t h = Hash(kernel::HostPtr(d.data), TotalSize(d), seed);
+        if (!seen.insert(h).second) continue;
+        std::shared_ptr<Image> img = FindImage(s.textures[size_t(i)]);
+        if (!img || img->texels[0].empty()) continue;
+        std::vector<uint8_t> rgba(size_t(d.width) * d.height * 4);
+        for (size_t k = 0; k < img->texels[0].size() && k * 4 < rgba.size(); k++)
+            for (int c = 0; c < 4; c++) rgba[k * 4 + c] = uint8_t(std::clamp(img->texels[0][k][c], 0.0f, 1.0f) * 255 + 0.5f);
+        std::string name = pack::PngName(d.width, d.height, h);
+        LOGI("tex2d: %s format %02X stage %d", name.c_str(), d.format, i);
+        pack::WritePngLater(std::filesystem::path(dir) / name, d.width, d.height, std::move(rgba));
+        if (FILE* f = std::fopen((std::string(dir) + "/" + name + ".raw").c_str(), "wb")) {
+            std::fwrite(kernel::HostPtr(d.data), 1, TotalSize(d), f);
+            std::fclose(f);
+        }
+    }
+}
+
 void Draw(const State& s, uint32_t prim, uint32_t start, uint32_t count, const uint8_t* indices) {
+    DumpScreenTextures(s);
     uint32_t draw = g_draws++;
     Assembled as;
     if (!Assemble(s, prim, start, count, indices, as) || as.topology != Topology::Triangles) return;

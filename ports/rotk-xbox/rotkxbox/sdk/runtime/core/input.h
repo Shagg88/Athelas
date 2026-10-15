@@ -11,6 +11,11 @@ struct Pad {
     int16_t lx = 0, ly = 0, rx = 0, ry = 0;
 };
 
+// [controls]: the controller buttons an Xbox button can be set to, in Settings::buttons' numbering
+constexpr const char* kSources[] = {"A", "B", "X", "Y", "LB", "RB", "LT", "RT", "LS", "RS", "none"};
+constexpr const char* kSourceNames[] = {"A", "B", "X", "Y", "LB", "RB", "LT", "RT", "Left stick click", "Right stick click", "Nothing"};
+constexpr uint32_t kSourceCount = 11;
+
 void Init();  // window thread, before boot
 // the controller on that port, then GameInfo::pad
 Pad Poll(int port);

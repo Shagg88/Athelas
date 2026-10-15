@@ -84,6 +84,8 @@ inline std::atomic<uint32_t> g_movie_shape{kMovieFit};
 // set by a game: where kMovieFit's window sits, its bottom edge as a share of the frame's height (0: centred). A
 // movie whose picture runs lower than a film's bars (a logo with a line of text at the bottom) keeps that line.
 inline std::atomic<float> g_movie_fit_bottom{0.0f};
+// set by a game: the widest kMovieFit goes on a wider screen, its films' own shape (16:9 unless set; ROTK's are 1.84:1)
+inline std::atomic<float> g_movie_fit_max{16.0f / 9.0f};
 // kMovieFit's window top for a window that is `share` of the frame's height
 inline float MovieFitTop(float share) {
     float b = g_movie_fit_bottom;

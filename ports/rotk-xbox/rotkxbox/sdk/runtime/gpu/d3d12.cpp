@@ -488,6 +488,7 @@ struct DrawTextures {
     float k[4] = {1, 1, 1, 1};  // Extension::Sample's k
     float wide[4] = {};         // host texels per console texel of a target read into a smaller one, 0 otherwise
     float sharp[4] = {};        // kTexSharp's strength, 0 otherwise
+    float sharp_texel[4][2] = {};  // kTexSharp: the bound picture's texel in uv
 };
 
 // a draw's shaders: what they are made from, their cache keys, the hashes Compile returned and the compiled blobs
@@ -941,7 +942,10 @@ bool D3D12Backend::CreateDevice() {
     LOGR("D3D12 adapter: %ls", adapter ? ad.Description : L"default");
     D3D12_COMMAND_QUEUE_DESC qd{};
     qd.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-    dev_->CreateCommandQueue(&qd, IID_PPV_ARGS(&queue_));
+    if (FAILED(dev_->CreateCommandQueue(&qd, IID_PPV_ARGS(&queue_)))) {
+        LOGE("d3d12: no command queue");
+        return false;
+    }
     ComPtr<IDXGIFactory5> f5;
     BOOL tear = FALSE;
     if (SUCCEEDED(factory_.As(&f5))) f5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &tear, sizeof(tear));
@@ -1148,21 +1152,23 @@ void D3D12Backend::Submit(bool wait) {
 
 void D3D12Backend::Flush() { Submit(true); }
 
-// kMovieFit's shape: the screen's (app::FrameAspect), from 16:9 up to a letterboxed film's own, 1.84:1 (rows 65 to 413
-// of the 4:3 frame)
-float MovieFitAspect() { return std::clamp(app::FrameAspect(), 16.0f / 9.0f, (4.0f / 3.0f) * 480.0f / 348.0f); }
+// kMovieFit's shape: the screen's (app::FrameAspect), from 16:9 up to g_movie_fit_max (a game whose films are wider
+// than 16:9 raises it to their own shape)
+float MovieFitAspect() { return std::clamp(app::FrameAspect(), 16.0f / 9.0f, std::max(g_movie_fit_max.load(), 16.0f / 9.0f)); }
 
 // the picture as shown: the frame at its render size, made as wide as the screen shows it (16:9 with widescreen),
 // saved as <PREFIX>_<date>_<time>_<ms>.png as ROTK Fix names its own, on the texture pack writer's thread
 void D3D12Backend::Screenshot(Target& t) {
     // the frame through the same pass as the screen (brightness, sharpening, colour look), without HDR; a movie as
-    // movie_display shows it
+    // the screen shows it: the screen's shape at the frame's height, the picture placed by movie_display as in
+    // BlitMovie, with its bars
     const app::Settings& stg = app::Get();
     uint32_t h = t.h, w = app::Widescreen() ? uint32_t(float(t.h) * app::FrameAspect() + 0.5f) : t.w;
     ID3D12Resource* src = t.res.Get();
     D3D12_RESOURCE_STATES* src_state = &t.state;
     DXGI_FORMAT fmt = t.fmt;
     float uv[4] = {0, 0, 1, 1};
+    float vx = 0, vy = 0, vw = 0, vh = 0;  // a movie's place in the shot; 0: all of it
     BlitOptions o{.gamma = gamma_, .sharpen = g_sharpen_off ? 0.0f : std::min(stg.sharpening, 100u) / 100.0f,
                   .texel = {1.0f / float(std::max(t.w, 1u)), 1.0f / float(std::max(t.h, 1u))}, .look = true};
     if (MovieFrame* f = PickMovieFrame()) {
@@ -1172,19 +1178,24 @@ void D3D12Backend::Screenshot(Target& t) {
         o.sharpen = std::min(stg.movie_sharpening, 100u) / 100.0f;
         o.texel[0] = 1.0f / float(std::max(t.gw, 1u));
         o.texel[1] = 1.0f / float(std::max(t.gh, 1u));
+        float aspect = 4.0f / 3.0f;  // the picture's shape in the shot, placed with bars as BlitMovie shows it
         uint32_t shape = g_movie_shape;
         if (stg.movie_display == 0 && shape == kMovieFit) {
-            float fa = MovieFitAspect();
-            uv[3] = (4.0f / 3.0f) / fa;
+            aspect = MovieFitAspect();
+            uv[3] = (4.0f / 3.0f) / aspect;
             uv[1] = MovieFitTop(uv[3]);
-            w = uint32_t(float(h) * fa + 0.5f);
         } else if (stg.movie_display == 0 && shape == kMovieWide) {
-            w = (h * 16 + 4) / 9;
-        } else if (stg.movie_display == 1) {
-            w = uint32_t(uint64_t(h) * std::max(bb_w_, 1u) / std::max(bb_h_, 1u));
-        } else {
-            w = (h * 4 + 1) / 3;
+            aspect = 16.0f / 9.0f;
         }
+        w = uint32_t(uint64_t(h) * std::max(bb_w_, 1u) / std::max(bb_h_, 1u));
+        vw = std::min(float(w), float(h) * aspect);
+        vh = vw / aspect;
+        if (stg.movie_display == 1) {
+            vw = float(w);
+            vh = float(h);
+        }
+        vx = (float(w) - vw) / 2;
+        vy = (float(h) - vh) / 2;
     }
     ComPtr<ID3D12Resource> down;
     {
@@ -1201,6 +1212,12 @@ void D3D12Backend::Screenshot(Target& t) {
             dev_->CreateRenderTargetView(down.Get(), nullptr, rh);
             Transition(src, *src_state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
             SetBlitTarget(rh, w, h);
+            if (vw > 0) {
+                float black[4] = {0, 0, 0, 1};
+                cl_->ClearRenderTargetView(rh, black, 0, nullptr);
+                D3D12_VIEWPORT vp{vx, vy, vw, vh, 0, 1};
+                cl_->RSSetViewports(1, &vp);
+            }
             Blit(src, fmt, uv, o);
             if (src == t.res.Get()) BlackSides(rh, w, h, float(w) / float(std::max(h, 1u)));
             D3D12_RESOURCE_STATES ds = D3D12_RESOURCE_STATE_RENDER_TARGET;
@@ -1268,7 +1285,7 @@ void D3D12Backend::EndQuery(uint32_t index) {
     query_active_ = -1;
     // counted at our resolution on the target the test drew to, given back in the title's
     const Target* t = bound_ds_ ? bound_ds_ : bound_rt_;
-    float ratio = t && t->w && t->h ? float(t->gw) * t->gh / (float(t->w) * t->h) : 1 / (scale_ * scale_);
+    float ratio = t && t->w && t->h ? float(t->gw) * t->gh / (float(t->w) * t->h) : 1 / (scale_ * xmul_ * scale_);
     if (t && bound_ms_) ratio /= float(samples_);  // anti-aliasing counts samples, not pixels
     std::lock_guard lock(query_lock_);
     QuerySlot& q = queries_[index % kQueryIndexes];
@@ -1378,7 +1395,9 @@ void D3D12Backend::ReleaseTarget(std::unordered_map<uint64_t, Target>::iterator 
 bool D3D12Backend::CreateTargetResource(Target& t, const Surface& s) {
     float sc = scale_;
     if (ext_) ext_->MakeTarget(s, t.depth, t.gw, t.gh, sc, t.fmt);
-    t.w = std::max(1u, uint32_t(std::lround(t.gw * sc * xmul_)));
+    // a scale the extension chose (a console sized target) holds both ways
+    float sx = sc == scale_ ? scale_ * xmul_ : sc;
+    t.w = std::max(1u, uint32_t(std::lround(t.gw * sx)));
     t.h = std::max(1u, uint32_t(std::lround(t.gh * sc)));
     D3D12_HEAP_PROPERTIES hp{D3D12_HEAP_TYPE_DEFAULT};
     D3D12_RESOURCE_DESC td = Texture2DDesc(DXGI_FORMAT_UNKNOWN, t.w, t.h);
@@ -1550,7 +1569,7 @@ uint32_t D3D12Backend::PickSamples() {
         }
         return n;
     }
-    LOGR("d3d12: anti-aliasing is not supported by this graphics card");
+    LOG_FIRST(1, "d3d12: anti-aliasing is not supported by this graphics card");
     return 1;
 }
 
@@ -1560,7 +1579,12 @@ bool D3D12Backend::MsFormatOk(DXGI_FORMAT fmt) {
     D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS q{fmt, samples_, D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE, 0};
     bool ok = SUCCEEDED(dev_->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &q, sizeof(q))) &&
               q.NumQualityLevels;
-    if (ok && fmt != DXGI_FORMAT_D24_UNORM_S8_UINT) {
+    if (ok && fmt == DXGI_FORMAT_D24_UNORM_S8_UINT) {
+        // the resolve pass reads the depth twin through a multisampled view of it
+        D3D12_FEATURE_DATA_FORMAT_SUPPORT fs{DXGI_FORMAT_R24_UNORM_X8_TYPELESS};
+        ok = SUCCEEDED(dev_->CheckFeatureSupport(D3D12_FEATURE_FORMAT_SUPPORT, &fs, sizeof(fs))) &&
+             (fs.Support1 & D3D12_FORMAT_SUPPORT1_MULTISAMPLE_LOAD);
+    } else if (ok) {
         D3D12_FEATURE_DATA_FORMAT_SUPPORT fs{fmt};
         ok = SUCCEEDED(dev_->CheckFeatureSupport(D3D12_FEATURE_FORMAT_SUPPORT, &fs, sizeof(fs))) &&
              (fs.Support1 & D3D12_FORMAT_SUPPORT1_MULTISAMPLE_RESOLVE);
@@ -1654,8 +1678,8 @@ ID3D12PipelineState* D3D12Backend::EnsureMsPipeline(uint32_t kind, DXGI_FORMAT f
 
 void D3D12Backend::ReadyRes(Target& t) {
     if (!t.ms || !t.ms_new) return;
-    t.ms_new = false;
     if (!t.depth) {
+        t.ms_new = false;
         Transition(t.ms.Get(), t.ms_state, D3D12_RESOURCE_STATE_RESOLVE_SOURCE);
         Transition(t.res.Get(), t.state, D3D12_RESOURCE_STATE_RESOLVE_DEST);
         cl_->ResolveSubresource(t.res.Get(), 0, t.ms.Get(), 0, t.fmt);
@@ -1664,6 +1688,7 @@ void D3D12Backend::ReadyRes(Target& t) {
     // depth has no hardware resolve: the first sample of each pixel, drawn as depth (the stencil stays behind)
     ID3D12PipelineState* pso = EnsureMsPipeline(kMsResolveDepth, DXGI_FORMAT_UNKNOWN, 1);
     if (!pso) return;
+    t.ms_new = false;
     Transition(t.ms.Get(), t.ms_state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     Transition(t.res.Get(), t.state, D3D12_RESOURCE_STATE_DEPTH_WRITE);
     D3D12_CPU_DESCRIPTOR_HANDLE dh = Cpu(dsv_heap_.Get(), t.view, dsv_inc_);
@@ -1681,9 +1706,9 @@ void D3D12Backend::ReadyRes(Target& t) {
 
 void D3D12Backend::ReadyMs(Target& t) {
     if (!t.ms || !t.res_new) return;
-    t.res_new = false;
     ID3D12PipelineState* pso = EnsureMsPipeline(t.depth ? kMsUpDepth : kMsUp, t.depth ? DXGI_FORMAT_UNKNOWN : t.fmt, samples_);
     if (!pso) return;
+    t.res_new = false;
     if (t.depth) LOG_FIRST(2, "d3d12: anti-aliasing: depth %08X written outside a draw, carried over without its stencil", t.data);
     Transition(t.res.Get(), t.state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     D3D12_SHADER_RESOURCE_VIEW_DESC sv{};
@@ -1917,7 +1942,9 @@ void D3D12Backend::Blit(ID3D12Resource* src, DXGI_FORMAT fmt, const float uvrect
                    L.shadow[0], L.shadow[1], L.shadow[2], 0,
                    L.light[0], L.light[1], L.light[2], 0};
     std::memcpy(cb.cpu, c, sizeof(c));
-    DrawFullScreen(EnsureBlitPipeline(o.rtv, o.over), cb.gpu, slot, si);
+    ID3D12PipelineState* pso = EnsureBlitPipeline(o.rtv, o.over);
+    if (!pso) return;
+    DrawFullScreen(pso, cb.gpu, slot, si);
 }
 
 ID3DBlob* D3D12Backend::Compile(const std::string& src, const char* entry, const char* profile, uint64_t& hash) {
@@ -2007,6 +2034,10 @@ ID3D12PipelineState* D3D12Backend::EnsureBlitPipeline(DXGI_FORMAT rtv, bool over
     uint64_t h;
     ID3DBlob* vs = Compile(kBlitHlsl, "vs", "vs_5_0", h);
     ID3DBlob* ps = Compile(kBlitHlsl, "psmain", "ps_5_0", h);
+    if (!vs || !ps) {
+        LOG_FIRST(1, "d3d12: the picture pass did not compile");
+        return nullptr;
+    }
     D3D12_GRAPHICS_PIPELINE_STATE_DESC d = FullScreenPipelineDesc(vs, ps, rtv);
     if (over) {
         auto& blend = d.BlendState.RenderTarget[0];
@@ -2018,7 +2049,10 @@ ID3D12PipelineState* D3D12Backend::EnsureBlitPipeline(DXGI_FORMAT rtv, bool over
         blend.DestBlendAlpha = D3D12_BLEND_ONE;
         blend.BlendOp = blend.BlendOpAlpha = D3D12_BLEND_OP_ADD;
     }
-    dev_->CreateGraphicsPipelineState(&d, IID_PPV_ARGS(&pso));
+    if (FAILED(dev_->CreateGraphicsPipelineState(&d, IID_PPV_ARGS(&pso)))) {
+        LOG_FIRST(1, "d3d12: the picture pass could not be made");
+        return nullptr;
+    }
     return pso.Get();
 }
 
@@ -2536,6 +2570,8 @@ D3D12_SAMPLER_DESC StageSampler(const State& s, int i, const DrawTextures& stage
         sd.Filter = D3D12_FILTER_ANISOTROPIC;
         sd.MaxAnisotropy = std::min<uint32_t>(an, 16);
     }
+    // smooth_2d: the bicubic taps need a linear sampler, on the top level as the taps read it
+    if (stages.info[i].flags & kTexSmooth) sd.Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
     // clamp: the draw's coordinates all lie in 0..1 (UnitTexcoords), so wrap is read as clamp
     sd.AddressU = Address(clamp && t[kTssAddressU] == kTaddressWrap ? kTaddressClamp : t[kTssAddressU]);
     sd.AddressV = Address(clamp && t[kTssAddressV] == kTaddressWrap ? kTaddressClamp : t[kTssAddressV]);
@@ -2635,15 +2671,39 @@ bool D3D12Backend::BindStageTexturesAndTargets(const State& s, DrawTextures& sta
     // HUD sharpening, as ROTK Fix: with [graphics] sharpening on, the pictures of 2D draws are sharpened at their own
     // texel size, more the larger they are drawn (40% per 480 lines past the first 480, up to 90%)
     float hud = 0;
-    if (g_screen_space_test && app::Get().sharpening && !g_sharpen_off)
+    if (g_screen_space_test && app::Get().sharpening && !g_sharpen_off && !g_movie)
         hud = std::clamp(0.4f * (scale_ * float(guest_h_) / 480.0f - 1.0f), 0.0f, 0.9f);
-    if (hud > 0 && g_screen_space_test(s)) {
+    // smooth_2d: a 2D picture the game reads unfiltered (point), as menus and HUD pictures often are, turns to blocks
+    // once the frame is drawn larger than the console's; it is upscaled bicubic instead (and not sharpened as well)
+    bool smooth = g_screen_space_test && app::Get().smooth_2d && !g_movie && scale_ * float(guest_h_) > 1.2f * 480.0f;
+    bool screen_space = (hud > 0 || smooth) && g_screen_space_test(s);
+    if (smooth && screen_space) {
+        for (int i = 0; i < 4; i++) {
+            TexInfo& t = stages.info[i];
+            // linear (rect) pictures too: the menus' full-screen backgrounds are 640 x 480 ones; their coordinates
+            // reach the taps already divided by the size
+            if (!stages.res[i] || stages.rt[i] || t.kind != kTex2D || t.shadow || (t.flags & kTexWide)) continue;
+            if (s.tss[size_t(i)][kTssMagFilter] >= kTexfLinear) continue;  // filtered already
+            LOG_FIRST(1, "d3d12: smooth 2D pictures on (%.0f lines)", scale_ * float(guest_h_));
+            t.flags |= kTexSmooth;
+            D3D12_RESOURCE_DESC rd = stages.res[i]->GetDesc();
+            stages.sharp_texel[i][0] = 1.0f / float(std::max<UINT64>(rd.Width, 1));
+            stages.sharp_texel[i][1] = 1.0f / float(std::max<UINT>(rd.Height, 1));
+        }
+    }
+    if (hud > 0 && screen_space) {
         LOG_FIRST(1, "d3d12: sharper HUD on (%.0f%% at %.0f lines)", hud * 100, scale_ * float(guest_h_));
         for (int i = 0; i < 4; i++) {
             TexInfo& t = stages.info[i];
-            if (!stages.res[i] || stages.rt[i] || t.kind != kTex2D || t.rect || t.shadow || (t.flags & kTexWide)) continue;
+            if (!stages.res[i] || stages.rt[i] || t.kind != kTex2D || t.rect || t.shadow ||
+                (t.flags & (kTexWide | kTexSmooth)))
+                continue;
             t.flags |= kTexSharp;
             stages.sharp[i] = hud;
+            // the texel of what is bound: a texture pack's picture may be larger than the console's
+            D3D12_RESOURCE_DESC rd = stages.res[i]->GetDesc();
+            stages.sharp_texel[i][0] = 1.0f / float(std::max<UINT64>(rd.Width, 1));
+            stages.sharp_texel[i][1] = 1.0f / float(std::max<UINT>(rd.Height, 1));
         }
     }
     g_perf.bind += PerfMs(perf_t);
@@ -2786,9 +2846,9 @@ constexpr float kGlowBoxTexels = 3.0f;  // console texels across the box each wi
 void D3D12Backend::FillTexelConstants(int i, const TextureDesc& d, const DrawTextures& stages, DrawConstants& c) {
     c.texsize[i][0] = float(d.width);
     c.texsize[i][1] = float(d.height);
-    if (stages.sharp[i] > 0) {
-        c.spread[i][0] = 1.0f / float(std::max(d.width, 1u));
-        c.spread[i][1] = 1.0f / float(std::max(d.height, 1u));
+    if (stages.sharp[i] > 0 || (stages.info[i].flags & kTexSmooth)) {
+        c.spread[i][0] = stages.sharp_texel[i][0];
+        c.spread[i][1] = stages.sharp_texel[i][1];
         c.spread[i][2] = stages.sharp[i];
     }
     // the console samples pixels at integer positions, D3D12 half a pixel on: targets are read half a texel back
@@ -3408,8 +3468,8 @@ void D3D12Backend::CopyByDraw(const Target& src_t, ID3D12Resource* src_res, D3D1
     Transition(dst_t.res.Get(), dst_t.state, D3D12_RESOURCE_STATE_RENDER_TARGET);
     D3D12_CPU_DESCRIPTOR_HANDLE rh = Cpu(rtv_heap_.Get(), dst_t.view, rtv_inc_);
     cl_->OMSetRenderTargets(1, &rh, FALSE, nullptr);
-    float src_scale = float(src_t.w) / src_t.gw;
-    float dst_scale = float(dst_t.w) / dst_t.gw, dst_scale_y = float(dst_t.h) / dst_t.gh;
+    float src_scale = float(src_t.w) / src_t.gw, src_sy = float(src_t.h) / src_t.gh;
+    float dst_scale = float(dst_t.w) / dst_t.gw, dst_sy = float(dst_t.h) / dst_t.gh;
     bool listed = l.count && l.src_rects;
     uint32_t n = listed ? l.count : 1;
     for (uint32_t i = 0; i < n; i++) {
@@ -3418,8 +3478,7 @@ void D3D12Backend::CopyByDraw(const Target& src_t, ID3D12Resource* src_res, D3D1
         DrawnRect r{.x0 = 0, .y0 = 0, .x1 = whole_w, .y1 = whole_h};
         if (listed) r = ReadDrawnRect(l.src_rects, l.dst_points, i);
         if (r.x1 <= r.x0 || r.y1 <= r.y0) continue;
-        D3D12_VIEWPORT vp{r.dx * dst_scale, r.dy * dst_scale_y, (r.x1 - r.x0) * dst_scale, (r.y1 - r.y0) * dst_scale_y,
-                          0, 1};
+        D3D12_VIEWPORT vp{r.dx * dst_scale, r.dy * dst_sy, (r.x1 - r.x0) * dst_scale, (r.y1 - r.y0) * dst_sy, 0, 1};
         LONG right = std::min(LONG(vp.TopLeftX + vp.Width), LONG(dst_t.w));
         LONG bottom = std::min(LONG(vp.TopLeftY + vp.Height), LONG(dst_t.h));
         D3D12_RECT scissor{LONG(vp.TopLeftX), LONG(vp.TopLeftY), right, bottom};
@@ -3427,7 +3486,7 @@ void D3D12Backend::CopyByDraw(const Target& src_t, ID3D12Resource* src_res, D3D1
         cl_->RSSetViewports(1, &vp);
         cl_->RSSetScissorRects(1, &scissor);
         float uv[4] = {r.x0 / src_t.gw, r.y0 / src_t.gh, (r.x1 - r.x0) / src_t.gw, (r.y1 - r.y0) / src_t.gh};
-        uint32_t taps = uint32_t(std::ceil(std::max(src_scale / dst_scale, 1.0f) - kTapsSlack));
+        uint32_t taps = uint32_t(std::ceil(std::max({src_scale / dst_scale, src_sy / dst_sy, 1.0f}) - kTapsSlack));
         float mul = 1 / dst_t.range;
         BlitOptions o{.alpha = true, .taps = taps, .mul = mul, .rtv = dst_t.fmt};
         Blit(src_res, src_t.fmt, uv, o);
@@ -3443,7 +3502,7 @@ void D3D12Backend::CopyByRegion(const Target& src_t, ID3D12Resource* src_res, D3
     Transition(dst_t.res.Get(), dst_t.state, D3D12_RESOURCE_STATE_COPY_DEST);
     D3D12_TEXTURE_COPY_LOCATION dl{dst_t.res.Get(), D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX};
     D3D12_TEXTURE_COPY_LOCATION sl{src_res, D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX};
-    float dst_scale = float(dst_t.w) / dst_t.gw, dst_scale_y = float(dst_t.h) / dst_t.gh;
+    float dst_scale = float(dst_t.w) / dst_t.gw, dst_sy = float(dst_t.h) / dst_t.gh;
     bool listed = l.count && l.src_rects;
     uint32_t n = listed ? l.count : 1;
     for (uint32_t i = 0; i < n; i++) {
@@ -3453,15 +3512,15 @@ void D3D12Backend::CopyByRegion(const Target& src_t, ID3D12Resource* src_res, D3
         if (listed) {
             GuestRect r = ReadGuestRect(l.src_rects, i);
             b.left = ScaleUnsigned(r.left, dst_scale);
-            b.top = ScaleUnsigned(r.top, dst_scale_y);
+            b.top = ScaleUnsigned(r.top, dst_sy);
             b.right = std::min(ScaleUnsigned(r.right, dst_scale), src_t.w);
-            b.bottom = std::min(ScaleUnsigned(r.bottom, dst_scale_y), src_t.h);
+            b.bottom = std::min(ScaleUnsigned(r.bottom, dst_sy), src_t.h);
             dx = b.left;
             dy = b.top;
             if (l.dst_points) {
                 GuestPoint p = ReadGuestPoint(l.dst_points, i);
                 dx = ScaleUnsigned(p.x, dst_scale);
-                dy = ScaleUnsigned(p.y, dst_scale_y);
+                dy = ScaleUnsigned(p.y, dst_sy);
             }
         }
         if (b.right <= b.left || b.bottom <= b.top || dx >= dst_t.w || dy >= dst_t.h) continue;
@@ -3666,7 +3725,7 @@ void D3D12Backend::KeepMovieFrame(Target& t) {
     // kept at up to twice the console's size: the movie's own detail (its pictures are about 700x500) survives to the
     // screen, and movie_sharpening works one console pixel wide, about one movie pixel, before the scale to the screen
     uint32_t kw = std::min(t.w, std::max(t.gw, 1u) * 2), kh = std::min(t.h, std::max(t.gh, 1u) * 2);
-    float k = float(t.w) / float(std::max(kw, 1u));
+    float k = std::max(float(t.w) / float(std::max(kw, 1u)), float(t.h) / float(std::max(kh, 1u)));
     ID3D12Resource* into = f.res.Get();
     if (into && (into->GetDesc().Width != kw || into->GetDesc().Height != kh)) into = nullptr;  // the screen changed
     ShrinkOptions o{.taps = uint32_t(std::max(1.0f, std::ceil(k - 0.01f))), .into = into, .into_state = f.state,
@@ -3694,6 +3753,8 @@ D3D12Backend::MovieFrame* D3D12Backend::PickMovieFrame() {
             break;
         }
     }
+    if (kept == kMovieFrames && pick->time > due)
+        LOG_FIRST(1, "d3d12: cutscene sound delay held to %u frames (the game presents faster than the delay allows)", kMovieFrames);
     return pick->res ? pick : nullptr;
 }
 
@@ -3874,9 +3935,9 @@ void D3D12Backend::Present(const Surface& front) {
     if (t && LatchCpuWrite(*t)) UploadTarget(*t, front);
     if (t) Resolve(*t);
     frame_sides_ = g_frame_sides.exchange(1.0f);
+    if (!g_movie) movie_on_ = false;  // first, so a screenshot just after a movie shows the game
     if (t && g_screenshot.exchange(false)) Screenshot(*t);
     if (t && g_movie) KeepMovieFrame(*t);
-    else movie_on_ = false;
     if (ramp_dirty_) UploadGammaRamp();
     Transition(lut_.Get(), lut_state_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
@@ -3885,8 +3946,19 @@ void D3D12Backend::Present(const Surface& front) {
     Submit(false);
     bool vsync = app::Get().vsync;
     auto perf_swap = PerfClock::now();
-    swap_->Present(vsync ? 1 : 0, !vsync && tearing_ ? DXGI_PRESENT_ALLOW_TEARING : 0);
+    HRESULT hr = swap_->Present(vsync ? 1 : 0, !vsync && tearing_ ? DXGI_PRESENT_ALLOW_TEARING : 0);
     g_perf.swap += PerfMs(perf_swap);
+    // the driver gone (a GPU timeout on a card asked too much of, a driver crash or update): nothing drawn reaches the
+    // screen again, so end with the reason rather than show a frozen picture
+    if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET || hr == DXGI_ERROR_DEVICE_HUNG) {
+        HRESULT why = dev_->GetDeviceRemovedReason();
+        LOGE("d3d12: the graphics device was lost (present %08lX, reason %08lX)", static_cast<unsigned long>(hr),
+             static_cast<unsigned long>(why));
+        app::Fail(app::kExitGpuLost,
+                  L"The graphics driver stopped responding. This can happen when the graphics card is asked for more "
+                  L"than it can do: try a lower Render resolution, Anti-aliasing off, or a lower frame rate. Updating "
+                  L"the graphics driver may also help; the log has the details.");
+    }
 
     presents_++;
     presents_seen_.store(presents_);

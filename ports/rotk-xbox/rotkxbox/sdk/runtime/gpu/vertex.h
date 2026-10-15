@@ -61,9 +61,11 @@ void FvfInputs(uint32_t fvf, VertexShader& out);
 using ScreenSpaceHook = float (*)(const State& s);
 extern ScreenSpaceHook g_screen_space_hook;
 // where a squeezed draw goes: given its x and y extent (pixels), the target width and the squeeze, the game sets
-// x' = a * x + b. Null, or not set: pulled towards the centre (a = squeeze, b = width / 2 * (1 - squeeze)).
+// x' = a * x + b, and may set y' = c * y + d (c = 1, d = 0 as given). Null, or not set: pulled towards the centre
+// (a = squeeze, b = width / 2 * (1 - squeeze)). A draw 90% of the target's width or more is asked with a squeeze of
+// 1 (a = 1, b = 0: left as it is); with no callback it is left alone.
 using ScreenSpacePlace = void (*)(float x0, float x1, float y0, float y1, float width, float squeeze, float& a,
-                                  float& b);
+                                  float& b, float& c, float& d);
 extern ScreenSpacePlace g_screen_space_place;
 // a draw in screen space (HUD, menus, text), as the game tells: texture dumps name the textures such draws use once
 // in the log, so the pieces of a HUD are easy to find for a texture pack. Null for none.

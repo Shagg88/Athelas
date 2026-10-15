@@ -162,6 +162,9 @@ void ApplyIni() {
     r.Bool("Graphics", "AlphaEdgeSmoothing", g_alpha_edges);
     r.Bool("Graphics", "HUDEdges", g_hud_edges);       // the Xbox port's own keys, for now
     r.Bool("Graphics", "SharperText", g_sharp_text);
+    // the shared SDK's smooth menus: off under ROTK Fix (its own SharperText redraws the text and menu pictures)
+    s.smooth_2d = false;
+    r.Bool("Graphics", "SmoothMenus", s.smooth_2d);
     // [Frame]: ROTK Fix's limiter at TargetFPS (0 no cap); Limiter = 0 leaves the game's own pace, the console's 30
     uint32_t target = g_fps, limiter = 1;
     r.Int("Frame", "TargetFPS", target, 0, 1000);

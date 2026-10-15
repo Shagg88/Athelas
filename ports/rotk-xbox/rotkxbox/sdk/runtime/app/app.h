@@ -33,6 +33,7 @@ struct Settings {
     float brightness = 1.0f;               // a curve over the picture as shown: 1 the game's own, more lifts the darks
     float lod_bias = 0.0f;                 // added to the game's mip level bias: below 0 picks sharper texture levels
     uint32_t sharpening = 0;               // 0 to 100: contrast adaptive sharpening over the picture as shown
+    bool smooth_2d = true;                 // unfiltered 2D pictures (menus, HUD) upscaled bicubic past 1.2x the console's lines
     uint32_t msaa = 0;                     // anti-aliasing samples: 0 off, 2, 4 or 8
     bool hdr = false;                      // HDR output on an HDR screen (Windows HDR on), read at start
     uint32_t colour_look = 0;              // 0 original, 1 film, 2 vivid, 3 dark fantasy
@@ -41,8 +42,11 @@ struct Settings {
     uint32_t vibration = 100;              // 0 to 100, rumble strength
     uint32_t stick_deadzone = 0;           // 0 to 50, % of a stick's travel read as centred
     uint32_t trigger_threshold = 0;        // 0 to 90, % of a trigger's pull read as released
+    // [controls]: for each Xbox button the game reads (A B X Y black white left trigger right trigger), the
+    // controller button that presses it, as input::kSources; as on the Xbox by default
+    uint32_t buttons[8] = {0, 1, 2, 3, 5, 4, 6, 7};
     uint32_t movie_display = 2;            // movies: 0 fit (the middle 16:9), 1 stretch, 2 4:3 (the console's frame)
-    uint32_t movie_sharpening = 0;         // 0 to 100, sharpening at the movie's own pixel size
+    uint32_t movie_sharpening = 75;        // 0 to 100, sharpening at the movie's own pixel size (75 by default, the player's choice)
     uint32_t movie_delay = 0;              // ms the movie picture is held back, for late (Bluetooth) sound
 };
 
@@ -73,6 +77,7 @@ enum ExitCode : int {
     kExitWrongRelease = 3,  // the game, but not the release this build was made from
     kExitNoD3D12 = 4,       // the graphics card or driver cannot run the renderer
     kExitBadSettings = 5,   // the settings file is not readable
+    kExitGpuLost = 6,       // the graphics driver stopped or reset while playing (Windows' GPU timeout, a driver crash)
 };
 // logs the reason, shows it unless --no-dialogs, and ends the process with code
 [[noreturn]] void Fail(int code, const std::wstring& message);
@@ -137,6 +142,9 @@ struct GameInfo {
     std::vector<std::pair<const char*, const char*>> images;  // xbe file name, executable name
     std::vector<Option> options;
     std::vector<cfg::Preset> presets;  // --describe-settings: a launcher's preset menu
+    // [controls]: the game's name for what each Xbox button does (A B X Y black white left trigger right trigger),
+    // the launcher's labels; empty ones show the button's name
+    std::vector<const char*> button_actions;
     // the settings file's toml::table, for what options cannot hold
     void (*load)(const void* table);
     void (*save)(void* table);

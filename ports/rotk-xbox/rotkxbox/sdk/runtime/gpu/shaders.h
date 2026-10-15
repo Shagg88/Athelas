@@ -19,6 +19,8 @@ struct TexInfo {
 enum : uint8_t {
     kTexWide = 4,  // an upscaled target shrunk by the pass: each tap averaged over console texels
     kTexSharp = 8, // a HUD or menu picture: sharpened at its own texel size (spread: texel step, strength)
+    kTexSmooth = 16, // a HUD or menu picture the game reads unfiltered, drawn larger: a bicubic (Catmull-Rom) upscale
+                     // through a linear sampler (spread: texel step)
 };
 
 struct PixelKey {

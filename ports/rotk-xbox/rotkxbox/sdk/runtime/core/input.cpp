@@ -121,20 +121,31 @@ Pad Poll(int port) {
                 SDL_GAMEPAD_BUTTON_DPAD_RIGHT, SDL_GAMEPAD_BUTTON_START,     SDL_GAMEPAD_BUTTON_BACK,
                 SDL_GAMEPAD_BUTTON_LEFT_STICK, SDL_GAMEPAD_BUTTON_RIGHT_STICK};
             for (int i = 0; i < 8; i++) p.buttons |= uint16_t(SDL_GetGamepadButton(pad, kButtons[i]) << i);
-            // A B X Y black white
-            constexpr SDL_GamepadButton kAnalog[] = {SDL_GAMEPAD_BUTTON_SOUTH, SDL_GAMEPAD_BUTTON_EAST,
-                                                     SDL_GAMEPAD_BUTTON_WEST,  SDL_GAMEPAD_BUTTON_NORTH,
-                                                     SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, SDL_GAMEPAD_BUTTON_LEFT_SHOULDER};
-            for (int i = 0; i < 6; i++) p.analog[i] = SDL_GetGamepadButton(pad, kAnalog[i]) ? 0xFF : 0;
-            auto axis = [&](SDL_GamepadAxis a) { return int(SDL_GetGamepadAxis(pad, a)); };
-            // 0 to 32767 into 0 to 255
             const app::Settings& st = app::Get();
-            p.analog[6] = Trigger(axis(SDL_GAMEPAD_AXIS_LEFT_TRIGGER), st.trigger_threshold);
-            p.analog[7] = Trigger(axis(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER), st.trigger_threshold);
+            auto axis = [&](SDL_GamepadAxis a) { return int(SDL_GetGamepadAxis(pad, a)); };
+            // the controller's buttons as input::kSources, then each Xbox button from the one [controls] sets it to
+            constexpr SDL_GamepadButton kFace[] = {SDL_GAMEPAD_BUTTON_SOUTH, SDL_GAMEPAD_BUTTON_EAST, SDL_GAMEPAD_BUTTON_WEST,
+                                                   SDL_GAMEPAD_BUTTON_NORTH, SDL_GAMEPAD_BUTTON_LEFT_SHOULDER,
+                                                   SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER};
+            uint8_t src[kSourceCount] = {};
+            for (int i = 0; i < 6; i++) src[i] = SDL_GetGamepadButton(pad, kFace[i]) ? 0xFF : 0;
+            src[6] = Trigger(axis(SDL_GAMEPAD_AXIS_LEFT_TRIGGER), st.trigger_threshold);
+            src[7] = Trigger(axis(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER), st.trigger_threshold);
+            src[8] = (p.buttons >> 6) & 1 ? 0xFF : 0;
+            src[9] = (p.buttons >> 7) & 1 ? 0xFF : 0;
+            bool moved[2] = {};
+            for (int i = 0; i < 8; i++) {
+                uint32_t from = std::min(st.buttons[i], kSourceCount - 1);
+                p.analog[i] = src[from];
+                if (from == 8 || from == 9) moved[from - 8] = true;
+            }
+            // a stick click set to an Xbox button no longer clicks the stick too
+            if (moved[0]) p.buttons &= uint16_t(~(1u << 6));
+            if (moved[1]) p.buttons &= uint16_t(~(1u << 7));
             // the first press of each trigger, and of each shoulder button, in the release log
             static bool seen[4][4] = {};
             const int lt = axis(SDL_GAMEPAD_AXIS_LEFT_TRIGGER), rt = axis(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
-            const bool lb = p.analog[5], rb = p.analog[4];
+            const bool lb = src[4], rb = src[5];
             const bool now[4] = {lt > 4000, rt > 4000, lb, rb};
             static const char* kWhat[4] = {"left trigger", "right trigger", "left shoulder (White)", "right shoulder (Black)"};
             for (int k = 0; k < 4; k++)

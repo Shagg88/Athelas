@@ -14,6 +14,18 @@ endif()
 set(CMAKE_POLICY_DEFAULT_CMP0091 NEW)
 
 include(FetchContent)
+# the executables' manifest (runtime/app/app.manifest) goes in as a resource
+if(WIN32)
+    enable_language(RC)
+    # the linker must not add its own manifest (also resource 1 of type 24): clang's link line has /MANIFEST:EMBED
+    # built in, which lld-link turns into "duplicate resource" against ours
+    foreach(lang C CXX)
+        string(REPLACE "/MANIFEST:EMBED" "/MANIFEST:NO" CMAKE_${lang}_LINK_EXECUTABLE "${CMAKE_${lang}_LINK_EXECUTABLE}")
+    endforeach()
+    if(MSVC AND NOT CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU")
+        add_link_options(/MANIFEST:NO)
+    endif()
+endif()
 set(ZYDIS_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
 set(ZYDIS_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(ZYDIS_BUILD_DOXYGEN OFF CACHE BOOL "" FORCE)
@@ -27,7 +39,7 @@ set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
 set(SDL_RENDER OFF CACHE BOOL "" FORCE)
 set(SDL_GPU OFF CACHE BOOL "" FORCE)
 set(SDL_CAMERA OFF CACHE BOOL "" FORCE)
-FetchContent_Declare(SDL3 GIT_REPOSITORY https://github.com/libsdl-org/SDL.git GIT_TAG release-3.4.16 GIT_SHALLOW TRUE)
+FetchContent_Declare(SDL3 GIT_REPOSITORY https://github.com/libsdl-org/SDL.git GIT_TAG release-3.4.18 GIT_SHALLOW TRUE)
 FetchContent_MakeAvailable(zydis tomlplusplus imgui SDL3)
 
 # x86 to C++ recompiler
@@ -85,12 +97,31 @@ function(add_xbe_image target xbe config partitions game_dir)
     file(SHA1 ${xbe_file} xbe_sha1)
     set(XBE_HASH ${CMAKE_CURRENT_BINARY_DIR}/${target}_xbe.cpp)
     file(CONFIGURE OUTPUT ${XBE_HASH} CONTENT "extern const char kImageSha1[] = \"${xbe_sha1}\";\n")
-    add_executable(${target} WIN32 ${XBE_RUNTIME_SOURCES} ${XBE_HOST_SOURCES} ${GAME_SOURCES} ${GEN_SOURCES} ${XBE_IMGUI_SOURCES} ${XBE_HASH})
+    # UTF-8 paths, DPI awareness: runtime/app/app.manifest, as resource 1 of type 24 (RT_MANIFEST)
+    set(XBE_RC ${CMAKE_CURRENT_BINARY_DIR}/${target}_manifest.rc)
+    set(rc "1 24 \"${XBE_SDK_DIR}/runtime/app/app.manifest\"\n")
+    # XBE_VERSION ("1.2.3") and XBE_PRODUCT, when the game sets them: the version Windows shows in the exe's
+    # Properties, and GAME_VERSION for the code
+    if(XBE_VERSION)
+        string(REPLACE "." "," v "${XBE_VERSION}")
+        string(APPEND rc "1 VERSIONINFO\nFILEVERSION ${v},0\nPRODUCTVERSION ${v},0\nFILEOS 0x40004\nFILETYPE 0x1\nBEGIN\n"
+            "BLOCK \"StringFileInfo\"\nBEGIN\nBLOCK \"040904b0\"\nBEGIN\n"
+            "VALUE \"FileDescription\", \"${XBE_PRODUCT}\"\nVALUE \"ProductName\", \"${XBE_PRODUCT}\"\n"
+            "VALUE \"FileVersion\", \"${XBE_VERSION}\"\nVALUE \"ProductVersion\", \"${XBE_VERSION}\"\n"
+            "VALUE \"InternalName\", \"${target}\"\nVALUE \"OriginalFilename\", \"${target}.exe\"\nEND\nEND\n"
+            "BLOCK \"VarFileInfo\"\nBEGIN\nVALUE \"Translation\", 0x409, 1200\nEND\nEND\n")
+    endif()
+    file(CONFIGURE OUTPUT ${XBE_RC} CONTENT "${rc}")
+    set_property(SOURCE ${XBE_RC} APPEND PROPERTY OBJECT_DEPENDS ${XBE_SDK_DIR}/runtime/app/app.manifest)
+    add_executable(${target} WIN32 ${XBE_RUNTIME_SOURCES} ${XBE_HOST_SOURCES} ${GAME_SOURCES} ${GEN_SOURCES} ${XBE_IMGUI_SOURCES} ${XBE_HASH} ${XBE_RC})
     add_dependencies(${target} recompile_${target})
     target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${XBE_SDK_DIR}/runtime ${GEN})
     target_include_directories(${target} SYSTEM PRIVATE ${imgui_SOURCE_DIR})
     target_compile_options(${target} PRIVATE -fno-strict-aliasing)
     target_compile_definitions(${target} PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS)
+    if(XBE_VERSION)
+        target_compile_definitions(${target} PRIVATE GAME_VERSION="${XBE_VERSION}")
+    endif()
     target_link_libraries(${target} PRIVATE tomlplusplus::tomlplusplus $<LINK_ONLY:SDL3::SDL3-static> d3d12 dxgi dxguid d3dcompiler xaudio2 ole32 windowscodecs dbghelp winmm dwmapi ws2_32)
     # lld keeps the recompiled weak functions overridable by the host ones
     target_link_options(${target} PRIVATE -fuse-ld=lld -g)

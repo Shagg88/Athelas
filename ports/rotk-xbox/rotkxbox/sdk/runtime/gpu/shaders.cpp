@@ -392,6 +392,7 @@ std::string TexFetch(const PixelKey& k, int i) {
     };
     auto tex2d = [&](const std::string& uv) {
         if (t.flags & kTexWide) return F("spreadtap(tex%d, smp%d, %s, spread[%d], %s)", i, i, uv.c_str(), i, Hooks().ReadScale(t).c_str());
+        if (t.flags & kTexSmooth) return F("smoothtap(tex%d, smp%d, %s, spread[%d])", i, i, uv.c_str(), i);
         if (t.flags & kTexSharp) return F("sharptap(tex%d, smp%d, %s, spread[%d])", i, i, uv.c_str(), i);
         return F("tex%d.Sample(smp%d, %s)", i, i, uv.c_str());
     };
@@ -463,6 +464,24 @@ const char* kPsTail = R"(float4 sharptap(Texture2D t, SamplerState s, float2 uv,
                t.Sample(s, uv + float2(0, w.y)).rgb + t.Sample(s, uv - float2(0, w.y)).rgb;
     c.rgb = saturate(c.rgb + w.z * (c.rgb - n * 0.25));
     return c;
+}
+// Catmull-Rom from 9 bilinear taps; w.xy the texel in uv. Kept in 0..1, as the ringing past an edge would show
+float4 smoothtap(Texture2D t, SamplerState s, float2 uv, float4 w) {
+    float2 p = uv / w.xy;
+    float2 tc = floor(p - 0.5) + 0.5;
+    float2 f = p - tc;
+    float2 w0 = f * (-0.5 + f * (1.0 - 0.5 * f));
+    float2 w1 = 1.0 + f * f * (-2.5 + 1.5 * f);
+    float2 w2 = f * (0.5 + f * (2.0 - 1.5 * f));
+    float2 w3 = f * f * (-0.5 + 0.5 * f);
+    float2 w12 = w1 + w2;
+    float2 p0 = (tc - 1) * w.xy, p3 = (tc + 2) * w.xy, p12 = (tc + w2 / w12) * w.xy;
+    float4 c = t.SampleLevel(s, float2(p0.x, p0.y), 0) * w0.x * w0.y + t.SampleLevel(s, float2(p12.x, p0.y), 0) * w12.x * w0.y +
+               t.SampleLevel(s, float2(p3.x, p0.y), 0) * w3.x * w0.y + t.SampleLevel(s, float2(p0.x, p12.y), 0) * w0.x * w12.y +
+               t.SampleLevel(s, float2(p12.x, p12.y), 0) * w12.x * w12.y + t.SampleLevel(s, float2(p3.x, p12.y), 0) * w3.x * w12.y +
+               t.SampleLevel(s, float2(p0.x, p3.y), 0) * w0.x * w3.y + t.SampleLevel(s, float2(p12.x, p3.y), 0) * w12.x * w3.y +
+               t.SampleLevel(s, float2(p3.x, p3.y), 0) * w3.x * w3.y;
+    return saturate(c);
 }
 float4 spreadtap(Texture2D t, SamplerState s, float2 uv, float4 w, float m) {
     float4 c = 0;
@@ -872,6 +891,8 @@ std::string PixelHlsl(const PixelKey& k) {
                           i, i, i, norm.c_str(), i, i, t.shadow, i);
             else if (t.kind == kTex2D && (t.flags & kTexWide))
                 body += F("float4 t%d = spreadtap(tex%d, smp%d, %s, spread[%d], %s);\n", i, i, i, uv.c_str(), i, Hooks().ReadScale(t).c_str());
+            else if (t.kind == kTex2D && (t.flags & kTexSmooth))
+                body += F("float4 t%d = smoothtap(tex%d, smp%d, %s, spread[%d]);\n", i, i, i, uv.c_str(), i);
             else if (t.kind == kTex2D && (t.flags & kTexSharp))
                 body += F("float4 t%d = sharptap(tex%d, smp%d, %s, spread[%d]);\n", i, i, i, uv.c_str(), i);
             else if (t.kind == kTex2D) body += F("float4 t%d = tex%d.Sample(smp%d, %s);\n", i, i, i, uv.c_str());

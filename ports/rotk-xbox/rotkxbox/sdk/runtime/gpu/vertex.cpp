@@ -488,8 +488,7 @@ bool OrthoExtent(const State& s, uint32_t start, uint32_t count, const uint8_t* 
 ScreenSpacePlace g_screen_space_place = nullptr;
 
 namespace {
-// x of the position register (v0, screen pixels) pulled towards the target's centre by f; a draw as wide as the
-// target (fades, full screen passes, backgrounds) is left alone
+// x of the position register (v0, screen pixels) pulled towards the target's centre by f
 void SqueezeScreenX(const State& s, const int* regs, int nregs, float f, Assembled& out) {
     int k = 0;
     while (k < nregs && regs[k] != 0) k++;
@@ -504,12 +503,17 @@ void SqueezeScreenX(const State& s, const int* regs, int nregs, float f, Assembl
         ylo = std::min(ylo, p[1]);
         yhi = std::max(yhi, p[1]);
     }
-    if (hi - lo >= 0.9f * float(w)) return;
-    float a = f, b = float(w) / 2 * (1 - f);
-    if (g_screen_space_place) g_screen_space_place(lo, hi, ylo, yhi, float(w), f, a, b);
+    // a draw about as wide as the target (fades, full screen passes, backgrounds) is not squeezed: the game is asked
+    // with a squeeze of 1, and may still move it
+    bool wide = hi - lo >= 0.9f * float(w);
+    if (wide && !g_screen_space_place) return;
+    if (wide) f = 1;
+    float a = f, b = float(w) / 2 * (1 - f), c = 1, d = 0;
+    if (g_screen_space_place) g_screen_space_place(lo, hi, ylo, yhi, float(w), f, a, b, c, d);
     for (uint32_t v = 0; v < out.vertex_count; v++) {
-        float& x = out.vertices[(size_t(v) * nregs + k) * 4];
-        x = a * x + b;
+        float* p = &out.vertices[(size_t(v) * nregs + k) * 4];
+        p[0] = a * p[0] + b;
+        p[1] = c * p[1] + d;
     }
 }
 }  // namespace

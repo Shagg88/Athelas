@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "app/app.h"
+#include "kernel/disc.h"
 #include "core/log.h"
 #include "image_symbols.h"
 #include "kernel/kernel.h"
@@ -32,8 +33,22 @@ int main(int argc, char** argv) {
     if (app::kGame.init) app::kGame.init();
     if (app::kGame.window) app::kGame.window(nullptr);
     std::string hdd = app::Instance() > 1 ? "hdd" + std::to_string(app::Instance()) : "hdd";
-    std::ifstream f(game + "/" + IMAGE_XBE, std::ios::binary);
-    std::vector<uint8_t> xbe((std::istreambuf_iterator<char>(f)), {});
+    std::vector<uint8_t> xbe;
+    // a disc image (.iso): mounted as the D: drive, the xbe read from it, as the port does
+    if (game.size() > 4 && (game.compare(game.size() - 4, 4, ".iso") == 0 || game.compare(game.size() - 4, 4, ".ISO") == 0)) {
+        auto disc = std::make_unique<kernel::Disc>();
+        std::string error;
+        if (!disc->Open(game, error) || !disc->Load(IMAGE_XBE, xbe)) {
+            std::fprintf(stderr, "%s: %s\n", game.c_str(), error.empty() ? "no " IMAGE_XBE : error.c_str());
+            return 2;
+        }
+        LOGI("harness: disc image %s", game.c_str());
+        kernel::MountDisc(std::move(disc));
+        game = std::filesystem::path(game).parent_path().string();
+    } else {
+        std::ifstream f(game + "/" + IMAGE_XBE, std::ios::binary);
+        xbe.assign(std::istreambuf_iterator<char>(f), {});
+    }
     if (!kernel::Boot(std::move(xbe), IMAGE_XBE, game, (app::ExeDir() / hdd).string())) return 1;
     for (;;) {
         std::this_thread::sleep_for(std::chrono::seconds(1));

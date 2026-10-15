@@ -4,6 +4,7 @@
 #include <string>
 
 #include "app/app.h"
+#include "core/input.h"
 
 namespace app {
 
@@ -63,6 +64,10 @@ std::vector<cfg::Desc> SettingsList() {
         {"graphics", "sharpening", Type::Int, "Sharpening",
          "Crisper picture. 0 turns it off. While playing, [ switches it on and off to compare.", nullptr, &s.sharpening,
          nullptr, 0, 100},
+        {"graphics", "smooth_2d", Type::Bool, "Smooth menus and HUD",
+         "Menu pictures, icons and text that the game draws unfiltered are upscaled smoothly instead of turning into "
+         "blocks at higher render resolutions. Off: as the game draws them.",
+         &s.smooth_2d},
         {"graphics", "colour_look", Type::Choice, "Colour look",
          "Original: the game's own colours.\nFilm: richer contrast, cool shadows and warm highlights.\nVivid: stronger "
          "colour.\nDark fantasy: cooler and moodier, with less colour.\nWhile playing, ] switches between them.",
@@ -115,6 +120,20 @@ std::vector<cfg::Desc> SettingsList() {
          "Also looks for a co-op host at this address, past the local network. Empty searches the local network only.",
          nullptr, nullptr, &s.join_ip, 0, 0, {}, "join_ip"},
     };
+    // [controls]: which controller button presses each Xbox button, named by what the game does with it
+    static const char* const kKeys[8] = {"a", "b", "x", "y", "black", "white", "left_trigger", "right_trigger"};
+    static const char* const kXbox[8] = {"Xbox A", "Xbox B", "Xbox X", "Xbox Y", "Xbox Black", "Xbox White",
+                                         "Xbox left trigger", "Xbox right trigger"};
+    std::vector<const char*> sources(std::begin(input::kSources), std::end(input::kSources));
+    std::vector<const char*> names(std::begin(input::kSourceNames), std::end(input::kSourceNames));
+    for (int i = 0; i < 8; i++) {
+        const char* action = size_t(i) < kGame.button_actions.size() ? kGame.button_actions[size_t(i)] : nullptr;
+        cfg::Desc d{"controls", kKeys[i], Type::Choice, action ? action : kXbox[i],
+                    "The button on your controller that does this. As on the Xbox by default (the Xbox's Black and "
+                    "White buttons are the bumpers).",
+                    nullptr, &s.buttons[i], nullptr, 0, 0, sources, nullptr, nullptr, names};
+        l.push_back(d);
+    }
     // the game's own settings go with the graphics ones, before textures
     auto at = std::find_if(l.begin(), l.end(), [](const cfg::Desc& d) { return std::string(d.section) == "textures"; });
     l.insert(at, kGame.options.begin(), kGame.options.end());

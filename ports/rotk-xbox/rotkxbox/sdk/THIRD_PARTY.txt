@@ -45,7 +45,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 
-SDL 3.4.16 (https://github.com/libsdl-org/SDL)
+SDL 3.4.18 (https://github.com/libsdl-org/SDL)
 
 Copyright (C) 1997-2026 Sam Lantinga <slouken@libsdl.org>
 

@@ -1,5 +1,6 @@
 // headless renderer: counts frames and draws, logs draw lists, draws chosen frames with the reference renderer
-// REF=N: every Nth frame drawn on the CPU into guest memory and saved as cap/ref_<frame>.tga
+// REF=N: every Nth frame drawn on the CPU into guest memory and saved as cap/ref_<frame>.tga (REF_FROM, REF_TO: only
+// within those frames)
 // CAP=N: every Nth frame's draws listed in cap/draws_<frame>.txt
 // snap in the run folder: the next two frames drawn and saved as snap_1.tga and snap_2.tga, then snap is removed
 #include <cstdio>
@@ -89,9 +90,12 @@ public:
         }
         static const long scan_at = harness::Env("TEXSCAN");
         if (scan_at && long(frames_) == scan_at) ScanTextures();
-        // REF_FROM=n: no frames drawn before frame n (a run of consecutive frames later on, with REF=1)
-        static const long every = harness::Env("REF"), cap = harness::Env("CAP"), from = harness::Env("REF_FROM");
-        drawing_ = snap_ || (every && long(frames_ + 1) >= from && (frames_ + 1) % every == 0);
+        static const long every = harness::Env("REF"), cap = harness::Env("CAP");
+        // REF_FROM / REF_TO: only frames in that range drawn, so a short stretch late in a run can be captured closely
+        static const long from = harness::Env("REF_FROM"), to = harness::Env("REF_TO");
+        long next = long(frames_ + 1);
+        bool in_range = next >= from && (!to || next <= to);
+        drawing_ = snap_ || (every && in_range && next % every == 0);
         if (drawing_) reference::BeginFrame();
         harness::g_frames = frames_ + 1;
         if (++frames_ % 60 == 0) LOGI("renderer: frame %llu, %llu draws, %llu empty frames", frames_, draws_, empty_);

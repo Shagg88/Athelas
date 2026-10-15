@@ -45,6 +45,7 @@ bool g_safe_area = false;       // [graphics] safe_area: the console's black TV 
 void InitCamera() {
     app::g_max_frame_aspect = 32.0f / 9.0f;  // ultrawide screens get their full width (see Place2D)
     gpu::g_wide_targets = true;              // drawn at the screen's own width, not stretched sideways
+    gpu::g_movie_fit_max = (4.0f / 3.0f) * 480.0f / 348.0f;  // the films are 1.84:1 (rows 65 to 413 of the frame)
     gpu::g_alpha_edges = g_alpha_edges;
     gpu::g_fog_scale = float(g_draw_percent) / 100.0f;
     if (g_draw_percent != 100) LOGR("rotk: draw distance %u%%", g_draw_percent);
