@@ -416,7 +416,13 @@ bool CodeGen::EmitInteger(uint32_t va, const ZydisDecodedInstruction& in, const 
         case ZYDIS_MNEMONIC_STD: Line("\tctx.df = 1;"); return true;
 
         case ZYDIS_MNEMONIC_PUSH:
-            if (ops[0].size == 16 && ops[0].type != ZYDIS_OPERAND_TYPE_IMMEDIATE) {
+            // a segment register (Zydis reports it as 16 bits) takes a full dword, as POP below takes 4: the 16-bit
+            // path left the stack 2 bytes off per push (found in Hunter: The Reckoning's Bink MMX check). The selector
+            // value is never read.
+            if (ops[0].type == ZYDIS_OPERAND_TYPE_REGISTER && ops[0].reg.value >= ZYDIS_REGISTER_ES &&
+                ops[0].reg.value <= ZYDIS_REGISTER_GS) {
+                Line("\tX86_PUSH32(0u);");
+            } else if (ops[0].size == 16 && ops[0].type != ZYDIS_OPERAND_TYPE_IMMEDIATE) {
                 emit(F("uint16_t v = (uint16_t)(%s); ctx.esp -= 2; X86_MEM16(ctx.esp) = v;", Read(ops[0], ea).c_str()));
             } else {
                 emit(F("uint32_t v = (uint32_t)(%s); X86_PUSH32(v);", Read(ops[0], ea).c_str()));
