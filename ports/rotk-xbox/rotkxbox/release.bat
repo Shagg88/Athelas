@@ -1,6 +1,7 @@
 @echo off
-rem A release copy for the launcher: release\ROTKXbox\ with only ROTKXbox.exe and THIRD_PARTY.txt (the licences of
-rem the libraries built into it, which must ship with it). The launcher looks for it as <launcher>\ROTKXbox\.
+rem A release copy for the launcher: release\ROTKXbox\ with only ROTKXbox.exe, LICENSE.txt (the recompiler runtime's
+rem MIT licence), THIRD_PARTY.txt (the licences of the libraries built into it; both must ship with it) and
+rem ROTKXbox.exe.sha256. The launcher looks for it as <launcher>\ROTKXbox\.
 rem The game files, settings, saves, logs and shader cache all live where the launcher's arguments say.
 setlocal
 set "GAME_EXE=ROTKXbox"
@@ -18,6 +19,9 @@ rd /s /q "release\%GAME_EXE%" 2>nul
 mkdir "release\%GAME_EXE%" || exit /b 1
 copy /y "%OUT%\%GAME_EXE%.exe" "release\%GAME_EXE%\" >nul || exit /b 1
 copy /y "%SDK%\THIRD_PARTY.txt" "release\%GAME_EXE%\" >nul || exit /b 1
+copy /y "%SDK%\LICENSE" "release\%GAME_EXE%\LICENSE.txt" >nul || exit /b 1
+rem the exe's SHA-256 as sha256sum writes it: "<hash>  ROTKXbox.exe"
+powershell -NoProfile -Command "$h = (Get-FileHash -Algorithm SHA256 'release\%GAME_EXE%\%GAME_EXE%.exe').Hash.ToLower(); [IO.File]::WriteAllText('release\%GAME_EXE%\%GAME_EXE%.exe.sha256', $h + '  %GAME_EXE%.exe' + [char]10)" || exit /b 1
 echo.
 echo Release copy: %CD%\release\%GAME_EXE%
 dir /b "release\%GAME_EXE%"
