@@ -1,5 +1,32 @@
+# game files: from the player's own disc, never committed (on the PC: C:\ROTKX\extracted)
+gamedata/
+gamedata_fast/
+assets_local/
+*.xbe
+*.iso
+# generated from the game's xbe, and build output
 rotkxbox/generated/
 rotkxbox/assets/
 rotkxbox/out/
+rotkxbox/release/
+rotkxbox/captures/
+# analysis dumps of the game's code and data
 analysis/
-work/
+shared/analysis/
+# Linux test-harness work folder: scripts and pad scripts are kept, runs, builds and game/PC-derived data are not
+work/runs/
+work/runs_*.out
+work/hbuild/
+work/tools/b/
+work/fonts/
+work/usersave/
+work/pcfake/
+work/xdk/
+work/*.png
+work/hidden/*.bin
+work/hidden/*.txt
+work/hidden/*.tsv
+work/hidden/*.pkl
+__pycache__/
+*.pyc
+*.log

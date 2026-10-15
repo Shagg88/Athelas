@@ -1,0 +1,23 @@
+# skip the level's movie, then fight: A (speed attack) and B now and then
+300 START 10
+420 A 10
+600 START 10
+720 A 10
+900 START 10
+1020 A 10
+1200 A 10
+1300 B 10
+1400 A 10
+1500 Y 10
+1600 A 10
+1700 X 10
+1800 A 10
+1900 B 10
+2000 A 10
+2200 A 10
+2400 Y 10
+2600 A 10
+2800 B 10
+3000 A 10
+3200 A 10
+3400 Y 10
