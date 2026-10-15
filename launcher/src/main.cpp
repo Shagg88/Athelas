@@ -3016,9 +3016,9 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     float pad = S(30), bannerH = S(142), barH = S(66);
     const GameInfo &g = a.game;
 
-    // ---- banner: title on the left, status on the right
-    ImGui::SetCursorPos(ImVec2(pad, S(28)));
+    // ---- banner: the title in the middle, status on the right, the game picker below on the left
     ImGui::PushFont(F_TITLE, F_TITLE->LegacySize);
+    ImGui::SetCursorPos(ImVec2((size.x - ImGui::CalcTextSize("Athelas").x) * 0.5f, S(32)));
     ImDrawList *dl = ImGui::GetWindowDrawList();
     ImVec2 tp = ImGui::GetCursorScreenPos();
     for (int dx = -1; dx <= 1; dx++)
@@ -3026,7 +3026,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
             if (dx || dy) dl->AddText(F_TITLE, F_TITLE->LegacySize, ImVec2(tp.x + dx * S(2), tp.y + dy * S(2)), IM_COL32(0, 0, 0, 110), "Athelas");
     ImGui::TextColored(C_GOLD_H, "Athelas");
     ImGui::PopFont();
-    ImGui::SetCursorPosX(pad + S(2));
+    ImGui::SetCursorPos(ImVec2(pad + S(2), S(98)));
     ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
     // The Return of the King is one entry whatever versions the player has (PC, Xbox or
     // both); with more than one, a second menu picks the version. Other games are listed as they are.
