@@ -1443,7 +1443,7 @@ static void tab_about(App &a)
     games_section(a);
     section("Setup");
     const GameInfo &g = a.game;
-    status_dot(g.exeFound && g.versionOk, g.exeFound, g.exeFound ? g.versionText.c_str() : "rotk.exe not found - put the launcher in your game folder", nullptr);
+    status_dot(g.exeFound && g.versionOk, g.exeFound, g.exeFound ? g.versionText.c_str() : "rotk.exe not found - choose your game folder on the About tab", nullptr);
     status_dot(g.hasDll && g.hasProxyD3D8 && g.hasProxyDinput, false, "ROTK Fix files", nullptr);
     status_dot(g.hasDxvk, false, "Vulkan renderer (DXVK)", nullptr);
     {
@@ -1493,8 +1493,11 @@ static void tab_about(App &a)
         { "Dear ImGui", "Launcher interface - MIT licence" },
         { "stb_image, stb_image_write", "Pictures and screenshots - public domain / MIT" },
         { "DSOAL, OpenAL Soft", "3D sound and EAX reverb - LGPL" },
-        { "Uncial Antiqua, Cinzel, EB Garamond", "Fonts - SIL Open Font License" },
-        { "Liberation Sans", "Button pictures - SIL Open Font License" } };
+        { "Uncial Antiqua, Cinzel", "Fonts - SIL Open Font License" },
+        { "EB Garamond", "Fonts - SIL Open Font License" },
+        { "Liberation Sans", "Button pictures - SIL Open Font License" },
+        { "XboxXBE-Recomp", "Recompiler runtime in the Xbox ports - MIT licence, (c) 2026 TGP482" },
+        { "toml++", "Settings files in the Xbox ports - MIT licence" } };
     for (auto &l : lic) { ImGui::TextColored(C_GOLD, "%s", l[0]); ImGui::SameLine(S(230)); ImGui::TextUnformatted(l[1]); }
     ImGui::PopTextWrapPos();
     ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);

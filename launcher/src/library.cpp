@@ -278,7 +278,7 @@ std::vector<LibGame> library_load(const std::string &launcherDir)
 bool library_save(const std::string &launcherDir, const std::vector<LibGame> &games)
 {
     CreateDirectoryA((launcherDir + "\\ROTKFix").c_str(), NULL);
-    std::string s = "; Games the ROTK Fix launcher knows about (Game = kind|location). Edited by the launcher.\r\n[Games]\r\n";
+    std::string s = "; Games Athelas knows about (Game = kind|location). Edited by the launcher.\r\n[Games]\r\n";
     for (auto &g : games) s += std::string("Game = ") + kind_key(g.kind) + "|" + g.path + "\r\n";
     FILE *f = fopen(lib_file(launcherDir).c_str(), "wb");
     if (!f) return false;

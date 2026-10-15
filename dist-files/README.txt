@@ -1,16 +1,20 @@
-ROTK Fix
-========
-An unofficial, free fan project for The Lord of the Rings: The Return of the
-King (PC, 2003). It lets you play your own copy on a modern PC: any screen
-size and refresh rate, smooth high frame rates, sharper graphics, and modern
-Xbox, PlayStation and Switch controllers.
+Athelas
+=======
+An unofficial, free fan project that lets you play your own copies of three
+Lord of the Rings games on a modern PC, all from one launcher, Athelas
+(Athelas.exe - named after kingsfoil, the healing herb):
 
-The launcher is called Athelas (Athelas.exe), after kingsfoil, the healing
-herb. Settings, playing, and your other games are all there.
+- The Return of the King (PC, 2003), through ROTK Fix: any screen size and
+  refresh rate, smooth high frame rates, sharper graphics, and modern Xbox,
+  PlayStation and Switch controllers.
+- The Return of the King (Xbox), through its native PC port, ROTKXbox.exe.
+- The Two Towers (Xbox), through its native PC port, TwoTowers.exe.
 
 Not affiliated with or endorsed by Electronic Arts, New Line Cinema, Warner
 Bros. or the Tolkien Estate. No game files are included: you need your own
-copy of the game, already installed and able to run.
+copy of each game you play (the PC game installed, or your own Xbox disc as
+an .iso or extracted files). Athelas does not change or bypass any copy
+protection.
 
 
 REQUIREMENTS
@@ -82,12 +86,18 @@ WHILE PLAYING
   ]                    Next colour look
 
 
-THE TWO TOWERS (XBOX)
----------------------
-Played through its PC port, TwoTowers.exe (in the TwoTowers folder), started
-from the launcher.
+THE TWO TOWERS (XBOX) - port 1.0.0
+----------------------------------
+An unofficial native PC port of the original Xbox game (US release),
+recompiled for Windows, in the TwoTowers folder and started from Athelas.
+It plays as on the Xbox by default. Options include widescreen up to 32:9
+ultrawide, frame rates up to 240, render resolution up to 300%,
+anti-aliasing, texture filtering, sharpening and HDR, menus that fill the
+screen with smooth upscaling, movie display modes, controller remapping and
+adjustable damage for each side.
 - Supported: the US Xbox release, as a disc image (.iso) or the extracted
-  files. Other releases are recognised, and you're warned before they start.
+  files. Other releases are recognised and you're warned before they start;
+  they will most likely crash.
 - Controller only: there is no keyboard play.
 - No in-game settings menu: every setting is on the launcher's Two Towers
   page (or in ROTKFix\TwoTowers\settings.toml next to the launcher).
@@ -103,6 +113,26 @@ Keys while playing:
 Reporting a problem: send the log, ROTKFix\TwoTowers\tt.log next to the
 launcher, and after a crash also the newest Game.<date>_<time>.dmp in
 ROTKFix\TwoTowers\CrashDumps.
+
+
+THE RETURN OF THE KING (XBOX) - port 1.0.0
+------------------------------------------
+An unofficial native PC port of the Xbox version, in the ROTKXbox folder and
+started from Athelas. It uses the same settings page as the PC version, with
+frame rates up to 240, widescreen, and fixes for slowdowns and vanishing
+enemies at high frame rates.
+- Needs your own Xbox disc dump: the extracted folder or an .iso (US
+  release). Nothing in it is changed.
+- Sharper text and menus: if you also have The Return of the King (PC), its
+  larger fonts and menu pictures are used (Graphics tab). Not required.
+- Needs Windows 10 or 11 (64-bit) and a Direct3D 12 graphics card.
+- Known issues: loading from an .iso hasn't been tested with a real ROTK disc
+  image yet (extracted folders are). The picture is darker than the PC
+  version because it keeps the Xbox's brightness curve: raise Brightness to
+  about 1.2-1.3 to match.
+
+Reporting a problem: send the log, ROTKFix\ROTKXbox\rotkx.log next to the
+launcher.
 
 
 TEXTURE PACKS
