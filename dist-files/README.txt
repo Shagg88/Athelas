@@ -39,10 +39,9 @@ d3d8.dll and dinput8.dll next to the game and adjusts the game in memory
 while it runs. Some antivirus programs distrust exactly that, and the files
 aren't code-signed (signing costs money every year), so Windows SmartScreen
 may say the launcher is "unrecognised" (click "More info", then "Run anyway").
-- Every release is built automatically from the published source code on
-  GitHub, and each download has a .sha256 file next to it. To check your
-  download: in PowerShell, run  Get-FileHash Athelas-<version>.zip  and
-  compare the result with the .sha256 file.
+- Each download has a .sha256 file next to it. To check your download: in
+  PowerShell, run  Get-FileHash Athelas-<version>.zip  and compare the result
+  with the .sha256 file.
 - If your antivirus removes a file, restore it and add an exception for the
   game folder, or report the false positive to your antivirus maker.
 ROTK Fix never connects to the internet and only changes files in the game

@@ -48,8 +48,7 @@ Played through its PC port, `TwoTowers.exe`, started from the launcher.
 
 ROTK Fix replaces `d3d8.dll`/`dinput8.dll` in the game folder and patches the game in memory, the usual way
 for game mods, and its files aren't code-signed. So SmartScreen may call the launcher "unrecognised" and
-some antivirus programs may flag it. Releases are built by GitHub Actions from this source, and every zip
-has a `.sha256` next to it (`Get-FileHash` in PowerShell to compare). ROTK Fix makes no network connections.
+some antivirus programs may flag it. Every zip has a `.sha256` next to it (`Get-FileHash` in PowerShell to compare). ROTK Fix makes no network connections.
 
 ## Install
 
@@ -82,7 +81,7 @@ SDL_DIR=path/to/SDL3-3.4.18 DXVK_DIR=path/to/dxvk-3.1.1 DSOAL_DIR=third_party/ds
 
 The 3D sound libraries (DSOAL and OpenAL Soft) are kept in `third_party/dsoal` with checksums, so every release ships the tested versions.
 
-GitHub Actions builds every push the same way. Pushing a `v*` tag creates a draft release with the zip and its SHA-256 checksum.
+The GitHub Actions workflow (`.github/workflows/build.yml`) builds ROTK Fix and Athelas the same way on every push. It can't build the two Xbox ports: recompiling them needs the game's own `default.xbe`, which can never be in a repository. So the full Athelas download is packaged on the developer's PC with `TT_DIR` and `RX_DIR` pointing at the ports' release folders.
 
 ## Licences
 
