@@ -6,8 +6,13 @@
 // ROTK PC's Data folder beside ROTKFix.ini, such a texture is drawn from the PC picture instead, at twice its size,
 // resampled into the Xbox picture's own framing (measured once from both pictures, below), so nothing on the menus
 // moves. Rows the PC picture does not reach keep the Xbox picture. A texture is matched to a PC picture by comparing
-// small copies of both; one that matches neither is left alone. The Xbox save and options screens use art the PC
-// version does not have, so they stay as they are.
+// small copies of both.
+//
+// One that matches neither is scaled up four times instead (Upscale, below), as it is drawn about that large at 1440p
+// and above: the save and options screens' art, which the PC version does not have, and the title and main menu when
+// the PC files are missing. Luma gets a light sharpen and Lanczos-3, the YUY2 texture's half-width colour stays
+// smooth, so it is as crisp as the art allows without inventing detail. Never while a movie plays (movie frames are
+// linear textures too, each one new), and at most 8 different pictures.
 //
 // fro03.scw is a SHOC file: chunks of tag, size (with header) and a 0x40-byte header; "FILL" pads to the next 64 KB.
 // SHOC chunks carry SDAT (stored) or Rdat (compressed: the game's decompressor, Xbox 0xF2CE0, big-endian 16-bit
@@ -15,6 +20,8 @@
 // u32 at +8, width u16 at +0x38, height u16 at +0x3A, format at +0x3C) whose pixels start 0x18 bytes after the table.
 #include <algorithm>
 #include <array>
+#include <chrono>
+#include <mutex>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
@@ -22,9 +29,11 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "core/log.h"
+#include "gpu/backend.h"
 #include "gpu/texture_pack.h"
 
 namespace rotk {
@@ -191,6 +200,103 @@ void Thumb(Get get, float* out) {  // kThumbW x kThumbH means of 8x8 Xbox texels
             for (int k = 0; k < 3; k++) out[(ty * kThumbW + tx) * 3 + k] = n ? sum[k] / n : -1.0f;
         }
 }
+
+// Lanczos-3 weights for an enlargement by scale: output texel u reads source texels around (u + 0.5) / scale - 0.5
+struct Taps {
+    int first;
+    float w[6];
+};
+float Lanczos3(float x) {
+    x = std::fabs(x);
+    if (x < 1e-5f) return 1.0f;
+    if (x >= 3.0f) return 0.0f;
+    constexpr float kPi = 3.14159265f;
+    return 3.0f * std::sin(kPi * x) * std::sin(kPi * x / 3.0f) / (kPi * kPi * x * x);
+}
+std::vector<Taps> Weights(uint32_t out_n, uint32_t scale) {
+    std::vector<Taps> t(out_n);
+    for (uint32_t u = 0; u < out_n; u++) {
+        float x = (u + 0.5f) / float(scale) - 0.5f;
+        int f = int(std::floor(x)) - 2;
+        float sum = 0;
+        for (int i = 0; i < 6; i++) sum += t[u].w[i] = Lanczos3(x - float(f + i));
+        for (float& w : t[u].w) w /= sum;
+        t[u].first = f;
+    }
+    return t;
+}
+
+// fn(first, end) over rows [0, n), split between a few threads
+template <class Fn>
+void Rows(uint32_t n, Fn fn) {
+    uint32_t k = std::clamp(std::thread::hardware_concurrency(), 1u, 8u), step = (n + k - 1) / k;
+    std::vector<std::thread> threads;
+    for (uint32_t a = step; a < n; a += step) threads.emplace_back(fn, a, std::min(a + step, n));
+    fn(0u, std::min(step, n));
+    for (std::thread& t : threads) t.join();
+}
+
+// a 512x448 YUY2 picture made kUpscale times larger, RGBA8: luma given a light unsharp mask (3x3, limited so hard
+// edges do not ring) and enlarged by Lanczos-3, the half-width colour (co-sited with the even texels) bilinear
+constexpr uint32_t kUpscale = 4;
+std::vector<uint8_t> Upscale(const uint8_t* p, uint32_t pitch) {
+    constexpr uint32_t W = kW * kUpscale, H = kH * kUpscale;
+    std::vector<float> Y(size_t(kW) * kH), U(size_t(kW / 2) * kH), V(U.size());
+    for (uint32_t y = 0; y < kH; y++)
+        for (uint32_t x = 0; x < kW; x += 2) {
+            const uint8_t* q = p + size_t(y) * pitch + x * 2;
+            Y[size_t(y) * kW + x] = q[0], Y[size_t(y) * kW + x + 1] = q[2];
+            U[size_t(y) * (kW / 2) + x / 2] = q[1] - 128.0f, V[size_t(y) * (kW / 2) + x / 2] = q[3] - 128.0f;
+        }
+    constexpr float kAmount = 0.5f, kLimit = 16.0f;
+    std::vector<float> sharp(Y.size());
+    auto at = [&](int x, int y) { return Y[size_t(std::clamp(y, 0, int(kH) - 1)) * kW + std::clamp(x, 0, int(kW) - 1)]; };
+    for (int y = 0; y < int(kH); y++)
+        for (int x = 0; x < int(kW); x++) {
+            float blur = (4 * at(x, y) + 2 * (at(x - 1, y) + at(x + 1, y) + at(x, y - 1) + at(x, y + 1)) +
+                          at(x - 1, y - 1) + at(x + 1, y - 1) + at(x - 1, y + 1) + at(x + 1, y + 1)) / 16.0f;
+            sharp[size_t(y) * kW + x] = at(x, y) + std::clamp((at(x, y) - blur) * kAmount, -kLimit, kLimit);
+        }
+    // luma: across, then down (edges clamped)
+    std::vector<Taps> tx = Weights(W, kUpscale), ty = Weights(H, kUpscale);
+    std::vector<float> across(size_t(W) * kH);
+    Rows(kH, [&](uint32_t first, uint32_t end) {
+        for (uint32_t y = first; y < end; y++)
+            for (uint32_t u = 0; u < W; u++) {
+                float v = 0;
+                for (int i = 0; i < 6; i++) v += tx[u].w[i] * sharp[size_t(y) * kW + std::clamp(tx[u].first + i, 0, int(kW) - 1)];
+                across[size_t(y) * W + u] = v;
+            }
+    });
+    std::vector<uint8_t> px(size_t(W) * H * 4);
+    Rows(H, [&](uint32_t first, uint32_t end) {
+        for (uint32_t v = first; v < end; v++) {
+            float sy = std::clamp((v + 0.5f) / kUpscale - 0.5f, 0.0f, kH - 1.0f);
+            uint32_t y0 = std::min(uint32_t(sy), kH - 2);
+            float fy = sy - y0;
+            const float* rows[6];
+            for (int i = 0; i < 6; i++) rows[i] = &across[size_t(std::clamp(ty[v].first + i, 0, int(kH) - 1)) * W];
+            for (uint32_t u = 0; u < W; u++) {
+                float l = 0;
+                for (int i = 0; i < 6; i++) l += ty[v].w[i] * rows[i][u];
+                float cx = std::clamp(((u + 0.5f) / kUpscale - 0.5f) / 2.0f, 0.0f, kW / 2 - 1.0f);
+                uint32_t x0 = std::min(uint32_t(cx), kW / 2 - 2);
+                float fx = cx - x0;
+                auto bl = [&](const std::vector<float>& c) {
+                    const float* r0 = &c[size_t(y0) * (kW / 2)];
+                    const float* r1 = r0 + kW / 2;
+                    return (r0[x0] * (1 - fx) + r0[x0 + 1] * fx) * (1 - fy) + (r1[x0] * (1 - fx) + r1[x0 + 1] * fx) * fy;
+                };
+                float cu = bl(U), cv = bl(V);
+                float c[3] = {l + 1.402f * cv, l - 0.344f * cu - 0.714f * cv, l + 1.772f * cu};
+                uint8_t* to = &px[(size_t(v) * W + u) * 4];
+                for (int i = 0; i < 3; i++) to[i] = uint8_t(std::clamp(c[i], 0.0f, 255.0f) + 0.5f);
+                to[3] = 255;
+            }
+        }
+    });
+    return px;
+}
 }  // namespace
 
 // after the image loads, on the fonts' thread (rotk_fonts.cpp Prepare)
@@ -242,7 +348,7 @@ void PrepareMenuArt() {
 
 // a texture the game made: the Xbox menu picture drawn from ROTK PC's, true with it in out
 bool ReplaceMenuArt(const gpu::pack::Contents& t, gpu::pack::Image& out) {
-    if (t.format != 0x24 || t.width != kW || t.height != kH || g_pictures.empty() || t.size < size_t(kW) * 2 * kH) return false;
+    if (t.format != 0x24 || t.width != kW || t.height != kH || t.size < size_t(kW) * 2 * kH || gpu::g_movie) return false;
     uint32_t pitch = uint32_t(t.size / kH);  // linear: its rows
     std::vector<uint8_t> xb = FromYuy2(t.data, kW, kH, pitch);
     std::array<float, kThumbW * kThumbH * 3> thumb;
@@ -257,10 +363,36 @@ bool ReplaceMenuArt(const gpu::pack::Contents& t, gpu::pack::Image& out) {
         e = n ? e / n : 1e9f;
         if (e < best_err) best_err = e, best = &p;
     }
-    if (!best || best_err > 30.0f) {  // a picture the PC version does not have
-        LOG_FIRST(8, "rotk: sharp menus: a menu picture ROTK PC does not have (closest %s, difference %.1f)",
-                  best ? best->known->name : "-", best_err);
-        return false;
+    if (!best || best_err > 30.0f) {  // a picture the PC version does not have: the Xbox one scaled up
+        // the renderer keeps what it is given by contents: a handful of menu pictures, never a stream of them
+        static std::mutex lock;
+        static std::vector<uint64_t> seen;
+        uint64_t h = 1469598103934665603ull;
+        for (size_t i = 0; i < size_t(pitch) * kH; i++) h = (h ^ t.data[i]) * 1099511628211ull;
+        [[maybe_unused]] size_t n;
+        {
+            std::lock_guard<std::mutex> g(lock);
+            bool again = std::find(seen.begin(), seen.end(), h) != seen.end();
+            if (!again && seen.size() >= 8) return false;
+            if (!again) seen.push_back(h);
+            n = seen.size();
+            if (again) LOG_FIRST(4, "rotk: sharp menus: a scaled-up menu picture asked for again");
+        }
+        out = {};
+        out.width = kW * kUpscale;
+        out.height = kH * kUpscale;
+        out.format = gpu::pack::Format::RGBA8;
+        auto t0 = std::chrono::steady_clock::now();
+        out.levels.push_back(Upscale(t.data, pitch));
+#ifndef _WIN32
+        if (const char* dir = std::getenv("ROTK_FONT_DUMP"))  // test build: the replacement as a PNG
+            gpu::pack::WritePng(std::string(dir) + "/upscaled" + std::to_string(n) + ".png", out.width, out.height, out.levels[0]);
+#endif
+        gpu::pack::MakeLevels(out);
+        LOGR("rotk: sharp menus: a menu picture ROTK PC does not have (closest %s, difference %.1f), scaled up in %d ms",
+             best ? best->known->name : "-", best_err,
+             int(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count()));
+        return true;
     }
     const Known& k = *best->known;
     uint32_t W = kW * kScale, H = kH * kScale;

@@ -116,8 +116,20 @@ pictures, with SIFT matches and an ECC refinement:
 - **Drawing.** It's drawn at 1024x896 from the PC picture, which has about 1.7 times the Xbox detail. It blends into
   the Xbox picture over the last 48 PC texels where the Xbox picture reaches further (the title's bottom rows).
 
-**Not replaced.** The Xbox save and options background (mountains under a fiery sky) is different art from the PC's
-coopbkgd, which has an ornate border, so it stays as it is.
+**Not in ROTK PC: scaled up (1.0.1).** The Xbox save and options background (mountains under a fiery sky) is
+different art from the PC's coopbkgd, which has an ornate border. A 512x448 YUY2 picture that matches no PC picture
+(difference over 30; the save screen's is 60.5) is scaled up 4x instead, to 2048x1792:
+
+- Luma: a 3x3 unsharp mask (amount 0.5, limited to ±16 so hard edges don't ring), then Lanczos-3.
+- Colour: the YUY2 half-width chroma, bilinear (co-sited with the even texels).
+- Split across up to 8 threads: about 60 ms on 2 cores at -O2, so a short one-off pause entering the screen.
+- Never while `gpu::g_movie` is set (movie frames are linear textures too, each one new).
+- At most 8 different pictures (by an FNV hash of the texels); the renderer keeps what it's given by content hash.
+- The title and main menu get the same when ROTK PC's files are missing.
+
+Test build: load game → save screen, `ROTK_FONT_DUMP` writes `upscaled1.png`; ridge lines and rock texture are
+visibly crisper than bilinear, with no halos. The game re-decodes the picture with the same bytes, so the D3D12
+renderer asks once; the reference renderer asks again each time (logged once as "asked for again").
 
 ## SDK: ROTK patch v10 (replaces v9)
 
