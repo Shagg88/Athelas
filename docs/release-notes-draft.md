@@ -43,6 +43,8 @@ This is the first public release.
 
 - Windows 10 or 11, 64-bit
 - ROTK (PC): a graphics card with a Vulkan 1.3 driver is recommended
+- ROTK (PC) 3D sound: Microsoft's Visual C++ Redistributable (x86), which most PCs already have; without it the game
+  plays its original sound
 - The Xbox games: a DirectX 12 graphics card. The Two Towers needs a controller.
 - Tested on Windows 11 with an NVIDIA GeForce RTX 3080 Ti. Windows 10 and AMD and Intel graphics are expected to
   work but haven't been tested yet; reports are welcome. Linux (Proton) is untested.

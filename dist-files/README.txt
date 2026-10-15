@@ -27,6 +27,9 @@ REQUIREMENTS
   Direct3D 8, but sharpening, colour looks and texture filtering are off; the launcher's About tab shows which one you have.
 - The Two Towers and The Return of the King (Xbox): your own US Xbox copy,
   and a DirectX 12 graphics card.
+- ROTK (PC) 3D sound and EAX need Microsoft's free "Visual C++ Redistributable
+  (x86)", which most PCs already have from other games. Without it the game
+  plays its original sound, and the launcher's sound setting says so.
 - A controller is optional: Xbox, PlayStation, Switch and most others work.
 - Laptops and integrated graphics: on first start the launcher picks the
   lighter Balanced preset for you.
