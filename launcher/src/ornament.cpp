@@ -241,3 +241,26 @@ bool orn_plate_button(const char *label, ImVec2 size, bool enabled)
     dl->AddText(tp, enabled ? ImGui::GetColorU32(ImGuiCol_Text) : ImGui::GetColorU32(ImGuiCol_TextDisabled), label, ImGui::FindRenderedTextEnd(label));
     return pressed && enabled;
 }
+
+// A tab (elves): notched top corners, a bronze edge with a fine silver line inside, open at
+// the bottom where it meets the page. The chosen tab is lit, with a bronze diamond on top.
+void orn_tab(ImDrawList *dl, ImVec2 a, ImVec2 b, bool selected, bool hovered)
+{
+    float n = std::min(O(7), (b.y - a.y) * 0.3f);
+    ImVec2 shape[6] = { V(a.x, b.y), V(a.x, a.y + n), V(a.x + n, a.y), V(b.x - n, a.y), V(b.x, a.y + n), V(b.x, b.y) };
+    ImU32 fill = selected ? col(70, 53, 30, 235) : hovered ? col(56, 44, 28, 215) : col(22, 19, 15, 190);
+    dl->AddConvexPolyFilled(shape, 6, fill);
+    if (selected)       // a soft glow from the top
+        dl->AddRectFilledMultiColor(V(a.x + n, a.y + O(1)), V(b.x - n, a.y + (b.y - a.y) * 0.55f),
+                                    col(232, 196, 112, 40), col(232, 196, 112, 40), col(232, 196, 112, 0), col(232, 196, 112, 0));
+    dl->AddPolyline(shape, 6, selected ? PGOLD(255) : hovered ? PGOLD(220) : PGOLD(140), O(1.3f));
+    float i = O(3);
+    ImVec2 inner[6] = { V(a.x + i, b.y), V(a.x + i, a.y + n + i * 0.4f), V(a.x + n + i * 0.4f, a.y + i), V(b.x - n - i * 0.4f, a.y + i),
+                        V(b.x - i, a.y + n + i * 0.4f), V(b.x - i, b.y) };
+    dl->AddPolyline(inner, 6, SILVER(selected ? 120 : 55), O(0.7f));
+    if (selected) {
+        float cx = (a.x + b.x) * 0.5f;
+        ImVec2 dm[4] = { V(cx, a.y - O(4)), V(cx + O(4), a.y), V(cx, a.y + O(4)), V(cx - O(4), a.y) };
+        dl->AddConvexPolyFilled(dm, 4, PGOLD(255));
+    }
+}

@@ -2747,6 +2747,41 @@ static void tt_about(App &a)
     games_section(a);
 }
 
+
+// Tabs spread evenly over the width, each in a carved frame (orn_tab) with its name centred.
+// ImGui's own tabs stay underneath, invisible, and only handle the clicks; 'sel' is the tab
+// chosen last frame. Call before BeginTabBar, with the tab font pushed; pair with tabs_end().
+static float tabs_begin(const char *const *labels, int n, int sel)
+{
+    ImDrawList *dl = ImGui::GetWindowDrawList();
+    const float gap = S(8), h = ImGui::GetFrameHeight();
+    ImVec2 p = ImGui::GetCursorScreenPos();
+    float avail = ImGui::GetContentRegionAvail().x;
+    float w = floorf((avail - gap * (n - 1)) / n);
+    for (int i = 0; i < n; i++) {
+        ImVec2 a(p.x + i * (w + gap), p.y + S(4)), b(a.x + w, p.y + h);
+        bool hov = ImGui::IsMouseHoveringRect(a, b);
+        orn_tab(dl, a, b, i == sel, hov);
+        ImVec2 ts = ImGui::CalcTextSize(labels[i]);
+        dl->AddText(ImVec2(floorf(a.x + (w - ts.x) * 0.5f), floorf(a.y + (b.y - a.y - ts.y) * 0.5f)),
+                    ImGui::GetColorU32(i == sel ? C_GOLD_H : hov ? C_TEXT : rgb(200, 186, 160)), labels[i]);
+    }
+    // the line the tabs stand on, open under the chosen one
+    float y = p.y + h, sx0 = p.x + sel * (w + gap), sx1 = sx0 + w;
+    ImU32 line = ImGui::GetColorU32(rgb(184, 144, 78, 0.55f));
+    if (sx0 > p.x) dl->AddLine(ImVec2(p.x, y), ImVec2(sx0, y), line, S(1.2f));
+    if (sx1 < p.x + avail) dl->AddLine(ImVec2(sx1, y), ImVec2(p.x + avail, y), line, S(1.2f));
+    // ImGui's tabs: the same places, nothing drawn
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(gap, ImGui::GetStyle().ItemInnerSpacing.y));
+    ImGui::PushStyleVar(ImGuiStyleVar_TabBarBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_TabBarOverlineSize, 0.0f);
+    for (ImGuiCol c : { ImGuiCol_Tab, ImGuiCol_TabHovered, ImGuiCol_TabSelected, ImGuiCol_TabSelectedOverline,
+                        ImGuiCol_TabDimmed, ImGuiCol_TabDimmedSelected, ImGuiCol_TabDimmedSelectedOverline })
+        ImGui::PushStyleColor(c, ImVec4(0, 0, 0, 0));
+    return w;
+}
+static void tabs_end() { ImGui::PopStyleColor(7); ImGui::PopStyleVar(3); }
+
 // The Two Towers' page when its port is ready: tabs like ROTK's
 static void tt_tabs(App &a, const LibGame &)
 {
@@ -2761,15 +2796,23 @@ static void tt_tabs(App &a, const LibGame &)
     has[6] = true;
     int count = 0;
     for (bool h : has) count += h;
-    const char *const *names = count > 5 ? tight : wide;   // six tabs only fit without the extra spaces
+    (void)wide;
+    static const char *ids[] = { "###display", "###graphics", "###controls", "###audio", "###network", "###gameplay", "###about" };
+    const char *shownNames[7]; int shownN = 0;
+    for (int t : order) if (has[t]) shownNames[shownN++] = tight[t];
+    static int ttSel = 0;
     ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
+    float tabW = tabs_begin(shownNames, shownN, ttSel);
     if (ImGui::BeginTabBar("tttabs")) {
         static int startTab = getenv("ROTKFIX_TAB") ? atoi(getenv("ROTKFIX_TAB")) : -1;
         int shown = 0;
         for (int t : order) {
             if (!has[t]) continue;
+            int idx = shown;
             ImGuiTabItemFlags tf = shown++ == startTab ? ImGuiTabItemFlags_SetSelected : 0;
-            if (ImGui::BeginTabItem(names[t], nullptr, tf)) {
+            ImGui::SetNextItemWidth(tabW);
+            if (ImGui::BeginTabItem(ids[t], nullptr, tf)) {
+                ttSel = idx;
                 ImGui::PopFont();
                 ImGui::BeginChild("tttab", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_NoBackground);
                 if (t == 0) tt_tab_display(a); else if (t == 1) tt_tab_graphics(a); else if (t == 2) tt_tab_controls(a);
@@ -2785,6 +2828,7 @@ static void tt_tabs(App &a, const LibGame &)
         ImGui::EndTabBar();
         startTab = -1;
     }
+    tabs_end();
     ImGui::PopFont();
 }
 
@@ -3263,16 +3307,22 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
         ImGui::EndChild();
     } else {
     ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
+    static const char *tabNames[] = { "Display", "Graphics", "Controls", "Audio", "About" };
+    static int rotkSel = 0;
+    float tabW = tabs_begin(tabNames, 5, rotkSel);
     if (ImGui::BeginTabBar("tabs")) {
         struct T { const char *name; void (*fn)(App &); } tabs[] = {
-            { "  Display  ", tab_display }, { "  Graphics  ", tab_graphics }, { "  Controls  ", tab_controls },
-            { "  Audio  ", tab_audio }, { "  About  ", tab_about } };
+            { "###display", tab_display }, { "###graphics", tab_graphics }, { "###controls", tab_controls },
+            { "###audio", tab_audio }, { "###about", tab_about } };
         // ROTKFIX_TAB=n (testing): open on tab n
         static int startTab = getenv("ROTKFIX_TAB") ? atoi(getenv("ROTKFIX_TAB")) : -1;
         int ti = 0;
         for (auto &t : tabs) {
+            int idx = ti;
             ImGuiTabItemFlags tf = ti++ == startTab ? ImGuiTabItemFlags_SetSelected : 0;
+            ImGui::SetNextItemWidth(tabW);
             if (ImGui::BeginTabItem(t.name, nullptr, tf)) {
+                rotkSel = idx;
                 ImGui::PopFont();
                 ImGui::BeginChild("tab", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_NoBackground);
                 t.fn(a);
@@ -3287,6 +3337,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
         ImGui::EndTabBar();
         startTab = -1;
     }
+    tabs_end();
     ImGui::PopFont();
     }
     ImGui::EndChild();
