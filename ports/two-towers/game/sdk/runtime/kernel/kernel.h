@@ -180,6 +180,9 @@ std::vector<ThreadRef> Threads();
 
 // files
 void MountDefaults(const std::string& game_dir, const std::string& data_dir);
+// at exit: the hard disk's folders the title left empty are removed (the partitions the console has but the game
+// never wrote to), so the saves folder holds only what was saved. They are made again at the next start.
+void TidyHardDisk();
 bool CreateSymbolicLink(const std::string& link, const std::string& target);
 bool DeleteSymbolicLink(const std::string& link);
 std::string QuerySymbolicLink(const std::string& link);

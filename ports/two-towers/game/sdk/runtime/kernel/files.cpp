@@ -209,6 +209,29 @@ void MountDefaults(const std::string& game_dir, const std::string& data_dir) {
     LOGI("files: D: is %s, hard disk under %s", disc ? disc->Path().string().c_str() : game_dir.c_str(), data_dir.c_str());
 }
 
+namespace {
+// removes the empty folders under dir, then dir itself when it ends up empty; true when it was removed
+bool RemoveEmpty(const fs::path& dir) {
+    std::error_code ec;
+    bool empty = true;
+    for (fs::directory_iterator it(dir, ec), end; !ec && it != end; it.increment(ec)) {
+        if (it->is_directory(ec) && !it->is_symlink(ec)) {
+            if (!RemoveEmpty(it->path())) empty = false;
+        } else {
+            empty = false;
+        }
+    }
+    if (ec || !empty) return false;
+    return fs::remove(dir, ec);
+}
+}  // namespace
+
+void TidyHardDisk() {
+    std::lock_guard<std::mutex> lock(g_links_lock);
+    for (auto& [k, v] : g_devices)
+        if (k.rfind("\\DEVICE\\HARDDISK0\\", 0) == 0) RemoveEmpty(v);
+}
+
 bool CreateSymbolicLink(const std::string& link, const std::string& target) {
     std::lock_guard<std::mutex> lock(g_links_lock);
     g_links[Upper(Normalize(link))] = Normalize(target);

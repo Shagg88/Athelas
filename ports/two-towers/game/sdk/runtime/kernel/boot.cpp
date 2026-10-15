@@ -211,6 +211,7 @@ void Relaunch(const char* exe) {
 }
 
 void Shutdown(int code) {
+    TidyHardDisk();
     LOGR("Exit (%d)", code);
     logx::Flush();
     std::_Exit(code);
