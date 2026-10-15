@@ -860,7 +860,7 @@ static void tab_graphics(App &a)
     int p = detect_preset(s);
     row_begin("Preset", "Original: as it looked in 2003, no anti-aliasing or filtering.\n"
                         "Balanced: light anti-aliasing and filtering, for older graphics cards.\n"
-                        "High: 4x anti-aliasing, smooth leaf edges, sharp textures.\n"
+                        "High: 4x anti-aliasing, sharp textures.\n"
                         "Ultra: 8x anti-aliasing and stronger sharpening. Heavy: at 1440p and above it can\n"
                         "stutter in foggy scenes above about 120 fps - use High for 144-240 fps.\n"
                         "Custom: shown when you change individual settings.");
@@ -883,14 +883,9 @@ static void tab_graphics(App &a)
     }
     static const char *aa[] = { "Off", "2x", "4x", "8x" };
     int aai = s.msaa == 2 ? 1 : s.msaa == 4 ? 2 : s.msaa == 8 ? 3 : 0;
-    row_begin("Anti-aliasing", "Smooths jagged edges (MSAA). 8x together with smooth leaf edges is heavy:\n"
-                               "at high frame rates 4x looks almost the same and stays smooth.");
+    row_begin("Anti-aliasing", "Smooths jagged edges (MSAA). 8x is heavy at high frame rates;\n"
+                               "4x looks almost the same.");
     if (segmented("aa", &aai, aa, 4)) s.msaa = aai == 0 ? 0 : 1 << aai;
-    row_end();
-    row_begin("Smooth leaf edges", "Also smooths cut-out textures like leaves, grass and fences. Needs anti-aliasing.");
-    ImGui::BeginDisabled(s.msaa == 0 || !vk);
-    ImGui::Checkbox("##edges", &s.alphaEdges);
-    ImGui::EndDisabled();
     row_end();
     static const char *af[] = { "Off", "2x", "4x", "8x", "16x" };
     int afi = s.aniso >= 16 ? 4 : s.aniso >= 8 ? 3 : s.aniso >= 4 ? 2 : s.aniso >= 2 ? 1 : 0;
@@ -1458,7 +1453,7 @@ static void tab_about(App &a)
                       : gi.state == GPU_VULKAN_TOO_OLD ? "Graphics: " + gi.name + " - Vulkan too old for DXVK; Direct3D 8 is used"
                       : "No Vulkan driver - Direct3D 8 is used";
         status_dot(gi.state == GPU_VULKAN_OK, gi.state == GPU_CHECKING, t.c_str(),
-                   gi.state == GPU_VULKAN_OK ? nullptr : "Sharpening, colour looks, texture filtering and smooth leaf edges need the "
+                   gi.state == GPU_VULKAN_OK ? nullptr : "Sharpening, colour looks and texture filtering need the "
                                                          "Vulkan renderer. A newer graphics driver may make it available.");
     }
     status_dot(g.hasSdl, false, "Controller support (SDL3)", nullptr);

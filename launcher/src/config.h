@@ -36,7 +36,6 @@ struct Settings {
     int  refresh = 0;             // fullscreen only, 0 = best
     bool vsync = true;
     int  msaa = 4;                // 0 2 4 8
-    bool alphaEdges = true;
     int  aniso = 16;              // 0 2 4 8 16
     bool widescreenFix = true;
     int  renderScale = 100;            // [Graphics] RenderScale: % of the chosen size the game draws at (50-200)

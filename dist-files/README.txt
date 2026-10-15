@@ -20,8 +20,7 @@ REQUIREMENTS
 - The Return of the King (PC): your own US copy, installed. A graphics card
   with a Vulkan 1.3 driver is recommended (most cards from 2016 on, with a
   current driver). Without one the game still runs through Windows' own
-  Direct3D 8, but sharpening, colour looks, texture filtering and smooth leaf
-  edges are off; the launcher's About tab shows which one you have.
+  Direct3D 8, but sharpening, colour looks and texture filtering are off; the launcher's About tab shows which one you have.
 - The Two Towers and The Return of the King (Xbox): your own US Xbox copy,
   and a DirectX 12 graphics card.
 - A controller is optional: Xbox, PlayStation, Switch and most others work.
@@ -186,9 +185,6 @@ The launcher writes ROTKFix.ini in the game folder. You can also edit it in Note
   Renderer               dxvk = Vulkan (recommended), native = Windows' own Direct3D 8 (default dxvk)
   DxvkFolder             Which DXVK inside the ROTKFix folder draws the game (default dxvk)
   MSAA                   Anti-aliasing: 0, 2, 4 or 8 (default 4)
-  AlphaEdgeSmoothing     1 = also smooth leaves, grass and fences (needs MSAA) (default 1)
-  AlphaEdgeMethod        coverage = only those draws cost extra (fast); persample = every pixel
-                         shaded per sample (the older way, much slower) (default coverage)
   AnisotropicFiltering   Texture filtering: 0, 2, 4, 8 or 16 (default 16)
   TextureLODBias         Texture sharpness: 0 = game's own, down to -1.0 = sharpest (default -0.50)
   Sharpening             0-100, 0 = off (also turns off the automatic HUD sharpening). [ switches it on and off while playing (default 60)

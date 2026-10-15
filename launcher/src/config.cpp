@@ -15,19 +15,19 @@
 // ---------------------------------------------------------------------------
 // Presets (graphics quality only; display, frame rate and FOV are left alone)
 
-struct PresetValues { int msaa; bool edges; int aniso; float lod; int sharpen; int shadows; bool charHigh; int sfx; };
+struct PresetValues { int msaa; int aniso; float lod; int sharpen; int shadows; bool charHigh; int sfx; };
 static const PresetValues k_presets[4] = {
-    /* Original */ { 0, false,  0,  0.0f,  0, 2, true, 2 },
-    /* Balanced */ { 2, false,  8,  0.0f, 40, 2, true, 2 },
-    /* High     */ { 4, true,  16, -0.5f, 60, 2, true, 2 },
-    /* Ultra    */ { 8, true,  16, -0.5f, 80, 2, true, 2 },
+    /* Original */ { 0,  0,  0.0f,  0, 2, true, 2 },
+    /* Balanced */ { 2,  8,  0.0f, 40, 2, true, 2 },
+    /* High     */ { 4, 16, -0.5f, 60, 2, true, 2 },
+    /* Ultra    */ { 8, 16, -0.5f, 80, 2, true, 2 },
 };
 
 void apply_preset(Settings &s, int p)
 {
     if (p < 0 || p > 3) return;
     const PresetValues &v = k_presets[p];
-    s.msaa = v.msaa; s.alphaEdges = v.edges; s.aniso = v.aniso; s.lodBias = v.lod; s.sharpening = v.sharpen;
+    s.msaa = v.msaa; s.aniso = v.aniso; s.lodBias = v.lod; s.sharpening = v.sharpen;
     s.shadows = v.shadows; s.charDetailHigh = v.charHigh; s.sfx = v.sfx;
     s.preset = p;
 }
@@ -36,7 +36,7 @@ int detect_preset(const Settings &s)
 {
     for (int p = 0; p < 4; p++) {
         const PresetValues &v = k_presets[p];
-        if (s.msaa == v.msaa && s.alphaEdges == v.edges && s.aniso == v.aniso && s.lodBias == v.lod &&
+        if (s.msaa == v.msaa && s.aniso == v.aniso && s.lodBias == v.lod &&
             s.sharpening == v.sharpen && s.shadows == v.shadows && s.charDetailHigh == v.charHigh && s.sfx == v.sfx)
             return p;
     }
@@ -382,7 +382,6 @@ bool load_settings(const std::string &dir, Settings &s)
     s.vsync = geti(ini, "Graphics", "VSync", 1) != 0;
     s.msaa = geti(ini, "Graphics", "MSAA", 4);
     if (s.msaa != 0 && s.msaa != 2 && s.msaa != 4 && s.msaa != 8) s.msaa = 4;
-    s.alphaEdges = geti(ini, "Graphics", "AlphaEdgeSmoothing", 1) != 0;
     s.aniso = geti(ini, "Graphics", "AnisotropicFiltering", 16);
     s.widescreenFix = geti(ini, "Graphics", "WidescreenFix", 1) != 0;
     s.renderScale = geti(ini, "Graphics", "RenderScale", 100);
@@ -446,7 +445,6 @@ static const std::vector<IniSection> &ini_layout()
             { "Renderer", "dxvk", "dxvk = Vulkan (recommended), native = Windows' own Direct3D 8" },
             { "DxvkFolder", "dxvk", "Which DXVK inside the ROTKFix folder draws the game" },
             { "MSAA", "4", "Anti-aliasing: 0, 2, 4 or 8" },
-            { "AlphaEdgeSmoothing", "1", "1 = also smooth leaves, grass and fences (needs MSAA; costs speed)" },
             { "AnisotropicFiltering", "16", "Texture filtering: 0, 2, 4, 8 or 16" },
             { "TextureLODBias", "-0.50", "Texture sharpness: 0 = game's own, down to -1.0 = sharpest" },
             { "Sharpening", "60", "0-100, 0 = off (also turns off the automatic HUD sharpening). [ switches it on and off while playing" },
@@ -590,7 +588,6 @@ static bool write_rotkfix_ini(const std::string &p, const Settings &s, bool crea
     set("Graphics", "VSync", std::to_string((int)s.vsync));
     set("Graphics", "Renderer", s.renderer ? "native" : "dxvk");
     set("Graphics", "MSAA", std::to_string(s.msaa));
-    set("Graphics", "AlphaEdgeSmoothing", std::to_string((int)s.alphaEdges));
     set("Graphics", "AnisotropicFiltering", std::to_string(s.aniso));
     set("Graphics", "TextureLODBias", fmtf(s.lodBias));
     set("Graphics", "Sharpening", std::to_string(s.sharpening));
@@ -628,7 +625,8 @@ static bool write_rotkfix_ini(const std::string &p, const Settings &s, bool crea
     // Compact layout: one aligned "Name = value" line per setting; what each
     // one does is explained in README.txt.
     static const char *retired[] = { "KeepHUDProportions", "DrawDistanceHotkey", "FoliageEdgeCutoff",
-                                     "FoliageEdgeCutoffDXT3", "ShadowResolution", "ButtonPictures", "SharperHUD" };
+                                     "FoliageEdgeCutoffDXT3", "ShadowResolution", "ButtonPictures", "SharperHUD",
+                                     "AlphaEdgeSmoothing", "AlphaEdgeMethod" };
     auto isRetired = [&](const std::string &k) {
         for (const char *r : retired) if (!_stricmp(r, k.c_str())) return true;
         return false;

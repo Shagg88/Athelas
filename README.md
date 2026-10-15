@@ -14,7 +14,7 @@ ROTK Fix, and also starts the PC ports of The Return of the King and The Two Tow
 
 - **Any screen:** widescreen and ultrawide without stretching (menus and HUD stay at most 16:9), any resolution, borderless/fullscreen/windowed with ultrawide window sizes, Alt-Tab that works
 - **Smooth:** 60 to 240 fps at normal game speed, even frame pacing, V-Sync aware
-- **Sharper:** anti-aliasing (including leaf and fence edges), texture filtering, sharpening, working brightness in borderless
+- **Sharper:** anti-aliasing, texture filtering, sharpening, working brightness in borderless
 - **Controllers:** Xbox, PlayStation, Switch and most others; button remapping; the right button names in hints
 - **Co-op:** two controllers on one PC, or online by streaming with Steam Remote Play Together or Parsec (see README.txt)
 - **Movies:** cutscenes fill widescreen screens with correct proportions; optional logo skip; a sound delay setting for Bluetooth speakers
@@ -27,8 +27,8 @@ ROTK Fix, and also starts the PC ports of The Return of the King and The Two Tow
 - Windows 10 or 11 (64-bit). Older Windows and Linux/Steam Deck (Proton) may work but aren't tested.
 - Your own US copy of each game. No game files are included.
 - **The Return of the King (PC):** a Vulkan 1.3 graphics driver is recommended. Without one, the game runs
-  through Windows' Direct3D 8 with the DXVK-only options (sharpening, colour looks, texture filtering, smooth
-  leaf edges) turned off. The launcher's About tab shows which renderer you'll get.
+  through Windows' Direct3D 8 with the DXVK-only options (sharpening, colour looks, texture filtering)
+  turned off. The launcher's About tab shows which renderer you'll get.
 - **The Two Towers and The Return of the King (Xbox):** a DirectX 12 graphics card.
 
 ## The Two Towers (Xbox)
