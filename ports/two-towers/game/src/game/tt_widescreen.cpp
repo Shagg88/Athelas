@@ -12,6 +12,7 @@
 #include <atomic>
 #include <chrono>
 #include <cmath>
+#include <cstdlib>
 #include <cstring>
 #include <vector>
 
@@ -76,6 +77,7 @@ std::atomic<int64_t> g_world_ms{-1000000}, g_world_since{-1000000};
 std::atomic<int> g_world_draws{0};
 constexpr int64_t kWorldSteadyMs = 500, kWorldGoneMs = 1500;
 constexpr int kWorldDrawsPerFrame = 100;  // the copyright screen once reached 30, gameplay draws 900 and more
+constexpr int kWorldDrawsNow = 20;        // this frame's 3D draws before the HUD: a loading screen has 0 or 1, play 180 and up
 int64_t NowMs() {
     using namespace std::chrono;
     return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
@@ -113,7 +115,11 @@ std::atomic<uint64_t> g_panel_frame{~0ull >> 1};     // the last frame with a me
 
 void HudPlace(float x0, float x1, float y0, float y1, float w, float f, float& a, float& b, float& c, float& d) {
     int64_t now = NowMs();
-    bool world = now - g_world_ms <= kWorldGoneMs && g_world_ms - g_world_since >= kWorldSteadyMs;
+    // and the world drawn in this very frame (it comes before the HUD): a loading screen drawn just as a level ends
+    // (none or one 3D draw) is laid out centred, not as HUD. The game then loads for seconds without a new frame,
+    // so that one frame stays on screen; the time rule alone placed its tip text and picture at the left edge
+    bool world = now - g_world_ms <= kWorldGoneMs && g_world_ms - g_world_since >= kWorldSteadyMs &&
+                 g_world_draws >= kWorldDrawsNow;
     // menus and the title screen: their picture is one panel inset from the edges of the 640 x 480 screen (24 to 616
     // across, 18 to 462 down: a TV's safe area), with black around it. In a frame that has that panel everything is
     // enlarged by the same 8% about the middle, so the panel meets the screen's edges and the menu's text, which is
@@ -173,6 +179,8 @@ namespace tt {
 void WorldFrame() {
     g_frame++;
     int n = g_world_draws.exchange(0);
+    static const bool log_draws = std::getenv("TT_WORLD_LOG") != nullptr;  // testing: 3D draws per frame
+    if (log_draws) LOGI("tt: frame %llu: %d 3D draws", (unsigned long long)g_frame.load(), n);
     if (n < kWorldDrawsPerFrame) return;
     int64_t now = NowMs();
     if (now - g_world_ms > kWorldGoneMs) {
