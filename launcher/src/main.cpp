@@ -102,7 +102,15 @@ static void setup_style()
 // can be added back later), shown one at a time with a slow cross-fade. Without any
 // pictures, an original drawn landscape of misty mountains is used.
 
-struct Picture { SDL_Texture *tex = nullptr; int w = 0, h = 0; float lum = 0; };   // lum: average brightness 0-255
+// w, h: the size it is shown at (w = the texture's width); lum: average brightness 0-255;
+// blur: a tiny copy, stretched over the window behind pictures too small to fill it sharply
+struct Picture { SDL_Texture *tex = nullptr, *blur = nullptr; int w = 0, h = 0; float lum = 0; };
+static void free_picture(Picture &p)
+{
+    if (p.tex) SDL_DestroyTexture(p.tex);
+    if (p.blur) SDL_DestroyTexture(p.blur);
+    p = Picture();
+}
 
 // Game art: the menu pictures of the player's own Return of the King (PC, else Xbox), read
 // once on a worker thread (rotk_menu_art_load) and kept in memory as DXT1. In the
@@ -289,9 +297,32 @@ static void backgrounds_poll(Backgrounds &b, SDL_Renderer *ren)
         if (s) SDL_DestroySurface(s);
         if (t) {
             SDL_SetTextureScaleMode(t, SDL_SCALEMODE_LINEAR);
-            if (b.prev.tex) SDL_DestroyTexture(b.prev.tex);
+            free_picture(b.prev);
             b.prev = b.cur;
+            b.cur = Picture();
             b.cur.tex = t; b.cur.w = j->w; b.cur.h = j->showH; b.cur.lum = j->lum;
+            // the blurred copy: a 32-pixel-wide average, smoothed again when stretched
+            const int bw = 32, bh = std::max(1, 32 * j->showH / std::max(1, j->w));
+            std::vector<unsigned char> sm((size_t)bw * bh * 4);
+            for (int oy = 0; oy < bh; oy++)
+                for (int ox = 0; ox < bw; ox++) {
+                    int x0 = ox * j->w / bw, x1 = std::max(x0 + 1, (ox + 1) * j->w / bw);
+                    int y0 = oy * j->h / bh, y1 = std::max(y0 + 1, (oy + 1) * j->h / bh);
+                    unsigned sum[3] = { 0, 0, 0 }, n = 0;
+                    for (int y = y0; y < y1; y += 2)
+                        for (int x = x0; x < x1; x += 2) {
+                            const unsigned char *c = j->px + ((size_t)y * j->w + x) * 4;
+                            sum[0] += c[0]; sum[1] += c[1]; sum[2] += c[2]; n++;
+                        }
+                    unsigned char *d = &sm[((size_t)oy * bw + ox) * 4];
+                    for (int c = 0; c < 3; c++) d[c] = (unsigned char)(n ? sum[c] / n : 0);
+                    d[3] = 255;
+                }
+            if (SDL_Surface *bs = SDL_CreateSurfaceFrom(bw, bh, SDL_PIXELFORMAT_RGBA32, sm.data(), bw * 4)) {
+                b.cur.blur = SDL_CreateTextureFromSurface(ren, bs);
+                if (b.cur.blur) SDL_SetTextureScaleMode(b.cur.blur, SDL_SCALEMODE_LINEAR);
+                SDL_DestroySurface(bs);
+            }
             b.changedAt = ImGui::GetTime();
         }
         b.index = j->found;
@@ -323,9 +354,8 @@ static void backgrounds_rebuild(Backgrounds &b, int group, const std::string &la
     if (g_bgShow == BG_ART_AND_MINE || g_bgShow == BG_MINE)
         list_pictures(launcherDir + "\\ROTKFix\\backgrounds", b.files, 100);
     if (b.files.empty()) {         // nothing to show here: the drawn landscape
-        if (b.cur.tex) SDL_DestroyTexture(b.cur.tex);
-        if (b.prev.tex) SDL_DestroyTexture(b.prev.tex);
-        b.cur = Picture(); b.prev = Picture();
+        free_picture(b.cur);
+        free_picture(b.prev);
     }
 }
 
@@ -342,15 +372,55 @@ static void bg_show_save()
     WritePrivateProfileStringA("Background", "Show", k_bgShowKey[g_bgShow], (d + "\\launcher.ini").c_str());
 }
 
-// Draw a picture to cover the rect (cropping, never stretching).
-static void draw_cover(ImDrawList *dl, const Picture &p, ImVec2 size, float alpha)
+// Draw a texture to cover the rect (cropping, never stretching).
+static void draw_cover_tex(ImDrawList *dl, SDL_Texture *tex, float ia, ImVec2 size, ImU32 col)
 {
-    if (!p.tex || alpha <= 0.0f) return;
-    float ia = (float)p.w / p.h, sa = size.x / size.y;
+    float sa = size.x / size.y;
     ImVec2 uv0(0, 0), uv1(1, 1);
     if (ia > sa) { float f = sa / ia; uv0.x = (1 - f) * 0.5f; uv1.x = 1 - uv0.x; }
     else         { float f = ia / sa; uv0.y = (1 - f) * 0.35f; uv1.y = uv0.y + f; }
-    dl->AddImage((ImTextureID)(intptr_t)p.tex, ImVec2(0, 0), size, uv0, uv1, IM_COL32(255, 255, 255, (int)(alpha * 255)));
+    dl->AddImage((ImTextureID)(intptr_t)tex, ImVec2(0, 0), size, uv0, uv1, col);
+}
+
+// Part of a texture with its own alpha at each corner (for soft edges).
+static void image_fade(ImDrawList *dl, SDL_Texture *tex, ImVec2 a, ImVec2 b, ImVec2 uva, ImVec2 uvb, int aTL, int aTR, int aBR, int aBL)
+{
+    dl->PushTexture((ImTextureID)(intptr_t)tex);
+    dl->PrimReserve(6, 4);
+    ImDrawIdx i = (ImDrawIdx)dl->_VtxCurrentIdx;
+    dl->PrimWriteIdx(i); dl->PrimWriteIdx((ImDrawIdx)(i + 1)); dl->PrimWriteIdx((ImDrawIdx)(i + 2));
+    dl->PrimWriteIdx(i); dl->PrimWriteIdx((ImDrawIdx)(i + 2)); dl->PrimWriteIdx((ImDrawIdx)(i + 3));
+    dl->PrimWriteVtx(a, uva, IM_COL32(255, 255, 255, aTL));
+    dl->PrimWriteVtx(ImVec2(b.x, a.y), ImVec2(uvb.x, uva.y), IM_COL32(255, 255, 255, aTR));
+    dl->PrimWriteVtx(b, uvb, IM_COL32(255, 255, 255, aBR));
+    dl->PrimWriteVtx(ImVec2(a.x, b.y), ImVec2(uva.x, uvb.y), IM_COL32(255, 255, 255, aBL));
+    dl->PopTexture();
+}
+
+// Draw a picture over the window. Big enough pictures fill it (cropped). Smaller ones
+// (the Two Towers gallery, 640 wide; the Xbox menu art, 512) would be blown up and
+// blurry, so they are shown nearer their own size, over a blurred copy of themselves,
+// with soft edges.
+static void draw_cover(ImDrawList *dl, const Picture &p, ImVec2 size, float alpha)
+{
+    if (!p.tex || alpha <= 0.0f) return;
+    int A = (int)(alpha * 255);
+    float coverScale = std::max(size.x / p.w, size.y / p.h);
+    if (coverScale <= 1.3f || !p.blur) { draw_cover_tex(dl, p.tex, (float)p.w / p.h, size, IM_COL32(255, 255, 255, A)); return; }
+    draw_cover_tex(dl, p.blur, (float)p.w / p.h, size, IM_COL32(150, 150, 150, A));   // dimmed, so the sharp picture stands out
+    float sc = std::min(size.x / p.w, size.y / p.h);
+    float w = p.w * sc, h = p.h * sc, x = (size.x - w) * 0.5f, y = (size.y - h) * 0.4f;
+    if (w >= size.x - 1) {             // fills the width: soft top and bottom edges
+        float f = h * 0.14f;
+        image_fade(dl, p.tex, ImVec2(x, y), ImVec2(x + w, y + f), ImVec2(0, 0), ImVec2(1, 0.14f), 0, 0, A, A);
+        image_fade(dl, p.tex, ImVec2(x, y + f), ImVec2(x + w, y + h - f), ImVec2(0, 0.14f), ImVec2(1, 0.86f), A, A, A, A);
+        image_fade(dl, p.tex, ImVec2(x, y + h - f), ImVec2(x + w, y + h), ImVec2(0, 0.86f), ImVec2(1, 1), A, A, 0, 0);
+    } else {                           // fills the height: soft left and right edges
+        float f = w * 0.14f;
+        image_fade(dl, p.tex, ImVec2(x, y), ImVec2(x + f, y + h), ImVec2(0, 0), ImVec2(0.14f, 1), 0, A, A, 0);
+        image_fade(dl, p.tex, ImVec2(x + f, y), ImVec2(x + w - f, y + h), ImVec2(0.14f, 0), ImVec2(0.86f, 1), A, A, A, A);
+        image_fade(dl, p.tex, ImVec2(x + w - f, y), ImVec2(x + w, y + h), ImVec2(0.86f, 0), ImVec2(1, 1), A, 0, 0, A);
+    }
 }
 
 // Original drawn backdrop: layered mountain ridges in mist under a pale moon.
