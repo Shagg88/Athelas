@@ -40,7 +40,10 @@
 #include "../third_party/stb_image.h"
 #pragma GCC diagnostic pop
 
-#define LAUNCHER_VERSION "0.8 (test)"
+#ifndef ROTKFIX_VERSION
+#define ROTKFIX_VERSION "dev"
+#endif
+#define LAUNCHER_VERSION ROTKFIX_VERSION   // from the VERSION file (build.sh)
 
 // ---------------------------------------------------------------------------
 // Theme

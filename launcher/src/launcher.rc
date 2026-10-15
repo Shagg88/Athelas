@@ -1,8 +1,9 @@
 #include <winver.h>
+#include "version_rc.h"   /* written by build.sh from the VERSION file */
 1 ICON "../art/rotkfix.ico"
 1 VERSIONINFO
-FILEVERSION 0,3,0,0
-PRODUCTVERSION 0,3,0,0
+FILEVERSION VERSION_RC
+PRODUCTVERSION VERSION_RC
 BEGIN
   BLOCK "StringFileInfo"
   BEGIN
@@ -10,8 +11,8 @@ BEGIN
     BEGIN
       VALUE "FileDescription", "Athelas - launcher for ROTK Fix and the Xbox ports (unofficial fan project)"
       VALUE "ProductName", "Athelas"
-      VALUE "FileVersion", "0.3"
-      VALUE "ProductVersion", "0.3"
+      VALUE "FileVersion", VERSION_STR
+      VALUE "ProductVersion", VERSION_STR
     END
   END
   BLOCK "VarFileInfo"

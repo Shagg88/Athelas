@@ -16,7 +16,8 @@
 #   licenses\        every third-party licence
 set -e
 cd "$(dirname "$0")/.."
-VER=${1:-dev}
+VERSION_FILE=VERSION . scripts/version.sh
+VER=${1:-$ROTKFIX_VERSION}
 : "${SDL_DIR:?set SDL_DIR}" "${DXVK_DIR:?set DXVK_DIR}"
 export SDL_DIR
 sh build.sh
