@@ -49,6 +49,12 @@ int Instance() {
     return n;
 }
 void* Window() { return nullptr; }
+// no in-game menu or window focus here
+bool OverlayOpen() { return false; }
+bool Paused() { return false; }
+bool Held() { return false; }
+bool Muted() { return false; }
+void Hold(const std::function<void()>&) {}
 
 // no command line: the run folder holds everything
 const CommandLine& Args() {

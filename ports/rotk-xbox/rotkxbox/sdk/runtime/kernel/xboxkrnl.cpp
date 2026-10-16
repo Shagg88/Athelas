@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <atomic>
 #include <cctype>
 #include <chrono>
 #include <cstdio>
@@ -68,12 +69,34 @@ void PutSystemTime(uint32_t va, uint64_t t) {
 }
 
 uint64_t InterruptTime() {
-    using namespace std::chrono;
-    static const auto start = steady_clock::now();
-    return uint64_t(duration_cast<nanoseconds>(steady_clock::now() - start).count() / 100);
+    static const int64_t start = GuestNs();
+    return uint64_t((GuestNs() - start) / 100);
 }
 
+int64_t SteadyNs() {
+    using namespace std::chrono;
+    return duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count();
+}
+std::atomic<int64_t> g_frozen_at{0}, g_frozen_total{0};
+
 }  // namespace
+
+int64_t GuestNs() {
+    int64_t at = g_frozen_at.load();
+    return (at ? at : SteadyNs()) - g_frozen_total.load();
+}
+
+void Freeze(bool on) {
+    if (on) {
+        int64_t zero = 0;
+        g_frozen_at.compare_exchange_strong(zero, SteadyNs());
+    } else if (int64_t at = g_frozen_at.load()) {
+        g_frozen_total += SteadyNs() - at;
+        g_frozen_at = 0;
+    }
+}
+
+bool Frozen() { return g_frozen_at.load() != 0; }
 
 uint32_t g_tick_count_va = 0;
 uint32_t g_launch_data_page_va = 0;
@@ -104,9 +127,9 @@ void InitKernelData() {
     W32(DataAddress(157), 10000);  // 1 ms in 100 ns units
     // the start of the clock
     std::thread([] {
-        auto start = std::chrono::steady_clock::now();
+        int64_t start = GuestNs();
         for (;;) {
-            auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
+            int64_t ms = (GuestNs() - start) / 1000000;
             W32(g_tick_count_va, uint32_t(ms));
             PutSystemTime(DataAddress(120), InterruptTime());
             PutSystemTime(DataAddress(154), uint64_t(Now100ns()));
@@ -236,9 +259,8 @@ KERNEL_EXPORT(228, NtSetSystemTime, 2) {
 constexpr uint64_t kPerfFrequency = 3375000;
 
 KERNEL_EXPORT(126, KeQueryPerformanceCounter, 0) {
-    using namespace std::chrono;
-    static const auto start = steady_clock::now();
-    uint64_t ns = uint64_t(duration_cast<nanoseconds>(steady_clock::now() - start).count());
+    static const int64_t start = GuestNs();
+    uint64_t ns = uint64_t(GuestNs() - start);
     uint64_t v = ns / 1000000000ull * kPerfFrequency + ns % 1000000000ull * kPerfFrequency / 1000000000ull;
     ctx.edx = uint32_t(v >> 32);
     return uint32_t(v);

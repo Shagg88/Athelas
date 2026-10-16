@@ -9,6 +9,7 @@
 #include <SDL3/SDL.h>
 
 #include "app/app.h"
+#include "core/keys.h"
 #include "core/log.h"
 
 namespace input {
@@ -109,7 +110,9 @@ void Init() {
     }
 }
 
-Pad Poll(int port) {
+namespace {
+// the controller on that port; remap: the Xbox buttons as [controls] sets them, else as on the Xbox
+Pad Read(int port, bool remap) {
     Pad p;
     {
         std::lock_guard lock(g_lock);
@@ -135,7 +138,8 @@ Pad Poll(int port) {
             src[9] = (p.buttons >> 7) & 1 ? 0xFF : 0;
             bool moved[2] = {};
             for (int i = 0; i < 8; i++) {
-                uint32_t from = std::min(st.buttons[i], kSourceCount - 1);
+                static constexpr uint32_t kXbox[8] = {0, 1, 2, 3, 5, 4, 6, 7};
+                uint32_t from = remap ? std::min(st.buttons[i], kSourceCount - 1) : kXbox[i];
                 p.analog[i] = src[from];
                 if (from == 8 || from == 9) moved[from - 8] = true;
             }
@@ -165,7 +169,19 @@ Pad Poll(int port) {
             p.ry = int16_t(-1 - ry);
         }
     }
+    return p;
+}
+}  // namespace
+
+Pad Raw(int port) { return Read(port, false); }
+
+bool Connected(int port) { return Read(port, false).connected || keys::Claims(port); }
+
+Pad Poll(int port) {
+    Pad p = Read(port, true);
+    app::OverlayPad(port, p);  // both stick clicks open the in-game menu; nothing reaches the game while it is open
     if (app::kGame.pad) app::kGame.pad(port, p);
+    keys::Merge(port, p);
     return p;
 }
 

@@ -1,11 +1,13 @@
 #pragma once
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <mutex>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "core/keys.h"
 #include "core/settings_file.h"
 
 namespace input {
@@ -49,6 +51,13 @@ struct Settings {
     uint32_t movie_display = 0;            // movies: 0 fit (the middle 16:9, the default), 1 stretch, 2 4:3 (the console's frame)
     uint32_t movie_sharpening = 75;        // 0 to 100, sharpening at the movie's own pixel size (75 by default, the player's choice)
     uint32_t movie_delay = 0;              // ms the movie picture is held back, for late (Bluetooth) sound
+    // [keyboard]: keys and mouse buttons press the controller's buttons on one player's port (keys.h)
+    bool keyboard = true;
+    uint32_t keyboard_player = 1;          // 1 or 2
+    std::string keys[keys::kCount];        // each action's keys, comma separated; keys::kDefaults and the game's
+    // [window]: when the game window loses the focus (another window in front, Alt-Tab)
+    bool pause_unfocused = false;          // the game stops, picture and sound, until it has the focus again
+    bool mute_unfocused = false;           // the sound goes quiet while it runs on
 };
 
 Settings& Get();
@@ -159,10 +168,34 @@ struct GameInfo {
     void (*rumble)(int port, uint16_t& left, uint16_t& right);
     // [controls] in the settings (the overlay, --describe-settings): off for a game that remaps its buttons another way
     bool remap_controls = true;
+    // [keyboard]: the game's own default keys where they differ from keys::kDefaults ({keys::kBlack, "Tab"})
+    std::vector<std::pair<uint32_t, const char*>> key_defaults;
+    // the in-game menu: the game's settings (options) that take effect while playing, "section.key"; the host's
+    // own are listed in overlay.cpp
+    std::vector<const char*> live_settings;
+    void (*save_settings)() = nullptr;                // the menu closed after a change: null saves the settings file
+    void (*setting_changed)(const cfg::Desc&) = nullptr;  // the menu changed one, at once
 };
 extern const GameInfo kGame;
 
 // sleeps out the rest of the frame for the fps cap
 void Pace();
+
+// the in-game menu (overlay.cpp): F10 or both stick clicks open it, and the game stands still behind it
+bool OverlayOpen();
+void OverlayPad(int port, input::Pad& pad);  // input::Poll: the menu's stick-click combination, and its masks
+void DrawOverlay(double fps);                // the renderer's ImGui frame, UiLock held
+bool OverlayMessage(void* hwnd, uint32_t msg, uintptr_t wp, intptr_t lp, intptr_t* result);  // window thread first
+void SetFocus(bool focus);                   // window thread: WM_ACTIVATE
+void OverlayInit();                          // after ImGui's context is made: the menu's font
+float UiScale();                             // ImGui font scale for text about 18 pixels high at 720 lines
+// the game stands still (the menu, or [window] pause_unfocused): the title's thread waits at its next Swap, the
+// guest's clocks stop and the sound pauses
+bool Paused();
+bool Muted();  // the sound is silent (paused, or [window] mute_unfocused without the focus)
+bool Held();   // the game is waiting in Hold now: its sound stands still too
+// the title's thread at Swap, while Paused: the guest's clocks stop, present shows the last picture again with the
+// menu over it, about 60 times a second, until the pause ends
+void Hold(const std::function<void()>& present);
 
 }  // namespace app

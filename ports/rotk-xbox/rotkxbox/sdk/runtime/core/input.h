@@ -19,6 +19,10 @@ constexpr uint32_t kSourceCount = 11;
 void Init();  // window thread, before boot
 // the controller on that port, then GameInfo::pad
 Pad Poll(int port);
+// the controller alone, its buttons as on the Xbox: no [controls] layout, game changes or keys (the in-game menu)
+Pad Raw(int port);
+// a controller is on the port, or the keyboard plays there (XAPI's device list)
+bool Connected(int port);
 void Rumble(int port, uint16_t left, uint16_t right);
 // the kind of controller on that port, for button pictures: 0 none or Xbox-like, 1 PlayStation, 2 Nintendo
 int Style(int port);

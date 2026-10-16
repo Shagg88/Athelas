@@ -3,6 +3,7 @@
 // ROTK Fix reads on PC, over its own settings.toml. Keys the Xbox version has no use for (Renderer, DxvkFolder,
 // HideRealControllers, HideMousePointer, LogInput, [Gamepad] Enabled, SkipOpeningLogos) are left alone.
 #include <algorithm>
+#include <cstdio>
 #include <cctype>
 #include <cstdlib>
 #include <filesystem>
@@ -13,7 +14,9 @@
 #include <toml++/toml.hpp>
 
 #include "app/app.h"
+#include "core/keys.h"
 #include "core/log.h"
+#include "gpu/backend.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -127,6 +130,13 @@ struct Reader {
     }
 };
 
+// ROTKFix.ini [Keyboard]: each keys::Action by the job it does in this game, as [GamepadButtons] names them
+constexpr const char* kKeyboardKeys[keys::kCount] = {
+    "MoveForward", "MoveBack", "MoveLeft", "MoveRight", "Walk",
+    "SpeedAttack", "PhysicalAttack", "Parry", "FierceAttack", "Action", "JumpBack", "RangedAttack", "KillingMove",
+    "Pause", "Back", "Special", "RightStick",
+    "MenuUp", "MenuDown", "MenuLeft", "MenuRight"};
+
 void ApplyIni() {
     std::filesystem::path file = IniArgument();
     if (file.empty()) return;
@@ -189,7 +199,8 @@ void ApplyIni() {
     // ButtonNames: auto, xbox, playstation, nintendo; original is the game's own pictures, the Xbox ones
     if (const std::string* v = r.Get("Gamepad", "ButtonNames")) {
         std::string w = Lower(*v);
-        g_button_pictures = w == "xbox" || w == "original" ? 1 : w == "playstation" ? 2 : w == "nintendo" ? 3 : 0;
+        g_button_pictures = w == "xbox" || w == "original" ? 1 : w == "playstation" ? 2 : w == "nintendo" ? 3
+                          : w == "keyboard" ? 4 : 0;
         r.applied++;
     }
     // [Gamepad] Enabled is the PC's DirectInput gamepad layer; the Xbox version always reads the controller
@@ -199,6 +210,17 @@ void ApplyIni() {
     r.Int("Gameplay", "DamageTaken", g_damage_percent, 10, 500);
     r.Int("Gameplay", "EnemyDamage", g_enemy_damage_percent, 10, 500);
     r.Bool("Gameplay", "UnlockAll", g_unlock_all);
+    // [Window]: the Xbox port's own (ROTK on PC slows itself down in the background)
+    r.Bool("Window", "PauseInBackground", s.pause_unfocused);
+    r.Bool("Window", "MuteInBackground", s.mute_unfocused);
+    // [Keyboard]: the Xbox port's keyboard and mouse play (on PC the game's own keyboard controls)
+    r.Bool("Keyboard", "Enabled", s.keyboard);
+    r.Int("Keyboard", "Player", s.keyboard_player, 1, 2);
+    for (uint32_t i = 0; i < keys::kCount; i++)
+        if (const std::string* v = r.Get("Keyboard", kKeyboardKeys[i])) {
+            s.keys[i] = *v;
+            r.applied++;
+        }
     // [Textures]
     r.Bool("Textures", "Dump", s.texture_dump);
     r.Bool("Textures", "Replace", s.texture_replace);
@@ -213,6 +235,61 @@ void LoadTable(const void* table) {
     app::Settings& s = app::Get();
     if (!t["graphics"]["smooth_2d"]) s.smooth_2d = false;
     if (!t["graphics"]["movie_sharpening"]) s.movie_sharpening = 0;
+}
+
+// GameInfo::setting_changed: the in-game menu changed one; what the settings feed at start, fed again
+void SettingChanged(const cfg::Desc& d) {
+    std::string k = std::string(d.section) + "." + d.key;
+    if (k == "graphics.draw_distance") gpu::g_fog_scale = float(g_draw_percent) / 100.0f;
+}
+
+// GameInfo::save_settings: the in-game menu closed after a change. Its settings go into ROTKFix.ini (the file the
+// launcher and ROTK on PC read) under ROTK Fix's names; without --ini, into settings.toml.
+void SaveIni() {
+    if (g_ini_file.empty()) {
+        app::Save();
+        return;
+    }
+#ifdef _WIN32
+    const app::Settings& s = app::Get();
+    std::string file = g_ini_file.string();
+    auto put = [&](const char* section, const char* key, const std::string& v) {
+        WritePrivateProfileStringA(section, key, v.c_str(), file.c_str());
+    };
+    auto num = [](double v, int places) {
+        char b[32];
+        std::snprintf(b, sizeof b, "%.*f", places, v);
+        return std::string(b);
+    };
+    auto i = [](uint32_t v) { return std::to_string(v); };
+    put("Frame", "ShowFPS", i(s.show_fps));
+    put("Graphics", "VSync", i(s.vsync));
+    put("Graphics", "RenderScale", i(s.render_percent));
+    put("Graphics", "MSAA", i(s.msaa));
+    put("Graphics", "AnisotropicFiltering", i(s.aniso));
+    put("Graphics", "TextureLODBias", num(s.lod_bias, 2));
+    put("Graphics", "Sharpening", i(s.sharpening));
+    put("Graphics", "SmoothMenus", i(s.smooth_2d));
+    static const char* const kLooks[] = {"original", "film", "vivid", "dark"};
+    put("Graphics", "ColourLook", kLooks[std::min(s.colour_look, 3u)]);
+    put("Graphics", "ColourLookStrength", i(s.look_strength));
+    put("Graphics", "Brightness", num(s.brightness, 2));
+    put("Graphics", "FieldOfView", i(g_fov_percent));
+    put("Graphics", "DrawDistance", i(g_draw_percent));
+    put("Graphics", "HUDEdges", i(g_hud_edges));
+    static const char* const kMovie[] = {"auto", "stretch", "4:3"};
+    put("Video", "MovieDisplay", kMovie[std::min(s.movie_display, 2u)]);
+    put("Video", "SharperMovies", i(s.movie_sharpening));
+    put("Video", "CutsceneAudioDelay", i(s.movie_delay));
+    put("Gamepad", "Vibration", i(s.vibration));
+    put("Gamepad", "StickDeadzone", i(s.stick_deadzone));
+    put("Gamepad", "TriggerThreshold", i(s.trigger_threshold));
+    put("Window", "PauseInBackground", i(s.pause_unfocused));
+    put("Window", "MuteInBackground", i(s.mute_unfocused));
+    put("Keyboard", "Enabled", i(s.keyboard));
+    put("Keyboard", "Player", i(s.keyboard_player));
+    LOGR("rotk: in-game menu settings written to %s", file.c_str());
+#endif
 }
 
 // GameInfo::init: after settings.toml loads, before the window and boot

@@ -154,6 +154,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         std::lock_guard lock(UiLock());
         if (ImGui::GetCurrentContext() && ImGui_ImplWin32_WndProcHandler(hwnd, msg, wp, lp)) return 1;
     }
+    if (intptr_t result = 0; OverlayMessage(hwnd, msg, wp, lp, &result)) return result;
     if (intptr_t result = 0; kGame.message && kGame.message(hwnd, msg, wp, lp, &result)) return result;
     switch (msg) {
         case WM_KEYDOWN:
@@ -177,6 +178,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             }
             return 0;
         case WM_ACTIVATE:
+            SetFocus(LOWORD(wp) != WA_INACTIVE);
             if (LOWORD(wp) == WA_INACTIVE) {
                 // a changed display mode steps aside for the desktop, minimized, and comes back on return; not while
                 // handing over to the next instance, which runs in the same mode
@@ -383,6 +385,7 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int) {
     io.IniFilename = nullptr;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
     ImGui_ImplWin32_Init(app::g_hwnd);
+    app::OverlayInit();
 
     input::Init();
     if (app::kGame.window) app::kGame.window(app::g_hwnd);

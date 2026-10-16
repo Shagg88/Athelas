@@ -8,9 +8,11 @@
 #include <windows.h>
 #include <xaudio2.h>
 
+#include <algorithm>
 #include <thread>
 #include <vector>
 
+#include "app/app.h"
 #include "audio/audio.h"
 #include "core/log.h"
 
@@ -45,7 +47,13 @@ void StartOutput(std::function<void(float*, uint32_t)> render) {
                 continue;
             }
             float* b = &bufs[(n % kSlots) * kFrames * 2];
-            render(b, kFrames);
+            // paused (app::Held): the mixer takes no time, so the game's sounds and music wait where they were;
+            // muted, they play on unheard
+            if (app::Held()) std::fill(b, b + kFrames * 2, 0.0f);
+            else {
+                render(b, kFrames);
+                if (app::Muted()) std::fill(b, b + kFrames * 2, 0.0f);
+            }
             XAUDIO2_BUFFER xb{};
             xb.AudioBytes = kFrames * 8;
             xb.pAudioData = reinterpret_cast<const BYTE*>(b);

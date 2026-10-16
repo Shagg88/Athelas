@@ -26,7 +26,13 @@ std::wstring Wide(const std::string& s) { return std::wstring(s.begin(), s.end()
 }  // namespace
 
 Settings& Get() {
-    static Settings s;
+    static Settings s = [] {
+        Settings d;
+        for (uint32_t i = 0; i < keys::kCount; i++) d.keys[i] = keys::kDefaults[i];
+        for (const auto& [action, value] : kGame.key_defaults)
+            if (action < keys::kCount) d.keys[action] = value;
+        return d;
+    }();
     return s;
 }
 

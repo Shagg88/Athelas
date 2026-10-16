@@ -239,6 +239,7 @@ void VerticalBlank(X86Context& ctx) {
     for (;;) {
         next = std::max(next + std::chrono::microseconds(16667), clock::now());
         std::this_thread::sleep_until(next);
+        if (kernel::Frozen()) continue;  // paused: no blanks, as no time passes for the game
         uint32_t count = Dev(XDK_CDevice_VBlankCount) + 1, swaps = Dev(kDevSwapCount);
         SetDev(XDK_CDevice_VBlankCount, count);
         ObjectRef event = FromPointer(kDevice + XDK_CDevice_VBlankEvent);
@@ -542,6 +543,9 @@ HLE_STDCALL(D3DDevice_Swap, 1) {
     }
     if (g_backend) g_backend->Present(SurfaceOf(g_buffers[1]));
     app::Pace();
+    // the in-game menu or a pause in the background: the game waits here, its last picture shown again with the
+    // menu over it, until it may go on
+    if (app::Paused() && g_backend) app::Hold([&] { g_backend->Present(SurfaceOf(g_buffers[1])); });
     if (g_title_surfaces) {
         // surfaces the title supplied (present params +0x34): the title tracks which one is the back buffer itself
         // (The Two Towers flips an index at each Swap and picks its surface by it), so the surfaces rotate, not their

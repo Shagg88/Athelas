@@ -11,6 +11,8 @@ extern uint32_t g_button_pictures;              // src/game/rotk_prompts.cpp
 void Loaded();                                  // rotk_movies.cpp
 void Init();                                    // rotk_settings.cpp: ROTKFix.ini, then the frame rate
 void LoadTable(const void* table);              // rotk_settings.cpp: 1.0.0's defaults for settings the file lacks
+void SaveIni();                                 // rotk_settings.cpp: the in-game menu's changes into ROTKFix.ini
+void SettingChanged(const cfg::Desc& d);        // rotk_settings.cpp: the in-game menu changed one
 }
 
 // what the runtime asks of the game; strings must be set, hooks may stay null
@@ -58,9 +60,12 @@ const app::GameInfo app::kGame = {
                  &rotk::g_safe_area},
                 {"graphics", "button_pictures", cfg::Type::Choice, "Button pictures",
                  "Which controller's buttons the game's hints show. Auto follows the controller you play with.",
-                 nullptr, &rotk::g_button_pictures, nullptr, 0, 0, {"auto", "xbox", "playstation", "nintendo"}, nullptr,
-                 nullptr, {"Auto", "Xbox", "PlayStation", "Nintendo"}}},
+                 nullptr, &rotk::g_button_pictures, nullptr, 0, 0, {"auto", "xbox", "playstation", "nintendo", "keyboard"}, nullptr,
+                 nullptr, {"Auto", "Xbox", "PlayStation", "Nintendo", "Keyboard keys"}}},
     .presets = {},
+    // what each Xbox button does (ROTK Fix's names for the slots), for the keyboard's labels; Black is RB, White LB
+    .button_actions = {"Speed Attack", "Physical Attack", "Parry", "Fierce Attack", "Action", "Jump Back",
+                       "Ranged Attack", "Killing Move"},
     .load = rotk::LoadTable,              // reads more from the settings file's toml::table
     .save = nullptr,                      // writes more into it
     .init = rotk::Init,                   // after the settings load, before the window and boot
@@ -71,4 +76,8 @@ const app::GameInfo app::kGame = {
     .pad = rotk::Pad,                     // changes a polled pad
     .rumble = nullptr,                    // changes a rumble before it is set
     .remap_controls = false,              // buttons are remapped through ROTKFix.ini ([Gamepad], rotk_controls.cpp)
+    // the in-game menu: these take effect at once; it saves into ROTKFix.ini, which the launcher shares with ROTK PC
+    .live_settings = {"graphics.fov", "graphics.draw_distance", "graphics.hud_edges"},
+    .save_settings = rotk::SaveIni,
+    .setting_changed = rotk::SettingChanged,
 };
