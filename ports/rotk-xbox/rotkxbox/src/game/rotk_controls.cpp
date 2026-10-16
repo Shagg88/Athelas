@@ -108,9 +108,11 @@ void Pad(int port, input::Pad& pad) {
 // loaded with either). For the keyboard: in the front end's menus Esc goes back and Enter presses Start, which they
 // take to go on ("press start" takes nothing else).
 std::atomic<bool> g_front_end{true};
+void AchievementsFile(const std::string& lower_name);  // rotk_achievements.cpp
 void FileOpened(const char* name) {
     std::string n = name;
     for (char& c : n) c = char(std::tolower(static_cast<unsigned char>(c)));
+    AchievementsFile(n);
     size_t at = n.find("\\data\\game\\");
     if (at == std::string::npos || n.size() < 4 || n.compare(n.size() - 4, 4, ".scx") != 0) return;
     std::string rest = n.substr(at + 11);  // "fro\fro03.scx", "globscen.scx"

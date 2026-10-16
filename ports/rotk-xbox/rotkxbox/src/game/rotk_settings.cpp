@@ -227,6 +227,13 @@ void ApplyIni() {
             s.keys[i] = *v;
             r.applied++;
         }
+    // [Achievements], [Discord]: shared with ROTK on PC (ROTK Fix's achieve.c)
+    r.Bool("Achievements", "Notify", s.achievement_notes);
+    r.Bool("Discord", "Enabled", s.discord);
+    if (const std::string* v = r.Get("Discord", "AppId")) {
+        s.discord_app_id = *v;
+        r.applied++;
+    }
     // [Textures]
     r.Bool("Textures", "Dump", s.texture_dump);
     r.Bool("Textures", "Replace", s.texture_replace);
@@ -294,6 +301,8 @@ void SaveIni() {
     put("Window", "MuteInBackground", i(s.mute_unfocused));
     put("Keyboard", "Enabled", i(s.keyboard));
     put("Keyboard", "Player", i(s.keyboard_player));
+    put("Achievements", "Notify", i(s.achievement_notes));
+    if (app::kGame.discord_app_id) put("Discord", "Enabled", i(s.discord));
     LOGR("rotk: in-game menu settings written to %s", file.c_str());
 #endif
 }

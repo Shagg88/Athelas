@@ -14,6 +14,28 @@ namespace input {
 struct Pad;
 }
 
+// achievements (app/achievements.cpp): a game lists them in GameInfo::achievements and earns them with Unlock
+namespace ach {
+struct Def {
+    const char* id;     // kept in achievements.txt; never changed once released
+    const char* title;
+    const char* desc;
+};
+void Start();                                 // at start: what's earned so far, and the list for the launcher
+void Unlock(const char* id);                  // any thread; once
+bool Has(const char* id);
+uint64_t Count(const char* name);             // a running total the game keeps (saved with the achievements)
+uint64_t Add(const char* name, uint64_t n);   // adds and returns the new total
+void Flush();                                 // write what's not written yet (at exit)
+void DrawNotes(float scale);                  // the renderer's ImGui frame: "Achievement earned" in the corner
+void DrawList();                              // the in-game menu's page
+}  // namespace ach
+
+// Discord status (app/discord.cpp), started once the window is up
+namespace discord {
+void Start();
+}
+
 // the host side: window, settings
 namespace app {
 
@@ -58,6 +80,9 @@ struct Settings {
     // [window]: when the game window loses the focus (another window in front, Alt-Tab)
     bool pause_unfocused = false;          // the game stops, picture and sound, until it has the focus again
     bool mute_unfocused = false;           // the sound goes quiet while it runs on
+    bool achievement_notes = true;         // [achievements] notify: a note in the corner when one is earned
+    bool discord = false;                  // [discord] enabled: what the game is doing on the player's Discord profile
+    std::string discord_app_id;            // [discord] app_id: another Discord application than the game's own
 };
 
 Settings& Get();
@@ -181,6 +206,13 @@ struct GameInfo {
     void (*file_opened)(const char* name) = nullptr;  // each file the game opens (any thread), to follow its state
     bool (*in_menus)() = nullptr;
     bool menu_accept_start = false;
+    // achievements: every one the game has, in the order the lists show them (empty: none)
+    std::vector<ach::Def> achievements;
+    // Discord status: the game's Discord application id (its name is what Discord shows as the game), and what the
+    // game is doing for the status's two lines, asked every few seconds from another thread (empty: "In the menus")
+    const char* discord_app_id = nullptr;
+    std::string (*activity)() = nullptr;        // "Helm's Deep"
+    std::string (*activity_state)() = nullptr;  // "As Gandalf", "Co-op"
 };
 extern const GameInfo kGame;
 

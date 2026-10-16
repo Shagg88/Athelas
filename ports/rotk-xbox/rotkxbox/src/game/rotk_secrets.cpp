@@ -22,6 +22,9 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <cstdio>
+#include <string>
+#include <thread>
 
 #include "core/log.h"
 #include "kernel/kernel.h"
@@ -29,12 +32,26 @@
 #include "xdk/hle.h"
 
 namespace rotk {
+void EnemyDefeated();  // rotk_achievements.cpp
 bool g_unlock_all = false, g_dev_buttons = false, g_codes_anytime = false;
 uint32_t g_damage_percent = 100, g_enemy_damage_percent = 100;
 
 namespace {
 #ifndef _WIN32
 const bool kEnvRead = [] {
+    // ROTK_DUMP_PROFILE=<file>: the progress block (0x1C4FE0, three 0x988-byte slots) written every 5 s (testing)
+    if (const char* f = std::getenv("ROTK_DUMP_PROFILE")) {
+        std::string path = f;
+        std::thread([path] {
+            for (int n = 0;; n++) {
+                std::this_thread::sleep_for(std::chrono::seconds(5));
+                if (FILE* o = std::fopen((path + "." + std::to_string(n)).c_str(), "wb")) {
+                    std::fwrite(::kernel::HostPtr(0x1C4FE0), 1, 3 * 0x988, o);
+                    std::fclose(o);
+                }
+            }
+        }).detach();
+    }
     auto on = [](const char* n) { return std::getenv(n) != nullptr; };
     g_unlock_all |= on("ROTK_UNLOCK");
     g_dev_buttons |= on("ROTK_DEVBUTTONS");
@@ -103,8 +120,12 @@ X86_FUNC(sub_0002A1B0) {
         ::kernel::W32(arg, uint32_t(int32_t(std::max<int64_t>(v, 1))));
         LOG_FIRST(2, "rotk: hit by a player %d scaled to %d (EnemyDamage %u%%)", int32_t(was), int32_t(::kernel::R32(arg)), pct);
     }
+    bool counts = who >= 0x10000 && who < 0x4000000 && player(by) && !player(who);
+    int32_t health = counts ? int32_t(::kernel::R32(who + 0x90)) : 0;
     __imp__sub_0002A1B0(ctx, base);
     if (scaled) ::kernel::W32(arg, was);  // the caller's own argument, as it was
+    // an enemy a player's hit took to 0: one defeated (rotk_achievements.cpp)
+    if (counts && health > 0 && int32_t(::kernel::R32(who + 0x90)) <= 0) rotk::EnemyDefeated();
 }
 
 // 0x102D50: the main menu, as it opens, hides three of its items with 0x10A550(0, name, visible = 0): "Online" (Xbox

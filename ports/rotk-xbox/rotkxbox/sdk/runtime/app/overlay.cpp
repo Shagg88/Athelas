@@ -91,7 +91,7 @@ constexpr const char* kLive[] = {
     "graphics.colour_look", "graphics.look_strength", "graphics.brightness", "graphics.movie_display",
     "graphics.movie_sharpening", "graphics.cutscene_audio_delay", "input.vibration", "input.stick_deadzone",
     "input.trigger_threshold", "window.pause_unfocused", "window.mute_unfocused", "keyboard.enabled",
-    "keyboard.player"};
+    "keyboard.player", "achievements.notify", "discord.enabled"};
 
 bool IsLive(const cfg::Desc& d) {
     std::string k = std::string(d.section) + "." + d.key;
@@ -107,6 +107,7 @@ int PageOf(const cfg::Desc& d) {
     std::string s = d.section;
     if (s == "display" || s == "graphics" || s == "textures") return 0;
     if (s == "input" || s == "keyboard" || s == "controls" || s == "window") return 1;
+    if (s == "achievements" || s == "discord") return 2;
     return 2;
 }
 
@@ -412,6 +413,7 @@ void DrawOverlay(double) {
     if (g_open) io.ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange;
     else io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
     static bool shown = false;  // drawn last frame: a new opening takes the keyboard and controller focus
+    ach::DrawNotes(UiScale());
     if (!g_open) {
         shown = false;
         return;
@@ -425,9 +427,9 @@ void DrawOverlay(double) {
                  ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
     shown = true;
     ImGui::SetWindowFontScale(scale);
-    static const char* const kPages[3] = {"Picture", "Controls", "Game"};
+    static const char* const kPages[4] = {"Picture", "Controls", "Game", "Achievements"};
     std::vector<cfg::Desc> list = SettingsList();
-    bool has[3] = {false, Get().keyboard, false};
+    bool has[4] = {false, Get().keyboard, false, !kGame.achievements.empty()};
     for (const cfg::Desc& d : list)
         if (IsLive(d)) has[PageOf(d)] = true;
     // the controller's shoulder buttons, or Page Up and Down, step through the pages there are
@@ -436,18 +438,18 @@ void DrawOverlay(double) {
     {
         input::Pad p = input::Raw(0);
         bool l = p.analog[5] > 30, r = p.analog[4] > 30;
-        int step = ((l && !lb) || ImGui::IsKeyPressed(ImGuiKey_PageUp, false)) ? 2
+        int step = ((l && !lb) || ImGui::IsKeyPressed(ImGuiKey_PageUp, false)) ? 3
                  : ((r && !rb) || ImGui::IsKeyPressed(ImGuiKey_PageDown, false)) ? 1 : 0;
         if (step) {
             want = page;
-            do want = (want + step) % 3;
+            do want = (want + step) % 4;
             while (!has[want] && want != page);
         }
         lb = l;
         rb = r;
     }
     if (ImGui::BeginTabBar("##pages")) {
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 4; i++) {
             if (!has[i]) continue;
             ImGuiTabItemFlags f = want == i ? ImGuiTabItemFlags_SetSelected : 0;
             if (ImGui::BeginTabItem(kPages[i], nullptr, f)) {
@@ -456,6 +458,7 @@ void DrawOverlay(double) {
                 for (const cfg::Desc& d : list)
                     if (IsLive(d) && PageOf(d) == i && Control(d)) g_dirty = true;
                 if (i == 1) KeyList();
+                if (i == 3) ach::DrawList();
                 ImGui::EndChild();
                 ImGui::EndTabItem();
             }

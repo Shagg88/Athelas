@@ -127,8 +127,8 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/cmake/Xb
      target_link_options(${target} PRIVATE -fuse-ld=lld -g)
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/app_headless.cpp /home/claude/tt-port/game/sdk/harness/app_headless.cpp
 --- upstream/harness/app_headless.cpp	2026-10-14 22:35:04.214332397 -0700
-+++ /home/claude/tt-port/game/sdk/harness/app_headless.cpp	2026-10-15 22:23:31.852994699 -0700
-@@ -1,4 +1,6 @@
++++ /home/claude/tt-port/game/sdk/harness/app_headless.cpp	2026-10-16 01:39:11.065617150 -0700
+@@ -1,11 +1,16 @@
 -// the host side without a window: settings at their defaults, the run folder as the exe folder
 +// the host side without a window: settings from settings.toml in the run folder when there is one (else the
 +// defaults), the run folder as the exe folder
@@ -136,7 +136,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/
  #include <chrono>
  #include <cstdlib>
  #include <filesystem>
-@@ -6,6 +8,7 @@
++#include <map>
+ #include <mutex>
++#include <string>
  #include <thread>
  
  #include "app/app.h"
@@ -144,7 +146,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/
  
  namespace app {
  
-@@ -13,13 +16,26 @@
+@@ -13,13 +18,26 @@
      static Settings s;
      return s;
  }
@@ -172,10 +174,33 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/
  
  std::filesystem::path ExeDir() {
      static const std::filesystem::path dir = std::filesystem::current_path();
-@@ -33,6 +49,39 @@
+@@ -33,6 +51,62 @@
      return n;
  }
  void* Window() { return nullptr; }
++// achievements: logged, nothing kept
++}  // namespace app
++namespace ach {
++void Unlock(const char* id) {
++    static std::map<std::string, bool> seen;
++    if (!seen[id]) LOGR("achievements: earned %s (harness)", id);
++    seen[id] = true;
++}
++bool Has(const char*) { return false; }
++std::map<std::string, uint64_t>& Counters() {
++    static std::map<std::string, uint64_t> m;
++    return m;
++}
++uint64_t Count(const char* n) { return Counters()[n]; }
++uint64_t Add(const char* n, uint64_t v) {
++    uint64_t t = Counters()[n] += v;
++    LOGR("achievements: %s now %llu (harness)", n, (unsigned long long)t);
++    return t;
++}
++void Flush() {}
++void Start() {}
++}  // namespace ach
++namespace app {
 +// no in-game menu or window focus here
 +bool OverlayOpen() { return false; }
 +bool Paused() { return false; }
@@ -212,7 +237,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/
  
  bool OpenSplash() { return false; }
  void SplashFirstFrame() {}
-@@ -47,6 +96,20 @@
+@@ -47,6 +121,20 @@
      return m;
  }
  
@@ -773,10 +798,240 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/
 +bool WriteTextureTga(uint32_t header, const char* path);
  
  }  // namespace reference
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/achievements.cpp /home/claude/tt-port/game/sdk/runtime/app/achievements.cpp
+--- upstream/runtime/app/achievements.cpp	1969-12-31 16:00:00.000000000 -0800
++++ /home/claude/tt-port/game/sdk/runtime/app/achievements.cpp	2026-10-16 01:39:11.064172628 -0700
+@@ -0,0 +1,226 @@
++// Achievements: the game says what each one is (GameInfo::achievements) and when one is earned (ach::Unlock); this
++// keeps them in achievements.txt beside the log (the launcher shows the list from it), shows a note in the corner
++// when one is earned ([achievements] notify), and lists them on the in-game menu's Achievements page.
++//
++// achievements.txt, rewritten whenever something changes:
++//   [unlocked]  id = 2026-10-16 01:23    (local time it was earned)
++//   [counters]  name = 123               (running totals a game keeps, such as enemies defeated)
++//   [list]      id = title | description (every achievement, for the launcher, in the game's order)
++#ifndef WIN32_LEAN_AND_MEAN
++#define WIN32_LEAN_AND_MEAN
++#endif
++#ifndef NOMINMAX
++#define NOMINMAX
++#endif
++#include <windows.h>
++
++#include <algorithm>
++#include <chrono>
++#include <cstdio>
++#include <ctime>
++#include <deque>
++#include <fstream>
++#include <map>
++#include <mutex>
++#include <cstdlib>
++#include <string>
++#include <thread>
++
++#include <imgui.h>
++
++#include "app/app.h"
++#include "core/log.h"
++
++namespace ach {
++
++namespace {
++
++std::mutex g_lock;
++bool g_loaded = false;
++std::map<std::string, std::string> g_unlocked;  // id -> when
++std::map<std::string, uint64_t> g_counters;
++struct Toast {
++    std::string title, desc;
++    double shown = -1;  // ImGui time it went up, -1 not yet
++};
++std::deque<Toast> g_toasts;
++
++std::filesystem::path File() { return app::LogFolder() / "achievements.txt"; }
++
++std::string Trim(const std::string& s) {
++    size_t a = s.find_first_not_of(" \t\r\n"), b = s.find_last_not_of(" \t\r\n");
++    return a == std::string::npos ? std::string() : s.substr(a, b - a + 1);
++}
++
++const Def* Find(const std::string& id) {
++    for (const Def& d : app::kGame.achievements)
++        if (id == d.id) return &d;
++    return nullptr;
++}
++
++// lock held
++void Save() {
++    std::error_code ec;
++    std::filesystem::create_directories(File().parent_path(), ec);
++    std::filesystem::path tmp = File();
++    tmp += ".new";
++    {
++        std::ofstream o(tmp, std::ios::binary);
++        if (!o) return;
++        o << "; Achievements earned in this game (kept by the game; Athelas shows them).\r\n[unlocked]\r\n";
++        for (const Def& d : app::kGame.achievements) {
++            auto it = g_unlocked.find(d.id);
++            if (it != g_unlocked.end()) o << d.id << " = " << it->second << "\r\n";
++        }
++        o << "\r\n[counters]\r\n";
++        for (auto& [k, v] : g_counters) o << k << " = " << v << "\r\n";
++        o << "\r\n[list]\r\n";
++        for (const Def& d : app::kGame.achievements) o << d.id << " = " << d.title << " | " << d.desc << "\r\n";
++    }
++    std::filesystem::rename(tmp, File(), ec);
++    if (ec) {
++        std::filesystem::copy_file(tmp, File(), std::filesystem::copy_options::overwrite_existing, ec);
++        std::filesystem::remove(tmp, ec);
++    }
++}
++
++// lock held
++void Load() {
++    if (g_loaded) return;
++    g_loaded = true;
++    std::ifstream in(File());
++    std::string line, section;
++    while (std::getline(in, line)) {
++        line = Trim(line);
++        if (line.empty() || line[0] == ';') continue;
++        if (line.front() == '[') {
++            section = line;
++            continue;
++        }
++        size_t eq = line.find('=');
++        if (eq == std::string::npos) continue;
++        std::string k = Trim(line.substr(0, eq)), v = Trim(line.substr(eq + 1));
++        if (section == "[unlocked]" && Find(k)) g_unlocked[k] = v;
++        else if (section == "[counters]") g_counters[k] = std::strtoull(v.c_str(), nullptr, 10);
++    }
++    LOGR("achievements: %zu of %zu earned (%s)", g_unlocked.size(), app::kGame.achievements.size(),
++         File().string().c_str());
++    if (!app::kGame.achievements.empty()) Save();  // the list for the launcher, from the first run
++    // testing: XBE_TEST_ACHIEVEMENT=<id> earns that one 20 s in (to see the note)
++    if (const char* t = std::getenv("XBE_TEST_ACHIEVEMENT")) {
++        std::string id = t;
++        std::thread([id] {
++            std::this_thread::sleep_for(std::chrono::seconds(20));
++            Unlock(id.c_str());
++        }).detach();
++    }
++}
++
++}  // namespace
++
++void Start() {
++    std::lock_guard lock(g_lock);
++    Load();
++}
++
++void Unlock(const char* id) {
++    std::lock_guard lock(g_lock);
++    Load();
++    if (g_unlocked.count(id)) return;
++    const Def* d = Find(id);
++    if (!d) return;
++    std::time_t t = std::time(nullptr);
++    char when[32];
++    std::strftime(when, sizeof when, "%Y-%m-%d %H:%M", std::localtime(&t));
++    g_unlocked[id] = when;
++    Save();
++    LOGR("achievements: earned \"%s\" (%s)", d->title, id);
++    if (app::Get().achievement_notes) g_toasts.push_back({d->title, d->desc});
++}
++
++bool Has(const char* id) {
++    std::lock_guard lock(g_lock);
++    Load();
++    return g_unlocked.count(id) != 0;
++}
++
++uint64_t Count(const char* name) {
++    std::lock_guard lock(g_lock);
++    Load();
++    auto it = g_counters.find(name);
++    return it == g_counters.end() ? 0 : it->second;
++}
++
++uint64_t Add(const char* name, uint64_t n) {
++    std::lock_guard lock(g_lock);
++    Load();
++    uint64_t v = g_counters[name] += n;
++    // saved every so often, not on every count; Unlock and the next Add after a pause save it too
++    static auto last = std::chrono::steady_clock::now();
++    auto now = std::chrono::steady_clock::now();
++    if (now - last > std::chrono::seconds(10)) {
++        last = now;
++        Save();
++    }
++    return v;
++}
++
++void Flush() {
++    std::lock_guard lock(g_lock);
++    if (g_loaded) Save();
++}
++
++// the renderer's ImGui frame (UiLock held): the newest note in the bottom right corner for six seconds
++void DrawNotes(float scale) {
++    std::lock_guard lock(g_lock);
++    if (g_toasts.empty()) return;
++    double now = ImGui::GetTime();
++    Toast& t = g_toasts.front();
++    if (t.shown < 0) t.shown = now;
++    double age = now - t.shown;
++    if (age > 6.0) {
++        g_toasts.pop_front();
++        return;
++    }
++    float alpha = float(std::min({1.0, age / 0.3, (6.0 - age) / 0.6}));
++    const ImGuiViewport* vp = ImGui::GetMainViewport();
++    float pad = std::max(12.0f, vp->Size.y / 50.0f);
++    ImGui::SetNextWindowPos(ImVec2(vp->Pos.x + vp->Size.x - pad, vp->Pos.y + vp->Size.y - pad), ImGuiCond_Always, ImVec2(1, 1));
++    ImGui::SetNextWindowBgAlpha(0.85f * alpha);
++    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, alpha);
++    ImGui::Begin("##achievement", nullptr,
++                 ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_AlwaysAutoResize |
++                     ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav);
++    ImGui::SetWindowFontScale(scale);
++    ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.45f, 1.0f), "Achievement earned");
++    ImGui::SetWindowFontScale(scale * 1.2f);
++    ImGui::TextUnformatted(t.title.c_str());
++    ImGui::SetWindowFontScale(scale * 0.85f);
++    ImGui::TextDisabled("%s", t.desc.c_str());
++    ImGui::End();
++    ImGui::PopStyleVar();
++}
++
++// the in-game menu's Achievements page
++void DrawList() {
++    std::lock_guard lock(g_lock);
++    Load();
++    const auto& all = app::kGame.achievements;
++    ImGui::Text("%zu of %zu earned", g_unlocked.size(), all.size());
++    ImGui::Separator();
++    for (const Def& d : all) {
++        auto it = g_unlocked.find(d.id);
++        bool got = it != g_unlocked.end();
++        ImGui::TextColored(got ? ImVec4(0.95f, 0.80f, 0.45f, 1.0f) : ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "%s  %s",
++                           got ? "+" : "-", d.title);
++        if (got) {
++            ImGui::SameLine();
++            ImGui::TextDisabled("  %s", it->second.c_str());
++        }
++        ImGui::Indent();
++        ImGui::TextDisabled("%s", d.desc);
++        ImGui::Unindent();
++    }
++}
++
++}  // namespace ach
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/app.h /home/claude/tt-port/game/sdk/runtime/app/app.h
 --- upstream/runtime/app/app.h	2026-10-14 22:35:04.215216692 -0700
-+++ /home/claude/tt-port/game/sdk/runtime/app/app.h	2026-10-16 00:21:38.420147558 -0700
-@@ -1,11 +1,15 @@
++++ /home/claude/tt-port/game/sdk/runtime/app/app.h	2026-10-16 01:39:11.064822508 -0700
+@@ -1,15 +1,41 @@
  #pragma once
  #include <cstdint>
  #include <filesystem>
@@ -792,7 +1047,33 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  namespace input {
  struct Pad;
  }
-@@ -17,28 +21,98 @@
+ 
++// achievements (app/achievements.cpp): a game lists them in GameInfo::achievements and earns them with Unlock
++namespace ach {
++struct Def {
++    const char* id;     // kept in achievements.txt; never changed once released
++    const char* title;
++    const char* desc;
++};
++void Start();                                 // at start: what's earned so far, and the list for the launcher
++void Unlock(const char* id);                  // any thread; once
++bool Has(const char* id);
++uint64_t Count(const char* name);             // a running total the game keeps (saved with the achievements)
++uint64_t Add(const char* name, uint64_t n);   // adds and returns the new total
++void Flush();                                 // write what's not written yet (at exit)
++void DrawNotes(float scale);                  // the renderer's ImGui frame: "Achievement earned" in the corner
++void DrawList();                              // the in-game menu's page
++}  // namespace ach
++
++// Discord status (app/discord.cpp), started once the window is up
++namespace discord {
++void Start();
++}
++
+ // the host side: window, settings
+ namespace app {
+ 
+@@ -17,28 +43,101 @@
  
  struct Settings {
      DisplayMode display_mode = DisplayMode::Borderless;
@@ -834,6 +1115,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +    // [window]: when the game window loses the focus (another window in front, Alt-Tab)
 +    bool pause_unfocused = false;          // the game stops, picture and sound, until it has the focus again
 +    bool mute_unfocused = false;           // the sound goes quiet while it runs on
++    bool achievement_notes = true;         // [achievements] notify: a note in the corner when one is earned
++    bool discord = false;                  // [discord] enabled: what the game is doing on the player's Discord profile
++    std::string discord_app_id;            // [discord] app_id: another Discord application than the game's own
  };
  
  Settings& Get();
@@ -894,7 +1178,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  
  std::filesystem::path ExeDir();
  // the game in assets (game_files.cpp): its folder and this executable's xbe, from the extracted files or a disc
-@@ -48,7 +122,7 @@
+@@ -48,7 +147,7 @@
      std::vector<uint8_t> xbe;
  };
  bool FindGame(GameFiles& game);
@@ -903,7 +1187,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  void* Window();  // HWND
  // boot splash: GameInfo::splash .bmp or .png beside the exe, up before the game window
  bool OpenSplash();        // window thread, at launch; false without one, and the game window opens at once
-@@ -64,21 +138,23 @@
+@@ -64,21 +163,23 @@
  std::recursive_mutex& UiLock();
  
  // what the game repo defines once
@@ -933,7 +1217,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      // the settings file's toml::table, for what options cannot hold
      void (*load)(const void* table);
      void (*save)(void* table);
-@@ -90,10 +166,42 @@
+@@ -90,10 +191,49 @@
      void (*ui)(double fps);        // each frame inside the ImGui frame, UiLock held
      void (*pad)(int port, input::Pad& pad);  // a polled pad before the game gets it
      void (*rumble)(int port, uint16_t& left, uint16_t& right);
@@ -952,6 +1236,13 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +    void (*file_opened)(const char* name) = nullptr;  // each file the game opens (any thread), to follow its state
 +    bool (*in_menus)() = nullptr;
 +    bool menu_accept_start = false;
++    // achievements: every one the game has, in the order the lists show them (empty: none)
++    std::vector<ach::Def> achievements;
++    // Discord status: the game's Discord application id (its name is what Discord shows as the game), and what the
++    // game is doing for the status's two lines, asked every few seconds from another thread (empty: "In the menus")
++    const char* discord_app_id = nullptr;
++    std::string (*activity)() = nullptr;        // "Helm's Deep"
++    std::string (*activity_state)() = nullptr;  // "As Gandalf", "Co-op"
  };
  extern const GameInfo kGame;
  
@@ -1007,6 +1298,165 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +    </dependentAssembly>
 +  </dependency>
 +</assembly>
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/discord.cpp /home/claude/tt-port/game/sdk/runtime/app/discord.cpp
+--- upstream/runtime/app/discord.cpp	1969-12-31 16:00:00.000000000 -0800
++++ /home/claude/tt-port/game/sdk/runtime/app/discord.cpp	2026-10-16 01:19:45.141186854 -0700
+@@ -0,0 +1,155 @@
++// Discord status ([discord] enabled, off by default): what the game is doing ("Helm's Deep", "In the menus") shown on
++// the player's Discord profile, through the Discord app's own local connection (the named pipe discord-ipc-N, the
++// protocol Discord's Rich Presence libraries speak). Nothing goes over the network from here, and with Discord not
++// running nothing happens. Needs the game's Discord application id (GameInfo::discord_app_id, or [discord] app_id).
++#ifndef WIN32_LEAN_AND_MEAN
++#define WIN32_LEAN_AND_MEAN
++#endif
++#ifndef NOMINMAX
++#define NOMINMAX
++#endif
++#include <windows.h>
++
++#include <atomic>
++#include <chrono>
++#include <cstdio>
++#include <cstring>
++#include <ctime>
++#include <string>
++#include <thread>
++#include <vector>
++
++#include "app/app.h"
++#include "core/log.h"
++
++namespace discord {
++
++namespace {
++
++std::string Json(const std::string& s) {
++    std::string o = "\"";
++    for (unsigned char c : s) {
++        if (c == '"' || c == '\\') o += '\\', o += char(c);
++        else if (c < 0x20) {
++            char b[8];
++            std::snprintf(b, sizeof b, "\\u%04x", c);
++            o += b;
++        } else o += char(c);
++    }
++    return o + "\"";
++}
++
++struct Pipe {
++    HANDLE h = INVALID_HANDLE_VALUE;
++    bool Open() {
++        for (int i = 0; i < 10 && h == INVALID_HANDLE_VALUE; i++) {
++            std::wstring name = L"\\\\.\\pipe\\discord-ipc-" + std::to_wstring(i);
++            h = CreateFileW(name.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
++        }
++        return h != INVALID_HANDLE_VALUE;
++    }
++    void Close() {
++        if (h != INVALID_HANDLE_VALUE) CloseHandle(h);
++        h = INVALID_HANDLE_VALUE;
++    }
++    bool Send(uint32_t op, const std::string& json) {
++        std::vector<char> b(8 + json.size());
++        uint32_t len = uint32_t(json.size());
++        std::memcpy(b.data(), &op, 4);
++        std::memcpy(b.data() + 4, &len, 4);
++        std::memcpy(b.data() + 8, json.data(), json.size());
++        DWORD w = 0;
++        return WriteFile(h, b.data(), DWORD(b.size()), &w, nullptr) && w == b.size();
++    }
++    // whatever Discord has answered, read and dropped so the pipe never fills; false when it closed
++    bool Drain() {
++        for (;;) {
++            DWORD avail = 0;
++            if (!PeekNamedPipe(h, nullptr, 0, nullptr, &avail, nullptr)) return false;
++            if (!avail) return true;
++            std::vector<char> b(avail);
++            DWORD r = 0;
++            if (!ReadFile(h, b.data(), avail, &r, nullptr)) return false;
++        }
++    }
++};
++
++std::string AppId() {
++    const std::string& s = app::Get().discord_app_id;
++    if (!s.empty()) return s;
++    return app::kGame.discord_app_id ? app::kGame.discord_app_id : "";
++}
++
++}  // namespace
++
++void Start() {
++    if (!app::Get().discord) return;
++    std::string id = AppId();
++    if (id.empty()) {
++        LOGR("discord: no application id for this game, status off");
++        return;
++    }
++    std::thread([id] {
++        const int64_t started = int64_t(std::time(nullptr));
++        Pipe p;
++        std::string shown;
++        int nonce = 0;
++        auto next_try = std::chrono::steady_clock::now();
++        bool told = false;
++        for (;;) {
++            std::this_thread::sleep_for(std::chrono::seconds(2));
++            if (!app::Get().discord) {  // switched off in the in-game menu: the status goes, the line closes
++                if (p.h != INVALID_HANDLE_VALUE) {
++                    p.Send(1, "{\"cmd\":\"SET_ACTIVITY\",\"args\":{\"pid\":" + std::to_string(GetCurrentProcessId()) +
++                                  "},\"nonce\":\"" + std::to_string(++nonce) + "\"}");
++                    p.Close();
++                    shown.clear();
++                }
++                continue;
++            }
++            if (p.h == INVALID_HANDLE_VALUE) {
++                if (std::chrono::steady_clock::now() < next_try) continue;
++                next_try = std::chrono::steady_clock::now() + std::chrono::seconds(20);
++                if (!p.Open()) {
++                    if (!told) LOGR("discord: Discord isn't running, trying again now and then");
++                    told = true;
++                    continue;
++                }
++                if (!p.Send(0, "{\"v\":1,\"client_id\":" + Json(id) + "}")) {
++                    p.Close();
++                    continue;
++                }
++                std::this_thread::sleep_for(std::chrono::milliseconds(300));
++                if (!p.Drain()) {
++                    p.Close();
++                    continue;
++                }
++                LOGR("discord: connected");
++                shown.clear();
++            }
++            std::string details = app::kGame.activity ? app::kGame.activity() : std::string();
++            std::string state = app::kGame.activity_state ? app::kGame.activity_state() : std::string();
++            if (details.empty()) details = "In the menus";
++            std::string key = details + "\n" + state;
++            if (key != shown) {
++                std::string act = "{\"details\":" + Json(details) + (state.empty() ? "" : ",\"state\":" + Json(state)) +
++                                  ",\"timestamps\":{\"start\":" + std::to_string(started) + "}}";
++                std::string msg = "{\"cmd\":\"SET_ACTIVITY\",\"args\":{\"pid\":" + std::to_string(GetCurrentProcessId()) +
++                                  ",\"activity\":" + act + "},\"nonce\":\"" + std::to_string(++nonce) + "\"}";
++                if (!p.Send(1, msg)) {
++                    LOGR("discord: connection closed");
++                    p.Close();
++                    continue;
++                }
++                shown = key;
++                LOG_FIRST(20, "discord: status \"%s\"%s%s", details.c_str(), state.empty() ? "" : " / ", state.c_str());
++            }
++            if (!p.Drain()) {
++                LOGR("discord: connection closed");
++                p.Close();
++            }
++        }
++    }).detach();
++}
++
++}  // namespace discord
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/game_files.cpp /home/claude/tt-port/game/sdk/runtime/app/game_files.cpp
 --- upstream/runtime/app/game_files.cpp	2026-10-14 22:35:04.215370614 -0700
 +++ /home/claude/tt-port/game/sdk/runtime/app/game_files.cpp	2026-10-14 22:14:56.909254571 -0700
@@ -1326,7 +1776,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +}  // namespace keys
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/main.cpp /home/claude/tt-port/game/sdk/runtime/app/main.cpp
 --- upstream/runtime/app/main.cpp	2026-10-14 22:35:04.215370614 -0700
-+++ /home/claude/tt-port/game/sdk/runtime/app/main.cpp	2026-10-15 22:23:12.657898078 -0700
++++ /home/claude/tt-port/game/sdk/runtime/app/main.cpp	2026-10-16 01:39:11.065198527 -0700
 @@ -5,8 +5,10 @@
  #ifndef NOMINMAX
  #define NOMINMAX
@@ -1576,13 +2026,15 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  
      bool splash = app::OpenSplash(), handover = app::StartHandover();
  
-@@ -259,13 +385,13 @@
+@@ -259,13 +385,15 @@
      io.IniFilename = nullptr;
      io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
      ImGui_ImplWin32_Init(app::g_hwnd);
 +    app::OverlayInit();
  
      input::Init();
++    ach::Start();
++    discord::Start();
      if (app::kGame.window) app::kGame.window(app::g_hwnd);
 -    std::wstring hdd = app::Instance() > 1 ? L"hdd" + std::to_wstring(app::Instance()) : L"hdd";
      if (app::Instance())
@@ -1592,10 +2044,18 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
          MessageBoxW(app::g_hwnd, L"The game failed to start, see the log in the logs folder.", app::kGame.short_title,
                      MB_ICONERROR);
          return 1;
+@@ -277,6 +405,7 @@
+         DispatchMessageW(&msg);
+     }
+     if (app::g_mode_changed) ChangeDisplaySettingsW(nullptr, 0);
++    ach::Flush();
+     logx::Flush();
+     kernel::Shutdown(0);
+ }
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/overlay.cpp /home/claude/tt-port/game/sdk/runtime/app/overlay.cpp
 --- upstream/runtime/app/overlay.cpp	1969-12-31 16:00:00.000000000 -0800
-+++ /home/claude/tt-port/game/sdk/runtime/app/overlay.cpp	2026-10-15 23:05:03.930641346 -0700
-@@ -0,0 +1,489 @@
++++ /home/claude/tt-port/game/sdk/runtime/app/overlay.cpp	2026-10-16 01:19:45.146949434 -0700
+@@ -0,0 +1,492 @@
 +// The in-game menu: F10 (or both stick clicks together) opens it over the game, which stands still behind it. It
 +// holds the settings that take effect at once; the rest stay in the launcher. Also [window] pause_unfocused and
 +// mute_unfocused: the same standstill, or silence, while another window has the focus.
@@ -1689,7 +2149,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +    "graphics.colour_look", "graphics.look_strength", "graphics.brightness", "graphics.movie_display",
 +    "graphics.movie_sharpening", "graphics.cutscene_audio_delay", "input.vibration", "input.stick_deadzone",
 +    "input.trigger_threshold", "window.pause_unfocused", "window.mute_unfocused", "keyboard.enabled",
-+    "keyboard.player"};
++    "keyboard.player", "achievements.notify", "discord.enabled"};
 +
 +bool IsLive(const cfg::Desc& d) {
 +    std::string k = std::string(d.section) + "." + d.key;
@@ -1705,6 +2165,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +    std::string s = d.section;
 +    if (s == "display" || s == "graphics" || s == "textures") return 0;
 +    if (s == "input" || s == "keyboard" || s == "controls" || s == "window") return 1;
++    if (s == "achievements" || s == "discord") return 2;
 +    return 2;
 +}
 +
@@ -2010,6 +2471,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +    if (g_open) io.ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange;
 +    else io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
 +    static bool shown = false;  // drawn last frame: a new opening takes the keyboard and controller focus
++    ach::DrawNotes(UiScale());
 +    if (!g_open) {
 +        shown = false;
 +        return;
@@ -2023,9 +2485,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +                 ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
 +    shown = true;
 +    ImGui::SetWindowFontScale(scale);
-+    static const char* const kPages[3] = {"Picture", "Controls", "Game"};
++    static const char* const kPages[4] = {"Picture", "Controls", "Game", "Achievements"};
 +    std::vector<cfg::Desc> list = SettingsList();
-+    bool has[3] = {false, Get().keyboard, false};
++    bool has[4] = {false, Get().keyboard, false, !kGame.achievements.empty()};
 +    for (const cfg::Desc& d : list)
 +        if (IsLive(d)) has[PageOf(d)] = true;
 +    // the controller's shoulder buttons, or Page Up and Down, step through the pages there are
@@ -2034,18 +2496,18 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +    {
 +        input::Pad p = input::Raw(0);
 +        bool l = p.analog[5] > 30, r = p.analog[4] > 30;
-+        int step = ((l && !lb) || ImGui::IsKeyPressed(ImGuiKey_PageUp, false)) ? 2
++        int step = ((l && !lb) || ImGui::IsKeyPressed(ImGuiKey_PageUp, false)) ? 3
 +                 : ((r && !rb) || ImGui::IsKeyPressed(ImGuiKey_PageDown, false)) ? 1 : 0;
 +        if (step) {
 +            want = page;
-+            do want = (want + step) % 3;
++            do want = (want + step) % 4;
 +            while (!has[want] && want != page);
 +        }
 +        lb = l;
 +        rb = r;
 +    }
 +    if (ImGui::BeginTabBar("##pages")) {
-+        for (int i = 0; i < 3; i++) {
++        for (int i = 0; i < 4; i++) {
 +            if (!has[i]) continue;
 +            ImGuiTabItemFlags f = want == i ? ImGuiTabItemFlags_SetSelected : 0;
 +            if (ImGui::BeginTabItem(kPages[i], nullptr, f)) {
@@ -2054,6 +2516,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +                for (const cfg::Desc& d : list)
 +                    if (IsLive(d) && PageOf(d) == i && Control(d)) g_dirty = true;
 +                if (i == 1) KeyList();
++                if (i == 3) ach::DrawList();
 +                ImGui::EndChild();
 +                ImGui::EndTabItem();
 +            }
@@ -8035,8 +8498,8 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      return guest_height ? std::max(h / guest_height, 0.1f) : 1.0f;
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/settings_list.cpp /home/claude/tt-port/game/sdk/runtime/app/settings_list.cpp
 --- upstream/runtime/app/settings_list.cpp	1969-12-31 16:00:00.000000000 -0800
-+++ /home/claude/tt-port/game/sdk/runtime/app/settings_list.cpp	2026-10-15 22:42:06.140946407 -0700
-@@ -0,0 +1,169 @@
++++ /home/claude/tt-port/game/sdk/runtime/app/settings_list.cpp	2026-10-16 01:19:45.144676133 -0700
+@@ -0,0 +1,183 @@
 +// every setting the settings file holds, described once: the host's here, the game's in GameInfo::options. No
 +// platform code, so the list can be checked anywhere.
 +#include <algorithm>
@@ -8181,6 +8644,20 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +                 &s.pause_unfocused});
 +    l.push_back({"window", "mute_unfocused", Type::Bool, "Mute in the background",
 +                 "No sound while another window is in front; the game keeps running.", &s.mute_unfocused});
++    if (!kGame.achievements.empty())
++        l.push_back({"achievements", "notify", Type::Bool, "Achievement notes",
++                     "A note in the corner of the screen when you earn an achievement. The list is on the in-game "
++                     "menu (F10) and in the launcher.",
++                     &s.achievement_notes});
++    if (kGame.discord_app_id) {
++        l.push_back({"discord", "enabled", Type::Bool, "Discord status",
++                     "Shows on your Discord profile that you're playing, and which level, while Discord is running "
++                     "on this PC. Nothing is sent anywhere else.",
++                     &s.discord});
++        l.push_back({"discord", "app_id", Type::String, "Discord application",
++                     "Another Discord application id to show instead of the game's own; empty uses the game's.",
++                     nullptr, nullptr, &s.discord_app_id});
++    }
 +    // [keyboard]: on by default, it changes nothing for a controller
 +    l.push_back({"keyboard", "enabled", Type::Bool, "Keyboard and mouse",
 +                 "Play with the keyboard and mouse as well as a controller. The keys work like the controller's "

@@ -15,7 +15,15 @@ void SaveIni();                                 // rotk_settings.cpp: the in-gam
 void SettingChanged(const cfg::Desc& d);        // rotk_settings.cpp: the in-game menu changed one
 void FileOpened(const char* name);              // rotk_controls.cpp: the front end or a level
 bool InMenus();
+std::vector<ach::Def> Achievements();           // rotk_achievements.cpp
+std::string Activity();
+std::string ActivityState();
 }
+
+// the Discord application whose name Discord shows as the game ("The Return of the King"); null: no Discord status
+#ifndef ROTKX_DISCORD_APP_ID
+#define ROTKX_DISCORD_APP_ID nullptr
+#endif
 
 // what the runtime asks of the game; strings must be set, hooks may stay null
 const app::GameInfo app::kGame = {
@@ -85,4 +93,8 @@ const app::GameInfo app::kGame = {
     .file_opened = rotk::FileOpened,
     .in_menus = rotk::InMenus,
     .menu_accept_start = true,  // the front end goes on with Start; "press start" takes nothing else
+    .achievements = rotk::Achievements(),
+    .discord_app_id = ROTKX_DISCORD_APP_ID,
+    .activity = rotk::Activity,
+    .activity_state = rotk::ActivityState,
 };

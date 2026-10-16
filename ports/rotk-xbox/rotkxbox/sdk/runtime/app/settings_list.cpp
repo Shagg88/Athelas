@@ -142,6 +142,20 @@ std::vector<cfg::Desc> SettingsList() {
                  &s.pause_unfocused});
     l.push_back({"window", "mute_unfocused", Type::Bool, "Mute in the background",
                  "No sound while another window is in front; the game keeps running.", &s.mute_unfocused});
+    if (!kGame.achievements.empty())
+        l.push_back({"achievements", "notify", Type::Bool, "Achievement notes",
+                     "A note in the corner of the screen when you earn an achievement. The list is on the in-game "
+                     "menu (F10) and in the launcher.",
+                     &s.achievement_notes});
+    if (kGame.discord_app_id) {
+        l.push_back({"discord", "enabled", Type::Bool, "Discord status",
+                     "Shows on your Discord profile that you're playing, and which level, while Discord is running "
+                     "on this PC. Nothing is sent anywhere else.",
+                     &s.discord});
+        l.push_back({"discord", "app_id", Type::String, "Discord application",
+                     "Another Discord application id to show instead of the game's own; empty uses the game's.",
+                     nullptr, nullptr, &s.discord_app_id});
+    }
     // [keyboard]: on by default, it changes nothing for a controller
     l.push_back({"keyboard", "enabled", Type::Bool, "Keyboard and mouse",
                  "Play with the keyboard and mouse as well as a controller. The keys work like the controller's "
