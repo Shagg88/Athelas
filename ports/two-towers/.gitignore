@@ -1,0 +1,20 @@
+# Never commit anything made from the game: see HANDOFF.md, "Rules".
+# game/.gitignore covers the build output (out/), the recompiled code (generated/), the player's game files (assets/),
+# release zips and exes, debugging symbols and symbols/.
+
+# screenshots of the game
+/notes/*.png
+# F3 debug captures (shaders, textures and constants taken from the running game)
+/game/captures/
+# snapshots of the launcher's source; that project keeps its own copy
+/launcher-handoff/*.zip
+# analysis output made from default.xbe
+/analysis/
+
+# editors and OS
+.vs/
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+__pycache__/

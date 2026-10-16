@@ -1,0 +1,81 @@
+--- /home/claude/tt/d3d12.orig.cpp	2026-10-12 14:49:01.133972182 -0700
++++ gpu/d3d12.cpp	2026-10-12 14:48:38.403375803 -0700
+@@ -132,6 +132,16 @@
+ }
+ )";
+ 
++// a clear of some colour channels only (D3DCLEAR_TARGET_R/G/B/A): drawn, with the other channels masked off
++const char* kClearHlsl = R"(
++cbuffer B : register(b1) { float4 col; };
++float4 vs(uint id : SV_VertexID) : SV_Position {
++    float2 t = float2((id << 1) & 2, id & 2);
++    return float4(t * float2(2, -2) + float2(-1, 1), 0, 1);
++}
++float4 psmain() : SV_Target { return col; }
++)";
++
+ const char* kDepthHlsl = R"(
+ Texture2D<float> img : register(t0);
+ SamplerState ps : register(s1);
+@@ -525,6 +535,7 @@
+     ID3DBlob* Compile(const std::string& src, const char* entry, const char* profile, uint64_t& hash);
+     // Blit's pipeline
+     ID3D12PipelineState* EnsureBlitPipeline(DXGI_FORMAT rtv, bool over = false);
++    ID3D12PipelineState* EnsureMaskedClearPipeline(DXGI_FORMAT rtv, uint32_t mask);
+     D3D12_GRAPHICS_PIPELINE_STATE_DESC FullScreenPipelineDesc(ID3DBlob* vs, ID3DBlob* ps, DXGI_FORMAT rtv) const;
+     // Init, in order, each callee right after its caller
+     bool CreateDevice();
+@@ -1335,6 +1346,20 @@
+     return d;
+ }
+ 
++// kClearHlsl's pipeline for a format and channel mask, kept in blit_psos_; null when it can't be made
++ID3D12PipelineState* D3D12Backend::EnsureMaskedClearPipeline(DXGI_FORMAT rtv, uint32_t mask) {
++    auto& pso = blit_psos_[0xC1EA000000000000ull | uint64_t(rtv) << 8 | mask];
++    if (pso) return pso.Get();
++    uint64_t h;
++    ID3DBlob* vs = Compile(kClearHlsl, "vs", "vs_5_0", h);
++    ID3DBlob* ps = Compile(kClearHlsl, "psmain", "ps_5_0", h);
++    if (!vs || !ps) return nullptr;
++    D3D12_GRAPHICS_PIPELINE_STATE_DESC d = FullScreenPipelineDesc(vs, ps, rtv);
++    d.BlendState.RenderTarget[0].RenderTargetWriteMask = UINT8(mask);
++    if (FAILED(dev_->CreateGraphicsPipelineState(&d, IID_PPV_ARGS(&pso)))) return nullptr;
++    return pso.Get();
++}
++
+ ID3D12PipelineState* D3D12Backend::EnsureBlitPipeline(DXGI_FORMAT rtv, bool over) {
+     auto& pso = blit_psos_[uint64_t(rtv) | uint64_t(over) << 32];
+     if (pso) return pso.Get();
+@@ -2438,7 +2463,31 @@
+         float col[4];
+         Color(c.color, col);
+         for (int i = 0; t.range != 1 && i < 3; i++) col[i] /= t.range;
+-        cl_->ClearRenderTargetView(Cpu(rtv_heap_.Get(), t.view, rtv_inc_), col, UINT(rs.size()), rs.data());
++        uint32_t mask = (c.flags & kClearTarget) >> 4;  // R G B A, as D3D12_COLOR_WRITE_ENABLE_*
++        if (mask == 0xF) {
++            cl_->ClearRenderTargetView(Cpu(rtv_heap_.Get(), t.view, rtv_inc_), col, UINT(rs.size()), rs.data());
++        } else if (ID3D12PipelineState* pso = EnsureMaskedClearPipeline(t.fmt, mask)) {
++            // ClearRenderTargetView writes every channel: The Two Towers clears only alpha (0x80) between drawing
++            // the world and its lighting passes, which would wipe the picture
++            D3D12_CPU_DESCRIPTOR_HANDLE rh = Cpu(rtv_heap_.Get(), t.view, rtv_inc_);
++            cl_->OMSetRenderTargets(1, &rh, FALSE, nullptr);
++            bound_rt_ = bound_ds_ = nullptr;
++            D3D12_VIEWPORT vp{0, 0, float(t.w), float(t.h), 0, 1};
++            cl_->RSSetViewports(1, &vp);
++            Alloc cb = Upload(256, 256);
++            std::memcpy(cb.cpu, col, sizeof(col));
++            uint32_t slot = AllocSrvSlots(1);
++            D3D12_SHADER_RESOURCE_VIEW_DESC sv{};
++            sv.Format = kBgra;
++            sv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
++            sv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
++            sv.Texture2D.MipLevels = 1;
++            dev_->CreateShaderResourceView(nullptr, &sv, Cpu(srv_heap_.Get(), slot, srv_inc_));
++            for (const D3D12_RECT& r : rs) {
++                cl_->RSSetScissorRects(1, &r);
++                DrawFullScreen(pso, cb.gpu, slot);
++            }
++        }
+     }
+     t.drawn = true;
+ }

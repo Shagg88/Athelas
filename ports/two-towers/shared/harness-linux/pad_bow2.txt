@@ -1,0 +1,7 @@
+# Amon Hen with the fast data: gameplay from about frame 900. Hold LT, press A twice while held.
+1000 LT 150
+1040 LT+A 10
+1090 LT+A 10
+1300 LT 150
+1340 LT+A 30
+1600 A 8

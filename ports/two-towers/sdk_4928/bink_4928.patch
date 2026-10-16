@@ -1,0 +1,12 @@
+--- /home/claude/tt/bink.orig.cpp	2026-10-12 12:21:35.859838056 -0700
++++ xdk/bink.cpp	2026-10-12 12:21:35.872835604 -0700
+@@ -32,7 +32,8 @@
+ X86_EXTERN_FUNC(GUEST_ORIG(BinkDoFrame));
+ X86_FUNC(GUEST(BinkDoFrame)) {
+     uint32_t bink = R32(ctx.esp + 4);
+-    if (bink && CallGuest(ctx, kBinkWait, {bink})) {
++    // titles that pace movies themselves may not link BinkWait (The Two Towers, XDK 4928): no hold then
++    if (HAS_BinkWait && bink && CallGuest(ctx, kBinkWait, {bink})) {
+         std::lock_guard<std::mutex> lock(g_held_lock);
+         g_held.insert(bink);
+         ctx.eax = 0;
