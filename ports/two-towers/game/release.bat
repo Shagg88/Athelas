@@ -7,7 +7,7 @@ rem the configure step writes where the SDK is
 if not exist "%OUT%\sdk_dir.txt" cmake --preset release >nul || exit /b 1
 if not exist "%OUT%\sdk_dir.txt" echo %OUT%\sdk_dir.txt was not written, update the SDK. && exit /b 1
 set /p SDK=<out\build\release\sdk_dir.txt
-rem the ROTK Fix launcher's layout: a TwoTowers folder holding only the exe and the licences
+rem Athelas's layout: the folder it ships as TT-Xbox, holding only the exe and the licences
 rd /s /q "%OUT%\TwoTowers" 2>nul
 mkdir "%OUT%\TwoTowers"
 copy /y "%OUT%\%GAME_EXE%.exe" "%OUT%\TwoTowers\" >nul || exit /b 1
