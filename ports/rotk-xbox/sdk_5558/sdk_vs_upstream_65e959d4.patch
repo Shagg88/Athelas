@@ -747,7 +747,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/
  }  // namespace reference
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/app.h /home/claude/tt-port/game/sdk/runtime/app/app.h
 --- upstream/runtime/app/app.h	2026-10-14 22:35:04.215216692 -0700
-+++ /home/claude/tt-port/game/sdk/runtime/app/app.h	2026-10-15 10:12:18.368947186 -0700
++++ /home/claude/tt-port/game/sdk/runtime/app/app.h	2026-10-15 21:58:50.864947790 -0700
 @@ -6,6 +6,8 @@
  #include <utility>
  #include <vector>
@@ -757,7 +757,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  namespace input {
  struct Pad;
  }
-@@ -17,28 +19,90 @@
+@@ -17,28 +19,91 @@
  
  struct Settings {
      DisplayMode display_mode = DisplayMode::Borderless;
@@ -777,6 +777,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +    float lod_bias = 0.0f;                 // added to the game's mip level bias: below 0 picks sharper texture levels
 +    uint32_t sharpening = 0;               // 0 to 100: contrast adaptive sharpening over the picture as shown
 +    bool smooth_2d = true;                 // unfiltered 2D pictures (menus, HUD) upscaled bicubic past 1.2x the console's lines
++    bool show_fps = false;                 // [display] show_fps: the frames per second in the screen's top right corner
 +    uint32_t msaa = 0;                     // anti-aliasing samples: 0 off, 2, 4 or 8
 +    bool hdr = false;                      // HDR output on an HDR screen (Windows HDR on), read at start
 +    uint32_t colour_look = 0;              // 0 original, 1 film, 2 vivid, 3 dark fantasy
@@ -851,7 +852,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  
  std::filesystem::path ExeDir();
  // the game in assets (game_files.cpp): its folder and this executable's xbe, from the extracted files or a disc
-@@ -48,7 +112,7 @@
+@@ -48,7 +113,7 @@
      std::vector<uint8_t> xbe;
  };
  bool FindGame(GameFiles& game);
@@ -860,7 +861,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  void* Window();  // HWND
  // boot splash: GameInfo::splash .bmp or .png beside the exe, up before the game window
  bool OpenSplash();        // window thread, at launch; false without one, and the game window opens at once
-@@ -64,21 +128,23 @@
+@@ -64,21 +129,23 @@
  std::recursive_mutex& UiLock();
  
  // what the game repo defines once
@@ -890,7 +891,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      // the settings file's toml::table, for what options cannot hold
      void (*load)(const void* table);
      void (*save)(void* table);
-@@ -90,6 +156,8 @@
+@@ -90,6 +157,8 @@
      void (*ui)(double fps);        // each frame inside the ImGui frame, UiLock held
      void (*pad)(int port, input::Pad& pad);  // a polled pad before the game gets it
      void (*rumble)(int port, uint16_t& left, uint16_t& right);
@@ -1529,8 +1530,8 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      return guest_height ? std::max(h / guest_height, 0.1f) : 1.0f;
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/settings_list.cpp /home/claude/tt-port/game/sdk/runtime/app/settings_list.cpp
 --- upstream/runtime/app/settings_list.cpp	1969-12-31 16:00:00.000000000 -0800
-+++ /home/claude/tt-port/game/sdk/runtime/app/settings_list.cpp	2026-10-14 22:49:37.406095556 -0700
-@@ -0,0 +1,143 @@
++++ /home/claude/tt-port/game/sdk/runtime/app/settings_list.cpp	2026-10-15 21:58:50.865624308 -0700
+@@ -0,0 +1,145 @@
 +// every setting the settings file holds, described once: the host's here, the game's in GameInfo::options. No
 +// platform code, so the list can be checked anywhere.
 +#include <algorithm>
@@ -1578,6 +1579,8 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +        {"display", "vsync", Type::Bool, "V-Sync",
 +         "Prevents tearing. The frame rate can't go above the screen's refresh rate.", &s.vsync, nullptr, nullptr, 0, 0,
 +         {}, "vsync"},
++        {"display", "show_fps", Type::Bool, "Frame rate counter",
++         "Shows the frames per second in the top right corner of the screen.", &s.show_fps},
 +        {"display", "render_percent", Type::Choice, "Render resolution",
 +         "The game is drawn at this share of the screen's size, then fitted to it. Above 100% gives a cleaner, sharper "
 +         "picture (supersampling) and costs speed; below 100% is faster but softer. 100% is the screen's own size.",
@@ -2478,7 +2481,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  }  // namespace gpu
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/gpu/d3d12.cpp /home/claude/tt-port/game/sdk/runtime/gpu/d3d12.cpp
 --- upstream/runtime/gpu/d3d12.cpp	2026-10-14 22:35:04.242549991 -0700
-+++ /home/claude/tt-port/game/sdk/runtime/gpu/d3d12.cpp	2026-10-15 15:58:41.376633338 -0700
++++ /home/claude/tt-port/game/sdk/runtime/gpu/d3d12.cpp	2026-10-15 21:58:50.866880418 -0700
 @@ -13,11 +13,13 @@
  #include <wrl/client.h>
  
@@ -4308,7 +4311,27 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  }
  
  void D3D12Backend::RenderUi() {
-@@ -2755,7 +3815,10 @@
+@@ -2741,6 +3801,19 @@
+     ImGui_ImplWin32_NewFrame();
+     ImGui::NewFrame();
+     if (app::kGame.ui) app::kGame.ui(fps_);
++    // [display] show_fps: the frames presented a second (counted over half a second), top right
++    if (app::Get().show_fps && fps_ > 0) {
++        const ImGuiViewport* vp = ImGui::GetMainViewport();
++        float pad = std::max(8.0f, vp->Size.y / 120.0f);
++        ImGui::SetNextWindowPos(ImVec2(vp->Pos.x + vp->Size.x - pad, vp->Pos.y + pad), ImGuiCond_Always, ImVec2(1, 0));
++        ImGui::SetNextWindowBgAlpha(0.45f);
++        ImGui::Begin("##fps", nullptr,
++                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_AlwaysAutoResize |
++                         ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav);
++        ImGui::SetWindowFontScale(std::max(1.0f, vp->Size.y / 720.0f));
++        ImGui::Text("%.0f fps", fps_);
++        ImGui::End();
++    }
+     ImGui::Render();
+     ID3D12DescriptorHeap* uh[] = {ui_heap_.Get()};
+     cl_->SetDescriptorHeaps(1, uh);
+@@ -2755,7 +3828,10 @@
      cl_->ClearRenderTargetView(rh, black, 0, nullptr);
      cl_->OMSetRenderTargets(1, &rh, FALSE, nullptr);
      bound_rt_ = bound_ds_ = nullptr;
@@ -4320,7 +4343,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      RenderUi();
      Transition(bb_[bi].Get(), bs, D3D12_RESOURCE_STATE_PRESENT);
  }
-@@ -2805,18 +3868,40 @@
+@@ -2805,18 +3881,40 @@
  void LogPerf() {
      static PerfClock::time_point perf_start = PerfClock::now();
      static uint64_t perf_frames = 0;
@@ -4363,7 +4386,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
               "resource %.2f fence %.2f flush %.2f copy %.2f, next frame %.2f) | read-backs waited for: %.1f lock, "
               "%.1f NOOVERWRITE",
               g_perf_capture_ns.exchange(0) / n / 1e6, g_perf_wait_ns.exchange(0) / n / 1e6,
-@@ -2825,7 +3910,7 @@
+@@ -2825,7 +3923,7 @@
               g_perf_wait_kind_ns[3].exchange(0) / n / 1e6, g_perf_wait_kind_ns[4].exchange(0) / n / 1e6,
               g_perf_wait_kind_ns[5].exchange(0) / n / 1e6, g_perf_sync_block.exchange(0) / n,
               g_perf_sync_late.exchange(0) / n);
@@ -4372,7 +4395,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
               "hashed | %.1f tex uploads %.2f MB, %.1f new tex, %.1f new targets, %.1f target uploads, %.1f shrinks, "
               "%.1f read-backs %.1f late | %llu shaders %llu psos this second",
               p.draws / n, p.raw / n, p.verts / n / 1000.0, p.upload / n / 1048576.0, p.overflow / n, p.sigs / n,
-@@ -2833,6 +3918,7 @@
+@@ -2833,6 +3931,7 @@
               p.targets / n, p.rtups / n, p.shrinks / n, p.syncs / n, p.lates / n,
               (unsigned long long)p.shaders, (unsigned long long)p.psos);
          g_perf = Perf{};
@@ -4380,7 +4403,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
          perf_start = PerfClock::now();
          perf_frames = 0;
      }
-@@ -2849,6 +3935,10 @@
+@@ -2849,6 +3948,10 @@
      Target* t = EnsureTarget(front, false);
      if (t && LatchCpuWrite(*t)) UploadTarget(*t, front);
      if (t) Resolve(*t);
@@ -4391,7 +4414,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      if (ramp_dirty_) UploadGammaRamp();
      Transition(lut_.Get(), lut_state_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
  
-@@ -2857,8 +3947,19 @@
+@@ -2857,8 +3960,19 @@
      Submit(false);
      bool vsync = app::Get().vsync;
      auto perf_swap = PerfClock::now();
@@ -4412,7 +4435,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  
      presents_++;
      presents_seen_.store(presents_);
-@@ -2871,13 +3972,20 @@
+@@ -2871,13 +3985,20 @@
  }
  
  void D3D12Backend::ApplySettings() {
@@ -4436,7 +4459,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
          if (ext_) ext_->Reset(*this);
          bound_rt_ = bound_ds_ = nullptr;
      }
-@@ -3136,6 +4244,7 @@
+@@ -3136,6 +4257,7 @@
  }
  
  void D3D12Backend::CapSave(Target& t, const char* name) {
@@ -4444,7 +4467,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      DXGI_FORMAT fmt = t.depth ? DXGI_FORMAT_R24_UNORM_X8_TYPELESS : t.fmt;
      float mul = t.depth ? 1 : t.range;
      CapSave({.res = t.res.Get(), .state = &t.state, .fmt = fmt, .w = t.gw, .h = t.gh, .mul = mul}, name);
-@@ -3162,6 +4271,7 @@
+@@ -3162,6 +4284,7 @@
  
  void D3D12Backend::Capture(Target& t, const char* tag, float mul) {
      if (!cap_) return;
@@ -4452,7 +4475,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      char name[32];
      snprintf(name, sizeof(name), "%04u_%s_%08X", cap_i_, tag, t.data);
      CapSave({.res = t.res.Get(), .state = &t.state, .fmt = t.fmt, .w = t.gw, .h = t.gh, .mul = mul}, name);
-@@ -3169,6 +4279,7 @@
+@@ -3169,6 +4292,7 @@
  
  void D3D12Backend::SetGamma(const uint8_t* ramp) {
      std::memcpy(ramp_, ramp, sizeof(ramp_));

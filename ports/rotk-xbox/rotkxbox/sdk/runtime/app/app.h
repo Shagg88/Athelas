@@ -34,6 +34,7 @@ struct Settings {
     float lod_bias = 0.0f;                 // added to the game's mip level bias: below 0 picks sharper texture levels
     uint32_t sharpening = 0;               // 0 to 100: contrast adaptive sharpening over the picture as shown
     bool smooth_2d = true;                 // unfiltered 2D pictures (menus, HUD) upscaled bicubic past 1.2x the console's lines
+    bool show_fps = false;                 // [display] show_fps: the frames per second in the screen's top right corner
     uint32_t msaa = 0;                     // anti-aliasing samples: 0 off, 2, 4 or 8
     bool hdr = false;                      // HDR output on an HDR screen (Windows HDR on), read at start
     uint32_t colour_look = 0;              // 0 original, 1 film, 2 vivid, 3 dark fantasy
