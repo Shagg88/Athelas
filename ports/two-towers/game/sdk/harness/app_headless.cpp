@@ -4,7 +4,9 @@
 #include <chrono>
 #include <cstdlib>
 #include <filesystem>
+#include <map>
 #include <mutex>
+#include <string>
 #include <thread>
 
 #include "app/app.h"
@@ -49,6 +51,29 @@ int Instance() {
     return n;
 }
 void* Window() { return nullptr; }
+// achievements: logged, nothing kept
+}  // namespace app
+namespace ach {
+void Unlock(const char* id) {
+    static std::map<std::string, bool> seen;
+    if (!seen[id]) LOGR("achievements: earned %s (harness)", id);
+    seen[id] = true;
+}
+bool Has(const char*) { return false; }
+std::map<std::string, uint64_t>& Counters() {
+    static std::map<std::string, uint64_t> m;
+    return m;
+}
+uint64_t Count(const char* n) { return Counters()[n]; }
+uint64_t Add(const char* n, uint64_t v) {
+    uint64_t t = Counters()[n] += v;
+    LOGR("achievements: %s now %llu (harness)", n, (unsigned long long)t);
+    return t;
+}
+void Flush() {}
+void Start() {}
+}  // namespace ach
+namespace app {
 // no in-game menu or window focus here
 bool OverlayOpen() { return false; }
 bool Paused() { return false; }

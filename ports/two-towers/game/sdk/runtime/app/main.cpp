@@ -388,6 +388,8 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int) {
     app::OverlayInit();
 
     input::Init();
+    ach::Start();
+    discord::Start();
     if (app::kGame.window) app::kGame.window(app::g_hwnd);
     if (app::Instance())
         SetWindowTextW(app::g_hwnd, (std::wstring(app::kGame.title) + L" [" + std::to_wstring(app::Instance()) + L"]").c_str());
@@ -403,6 +405,7 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int) {
         DispatchMessageW(&msg);
     }
     if (app::g_mode_changed) ChangeDisplaySettingsW(nullptr, 0);
+    ach::Flush();
     logx::Flush();
     kernel::Shutdown(0);
 }

@@ -15,7 +15,14 @@ void InitRenderer();  // tt_renderer.cpp: the water simulation's targets at the 
 extern uint32_t g_damage_taken, g_enemy_damage;  // tt_devsettings.cpp
 void FileOpened(const char* name);  // tt_extras.cpp: the front end or a level
 bool InMenus();
+std::vector<ach::Def> Achievements();  // tt_achievements.cpp
+std::string Activity();
 }
+
+// the Discord application whose name Discord shows as the game ("The Two Towers"); null: no Discord status
+#ifndef TT_DISCORD_APP_ID
+#define TT_DISCORD_APP_ID nullptr
+#endif
 
 // what the runtime asks of the game; strings must be set, hooks may stay null
 const app::GameInfo app::kGame = {
@@ -87,4 +94,7 @@ const app::GameInfo app::kGame = {
     .live_settings = {"graphics.fov", "graphics.hud_edges", "gameplay.damage_taken", "gameplay.enemy_damage"},
     .file_opened = tt::FileOpened,
     .in_menus = tt::InMenus,  // Esc goes back in the front end's menus; Enter (A) goes on there as it is
+    .achievements = tt::Achievements(),
+    .discord_app_id = TT_DISCORD_APP_ID,
+    .activity = tt::Activity,
 };

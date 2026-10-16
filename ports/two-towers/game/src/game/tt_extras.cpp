@@ -21,9 +21,11 @@ namespace tt {
 // (Worlds\*.bfa) starts a level; the front end's own screens (UI\*.BFF but loading pictures and options, which a
 // pause in a level may open too) end one. For the keyboard: Esc goes back in the front end's menus.
 std::atomic<bool> g_front_end{true};
+void AchievementsFile(const std::string& lower_name);  // tt_achievements.cpp
 void FileOpened(const char* name) {
     std::string n = name;
     for (char& c : n) c = char(std::tolower(static_cast<unsigned char>(c)));
+    AchievementsFile(n);
     auto ends = [&](const char* e) { size_t k = std::strlen(e); return n.size() >= k && n.compare(n.size() - k, k, e) == 0; };
     bool was = g_front_end;
     if (n.find("\\worlds\\") != std::string::npos && ends(".bfa")) g_front_end = false;
