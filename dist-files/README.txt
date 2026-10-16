@@ -122,8 +122,8 @@ Keys while playing:
   [                    Sharpening off/on
   ]                    Next colour look
 
-Reporting a problem: send the log, TT-Xbox\tt.log, and after a crash also
-the newest Game.<date>_<time>.dmp in TT-Xbox\CrashDumps.
+Reporting a problem: see REPORTING A PROBLEM below. The log is TT-Xbox\tt.log,
+and after a crash the newest Game.<date>_<time>.dmp in TT-Xbox\CrashDumps.
 
 
 THE RETURN OF THE KING (XBOX) - port 1.0.1
@@ -149,8 +149,8 @@ enemies at high frame rates.
 
 Its saves are in ROTK-Xbox\saves.
 
-Reporting a problem: send the log, ROTK-Xbox\rotkx.log, and after a crash
-also the newest .dmp file in ROTK-Xbox\CrashDumps.
+Reporting a problem: see REPORTING A PROBLEM below. The log is
+ROTK-Xbox\rotkx.log, and after a crash the newest .dmp in ROTK-Xbox\CrashDumps.
 
 
 KEYBOARD, MOUSE AND THE IN-GAME MENU (both Xbox ports)
@@ -200,6 +200,23 @@ in-game menu (F10) has an Achievements page in the Xbox ports. They are kept
 in achievements.txt: in the ROTKFix folder in the game folder for the PC
 version, and in the TT-Xbox and ROTK-Xbox folders for the ports. They are
 only kept on this PC; nothing is sent anywhere.
+
+
+REPORTING A PROBLEM
+-------------------
+Open an issue at https://github.com/Shagg88/Athelas/issues (a free GitHub
+account is needed) and choose "Bug report". Say which game and version
+(PC or Xbox), what happened and what you did just before, and attach the
+log: drag the file into the box.
+  The Return of the King (PC)    ROTKFix.log in the game folder
+  The Return of the King (Xbox)  ROTK-Xbox\rotkx.log
+  The Two Towers                 TT-Xbox\tt.log
+After an Xbox port crashes, also the newest .dmp file in its CrashDumps folder.
+GitHub doesn't take .dmp files as they are: right-click the file, choose
+"Compress to ZIP file" (Windows 11) or Send to > Compressed (zipped)
+folder (Windows 10), and attach the zip.
+The logs hold your settings, your graphics card and Windows version, and the
+folder names where your games are, which can include your Windows user name.
 
 
 TEXTURE PACKS

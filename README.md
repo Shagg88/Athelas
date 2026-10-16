@@ -75,6 +75,12 @@ Played through its PC port, `ROTKXbox.exe`, started from the launcher with the s
 - Two-player co-op on one PC, or online by streaming (Parsec, or Steam Remote Play Together).
 - Problem reports: `ROTK-Xbox\rotkx.log`, plus the newest `.dmp` in `ROTK-Xbox\CrashDumps` after a crash.
 
+## Reporting a problem
+
+Open an [issue](../../issues) and choose **Bug report**. Attach the game's log: `ROTKFix.log` in the PC game's folder,
+`ROTK-Xbox\rotkx.log` or `TT-Xbox\tt.log` beside the launcher. After an Xbox port crashes, add the newest `.dmp` from its
+`CrashDumps` folder, zipped first (GitHub doesn't take `.dmp` files as they are).
+
 ## Antivirus and SmartScreen
 
 ROTK Fix replaces `d3d8.dll`/`dinput8.dll` in the game folder and patches the game in memory, the usual way
