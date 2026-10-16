@@ -27,7 +27,7 @@ std::string ActivityState();
 
 // what the runtime asks of the game; strings must be set, hooks may stay null
 const app::GameInfo app::kGame = {
-    .title = L"ROTK Xbox (PC port)",      // window and splash; a neutral name until release
+    .title = L"The Return of the King (PC port)",       // window and splash
     .short_title = L"ROTK Xbox",          // message boxes
     .name = L"ROTKXbox",                  // window classes, crash dumps, handover event
     .log = "rotkx",                       // log file prefix

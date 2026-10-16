@@ -1,7 +1,7 @@
 @echo off
-rem A release copy for the launcher: release\ROTKXbox\ with only ROTKXbox.exe, LICENSE.txt (the recompiler runtime's
+rem A release copy for Athelas: release\ROTKXbox\ with only ROTKXbox.exe, LICENSE.txt (the recompiler runtime's
 rem MIT licence), THIRD_PARTY.txt (the licences of the libraries built into it; both must ship with it) and
-rem ROTKXbox.exe.sha256. The launcher looks for it as <launcher>\ROTKXbox\.
+rem ROTKXbox.exe.sha256. Athelas ships it as its ROTK-Xbox folder.
 rem The game files, settings, saves, logs and shader cache all live where the launcher's arguments say.
 setlocal
 set "GAME_EXE=ROTKXbox"
