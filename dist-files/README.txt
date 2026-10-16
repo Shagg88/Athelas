@@ -1,6 +1,8 @@
 Athelas
 =======
-By Shagg. An unofficial, free fan project that lets you play your own copies of three
+By Shagg, with Claude (Anthropic).
+
+An unofficial, free fan project that lets you play your own copies of three
 Lord of the Rings games on a modern PC, all from one launcher, Athelas
 (Athelas.exe - named after kingsfoil, the healing herb):
 

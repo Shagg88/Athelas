@@ -1525,7 +1525,7 @@ static void tab_about(App &a)
     for (auto &l : lic) { ImGui::TextColored(C_GOLD, "%s", l[0]); ImGui::SameLine(S(230)); ImGui::TextUnformatted(l[1]); }
     ImGui::PopTextWrapPos();
     ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
-    ImGui::TextColored(C_DIM, "Launcher version " LAUNCHER_VERSION "  -  made by Shagg");
+    ImGui::TextColored(C_DIM, "Launcher version " LAUNCHER_VERSION "  -  made by Shagg, with Claude (Anthropic)");
     ImGui::PopFont();
 
     section("Remove ROTK Fix");

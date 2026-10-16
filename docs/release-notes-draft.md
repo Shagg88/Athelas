@@ -73,7 +73,7 @@ The README in the zip has the details.
 
 ## Credits
 
-Made by Shagg.
+Made by Shagg, with Claude (Anthropic).
 
 Built on DXVK, SDL3, Dear ImGui, DSOAL and OpenAL Soft, and XboxXBE-Recomp (MIT, © 2026 TGP482). Full licences are
 in the `licenses` folder.

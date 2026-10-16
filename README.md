@@ -1,6 +1,6 @@
 # ROTK Fix
 
-By Shagg. An unofficial, free fan project for **The Lord of the Rings: The Return of the King** (PC, 2003).
+By Shagg, with Claude (Anthropic). An unofficial, free fan project for **The Lord of the Rings: The Return of the King** (PC, 2003).
 It lets people play their own copy on a modern PC.
 
 The launcher that comes with it is called **Athelas** (after kingsfoil, the healing herb). It sets up and starts
