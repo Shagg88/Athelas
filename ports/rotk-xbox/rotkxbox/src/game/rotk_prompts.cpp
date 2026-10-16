@@ -12,7 +12,14 @@
 #include <string>
 #include <vector>
 #ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX  // std::min and std::max, not Windows' macros
+#endif
 #include <windows.h>
+#pragma comment(lib, "gdi32")  // the key caps' text
 #endif
 #include <cstdint>
 #include <cstring>
