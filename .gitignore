@@ -5,15 +5,15 @@ dist/
 deps/
 __pycache__/
 # local test material: never commit game files or logs
-input*/
-out*/
-data/
-config/
-logs/
+/input*/
+/out*/
+/data/
+/config/
+/logs/
 *.log
 *.exe
 !launcher/**/*.exe.manifest
 # working files: static-analysis reports, old source kept for reference
 *.plist
 attic/
-notes.md
+/notes.md
