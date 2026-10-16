@@ -347,6 +347,7 @@ bool load_settings(const std::string &dir, Settings &s)
     const char *ini = p.c_str();
     bool exists = file_exists(p);
     s.targetFps = clampi(geti(ini, "Frame", "TargetFPS", 60), 20, 240);
+    s.showFps = geti(ini, "Frame", "ShowFPS", 0) != 0;
     s.padEnabled = geti(ini, "Gamepad", "Enabled", 1) != 0;
     s.player2 = geti(ini, "Gamepad", "SecondController", 1) != 0;
     s.damageTaken = clampi(geti(ini, "Gameplay", "DamageTaken", 100), 10, 500);
@@ -467,6 +468,7 @@ static const std::vector<IniSection> &ini_layout()
         { "Frame", "Frame rate", {
             { "TargetFPS", "60", "Frames per second (the game was made for 60)" },
             { "Limiter", "1", "1 = ROTK Fix's smooth limiter, 0 = the game's own (62 fps, busy CPU)" },
+            { "ShowFPS", "0", "1 = a frame rate counter in the corner of the screen" },
             { "SpinMicroseconds", "1000", "Fine timing window; leave as it is" },
         } },
         { "Video", "Movies", {
@@ -611,6 +613,7 @@ static bool write_rotkfix_ini(const std::string &p, const Settings &s, bool crea
     set("Graphics", "FieldOfView", std::to_string(s.fovPct));
     set("Frame", "TargetFPS", std::to_string(s.targetFps));
     set("Frame", "Limiter", "1");
+    set("Frame", "ShowFPS", std::to_string((int)s.showFps));
     set("Video", "MovieDisplay", s.movieDisplay == 1 ? "stretch" : s.movieDisplay == 2 ? "4:3" : "auto");
     set("Video", "SharperMovies", std::to_string(s.sharperMovies));
     set("Video", "CutsceneAudioDelay", std::to_string(s.audioDelayMs));

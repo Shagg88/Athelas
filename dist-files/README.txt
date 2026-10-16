@@ -265,6 +265,7 @@ The launcher writes ROTKFix.ini in the game folder. You can also edit it in Note
 [Frame]  Frame rate
   TargetFPS              Frames per second (the game was made for 60) (default 60)
   Limiter                1 = ROTK Fix's smooth limiter, 0 = the game's own (62 fps, busy CPU) (default 1)
+  ShowFPS                1 = a frame rate counter in the corner of the screen (default 0)
   SpinMicroseconds       Fine timing window; leave as it is (default 1000)
 
 [Video]  Movies

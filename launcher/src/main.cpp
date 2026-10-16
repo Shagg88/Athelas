@@ -840,6 +840,11 @@ static void tab_display(App &a)
         ImGui::TextColored(C_DIM, "Your screen runs at %d Hz - %d fps fits it evenly.", maxHz, s.targetFps);
     ImGui::PopTextWrapPos();
     ImGui::PopFont();
+    row_begin("Frame rate counter", g_xboxPage ? "Shows the frames per second in the top right corner of the screen."
+                                               : "Shows the frames per second in the top left corner of the screen "
+                                                 "(with the Vulkan renderer, the default).");
+    ImGui::Checkbox("##showfps", &s.showFps);
+    row_end();
 }
 
 static float hfov_deg(const App &a, int pct)
@@ -2254,13 +2259,14 @@ static void tt_tab_display(App &a)
         ImGui::PopTextWrapPos();
         ImGui::PopFont();
     }
+    if (const PortSetting *ps = tt_setting(a, "display", "show_fps")) tt_setting_row(a, *ps);
 
     // anything else the port adds to [display] later, with its own label
     bool more = false;
     for (auto &ps : a.tt.settings) {
         if (ps.section != "display") continue;
         if (ps.key == "screen" || ps.key == "mode" || ps.key == "width" || ps.key == "height" || ps.key == "refresh" ||
-            ps.key == "vsync" || ps.key == "render_percent" || tt_hidden(ps)) continue;
+            ps.key == "vsync" || ps.key == "render_percent" || ps.key == "show_fps" || tt_hidden(ps)) continue;
         if (!more) { section("More"); more = true; }
         tt_setting_row(a, ps);
     }

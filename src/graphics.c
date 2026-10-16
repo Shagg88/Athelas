@@ -43,6 +43,7 @@ static char g_screenName[32] = "main"; /* [Graphics] Screen: main, or DISPLAY2 e
 static UINT g_screenAdapter;           /* the game's adapter 0 is drawn on this one */
 static int  g_refresh    = 0;      /* 0 = desktop refresh (fullscreen only) */
 static int  g_vsync      = 1;
+static int  g_showFps    = 0;      /* [Frame] ShowFPS: DXVK's frame rate counter, top left */
 static int  g_msaa       = 0;      /* 0, 2, 4, 8 */
 static int  g_aniso      = 16;     /* 0 = game default; DXVK only */
 static int  g_fovPct     = 100;    /* field of view, percent of the game's own */
@@ -92,6 +93,7 @@ void graphics_load_settings(const char *ini)
     g_height  = GetPrivateProfileIntA("Graphics", "Height", 0, ini);
     g_refresh = GetPrivateProfileIntA("Graphics", "RefreshRate", 0, ini);
     g_vsync   = GetPrivateProfileIntA("Graphics", "VSync", 1, ini);
+    g_showFps = GetPrivateProfileIntA("Frame", "ShowFPS", 0, ini) != 0;
     g_msaa    = GetPrivateProfileIntA("Graphics", "MSAA", 0, ini);
     g_aniso   = GetPrivateProfileIntA("Graphics", "AnisotropicFiltering", 16, ini);
     g_aspectFix = GetPrivateProfileIntA("Graphics", "WidescreenFix", 1, ini);
@@ -144,6 +146,8 @@ static void write_dxvk_conf(const char *dir)
     CreateDirectoryA(logdir, NULL);
     SetEnvironmentVariableA("DXVK_LOG_PATH", logdir);
     SetEnvironmentVariableA("DXVK_LOG_LEVEL", "warn");
+    /* ShowFPS: DXVK's own counter (a DXVK_HUD set by the player is left as it is) */
+    if (g_showFps && !GetEnvironmentVariableA("DXVK_HUD", NULL, 0)) SetEnvironmentVariableA("DXVK_HUD", "fps");
 }
 
 static HMODULE load_backend(void)

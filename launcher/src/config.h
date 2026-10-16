@@ -17,6 +17,7 @@
 struct Settings {
     // [Frame]
     int  targetFps = 60;
+    bool showFps = false;         // [Frame] ShowFPS: a frame rate counter in the game
     // [Gamepad]
     bool padEnabled = true;
     bool hideRealPads = true;
