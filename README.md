@@ -117,6 +117,23 @@ The 3D sound libraries (DSOAL and OpenAL Soft) are kept in `third_party/dsoal` w
 
 The GitHub Actions workflow (`.github/workflows/build.yml`) builds ROTK Fix and Athelas the same way on every push. It can't build the two Xbox ports: recompiling them needs the game's own `default.xbe`, which can never be in a repository. Each port builds on Windows with its `build.bat` (see the ports' READMEs), and the full Athelas download is packaged with `TT_DIR` and `RX_DIR` pointing at the ports' release folders.
 
+## Credits
+
+Made by Shagg, with Claude (Anthropic).
+
+Thank you to:
+- **The developers:** Stormfront Studios, EA Redwood Shores and Hypnos Entertainment, for making these games. And
+  to J.R.R. Tolkien and the films, for the world they're set in.
+- **[XboxXBE-Recomp](https://github.com/TGP482/XboxXBE-Recomp)** by TGP482, which made the Xbox ports possible.
+- **The open-source projects** this is built on: [DXVK](https://github.com/doitsujin/dxvk),
+  [SDL](https://libsdl.org), [DSOAL](https://github.com/kcat/dsoal), [OpenAL Soft](https://openal-soft.org),
+  [Dear ImGui](https://github.com/ocornut/imgui), [toml++](https://github.com/marzer/tomlplusplus),
+  [stb](https://github.com/nothings/stb), [XbSymbolDatabase](https://github.com/Cxbx-Reloaded/XbSymbolDatabase)
+  and [Cxbx-Reloaded](https://github.com/Cxbx-Reloaded/Cxbx-Reloaded).
+- **Everyone who plays it and reports a problem.**
+
+Every licence is in the [licenses](licenses) folder.
+
 ## Licences
 
 Athelas, ROTK Fix and the ports are MIT licensed, © 2026 Shagg (see `LICENSE`). Bundled components keep their own licences, all in `licenses/` and shipped in `ROTKFix\licenses`.:
