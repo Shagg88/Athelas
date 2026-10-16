@@ -1288,13 +1288,13 @@ static void tab_controls(App &a)
     section("Controller");
     // on Xbox the controller is the game's own input, so this switch is the PC version's only
     bool padOn = s.padEnabled || g_xboxPage;
-    row_begin("Use a controller", g_xboxPage ? "Always on for the Xbox version: the controller is the game's own input."
-                                             : "Xbox, PlayStation, Switch and most other controllers work, wired or wireless.");
-    ImGui::BeginDisabled(g_xboxPage);
-    if (g_xboxPage) { bool on = true; ImGui::Checkbox("##pad", &on); } else ImGui::Checkbox("##pad", &s.padEnabled);
-    ImGui::EndDisabled();
+    // the Xbox version has no switch: a controller always works there, so the row only says whether one is in
+    row_begin(g_xboxPage ? "Controller" : "Use a controller",
+              g_xboxPage ? "Any controller you plug in works, as well as the keyboard and mouse."
+                         : "Xbox, PlayStation, Switch and most other controllers work, wired or wireless.");
+    if (!g_xboxPage) ImGui::Checkbox("##pad", &s.padEnabled);
     if (padOn) {
-        ImGui::SameLine(0, S(16));
+        if (!g_xboxPage) ImGui::SameLine(0, S(16));
         ImGui::AlignTextToFramePadding();
         if (a.controllers > 1) ImGui::TextColored(C_GOOD, "%d controllers connected", a.controllers);
         else if (a.controllers) ImGui::TextColored(C_GOOD, "Connected");
@@ -2785,12 +2785,8 @@ static void tt_slider_row(App &a, const char *key, const char *label, const char
 static void tt_tab_controls(App &a)
 {
     section("Controller");
-    row_begin("Use a controller", "Always on: the controller is the game's own input, as on the Xbox.");
-    ImGui::BeginDisabled();
-    bool on = true;
-    ImGui::Checkbox("##ttpad", &on);
-    ImGui::EndDisabled();
-    ImGui::SameLine(0, S(16));
+    // no switch here: a controller always works, plugged in or not; this only says whether one is
+    row_begin("Controller", "Any controller you plug in works, as well as the keyboard and mouse.");
     ImGui::AlignTextToFramePadding();
     if (a.controllers > 1) ImGui::TextColored(C_GOOD, "%d controllers connected", a.controllers);
     else if (a.controllers) ImGui::TextColored(C_GOOD, "Connected");
