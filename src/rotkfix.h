@@ -46,6 +46,15 @@ void    sound_late_patch(void);   /* disc exe: from Direct3DCreate8 */
 void    gameplay_load_settings(const char *ini);
 void    gameplay_patch(void);
 
+/* achieve.c */
+void    achieve_load_settings(const char *ini);
+void    achieve_start(void);                 /* DllMain: the list, the saved state, the progress and Discord threads */
+void    achieve_file(const char *name);       /* each file the game opens */
+void    achieve_enemy_defeated(void);         /* gameplay.c */
+struct IDirect3DDevice9;
+void    achieve_draw(struct IDirect3DDevice9 *dev);   /* post.c: the note over the finished frame */
+void    achieve_release(void);                /* post.c: the device is reset or made again */
+
 /* textures.c */
 void    textures_load_settings(const char *ini);
 void    textures_on_create(void *dev, void *realCreateTexture, void *tex);

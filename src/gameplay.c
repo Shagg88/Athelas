@@ -49,7 +49,19 @@ static int scale(int amount, int pct)
     return v < 1 ? 1 : (int)v;
 }
 
+static int __cdecl hook_hit_scaled(void *who, int amount, void *by);
 static int __cdecl hook_hit(void *who, int amount, void *by)
+{
+    /* a player's hit that takes an enemy's health (+0x90) to 0: one defeated (achieve.c) */
+    const BYTE *w = (const BYTE *)who;
+    int counts = w && !is_player(w) && is_player((const BYTE *)by) && readable(w + 0x90, 4);
+    int before = counts ? *(const int *)(w + 0x90) : 0;
+    int r = hook_hit_scaled(who, amount, by);
+    if (counts && before > 0 && *(const int *)(w + 0x90) <= 0) achieve_enemy_defeated();
+    return r;
+}
+
+static int __cdecl hook_hit_scaled(void *who, int amount, void *by)
 {
     if (amount > 0 && who) {
         int pct = is_player((const BYTE *)who) ? g_damageTaken : is_player((const BYTE *)by) ? g_enemyDamage : 100;
@@ -67,7 +79,7 @@ static int __cdecl hook_hit(void *who, int amount, void *by)
 
 void gameplay_patch(void)
 {
-    if (g_damageTaken != 100 || g_enemyDamage != 100) {
+    {   /* always: enemies defeated count for the achievements; the damage settings at 100 change nothing */
         BYTE *fn = (BYTE *)ADDR_HIT;
         BYTE *tr = (BYTE *)code_alloc(16);
         if (!readable(fn, 0x20) || memcmp(fn, SIG_HIT, 8) || memcmp(fn + 0x1A, SIG_HIT_PLAYER, 5) || !tr) {
@@ -79,8 +91,11 @@ void gameplay_patch(void)
             g_realHit = (Hit_t)(void *)tr;
             BYTE jmp[8] = { 0xE9, 0, 0, 0, 0, 0x90, 0x90, 0x90 };
             *(LONG *)(jmp + 1) = (LONG)((DWORD_PTR)&hook_hit - ((DWORD_PTR)fn + 5));
-            if (write_code(fn, jmp, 8))
-                logf_("gameplay: damage taken %d%%, damage enemies take %d%%", g_damageTaken, g_enemyDamage);
+            if (write_code(fn, jmp, 8)) {
+                if (g_damageTaken != 100 || g_enemyDamage != 100)
+                    logf_("gameplay: damage taken %d%%, damage enemies take %d%%", g_damageTaken, g_enemyDamage);
+                else logf_("gameplay: hits followed for the achievements (damage as the game's)");
+            }
         }
     }
     if (g_unlockAll) {

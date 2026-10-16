@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <string>
 #include <vector>
+#include <map>
 #include <algorithm>
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
@@ -1688,6 +1689,89 @@ static void games_section(App &a)
 
 static void rx_about(App &a);
 // ---- Gameplay: both ROTK versions read [Gameplay] (ROTK Fix on PC, the port on Xbox)
+// ---------------------------------------------------------------------------
+// Achievements, as each game keeps them in its achievements.txt ([unlocked] id = date, [counters], [list] id =
+// title | description), shown on the Gameplay tabs. The games earn them; the launcher only reads the file.
+
+// The games' Discord applications aren't registered yet (each needs an ID from the Discord developer portal);
+// until they are, the Discord status stays out of the launcher and the games' menus.
+static const bool k_discordReady = false;
+
+struct AchItem { std::string id, title, desc, when; };
+struct AchFile { std::vector<AchItem> items; unsigned long long kills = 0; bool found = false; };
+
+static AchFile read_achievements(const std::string &path)
+{
+    static std::string cachedPath;
+    static AchFile cached;
+    static double readAt = -10;
+    if (path == cachedPath && ImGui::GetTime() - readAt < 2.0) return cached;
+    cachedPath = path; readAt = ImGui::GetTime();
+    AchFile f;
+    FILE *fp = fopen(path.c_str(), "rb");
+    if (fp) {
+        f.found = true;
+        std::map<std::string, std::string> when;
+        char line[512], sec[32] = "";
+        while (fgets(line, sizeof line, fp)) {
+            std::string l = line;
+            while (!l.empty() && (l.back() == '\r' || l.back() == '\n' || l.back() == ' ')) l.pop_back();
+            size_t a0 = l.find_first_not_of(" \t");
+            if (a0 == std::string::npos || l[a0] == ';') continue;
+            l = l.substr(a0);
+            if (l[0] == '[') { snprintf(sec, sizeof sec, "%s", l.c_str()); continue; }
+            size_t eq = l.find('=');
+            if (eq == std::string::npos) continue;
+            std::string k = l.substr(0, eq), v = l.substr(eq + 1);
+            while (!k.empty() && k.back() == ' ') k.pop_back();
+            while (!v.empty() && v.front() == ' ') v.erase(v.begin());
+            if (!strcmp(sec, "[unlocked]")) when[k] = v;
+            else if (!strcmp(sec, "[counters]") && k == "enemies_defeated") f.kills = strtoull(v.c_str(), nullptr, 10);
+            else if (!strcmp(sec, "[list]")) {
+                size_t bar = v.find(" | ");
+                f.items.push_back({ k, bar == std::string::npos ? v : v.substr(0, bar), bar == std::string::npos ? "" : v.substr(bar + 3), "" });
+            }
+        }
+        fclose(fp);
+        for (auto &it : f.items) { auto w = when.find(it.id); if (w != when.end()) it.when = w->second; }
+    }
+    cached = f;
+    return f;
+}
+
+static void achievements_section(const std::string &path)
+{
+    AchFile f = read_achievements(path);
+    int got = 0;
+    for (auto &it : f.items) got += !it.when.empty();
+    char head[64];
+    if (f.items.empty()) snprintf(head, sizeof head, "Achievements");
+    else snprintf(head, sizeof head, "Achievements  -  %d of %d earned", got, (int)f.items.size());
+    section(head);
+    ImGui::PushTextWrapPos(0);
+    if (!f.found || f.items.empty()) {
+        ImGui::TextColored(C_DIM, "Play the game once and its achievements appear here. They're earned as you play, "
+                                  "including what your saved progress already holds.");
+        ImGui::PopTextWrapPos();
+        return;
+    }
+    if (f.kills) ImGui::TextColored(C_DIM, "Enemies defeated: %llu", f.kills);
+    for (auto &it : f.items) {
+        bool on = !it.when.empty();
+        ImGui::TextColored(on ? C_GOLD_H : C_DIM, "%s %s", on ? "+" : "-", it.title.c_str());
+        if (on) { ImGui::SameLine(); ImGui::PushFont(F_SMALL, F_SMALL->LegacySize); ImGui::TextColored(C_DIM, "  %s", it.when.c_str()); ImGui::PopFont(); }
+        ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
+        ImGui::Indent(S(18));
+        ImGui::TextColored(C_DIM, "%s", it.desc.c_str());
+        ImGui::Unindent(S(18));
+        ImGui::PopFont();
+    }
+    ImGui::PopTextWrapPos();
+}
+
+static std::string rx_data_dir();
+static std::string tt_data_dir();
+
 static void tab_gameplay(App &a)
 {
     Settings &s = a.s;
@@ -1706,6 +1790,18 @@ static void tab_gameplay(App &a)
                                                   "off again shows only what you've earned.");
     ImGui::Checkbox("##unlockall", &s.unlockAll);
     row_end();
+    section(k_discordReady ? "Achievements and Discord" : "Achievements");
+    row_begin("Achievement notes", "A note in the corner of the screen when you earn an achievement. The PC version shows it with "
+                                   "the Vulkan renderer (the default).");
+    ImGui::Checkbox("##achnotes", &s.achNotify);
+    row_end();
+    if (k_discordReady) {
+    row_begin("Discord status", "Shows on your Discord profile that you're playing, and which level and hero, while Discord is "
+                                "running on this PC. Nothing is sent anywhere else.");
+    ImGui::Checkbox("##discord", &s.discord);
+    row_end();
+    }
+    achievements_section(g_xboxPage ? rx_data_dir() + "\\achievements.txt" : a.dir + "\\ROTKFix\\achievements.txt");
 }
 
 static void tab_about(App &a)
@@ -2241,7 +2337,7 @@ static int tt_tab_of(const std::string &sec)
     if (sec == "controls" || sec == "input") return 2;
     if (sec == "audio" || sec == "sound") return 3;
     if (sec == "network") return 4;
-    if (sec == "gameplay") return 5;
+    if (sec == "gameplay" || sec == "achievements" || sec == "discord") return 5;
     return 1;   // graphics, textures and anything else
 }
 
@@ -2292,7 +2388,8 @@ static void tt_open_textures()
 // ([window] and [keyboard] have rows of their own on the Display and Controls tabs)
 static bool tt_hidden(const PortSetting &ps)
 {
-    return (ps.section == "display" && ps.key == "fps_cap") || ps.section == "window" || ps.section == "keyboard";
+    return (ps.section == "display" && ps.key == "fps_cap") || ps.section == "window" || ps.section == "keyboard" ||
+           (ps.section == "discord" && ps.key == "app_id");
 }
 // The tab a setting is shown on: its section's, except the frame rate, which is on Display as in ROTK's
 static int tt_tab_of_setting(const PortSetting &ps) { return ps.section == "graphics" && ps.key == "fps" ? 0 : tt_tab_of(ps.section); }
@@ -3001,6 +3098,7 @@ static void tt_tab_gameplay(App &a)
         if (!more) { section(head ? "More" : "Gameplay"); more = true; }
         tt_setting_row(a, ps);
     }
+    achievements_section(tt_data_dir() + "\\achievements.txt");
 }
 
 // The settings on one tab, in the port's own order, grouped by section

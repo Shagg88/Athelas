@@ -225,6 +225,7 @@ static void load_settings(void)
     sound_load_settings(ini);
     textures_load_settings(ini);
     gameplay_load_settings(ini);
+    achieve_load_settings(ini);
     g_devButtons = GetPrivateProfileIntA("Extras", "DeveloperButtons", 0, ini);
     graphics_load_settings(ini);
     post_load_settings(ini);
@@ -338,7 +339,7 @@ static void note_level_file(const char *n)
 static HANDLE WINAPI hook_CreateFileA(LPCSTR n, DWORD a, DWORD sh, LPSECURITY_ATTRIBUTES sa, DWORD cd, DWORD fl, HANDLE t)
 {
     InterlockedIncrement(&g_hitch[HITCH_FILES]);
-    if (n && !IsBadStringPtrA(n, MAX_PATH)) note_level_file(n);
+    if (n && !IsBadStringPtrA(n, MAX_PATH)) { note_level_file(n); achieve_file(n); }
     if (n) { const char *b = strrchr(n, '\\'); lstrcpynA(g_lastFile, b ? b + 1 : n, sizeof g_lastFile); }
     return g_realCreateFileA(n, a, sh, sa, cd, fl, t);
 }
@@ -421,9 +422,14 @@ static BOOL WINAPI hook_SHGetSpecialFolderPathA(HWND h, LPSTR path, int csidl, B
     return r;
 }
 
-static void hitch_install(void)
+/* the files the game opens: level lines in the log, and the level and hero for the achievements' Discord status */
+static void files_install(void)
 {
     g_realCreateFileA = (CreateFileA_t)iat_hook("kernel32.dll", "CreateFileA", (void *)hook_CreateFileA);
+}
+
+static void hitch_install(void)
+{
     g_realReadFile = (ReadFile_t)iat_hook("kernel32.dll", "ReadFile", (void *)hook_ReadFile);
     logf_("diagnostics: slow frames logged (file reads %s)", g_realCreateFileA && g_realReadFile ? "counted" : "not counted");
 }
@@ -1109,6 +1115,8 @@ BOOL WINAPI DllMain(HINSTANCE inst, DWORD reason, LPVOID reserved)
         apply_patches();
         g_realSHGetSpecialFolderPathA = (SHGetSpecialFolderPathA_t)iat_hook("shell32.dll", "SHGetSpecialFolderPathA",
                                                                              (void *)hook_SHGetSpecialFolderPathA);
+        files_install();
+        achieve_start();
         if (g_logEnabled) hitch_install();
         if (g_logEnabled && g_detailLog) stall_start();
         code_seal();

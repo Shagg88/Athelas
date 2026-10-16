@@ -183,6 +183,23 @@ it was when you come back. "Mute in the background" only silences it. Both
 are off by default.
 
 
+ACHIEVEMENTS (all three games)
+------------------------------
+Each game has a set of achievements of its own: The Two Towers 14 (every
+level, and the secret mission), The Return of the King 29 on both PC and Xbox
+(every level, every hero, co-op, a hero at level 10, enemies defeated). They
+are earned as you play, and what your saves already hold counts too, so an
+old save earns the levels it has finished the first time you play.
+
+A note shows in the bottom right corner when you earn one ("Achievement
+notes", Gameplay tab; on the PC version with the Vulkan renderer, the
+default). The launcher's Gameplay tab lists them, earned and not, and the
+in-game menu (F10) has an Achievements page in the Xbox ports. They are kept
+in achievements.txt: in the ROTKFix folder in the game folder for the PC
+version, and in the TT-Xbox and ROTK-Xbox folders for the ports. They are
+only kept on this PC; nothing is sent anywhere.
+
+
 TEXTURE PACKS
 -------------
 ROTK Fix can swap any of the game's textures for a PNG of your own. It

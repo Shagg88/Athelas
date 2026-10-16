@@ -21,6 +21,7 @@ ROTK Fix, and also starts the PC ports of The Return of the King and The Two Tow
 - **Texture packs:** dump the game's textures to PNG and load replacements from a folder (no game art included)
 - **Screenshots:** `\` or Print Screen saves a PNG
 - **Gameplay:** damage taken, enemy damage, and every level and character unlocked (off by default)
+- **Achievements:** in all three games, earned as you play (and from what your saves already hold), with a note on screen and the list in the launcher
 - **Launcher:** every setting in one place, with presets (Original, Balanced, High, Ultra)
 
 ## Requirements

@@ -32,6 +32,8 @@ struct Settings {
     int  damageTaken = 100;
     int  enemyDamage = 100;
     bool unlockAll = false;
+    bool achNotify = true;        // [Achievements] Notify: a note in the corner when one is earned
+    bool discord = false;         // [Discord] Enabled: the Discord status
     // [Video]
     bool skipAllVideos = true;
     bool texReplace = true;       // [Textures] Replace: use texture packs

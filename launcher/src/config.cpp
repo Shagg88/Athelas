@@ -371,6 +371,8 @@ bool load_settings(const std::string &dir, Settings &s)
     s.damageTaken = clampi(geti(ini, "Gameplay", "DamageTaken", 100), 10, 500);
     s.enemyDamage = clampi(geti(ini, "Gameplay", "EnemyDamage", 100), 10, 500);
     s.unlockAll = geti(ini, "Gameplay", "UnlockAll", 0) != 0;
+    s.achNotify = geti(ini, "Achievements", "Notify", 1) != 0;
+    s.discord = geti(ini, "Discord", "Enabled", 0) != 0;
     s.pauseBg = geti(ini, "Window", "PauseInBackground", 0) != 0;
     s.muteBg = geti(ini, "Window", "MuteInBackground", 0) != 0;
     s.kbEnabled = geti(ini, "Keyboard", "Enabled", 1) != 0;
@@ -530,6 +532,9 @@ static const std::vector<IniSection> &ini_layout()
             { "EnemyDamage", "100", "Damage your hits do to enemies, % of the game's (10-500)" },
             { "UnlockAll", "0", "1 = every level and character can be chosen" },
         } },
+        { "Achievements", "Achievements (both versions; the list is in ROTKFix\\achievements.txt)", {
+            { "Notify", "1", "1 = a note in the corner when you earn one" },
+        } },
         { "Window", "In the background (Xbox version)", {
             { "PauseInBackground", "0", "1 = the game stops while another window is in front (Alt-Tab)" },
             { "MuteInBackground", "0", "1 = no sound while another window is in front" },
@@ -667,6 +672,8 @@ static bool write_rotkfix_ini(const std::string &p, const Settings &s, bool crea
     set("Gameplay", "DamageTaken", std::to_string(s.damageTaken));
     set("Gameplay", "EnemyDamage", std::to_string(s.enemyDamage));
     set("Gameplay", "UnlockAll", std::to_string((int)s.unlockAll));
+    set("Achievements", "Notify", std::to_string((int)s.achNotify));
+    // [Discord] Enabled is written once the games' Discord applications exist (k_discordReady in main.cpp)
     set("Window", "PauseInBackground", std::to_string((int)s.pauseBg));
     set("Window", "MuteInBackground", std::to_string((int)s.muteBg));
     set("Keyboard", "Enabled", std::to_string((int)s.kbEnabled));
