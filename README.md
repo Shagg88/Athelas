@@ -6,7 +6,7 @@ distributable today, so that's why I'm here. (Athelas is kingsfoil, the healing 
 This is my first ever project of this magnitude so I expect there to be a few bugs.  I have a Windows PC that I tested this on, that's about it.  It's supposed to run on Linux and Steam Deck
 (Mac and Android maybe in the future) but only time will tell. I'll be open to accepting public contributions and pull releases as well.
 
-- **The Return of the King (PC, 2003)**, through **ROTK Fix**
+- **The Return of the King (PC, 2003)**, through **ROTK Fix** (This is the recommended way to play the The Return of the King, at least in my opinion)
 - **The Return of the King (Xbox)**, through a native PC port
 - **The Two Towers (Xbox)**, through a native PC port
 
