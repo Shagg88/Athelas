@@ -52,3 +52,10 @@ with no crash; it schedules threads differently.
   value every frame) to catch the writer.
 - A safe stopgap: a hook at 0xE60FC that treats a section outside 0 to 19 as 0. The profiler only measures
   time, so the game would play the same. This hides the symptom, not the cause.
+
+## The stopgap (2026-10-16)
+
+`TT_ProfilerStart` (0xE60FC) and `TT_ProfilerEnd` (0xE65B1) in `tt_hooks.cpp` take a section outside 0 to 19
+as 0 before it is used. The log says so (`tt: profiler section ... out of range`), at most three times a run.
+Checked in the harness by forcing the bad value (0x068BD578) into the field: the line was logged and the game
+went on. The cause is still open.
