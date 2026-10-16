@@ -800,6 +800,31 @@ static void wine_prefer_fix_dlls()
     RegCloseKey(k);
 }
 
+// what wine_prefer_fix_dlls() wrote, removed again (Remove ROTK Fix); true when there was something to remove
+static bool wine_forget_fix_dlls()
+{
+    HMODULE nt = GetModuleHandleA("ntdll.dll");
+    if (!nt || !GetProcAddress(nt, "wine_get_version")) return false;
+    HKEY k;
+    if (RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\Wine\\AppDefaults\\rotk.exe\\DllOverrides", 0, KEY_SET_VALUE | KEY_QUERY_VALUE,
+                      &k) != ERROR_SUCCESS) return false;
+    bool any = false;
+    for (const char *dll : { "d3d8", "dinput8", "dsound" }) any |= RegDeleteValueA(k, dll) == ERROR_SUCCESS;
+    DWORD left = 0;
+    RegQueryInfoKeyA(k, NULL, NULL, NULL, NULL, NULL, NULL, &left, NULL, NULL, NULL, NULL);
+    RegCloseKey(k);
+    if (left) return any;
+    RegDeleteKeyA(HKEY_CURRENT_USER, "Software\\Wine\\AppDefaults\\rotk.exe\\DllOverrides");
+    // rotk.exe's own key too, when nothing else (another setting of the user's) is in it
+    if (RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\Wine\\AppDefaults\\rotk.exe", 0, KEY_QUERY_VALUE, &k) == ERROR_SUCCESS) {
+        DWORD subkeys = 1, values = 1;
+        RegQueryInfoKeyA(k, NULL, NULL, NULL, &subkeys, NULL, NULL, &values, NULL, NULL, NULL, NULL);
+        RegCloseKey(k);
+        if (!subkeys && !values) RegDeleteKeyA(HKEY_CURRENT_USER, "Software\\Wine\\AppDefaults\\rotk.exe");
+    }
+    return any;
+}
+
 bool launch_game(const std::string &dir, std::string &err)
 {
     std::string exe = dir + "\\rotk.exe";
@@ -917,7 +942,10 @@ bool uninstall(const std::string &dir, std::vector<std::string> &done, std::stri
         else done.push_back("Could not remove the ROTKFix folder completely");
     }
 
-    // 5. The launcher itself: removed by remove_launcher_after_exit() when it closes
+    // 5. Under Wine/Proton: the per-program DLL settings PLAY wrote for rotk.exe
+    if (wine_forget_fix_dlls()) done.push_back("Removed the Wine/Proton DLL settings for rotk.exe");
+
+    // 6. The launcher itself: removed by remove_launcher_after_exit() when it closes
     if (!_stricmp(dir.c_str(), exe_dir().c_str())) done.push_back("The launcher removes itself when it closes");
     return true;
 }
