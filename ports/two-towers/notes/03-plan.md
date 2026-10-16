@@ -51,6 +51,6 @@ One of them, **XboxXBE-Recomp**, already does most of what we planned to build o
 ## Ground rules check
 
 - No game code or assets in the project. The generated C++, the dump and `C:\TT\analysis` stay local.
-- No DRM bypass. Nothing in this approach touches disc authentication; the game reads the owner's extracted files. Saves are signed with our own key.
+- No DRM bypass of the game's files: the game reads the owner's own disc image or extracted files, nothing is decrypted, and saves are signed with our own key. One thing does touch disc authentication: on a console, XAPI's startup asks the DVD drive whether a pressed Xbox disc is in it, and on a PC there is no such drive, so the check always fails. A hook lets startup carry on past that failure instead of rebooting to the dashboard (05-first-bringup.md, problem 3; ROTK Xbox: rotkx-01-bringup.md, problem 1).
 - No EA branding in the launcher or splash.
 - Nothing goes to GitHub until you say so.
