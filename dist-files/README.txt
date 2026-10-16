@@ -19,8 +19,8 @@ protection.
 
 REQUIREMENTS
 ------------
-- Windows 10 or 11 (64-bit). Older Windows and Linux/Steam Deck (Proton) may
-  work but aren't tested.
+- Windows 10 or 11 (64-bit), or Linux / Steam Deck through Proton (see STEAM
+  DECK AND LINUX).
 - The Return of the King (PC): your own US copy, installed. A graphics card
   with a Vulkan 1.3 driver is recommended (most cards from 2016 on, with a
   current driver). Without one the game still runs through Windows' own
@@ -174,6 +174,28 @@ controller and plays player 2.
 Then pick Co-op in the game's menu. Your friend sees your screen with a short
 delay. For the PC game, check that "Player 2 (co-op)" on the launcher's
 Controls tab is set to "Second controller" (the default).
+
+
+STEAM DECK AND LINUX
+--------------------
+All three games run through Proton, Steam's Windows layer. This has been tested
+on Linux in a setup like the Deck's (1280x800, Proton's graphics layers), not
+yet on a real Deck: reports are welcome.
+1. In Desktop Mode, unzip Athelas into a folder of its own, for example
+   /home/deck/Games/Athelas.
+2. In Steam: Games > "Add a Non-Steam Game to My Library", choose Athelas.exe.
+   Then its Properties > Compatibility: tick "Force the use of a specific Steam
+   Play compatibility tool" and pick the newest Proton.
+3. Start it from Steam (Game Mode works too) and show it your games:
+   - The Xbox games: your disc images (.iso) or extracted folders, anywhere on
+     the Deck or an SD card.
+   - The Return of the King (PC): a folder with your installed game, for
+     example copied from a Windows PC. Athelas sets ROTK Fix up there and tells
+     Proton to use its files; no launch options are needed. The original disc
+     release's copy protection can't run under Proton, so that copy won't start.
+- Controls: the Deck's controls work as an Xbox controller in all three games
+  and in Athelas (the touchscreen and trackpads also work in Athelas).
+- The Balanced preset suits the Deck; 60 fps is a good target for battery life.
 
 
 WIDE AND ULTRAWIDE SCREENS

@@ -49,7 +49,9 @@ This is the first public release.
   plays its original sound
 - The Xbox games: a DirectX 12 graphics card. The Two Towers needs a controller.
 - Tested on Windows 11 with an NVIDIA GeForce RTX 3080 Ti. Windows 10 and AMD and Intel graphics are expected to
-  work but haven't been tested yet; reports are welcome. Linux (Proton) is untested.
+  work but haven't been tested yet; reports are welcome.
+- Steam Deck and Linux: through Proton (add Athelas.exe as a non-Steam game). Tested in a Deck-like setup, not yet on a
+  real Deck.
 
 ## Install
 

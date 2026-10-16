@@ -24,7 +24,7 @@ ROTK Fix, and also starts the PC ports of The Return of the King and The Two Tow
 
 ## Requirements
 
-- Windows 10 or 11 (64-bit). Older Windows and Linux/Steam Deck (Proton) may work but aren't tested.
+- Windows 10 or 11 (64-bit), or Linux / Steam Deck through Proton (tested in a Deck-like setup, not yet on a real Deck; see README.txt).
 - Your own US copy of each game. No game files are included.
 - **The Return of the King (PC):** a Vulkan 1.3 graphics driver is recommended. Without one, the game runs
   through Windows' Direct3D 8 with the DXVK-only options (sharpening, colour looks, texture filtering)

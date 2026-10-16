@@ -784,17 +784,20 @@ bool install_input_profile(const std::string &dir, std::string &err)
 }
 
 // Running under Wine or Proton (Linux, Steam Deck): Wine loads its own d3d8, dinput8 and dsound unless told to prefer
-// the game folder's, so ROTK Fix's loaders and DSOAL are named here for the game's process, after any overrides the
-// user or Proton set (an entry of ours wins over theirs for these three only).
+// the game folder's. Its per-program DLL settings (HKCU\Software\Wine\AppDefaults\rotk.exe\DllOverrides) say so
+// for rotk.exe alone, so ROTK Fix's loaders and DSOAL load. (WINEDLLOVERRIDES can't do it: Wine passes the launcher's
+// own value to a child process, not one set from Windows.)
 static void wine_prefer_fix_dlls()
 {
     HMODULE nt = GetModuleHandleA("ntdll.dll");
     if (!nt || !GetProcAddress(nt, "wine_get_version")) return;
-    char cur[2048] = "";
-    DWORD n = GetEnvironmentVariableA("WINEDLLOVERRIDES", cur, sizeof cur);
-    std::string v = n && n < sizeof cur ? std::string(cur) + ";" : std::string();
-    v += "d3d8,dinput8,dsound=n,b";
-    SetEnvironmentVariableA("WINEDLLOVERRIDES", v.c_str());
+    HKEY k;
+    if (RegCreateKeyExA(HKEY_CURRENT_USER, "Software\\Wine\\AppDefaults\\rotk.exe\\DllOverrides", 0, NULL, 0, KEY_SET_VALUE,
+                        NULL, &k, NULL) != ERROR_SUCCESS) return;
+    static const char v[] = "native,builtin";
+    for (const char *dll : { "d3d8", "dinput8", "dsound" })
+        RegSetValueExA(k, dll, 0, REG_SZ, (const BYTE *)v, sizeof v);
+    RegCloseKey(k);
 }
 
 bool launch_game(const std::string &dir, std::string &err)
