@@ -71,6 +71,8 @@ INSTALL
 3. Choose your settings and press PLAY. Always start the games from the
    launcher from now on: it is where every setting lives, and it saves them
    for the game each time.
+4. Optional: the About tab can put a shortcut to Athelas on the desktop and
+   in the Start menu.
 
 The first time you press Save or Play, the launcher adds the controller layout
 to the game's Input.ini (the original is kept as Input.ini.original) and

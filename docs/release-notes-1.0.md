@@ -46,6 +46,7 @@ This is the first public release.
 - All three games' settings in one place, with presets; every key and button can be changed
 - Background art taken from your own game files, rotating, or your own pictures
 - Sets ROTK Fix up in your PC game folder and removes it cleanly
+- Desktop and Start menu shortcuts, on request (About tab)
 
 ## Requirements
 
@@ -73,7 +74,7 @@ The README in the zip has the details.
 
 ## Checksum
 
-`Athelas-1.0.zip` SHA-256: `4bb398110c2ecd92379c010f3e1e356c4fe7f8c3688b8242f9aaa8571244a65c`
+`Athelas-1.0.zip` SHA-256: `c7baa9ff8db7ceaf43164196af6e6a53a429f2d4335f7aa0473d45bac2d89a78`
 
 ## Credits
 
