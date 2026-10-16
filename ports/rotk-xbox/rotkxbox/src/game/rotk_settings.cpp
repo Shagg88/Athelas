@@ -26,6 +26,8 @@ extern uint32_t g_fps;                         // rotk_framerate.cpp
 extern uint32_t g_fov_percent, g_draw_percent;  // rotk_widescreen.cpp
 extern bool g_alpha_edges, g_hud_edges;          // rotk_widescreen.cpp
 extern bool g_second_controller;                 // rotk_controls.cpp
+extern bool g_unlock_all;                        // rotk_secrets.cpp
+extern uint32_t g_damage_percent, g_enemy_damage_percent;  // rotk_secrets.cpp
 void LoadControls(const std::string* (*get)(void*, const char*, const char*), void* ctx);
 void InitFrameRate();
 void InitCamera();
@@ -191,6 +193,11 @@ void ApplyIni() {
     }
     // [Gamepad] Enabled is the PC's DirectInput gamepad layer; the Xbox version always reads the controller
     LoadControls([](void* c, const char* section, const char* key) { return static_cast<Reader*>(c)->Get(section, key); }, &r);
+    // [Gameplay]: damage the player takes and enemies take, in percent of the game's (The Two Towers' damage_taken and
+    // enemy_damage), and every level and character open (the game's own developer switch)
+    r.Int("Gameplay", "DamageTaken", g_damage_percent, 10, 500);
+    r.Int("Gameplay", "EnemyDamage", g_enemy_damage_percent, 10, 500);
+    r.Bool("Gameplay", "UnlockAll", g_unlock_all);
     // [Textures]
     r.Bool("Textures", "Dump", s.texture_dump);
     r.Bool("Textures", "Replace", s.texture_replace);

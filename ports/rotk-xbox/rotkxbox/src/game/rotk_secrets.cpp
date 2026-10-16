@@ -10,7 +10,13 @@
 //   of the three elements it looks up once).
 // - 0x9E4D0: whether a progress flag is set (0xC: the final level beaten), asked before secret codes are accepted.
 // - 0x29530: copies the difficulty table's damage multipliers (upgd "DIFF") to 0x17F550..0x17F57C at load: easy,
-//   normal, hard x single player, co-op x min, max (damage the player takes).
+//   normal, hard x single player, co-op x min, max (damage the player takes). [Gameplay] DamageTaken scales them.
+// - 0x2A1B0(character, amount, attacker): every hit. A player (word +0x7A = 0x63) takes the amount through those
+//   multipliers; anyone else loses it from health (+0x90) as it is. [Gameplay] EnemyDamage scales the hits players
+//   land (callers: 0x20ED0 most hits, 0x5818E enemies on a player; type logged per hit in Helm's Deep and Pelennor).
+//
+// [Gameplay] UnlockAll and the damage settings come from ROTKFix.ini (rotk_settings.cpp).
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstdint>
@@ -24,7 +30,7 @@
 
 namespace rotk {
 bool g_unlock_all = false, g_dev_buttons = false, g_codes_anytime = false;
-uint32_t g_damage_percent = 100;
+uint32_t g_damage_percent = 100, g_enemy_damage_percent = 100;
 
 namespace {
 #ifndef _WIN32
@@ -34,6 +40,7 @@ const bool kEnvRead = [] {
     g_dev_buttons |= on("ROTK_DEVBUTTONS");
     g_codes_anytime |= on("ROTK_CODES");
     if (const char* d = std::getenv("ROTK_DAMAGE")) g_damage_percent = uint32_t(std::atoi(d));
+    if (const char* d = std::getenv("ROTK_ENEMY_DAMAGE")) g_enemy_damage_percent = uint32_t(std::atoi(d));
     return true;
 }();
 #endif
@@ -80,6 +87,24 @@ X86_FUNC(sub_00029530) {
         ::kernel::W32(0x17F550 + i * 4, u);
     }
     LOGR("rotk: damage taken scaled to %u%%", rotk::g_damage_percent);
+}
+
+// 0x2A1B0(character, amount, attacker): a hit a player (type 0x63) lands on anyone else takes EnemyDamage percent of
+// the amount, at least 1 of a hit that did any, so a low setting never makes enemies immune. Hits between other
+// characters (allies and enemies fight each other, most hits in a battle) are left as they are.
+X86_EXTERN_FUNC(__imp__sub_0002A1B0);
+X86_FUNC(sub_0002A1B0) {
+    uint32_t pct = rotk::g_enemy_damage_percent, who = ::kernel::R32(ctx.esp + 4), arg = ctx.esp + 8;
+    uint32_t was = ::kernel::R32(arg), by = ::kernel::R32(ctx.esp + 12);
+    auto player = [](uint32_t c) { return c >= 0x10000 && c < 0x4000000 && ::kernel::R16(c + 0x7A) == 0x63; };
+    bool scaled = pct != 100 && who && int32_t(was) > 0 && player(by) && !player(who);
+    if (scaled) {
+        int64_t v = (int64_t(int32_t(was)) * pct + 50) / 100;
+        ::kernel::W32(arg, uint32_t(int32_t(std::max<int64_t>(v, 1))));
+        LOG_FIRST(2, "rotk: hit by a player %d scaled to %d (EnemyDamage %u%%)", int32_t(was), int32_t(::kernel::R32(arg)), pct);
+    }
+    __imp__sub_0002A1B0(ctx, base);
+    if (scaled) ::kernel::W32(arg, was);  // the caller's own argument, as it was
 }
 
 // 0x102D50: the main menu, as it opens, hides three of its items with 0x10A550(0, name, visible = 0): "Online" (Xbox
