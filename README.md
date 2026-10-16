@@ -28,6 +28,13 @@ Download it from [Releases](../../releases): one zip with the launcher, ROTK Fix
   <img src="https://github.com/user-attachments/assets/12192f57-5179-470c-bee4-6dec1affec9d" width="49%">
 </p>
 
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/4bea88f9-01f9-484e-8f0b-d22c6fbf1864" width="32%">
+  <img src="https://github.com/user-attachments/assets/f5a0d251-7208-46ff-aea8-03d63577a4f2" width="32%">
+  <img src="https://github.com/user-attachments/assets/d9600fa1-c760-4185-a82c-ada85b03ea87" width="32%">
+</p>
+
+
 
 
 *The background pictures in these screenshots are artwork from the games themselves. They aren't included in the
