@@ -19,6 +19,18 @@ Download it from [Releases](../../releases): one zip with the launcher, ROTK Fix
 > Xbox ports skip the console's check for an original Xbox disc, which a PC can't answer as it has no Xbox drive;
 > the games' own files are never decrypted or changed.
 
+## Screenshots
+
+<img width="880" height="664" alt="Screenshot 2026-10-16 114801" src="https://github.com/user-attachments/assets/03aa7abf-9251-4ba7-9da1-0c436dd3f7aa" />
+<img width="878" height="664" alt="Screenshot 2026-10-16 114814" src="https://github.com/user-attachments/assets/c96dd4be-73fc-46d5-9999-c967dc6f78ca" />
+<img width="879" height="664" alt="Screenshot 2026-10-16 114911" src="https://github.com/user-attachments/assets/3944288d-4964-43c0-a82d-1f3b4a6191f5" />
+
+
+*The background pictures in these screenshots are artwork from the games themselves. They aren't included in the
+download: Athelas reads them from your own copy of a game, so you'll only see them once the launcher has found one
+of your games. Until then, or if you choose "None" under About → Background pictures, the launcher shows its own
+drawn landscape instead. All game and film artwork belongs to its owners.*
+
 ## In this repository
 
 | Path | What it is |
