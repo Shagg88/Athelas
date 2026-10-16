@@ -507,7 +507,7 @@ static const std::vector<IniSection> &ini_layout()
         { "Gamepad", "Controllers", {
             { "Enabled", "1", "1 = use modern controllers (as \"ROTK Fix Gamepad\")" },
             { "SecondController", "1", "1 = a second controller plays player 2 in co-op" },
-            { "ButtonNames", "auto", "Button pictures in on-screen hints: auto, xbox, playstation, nintendo; original = the game's own text" },
+            { "ButtonNames", "auto", "Button pictures in on-screen hints: auto, xbox, playstation, nintendo; original = the game's own text; keyboard = key caps (Xbox version)" },
             { "HideMousePointer", "1", "1 = hide the game's menu pointer while a controller is used (moving the mouse shows it)" },
             { "Vibration", "100", "Rumble strength 0-100, 0 = off" },
             { "StickDeadzone", "12", "Percent" },

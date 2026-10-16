@@ -38,10 +38,10 @@ Played through its PC port, `TwoTowers.exe`, started from the launcher.
 
 - Supported: the US Xbox release, as a disc image (`.iso`) or the extracted files. Other releases are recognised,
   with a warning before they start.
-- Controller only (no keyboard play), and no in-game settings menu: all settings are on the launcher's page or in
-  `settings.toml`.
+- Keyboard and mouse or a controller. `F10` (or both stick clicks) opens an in-game settings menu; every setting is
+  also on the launcher's page or in `settings.toml`.
 - The game's own files are only read, never changed.
-- Keys: `\` screenshot, `F1` hide the HUD, `[` sharpening off/on, `]` next colour look.
+- Keys: `F10` settings menu, `\` screenshot, `F1` hide the HUD, `[` sharpening off/on, `]` next colour look.
 - Problem reports: the log (`TT-Xbox\tt.log` next to the launcher), plus the newest `.dmp` in
   `TT-Xbox\CrashDumps` after a crash.
 

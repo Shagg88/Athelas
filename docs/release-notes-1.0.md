@@ -29,14 +29,21 @@ This is the first public release.
 - Two-player co-op on one screen, and online by streaming it with Parsec (or Steam Remote Play Together)
 - The same gameplay options as the PC version: damage taken, enemy damage, unlock everything
 - Fixes for slowdowns and for enemies vanishing instead of fading at high frame rates
+- Keyboard and mouse play, with the PC version's keys and key pictures in the game's hints
 
 **The Two Towers (Xbox) 1.0.1**
 - Runs natively on PC: widescreen up to 32:9, up to 240 fps, higher resolutions, HDR
 - Controller remapping and adjustable difficulty
+- Keyboard and mouse play, with the PC version of The Return of the King's keys
 - Plays as on the Xbox by default; every enhancement is a setting
 
+**Both Xbox ports**
+- An in-game settings menu: F10, or both stick clicks together; the game pauses behind it
+- Pause or mute while the game is in the background (off by default)
+- A frame rate counter
+
 **Athelas, the launcher**
-- All three games' settings in one place, with presets
+- All three games' settings in one place, with presets; every key and button can be changed
 - Background art taken from your own game files, rotating, or your own pictures
 - Sets ROTK Fix up in your PC game folder and removes it cleanly
 
@@ -46,7 +53,7 @@ This is the first public release.
 - ROTK (PC): a graphics card with a Vulkan 1.3 driver is recommended
 - ROTK (PC) 3D sound: Microsoft's Visual C++ Redistributable (x86), which most PCs already have; without it the game
   plays its original sound
-- The Xbox games: a DirectX 12 graphics card. The Two Towers needs a controller.
+- The Xbox games: a DirectX 12 graphics card. A controller, or the keyboard and mouse.
 - Tested on Windows 11 with an NVIDIA GeForce RTX 3080 Ti. Windows 10 and AMD and Intel graphics are expected to
   work but haven't been tested yet; reports are welcome.
 - Steam Deck and Linux: through Proton (add Athelas.exe as a non-Steam game). Tested in a Deck-like setup, not yet on a
@@ -66,7 +73,7 @@ The README in the zip has the details.
 
 ## Checksum
 
-`Athelas-1.0.zip` SHA-256: `2471db9afcd7e81d84f7162b323ec37b54051feecb5db5a340ebe22f44a287d8`
+`Athelas-1.0.zip` SHA-256: `a89beaddfdbcae87738768a91f71230c52f5405e8ad030887ed51c1a4a7dc0f5`
 
 ## Credits
 

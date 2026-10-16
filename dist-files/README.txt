@@ -103,13 +103,16 @@ adjustable damage for each side.
 - Supported: the US Xbox release, as a disc image (.iso) or the extracted
   files. Other releases are recognised and you're warned before they start;
   they will most likely crash.
-- Controller only: there is no keyboard play.
-- No in-game settings menu: every setting is on the launcher's Two Towers
-  page (or in TT-Xbox\settings.toml). Its saves are in TT-Xbox\saves.
+- Keyboard and mouse or controller (see KEYBOARD, MOUSE AND THE IN-GAME
+  MENU below). The game's hints still show controller buttons.
+- Settings: on the launcher's Two Towers page (or in TT-Xbox\settings.toml);
+  the ones that take effect at once are also in the in-game menu (F10).
+  Its saves are in TT-Xbox\saves.
 - The game's own files are only read, never changed.
 - Needs Windows 10 or 11 (64-bit) and a Direct3D 12 graphics card.
 
 Keys while playing:
+  F10                  Settings menu (the game pauses)
   \                    Screenshot (saved to the Screenshots folder)
   F1                   Hide or show the HUD
   [                    Sharpening off/on
@@ -130,8 +133,11 @@ enemies at high frame rates.
 - Sharper text and menus: if you also have The Return of the King (PC), its
   larger fonts and menu pictures are used (Graphics tab). Not required.
 - Needs Windows 10 or 11 (64-bit) and a Direct3D 12 graphics card.
-- Co-op: two players on one screen, with two controllers; it can also be
-  played online (see PLAYING CO-OP ONLINE).
+- Co-op: two players on one screen, with two controllers (or a controller
+  and the keyboard); it can also be played online (see PLAYING CO-OP ONLINE).
+- Keyboard and mouse, an in-game settings menu (F10), and pausing in the
+  background: see KEYBOARD, MOUSE AND THE IN-GAME MENU below. With no
+  controller plugged in, the game's hints show the keys.
 - Gameplay tab (shared with the PC version): damage taken, enemy damage, and
   every level and character unlocked. All off by default.
 - Known issue: the picture is darker than the PC version because it keeps the
@@ -141,6 +147,37 @@ Its saves are in ROTK-Xbox\saves.
 
 Reporting a problem: send the log, ROTK-Xbox\rotkx.log, and after a crash
 also the newest .dmp file in ROTK-Xbox\CrashDumps.
+
+
+KEYBOARD, MOUSE AND THE IN-GAME MENU (both Xbox ports)
+------------------------------------------------------
+Keyboard and mouse work as well as a controller, as player 1 or player 2
+(Controls tab). The keys are the PC version of The Return of the King's:
+  W A S D              Move (hold Left Alt to walk)
+  Left mouse / Enter   Speed attack (also selects in menus)
+  Right mouse          Fierce attack
+  Space / middle mouse Killing move
+  Q                    Parry
+  Left Ctrl / Bksp     Physical attack (Knock back), and back in menus
+  Left Shift           Ranged attack
+  Tab                  Jump back
+  E                    Action (The Return of the King)
+  F5                   Special ability (The Return of the King)
+  Esc                  Pause
+  Arrow keys           Menus
+Each key can be changed on the launcher's Controls tab: click a move, then
+press the key or mouse button.
+
+F10, or both stick clicks together on a controller, opens the settings menu
+over the game, which stands still behind it. It holds the settings that take
+effect at once (picture, controls, field of view, damage) and saves them when
+it closes (F10, Esc, B or Start). LB and RB, or Page Up and Page Down, change
+its page.
+
+In the background: "Pause in the background" (Display tab) stops the game,
+picture and sound, while another window is in front, and it carries on where
+it was when you come back. "Mute in the background" only silences it. Both
+are off by default.
 
 
 TEXTURE PACKS
@@ -281,7 +318,7 @@ The launcher writes ROTKFix.ini in the game folder. You can also edit it in Note
 [Gamepad]  Controllers
   Enabled                1 = use modern controllers (as "ROTK Fix Gamepad") (default 1)
   SecondController       1 = a second controller plays player 2 in co-op (default 1)
-  ButtonNames            Button pictures in on-screen hints: auto, xbox, playstation, nintendo; original = the game's own text (default auto)
+  ButtonNames            Button pictures in on-screen hints: auto, xbox, playstation, nintendo; original = the game's own text; keyboard = key caps (Xbox version) (default auto)
   HideMousePointer       1 = hide the game's menu pointer while a controller is used (moving the mouse shows it) (default 1)
   Vibration              Rumble strength 0-100, 0 = off (default 100)
   StickDeadzone          Percent (default 12)
@@ -315,6 +352,22 @@ The launcher writes ROTKFix.ini in the game folder. You can also edit it in Note
   DamageTaken            Damage you take, % of the game's (10-500) (default 100)
   EnemyDamage            Damage your hits do to enemies, % of the game's (10-500) (default 100)
   UnlockAll              1 = every level and character can be chosen (default 0)
+
+[Window]  In the background (Xbox version)
+  PauseInBackground      1 = the game stops while another window is in front (default 0)
+  MuteInBackground       1 = no sound while another window is in front (default 0)
+
+[Keyboard]  Keyboard and mouse (Xbox version; on PC the game's own keyboard controls are used)
+  Enabled                1 = play with the keyboard and mouse as well as a controller (default 1)
+  Player                 1 or 2: which player the keyboard plays as (default 1)
+  MoveForward ... MenuRight  The keys for each move, comma separated: A-Z, 0-9, F1-F12 (not F3 or F10),
+                         Space, Enter, Esc, Tab, Backspace, CapsLock, LShift, RShift, LCtrl, RCtrl, LAlt, RAlt,
+                         Up, Down, Left, Right, Insert, Delete, Home, End, PageUp, PageDown, Numpad0-9,
+                         NumpadStar, NumpadPlus, NumpadMinus, NumpadDot, NumpadSlash, Minus, Equals, Comma,
+                         Period, Slash, Semicolon, Apostrophe, Grave, Mouse1-Mouse5 (left, right, middle, 4, 5)
+                         Moves: MoveForward MoveBack MoveLeft MoveRight Walk SpeedAttack PhysicalAttack Parry
+                         FierceAttack Action JumpBack RangedAttack KillingMove Pause Back Special RightStick
+                         MenuUp MenuDown MenuLeft MenuRight
 
 [Textures]  Texture packs
   Dump                   1 = save every texture the game uses as a PNG in ROTKFix\textures\dump (for making texture packs) (default 0)
