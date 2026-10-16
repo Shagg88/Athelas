@@ -8,7 +8,10 @@
 //
 // SecondController = 0 leaves player 2's port empty. Enabled (the PC's DirectInput gamepad layer) has no use here:
 // on the Xbox version the controller is the game's own input.
+#include <atomic>
+#include <cctype>
 #include <cstdint>
+#include <string>
 
 #include "core/input.h"
 #include "core/log.h"
@@ -99,6 +102,24 @@ void Pad(int port, input::Pad& pad) {
     for (int a = 0; a < kActionCount; a++)
         if (v[a] > Read(pad, kActions[a].slot)) Write(pad, kActions[a].slot, v[a]);
 }
+
+// the front end (title, menus, the upgrade shop) or a level, from the scene the game loads last:
+// Data\Game\Fro\Fro03.scx is the front end, Data\Game\<abc>\<Abc01>.scx a level (GlobScen.scx, beside them, is
+// loaded with either). For the keyboard: in the front end's menus Esc goes back and Enter presses Start, which they
+// take to go on ("press start" takes nothing else).
+std::atomic<bool> g_front_end{true};
+void FileOpened(const char* name) {
+    std::string n = name;
+    for (char& c : n) c = char(std::tolower(static_cast<unsigned char>(c)));
+    size_t at = n.find("\\data\\game\\");
+    if (at == std::string::npos || n.size() < 4 || n.compare(n.size() - 4, 4, ".scx") != 0) return;
+    std::string rest = n.substr(at + 11);  // "fro\fro03.scx", "globscen.scx"
+    size_t slash = rest.find('\\');
+    if (slash == std::string::npos) return;
+    bool fe = rest.compare(0, slash, "fro") == 0;
+    if (g_front_end.exchange(fe) != fe) LOGI("rotk: %s", fe ? "front end" : "in a level");
+}
+bool InMenus() { return g_front_end.load(); }
 
 // ROTKFix.ini: get(section, key) gives the value or null
 void LoadControls(const std::string* (*get)(void*, const char*, const char*), void* ctx) {

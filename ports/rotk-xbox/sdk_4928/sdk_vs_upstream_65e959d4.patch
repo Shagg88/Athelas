@@ -535,7 +535,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/
  }  // namespace
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/pad_script.cpp /home/claude/tt-port/game/sdk/harness/pad_script.cpp
 --- upstream/harness/pad_script.cpp	2026-10-14 22:35:04.214451573 -0700
-+++ /home/claude/tt-port/game/sdk/harness/pad_script.cpp	2026-10-15 22:34:14.170821225 -0700
++++ /home/claude/tt-port/game/sdk/harness/pad_script.cpp	2026-10-16 00:12:27.114031270 -0700
 @@ -1,6 +1,7 @@
 -// pad 0 from a script, then GameInfo::pad as on Windows
 +// pad 0 from a script (SCRIPT), pad 1 from a second one (SCRIPT2: plugged in only then), then GameInfo::pad as on
@@ -584,7 +584,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/
          std::string cmd = (app::ExeDir() / "cmd").string();
          if (FILE* f = std::fopen(cmd.c_str(), "r")) {
              char b[64] = {};
-@@ -83,11 +87,19 @@
+@@ -83,11 +87,20 @@
          for (const Press& s : script)
              if (t >= s.at && t <= s.at + s.len) Apply(s.buttons, p);
          if (live.at >= 0 && t >= live.at && t <= live.at + live.len) Apply(live.buttons, p);
@@ -597,6 +597,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/
  }
  
 +bool Connected(int port) { return Poll(port).connected; }
++Pad Raw(int port) { return Poll(port); }
 +
 +// PAD_STYLE=1 (PlayStation) or 2 (Nintendo): the kind of controller the test plays with
 +int Style(int) { return int(harness::Env("PAD_STYLE")); }
@@ -774,7 +775,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/harness/
  }  // namespace reference
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/app.h /home/claude/tt-port/game/sdk/runtime/app/app.h
 --- upstream/runtime/app/app.h	2026-10-14 22:35:04.215216692 -0700
-+++ /home/claude/tt-port/game/sdk/runtime/app/app.h	2026-10-15 22:42:06.139644931 -0700
++++ /home/claude/tt-port/game/sdk/runtime/app/app.h	2026-10-16 00:21:38.420147558 -0700
 @@ -1,11 +1,15 @@
  #pragma once
  #include <cstdint>
@@ -932,7 +933,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      // the settings file's toml::table, for what options cannot hold
      void (*load)(const void* table);
      void (*save)(void* table);
-@@ -90,10 +166,36 @@
+@@ -90,10 +166,42 @@
      void (*ui)(double fps);        // each frame inside the ImGui frame, UiLock held
      void (*pad)(int port, input::Pad& pad);  // a polled pad before the game gets it
      void (*rumble)(int port, uint16_t& left, uint16_t& right);
@@ -945,6 +946,12 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +    std::vector<const char*> live_settings;
 +    void (*save_settings)() = nullptr;                // the menu closed after a change: null saves the settings file
 +    void (*setting_changed)(const cfg::Desc&) = nullptr;  // the menu changed one, at once
++    // the keyboard in the game's own menus: in_menus says when they are up (the front end, not a pause in a level);
++    // there the keys bound to Start press B, so Esc goes back, and with menu_accept_start the keys bound to A press
++    // Start (a game whose menus take Start to go on, "press start" among them)
++    void (*file_opened)(const char* name) = nullptr;  // each file the game opens (any thread), to follow its state
++    bool (*in_menus)() = nullptr;
++    bool menu_accept_start = false;
  };
  extern const GameInfo kGame;
  
@@ -1140,8 +1147,8 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      return true;
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/keyboard.cpp /home/claude/tt-port/game/sdk/runtime/app/keyboard.cpp
 --- upstream/runtime/app/keyboard.cpp	1969-12-31 16:00:00.000000000 -0800
-+++ /home/claude/tt-port/game/sdk/runtime/app/keyboard.cpp	2026-10-15 22:42:06.140167318 -0700
-@@ -0,0 +1,164 @@
++++ /home/claude/tt-port/game/sdk/runtime/app/keyboard.cpp	2026-10-16 00:21:38.420635927 -0700
+@@ -0,0 +1,175 @@
 +// Keyboard and mouse play ([keyboard] in the settings file): keys press the console controller's buttons and move
 +// its left stick, on player 1's port (or player 2's), together with any controller there. The keys are read only
 +// while the game window has the focus, and the mouse buttons only with the pointer over the picture.
@@ -1281,6 +1288,17 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +    for (auto& w : g_latched) w = 0;  // read once
 +    if (!any) return;
 +    if (!g_used.exchange(true)) LOGR("keyboard: first key press");
++    // in the game's menus Esc (Start's keys) goes back, and Enter (A's) goes on the way those menus take it
++    if (app::kGame.in_menus && app::kGame.in_menus()) {
++        bool start = held[kStart];
++        if (app::kGame.menu_accept_start) {
++            held[kStart] = held[kA];
++            held[kA] = false;
++        } else {
++            held[kStart] = false;
++        }
++        held[kB] = held[kB] || start;
++    }
 +    // the left stick: the keys' direction at full tilt (a diagonal no further than a straight push), half with walk
 +    int dx = int(held[kMoveRight]) - int(held[kMoveLeft]), dy = int(held[kMoveUp]) - int(held[kMoveDown]);
 +    if (dx || dy) {
@@ -12074,8 +12092,16 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      std::_Exit(code);
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/kernel/files.cpp /home/claude/tt-port/game/sdk/runtime/kernel/files.cpp
 --- upstream/runtime/kernel/files.cpp	2026-10-14 22:35:04.218722056 -0700
-+++ /home/claude/tt-port/game/sdk/runtime/kernel/files.cpp	2026-10-15 10:23:30.984477311 -0700
-@@ -78,6 +78,7 @@
++++ /home/claude/tt-port/game/sdk/runtime/kernel/files.cpp	2026-10-16 00:21:38.419597620 -0700
+@@ -6,6 +6,7 @@
+ #include <fstream>
+ #include <map>
+ 
++#include "app/app.h"
+ #include "kernel/disc.h"
+ #include "kernel/kernel.h"
+ #include "kernel/exports.h"
+@@ -78,6 +79,7 @@
      size_t next = 0;
      bool listed = false;
      bool delete_on_close = false;
@@ -12083,7 +12109,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      std::mutex io;  // threads sharing a handle: seek and transfer stay together
      File() : Object(ObjType::File) {}
      ~File() override {
-@@ -208,6 +209,29 @@
+@@ -208,6 +210,29 @@
      LOGI("files: D: is %s, hard disk under %s", disc ? disc->Path().string().c_str() : game_dir.c_str(), data_dir.c_str());
  }
  
@@ -12113,7 +12139,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  bool CreateSymbolicLink(const std::string& link, const std::string& target) {
      std::lock_guard<std::mutex> lock(g_links_lock);
      g_links[Upper(Normalize(link))] = Normalize(target);
-@@ -296,6 +320,7 @@
+@@ -296,9 +321,11 @@
      f->xbox = Normalize(name);
      f->entry = e;
      f->dir = e->dir;
@@ -12121,7 +12147,11 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      W32(handle_out, NewHandle(f));
      IoStatus(iosb, kSuccess, 1);
      LOG_FIRST(400, "open %s", name.c_str());
-@@ -418,6 +443,7 @@
++    if (app::kGame.file_opened) app::kGame.file_opened(name.c_str());
+     return kSuccess;
+ }
+ 
+@@ -418,9 +445,11 @@
      f->xbox = Normalize(name);
      f->fp = fp;
      f->delete_on_close = options & 0x1000;  // FILE_DELETE_ON_CLOSE
@@ -12129,7 +12159,11 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      W32(handle_out, NewHandle(f));
      IoStatus(iosb, kSuccess, info);
      LOG_FIRST(400, "open %s", name.c_str());
-@@ -447,19 +473,23 @@
++    if (app::kGame.file_opened) app::kGame.file_opened(name.c_str());
+     return kSuccess;
+ }
+ 
+@@ -447,19 +476,23 @@
          if (!f->fp) f->fp = std::fopen(host.c_str(), "rb");
          if (!f->fp) return kAccessDenied;
      }
@@ -12156,7 +12190,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  }
  
  static uint64_t Offset(File& f, uint32_t off) {
-@@ -525,6 +555,12 @@
+@@ -525,6 +558,12 @@
              G<uint8_t>(out + 0x15) = f->dir;  // Directory, after DeletePending
              IoStatus(iosb, kSuccess, 0x18);
              return kSuccess;

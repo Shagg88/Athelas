@@ -13,6 +13,8 @@ void Init();                                    // rotk_settings.cpp: ROTKFix.in
 void LoadTable(const void* table);              // rotk_settings.cpp: 1.0.0's defaults for settings the file lacks
 void SaveIni();                                 // rotk_settings.cpp: the in-game menu's changes into ROTKFix.ini
 void SettingChanged(const cfg::Desc& d);        // rotk_settings.cpp: the in-game menu changed one
+void FileOpened(const char* name);              // rotk_controls.cpp: the front end or a level
+bool InMenus();
 }
 
 // what the runtime asks of the game; strings must be set, hooks may stay null
@@ -80,4 +82,7 @@ const app::GameInfo app::kGame = {
     .live_settings = {"graphics.fov", "graphics.draw_distance", "graphics.hud_edges"},
     .save_settings = rotk::SaveIni,
     .setting_changed = rotk::SettingChanged,
+    .file_opened = rotk::FileOpened,
+    .in_menus = rotk::InMenus,
+    .menu_accept_start = true,  // the front end goes on with Start; "press start" takes nothing else
 };
