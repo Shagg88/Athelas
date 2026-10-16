@@ -29,7 +29,6 @@ What the port does, its keys and settings are in [`rotkxbox/README.md`](rotkxbox
 | `ref/` | The Two Towers port's config and game code, for reference. |
 | `shared/` | The Linux test harness scripts, shared with the Two Towers port. |
 | `work/` | The Linux test harness's working folder: build and sweep scripts, controller input scripts and small analysis tools. Its runs and builds are not kept. |
-| `HANDOFF.md` | A developer handoff: the state of the port and how its parts fit together. |
 
 ## Building
 

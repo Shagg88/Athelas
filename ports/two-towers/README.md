@@ -26,7 +26,6 @@ What the port does, its keys and settings are in [`game/README.md`](game/README.
 | `launcher-handoff/` | The interface between the port and the Athelas launcher: how the launcher starts it and passes its settings. |
 | `tools/` | Python scripts for looking at an xbe: headers, disassembly, call graphs, config merging. They contain no game data. |
 | `shared/` | Analysis helpers and the Linux test harness scripts, shared with the Return of the King port. |
-| `HANDOFF.md` | A developer handoff: the state of the port and how its parts fit together. |
 
 ## Building
 
