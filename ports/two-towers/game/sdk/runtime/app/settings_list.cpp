@@ -45,6 +45,8 @@ std::vector<cfg::Desc> SettingsList() {
         {"display", "vsync", Type::Bool, "V-Sync",
          "Prevents tearing. The frame rate can't go above the screen's refresh rate.", &s.vsync, nullptr, nullptr, 0, 0,
          {}, "vsync"},
+        {"display", "show_fps", Type::Bool, "Frame rate counter",
+         "Shows the frames per second in the top right corner of the screen.", &s.show_fps},
         {"display", "render_percent", Type::Choice, "Render resolution",
          "The game is drawn at this share of the screen's size, then fitted to it. Above 100% gives a cleaner, sharper "
          "picture (supersampling) and costs speed; below 100% is faster but softer. 100% is the screen's own size.",

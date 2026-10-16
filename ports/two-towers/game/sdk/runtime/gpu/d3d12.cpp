@@ -3801,6 +3801,19 @@ void D3D12Backend::RenderUi() {
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
     if (app::kGame.ui) app::kGame.ui(fps_);
+    // [display] show_fps: the frames presented a second (counted over half a second), top right
+    if (app::Get().show_fps && fps_ > 0) {
+        const ImGuiViewport* vp = ImGui::GetMainViewport();
+        float pad = std::max(8.0f, vp->Size.y / 120.0f);
+        ImGui::SetNextWindowPos(ImVec2(vp->Pos.x + vp->Size.x - pad, vp->Pos.y + pad), ImGuiCond_Always, ImVec2(1, 0));
+        ImGui::SetNextWindowBgAlpha(0.45f);
+        ImGui::Begin("##fps", nullptr,
+                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_AlwaysAutoResize |
+                         ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav);
+        ImGui::SetWindowFontScale(std::max(1.0f, vp->Size.y / 720.0f));
+        ImGui::Text("%.0f fps", fps_);
+        ImGui::End();
+    }
     ImGui::Render();
     ID3D12DescriptorHeap* uh[] = {ui_heap_.Get()};
     cl_->SetDescriptorHeaps(1, uh);
