@@ -154,7 +154,8 @@ KEYBOARD, MOUSE AND THE IN-GAME MENU (both Xbox ports)
 Keyboard and mouse work as well as a controller, as player 1 or player 2
 (Controls tab). The keys are the PC version of The Return of the King's:
   W A S D              Move (hold Left Alt to walk)
-  Left mouse / Enter   Speed attack (also selects in menus)
+  Left mouse / Enter   Speed attack; in the menus, Enter goes on (and "press
+                       start")
   Right mouse          Fierce attack
   Space / middle mouse Killing move
   Q                    Parry
@@ -163,7 +164,7 @@ Keyboard and mouse work as well as a controller, as player 1 or player 2
   Tab                  Jump back
   E                    Action (The Return of the King)
   F5                   Special ability (The Return of the King)
-  Esc                  Pause
+  Esc                  Pause; in the menus, back
   Arrow keys           Menus
 Each key can be changed on the launcher's Controls tab: click a move, then
 press the key or mouse button.
