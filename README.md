@@ -21,10 +21,12 @@ Download it from [Releases](../../releases): one zip with the launcher, ROTK Fix
 
 ## Screenshots
 
-<img width="880" height="664" alt="Screenshot 2026-10-16 114801" src="https://github.com/user-attachments/assets/7a19a7d8-5653-4a2c-909e-cd8dd1dcf653" />
-<img width="878" height="664" alt="Screenshot 2026-10-16 114814" src="https://github.com/user-attachments/assets/a3e6f93c-6f4a-49a3-838f-882b6918a74c" />
-<img width="879" height="664" alt="Screenshot 2026-10-16 114911" src="https://github.com/user-attachments/assets/3430b371-e91e-4384-84d3-0da9656f378a" />
-<img width="877" height="665" alt="Screenshot 2026-10-16 124400" src="https://github.com/user-attachments/assets/12192f57-5179-470c-bee4-6dec1affec9d" />
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/7a19a7d8-5653-4a2c-909e-cd8dd1dcf653" width="49%">
+  <img src="https://github.com/user-attachments/assets/a3e6f93c-6f4a-49a3-838f-882b6918a74c" width="49%">
+  <img src="https://github.com/user-attachments/assets/3430b371-e91e-4384-84d3-0da9656f378a" width="49%">
+  <img src="https://github.com/user-attachments/assets/12192f57-5179-470c-bee4-6dec1affec9d" width="49%">
+</p>
 
 
 
