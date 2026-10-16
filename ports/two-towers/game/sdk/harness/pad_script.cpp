@@ -96,6 +96,7 @@ Pad Poll(int port) {
 }
 
 bool Connected(int port) { return Poll(port).connected; }
+Pad Raw(int port) { return Poll(port); }
 
 // PAD_STYLE=1 (PlayStation) or 2 (Nintendo): the kind of controller the test plays with
 int Style(int) { return int(harness::Env("PAD_STYLE")); }
