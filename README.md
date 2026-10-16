@@ -1,11 +1,11 @@
 # Athelas
 
 I'm Shagg and I created this project with the help of Claude (Anthropic). This is a free, unofficial launcher for three Lord of the Rings games, so you can play
-your own copies on a modern Windows PC from one place.  I used to play this with my siblings and friends for hours on end, day after day and it's an absolute shame they're not
-distributable today, so that's why I'm here. (Athelas is kingsfoil, the healing herb).  After the release of the War in the North "remaster" I decided to really take on this project. 
-This is my first ever project of this magnitude so I expect there to be a few bugs.  I have a Windows PC that I tested this on, that's about it.  It's supposed to run on Linux and Steam Deck
-(Mac and Android maybe in the future) but only time will tell. Mods and Texture packs are supported but I have not done any of those.  I'll be open to accepting public contributions and 
-pull releases as well.
+your own copies on a modern Windows PC from one place.  Tolkien created an amazing world that deserves to be lived and experienced in every way possible. I used to play this with my siblings 
+and friends for hours on end, day after day and it's an absolute shame they're not distributable today, so that's why I'm here. (Athelas is kingsfoil, the healing herb).  
+After the release of the War in the North "remaster" I decided to really take on this project. This is my first ever project of this magnitude so I expect there to be a few bugs.  
+I have a Windows PC that I tested this on, that's about it.  It's supposed to run on Linux and Steam Deck(Mac and Android maybe in the future) but only time will tell. Mods and Texture 
+packs are supported but I have not done any of those.  I'll be open to accepting public contributions and pull releases as well.
 
 - **The Return of the King (PC, 2003)**, through **ROTK Fix** (This is the recommended way to play the The Return of the King, at least in my opinion)
 - **The Return of the King (Xbox)**, through a native PC port
