@@ -73,7 +73,7 @@ The README in the zip has the details.
 
 ## Checksum
 
-`Athelas-1.0.zip` SHA-256: `5c6961189cdb5f26911bff57166c5372a6c813507d2634eac0f10be736ac4ccd`
+`Athelas-1.0.zip` SHA-256: `d163d7e71a11cae5feae6dcbaa82dfc328793704c01c99cea1716903247b93f5`
 
 ## Credits
 
