@@ -1,7 +1,4 @@
-# Athelas [VERSION]: release notes (draft)
-
-<!-- Draft for the GitHub release page. Still to decide: the version number (1.0 or 0.9).
-     Fill in the checksum from dist/Athelas-<version>.zip.sha256 when the final zip is built. -->
+# Athelas 1.0
 
 Athelas is a free, unofficial launcher for three Lord of the Rings games, so you can play your own copies on a modern
 Windows PC from one place:
@@ -69,7 +66,7 @@ The README in the zip has the details.
 
 ## Checksum
 
-`Athelas-[VERSION].zip` SHA-256: `[from the .sha256 file]`
+`Athelas-1.0.zip` SHA-256: `2471db9afcd7e81d84f7162b323ec37b54051feecb5db5a340ebe22f44a287d8`
 
 ## Credits
 
