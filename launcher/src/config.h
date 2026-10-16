@@ -25,7 +25,7 @@ struct Settings {
     int  triggerThreshold = 30;
     int  vibration = 100;         // controller rumble strength %, 0 = off
     int  player2 = 1;             // 0 keyboard and mouse, 1 second controller (co-op)
-    int  buttonNames = 0;         // 0 auto, 1 xbox, 2 playstation, 3 nintendo, 4 original ("Button 7")
+    int  buttonNames = 0;         // 0 auto, 1 xbox, 2 playstation, 3 nintendo, 4 original ("Button 7"), 5 keyboard (Xbox version)
     int  padMap[2][9] = { { 0, 1, 2, 3, 4, 5, 8, 10, 11 },   // per player: physical button for each PadAction (PadPhys ids)
                           { 0, 1, 2, 3, 4, 5, 8, 10, 11 } };
     // [Gameplay] (both ROTK versions): damage taken and dealt, percent of the game's; every level and character open
@@ -71,7 +71,21 @@ struct Settings {
     bool subtitles = true;
     int  sound3d = 1;             // 0 off (game's own), 1 speakers, 2 headphones (HRTF)
     int  volMusic = 100, volVoice = 100, volSfx = 100;
+
+    // the Xbox version's own (ROTK on PC has the game's own keyboard controls and slows itself in the background)
+    bool pauseBg = false;         // [Window] PauseInBackground
+    bool muteBg = false;          // [Window] MuteInBackground
+    bool kbEnabled = true;        // [Keyboard] Enabled
+    int  kbPlayer = 1;            // [Keyboard] Player: 1 or 2
+    std::string kbKeys[21];       // [Keyboard] each KB_ action's keys ("Mouse1, Enter"); k_kbDefault when not set
 };
+
+// Keyboard and mouse play in the Xbox ports, in the ports' order (keys.h in their SDK); ini key, default keys and
+// label for ROTK Xbox. The Two Towers' come from the port itself (its [keyboard] settings).
+enum { KB_ACTION_COUNT = 21 };
+extern const char *const k_kbKey[KB_ACTION_COUNT];
+extern const char *const k_kbDefault[KB_ACTION_COUNT];
+extern const char *const k_kbLabel[KB_ACTION_COUNT];
 
 // Controller buttons, named by Xbox position (A = bottom face button on every brand)
 enum PadPhys { PH_A, PH_B, PH_X, PH_Y, PH_LB, PH_RB, PH_BACK, PH_START, PH_LS, PH_RS, PH_LT, PH_RT, PAD_PHYS_COUNT };

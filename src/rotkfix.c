@@ -254,6 +254,7 @@ void limiter_cap_to_refresh(unsigned hz)
     if (g_freq.QuadPart) g_period = g_freq.QuadPart / g_targetFps;
 }
 
+static int g_dpiAware;   /* SetProcessDpiAwarenessContext took (DllMain) */
 static int g_hitchLogged, g_slowFrames;   /* slow-frame diagnostics, below */
 
 static void flush_stats(LONGLONG now)
@@ -1071,12 +1072,27 @@ BOOL WINAPI DllMain(HINSTANCE inst, DWORD reason, LPVOID reserved)
         if (slash) *slash = 0;
 
         load_settings();
+        /* rotk.exe has no DPI manifest: at 125-200% Windows scaling the game saw a smaller "virtual" screen and
+         * Windows stretched its picture up, blurred. Per-monitor aware before the game makes its window, it gets
+         * the screen's real pixels. Looked up at run time: Windows 10 1703 and later, and Wine. */
+        {
+            typedef BOOL (WINAPI *SetCtx_t)(HANDLE);
+            HMODULE u = GetModuleHandleA("user32.dll");
+            SetCtx_t set = u ? (SetCtx_t)(void *)GetProcAddress(u, "SetProcessDpiAwarenessContext") : NULL;
+            g_dpiAware = set && set((HANDLE)(INT_PTR)-4); /* DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 */
+            if (!g_dpiAware && u) {
+                typedef BOOL (WINAPI *SetAware_t)(void);
+                SetAware_t old = (SetAware_t)(void *)GetProcAddress(u, "SetProcessDPIAware");
+                g_dpiAware = old && old();
+            }
+        }
         if (g_logEnabled) {
             char lp[MAX_PATH]; path_in_dir(lp, "ROTKFix.log");
             g_log = fopen(lp, "w");
         }
         logf_("ROTK Fix " ROTKFIX_VERSION " loaded (Limiter=%d TargetFPS=%d Spin=%dus)",
               g_limiterMode, g_targetFps, g_spinUs);
+        logf_("display scaling: %s", g_dpiAware ? "per-monitor DPI aware (real screen pixels)" : "not DPI aware (older Windows)");
 
         QueryPerformanceFrequency(&g_freq);
         g_period = g_freq.QuadPart / g_targetFps;

@@ -490,7 +490,17 @@ static void draw_background(ImDrawList *dl, ImVec2 size, Backgrounds &b)
         float e = extra(b.prev) * (1 - fade) + extra(b.cur) * fade;
         if (e > 0) dl->AddRectFilled(ImVec2(0, 0), size, IM_COL32(3, 9, 5, (int)e));
     }
-    dl->AddRectFilledMultiColor(ImVec2(0, 0), size, a0, a0, a1, a1);
+    if (pic) {
+        // the picture mostly clear (the settings panel has its own backing): darker only behind the banner's text
+        // at the top and the buttons at the bottom
+        float top = S(150), bottom = S(110);
+        ImU32 band = IM_COL32(3, 9, 5, 135), clear = IM_COL32(3, 9, 5, 35);
+        dl->AddRectFilledMultiColor(ImVec2(0, 0), ImVec2(size.x, top), band, band, clear, clear);
+        dl->AddRectFilled(ImVec2(0, top), ImVec2(size.x, size.y - bottom), clear);
+        dl->AddRectFilledMultiColor(ImVec2(0, size.y - bottom), size, clear, clear, band, band);
+    } else {
+        dl->AddRectFilledMultiColor(ImVec2(0, 0), size, a0, a0, a1, a1);
+    }
     orn_window_frame(dl, size);   // carved stone border (ornament.cpp)
 }
 
@@ -599,6 +609,10 @@ struct App {
     double captureAt = 0;
     int captureFrame = 0;              // last frame a Controls tab was drawn (a capture ends when it isn't)
     bool captureTT = false;            // the move waiting is on The Two Towers' Controls tab (its [controls] buttons)
+    // keyboard keys for the Xbox ports: the action waiting for "press a key", and the key pressed for it
+    int kbCapture = -1, kbCaptureFrame = 0, kbResultFor = -1;
+    double kbCaptureAt = 0;
+    std::string kbResult;
     std::string message;
     bool messageBad = false;
     double messageAt = 0;
@@ -845,6 +859,16 @@ static void tab_display(App &a)
                                                  "(with the Vulkan renderer, the default).");
     ImGui::Checkbox("##showfps", &s.showFps);
     row_end();
+    if (g_xboxPage) {   // ROTK on PC slows itself down in the background on its own
+        section("In the background");
+        row_begin("Pause in the background", "The game stops, picture and sound, while another window is in front "
+                                             "(Alt-Tab), and carries on where it was when you come back.");
+        ImGui::Checkbox("##pausebg", &s.pauseBg);
+        row_end();
+        row_begin("Mute in the background", "No sound while another window is in front; the game keeps running.");
+        ImGui::Checkbox("##mutebg", &s.muteBg);
+        row_end();
+    }
 }
 
 static float hfov_deg(const App &a, int pct)
@@ -1114,6 +1138,150 @@ static void capture_event(App &a, const SDL_Event &e)
     a.captureAt = ImGui::GetTime();
 }
 
+// ---------------------------------------------------------------------------
+// Keyboard and mouse for the Xbox ports: one key or mouse button per move, set by pressing it. The names are the
+// ports' own (keys.h in their SDK): what SDL calls a key here is turned into that name.
+
+static const char *kb_name_of_scancode(SDL_Scancode sc)
+{
+    static char one[2];
+    if (sc >= SDL_SCANCODE_A && sc <= SDL_SCANCODE_Z) { one[0] = (char)('A' + (sc - SDL_SCANCODE_A)); one[1] = 0; return one; }
+    if (sc >= SDL_SCANCODE_1 && sc <= SDL_SCANCODE_9) { one[0] = (char)('1' + (sc - SDL_SCANCODE_1)); one[1] = 0; return one; }
+    switch (sc) {
+    case SDL_SCANCODE_0: return "0";
+    case SDL_SCANCODE_F1: return "F1"; case SDL_SCANCODE_F2: return "F2"; case SDL_SCANCODE_F4: return "F4";
+    case SDL_SCANCODE_F5: return "F5"; case SDL_SCANCODE_F6: return "F6"; case SDL_SCANCODE_F7: return "F7";
+    case SDL_SCANCODE_F8: return "F8"; case SDL_SCANCODE_F9: return "F9"; case SDL_SCANCODE_F11: return "F11";
+    case SDL_SCANCODE_F12: return "F12";
+    case SDL_SCANCODE_SPACE: return "Space"; case SDL_SCANCODE_RETURN: case SDL_SCANCODE_KP_ENTER: return "Enter";
+    case SDL_SCANCODE_TAB: return "Tab"; case SDL_SCANCODE_BACKSPACE: return "Backspace"; case SDL_SCANCODE_CAPSLOCK: return "CapsLock";
+    case SDL_SCANCODE_LSHIFT: return "LShift"; case SDL_SCANCODE_RSHIFT: return "RShift";
+    case SDL_SCANCODE_LCTRL: return "LCtrl"; case SDL_SCANCODE_RCTRL: return "RCtrl";
+    case SDL_SCANCODE_LALT: return "LAlt"; case SDL_SCANCODE_RALT: return "RAlt";
+    case SDL_SCANCODE_UP: return "Up"; case SDL_SCANCODE_DOWN: return "Down"; case SDL_SCANCODE_LEFT: return "Left"; case SDL_SCANCODE_RIGHT: return "Right";
+    case SDL_SCANCODE_INSERT: return "Insert"; case SDL_SCANCODE_DELETE: return "Delete"; case SDL_SCANCODE_HOME: return "Home";
+    case SDL_SCANCODE_END: return "End"; case SDL_SCANCODE_PAGEUP: return "PageUp"; case SDL_SCANCODE_PAGEDOWN: return "PageDown";
+    case SDL_SCANCODE_KP_0: return "Numpad0"; case SDL_SCANCODE_KP_1: return "Numpad1"; case SDL_SCANCODE_KP_2: return "Numpad2";
+    case SDL_SCANCODE_KP_3: return "Numpad3"; case SDL_SCANCODE_KP_4: return "Numpad4"; case SDL_SCANCODE_KP_5: return "Numpad5";
+    case SDL_SCANCODE_KP_6: return "Numpad6"; case SDL_SCANCODE_KP_7: return "Numpad7"; case SDL_SCANCODE_KP_8: return "Numpad8";
+    case SDL_SCANCODE_KP_9: return "Numpad9"; case SDL_SCANCODE_KP_MULTIPLY: return "NumpadStar"; case SDL_SCANCODE_KP_PLUS: return "NumpadPlus";
+    case SDL_SCANCODE_KP_MINUS: return "NumpadMinus"; case SDL_SCANCODE_KP_PERIOD: return "NumpadDot"; case SDL_SCANCODE_KP_DIVIDE: return "NumpadSlash";
+    case SDL_SCANCODE_MINUS: return "Minus"; case SDL_SCANCODE_EQUALS: return "Equals"; case SDL_SCANCODE_COMMA: return "Comma";
+    case SDL_SCANCODE_PERIOD: return "Period"; case SDL_SCANCODE_SLASH: return "Slash"; case SDL_SCANCODE_SEMICOLON: return "Semicolon";
+    case SDL_SCANCODE_APOSTROPHE: return "Apostrophe"; case SDL_SCANCODE_GRAVE: return "Grave";
+    default: return nullptr;   // [ ] \ F3 F10 are the ports' own keys, and the rest aren't read
+    }
+}
+
+// a key as the Controls tab shows it
+static std::string kb_display(const std::string &list)
+{
+    static const struct { const char *from, *to; } k[] = {
+        { "Mouse1", "Left mouse" }, { "Mouse2", "Right mouse" }, { "Mouse3", "Middle mouse" }, { "Mouse4", "Mouse 4" },
+        { "Mouse5", "Mouse 5" }, { "LCtrl", "Left Ctrl" }, { "RCtrl", "Right Ctrl" }, { "LShift", "Left Shift" },
+        { "RShift", "Right Shift" }, { "LAlt", "Left Alt" }, { "RAlt", "Right Alt" }, { "Grave", "` (left of 1)" },
+        { "CapsLock", "Caps Lock" }, { "PageUp", "Page Up" }, { "PageDown", "Page Down" } };
+    std::string out;
+    size_t st = 0;
+    while (st <= list.size()) {
+        size_t c = list.find(',', st);
+        std::string one = list.substr(st, c == std::string::npos ? std::string::npos : c - st);
+        st = c == std::string::npos ? list.size() + 1 : c + 1;
+        while (!one.empty() && one.front() == ' ') one.erase(one.begin());
+        while (!one.empty() && one.back() == ' ') one.pop_back();
+        if (one.empty()) continue;
+        for (auto &x : k) if (!_stricmp(x.from, one.c_str())) { one = x.to; break; }
+        if (!out.empty()) out += ", ";
+        out += one;
+    }
+    return out.empty() ? "Nothing" : out;
+}
+
+// SDL events while a move waits for its key: true takes the event (it doesn't also click in the launcher)
+static bool kb_capture_event(App &a, const SDL_Event &e)
+{
+    if (a.kbCapture < 0) return false;
+    if (e.type != SDL_EVENT_KEY_DOWN && e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return false;
+    if (ImGui::GetTime() - a.kbCaptureAt < 0.25) return e.type == SDL_EVENT_KEY_DOWN;   // the click that started it
+    const char *name = nullptr;
+    if (e.type == SDL_EVENT_KEY_DOWN) {
+        if (e.key.scancode == SDL_SCANCODE_ESCAPE) { a.kbCapture = -1; return true; }   // stop, nothing changed
+        name = kb_name_of_scancode(e.key.scancode);
+    } else {
+        static const char *b[] = { nullptr, "Mouse1", "Mouse3", "Mouse2", "Mouse4", "Mouse5" };   // SDL: 1 left, 2 middle, 3 right
+        if (e.button.button < 6) name = b[e.button.button];
+    }
+    if (!name) return true;   // a key the ports don't read: keep waiting
+    a.kbResult = name;
+    a.kbResultFor = a.kbCapture;
+    a.kbCapture = -1;
+    return true;
+}
+
+// The keyboard rows: enabled, player, and each move's keys (labels and defaults per game); true when changed
+static bool keyboard_section(App &a, bool &enabled, int &player, std::string *keys, const std::string *labels,
+                             const std::string *defaults, int n)
+{
+    bool changed = false;
+    section("Keyboard and mouse");
+    row_begin("Keyboard and mouse", "Play with the keyboard and mouse as well as a controller. The keys work like "
+                                    "the controller's buttons; the game's hints still show the controller's.");
+    changed |= ImGui::Checkbox("##kbon", &enabled);
+    row_end();
+    ImGui::BeginDisabled(!enabled);
+    static const char *pl[] = { "Player 1", "Player 2" };
+    int p = player - 1;
+    row_begin("Keyboard player", "Which player the keyboard and mouse play as. Player 2 lets one person use the "
+                                 "keyboard in co-op while the other uses a controller.");
+    if (segmented("kbplayer", &p, pl, 2)) { player = p + 1; changed = true; }
+    row_end();
+    if (a.kbResultFor >= 0 && a.kbResultFor < n) { keys[a.kbResultFor] = a.kbResult; a.kbResultFor = -1; changed = true; }
+    a.kbCaptureFrame = ImGui::GetFrameCount();
+    if (a.kbCapture >= 0 && ImGui::GetTime() - a.kbCaptureAt > 8.0) a.kbCapture = -1;
+    float slotW = S(230);
+    for (int i = 0; i < n; i++) {
+        if (keys[i].empty() && defaults[i].empty()) continue;   // nothing the game does with it
+        ImGui::PushID(i);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted(labels[i].c_str());
+        ImGui::SameLine(g_labelW);
+        bool waiting = a.kbCapture == i;
+        std::string lab = (waiting ? std::string("Press a key...") : kb_display(keys[i])) + "##key";
+        if (waiting) {
+            float pulse = 0.5f + 0.5f * (float)sin(ImGui::GetTime() * 6.0);
+            ImGui::PushStyleColor(ImGuiCol_Button, rgb(110 + (int)(40 * pulse), 82 + (int)(30 * pulse), 36));
+            ImGui::PushStyleColor(ImGuiCol_Border, C_GOLD_H);
+        } else {
+            ImGui::PushStyleColor(ImGuiCol_Button, rgb(34, 27, 20));
+            ImGui::PushStyleColor(ImGuiCol_Border, C_LINE);
+        }
+        if (ImGui::Button(lab.c_str(), ImVec2(slotW, 0))) {
+            if (waiting) a.kbCapture = -1;
+            else { a.kbCapture = i; a.kbCaptureAt = ImGui::GetTime(); }
+        }
+        ImGui::PopStyleColor(2);
+        if (!keys[i].empty()) {
+            ImGui::SameLine();
+            if (ImGui::SmallButton("Clear")) { keys[i].clear(); changed = true; if (waiting) a.kbCapture = -1; }
+        }
+        ImGui::PopID();
+    }
+    ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
+    ImGui::PushTextWrapPos(0);
+    ImGui::TextColored(a.kbCapture >= 0 ? C_GOLD_H : C_DIM, "%s", a.kbCapture >= 0
+        ? "Press the key or mouse button for it. Esc stops."
+        : "Click a move, then press the key or mouse button you want. F10 opens the settings menu in the game.");
+    ImGui::PopTextWrapPos();
+    ImGui::PopFont();
+    bool isDefault = true;
+    for (int i = 0; i < n; i++) if (keys[i] != defaults[i]) isDefault = false;
+    ImGui::BeginDisabled(isDefault);
+    if (ImGui::Button("Default keys")) { for (int i = 0; i < n; i++) keys[i] = defaults[i]; a.kbCapture = -1; changed = true; }
+    ImGui::EndDisabled();
+    ImGui::EndDisabled();
+    return changed;
+}
+
 static void tab_controls(App &a)
 {
     Settings &s = a.s;
@@ -1232,12 +1400,14 @@ static void tab_controls(App &a)
                                   "With two controllers, the first one connected is player 1 and the next is player 2.");
     segmented("p2", &s.player2, p2, 2);
     row_end();
-    static const char *bn[] = { "Automatic", "Xbox", "PlayStation", "Nintendo", "Original (\"Button 7\")" };
+    static const char *bn[] = { "Automatic", "Xbox", "PlayStation", "Nintendo", "Original (\"Button 7\")", "Keyboard keys" };
+    const bool bnOn[] = { true, true, true, true, true, g_xboxPage };   // key pictures: the Xbox version's keyboard play
     row_begin("Button names", g_xboxPage ? "Which controller's buttons the game's hints and tutorials show, as pictures.\n"
-                                           "Automatic follows the controller you play with. \"Original\" keeps the Xbox pictures."
+                                           "Automatic follows the controller you play with, or shows keyboard keys when none is plugged in. "
+                                           "\"Original\" keeps the Xbox pictures."
                                          : "Which controller's buttons the game's hints and tutorials show, as pictures.\n"
                                            "Automatic follows the controller you play with. \"Original\" keeps the game's own text.");
-    segmented("names", &s.buttonNames, bn, 5);
+    segmented("names", &s.buttonNames, bn, 6, bnOn);
     row_end();
     row_begin("Vibration", "Controller rumble from the original Xbox version, switched back on. 0 turns it off.");
     ImGui::SliderInt("##rumble", &s.vibration, 0, 100, s.vibration == 0 ? "Off" : "%d%%");
@@ -1250,6 +1420,11 @@ static void tab_controls(App &a)
     row_end();
 
     ImGui::EndDisabled();
+    if (g_xboxPage) {   // on PC the game has keyboard controls of its own
+        static std::string labels[KB_ACTION_COUNT], defaults[KB_ACTION_COUNT];
+        for (int k = 0; k < KB_ACTION_COUNT; k++) { labels[k] = k_kbLabel[k]; defaults[k] = k_kbDefault[k]; }
+        keyboard_section(a, s.kbEnabled, s.kbPlayer, s.kbKeys, labels, defaults, KB_ACTION_COUNT);
+    }
 }
 
 static void tab_audio(App &a)
@@ -2047,7 +2222,11 @@ static void tt_open_textures()
 
 // Settings the launcher sets by itself instead of showing: the frame limit follows the
 // frame rate (one "Frame rate" choice, as for ROTK)
-static bool tt_hidden(const PortSetting &ps) { return ps.section == "display" && ps.key == "fps_cap"; }
+// ([window] and [keyboard] have rows of their own on the Display and Controls tabs)
+static bool tt_hidden(const PortSetting &ps)
+{
+    return (ps.section == "display" && ps.key == "fps_cap") || ps.section == "window" || ps.section == "keyboard";
+}
 // The tab a setting is shown on: its section's, except the frame rate, which is on Display as in ROTK's
 static int tt_tab_of_setting(const PortSetting &ps) { return ps.section == "graphics" && ps.key == "fps" ? 0 : tt_tab_of(ps.section); }
 
@@ -2260,6 +2439,11 @@ static void tt_tab_display(App &a)
         ImGui::PopFont();
     }
     if (const PortSetting *ps = tt_setting(a, "display", "show_fps")) tt_setting_row(a, *ps);
+    if (tt_setting(a, "window", "pause_unfocused")) {
+        section("In the background");
+        for (const char *k : { "pause_unfocused", "mute_unfocused" })
+            if (const PortSetting *ps = tt_setting(a, "window", k)) tt_setting_row(a, *ps);
+    }
 
     // anything else the port adds to [display] later, with its own label
     bool more = false;
@@ -2694,6 +2878,33 @@ static void tt_tab_controls(App &a)
     tt_slider_row(a, "vibration", "Vibration", "Controller rumble from the original Xbox version. 0 turns it off.", "##ttrumble", "Off");
     tt_slider_row(a, "stick_deadzone", "Stick deadzone", "How far a stick must move before it counts. 0 keeps the game's own, as on the Xbox.", "##ttdz", "Game's own");
     tt_slider_row(a, "trigger_threshold", "Trigger sensitivity", "How far the triggers must be pulled to count as pressed. 0 keeps the game's own, as on the Xbox.", "##tttrig", "Game's own");
+    // [keyboard]: the port's own list, in its order (keys.h in its SDK)
+    if (const PortSetting *en = tt_setting(a, "keyboard", "enabled")) {
+        static const char *const keyNames[KB_ACTION_COUNT] = {
+            "move_up", "move_down", "move_left", "move_right", "walk", "a", "b", "x", "y", "black", "white",
+            "left_trigger", "right_trigger", "start", "back", "left_stick", "right_stick", "dpad_up", "dpad_down",
+            "dpad_left", "dpad_right" };
+        static const char *const ttLabels[KB_ACTION_COUNT] = {
+            nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+            "Pause", "Back", nullptr, nullptr, "Menu up", "Menu down", "Menu left", "Menu right" };
+        std::string keys[KB_ACTION_COUNT], labels[KB_ACTION_COUNT], defaults[KB_ACTION_COUNT];
+        const PortSetting *ps[KB_ACTION_COUNT] = {};
+        for (int k = 0; k < KB_ACTION_COUNT; k++) {
+            ps[k] = tt_setting(a, "keyboard", keyNames[k]);
+            if (!ps[k]) continue;
+            keys[k] = toml_unquote(tt_val(a, *ps[k]));
+            defaults[k] = toml_unquote(ps[k]->def);
+            labels[k] = ttLabels[k] ? std::string(ttLabels[k]) : tt_move_name(ps[k]->label);
+        }
+        bool on = tt_val(a, *en) == "true";
+        int player = 1;
+        if (const PortSetting *pp = tt_setting(a, "keyboard", "player")) player = atoi(toml_unquote(tt_val(a, *pp)).c_str()) == 2 ? 2 : 1;
+        if (keyboard_section(a, on, player, keys, labels, defaults, KB_ACTION_COUNT)) {
+            a.ttFile.set("keyboard", "enabled", on ? "true" : "false");
+            a.ttFile.set("keyboard", "player", toml_quote(player == 2 ? "2" : "1"));
+            for (int k = 0; k < KB_ACTION_COUNT; k++) if (ps[k]) a.ttFile.set("keyboard", keyNames[k], toml_quote(keys[k]));
+        }
+    }
     // anything else the port puts on this tab
     bool more = false;
     for (auto &ps : a.tt.settings) {
@@ -3334,13 +3545,15 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     // ---- settings panel
     // an elven frame around it; the panel itself sits just inside the frame
     const float frameT = S(9);
-    ImVec2 panelA = ImGui::GetWindowPos() + ImVec2(pad, bannerH);
-    ImVec2 panelB = panelA + ImVec2(size.x - pad * 2, size.y - bannerH - barH - S(30));
+    // on the right, the picture left of it in the clear
+    const float panelW = std::min(size.x - pad * 2, S(690)), panelX = size.x - pad - panelW;
+    ImVec2 panelA = ImGui::GetWindowPos() + ImVec2(panelX, bannerH);
+    ImVec2 panelB = panelA + ImVec2(panelW, size.y - bannerH - barH - S(30));
     orn_panel_fill(ImGui::GetWindowDrawList(), panelA, panelB, ImGui::GetColorU32(rgb(15, 14, 13, 0.70f)));
     const float inset = frameT * 0.5f + S(5);   // clear of the frame's lines
-    ImGui::SetCursorPos(ImVec2(pad + inset, bannerH + inset));
+    ImGui::SetCursorPos(ImVec2(panelX + inset, bannerH + inset));
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0, 0, 0, 0));
-    ImGui::BeginChild("panel", ImVec2(size.x - pad * 2 - inset * 2, size.y - bannerH - barH - S(30) - inset * 2), ImGuiChildFlags_AlwaysUseWindowPadding);
+    ImGui::BeginChild("panel", ImVec2(panelW - inset * 2, size.y - bannerH - barH - S(30) - inset * 2), ImGuiChildFlags_AlwaysUseWindowPadding);
     g_labelW = std::max(S(230), ImGui::GetContentRegionAvail().x * 0.36f);
     if (ttShown) {
         if (!a.ttLoaded) tt_load_settings(a);
@@ -3404,7 +3617,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     float bx = size.x - pad - playW;
     // summary and messages on a small parchment card, readable over any background
     {
-        float cardW = bx - saveW - S(24) - pad;
+        float cardW = bx - saveW - S(24) - panelX;   // under the panel, the picture beside it kept clear
         bool msg = !a.message.empty() && ImGui::GetTime() - a.messageAt < (a.messageBad ? 30.0 : 4.0);
         float cardH = S(32);
         if (msg) {   // room for the message, however many lines it wraps to
@@ -3412,18 +3625,18 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
             cardH += ImGui::CalcTextSize(a.message.c_str(), nullptr, false, cardW - S(18)).y + S(2);
             ImGui::PopFont();
         }
-        ImVec2 c0 = ImGui::GetWindowPos() + ImVec2(pad, by + (playH - cardH) * 0.5f), c1 = c0 + ImVec2(cardW, cardH);
+        ImVec2 c0 = ImGui::GetWindowPos() + ImVec2(panelX, by + (playH - cardH) * 0.5f), c1 = c0 + ImVec2(cardW, cardH);
         orn_plate(ImGui::GetWindowDrawList(), c0, c1, ImGui::GetColorU32(rgb(15, 14, 13, 0.86f)), false);
         ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
-        ImGui::SetCursorPos(ImVec2(pad + S(10), by + (playH - cardH) * 0.5f + S(5)));
-        ImGui::PushTextWrapPos(pad + cardW - S(8));
+        ImGui::SetCursorPos(ImVec2(panelX + S(10), by + (playH - cardH) * 0.5f + S(5)));
+        ImGui::PushTextWrapPos(panelX + cardW - S(8));
         if (own && !g.exeFound) ImGui::TextColored(C_DIM, "Add a game to begin");
         else if (own || rxShown) ImGui::TextColored(C_DIM, "%d x %d  |  %s  |  %d fps  |  %s", w, h, dm[a.s.displayMode], fps, pn[detect_preset(a.s)]);
         else if (ttShown) ImGui::TextColored(C_DIM, "%s", tt_summary(a).c_str());
         else ImGui::TextColored(C_DIM, "%s  |  %s", game_kind_name(a.lib[a.cur].kind),
                                 game_kind_playable(a.lib[a.cur].kind) ? "settings in its own launcher" : "not playable yet");
         if (msg) {
-            ImGui::SetCursorPosX(pad + S(10));
+            ImGui::SetCursorPosX(panelX + S(10));
             ImGui::TextColored(a.messageBad ? C_BAD : C_GOOD, "%s", a.message.c_str());
         }
         ImGui::PopTextWrapPos();
@@ -3510,7 +3723,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     }
     g_scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
     if (g_scale <= 0.0f) g_scale = 1.0f;
-    int ww = (int)(720 * g_scale), wh = (int)(800 * g_scale);
+    // landscape, so the background pictures (screenshots, the games' art) show at their own shape beside the settings
+    int ww = (int)(1180 * g_scale), wh = (int)(740 * g_scale);
     const SDL_DisplayMode *dmode = SDL_GetDesktopDisplayMode(SDL_GetPrimaryDisplay());
     if (dmode && (ww > dmode->w * 0.95f || wh > dmode->h * 0.9f)) {
         float f = std::min(dmode->w * 0.95f / ww, dmode->h * 0.9f / wh);
@@ -3589,7 +3803,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     while (!a.quit) {
         SDL_Event e;
         while (SDL_PollEvent(&e)) {
-            ImGui_ImplSDL3_ProcessEvent(&e);
+            if (!kb_capture_event(a, e)) ImGui_ImplSDL3_ProcessEvent(&e);   // a key being set doesn't also click
             if (e.type == SDL_EVENT_QUIT) a.quit = true;
             if (e.type == SDL_EVENT_GAMEPAD_ADDED || e.type == SDL_EVENT_GAMEPAD_REMOVED) refresh_controllers(a);
             capture_event(a, e);
@@ -3606,6 +3820,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
         if (SDL_GetWindowFlags(win) & SDL_WINDOW_MINIMIZED) { SDL_Delay(50); continue; }
         // while mapping (and just after), controller presses must not also click things here
         if (a.capture >= 0 && ImGui::GetFrameCount() - a.captureFrame > 2) a.capture = -1;   // left the Controls tab or the page
+        if (a.kbCapture >= 0 && ImGui::GetFrameCount() - a.kbCaptureFrame > 2) a.kbCapture = -1;
         if (a.firstRunPreset) {
             // first run: High suits a gaming graphics card; integrated graphics (most laptops), software
             // Vulkan and PCs without Vulkan get Balanced instead - unless the player already changed something

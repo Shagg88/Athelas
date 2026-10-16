@@ -341,6 +341,24 @@ static bool puti(const char *ini, const char *sec, const char *key, int v) { ret
 
 static int clampi(int v, int a, int b) { return v < a ? a : v > b ? b : v; }
 
+static std::string trim(const std::string &v);
+
+const char *const k_kbKey[KB_ACTION_COUNT] = {
+    "MoveForward", "MoveBack", "MoveLeft", "MoveRight", "Walk",
+    "SpeedAttack", "PhysicalAttack", "Parry", "FierceAttack", "Action", "JumpBack", "RangedAttack", "KillingMove",
+    "Pause", "Back", "Special", "RightStick",
+    "MenuUp", "MenuDown", "MenuLeft", "MenuRight"};
+const char *const k_kbDefault[KB_ACTION_COUNT] = {
+    "W", "S", "A", "D", "LAlt",
+    "Mouse1, Enter", "LCtrl, Backspace", "Q", "Mouse2", "E", "Tab", "LShift", "Space, Mouse3",
+    "Esc", "Grave", "F5", "",
+    "Up", "Down", "Left", "Right"};
+const char *const k_kbLabel[KB_ACTION_COUNT] = {
+    "Move forward", "Move back", "Move left", "Move right", "Walk (hold)",
+    "Speed attack", "Physical attack", "Parry", "Fierce attack", "Action", "Jump back", "Ranged attack", "Killing move",
+    "Pause", "Back", "Special ability", "Right stick click",
+    "Menu up", "Menu down", "Menu left", "Menu right"};
+
 bool load_settings(const std::string &dir, Settings &s)
 {
     std::string p = dir + "\\ROTKFix.ini";
@@ -353,15 +371,20 @@ bool load_settings(const std::string &dir, Settings &s)
     s.damageTaken = clampi(geti(ini, "Gameplay", "DamageTaken", 100), 10, 500);
     s.enemyDamage = clampi(geti(ini, "Gameplay", "EnemyDamage", 100), 10, 500);
     s.unlockAll = geti(ini, "Gameplay", "UnlockAll", 0) != 0;
+    s.pauseBg = geti(ini, "Window", "PauseInBackground", 0) != 0;
+    s.muteBg = geti(ini, "Window", "MuteInBackground", 0) != 0;
+    s.kbEnabled = geti(ini, "Keyboard", "Enabled", 1) != 0;
+    s.kbPlayer = clampi(geti(ini, "Keyboard", "Player", 1), 1, 2);
+    for (int i = 0; i < KB_ACTION_COUNT; i++) s.kbKeys[i] = trim(gets(ini, "Keyboard", k_kbKey[i], k_kbDefault[i]));
     s.vibration = clampi(geti(ini, "Gamepad", "Vibration", 100), 0, 100);
     s.hideRealPads = geti(ini, "Gamepad", "HideRealControllers", 1) != 0;
     s.deadzone = clampi(geti(ini, "Gamepad", "StickDeadzone", 12), 0, 50);
     s.triggerThreshold = clampi(geti(ini, "Gamepad", "TriggerThreshold", 30), 5, 95);
     {
         std::string bn = gets(ini, "Gamepad", "ButtonNames", "auto");
-        static const char *names[] = { "auto", "xbox", "playstation", "nintendo", "original" };
+        static const char *names[] = { "auto", "xbox", "playstation", "nintendo", "original", "keyboard" };
         s.buttonNames = 0;
-        for (int i = 0; i < 5; i++) if (!_stricmp(bn.c_str(), names[i])) s.buttonNames = i;
+        for (int i = 0; i < 6; i++) if (!_stricmp(bn.c_str(), names[i])) s.buttonNames = i;
         for (int pl = 0; pl < 2; pl++)
             for (int a = 0; a < PAD_ACTION_COUNT; a++) {
                 // player 2 without a layout of its own starts from player 1's
@@ -507,6 +530,23 @@ static const std::vector<IniSection> &ini_layout()
             { "EnemyDamage", "100", "Damage your hits do to enemies, % of the game's (10-500)" },
             { "UnlockAll", "0", "1 = every level and character can be chosen" },
         } },
+        { "Window", "In the background (Xbox version)", {
+            { "PauseInBackground", "0", "1 = the game stops while another window is in front (Alt-Tab)" },
+            { "MuteInBackground", "0", "1 = no sound while another window is in front" },
+        } },
+        { "Keyboard", "Keyboard and mouse (Xbox version; on PC the game's own keyboard controls are used)", {
+            { "Enabled", "1", "1 = play with the keyboard and mouse as well as a controller" },
+            { "Player", "1", "Which player the keyboard plays as in co-op: 1 or 2" },
+            { "MoveForward", "W", "Keys, comma separated: A-Z, 0-9, F1-F12, Space, Enter, Esc, Tab, Backspace, LShift, LCtrl, LAlt, Up, Down, Left, Right, Numpad0-9, Mouse1-Mouse5 ..." },
+            { "MoveBack", "S", nullptr }, { "MoveLeft", "A", nullptr }, { "MoveRight", "D", nullptr },
+            { "Walk", "LAlt", "Held: move at half speed" },
+            { "SpeedAttack", "Mouse1, Enter", nullptr }, { "PhysicalAttack", "LCtrl, Backspace", "Also goes back in menus" },
+            { "Parry", "Q", nullptr }, { "FierceAttack", "Mouse2", nullptr }, { "Action", "E", nullptr },
+            { "JumpBack", "Tab", nullptr }, { "RangedAttack", "LShift", nullptr }, { "KillingMove", "Space, Mouse3", nullptr },
+            { "Pause", "Esc", nullptr }, { "Back", "Grave", nullptr }, { "Special", "F5", nullptr },
+            { "RightStick", "", nullptr },
+            { "MenuUp", "Up", nullptr }, { "MenuDown", "Down", nullptr }, { "MenuLeft", "Left", nullptr }, { "MenuRight", "Right", nullptr },
+        } },
         { "Textures", "Texture packs", {
             { "Dump", "0", "1 = save every texture the game uses as a PNG in ROTKFix\\textures\\dump (for making texture packs)" },
             { "Replace", "1", "1 = use replacement PNGs from ROTKFix\\textures\\replace (texture packs)" },
@@ -590,7 +630,7 @@ static bool write_rotkfix_ini(const std::string &p, const Settings &s, bool crea
     };
     static const char *dm[] = { "borderless", "fullscreen", "windowed" };
     static const char *looks[] = { "original", "film", "vivid", "dark" };
-    static const char *names[] = { "auto", "xbox", "playstation", "nintendo", "original" };
+    static const char *names[] = { "auto", "xbox", "playstation", "nintendo", "original", "keyboard" };
     static const char *sm[] = { "off", "speakers", "headphones" };
     set("Graphics", "Screen", s.screen);
     set("Graphics", "DisplayMode", dm[s.displayMode]);
@@ -627,6 +667,11 @@ static bool write_rotkfix_ini(const std::string &p, const Settings &s, bool crea
     set("Gameplay", "DamageTaken", std::to_string(s.damageTaken));
     set("Gameplay", "EnemyDamage", std::to_string(s.enemyDamage));
     set("Gameplay", "UnlockAll", std::to_string((int)s.unlockAll));
+    set("Window", "PauseInBackground", std::to_string((int)s.pauseBg));
+    set("Window", "MuteInBackground", std::to_string((int)s.muteBg));
+    set("Keyboard", "Enabled", std::to_string((int)s.kbEnabled));
+    set("Keyboard", "Player", std::to_string(s.kbPlayer));
+    for (int i = 0; i < KB_ACTION_COUNT; i++) set("Keyboard", k_kbKey[i], s.kbKeys[i]);
     set("Gamepad", "ButtonNames", names[s.buttonNames]);
     set("Gamepad", "Vibration", std::to_string(s.vibration));
     set("Gamepad", "StickDeadzone", std::to_string(s.deadzone));
