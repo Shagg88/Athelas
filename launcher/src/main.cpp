@@ -3546,7 +3546,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     // an elven frame around it; the panel itself sits just inside the frame
     const float frameT = S(9);
     // on the right, the picture left of it in the clear
-    const float panelW = std::min(size.x - pad * 2, S(690)), panelX = size.x - pad - panelW;
+    const float panelW = std::min(size.x - pad * 2, S(640)), panelX = size.x - pad - panelW;
     ImVec2 panelA = ImGui::GetWindowPos() + ImVec2(panelX, bannerH);
     ImVec2 panelB = panelA + ImVec2(panelW, size.y - bannerH - barH - S(30));
     orn_panel_fill(ImGui::GetWindowDrawList(), panelA, panelB, ImGui::GetColorU32(rgb(15, 14, 13, 0.70f)));
@@ -3724,7 +3724,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     g_scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
     if (g_scale <= 0.0f) g_scale = 1.0f;
     // landscape, so the background pictures (screenshots, the games' art) show at their own shape beside the settings
-    int ww = (int)(1180 * g_scale), wh = (int)(740 * g_scale);
+    int ww = (int)(1040 * g_scale), wh = (int)(680 * g_scale);
     const SDL_DisplayMode *dmode = SDL_GetDesktopDisplayMode(SDL_GetPrimaryDisplay());
     if (dmode && (ww > dmode->w * 0.95f || wh > dmode->h * 0.9f)) {
         float f = std::min(dmode->w * 0.95f / ww, dmode->h * 0.9f / wh);
