@@ -1,16 +1,34 @@
-# ROTK Fix
+# Athelas
 
-By Shagg, with Claude (Anthropic). An unofficial, free fan project for **The Lord of the Rings: The Return of the King** (PC, 2003).
-It lets people play their own copy on a modern PC.
+By Shagg, with Claude (Anthropic). A free, unofficial launcher for three Lord of the Rings games, so you can play
+your own copies on a modern Windows PC from one place (Athelas is kingsfoil, the healing herb):
 
-The launcher that comes with it is called **Athelas** (after kingsfoil, the healing herb). It sets up and starts
-ROTK Fix, and also starts the PC ports of The Return of the King and The Two Towers for players' own Xbox copies.
+- **The Return of the King (PC, 2003)**, through **ROTK Fix**
+- **The Return of the King (Xbox)**, through a native PC port
+- **The Two Towers (Xbox)**, through a native PC port
+
+Download it from [Releases](../../releases): one zip with the launcher, ROTK Fix and both ports.
 
 > Not affiliated with or endorsed by Electronic Arts, New Line Cinema, Warner Bros. or the Tolkien Estate.
-> No game files are included or distributed. You need your own copy of the game, already installed and able to run.
-> ROTK Fix does not change or bypass the game's copy protection.
+> No game files are included. You need your own copy of each game: the PC game installed, or your own Xbox disc as
+> an `.iso` or extracted files (US releases). ROTK Fix doesn't change or bypass the PC game's copy protection. The
+> Xbox ports skip the console's check for an original Xbox disc, which a PC can't answer as it has no Xbox drive;
+> the games' own files are never decrypted or changed.
 
-## What it does
+## In this repository
+
+| Path | What it is |
+|---|---|
+| `launcher/` | Athelas, the launcher |
+| `src/`, `build.sh` | ROTK Fix, for the PC game |
+| `ports/two-towers/` | The Two Towers PC port ([its README](ports/two-towers/README.md)) |
+| `ports/rotk-xbox/` | The Return of the King Xbox PC port ([its README](ports/rotk-xbox/README.md)) |
+| `dist-files/README.txt` | The README that comes in the download, with every setting |
+| `docs/` | Release notes and engine notes |
+| `scripts/` | Packaging the release zip |
+| `third_party/`, `licenses/` | Bundled libraries and every licence |
+
+## ROTK Fix: what it does
 
 - **Any screen:** widescreen and ultrawide without stretching (menus and HUD stay at most 16:9), any resolution, borderless/fullscreen/windowed with ultrawide window sizes, Alt-Tab that works
 - **Smooth:** 60 to 240 fps at normal game speed, even frame pacing, V-Sync aware
@@ -94,11 +112,11 @@ SDL_DIR=path/to/SDL3-3.4.18 DXVK_DIR=path/to/dxvk-3.1.1 DSOAL_DIR=third_party/ds
 
 The 3D sound libraries (DSOAL and OpenAL Soft) are kept in `third_party/dsoal` with checksums, so every release ships the tested versions.
 
-The GitHub Actions workflow (`.github/workflows/build.yml`) builds ROTK Fix and Athelas the same way on every push. It can't build the two Xbox ports: recompiling them needs the game's own `default.xbe`, which can never be in a repository. So the full Athelas download is packaged on the developer's PC with `TT_DIR` and `RX_DIR` pointing at the ports' release folders.
+The GitHub Actions workflow (`.github/workflows/build.yml`) builds ROTK Fix and Athelas the same way on every push. It can't build the two Xbox ports: recompiling them needs the game's own `default.xbe`, which can never be in a repository. Each port builds on Windows with its `build.bat` (see the ports' READMEs), and the full Athelas download is packaged with `TT_DIR` and `RX_DIR` pointing at the ports' release folders.
 
 ## Licences
 
-ROTK Fix is MIT licensed, © 2026 Shagg (see `LICENSE`). Bundled components keep their own licences, all in `licenses/` and shipped in `ROTKFix\licenses`:
+Athelas, ROTK Fix and the ports are MIT licensed, © 2026 Shagg (see `LICENSE`). Bundled components keep their own licences, all in `licenses/` and shipped in `ROTKFix\licenses`.:
 
 - DXVK (zlib)
 - SDL3 (zlib)
