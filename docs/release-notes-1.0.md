@@ -42,6 +42,13 @@ This is the first public release.
 - Pause or mute while the game is in the background (off by default)
 - A frame rate counter
 
+**Achievements, in all three games**
+- The Two Towers 14, The Return of the King 29 (PC and Xbox alike): every level, every hero, co-op, enemies defeated
+- Earned as you play, and from what your saves already hold
+- A note in the corner when you earn one (can be turned off), and the list on the launcher's Gameplay tab and the
+  in-game menu
+- Kept only on your PC, in each game's achievements.txt
+
 **Athelas, the launcher**
 - All three games' settings in one place, with presets; every key and button can be changed
 - Background art taken from your own game files, rotating, or your own pictures
