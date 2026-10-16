@@ -103,7 +103,10 @@ To uninstall, use **About → Remove ROTK Fix** in the launcher, then delete the
 - **Sound:** the game's 3D sound and EAX reverb restored through [DSOAL](https://github.com/kcat/dsoal) and [OpenAL Soft](https://openal-soft.org).
 - **Launcher:** writes `ROTKFix.ini` and the game's own `ROTK.ini`.
 
-## Building
+## Building (for developers)
+
+Players don't need this: download the zip from [Releases](../../releases) instead. This section is only for
+changing the code and building it yourself.
 
 Builds cross-compile on Linux with MinGW-w64 (32-bit, because the game is 32-bit):
 
