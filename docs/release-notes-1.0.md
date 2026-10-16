@@ -8,7 +8,9 @@ Windows PC from one place:
 - **The Two Towers (Xbox)**, through a native PC port
 
 No game files are included. You need your own copy of each game: the PC game installed, or your own Xbox disc as an
-`.iso` or extracted files (US releases). Nothing bypasses copy protection, and the games' own files are never changed.
+`.iso` or extracted files (US releases). ROTK Fix doesn't change or bypass the PC game's copy
+protection. The Xbox ports skip the console's check for an original Xbox disc, which a PC can't answer as it has no
+Xbox drive. The games' own files are never decrypted or changed.
 
 ## What's new
 

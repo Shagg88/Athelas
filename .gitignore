@@ -16,3 +16,4 @@ logs/
 # working files: static-analysis reports, old source kept for reference
 *.plist
 attic/
+notes.md

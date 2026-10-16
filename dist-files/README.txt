@@ -15,8 +15,10 @@ Lord of the Rings games on a modern PC, all from one launcher, Athelas
 Not affiliated with or endorsed by Electronic Arts, New Line Cinema, Warner
 Bros. or the Tolkien Estate. No game files are included: you need your own
 copy of each game you play (the PC game installed, or your own Xbox disc as
-an .iso or extracted files). Athelas does not change or bypass any copy
-protection.
+an .iso or extracted files). ROTK Fix does not change or bypass the PC
+game's copy protection. The Xbox ports skip the console's check for an
+original Xbox disc, which a PC can't answer as it has no Xbox drive; they
+don't decrypt or change the game's files.
 
 
 REQUIREMENTS
