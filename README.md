@@ -1,6 +1,6 @@
 # ROTK Fix
 
-An unofficial, free fan project for **The Lord of the Rings: The Return of the King** (PC, 2003).
+By Shagg. An unofficial, free fan project for **The Lord of the Rings: The Return of the King** (PC, 2003).
 It lets people play their own copy on a modern PC.
 
 The launcher that comes with it is called **Athelas** (after kingsfoil, the healing herb). It sets up and starts
@@ -97,7 +97,7 @@ The GitHub Actions workflow (`.github/workflows/build.yml`) builds ROTK Fix and 
 
 ## Licences
 
-ROTK Fix is MIT licensed (see `LICENSE`). Bundled components keep their own licences, all in `licenses/` and shipped in `ROTKFix\licenses`:
+ROTK Fix is MIT licensed, © 2026 Shagg (see `LICENSE`). Bundled components keep their own licences, all in `licenses/` and shipped in `ROTKFix\licenses`:
 
 - DXVK (zlib)
 - SDL3 (zlib)

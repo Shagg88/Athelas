@@ -1,6 +1,6 @@
 # Athelas [VERSION]: release notes (draft)
 
-<!-- Draft for the GitHub release page. Still to decide: the version number (1.0 or 0.9) and the name/credits line.
+<!-- Draft for the GitHub release page. Still to decide: the version number (1.0 or 0.9).
      Fill in the checksum from dist/Athelas-<version>.zip.sha256 when the final zip is built. -->
 
 Athelas is a free, unofficial launcher for three Lord of the Rings games, so you can play your own copies on a modern
@@ -73,7 +73,7 @@ The README in the zip has the details.
 
 ## Credits
 
-[name/credits line to be decided]
+Made by Shagg.
 
 Built on DXVK, SDL3, Dear ImGui, DSOAL and OpenAL Soft, and XboxXBE-Recomp (MIT, © 2026 TGP482). Full licences are
 in the `licenses` folder.

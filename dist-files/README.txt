@@ -1,6 +1,6 @@
 Athelas
 =======
-An unofficial, free fan project that lets you play your own copies of three
+By Shagg. An unofficial, free fan project that lets you play your own copies of three
 Lord of the Rings games on a modern PC, all from one launcher, Athelas
 (Athelas.exe - named after kingsfoil, the healing herb):
 
@@ -343,4 +343,4 @@ ROTKFix\licenses in the game folder once ROTK Fix is set up there)
   XboxXBE-Recomp (MIT, (c) 2026 TGP482)  runtime in TwoTowers.exe and ROTKXbox.exe
   toml++ (MIT)         settings files in the Xbox ports
   (the Xbox ports' own lists are in TT-Xbox\THIRD_PARTY.txt and ROTK-Xbox\THIRD_PARTY.txt)
-ROTK Fix and Athelas are MIT licensed.
+ROTK Fix and Athelas are MIT licensed, (c) 2026 Shagg.
