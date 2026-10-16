@@ -2,7 +2,7 @@
 
 An unofficial native PC port of the original Xbox game *The Lord of the Rings: The Two Towers* (US release). The game's own program is statically recompiled for Windows with [XboxXBE-Recomp](https://github.com/TGP482/XboxXBE-Recomp). It plays as it did on the Xbox by default; widescreen, higher frame rates, sharper graphics and the other improvements are settings you turn on.
 
-The port is part of **Athelas**, a launcher for three Lord of the Rings games. Players get it from the Athelas releases page, where it comes as `TwoTowers.exe` in the `TT-Xbox` folder beside `Athelas.exe`. This repository holds the port's source.
+The port is part of **Athelas**, a launcher for three Lord of the Rings games. Players get it from the Athelas download (the Releases page of this repository), where it comes as `TwoTowers.exe` in the `TT-Xbox` folder beside `Athelas.exe`. This folder holds the port's source.
 
 > [!NOTE]
 > No game files are included. You need your own copy of the Xbox game: a disc image (`.iso`) or its extracted files. This project is not affiliated with or endorsed by Electronic Arts, New Line Cinema, Warner Bros. or the Tolkien Estate.
