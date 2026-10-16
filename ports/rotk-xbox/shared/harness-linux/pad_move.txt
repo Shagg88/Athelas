@@ -1,0 +1,6 @@
+# gameplay starts around frame 400 with the fast data
+700 LS 200
+950 X 6
+970 X 6
+990 X 6
+1010 Y 6

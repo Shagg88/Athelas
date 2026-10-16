@@ -1,0 +1,346 @@
+# Recompiler input for default.xbe, written by xbe_symbols
+
+[xbe]
+path = "assets/default.xbe"
+title = 0x4541003E
+entry = 0x11FA47
+xdk = 5558
+out = "generated/game"
+partitions = 32
+code_sections = [".text", "D3D", "D3DX", "XGRPH", "DSOUND", "XPP"]
+
+# extra entry points
+[functions]
+
+# functions the host replaces or calls by name, 0 where the image has none
+[symbols]
+_CIacos                                              = 0x1175A8
+_CIasin                                              = 0x117D40
+accept                                               = 0
+bind                                                 = 0
+BinkDoFrame                                          = 0
+BinkGetSummary                                       = 0
+BinkNextFrame                                        = 0
+BinkWait                                             = 0
+CDevice_KickOff                                      = 0x12FD90  # xbsymdb
+CDirectSoundStream_AddRef                            = 0
+CDirectSoundStream_Discontinuity                     = 0
+CDirectSoundStream_Flush                             = 0
+CDirectSoundStream_FlushEx                           = 0
+CDirectSoundStream_GetInfo                           = 0
+CDirectSoundStream_GetStatus                         = 0
+CDirectSoundStream_Pause                             = 0
+CDirectSoundStream_Process                           = 0
+CDirectSoundStream_Release                           = 0
+CDirectSoundStream_SetFilter                         = 0
+CDirectSoundStream_SetFormat                         = 0
+CDirectSoundStream_SetFrequency                      = 0
+CDirectSoundStream_SetHeadroom                       = 0
+CDirectSoundStream_SetI3DL2Source                    = 0
+CDirectSoundStream_SetMaxDistance                    = 0
+CDirectSoundStream_SetMinDistance                    = 0
+CDirectSoundStream_SetMixBins                        = 0
+CDirectSoundStream_SetMixBinVolumes                  = 0
+CDirectSoundStream_SetPosition                       = 0
+CDirectSoundStream_SetVelocity                       = 0
+CDirectSoundStream_SetVolume                         = 0
+closesocket                                          = 0
+connect                                              = 0
+crt_acos                                             = 0x1175C5
+crt_asin                                             = 0x117D5D
+crt_atan                                             = 0
+crt_cos                                              = 0
+crt_log                                              = 0
+crt_log10                                            = 0
+crt_pow                                              = 0x1186AC
+crt_sin                                              = 0
+crt_sqrt                                             = 0
+crt_tan                                              = 0
+D3D_BlockOnResource                                  = 0x130290  # xbsymdb
+D3D_BlockOnTime                                      = 0x12FF60  # xbsymdb
+D3D_InitDefaultState                                 = 0x131C00
+D3D_InternalAddRef                                   = 0x12EA70
+D3D_InternalRelease                                  = 0x12EC00
+D3D_KickOffAndWaitForIdle                            = 0x130270  # xbsymdb
+D3D_MakeRequestedSpace                               = 0x1300D0  # xbsymdb
+D3D_SetFence                                         = 0x12FEB0  # xbsymdb
+D3DDevice_Begin                                      = 0x12E480
+D3DDevice_BeginPush                                  = 0x12FD60  # manual
+D3DDevice_BlockOnFence                               = 0x12CDF0  # xbsymdb
+D3DDevice_BlockUntilVerticalBlank                    = 0x12CE30  # xbsymdb
+D3DDevice_Clear                                      = 0x12A2A0  # xbsymdb
+D3DDevice_CopyRects                                  = 0
+D3DDevice_CreatePixelShader                          = 0x130420
+D3DDevice_CreateVertexShader                         = 0x12C290
+D3DDevice_DeletePixelShader                          = 0x130470
+D3DDevice_DeleteVertexShader                         = 0x12C950
+D3DDevice_DrawIndexedVertices                        = 0x12E130
+D3DDevice_DrawVertices                               = 0x12E090
+D3DDevice_DrawVerticesUP                             = 0
+D3DDevice_EnableOverlay                              = 0
+D3DDevice_End                                        = 0x12E4C0  # xbsymdb
+D3DDevice_EndPush                                    = 0x12FD80  # xbsymdb
+D3DDevice_FlushVertexCache                           = 0
+D3DDevice_GetBackBuffer2                             = 0x12D390  # xbsymdb
+D3DDevice_GetDepthStencilSurface2                    = 0x12D3E0  # xbsymdb
+D3DDevice_GetRenderTarget2                           = 0
+D3DDevice_GetVertexShaderFunction                    = 0
+D3DDevice_InsertFence                                = 0x12CF10  # xbsymdb
+D3DDevice_IsFencePending                             = 0
+D3DDevice_LightEnable                                = 0
+D3DDevice_LoadVertexShader                           = 0x12C6D0  # xbsymdb
+D3DDevice_MakeSpace                                  = 0x130210  # xbsymdb
+D3DDevice_PersistDisplay                             = 0
+D3DDevice_Release                                    = 0
+D3DDevice_SelectVertexShader                         = 0x12C730
+D3DDevice_SetFlickerFilter                           = 0x12CE60  # xbsymdb
+D3DDevice_SetGammaRamp                               = 0x12CBD0  # xbsymdb
+D3DDevice_SetIndices                                 = 0x12D870  # xbsymdb
+D3DDevice_SetLight                                   = 0
+D3DDevice_SetMaterial                                = 0
+D3DDevice_SetPalette                                 = 0x12D7E0  # xbsymdb
+D3DDevice_SetPixelShader                             = 0x1304D0
+D3DDevice_SetPixelShaderConstant                     = 0
+D3DDevice_SetRenderState_BackFillMode                = 0x12AE00
+D3DDevice_SetRenderState_CullMode                    = 0x12AA90
+D3DDevice_SetRenderState_DoNotCullUncompressed       = 0x12BBF0  # xbsymdb
+D3DDevice_SetRenderState_Dxt1NoiseEnable             = 0x12AC50  # xbsymdb
+D3DDevice_SetRenderState_EdgeAntiAlias               = 0x12A9C0
+D3DDevice_SetRenderState_FillMode                    = 0x12ADB0
+D3DDevice_SetRenderState_FogColor                    = 0x12AA40
+D3DDevice_SetRenderState_FrontFace                   = 0x12AB00
+D3DDevice_SetRenderState_LineWidth                   = 0x12ABE0
+D3DDevice_SetRenderState_LogicOp                     = 0x12AD50
+D3DDevice_SetRenderState_MultiSampleAntiAlias        = 0x12BC70  # xbsymdb
+D3DDevice_SetRenderState_MultiSampleMask             = 0x12BCF0
+D3DDevice_SetRenderState_MultiSampleMode             = 0x12BC10  # xbsymdb
+D3DDevice_SetRenderState_MultiSampleRenderTargetMode = 0x12BC40  # xbsymdb
+D3DDevice_SetRenderState_NormalizeNormals            = 0x12AB40
+D3DDevice_SetRenderState_OcclusionCullEnable         = 0x12BAD0  # xbsymdb
+D3DDevice_SetRenderState_PSTextureModes              = 0x12A690  # xbsymdb
+D3DDevice_SetRenderState_RopZCmpAlwaysRead           = 0x12BBB0  # xbsymdb
+D3DDevice_SetRenderState_RopZRead                    = 0x12BBD0  # xbsymdb
+D3DDevice_SetRenderState_SampleAlpha                 = 0x12BD40
+D3DDevice_SetRenderState_ShadowFunc                  = 0x12AA00
+D3DDevice_SetRenderState_Simple                      = 0x12A6C0
+D3DDevice_SetRenderState_StencilCullEnable           = 0x12BB40  # xbsymdb
+D3DDevice_SetRenderState_StencilEnable               = 0x12B9A0  # xbsymdb
+D3DDevice_SetRenderState_StencilFail                 = 0x12BA30
+D3DDevice_SetRenderState_TextureFactor               = 0x12AB80  # xbsymdb
+D3DDevice_SetRenderState_TwoSidedLighting            = 0x12AE60
+D3DDevice_SetRenderState_VertexBlend                 = 0x12AEE0
+D3DDevice_SetRenderState_YuvEnable                   = 0x12BAA0  # xbsymdb
+D3DDevice_SetRenderState_ZEnable                     = 0x12B910  # xbsymdb
+D3DDevice_SetRenderStateNotInline                    = 0x12A6F0
+D3DDevice_SetRenderTarget                            = 0x12D110  # xbsymdb
+D3DDevice_SetScissors                                = 0x12DA60  # xbsymdb
+D3DDevice_SetScreenSpaceOffset                       = 0x12DD60  # xbsymdb
+D3DDevice_SetShaderConstantMode                      = 0x12C7F0
+D3DDevice_SetSoftDisplayFilter                       = 0x12CEB0  # xbsymdb
+D3DDevice_SetStreamSource                            = 0x12C600
+D3DDevice_SetTexture                                 = 0x12D630
+D3DDevice_SetTextureStageStateNotInline              = 0x12B130  # xbsymdb
+D3DDevice_SetTextureState_BorderColor                = 0x12B0B0
+D3DDevice_SetTextureState_BumpEnv                    = 0x12B040  # xbsymdb
+D3DDevice_SetTextureState_ColorKeyColor              = 0x12B0F0
+D3DDevice_SetTextureState_TexCoordIndex              = 0x12AF30
+D3DDevice_SetTile                                    = 0x12DA50  # xbsymdb
+D3DDevice_SetTransform                               = 0x12CC60  # xbsymdb
+D3DDevice_SetVertexShader                            = 0x12CA60
+D3DDevice_SetVertexShaderConstant1                   = 0x12C3D0
+D3DDevice_SetVertexShaderConstant1Fast               = 0
+D3DDevice_SetVertexShaderConstant4                   = 0x12C430
+D3DDevice_SetVertexShaderConstantNotInlineFast       = 0x12C4E0
+D3DDevice_SetViewport                                = 0x12D400  # xbsymdb
+D3DDevice_Swap                                       = 0x12F6D0  # xbsymdb
+D3DDevice_SwitchTexture                              = 0
+D3DResource_BlockUntilNotBusy                        = 0
+D3DResource_IsBusy                                   = 0
+Direct3D_CreateDevice                                = 0x12F8A0
+DirectSoundCreate                                    = 0x140750
+DirectSoundCreateBuffer                              = 0
+DirectSoundCreateStream                              = 0
+DirectSoundDoWork                                    = 0x13F5AE
+DirectSoundUseFullHRTF                               = 0
+DirectSoundUseLightHRTF                              = 0
+getsockname                                          = 0
+getsockopt                                           = 0
+IDirectSound_CommitDeferredSettings                  = 0x14038F
+IDirectSound_CommitEffectData                        = 0
+IDirectSound_CreateSoundBuffer                       = 0x140566
+IDirectSound_DownloadEffectsImage                    = 0x13F477
+IDirectSound_EnableHeadphones                        = 0
+IDirectSound_GetEffectData                           = 0
+IDirectSound_GetOutputLevels                         = 0
+IDirectSound_GetSpeakerConfig                        = 0
+IDirectSound_Release                                 = 0x13E9C2
+IDirectSound_SetDistanceFactor                       = 0
+IDirectSound_SetDopplerFactor                        = 0
+IDirectSound_SetEffectData                           = 0
+IDirectSound_SetI3DL2Listener                        = 0x14058A
+IDirectSound_SetMixBinHeadroom                       = 0
+IDirectSound_SetOrientation                          = 0
+IDirectSound_SetPosition                             = 0
+IDirectSound_SetRolloffFactor                        = 0
+IDirectSound_SetVelocity                             = 0
+IDirectSound_SynchPlayback                           = 0
+IDirectSoundBuffer_GetCurrentPosition                = 0x13F58E
+IDirectSoundBuffer_GetStatus                         = 0x13F572
+IDirectSoundBuffer_Lock                              = 0
+IDirectSoundBuffer_Play                              = 0x13F4F2
+IDirectSoundBuffer_Release                           = 0x13E9D8
+IDirectSoundBuffer_SetAllParameters                  = 0
+IDirectSoundBuffer_SetBufferData                     = 0x13FF9C
+IDirectSoundBuffer_SetCurrentPosition                = 0
+IDirectSoundBuffer_SetFilter                         = 0x13F49E
+IDirectSoundBuffer_SetFormat                         = 0x13FF80
+IDirectSoundBuffer_SetFrequency                      = 0x13F9A0
+IDirectSoundBuffer_SetHeadroom                       = 0x13F4BA
+IDirectSoundBuffer_SetI3DL2Source                    = 0
+IDirectSoundBuffer_SetLoopRegion                     = 0x13F552
+IDirectSoundBuffer_SetMaxDistance                    = 0
+IDirectSoundBuffer_SetMinDistance                    = 0
+IDirectSoundBuffer_SetMixBins                        = 0x13F9BC
+IDirectSoundBuffer_SetMixBinVolumes                  = 0x13F4D6
+IDirectSoundBuffer_SetOutputBuffer                   = 0
+IDirectSoundBuffer_SetPlayRegion                     = 0
+IDirectSoundBuffer_SetPosition                       = 0
+IDirectSoundBuffer_SetRolloffCurve                   = 0
+IDirectSoundBuffer_SetVelocity                       = 0
+IDirectSoundBuffer_SetVolume                         = 0
+IDirectSoundBuffer_Stop                              = 0x13F516
+IDirectSoundBuffer_StopEx                            = 0x13F52E
+IDirectSoundBuffer_Unlock                            = 0
+IDirectSoundStream_SetEG                             = 0
+ioctlsocket                                          = 0
+listen                                               = 0
+Lock2DSurface                                        = 0x130E60
+recv                                                 = 0
+recvfrom                                             = 0
+select                                               = 0
+send                                                 = 0
+sendto                                               = 0
+setsockopt                                           = 0
+shutdown                                             = 0
+socket                                               = 0
+WSACancelOverlappedIO                                = 0
+WSAGetLastError                                      = 0
+WSAGetOverlappedResult                               = 0
+WSARecv                                              = 0
+WSARecvFrom                                          = 0
+WSASend                                              = 0
+WSASendTo                                            = 0
+WSAStartup                                           = 0
+XAudioDownloadEffectsImage                           = 0
+XInitDevices                                         = 0x147CF3
+XInputClose                                          = 0x14880A
+XInputGetState                                       = 0x1489EE
+XInputOpen                                           = 0x1487B4
+XInputSetState                                       = 0x148A61
+XLaunchNewImageA                                     = 0x11F869
+XMountUtilityDrive                                   = 0x11E9A8
+XNetCreateKey                                        = 0
+XNetDnsLookup                                        = 0
+XNetDnsRelease                                       = 0
+XNetGetEthernetLinkStatus                            = 0
+XNetGetTitleXnAddr                                   = 0
+XNetInAddrToXnAddr                                   = 0
+XNetRandom                                           = 0
+XNetRegisterKey                                      = 0
+XNetStartup                                          = 0
+XNetUnregisterKey                                    = 0
+XNetXnAddrToInAddr                                   = 0
+XOnlineCleanup                                       = 0
+XOnlineStartup                                       = 0
+D3DDevice_RunPushBuffer      = 0x12E5B0  # manual (added)
+D3DDevice_KickPushBuffer     = 0x12CE00  # manual (added)
+D3DDevice_InsertCallback     = 0x12FCF0  # manual (added)
+D3DDevice_SetPixelShaderProgram = 0x130490  # manual (added)
+XInputGetCapabilities        = 0x148816  # manual (added)
+
+[data]
+D3D_DeferredTextureState    = 0x13A430  # xbsymdb
+D3D_Device                  = 0x13A8D0
+D3D_DirtyFlags              = 0x13A428  # manual
+D3D_IndexData               = 0x13A424  # manual
+D3D_pDevice                 = 0x13A8C8
+D3D_RenderState             = 0x13A630  # xbsymdb
+D3D_SimpleRenderStateEncode = 0x160EB8
+D3D_Streams                 = 0x13CD60
+DSound_StreamVtable         = 0
+DSound_StreamVtable2        = 0
+XPP_GamepadType             = 0x147834
+XPP_MemoryUnitType          = 0x1478E0
+
+# argument locations in API order for functions a link time code generated library compiled with another
+# convention: a register (eax ebx ecx edx esi edi ebp) or "stack" for the next stack slot, which the callee pops
+[abi]
+
+# ---- The Return of the King hooks (appended to game.toml by the config build) ----
+[[hook]]                   # XapiInitProcess: failed disc authentication (0x121C84 < 0) -> continue instead of booting to the dashboard (0x121EE4)
+at = 0x00121EBE
+call = "ROTK_DiscCheckFailed"
+on_true = 0x00121EC3
+
+[[hook]]                   # frame end: the wait for a vertical blank since the last frame (skipped above 30 fps)
+at = 0x000D03D3
+call = "ROTK_FrameWait"
+on_true = 0x000D03F1
+
+[[hook]]                   # the screen's TV-safe border (64 x 32 pixels around the picture): none unless [graphics] safe_area
+at = 0x000BF143
+call = "ROTK_SafeArea"
+
+[[hook]]                   # the same, field rendering mode
+at = 0x000BF20E
+call = "ROTK_SafeArea"
+
+[[hook]]                   # the same, frame rendering mode
+at = 0x000BF26E
+call = "ROTK_SafeArea"
+
+[[hook]]                   # menus: held up, its repeat counter about to count a frame (at 10, a step; then every 2)
+at = 0x000FDB13
+call = "ROTK_MenuRepeat"
+
+[[hook]]                   # held down
+at = 0x000FDC84
+call = "ROTK_MenuRepeat"
+
+[[hook]]                   # held right
+at = 0x000FDDE3
+call = "ROTK_MenuRepeat"
+
+[[hook]]                   # held left
+at = 0x000FDEC8
+call = "ROTK_MenuRepeat"
+
+[[hook]]                   # player move and slide: fcom [0.001] -> clamp(step) x 0.03 above 30 fps, as ROTK PC
+at = 0x0005EC2D
+call = "ROTK_SlideCompare"
+on_true = 0x0005EC33
+
+[[hook]]                   # the same, fld [0.001]
+at = 0x0005EC3E
+call = "ROTK_SlideLoad"
+on_true = 0x0005EC44
+
+[[hook]]                   # the same, fcomp [0.1] -> clamp(step) x 3
+at = 0x0005F0E2
+call = "ROTK_SlideRest"
+on_true = 0x0005F0E8
+
+[[hook]]                   # the same, fcom [0.001]
+at = 0x0005F14D
+call = "ROTK_SlideCompare"
+on_true = 0x0005F153
+
+[[hook]]                   # the same, fld [0.001]
+at = 0x0005F15E
+call = "ROTK_SlideLoad"
+on_true = 0x0005F164
+
+[[hook]]                   # the same, fcomp [0.001]
+at = 0x0005F1D0
+call = "ROTK_SlideComparePop"
+on_true = 0x0005F1D6

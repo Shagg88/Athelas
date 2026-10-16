@@ -1,0 +1,12 @@
+# Addresses proven by hand for The Return of the King (4541003E, XDK 5558); applied over xbe_symbols + XbSymbolDatabase.
+[data]
+D3D_DirtyFlags       = 0x13A428  # D3DDevice_SetTexture 0x12D6B1..0x12D6BD or 0x4800 into it
+D3D_IndexData        = 0x13A424  # D3DDevice_SetIndices 0x12D889 stores the index buffer data
+[symbols]
+D3DDevice_BeginPush               = 0x12FD60  # XbSymbolDatabase D3DDevice_BeginPush_4: (dwords), jumps to MakeRequestedSpace 0x130220
+# ROTK host replacements (rotkxbox/src/game)
+D3DDevice_RunPushBuffer           = 0x12E5B0  # XbSymbolDatabase; the game's draw-list player 0xBD462 runs mesh push buffers
+D3DDevice_KickPushBuffer          = 0x12CE00
+D3DDevice_InsertCallback          = 0x12FCF0
+D3DDevice_SetPixelShaderProgram   = 0x130490
+XInputGetCapabilities             = 0x148816  # XPP; the game asks after XInputOpen

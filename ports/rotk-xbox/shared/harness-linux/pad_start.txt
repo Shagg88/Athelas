@@ -1,0 +1,9 @@
+# press START every few seconds, then A, to move through the intro and menus
+600 START
+900 A
+1200 START
+1500 A
+1800 START
+2100 A
+2400 START
+2700 A

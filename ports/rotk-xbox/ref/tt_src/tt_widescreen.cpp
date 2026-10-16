@@ -1,0 +1,154 @@
+// The Two Towers: widescreen. The game only renders 4:3 and never asks for the console's widescreen setting, but
+// the host shows the picture at 16:9 on a widescreen display (gpu BlitFrame), which stretched the world sideways.
+// Every camera projection goes through 0x4E890 (this, fov, aspect, near, far): with a widescreen display the 4:3
+// aspect becomes 16:9, so the same vertical view is kept and more is seen at the sides. The frustum culling built
+// from the same arguments follows.
+//
+// The HUD, menus and text are 2D quads in 640x480 screen pixels, drawn with the game's pass-through vertex
+// programs; on a widescreen display their x is pulled into the middle 4:3 of the picture so they keep their shape.
+// Quads as wide as the screen (fades, full screen effects) stay as they are (gpu::SqueezeScreenX). With hud_edges
+// (on by default, and only with widescreen = true) the pieces near the sides stay at the sides (HudPlace).
+#include <algorithm>
+#include <atomic>
+#include <chrono>
+#include <cmath>
+#include <cstring>
+#include <vector>
+
+#include "app/app.h"
+#include "core/log.h"
+#include "gpu/state.h"
+#include "gpu/texture.h"
+#include "gpu/vertex.h"
+#include "kernel/kernel.h"
+#include "xdk/hle.h"
+
+X86_EXTERN_FUNC(__imp__sub_0004E890);
+X86_FUNC(sub_0004E890) {
+    if (app::Widescreen()) {
+        uint32_t at = ctx.esp + 8;  // aspect
+        float aspect;
+        std::memcpy(&aspect, ::kernel::HostPtr(at), 4);
+        if (std::fabs(aspect - 4.0f / 3.0f) < 0.01f) {
+            aspect = 16.0f / 9.0f;
+            std::memcpy(::kernel::HostPtr(at), &aspect, 4);
+        }
+    }
+    __imp__sub_0004E890(ctx, base);
+}
+
+namespace tt {
+bool g_hud_edges = true;  // settings.toml [graphics] hud_edges
+}
+
+namespace {
+// The game's 2D vertex programs only copy inputs to outputs: mov oPos, v0 first, then any of mov oD0 / oT0, vN
+// (HUD, text, menus, fades, panels). In 4928 microcode each such instruction is 0, 0x0020001B | vN << 9,
+// 0x0836106C, 0x2070F8xx (the low byte picks the output and marks the last instruction).
+bool Is2D(const std::vector<uint32_t>& p) {
+    if (p.empty() || p.size() % 4 || p.size() > 4 * 6) return false;
+    for (size_t i = 0; i < p.size(); i += 4) {
+        if (p[i] != 0 || (p[i + 1] & ~0x1E00u) != 0x0020001Bu || p[i + 2] != 0x0836106Cu ||
+            (p[i + 3] & 0xFFFFFF00u) != 0x2070F800u)
+            return false;
+    }
+    return p[1] == 0x0020001Bu && (p[3] & 0xFEu) == 0;  // v0 to oPos first
+}
+
+// the last draw of the 3D world (a vertex program other than the 2D ones): HUD pieces go to the edges only while
+// the world is on screen, so screens of only 2D (legal text, menus) stay centred as they were laid out
+// A frame with the world in it draws hundreds of 3D things; a movie frame or a loading screen draws one or two
+// (the movie quad uses a 3D-looking vertex program). The edges need such frames for half a second (a loading frame
+// behind a 2D screen does not count), and stay until they have been gone for a second and a half (a stalled frame
+// does not end it). tt::WorldFrame counts, once a frame, from the frame wait (tt_extras.cpp).
+std::atomic<int64_t> g_world_ms{-1000000}, g_world_since{-1000000};
+std::atomic<int> g_world_draws{0};
+constexpr int64_t kWorldSteadyMs = 500, kWorldGoneMs = 1500;
+constexpr int kWorldDrawsPerFrame = 100;  // the copyright screen once reached 30, gameplay draws 900 and more
+int64_t NowMs() {
+    using namespace std::chrono;
+    return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
+}
+
+float HudSqueeze(const gpu::State& s) {
+    if (!s.vs || !(s.vs_handle & 1) || !app::Widescreen()) return 1.0f;
+    if (!Is2D(s.vs->program)) {
+        g_world_draws++;
+        return 1.0f;
+    }
+    uint32_t w, h;
+    gpu::SurfaceSize(s.rt, w, h);
+    if (w != 640 || h != 480) return 1.0f;  // the screen, not a texture the game draws into
+    // screen effects that sample a copy of the screen (heat haze over lava) must line up with the 3D picture
+    for (uint32_t t : s.textures) {
+        gpu::TextureDesc d;
+        if (t && gpu::Describe(t, d) && d.width >= 640 && d.height >= 480) return 1.0f;
+    }
+    return (4.0f / 3.0f) / (16.0f / 9.0f);
+}
+
+// hud_edges: a HUD piece near the left or right edge keeps its distance to that edge of the 16:9 picture (in
+// 4:3 pixels) instead of moving into the middle 4:3; the rest stays centred. The game draws text a letter at a
+// time and bars a piece at a time, so a draw that touches the one just before it (side by side, same rows) goes
+// where that one went: a word or a bar moves as one. Only the last draw counts, never a union of them, and a wide
+// draw (a centred panel) starts no chain: a box that only grew, kept from frame to frame, once took in the whole
+// screen and pulled every HUD piece into the middle.
+struct Chain {
+    float x0 = 0, x1 = -1, y0 = 0, y1 = -1;
+    float b = 0;
+} g_chain;
+std::atomic<uint64_t> g_chain_frame{0}, g_frame{0};  // the frame the chain was made in
+
+void HudPlace(float x0, float x1, float y0, float y1, float w, float f, float& a, float& b) {
+    a = f;
+    float centre = w / 2 * (1 - f), right = w * (1 - f);
+    int64_t now = NowMs();
+    bool world = now - g_world_ms <= kWorldGoneMs && g_world_ms - g_world_since >= kWorldSteadyMs;
+    if (!tt::g_hud_edges || !world) {
+        b = centre;
+        return;
+    }
+    constexpr float kGap = 16, kRows = 8, kWide = 0.4f;
+    if (g_chain_frame != g_frame) g_chain = {};  // no chain carries over from the frame before
+    g_chain_frame = g_frame.load();
+    bool touches = x0 <= g_chain.x1 + kGap && x1 >= g_chain.x0 - kGap && y0 <= g_chain.y1 + kRows &&
+                   y1 >= g_chain.y0 - kRows;
+    if (touches) {
+        b = g_chain.b;
+        g_chain = {x0, x1, y0, y1, b};
+        return;
+    }
+    // only what hugs a side: the HUD sits within 96 of 640 pixels of the edge, centred text and menus start further in
+    constexpr float kEdge = 0.15f;
+    if (x0 < w * kEdge && x1 < w / 2) b = 0.0f;
+    else if (x1 > w * (1 - kEdge) && x0 > w / 2) b = right;
+    else b = centre;
+    if (x1 - x0 > w * kWide) g_chain = {};
+    else g_chain = {x0, x1, y0, y1, b};
+}
+
+}  // namespace
+
+namespace tt {
+// once a frame: was the world in the frame just drawn
+void WorldFrame() {
+    g_frame++;
+    int n = g_world_draws.exchange(0);
+    if (n < kWorldDrawsPerFrame) return;
+    int64_t now = NowMs();
+    if (now - g_world_ms > kWorldGoneMs) {
+        g_world_since = now;  // a new stretch of the world on screen
+        static std::atomic<int> logged{0};
+        if (logged++ < 16) LOGR("tt: world on screen (%d 3D draws a frame): HUD to the screen edges", n);
+    }
+    g_world_ms = now;
+}
+}  // namespace tt
+
+namespace {
+// the game's 2D vertex programs, for texture dumps to name the HUD's textures by
+bool ScreenSpace(const gpu::State& s) { return s.vs && Is2D(s.vs->program); }
+
+const int kRegistered = (gpu::g_screen_space_hook = HudSqueeze, gpu::g_screen_space_place = HudPlace,
+                         gpu::g_screen_space_test = ScreenSpace, 0);
+}  // namespace

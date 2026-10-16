@@ -1,0 +1,69 @@
+
+# ---- The Return of the King hooks (appended to game.toml by the config build) ----
+[[hook]]                   # XapiInitProcess: failed disc authentication (0x121C84 < 0) -> continue instead of booting to the dashboard (0x121EE4)
+at = 0x00121EBE
+call = "ROTK_DiscCheckFailed"
+on_true = 0x00121EC3
+
+[[hook]]                   # frame end: the wait for a vertical blank since the last frame (skipped above 30 fps)
+at = 0x000D03D3
+call = "ROTK_FrameWait"
+on_true = 0x000D03F1
+
+[[hook]]                   # the screen's TV-safe border (64 x 32 pixels around the picture): none unless [graphics] safe_area
+at = 0x000BF143
+call = "ROTK_SafeArea"
+
+[[hook]]                   # the same, field rendering mode
+at = 0x000BF20E
+call = "ROTK_SafeArea"
+
+[[hook]]                   # the same, frame rendering mode
+at = 0x000BF26E
+call = "ROTK_SafeArea"
+
+[[hook]]                   # menus: held up, its repeat counter about to count a frame (at 10, a step; then every 2)
+at = 0x000FDB13
+call = "ROTK_MenuRepeat"
+
+[[hook]]                   # held down
+at = 0x000FDC84
+call = "ROTK_MenuRepeat"
+
+[[hook]]                   # held right
+at = 0x000FDDE3
+call = "ROTK_MenuRepeat"
+
+[[hook]]                   # held left
+at = 0x000FDEC8
+call = "ROTK_MenuRepeat"
+
+[[hook]]                   # player move and slide: fcom [0.001] -> clamp(step) x 0.03 above 30 fps, as ROTK PC
+at = 0x0005EC2D
+call = "ROTK_SlideCompare"
+on_true = 0x0005EC33
+
+[[hook]]                   # the same, fld [0.001]
+at = 0x0005EC3E
+call = "ROTK_SlideLoad"
+on_true = 0x0005EC44
+
+[[hook]]                   # the same, fcomp [0.1] -> clamp(step) x 3
+at = 0x0005F0E2
+call = "ROTK_SlideRest"
+on_true = 0x0005F0E8
+
+[[hook]]                   # the same, fcom [0.001]
+at = 0x0005F14D
+call = "ROTK_SlideCompare"
+on_true = 0x0005F153
+
+[[hook]]                   # the same, fld [0.001]
+at = 0x0005F15E
+call = "ROTK_SlideLoad"
+on_true = 0x0005F164
+
+[[hook]]                   # the same, fcomp [0.001]
+at = 0x0005F1D0
+call = "ROTK_SlideComparePop"
+on_true = 0x0005F1D6
