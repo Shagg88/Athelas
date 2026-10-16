@@ -137,6 +137,11 @@ int32_t PulseEvent(Object& o);
 int32_t ReleaseSemaphore(Object& o, int32_t count, uint32_t& status);
 int32_t ReleaseMutant(Object& o, uint32_t& status);
 int64_t Now100ns();                           // system time, 100 ns since 1601
+// the guest's own clock, steady nanoseconds that stand still while the game is paused (app::Paused): the interrupt
+// time, performance counter, tick count and vertical blanks follow it, so a pause is no jump in the game's time
+int64_t GuestNs();
+void Freeze(bool on);
+bool Frozen();
 int64_t ToDeadline(int64_t due_100ns);        // relative or absolute to a steady clock deadline in ns
 void QueueDpc(uint32_t dpc, uint32_t arg1, uint32_t arg2);
 struct Thread;

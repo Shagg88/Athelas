@@ -36,11 +36,12 @@ bool Guest(uint32_t va) { return va >= 0x10000 && va < 0x84000000; }
 void ApplyFov() {
     static uint32_t field = 0;
     static float original = 0, written = 0;
-    static const uint32_t percent = [] {
-        const char* e = std::getenv("TT_FOV_PERCENT");  // a test override
-        return e ? uint32_t(std::atoi(e)) : tt::g_fov_percent;
-    }();
-    if (percent == 100 || percent < 50 || percent > 200) return;
+    static const char* env = std::getenv("TT_FOV_PERCENT");  // a test override
+    // read each frame: the in-game menu may change it while playing
+    const uint32_t percent = env ? uint32_t(std::atoi(env)) : tt::g_fov_percent;
+    static uint32_t last = 100;
+    if ((percent == 100 && last == 100) || percent < 50 || percent > 200) return;
+    last = percent;
     uint32_t root = ::kernel::R32(kCameraTuningRoot);
     uint32_t tuning = Guest(root) ? ::kernel::R32(root + 0x18) : 0;
     if (!Guest(tuning)) return;

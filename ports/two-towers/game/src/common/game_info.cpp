@@ -78,4 +78,9 @@ const app::GameInfo app::kGame = {
     .ui = nullptr,                        // ImGui drawing each frame
     .pad = nullptr,                       // changes a polled pad
     .rumble = nullptr,                    // changes a rumble before it is set
+    .remap_controls = true,
+    // [keyboard]: Black is Jump Back here (ROTK's White); White does nothing
+    .key_defaults = {{keys::kBlack, "Tab"}, {keys::kWhite, ""}},
+    // the in-game menu: these take effect at once
+    .live_settings = {"graphics.fov", "graphics.hud_edges", "gameplay.damage_taken", "gameplay.enemy_damage"},
 };

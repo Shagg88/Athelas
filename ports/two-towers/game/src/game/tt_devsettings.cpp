@@ -102,8 +102,12 @@ uint32_t g_enemy_damage = 100;     // [gameplay] enemy_damage, percent
 }
 
 namespace {
+// each frame: the in-game menu may change the percent while playing, back to 100 too
 void Scale(const char* side, uint32_t percent) {
-    if (percent == 100) return;
+    static bool touched[2] = {};
+    bool& t = touched[side[0] == 'B'];
+    if (percent == 100 && !t) return;
+    t = true;
     for (const char* level : {"Easy", "Normal", "Hard"}) {
         Known* k = Find(std::string("DIFFICULTY/") + side + " " + level);
         if (!k || !k->addr || k->type != 2) continue;

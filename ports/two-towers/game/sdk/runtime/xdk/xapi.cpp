@@ -21,7 +21,7 @@ void UpdatePorts() {
     std::lock_guard<std::mutex> lock(g_ports_lock);
     uint32_t cur = 0;
     for (int p = 0; p < 4; p++)
-        if (input::Poll(p).connected) cur |= 1u << p;
+        if (input::Connected(p)) cur |= 1u << p;
     uint32_t old = R32(kGamepadType + XDK_XPP_Current);
     if (cur != old) {
         W32(kGamepadType + XDK_XPP_Changed, R32(kGamepadType + XDK_XPP_Changed) | (cur ^ old));

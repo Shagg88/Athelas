@@ -894,6 +894,7 @@ private:
     uint64_t presents_ = 0;
     double fps_ = 0;
     std::chrono::steady_clock::time_point fps_t_ = std::chrono::steady_clock::now();
+    float brightness_ = 1.0f;  // the brightness the gamma ramp was last made with
     uint64_t fps_n_ = 0;
 };
 
@@ -3801,6 +3802,7 @@ void D3D12Backend::RenderUi() {
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
     if (app::kGame.ui) app::kGame.ui(fps_);
+    app::DrawOverlay(fps_);
     // [display] show_fps: the frames presented a second (counted over half a second), top right
     if (app::Get().show_fps && fps_ > 0) {
         const ImGuiViewport* vp = ImGui::GetMainViewport();
@@ -3810,7 +3812,7 @@ void D3D12Backend::RenderUi() {
         ImGui::Begin("##fps", nullptr,
                      ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_AlwaysAutoResize |
                          ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav);
-        ImGui::SetWindowFontScale(std::max(1.0f, vp->Size.y / 720.0f));
+        ImGui::SetWindowFontScale(app::UiScale());
         ImGui::Text("%.0f fps", fps_);
         ImGui::End();
     }
@@ -3952,6 +3954,13 @@ void D3D12Backend::Present(const Surface& front) {
     if (!g_movie) movie_on_ = false;  // first, so a screenshot just after a movie shows the game
     if (t && g_screenshot.exchange(false)) Screenshot(*t);
     if (t && g_movie) KeepMovieFrame(*t);
+    // brightness changed in the in-game menu: the ramp again, the identity one for a game that never set its own
+    if (float b = app::Get().brightness; b != brightness_) {
+        if (!ramp_set_ && brightness_ == 1.0f)
+            for (int i = 0; i < 256; i++) ramp_[i] = ramp_[256 + i] = ramp_[512 + i] = uint8_t(i);
+        brightness_ = b;
+        ramp_dirty_ = true;
+    }
     if (ramp_dirty_) UploadGammaRamp();
     Transition(lut_.Get(), lut_state_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 

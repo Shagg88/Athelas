@@ -136,6 +136,30 @@ std::vector<cfg::Desc> SettingsList() {
                     nullptr, &s.buttons[i], nullptr, 0, 0, sources, nullptr, nullptr, names};
         l.push_back(d);
     }
+    l.push_back({"window", "pause_unfocused", Type::Bool, "Pause in the background",
+                 "The game stops, picture and sound, while another window is in front (Alt-Tab), and carries on "
+                 "where it was when you come back.",
+                 &s.pause_unfocused});
+    l.push_back({"window", "mute_unfocused", Type::Bool, "Mute in the background",
+                 "No sound while another window is in front; the game keeps running.", &s.mute_unfocused});
+    // [keyboard]: on by default, it changes nothing for a controller
+    l.push_back({"keyboard", "enabled", Type::Bool, "Keyboard and mouse",
+                 "Play with the keyboard and mouse as well as a controller. The keys work like the controller's "
+                 "buttons; the game's hints still show the controller's.",
+                 &s.keyboard});
+    l.push_back({"keyboard", "player", Type::Choice, "Keyboard player",
+                 "Which player the keyboard and mouse play as. Player 2 lets one person use the keyboard in co-op "
+                 "while the other uses a controller.",
+                 nullptr, &s.keyboard_player, nullptr, 0, 0, {"1", "2"}, nullptr, nullptr, {"Player 1", "Player 2"}});  // stores 1 or 2
+    for (uint32_t i = 0; i < keys::kCount; i++) {
+        const char* label = keys::kLabels[i];
+        if (i >= keys::kA && i <= keys::kRightTrigger && size_t(i - keys::kA) < kGame.button_actions.size() &&
+            kGame.button_actions[i - keys::kA])
+            label = kGame.button_actions[i - keys::kA];
+        l.push_back({"keyboard", keys::kSettingKeys[i], Type::String, label,
+                     "The keys that do this, comma separated (\"Mouse1, Enter\"); empty for none.", nullptr, nullptr,
+                     &s.keys[i]});
+    }
     // the game's own settings go with the graphics ones, before textures
     auto at = std::find_if(l.begin(), l.end(), [](const cfg::Desc& d) { return std::string(d.section) == "textures"; });
     l.insert(at, kGame.options.begin(), kGame.options.end());
