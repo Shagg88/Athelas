@@ -24,11 +24,13 @@ This is the first public release.
 - The game's 3D sound and EAX reverb restored
 - Modern Xbox, PlayStation and Switch controllers, with remapping and matching button pictures
 - Two-player co-op with two controllers, and online by streaming it with Parsec (or Steam Remote Play Together)
+- Gameplay options: damage taken, enemy damage, and every level and character unlocked (all off by default)
 
 **The Return of the King (Xbox) 1.0.1**
 - Runs natively on PC, up to 240 fps, widescreen and ultrawide
 - Sharp text and menus, using the PC version's larger fonts and pictures when you have it installed
 - Two-player co-op on one screen, and online by streaming it with Parsec (or Steam Remote Play Together)
+- The same gameplay options as the PC version: damage taken, enemy damage, unlock everything
 - Fixes for slowdowns and for enemies vanishing instead of fading at high frame rates
 
 **The Two Towers (Xbox) 1.0.1**

@@ -224,6 +224,7 @@ static void load_settings(void)
     icons_load_settings(ini);
     sound_load_settings(ini);
     textures_load_settings(ini);
+    gameplay_load_settings(ini);
     g_devButtons = GetPrivateProfileIntA("Extras", "DeveloperButtons", 0, ini);
     graphics_load_settings(ini);
     post_load_settings(ini);
@@ -975,6 +976,7 @@ static void apply_patches(void)
     sound_patch();
     patch_dev_buttons();
     patch_input_sleep();
+    gameplay_patch();
     g_patched = 1;
 }
 

@@ -27,6 +27,10 @@ struct Settings {
     int  buttonNames = 0;         // 0 auto, 1 xbox, 2 playstation, 3 nintendo, 4 original ("Button 7")
     int  padMap[2][9] = { { 0, 1, 2, 3, 4, 5, 8, 10, 11 },   // per player: physical button for each PadAction (PadPhys ids)
                           { 0, 1, 2, 3, 4, 5, 8, 10, 11 } };
+    // [Gameplay] (both ROTK versions): damage taken and dealt, percent of the game's; every level and character open
+    int  damageTaken = 100;
+    int  enemyDamage = 100;
+    bool unlockAll = false;
     // [Video]
     bool skipAllVideos = true;
     bool texReplace = true;       // [Textures] Replace: use texture packs

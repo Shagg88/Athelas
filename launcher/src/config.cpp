@@ -349,6 +349,9 @@ bool load_settings(const std::string &dir, Settings &s)
     s.targetFps = clampi(geti(ini, "Frame", "TargetFPS", 60), 20, 240);
     s.padEnabled = geti(ini, "Gamepad", "Enabled", 1) != 0;
     s.player2 = geti(ini, "Gamepad", "SecondController", 1) != 0;
+    s.damageTaken = clampi(geti(ini, "Gameplay", "DamageTaken", 100), 10, 500);
+    s.enemyDamage = clampi(geti(ini, "Gameplay", "EnemyDamage", 100), 10, 500);
+    s.unlockAll = geti(ini, "Gameplay", "UnlockAll", 0) != 0;
     s.vibration = clampi(geti(ini, "Gamepad", "Vibration", 100), 0, 100);
     s.hideRealPads = geti(ini, "Gamepad", "HideRealControllers", 1) != 0;
     s.deadzone = clampi(geti(ini, "Gamepad", "StickDeadzone", 12), 0, 50);
@@ -497,6 +500,11 @@ static const std::vector<IniSection> &ini_layout()
             { "FierceAttack", "Y", nullptr }, { "JumpBack", "LB", nullptr }, { "Action", "RB", nullptr },
             { "Special", "LS", nullptr }, { "RangedAttack", "LT", nullptr }, { "KillingMove", "RT", nullptr },
         } },
+        { "Gameplay", "Gameplay", {
+            { "DamageTaken", "100", "Damage you take, % of the game's (10-500)" },
+            { "EnemyDamage", "100", "Damage your hits do to enemies, % of the game's (10-500)" },
+            { "UnlockAll", "0", "1 = every level and character can be chosen" },
+        } },
         { "Textures", "Texture packs", {
             { "Dump", "0", "1 = save every texture the game uses as a PNG in ROTKFix\\textures\\dump (for making texture packs)" },
             { "Replace", "1", "1 = use replacement PNGs from ROTKFix\\textures\\replace (texture packs)" },
@@ -613,6 +621,9 @@ static bool write_rotkfix_ini(const std::string &p, const Settings &s, bool crea
     set("Sound", "Mode", sm[s.sound3d]);
     set("Gamepad", "Enabled", std::to_string((int)s.padEnabled));
     set("Gamepad", "SecondController", std::to_string(s.player2));
+    set("Gameplay", "DamageTaken", std::to_string(s.damageTaken));
+    set("Gameplay", "EnemyDamage", std::to_string(s.enemyDamage));
+    set("Gameplay", "UnlockAll", std::to_string((int)s.unlockAll));
     set("Gamepad", "ButtonNames", names[s.buttonNames]);
     set("Gamepad", "Vibration", std::to_string(s.vibration));
     set("Gamepad", "StickDeadzone", std::to_string(s.deadzone));

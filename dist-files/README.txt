@@ -130,6 +130,8 @@ enemies at high frame rates.
 - Needs Windows 10 or 11 (64-bit) and a Direct3D 12 graphics card.
 - Co-op: two players on one screen, with two controllers; it can also be
   played online (see PLAYING CO-OP ONLINE).
+- Gameplay tab (shared with the PC version): damage taken, enemy damage, and
+  every level and character unlocked. All off by default.
 - Known issue: the picture is darker than the PC version because it keeps the
   Xbox's brightness curve: raise Brightness to about 1.2-1.3 to match.
 
@@ -305,6 +307,11 @@ The launcher writes ROTKFix.ini in the game folder. You can also edit it in Note
   Special                (default LS)
   RangedAttack           (default LT)
   KillingMove            (default RT)
+
+[Gameplay]  Gameplay (both versions of The Return of the King)
+  DamageTaken            Damage you take, % of the game's (10-500) (default 100)
+  EnemyDamage            Damage your hits do to enemies, % of the game's (10-500) (default 100)
+  UnlockAll              1 = every level and character can be chosen (default 0)
 
 [Textures]  Texture packs
   Dump                   1 = save every texture the game uses as a PNG in ROTKFix\textures\dump (for making texture packs) (default 0)

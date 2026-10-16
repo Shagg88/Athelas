@@ -1440,6 +1440,27 @@ static void games_section(App &a)
 }
 
 static void rx_about(App &a);
+// ---- Gameplay: both ROTK versions read [Gameplay] (ROTK Fix on PC, the port on Xbox)
+static void tab_gameplay(App &a)
+{
+    Settings &s = a.s;
+    section("Difficulty");
+    row_begin("Damage taken", "How much damage you take, compared with the game. Works with the game's own difficulty "
+                              "setting: 50% halves the damage at any difficulty, 200% doubles it.");
+    ImGui::SliderInt("##dmgtaken", &s.damageTaken, 10, 500, s.damageTaken == 100 ? "100%%  (game's own)" : "%d%%");
+    row_end();
+    row_begin("Enemy damage", "How much damage your hits do to enemies, compared with the game. Fights between other "
+                              "characters, such as your allies and their enemies, stay as they are.");
+    ImGui::SliderInt("##dmgenemy", &s.enemyDamage, 10, 500, s.enemyDamage == 100 ? "100%%  (game's own)" : "%d%%");
+    row_end();
+    section("Unlocks");
+    row_begin("Unlock all levels and characters", "Every level, the secret one included, and every character can be "
+                                                  "chosen from the start, as in the game's developer builds. Turning it "
+                                                  "off again shows only what you've earned.");
+    ImGui::Checkbox("##unlockall", &s.unlockAll);
+    row_end();
+}
+
 static void tab_about(App &a)
 {
     if (g_xboxPage) { rx_about(a); return; }
@@ -3330,13 +3351,13 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
         ImGui::EndChild();
     } else {
     ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
-    static const char *tabNames[] = { "Display", "Graphics", "Controls", "Audio", "About" };
+    static const char *tabNames[] = { "Display", "Graphics", "Controls", "Audio", "Gameplay", "About" };
     static int rotkSel = 0;
-    float tabW = tabs_begin(tabNames, 5, rotkSel);
+    float tabW = tabs_begin(tabNames, 6, rotkSel);
     if (ImGui::BeginTabBar("tabs")) {
         struct T { const char *name; void (*fn)(App &); } tabs[] = {
             { "###display", tab_display }, { "###graphics", tab_graphics }, { "###controls", tab_controls },
-            { "###audio", tab_audio }, { "###about", tab_about } };
+            { "###audio", tab_audio }, { "###gameplay", tab_gameplay }, { "###about", tab_about } };
         // ROTKFIX_TAB=n (testing): open on tab n
         static int startTab = getenv("ROTKFIX_TAB") ? atoi(getenv("ROTKFIX_TAB")) : -1;
         int ti = 0;

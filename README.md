@@ -20,6 +20,7 @@ ROTK Fix, and also starts the PC ports of The Return of the King and The Two Tow
 - **Movies:** cutscenes fill widescreen screens with correct proportions; optional logo skip; a sound delay setting for Bluetooth speakers
 - **Texture packs:** dump the game's textures to PNG and load replacements from a folder (no game art included)
 - **Screenshots:** `\` or Print Screen saves a PNG
+- **Gameplay:** damage taken, enemy damage, and every level and character unlocked (off by default)
 - **Launcher:** every setting in one place, with presets (Original, Balanced, High, Ultra)
 
 ## Requirements

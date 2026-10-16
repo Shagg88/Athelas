@@ -42,6 +42,10 @@ void    sound_load_settings(const char *ini);
 void    sound_patch(void);
 void    sound_late_patch(void);   /* disc exe: from Direct3DCreate8 */
 
+/* gameplay.c */
+void    gameplay_load_settings(const char *ini);
+void    gameplay_patch(void);
+
 /* textures.c */
 void    textures_load_settings(const char *ini);
 void    textures_on_create(void *dev, void *realCreateTexture, void *tex);
