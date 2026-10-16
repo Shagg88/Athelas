@@ -8,12 +8,32 @@
 #include <algorithm>
 #include <atomic>
 #include <cstdlib>
+#include <cctype>
 #include <cstring>
+#include <string>
 
+#include "core/log.h"
 #include "kernel/kernel.h"
 #include "xdk/hle.h"
 
 namespace tt {
+// the front end (title, main menu, the screens between levels) or a level, from the files the game opens: a world
+// (Worlds\*.bfa) starts a level; the front end's own screens (UI\*.BFF but loading pictures and options, which a
+// pause in a level may open too) end one. For the keyboard: Esc goes back in the front end's menus.
+std::atomic<bool> g_front_end{true};
+void FileOpened(const char* name) {
+    std::string n = name;
+    for (char& c : n) c = char(std::tolower(static_cast<unsigned char>(c)));
+    auto ends = [&](const char* e) { size_t k = std::strlen(e); return n.size() >= k && n.compare(n.size() - k, k, e) == 0; };
+    bool was = g_front_end;
+    if (n.find("\\worlds\\") != std::string::npos && ends(".bfa")) g_front_end = false;
+    else if (n.find("\\ui\\") != std::string::npos && ends(".bff") && n.find("\\ui\\load") == std::string::npos &&
+             n.find("\\ui\\options") == std::string::npos)
+        g_front_end = true;
+    if (was != g_front_end) LOGI("tt: %s (%s)", g_front_end ? "front end" : "in a level", name);
+}
+bool InMenus() { return g_front_end.load(); }
+
 uint32_t g_fov_percent = 100;  // settings.toml [graphics] fov
 std::atomic<bool> g_hud_hidden{false};
 

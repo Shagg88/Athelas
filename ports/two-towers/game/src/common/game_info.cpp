@@ -13,6 +13,8 @@ extern bool g_skip_logos;  // tt_movies.cpp
 extern bool g_skip_all_videos;  // tt_movies.cpp
 void InitRenderer();  // tt_renderer.cpp: the water simulation's targets at the console's size
 extern uint32_t g_damage_taken, g_enemy_damage;  // tt_devsettings.cpp
+void FileOpened(const char* name);  // tt_extras.cpp: the front end or a level
+bool InMenus();
 }
 
 // what the runtime asks of the game; strings must be set, hooks may stay null
@@ -83,4 +85,6 @@ const app::GameInfo app::kGame = {
     .key_defaults = {{keys::kBlack, "Tab"}, {keys::kWhite, ""}},
     // the in-game menu: these take effect at once
     .live_settings = {"graphics.fov", "graphics.hud_edges", "gameplay.damage_taken", "gameplay.enemy_damage"},
+    .file_opened = tt::FileOpened,
+    .in_menus = tt::InMenus,  // Esc goes back in the front end's menus; Enter (A) goes on there as it is
 };

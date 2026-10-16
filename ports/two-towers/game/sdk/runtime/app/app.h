@@ -175,6 +175,12 @@ struct GameInfo {
     std::vector<const char*> live_settings;
     void (*save_settings)() = nullptr;                // the menu closed after a change: null saves the settings file
     void (*setting_changed)(const cfg::Desc&) = nullptr;  // the menu changed one, at once
+    // the keyboard in the game's own menus: in_menus says when they are up (the front end, not a pause in a level);
+    // there the keys bound to Start press B, so Esc goes back, and with menu_accept_start the keys bound to A press
+    // Start (a game whose menus take Start to go on, "press start" among them)
+    void (*file_opened)(const char* name) = nullptr;  // each file the game opens (any thread), to follow its state
+    bool (*in_menus)() = nullptr;
+    bool menu_accept_start = false;
 };
 extern const GameInfo kGame;
 

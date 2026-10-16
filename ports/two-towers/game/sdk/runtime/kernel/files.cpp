@@ -6,6 +6,7 @@
 #include <fstream>
 #include <map>
 
+#include "app/app.h"
 #include "kernel/disc.h"
 #include "kernel/kernel.h"
 #include "kernel/exports.h"
@@ -324,6 +325,7 @@ uint32_t OpenOnDisc(const Disc::Entry* e, const std::string& name, uint32_t hand
     W32(handle_out, NewHandle(f));
     IoStatus(iosb, kSuccess, 1);
     LOG_FIRST(400, "open %s", name.c_str());
+    if (app::kGame.file_opened) app::kGame.file_opened(name.c_str());
     return kSuccess;
 }
 
@@ -447,6 +449,7 @@ KERNEL_EXPORT(190, NtCreateFile, 9) {
     W32(handle_out, NewHandle(f));
     IoStatus(iosb, kSuccess, info);
     LOG_FIRST(400, "open %s", name.c_str());
+    if (app::kGame.file_opened) app::kGame.file_opened(name.c_str());
     return kSuccess;
 }
 

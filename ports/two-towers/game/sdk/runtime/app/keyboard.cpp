@@ -137,6 +137,17 @@ void Merge(int port, input::Pad& p) {
     for (auto& w : g_latched) w = 0;  // read once
     if (!any) return;
     if (!g_used.exchange(true)) LOGR("keyboard: first key press");
+    // in the game's menus Esc (Start's keys) goes back, and Enter (A's) goes on the way those menus take it
+    if (app::kGame.in_menus && app::kGame.in_menus()) {
+        bool start = held[kStart];
+        if (app::kGame.menu_accept_start) {
+            held[kStart] = held[kA];
+            held[kA] = false;
+        } else {
+            held[kStart] = false;
+        }
+        held[kB] = held[kB] || start;
+    }
     // the left stick: the keys' direction at full tilt (a diagonal no further than a straight push), half with walk
     int dx = int(held[kMoveRight]) - int(held[kMoveLeft]), dy = int(held[kMoveUp]) - int(held[kMoveDown]);
     if (dx || dy) {
