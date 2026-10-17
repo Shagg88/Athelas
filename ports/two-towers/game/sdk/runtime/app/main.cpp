@@ -398,6 +398,11 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int) {
     if (app::kGame.window) app::kGame.window(app::g_hwnd);
     if (app::Instance())
         SetWindowTextW(app::g_hwnd, (std::wstring(app::kGame.title) + L" [" + std::to_wstring(app::Instance()) + L"]").c_str());
+    if (app::Get().one_core) {
+        uint64_t m = app::OneCoreMask();
+        kernel::SetGuestAffinity(m);
+        LOGR("system: the game's threads on one core (mask %llX)", (unsigned long long)m);
+    }
     if (!kernel::Boot(std::move(game.xbe), IMAGE_XBE, game.dir.string(), app::SavesDir().string())) {
         MessageBoxW(app::g_hwnd, L"The game failed to start, see the log in the logs folder.", app::kGame.short_title,
                     MB_ICONERROR);

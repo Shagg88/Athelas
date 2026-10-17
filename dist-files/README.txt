@@ -81,6 +81,15 @@ to the game's Input.ini (the original is kept as Input.ini.original) and
 updates the game's settings file in Documents (a copy of yours is kept).
 
 
+NEW VERSIONS
+------------
+When it starts, the launcher asks GitHub for the number of the newest Athelas
+release, and says so under the settings and on the About tab when a newer one
+is out. Nothing about you or your games is sent and nothing is downloaded.
+Turn it off on the About tab ("Look for new versions"). To update, unzip the
+new version over this folder: your settings, saves and achievements are kept.
+
+
 UNINSTALL
 ---------
 Open the launcher, go to About, and press "Remove ROTK Fix". It removes every
@@ -256,6 +265,24 @@ delay. For the PC game, check that "Player 2 (co-op)" on the launcher's
 Controls tab is set to "Second controller" (the default).
 
 
+WINDOWS ON ARM (SNAPDRAGON LAPTOPS)
+-----------------------------------
+Athelas runs on Windows on ARM PCs through Windows' own translation, which
+costs the Xbox ports a lot of speed. Native ARM64 builds of the ports
+(TwoTowers-arm64.exe, ROTKXbox-arm64.exe) are being tested: see the
+"1.1-arm-test" pre-release on the Athelas GitHub page. Put them beside the
+usual exes and the launcher starts them by itself on an ARM PC (the About tab
+then says "ARM64 build").
+
+ROTK on PC itself is a 32-bit Intel program, so on ARM it always runs through
+Windows' translation; ROTK Fix works with it the same.
+
+If an Xbox port crashes at random on an ARM PC, turn on "One processor core"
+at the bottom of its Graphics tab (shown on ARM PCs only): the game's threads
+then take turns on one core, as they did on the Xbox. A little slower; tell
+us if it helps.
+
+
 STEAM DECK AND LINUX
 --------------------
 All three games run through Proton, Steam's Windows layer. This has been tested
@@ -308,6 +335,20 @@ tool that stands in for that driver, put the disc in the drive, and press
 Play. The disc version asks to run as administrator: allow the Windows prompt.
 If you play from an image of your own disc, mount it in a virtual drive before
 pressing Play. The launcher shows "Disc version (protected)" for this copy.
+
+
+WHERE YOUR SETTINGS ARE
+-----------------------
+The Return of the King, PC and Xbox: both versions share one file, ROTKFix.ini,
+so what you set in the launcher applies to both. It is in the PC game's folder,
+or in the launcher's folder if you only have the Xbox version (the launcher's
+About tab shows where). The settings.toml in ROTK-Xbox only holds defaults that
+ROTKFix.ini replaces each time the game starts; it says so at its top.
+
+The Two Towers: TT-Xbox\settings.toml.
+
+Starting ROTKXbox.exe or TwoTowers.exe directly, without the launcher, uses
+the same settings.
 
 
 ROTKFIX.INI SETTINGS
@@ -399,6 +440,9 @@ The launcher writes ROTKFix.ini in the game folder. You can also edit it in Note
 [Window]  In the background (Xbox version)
   PauseInBackground      1 = the game stops while another window is in front (default 0)
   MuteInBackground       1 = no sound while another window is in front (default 0)
+
+[System]  Windows on ARM (Xbox version)
+  OneCore                1 = the game's threads take turns on one processor core (default 0)
 
 [Keyboard]  Keyboard and mouse (Xbox version; on PC the game's own keyboard controls are used)
   Enabled                1 = play with the keyboard and mouse as well as a controller (default 1)

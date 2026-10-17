@@ -41,7 +41,8 @@ std::string ValueText(const Desc& d);
 bool Read(const std::string& path, const std::vector<Desc>& list, std::string& error, bool* old_layout = nullptr);
 // the file as Write would make it, keeping what other (unknown) keys `previous` holds
 std::string Text(const std::vector<Desc>& list, const std::string& previous = {});
-bool Write(const std::string& path, const std::vector<Desc>& list);
+// header: comment lines ("# ...") written above the settings, each time
+bool Write(const std::string& path, const std::vector<Desc>& list, const std::string& header = {});
 // a launcher's preset: "section.key" to the value as JSON writes it ("\"16\"", "true", "-0.50"); keys it leaves
 // out are the player's own
 struct Preset {

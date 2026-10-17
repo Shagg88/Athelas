@@ -142,6 +142,11 @@ std::vector<cfg::Desc> SettingsList() {
                  &s.pause_unfocused});
     l.push_back({"window", "mute_unfocused", Type::Bool, "Mute in the background",
                  "No sound while another window is in front; the game keeps running.", &s.mute_unfocused});
+    l.push_back({"system", "one_core", Type::Bool, "One processor core",
+                 "The game's own threads take turns on one processor core, as they did on the Xbox, instead of "
+                 "running side by side. A little slower. Try it if the game crashes at random on a Windows on ARM "
+                 "PC; read at start.",
+                 &s.one_core});
     if (!kGame.achievements.empty())
         l.push_back({"achievements", "notify", Type::Bool, "Achievement notes",
                      "A note in the corner of the screen when you earn an achievement. The list is on the in-game "

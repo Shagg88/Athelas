@@ -1,3 +1,4 @@
+#include <cstdio>
 // The Two Towers: instruction hooks ([[hook]] entries in config/hooks.toml).
 #include <chrono>
 #include <cstdint>
@@ -40,6 +41,19 @@ static void ProfilerSection(uint8_t* base, uint32_t slot) {
     *section = 0;
     static std::atomic<int> told{0};
     if (told++ < 3) LOGI("tt: profiler section %08X out of range, taken as 0", v);
+    if (told == 1) {
+        // what overwrote it: the slot's first 0x40 bytes and the 0x40 before, as text where printable
+        for (uint32_t at = slot - 0x40; at < slot + 0x40; at += 16) {
+            char hex[64], txt[17];
+            for (int i = 0; i < 16; i++) {
+                uint8_t b = base[at + i];
+                std::snprintf(hex + i * 3, 4, "%02X ", b);
+                txt[i] = b >= 32 && b < 127 ? char(b) : '.';
+            }
+            txt[16] = 0;
+            LOGI("tt:   %08X  %s %s", at, hex, txt);
+        }
+    }
 }
 void TT_ProfilerStart(X86Context& ctx, uint8_t* base) { ProfilerSection(base, ctx.eax); }  // 0xE60FC, slot in eax
 void TT_ProfilerEnd(X86Context& ctx, uint8_t* base) { ProfilerSection(base, ctx.edi); }    // 0xE65B1, slot in edi

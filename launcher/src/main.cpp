@@ -13,6 +13,8 @@
 #include <SDL3/SDL.h>
 #include <math.h>
 #include <stdio.h>
+#include <string.h>
+#include <ctype.h>
 #include <string>
 #include <vector>
 #include <map>
@@ -27,6 +29,7 @@
 #include "ornament.h"
 #include "gpu.h"
 #include "gameart.h"
+#include "update.h"
 #include <shlobj.h>
 #include "font_cinzel.h"
 #include "font_garamond.h"
@@ -673,7 +676,8 @@ static void refresh_controllers(App &a)
 
 static bool g_removeSelf;      // uninstalled from the launcher's own folder: delete the launcher when it closes
 static bool g_fixRemoved;      // ROTK Fix was just removed from the PC game shown (Play and Save are off)
-static bool g_xboxPage;        // the Return of the King page is showing the Xbox version (PC-only options greyed out)
+static bool g_xboxPage;
+static bool native_arm64();        // the Return of the King page is showing the Xbox version (PC-only options greyed out)
 
 // A note under a section whose options are the PC game's own and don't apply on Xbox
 static void pc_only_note()
@@ -1067,6 +1071,14 @@ static void tab_graphics(App &a)
     ImGui::Checkbox("##subs", &s.subtitles);
     row_end();
     ImGui::EndDisabled();
+    if (g_xboxPage && native_arm64()) {   // Windows on ARM only: see the README's Windows on ARM section
+        section("Windows on ARM");
+        row_begin("One processor core", "The game's own threads take turns on one processor core, as they did on the "
+                                        "Xbox, instead of running side by side. A little slower. Try it if the game "
+                                        "crashes at random on this PC.");
+        ImGui::Checkbox("##onecore", &s.oneCore);
+        row_end();
+    }
 }
 
 enum { NAMES_AUTO, NAMES_XBOX, NAMES_PS, NAMES_NINTENDO, NAMES_ORIGINAL };
@@ -1806,9 +1818,39 @@ static void tab_gameplay(App &a)
     achievements_section(g_xboxPage ? rx_data_dir() + "\\achievements.txt" : a.dir + "\\ROTKFix\\achievements.txt", false);
 }
 
+// [Updates] Check in Athelas.ini: whether the launcher asks GitHub at start for the newest release's number (on by default)
+static std::string ports_ini();
+static bool updates_on() { return GetPrivateProfileIntA("Updates", "Check", 1, ports_ini().c_str()) != 0; }
+
+// About, both ROTK pages: a newer Athelas, and the switch for looking
+static void update_section()
+{
+    section("Updates");
+    std::string v = update_newer();
+    ImGui::PushTextWrapPos(0);
+    if (!v.empty()) {
+        ImGui::TextColored(C_GOLD_H, "Athelas %s is out (you have " LAUNCHER_VERSION ").", v.c_str());
+        ImGui::TextUnformatted("Download it from its page and unzip it over this folder: your settings, saves and "
+                               "achievements are kept.");
+        if (ImGui::Button("Open the download page")) ShellExecuteA(NULL, "open", update_page(), NULL, NULL, SW_SHOWNORMAL);
+    } else {
+        ImGui::TextColored(C_DIM, "Athelas " LAUNCHER_VERSION ". A newer version shows here, and under the settings, "
+                                  "when one is out.");
+    }
+    ImGui::PopTextWrapPos();
+    bool on = updates_on();
+    row_begin("Look for new versions", "When the launcher starts, it asks GitHub for the number of the newest Athelas "
+                                       "release. Nothing about you or your games is sent, and nothing is downloaded.");
+    if (ImGui::Checkbox("##updates", &on)) {
+        WritePrivateProfileStringA("Updates", "Check", on ? "1" : "0", ports_ini().c_str());
+        if (on) update_check_start(LAUNCHER_VERSION);
+    }
+    row_end();
+}
+
 static void tab_about(App &a)
 {
-    if (g_xboxPage) { rx_about(a); return; }
+    if (g_xboxPage) { rx_about(a); update_section(); return; }
     games_section(a);
     section("Setup");
     const GameInfo &g = a.game;
@@ -1872,6 +1914,7 @@ static void tab_about(App &a)
     ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
     ImGui::TextColored(C_DIM, "Launcher version " LAUNCHER_VERSION "  -  made by Shagg, with Claude (Anthropic)");
     ImGui::PopFont();
+    update_section();
 
     section("Remove ROTK Fix");
     ImGui::PushTextWrapPos(0);
@@ -2003,6 +2046,26 @@ static std::string port_override(const char *key)
 
 static bool file_there(const std::string &p) { DWORD a = GetFileAttributesA(p.c_str()); return a != INVALID_FILE_ATTRIBUTES && !(a & FILE_ATTRIBUTE_DIRECTORY); }
 
+// A Windows on ARM PC runs a port's ARM64 build (<name>-arm64.exe beside the x64 one) natively; the x64 build only
+// through Windows' translation, far slower. The launcher is an x86 program, so it asks for the machine's own CPU.
+static bool native_arm64()
+{
+    static int v = -1;
+    if (v < 0) {
+        typedef BOOL(WINAPI * Wow64Process2)(HANDLE, USHORT *, USHORT *);
+        Wow64Process2 f = (Wow64Process2)(void *)GetProcAddress(GetModuleHandleA("kernel32.dll"), "IsWow64Process2");
+        USHORT process = 0, machine = 0;
+        v = f && f(GetCurrentProcess(), &process, &machine) && machine == 0xAA64;   // IMAGE_FILE_MACHINE_ARM64
+    }
+    return v != 0;
+}
+static std::string arm64_twin(const std::string &exe)
+{
+    if (!native_arm64() || exe.size() < 4) return exe;
+    std::string t = exe.substr(0, exe.size() - 4) + "-arm64.exe";
+    return file_there(t) ? t : exe;
+}
+
 static void tt_find(App &a)
 {
     a.ttLooked = true;
@@ -2011,7 +2074,8 @@ static void tt_find(App &a)
     // folder next to the launcher (the release copy; TwoTowers in earlier test builds)
     std::string cand[3] = { port_override("TwoTowers"), exe_dir() + "\\" DIR_TT_XBOX "\\TwoTowers.exe",
                             exe_dir() + "\\TwoTowers\\TwoTowers.exe" };
-    for (auto &c : cand) if (!c.empty() && file_there(c)) { a.tt.exe = c; break; }
+    for (int i = 0; i < 3; i++)
+        if (!cand[i].empty() && file_there(cand[i])) { a.tt.exe = i ? arm64_twin(cand[i]) : cand[i]; break; }
     if (a.tt.exe.empty()) return;
     port_query(a.tt);
     // movies "fit" (the film filling the width) for a new settings file, as ROTK's MovieDisplay = auto; the port's
@@ -2104,6 +2168,57 @@ static void tt_play(App &a, const LibGame &g)
 }
 
 // The port has closed: back to the launcher, saying why if it wasn't a normal quit
+// The CPU an exe is built for, from its PE header: "ARM64", "x64", "x86", or "" when unreadable
+static std::string exe_machine(const std::string &path)
+{
+    FILE *f = fopen(path.c_str(), "rb");
+    if (!f) return "";
+    unsigned char h[0x40], pe[6];
+    std::string r;
+    if (fread(h, 1, sizeof h, f) == sizeof h && h[0] == 'M' && h[1] == 'Z') {
+        long at = (long)(h[0x3C] | h[0x3D] << 8 | h[0x3E] << 16 | (unsigned)h[0x3F] << 24);
+        if (!fseek(f, at, SEEK_SET) && fread(pe, 1, 6, f) == 6 && !memcmp(pe, "PE\0\0", 4)) {
+            unsigned m = pe[4] | pe[5] << 8;
+            r = m == 0xAA64 ? "ARM64" : m == 0x8664 ? "x64" : m == 0x14C ? "x86" : "";
+        }
+    }
+    fclose(f);
+    return r;
+}
+
+static std::string url_encode(const std::string &s)
+{
+    std::string o;
+    for (unsigned char c : s) {
+        if (isalnum(c) || c == '-' || c == '.' || c == '_' || c == '~') o += (char)c;
+        else { char b[4]; snprintf(b, sizeof b, "%%%02X", c); o += b; }
+    }
+    return o;
+}
+
+// After a crash: the log and a bug report a click away (the report opens the repository's form, its title filled in)
+static void crash_box(App &a, const std::string &text, const std::string &title)
+{
+    const SDL_MessageBoxButtonData buttons[] = {
+        { SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT | SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 0, "Close" },
+        { 0, 1, "Open log folder" },
+        { 0, 2, "Report a problem" },
+    };
+    std::string t = text + "\n\nIf it keeps happening, please report it and attach the log file: it shows what went wrong.";
+    SDL_MessageBoxData box = { SDL_MESSAGEBOX_ERROR, NULL, "Athelas", t.c_str(), 3, buttons, NULL };
+    int pressed = 0;
+    if (!SDL_ShowMessageBox(&box, &pressed)) return;
+    if (pressed == 1) {
+        if (GetFileAttributesA(a.runningLog.c_str()) != INVALID_FILE_ATTRIBUTES)
+            ShellExecuteA(NULL, "open", "explorer.exe", ("/select,\"" + a.runningLog + "\"").c_str(), NULL, SW_SHOWNORMAL);
+        else
+            ShellExecuteA(NULL, "open", a.runningLog.substr(0, a.runningLog.find_last_of('\\')).c_str(), NULL, NULL, SW_SHOWNORMAL);
+    } else if (pressed == 2) {
+        std::string url = "https://github.com/Shagg88/Athelas/issues/new?template=bug_report.md&title=" + url_encode(title);
+        ShellExecuteA(NULL, "open", url.c_str(), NULL, NULL, SW_SHOWNORMAL);
+    }
+}
+
 static void port_finished(App &a, DWORD code)
 {
     std::string why = port_log_reason(a.runningLog);
@@ -2160,6 +2275,17 @@ static void port_finished(App &a, DWORD code)
     SDL_ShowWindow(a.win);
     SDL_RaiseWindow(a.win);
     set_message(a, m, true);
+    // a crash or a failed start (not a setting or a game file the player can put right from the message)
+    if (code == 1 || code == 6 || code > 0xFF) {
+        const Port &p = a.runningExe == a.tt.exe ? a.tt : a.rx;
+        std::string arch = exe_machine(a.runningExe);
+        char c[16]; snprintf(c, sizeof c, "0x%08lX", (unsigned long)code);
+        std::string title = a.runningGame + ": " + (code == 1 ? "doesn't start" : code == 6 ? "graphics driver stopped"
+                                                                                           : std::string("closed (") + c + ")") +
+                            " - Athelas " LAUNCHER_VERSION + (p.version.empty() ? "" : ", " + p.version) +
+                            (arch.empty() ? "" : " " + arch);
+        crash_box(a, m, title);
+    }
 }
 
 static std::string cap_first(std::string s) { if (!s.empty() && s[0] >= 'a' && s[0] <= 'z') s[0] -= 32; return s; }
@@ -2416,6 +2542,7 @@ static void tt_open_textures()
 // ([window] and [keyboard] have rows of their own on the Display and Controls tabs)
 static bool tt_hidden(const PortSetting &ps)
 {
+    if (ps.section == "system" && ps.key == "one_core") return !native_arm64();   // shown on Windows on ARM PCs only
     return (ps.section == "display" && ps.key == "fps_cap") || ps.section == "window" || ps.section == "keyboard" ||
            (ps.section == "discord" && ps.key == "app_id");
 }
@@ -3177,7 +3304,11 @@ static void tt_about(App &a)
     section("Port");
     ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
     ImGui::PushTextWrapPos(0);
-    ImGui::TextColored(C_DIM, "%s  -  %s", a.tt.version.c_str(), a.tt.exe.c_str());
+    {
+        std::string arch = exe_machine(a.tt.exe);
+        ImGui::TextColored(C_DIM, "%s%s  -  %s", a.tt.version.c_str(), arch.empty() ? "" : (" (" + arch + " build)").c_str(),
+                           a.tt.exe.c_str());
+    }
     ImGui::TextColored(C_DIM, "Settings, texture packs and the log: %s", tt_data_dir().c_str());
     ImGui::PopTextWrapPos();
     ImGui::PopFont();
@@ -3334,7 +3465,8 @@ static void rx_find(App &a)
     // folder next to the launcher (the release copy; ROTKXbox in earlier test builds)
     std::string cand[3] = { port_override("ROTKXbox"), exe_dir() + "\\" DIR_ROTK_XBOX "\\ROTKXbox.exe",
                             exe_dir() + "\\ROTKXbox\\ROTKXbox.exe" };
-    for (auto &c : cand) if (!c.empty() && file_there(c)) { a.rx.exe = c; break; }
+    for (int i = 0; i < 3; i++)
+        if (!cand[i].empty() && file_there(cand[i])) { a.rx.exe = i ? arm64_twin(cand[i]) : cand[i]; break; }
     if (a.rx.exe.empty()) return;
     std::string out;
     if (run_capture(a.rx.exe, "--version", out, 15000) == 0) {
@@ -3386,13 +3518,28 @@ static void rx_about(App &a)
     ImGui::Text("Xbox, %s copy, %s", game_region_name(g), g.iso ? "disc image" : "extracted files");
     if (g.titleId) { ImGui::SameLine(); ImGui::TextColored(C_DIM, "(title ID %08X)", (unsigned)g.titleId); }
     row_end();
+    // where the settings are: one file for both versions of ROTK, not the ROTK-Xbox folder's settings.toml (issue #4)
+    section("Settings");
+    {
+        std::string ini = a.dir + "\\ROTKFix.ini";
+        row_begin("Settings file", a.game.exeFound
+            ? "The PC and Xbox versions of The Return of the King share this one file: what you set here applies to "
+              "both. The settings.toml in the ROTK-Xbox folder only holds defaults that this file replaces when the "
+              "game starts."
+            : "The Xbox version keeps its settings in this file, the one ROTK on PC would share. The settings.toml "
+              "in the ROTK-Xbox folder only holds defaults that this file replaces when the game starts.");
+        ImGui::PushTextWrapPos(0); ImGui::TextUnformatted(ini.c_str()); ImGui::PopTextWrapPos();
+        if (GetFileAttributesA(ini.c_str()) != INVALID_FILE_ATTRIBUTES && ImGui::Button("Show in folder##rxini"))
+            ShellExecuteA(NULL, "open", "explorer.exe", ("/select,\"" + ini + "\"").c_str(), NULL, SW_SHOWNORMAL);
+        row_end();
+    }
     section("Port");
     ImGui::PushTextWrapPos(0);
     if (rx_ready(a)) {
         ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
-        ImGui::TextColored(C_DIM, "%s  -  %s", a.rx.version.empty() ? "ROTKXbox" : a.rx.version.c_str(), a.rx.exe.c_str());
-        if (a.game.exeFound) ImGui::TextColored(C_DIM, "Settings are shared with the PC version (%s\\ROTKFix.ini).", a.dir.c_str());
-        else ImGui::TextColored(C_DIM, "Settings: %s\\ROTKFix.ini", a.dir.c_str());
+        std::string arch = exe_machine(a.rx.exe);
+        ImGui::TextColored(C_DIM, "%s%s  -  %s", a.rx.version.empty() ? "ROTKXbox" : a.rx.version.c_str(),
+                           arch.empty() ? "" : (" (" + arch + " build)").c_str(), a.rx.exe.c_str());
         ImGui::TextColored(C_DIM, "Log, saves and Xbox texture packs: %s", rx_data_dir().c_str());
         ImGui::PopFont();
         ImGui::PopTextWrapPos();
@@ -3809,7 +3956,8 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     {
         float cardW = bx - saveW - S(24) - panelX;   // under the panel, the picture beside it kept clear
         bool msg = !a.message.empty() && ImGui::GetTime() - a.messageAt < (a.messageBad ? 30.0 : 4.0);
-        float cardH = S(32);
+        std::string newer = update_newer();
+        float cardH = S(32) + (newer.empty() ? 0.0f : S(18));
         if (msg) {   // room for the message, however many lines it wraps to
             ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
             cardH += ImGui::CalcTextSize(a.message.c_str(), nullptr, false, cardW - S(18)).y + S(2);
@@ -3825,6 +3973,10 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
         else if (ttShown) ImGui::TextColored(C_DIM, "%s", tt_summary(a).c_str());
         else ImGui::TextColored(C_DIM, "%s  |  %s", game_kind_name(a.lib[a.cur].kind),
                                 game_kind_playable(a.lib[a.cur].kind) ? "settings in its own launcher" : "not playable yet");
+        if (!newer.empty()) {
+            ImGui::SetCursorPosX(panelX + S(10));
+            ImGui::TextColored(C_GOLD_H, "Athelas %s is out  -  About tab", newer.c_str());
+        }
         if (msg) {
             ImGui::SetCursorPosX(panelX + S(10));
             ImGui::TextColored(a.messageBad ? C_BAD : C_GOOD, "%s", a.message.c_str());
@@ -3989,6 +4141,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     if (justInstalled) set_message(a, "ROTK Fix is set up in " + pcDir + ". Choose your settings and press Play.", false);
     if (protectedDir) set_message(a, "This game folder is protected by Windows, so settings can't be saved. "
                                      "Open the launcher again and allow the permission prompt.", true);
+
+    if (updates_on()) update_check_start(LAUNCHER_VERSION);
 
     while (!a.quit) {
         SDL_Event e;

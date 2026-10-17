@@ -228,7 +228,7 @@ std::string Text(const std::vector<Desc>& list, const std::string& previous) {
     return out;
 }
 
-bool Write(const std::string& path, const std::vector<Desc>& list) {
+bool Write(const std::string& path, const std::vector<Desc>& list, const std::string& header) {
     std::string previous;
     {
         std::ifstream f(path, std::ios::binary);
@@ -242,7 +242,7 @@ bool Write(const std::string& path, const std::vector<Desc>& list) {
     {
         std::ofstream f(tmp, std::ios::binary | std::ios::trunc);
         if (!f) return false;
-        f << Text(list, previous);
+        f << header << Text(list, previous);
         if (!f) return false;
     }
     std::filesystem::rename(tmp, path, ec);

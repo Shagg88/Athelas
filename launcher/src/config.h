@@ -52,6 +52,7 @@ struct Settings {
     int  aniso = 16;              // 0 2 4 8 16
     bool widescreenFix = true;
     int  renderScale = 100;            // [Graphics] RenderScale: % of the chosen size the game draws at (50-200)
+    bool oneCore = false;              // [System] OneCore: Xbox version only, the game's threads on one core (Windows on ARM)
     bool hudEdges = false;             // [Graphics] HUDEdges: Xbox version only, HUD pieces at the 16:9 edges
     bool sharperText = false;          // [Graphics] SharperText: Xbox version only, the PC version's larger fonts and menu pictures
     int  fovPct = 100;            // 70-150

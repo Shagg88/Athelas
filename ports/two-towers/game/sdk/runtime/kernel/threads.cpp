@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
@@ -95,11 +96,28 @@ void NameHostThread(const char* name) {
 #endif
 }
 
+std::atomic<uint64_t> g_affinity{0};
+
+void ApplyAffinity() {
+    uint64_t m = g_affinity.load();
+    if (!m) return;
+#ifdef _WIN32
+    SetThreadAffinityMask(GetCurrentThread(), DWORD_PTR(m));
+#else
+    cpu_set_t set;
+    CPU_ZERO(&set);
+    for (int i = 0; i < 64; i++)
+        if (m >> i & 1) CPU_SET(i, &set);
+    pthread_setaffinity_np(pthread_self(), sizeof set, &set);
+#endif
+}
+
 // recompiled code nests host frames as deep as the guest's calls, give it room
 void Spawn(std::function<void()> fn) {
     auto* f = new std::function<void()>(std::move(fn));
 #ifdef _WIN32
     auto entry = [](void* p) -> DWORD {
+        ApplyAffinity();
         std::unique_ptr<std::function<void()>> g(static_cast<std::function<void()>*>(p));
         (*g)();
         return 0;
@@ -112,6 +130,7 @@ void Spawn(std::function<void()> fn) {
     pthread_attr_setstacksize(&attr, 64u << 20);
     pthread_t th;
     pthread_create(&th, &attr, [](void* p) -> void* {
+        ApplyAffinity();
         std::unique_ptr<std::function<void()>> g(static_cast<std::function<void()>*>(p));
         (*g)();
         return nullptr;
@@ -122,6 +141,8 @@ void Spawn(std::function<void()> fn) {
 }
 
 }  // namespace
+
+void SetGuestAffinity(uint64_t mask) { g_affinity.store(mask); }
 
 Thread* Current() { return t_current.get(); }
 ThreadRef CurrentRef() { return t_current; }

@@ -175,6 +175,8 @@ X86Context& CurrentContext();
 ThreadRef CreateThread(uint32_t stack_size, uint32_t tls_size, uint32_t system_routine, uint32_t start_routine,
                        uint32_t start_context, bool suspended);
 void StartThread(ThreadRef t);
+// the processors the guest's threads may run on, a mask of them (0: any), for threads started after the call
+void SetGuestAffinity(uint64_t mask);
 [[noreturn]] void ExitThread(uint32_t code);
 void Resume(Thread& t);
 uint32_t Suspend(Thread& t);  // previous count; another thread stops at its next kernel wait, delay or yield

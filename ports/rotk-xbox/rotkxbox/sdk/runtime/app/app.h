@@ -83,11 +83,14 @@ struct Settings {
     bool achievement_notes = true;         // [achievements] notify: a note in the corner when one is earned
     bool discord = false;                  // [discord] enabled: what the game is doing on the player's Discord profile
     std::string discord_app_id;            // [discord] app_id: another Discord application than the game's own
+    bool one_core = false;                 // [system] one_core: the game's threads take turns on one core, as on the Xbox
 };
 
 Settings& Get();
 void Load();  // a settings file that is not TOML ends the run (kExitBadSettings); a missing one is made with defaults
 void Save();
+// a note Save writes at the top of the settings file, as comment lines (a game whose settings live elsewhere says where)
+void SetSettingsNote(const std::string& comment_lines);
 void LogSettings();  // every setting, as the settings file has them
 std::vector<cfg::Desc> SettingsList();  // every setting the file holds, the host's and the game's
 std::filesystem::path SettingsFile();   // --config, or GameInfo::settings beside the exe
@@ -123,6 +126,7 @@ std::filesystem::path ShaderCacheDir();  // --shader-cache, or shadercache besid
 std::filesystem::path ScreenshotDir();   // --screenshots, or Screenshots beside the exe
 std::filesystem::path LogFolder();       // --log's folder, or logs beside the exe; crash dumps and F3 captures go by it
 void LogSystem();    // the machine and the settings, at a run's start
+uint64_t OneCoreMask();  // the fastest processor core, as an affinity mask (for [system] one_core)
 void ApplyDisplay();  // any thread
 struct Mode {
     uint32_t width, height;

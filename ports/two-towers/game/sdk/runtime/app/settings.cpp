@@ -64,8 +64,14 @@ void Load() {
     }
 }
 
+namespace {
+std::string g_note;
+}
+
+void SetSettingsNote(const std::string& comment_lines) { g_note = comment_lines; }
+
 void Save() {
-    if (!cfg::Write(SettingsFile().string(), SettingsList()))
+    if (!cfg::Write(SettingsFile().string(), SettingsList(), g_note))
         LOGW("settings: could not write %s", SettingsFile().string().c_str());
 }
 

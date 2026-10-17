@@ -6,7 +6,9 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
+#if defined(_M_X64) || defined(__x86_64__)
 #include <intrin.h>
+#endif
 
 #include <algorithm>
 #include <cstdlib>
@@ -54,6 +56,18 @@ std::string OsVersion() {
 }
 
 std::string CpuName() {
+#if !(defined(_M_X64) || defined(__x86_64__))
+    // no cpuid on ARM: Windows keeps the processor's name
+    char name[128] = {};
+    DWORD size = sizeof name;
+    if (RegGetValueA(HKEY_LOCAL_MACHINE, "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", "ProcessorNameString",
+                     RRF_RT_REG_SZ, nullptr, name, &size) != ERROR_SUCCESS)
+        return "unknown";
+    std::string s = name;
+    s.erase(0, s.find_first_not_of(' '));
+    s.erase(s.find_last_not_of(' ') + 1);
+    return s;
+#else
     int r[4] = {};
     __cpuid(r, int(0x80000000));
     if (uint32_t(r[0]) < 0x80000004) return "unknown";
@@ -66,9 +80,34 @@ std::string CpuName() {
     s.erase(0, s.find_first_not_of(' '));
     s.erase(s.find_last_not_of(' ') + 1);
     return s;
+#endif
 }
 
 }  // namespace
+
+uint64_t OneCoreMask() {
+    // the first of the cores with the highest efficiency class: a performance core where they differ
+#ifdef __MINGW32__  // its headers lack the CPU set calls (test builds only): the first core
+    return 1;
+#else
+    ULONG size = 0;
+    GetSystemCpuSetInformation(nullptr, 0, &size, GetCurrentProcess(), 0);
+    std::vector<uint8_t> buf(size);
+    auto* info = reinterpret_cast<SYSTEM_CPU_SET_INFORMATION*>(buf.data());
+    if (!size || !GetSystemCpuSetInformation(info, size, &size, GetCurrentProcess(), 0)) return 1;
+    int best = -1, cls = -1;
+    for (ULONG at = 0; at < size;) {
+        auto* e = reinterpret_cast<SYSTEM_CPU_SET_INFORMATION*>(buf.data() + at);
+        if (e->Type == CpuSetInformation && e->CpuSet.Group == 0 && e->CpuSet.LogicalProcessorIndex < 64 &&
+            int(e->CpuSet.EfficiencyClass) > cls) {
+            cls = e->CpuSet.EfficiencyClass;
+            best = e->CpuSet.LogicalProcessorIndex;
+        }
+        at += e->Size;
+    }
+    return best < 0 ? 1 : 1ull << best;
+#endif
+}
 
 void LogSystem() {
     std::time_t now = std::time(nullptr);
@@ -80,6 +119,13 @@ void LogSystem() {
     SYSTEM_INFO si{};
     GetNativeSystemInfo(&si);
     LOGR("CPU: %s (%lu threads)", CpuName().c_str(), si.dwNumberOfProcessors);
+#if defined(_M_ARM64) || defined(__aarch64__)
+    LOGR("Build: ARM64");
+#else
+    // GetNativeSystemInfo tells the machine's own processor, even to an x64 program Windows on ARM is translating
+    LOGR("Build: x64%s", si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM64
+                             ? ", translated by Windows on ARM (the ARM64 build runs natively)" : "");
+#endif
     MEMORYSTATUSEX mem{sizeof(mem)};
     GlobalMemoryStatusEx(&mem);
     LOGR("RAM: %.1f GB", mem.ullTotalPhys / 1073741824.0);

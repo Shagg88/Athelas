@@ -9,7 +9,9 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
+#if defined(__SSE4_1__)
 #include <smmintrin.h>
+#endif
 
 #include <algorithm>
 #include <chrono>
@@ -82,6 +84,9 @@ std::vector<Range> StateRanges() {
 
 // equal bytes, 16 at a time: most of the state is compared on every draw
 bool Same(const uint8_t* a, const uint8_t* b, size_t n) {
+#if !defined(__SSE4_1__)
+    return !std::memcmp(a, b, n);
+#else
     size_t i = 0;
     __m128i diff = _mm_setzero_si128();
     for (; i + 16 <= n; i += 16)
@@ -89,6 +94,7 @@ bool Same(const uint8_t* a, const uint8_t* b, size_t n) {
                                                 _mm_loadu_si128(reinterpret_cast<const __m128i*>(b + i))));
     if (!_mm_testz_si128(diff, diff)) return false;
     return i == n || !std::memcmp(a + i, b + i, n - i);
+#endif
 }
 
 using Clock = std::chrono::steady_clock;

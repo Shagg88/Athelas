@@ -198,6 +198,7 @@ void ApplyIni() {
     r.Int("Graphics", "DrawDistance", g_draw_percent, 50, 800);
     r.Bool("Graphics", "AlphaEdgeSmoothing", g_alpha_edges);
     r.Bool("Graphics", "HUDEdges", g_hud_edges);       // the Xbox port's own keys, for now
+    r.Bool("System", "OneCore", s.one_core);          // Windows on ARM: the guest's threads on one core
     r.Bool("Graphics", "SharperText", g_sharp_text);
     // the shared SDK's smooth menus: off under ROTK Fix (its own SharperText redraws the text and menu pictures)
     s.smooth_2d = false;
@@ -255,6 +256,11 @@ void ApplyIni() {
     r.Bool("Textures", "Dump", s.texture_dump);
     r.Bool("Textures", "Replace", s.texture_replace);
     LOGR("rotk: %d settings from %s (ROTK Fix's file)", r.applied, file.string().c_str());
+    // settings.toml beside the port says so at its top, for anyone who opens it looking for them (issue #4)
+    app::SetSettingsNote("# ROTK Xbox shares its settings with ROTK on PC. They are kept in:\n#   " + file.string() +
+                         "\n# Change them in Athelas (or the game's own menu): that file replaces what this one holds "
+                         "each time\n# the game starts.\n\n");
+    app::Save();
 }
 }  // namespace
 
@@ -307,6 +313,7 @@ void SaveIni() {
     put("Graphics", "FieldOfView", i(g_fov_percent));
     put("Graphics", "DrawDistance", i(g_draw_percent));
     put("Graphics", "HUDEdges", i(g_hud_edges));
+    put("System", "OneCore", i(s.one_core));
     static const char* const kMovie[] = {"auto", "stretch", "4:3"};
     put("Video", "MovieDisplay", kMovie[std::min(s.movie_display, 2u)]);
     put("Video", "SharperMovies", i(s.movie_sharpening));

@@ -11,9 +11,7 @@
 #include "kernel/kernel.h"
 
 #ifdef _WIN32
-#include <intrin.h>
-#else
-#include <x86intrin.h>
+#include <intrin.h>  // __debugbreak
 #endif
 
 namespace {

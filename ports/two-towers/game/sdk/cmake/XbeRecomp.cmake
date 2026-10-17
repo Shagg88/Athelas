@@ -42,18 +42,28 @@ set(SDL_CAMERA OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(SDL3 GIT_REPOSITORY https://github.com/libsdl-org/SDL.git GIT_TAG release-3.4.18 GIT_SHALLOW TRUE)
 FetchContent_MakeAvailable(zydis tomlplusplus imgui SDL3)
 
-# x86 to C++ recompiler
-file(GLOB XBE_RECOMP_SOURCES CONFIGURE_DEPENDS ${XBE_SDK_DIR}/tools/recomp/*.cpp)
-add_executable(xbe_recomp ${XBE_RECOMP_SOURCES})
-target_include_directories(xbe_recomp PRIVATE ${XBE_SDK_DIR}/runtime ${XBE_SDK_DIR}/tools/recomp)
-target_compile_definitions(xbe_recomp PRIVATE _CRT_SECURE_NO_WARNINGS)
-target_link_libraries(xbe_recomp PRIVATE Zydis tomlplusplus::tomlplusplus)
+# Cross-compiling (an ARM64 build on an x64 PC): the tools must run on this machine, so they come from a build
+# for it, XBE_HOST_TOOLS = the folder holding its xbe_recomp and xbe_symbols
+set(XBE_HOST_TOOLS "" CACHE PATH "Folder with xbe_recomp and xbe_symbols built for this machine, when cross-compiling")
+if(XBE_HOST_TOOLS)
+    foreach(tool xbe_recomp xbe_symbols)
+        add_executable(${tool} IMPORTED GLOBAL)
+        set_target_properties(${tool} PROPERTIES IMPORTED_LOCATION ${XBE_HOST_TOOLS}/${tool}${CMAKE_HOST_EXECUTABLE_SUFFIX})
+    endforeach()
+else()
+    # x86 to C++ recompiler
+    file(GLOB XBE_RECOMP_SOURCES CONFIGURE_DEPENDS ${XBE_SDK_DIR}/tools/recomp/*.cpp)
+    add_executable(xbe_recomp ${XBE_RECOMP_SOURCES})
+    target_include_directories(xbe_recomp PRIVATE ${XBE_SDK_DIR}/runtime ${XBE_SDK_DIR}/tools/recomp)
+    target_compile_definitions(xbe_recomp PRIVATE _CRT_SECURE_NO_WARNINGS)
+    target_link_libraries(xbe_recomp PRIVATE Zydis tomlplusplus::tomlplusplus)
 
-# XDK signature scanner that writes a new title's config
-add_executable(xbe_symbols ${XBE_SDK_DIR}/tools/symbols/main.cpp)
-target_include_directories(xbe_symbols PRIVATE ${XBE_SDK_DIR}/runtime)
-target_compile_definitions(xbe_symbols PRIVATE _CRT_SECURE_NO_WARNINGS)
-target_link_libraries(xbe_symbols PRIVATE Zydis tomlplusplus::tomlplusplus)
+    # XDK signature scanner that writes a new title's config
+    add_executable(xbe_symbols ${XBE_SDK_DIR}/tools/symbols/main.cpp)
+    target_include_directories(xbe_symbols PRIVATE ${XBE_SDK_DIR}/runtime)
+    target_compile_definitions(xbe_symbols PRIVATE _CRT_SECURE_NO_WARNINGS)
+    target_link_libraries(xbe_symbols PRIVATE Zydis tomlplusplus::tomlplusplus)
+endif()
 
 set(XBE_IMGUI_SOURCES
     ${imgui_SOURCE_DIR}/imgui.cpp

@@ -418,6 +418,7 @@ bool load_settings(const std::string &dir, Settings &s)
     s.renderScale = geti(ini, "Graphics", "RenderScale", 100);
     s.renderScale = s.renderScale < 50 ? 50 : s.renderScale > 200 ? 200 : s.renderScale;   // as ROTK Fix clamps it
     s.hudEdges = geti(ini, "Graphics", "HUDEdges", 0) != 0;
+    s.oneCore = geti(ini, "System", "OneCore", 0) != 0;
     s.sharperText = geti(ini, "Graphics", "SharperText", 0) != 0;
     s.fovPct = clampi(geti(ini, "Graphics", "FieldOfView", 100), 70, 150);
     s.lodBias = std::min(0.0f, std::max(-1.0f, getf(ini, "Graphics", "TextureLODBias", -0.5f)));
@@ -654,6 +655,7 @@ static bool write_rotkfix_ini(const std::string &p, const Settings &s, bool crea
     set("Graphics", "WidescreenFix", std::to_string((int)s.widescreenFix));
     set("Graphics", "RenderScale", std::to_string(s.renderScale));
     set("Graphics", "HUDEdges", std::to_string((int)s.hudEdges));
+    set("System", "OneCore", std::to_string((int)s.oneCore));
     set("Graphics", "SharperText", std::to_string((int)s.sharperText));
     set("Graphics", "FieldOfView", std::to_string(s.fovPct));
     set("Frame", "TargetFPS", std::to_string(s.targetFps));
