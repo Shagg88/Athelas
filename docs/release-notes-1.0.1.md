@@ -28,4 +28,4 @@ A bug-fix update. Unzip it over your Athelas folder: your settings, saves and ac
 
 ## Checksum
 
-`Athelas-1.0.1.zip` SHA-256: (filled in when the zip is built)
+`Athelas-1.0.1.zip` SHA-256: `7c41eadf83477bdd0e1bec16b6fddd45d33934da5043e5503b987dc9274e961f`
