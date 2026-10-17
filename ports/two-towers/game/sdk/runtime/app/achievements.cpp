@@ -45,7 +45,10 @@ struct Toast {
 };
 std::deque<Toast> g_toasts;
 
-std::filesystem::path File() { return app::LogFolder() / "achievements.txt"; }
+// beside the log Athelas gives (the game's folder there), or beside the exe when started on its own: the same file
+std::filesystem::path File() {
+    return (app::Args().log.empty() ? app::ExeDir() : app::LogFolder()) / "achievements.txt";
+}
 
 std::string Trim(const std::string& s) {
     size_t a = s.find_first_not_of(" \t\r\n"), b = s.find_last_not_of(" \t\r\n");

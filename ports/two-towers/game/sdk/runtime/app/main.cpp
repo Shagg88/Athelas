@@ -245,6 +245,7 @@ const CommandLine& Args() {
             else if (a == L"--screenshots") c.screenshots = next();
             else if (a == L"--instance") c.instance = std::max(0, std::min(8, _wtoi(next().c_str())));
             else if (a == L"--no-dialogs") c.no_dialogs = true;
+            else if (a == L"--any-release") c.any_release = true;
             else if (a == L"--version") c.version = true;
             else if (a == L"--describe-settings") c.describe = true;
         }
@@ -265,7 +266,11 @@ std::filesystem::path TextureDir() { return Args().textures.empty() ? ExeDir() /
 std::filesystem::path LogFolder() { return Args().log.empty() ? ExeDir() / "logs" : Args().log.parent_path(); }
 
 std::filesystem::path SavesDir() {
-    std::filesystem::path base = Args().saves.empty() ? ExeDir() / "hdd" : Args().saves;
+    // started on its own: the saves Athelas keeps beside the exe (saves) when it has played the game, else hdd
+    std::error_code ec;
+    std::filesystem::path base = !Args().saves.empty()                              ? Args().saves
+                                 : std::filesystem::is_directory(ExeDir() / "saves", ec) ? ExeDir() / "saves"
+                                                                                      : ExeDir() / "hdd";
     // a second copy for system link tests keeps a disk of its own
     if (Instance() > 1) base += std::to_wstring(Instance());
     return base;

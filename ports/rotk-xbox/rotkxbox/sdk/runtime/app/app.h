@@ -102,6 +102,7 @@ std::filesystem::path SettingsFile();   // --config, or GameInfo::settings besid
 struct CommandLine {
     std::filesystem::path game, config, textures, log, saves, shader_cache, screenshots;
     bool no_dialogs = false, version = false, describe = false;
+    bool any_release = false;  // --any-release: start another release of the game without asking (the launcher asked)
     int instance = 0;  // --instance N: a second copy on this PC for system link tests
 };
 const CommandLine& Args();

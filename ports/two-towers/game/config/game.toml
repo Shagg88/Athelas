@@ -8,6 +8,8 @@ xdk = 4928
 out = "generated/game"
 partitions = 32
 code_sections = [".text", "D3D", "XGRPH", "DSOUND", "XACTENG", "BINK32X2", "BINK16X2", "BINK32A", "BINK16", "BINK16MX", "BINKYUY2", "BINK", "BINK32", "BINK16M", "BINK32M", "BINK5551", "BINK4444", "BINK32MX", "WMADEC", "XPP"]
+# the CRT's setjmp (_setjmp3, "VC20"): longjmp from the script errors resumes after its one call (0xA0565)
+setjmp = [0x00100564]
 
 # extra entry points
 [functions]

@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <cwctype>
+#include <cstdio>
 #include <cstring>
 #include <fstream>
 
@@ -18,8 +19,10 @@
 #include "image_symbols.h"
 #include "kernel/crypto.h"
 #include "kernel/disc.h"
+#include "xbe/image_hash.h"
 
 extern const char kImageSha1[];  // the xbe recompiled into this executable, written by CMake
+extern const uint64_t kImageSectionsHash;  // its code and data without the certificate, written by xbe_recomp
 
 namespace app {
 
@@ -81,6 +84,23 @@ uint32_t TitleId(const std::vector<uint8_t>& x) {
     return cert > base ? u32(size_t(cert - base) + 8) : 0;
 }
 
+// the certificate's version, region and date and the image's build date: what tells two releases of a title apart
+std::string Edition(const std::vector<uint8_t>& x) {
+    auto u32 = [&](size_t at) {
+        uint32_t v = 0;
+        if (at + 4 <= x.size()) std::memcpy(&v, x.data() + at, 4);
+        return v;
+    };
+    if (x.size() < 0x180 || std::memcmp(x.data(), "XBEH", 4)) return "";
+    uint32_t base = u32(0x104), cert = u32(0x118);
+    if (cert <= base) return "";
+    size_t c = cert - base;
+    char b[96];
+    std::snprintf(b, sizeof b, "version %u, region %X, disc %u, built %08X, certified %08X", u32(c + 0xAC), u32(c + 0xA0),
+                  u32(c + 0xA8), u32(0x114), u32(c + 4));
+    return b;
+}
+
 std::wstring Wide(const std::string& s) { return std::wstring(s.begin(), s.end()); }
 
 }  // namespace
@@ -115,8 +135,17 @@ bool FindGame(GameFiles& game) {
         bool match = sha == kImageSha1;
         uint32_t tid = TitleId(xbe);
         bool same_title = !kGame.title_id || tid == kGame.title_id;
+        // another copy whose file differs from this build's only outside the code and data (the certificate or
+        // signature: another printing, dump or resigning) runs the same
+        bool same_code = !match && same_title && kImageSectionsHash && xbe::SectionsHash(xbe) == kImageSectionsHash;
+        if (same_code) {
+            LOGR("Game: %s in %s: the same code and data as this build's, another certificate", IMAGE_XBE,
+                 name.string().c_str());
+            match = true;
+        }
         LOGR("Game: %s in %s, title %08X, sha1 %s%s", IMAGE_XBE, name.string().c_str(), tid, sha.c_str(),
              match ? "" : same_title ? ", another release" : ", another game");
+        LOGR("Game: %s", Edition(xbe).c_str());
         fs::path dir = fs::is_directory(name, ec) ? name : name.parent_path();
         if (match) {
             game = {dir, std::move(xbe)};
@@ -159,8 +188,9 @@ bool FindGame(GameFiles& game) {
     std::wstring text = other_name.filename().wstring() +
                         L" is a different release of the game than this build was made from (only the US release is "
                         L"supported for now), and will most likely crash.";
-    if (Args().no_dialogs) Fail(kExitWrongRelease, text);
-    if (MessageBoxW(nullptr, (text + L"\n\nStart it anyway?").c_str(), kGame.short_title,
+    if (Args().any_release) LOGW("game: another release, started anyway (--any-release)");
+    else if (Args().no_dialogs) Fail(kExitWrongRelease, text);
+    else if (MessageBoxW(nullptr, (text + L"\n\nStart it anyway?").c_str(), kGame.short_title,
                     MB_ICONWARNING | MB_YESNO | MB_DEFBUTTON2) != IDYES) {
         LOGR("Exit (%d): another release, not started", kExitWrongRelease);
         logx::Flush();

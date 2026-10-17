@@ -86,6 +86,23 @@ std::filesystem::path IniArgument() {
     for (int i = 1; v && i + 1 < n; i++)
         if (std::wstring(v[i]) == L"--ini") p = v[i + 1];
     if (v) LocalFree(v);
+    if (!p.empty()) return p;
+    // started on its own from Athelas's ROTK-Xbox folder: the ROTKFix.ini Athelas would pass, that of the PC game it
+    // knows (Athelas.ini's Game = rotk-pc|<folder>), else the one beside Athelas
+    std::error_code ec;
+    std::filesystem::path athelas = app::ExeDir().parent_path();
+    std::ifstream list(athelas / "Athelas.ini");
+    std::string line;
+    while (list && std::getline(list, line)) {
+        while (!line.empty() && (line.back() == '\r' || line.back() == ' ')) line.pop_back();
+        size_t eq = line.find('=');
+        if (eq == std::string::npos || Lower(Trim(line.substr(0, eq))) != "game") continue;
+        std::string value = Trim(line.substr(eq + 1));
+        if (Lower(value.substr(0, 8)) != "rotk-pc|") continue;
+        std::filesystem::path ini = std::filesystem::path(value.substr(8)) / "ROTKFix.ini";
+        if (std::filesystem::is_regular_file(ini, ec)) return ini;
+    }
+    if (std::filesystem::is_regular_file(athelas / "ROTKFix.ini", ec)) return athelas / "ROTKFix.ini";
     return p;
 #else
     const char* e = std::getenv("ROTK_INI");

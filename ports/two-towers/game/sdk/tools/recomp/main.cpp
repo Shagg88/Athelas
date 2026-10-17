@@ -80,6 +80,8 @@ static bool LoadConfig(const fs::path& path, Config& cfg, const fs::path& xdk_di
     if (auto v = t["xbe"]["path"].value<std::string>()) cfg.xbe_path = *v;
     if (auto v = t["xbe"]["title"].value<int64_t>()) cfg.title = uint32_t(*v);
     if (auto v = t["xbe"]["entry"].value<int64_t>()) cfg.entry = uint32_t(*v);
+    if (auto a = t["xbe"]["setjmp"].as_array())
+        for (auto& i : *a) cfg.setjmp.insert(uint32_t(i.value_or(int64_t(0))));
     if (auto a = t["xbe"]["trace"].as_array())
         for (auto& i : *a) cfg.trace.insert(uint32_t(i.value_or(int64_t(0))));
     if (auto v = t["xbe"]["out"].value<std::string>()) cfg.out_dir = *v;

@@ -297,6 +297,10 @@ The launcher checks your rotk.exe and shows "Game v1.0" when it is supported.
 If it says "Unknown game version", please report it with your rotk.exe's size.
 ROTK Fix does not change or bypass the game's copy protection.
 
+The Xbox ports were made from the US releases. Another release (another
+revision of the disc, or a modified copy) makes the launcher ask whether to
+start it anyway: it may well work, but it hasn't been tested and could crash.
+
 Installed from the original disc? Its SafeDisc copy protection needs an old
 Windows driver that Windows 10 and 11 block, so the game will not start on its
 own. Install SafeDiscShim (https://github.com/RibShark/SafeDiscShim), a free

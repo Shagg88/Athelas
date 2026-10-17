@@ -1030,7 +1030,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +}  // namespace ach
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/app.h /home/claude/tt-port/game/sdk/runtime/app/app.h
 --- upstream/runtime/app/app.h	2026-10-14 22:35:04.215216692 -0700
-+++ /home/claude/tt-port/game/sdk/runtime/app/app.h	2026-10-16 01:39:11.064822508 -0700
++++ /home/claude/tt-port/game/sdk/runtime/app/app.h	2026-10-16 22:07:07.315407058 -0700
 @@ -1,15 +1,41 @@
  #pragma once
  #include <cstdint>
@@ -1073,7 +1073,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  // the host side: window, settings
  namespace app {
  
-@@ -17,28 +43,101 @@
+@@ -17,28 +43,102 @@
  
  struct Settings {
      DisplayMode display_mode = DisplayMode::Borderless;
@@ -1138,6 +1138,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +struct CommandLine {
 +    std::filesystem::path game, config, textures, log, saves, shader_cache, screenshots;
 +    bool no_dialogs = false, version = false, describe = false;
++    bool any_release = false;  // --any-release: start another release of the game without asking (the launcher asked)
 +    int instance = 0;  // --instance N: a second copy on this PC for system link tests
 +};
 +const CommandLine& Args();
@@ -1178,7 +1179,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  
  std::filesystem::path ExeDir();
  // the game in assets (game_files.cpp): its folder and this executable's xbe, from the extracted files or a disc
-@@ -48,7 +147,7 @@
+@@ -48,7 +148,7 @@
      std::vector<uint8_t> xbe;
  };
  bool FindGame(GameFiles& game);
@@ -1187,7 +1188,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  void* Window();  // HWND
  // boot splash: GameInfo::splash .bmp or .png beside the exe, up before the game window
  bool OpenSplash();        // window thread, at launch; false without one, and the game window opens at once
-@@ -64,21 +163,23 @@
+@@ -64,21 +164,23 @@
  std::recursive_mutex& UiLock();
  
  // what the game repo defines once
@@ -1217,7 +1218,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      // the settings file's toml::table, for what options cannot hold
      void (*load)(const void* table);
      void (*save)(void* table);
-@@ -90,10 +191,49 @@
+@@ -90,10 +192,49 @@
      void (*ui)(double fps);        // each frame inside the ImGui frame, UiLock held
      void (*pad)(int port, input::Pad& pad);  // a polled pad before the game gets it
      void (*rumble)(int port, uint16_t& left, uint16_t& right);
@@ -1459,16 +1460,28 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +}  // namespace discord
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/game_files.cpp /home/claude/tt-port/game/sdk/runtime/app/game_files.cpp
 --- upstream/runtime/app/game_files.cpp	2026-10-14 22:35:04.215370614 -0700
-+++ /home/claude/tt-port/game/sdk/runtime/app/game_files.cpp	2026-10-14 22:14:56.909254571 -0700
-@@ -10,6 +10,7 @@
++++ /home/claude/tt-port/game/sdk/runtime/app/game_files.cpp	2026-10-16 22:27:23.103626679 -0700
+@@ -10,6 +10,8 @@
  
  #include <algorithm>
  #include <cwctype>
++#include <cstdio>
 +#include <cstring>
  #include <fstream>
  
  #include "app/app.h"
-@@ -31,7 +32,16 @@
+@@ -17,8 +19,10 @@
+ #include "image_symbols.h"
+ #include "kernel/crypto.h"
+ #include "kernel/disc.h"
++#include "xbe/image_hash.h"
+ 
+ extern const char kImageSha1[];  // the xbe recompiled into this executable, written by CMake
++extern const uint64_t kImageSectionsHash;  // its code and data without the certificate, written by xbe_recomp
+ 
+ namespace app {
+ 
+@@ -31,7 +35,16 @@
      auto dir = ExeDir();
      std::error_code ec;
      for (int i = 0; i < 6; i++) {
@@ -1486,7 +1499,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
          if (!dir.has_parent_path() || dir.parent_path() == dir) break;
          dir = dir.parent_path();
      }
-@@ -59,14 +69,37 @@
+@@ -59,14 +72,54 @@
      return true;
  }
  
@@ -1500,6 +1513,23 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +    if (x.size() < 0x180 || std::memcmp(x.data(), "XBEH", 4)) return 0;
 +    uint32_t base = u32(0x104), cert = u32(0x118);
 +    return cert > base ? u32(size_t(cert - base) + 8) : 0;
++}
++
++// the certificate's version, region and date and the image's build date: what tells two releases of a title apart
++std::string Edition(const std::vector<uint8_t>& x) {
++    auto u32 = [&](size_t at) {
++        uint32_t v = 0;
++        if (at + 4 <= x.size()) std::memcpy(&v, x.data() + at, 4);
++        return v;
++    };
++    if (x.size() < 0x180 || std::memcmp(x.data(), "XBEH", 4)) return "";
++    uint32_t base = u32(0x104), cert = u32(0x118);
++    if (cert <= base) return "";
++    size_t c = cert - base;
++    char b[96];
++    std::snprintf(b, sizeof b, "version %u, region %X, disc %u, built %08X, certified %08X", u32(c + 0xAC), u32(c + 0xA0),
++                  u32(c + 0xA8), u32(0x114), u32(c + 4));
++    return b;
 +}
 +
 +std::wstring Wide(const std::string& s) { return std::wstring(s.begin(), s.end()); }
@@ -1528,7 +1558,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
              std::wstring ext = e.path().extension().wstring();
              std::transform(ext.begin(), ext.end(), ext.begin(), [](wchar_t c) { return wchar_t(std::towlower(c)); });
              if (ext == L".iso" && e.is_regular_file(ec)) isos.push_back(e.path());
-@@ -76,18 +109,24 @@
+@@ -76,18 +129,33 @@
      // the first copy with this xbe wins, the extracted files before any image; another release is kept to offer
      GameFiles other;
      std::unique_ptr<kernel::Disc> other_disc;
@@ -1540,8 +1570,17 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 -        LOGR("Game: %s in %s, sha1 %s%s", IMAGE_XBE, name.string().c_str(), sha.c_str(), match ? "" : ", another release");
 +        uint32_t tid = TitleId(xbe);
 +        bool same_title = !kGame.title_id || tid == kGame.title_id;
++        // another copy whose file differs from this build's only outside the code and data (the certificate or
++        // signature: another printing, dump or resigning) runs the same
++        bool same_code = !match && same_title && kImageSectionsHash && xbe::SectionsHash(xbe) == kImageSectionsHash;
++        if (same_code) {
++            LOGR("Game: %s in %s: the same code and data as this build's, another certificate", IMAGE_XBE,
++                 name.string().c_str());
++            match = true;
++        }
 +        LOGR("Game: %s in %s, title %08X, sha1 %s%s", IMAGE_XBE, name.string().c_str(), tid, sha.c_str(),
 +             match ? "" : same_title ? ", another release" : ", another game");
++        LOGR("Game: %s", Edition(xbe).c_str());
 +        fs::path dir = fs::is_directory(name, ec) ? name : name.parent_path();
          if (match) {
 -            game = {assets, std::move(xbe)};
@@ -1558,7 +1597,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
              other_disc = std::move(disc);
              other_name = name;
          }
-@@ -95,7 +134,7 @@
+@@ -95,7 +163,7 @@
      };
  
      std::vector<uint8_t> xbe;
@@ -1567,7 +1606,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      for (const fs::path& iso : isos) {
          auto disc = std::make_unique<kernel::Disc>();
          std::string error;
-@@ -111,13 +150,22 @@
+@@ -111,13 +179,23 @@
      }
  
      if (other_name.empty()) {
@@ -1585,8 +1624,9 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 -    if (MessageBoxW(nullptr, text.c_str(), kGame.short_title, MB_ICONWARNING | MB_YESNO | MB_DEFBUTTON2) != IDYES) return false;
 +                        L" is a different release of the game than this build was made from (only the US release is "
 +                        L"supported for now), and will most likely crash.";
-+    if (Args().no_dialogs) Fail(kExitWrongRelease, text);
-+    if (MessageBoxW(nullptr, (text + L"\n\nStart it anyway?").c_str(), kGame.short_title,
++    if (Args().any_release) LOGW("game: another release, started anyway (--any-release)");
++    else if (Args().no_dialogs) Fail(kExitWrongRelease, text);
++    else if (MessageBoxW(nullptr, (text + L"\n\nStart it anyway?").c_str(), kGame.short_title,
 +                    MB_ICONWARNING | MB_YESNO | MB_DEFBUTTON2) != IDYES) {
 +        LOGR("Exit (%d): another release, not started", kExitWrongRelease);
 +        logx::Flush();
@@ -1776,7 +1816,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +}  // namespace keys
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/app/main.cpp /home/claude/tt-port/game/sdk/runtime/app/main.cpp
 --- upstream/runtime/app/main.cpp	2026-10-14 22:35:04.215370614 -0700
-+++ /home/claude/tt-port/game/sdk/runtime/app/main.cpp	2026-10-16 01:39:11.065198527 -0700
++++ /home/claude/tt-port/game/sdk/runtime/app/main.cpp	2026-10-16 22:07:07.315986642 -0700
 @@ -5,8 +5,10 @@
  #ifndef NOMINMAX
  #define NOMINMAX
@@ -1906,7 +1946,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
              if (LOWORD(wp) == WA_INACTIVE) {
                  // a changed display mode steps aside for the desktop, minimized, and comes back on return; not while
                  // handing over to the next instance, which runs in the same mode
-@@ -179,12 +228,64 @@
+@@ -179,12 +228,65 @@
      return std::filesystem::path(p).parent_path();
  }
  
@@ -1931,6 +1971,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
 +            else if (a == L"--screenshots") c.screenshots = next();
 +            else if (a == L"--instance") c.instance = std::max(0, std::min(8, _wtoi(next().c_str())));
 +            else if (a == L"--no-dialogs") c.no_dialogs = true;
++            else if (a == L"--any-release") c.any_release = true;
 +            else if (a == L"--version") c.version = true;
 +            else if (a == L"--describe-settings") c.describe = true;
 +        }
@@ -1976,7 +2017,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  }
  
  void* Window() { return g_hwnd; }
-@@ -215,7 +316,31 @@
+@@ -215,7 +317,31 @@
  
  }  // namespace app
  
@@ -2008,7 +2049,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      SetUnhandledExceptionFilter(app::WriteCrashDump);
      std::signal(SIGABRT, [](int) { app::WriteCrashDump(nullptr); });
      timeBeginPeriod(1);
-@@ -224,14 +349,15 @@
+@@ -224,14 +350,15 @@
      bool relaunched = std::wcsstr(GetCommandLineW(), L"--relaunched") != nullptr;
      std::string log = app::kGame.log;
      if (app::Instance() > 1) log += "-" + std::to_string(app::Instance());
@@ -2026,7 +2067,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
  
      bool splash = app::OpenSplash(), handover = app::StartHandover();
  
-@@ -259,13 +385,15 @@
+@@ -259,13 +386,15 @@
      io.IniFilename = nullptr;
      io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
      ImGui_ImplWin32_Init(app::g_hwnd);
@@ -2044,7 +2085,7 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
          MessageBoxW(app::g_hwnd, L"The game failed to start, see the log in the logs folder.", app::kGame.short_title,
                      MB_ICONERROR);
          return 1;
-@@ -277,6 +405,7 @@
+@@ -277,6 +406,7 @@
          DispatchMessageW(&msg);
      }
      if (app::g_mode_changed) ChangeDisplaySettingsW(nullptr, 0);
@@ -12776,6 +12817,56 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      uint64_t v = ns / 1000000000ull * kPerfFrequency + ns % 1000000000ull * kPerfFrequency / 1000000000ull;
      ctx.edx = uint32_t(v >> 32);
      return uint32_t(v);
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/xbe/image_hash.h /home/claude/tt-port/game/sdk/runtime/xbe/image_hash.h
+--- upstream/runtime/xbe/image_hash.h	1969-12-31 16:00:00.000000000 -0800
++++ /home/claude/tt-port/game/sdk/runtime/xbe/image_hash.h	2026-10-16 22:27:33.532155277 -0700
+@@ -0,0 +1,46 @@
++#pragma once
++// The game's code and data in an xbe, without its certificate and signature: two copies of a release whose
++// files differ only there (another printing, another dump tool, a resigned image) run the same under one build.
++// FNV-1a 64 over the image header's boot fields (base, sizes, the xored entry point and kernel thunk, init flags,
++// TLS, stack and heap) and each section's flags, address, sizes and raw bytes. Written into the executable by
++// xbe_recomp (kImageSectionsHash) and checked by the runtime.
++#include <cstdint>
++#include <cstring>
++#include <vector>
++
++namespace xbe {
++
++inline uint64_t SectionsHash(const std::vector<uint8_t>& f) {
++    auto u32 = [&](size_t at) -> uint32_t {
++        uint32_t v = 0;
++        if (at + 4 <= f.size()) std::memcpy(&v, f.data() + at, 4);
++        return v;
++    };
++    if (f.size() < 0x180 || std::memcmp(f.data(), "XBEH", 4)) return 0;
++    uint64_t h = 0xCBF29CE484222325ull;
++    auto mix = [&](const uint8_t* p, size_t n) {
++        for (size_t i = 0; i < n; i++) h = (h ^ p[i]) * 0x100000001B3ull;
++    };
++    auto mix32 = [&](uint32_t v) { mix(reinterpret_cast<const uint8_t*>(&v), 4); };
++    uint32_t base = u32(0x104);
++    mix32(base);
++    mix32(u32(0x10C));  // image size
++    mix32(u32(0x128));  // entry point
++    mix32(u32(0x158));  // kernel thunk
++    for (uint32_t at : {0x108u, 0x124u, 0x12Cu, 0x130u, 0x134u, 0x138u}) mix32(u32(at));  // headers, init flags, TLS, stack, heap
++    uint32_t n = u32(0x11C), at = u32(0x120);
++    if (at < base || n > 256) return 0;
++    for (uint32_t i = 0; i < n; i++) {
++        size_t s = size_t(at - base) + size_t(i) * 0x38;
++        uint32_t va = u32(s + 4), vsize = u32(s + 8), raw = u32(s + 12), rsize = u32(s + 16);
++        mix32(u32(s));  // flags
++        mix32(va);
++        mix32(vsize);
++        mix32(rsize);
++        if (size_t(raw) + rsize > f.size()) return 0;
++        mix(f.data() + raw, rsize);
++    }
++    return h;
++}
++
++}  // namespace xbe
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/xdk/bink.cpp /home/claude/tt-port/game/sdk/runtime/xdk/bink.cpp
 --- upstream/runtime/xdk/bink.cpp	2026-10-14 22:35:04.218722056 -0700
 +++ /home/claude/tt-port/game/sdk/runtime/xdk/bink.cpp	2026-10-14 22:14:56.910538221 -0700
@@ -13557,6 +13648,96 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/runtime/
      if (type != kGamepadType || port > 3) return 0;
      uint32_t h = mem::AllocSystem(16);
      std::lock_guard<std::mutex> lock(g_ports_lock);
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/tools/recomp/analysis.cpp /home/claude/tt-port/game/sdk/tools/recomp/analysis.cpp
+--- upstream/tools/recomp/analysis.cpp	2026-10-14 22:35:04.221978692 -0700
++++ /home/claude/tt-port/game/sdk/tools/recomp/analysis.cpp	2026-10-16 21:30:57.436914432 -0700
+@@ -530,6 +530,7 @@
+         }
+     }
+     EhContinuations();
++    SetjmpContinuations();
+     // every direct call from decoded code names a function
+     for (bool changed = true; changed;) {
+         changed = false;
+@@ -567,6 +568,24 @@
+     functions.insert(va);
+ }
+ 
++// setjmp/longjmp ([xbe] setjmp, the CRT's setjmp): longjmp ends in "jmp [buf+0x14]", the address after the setjmp call,
++// with the registers and esp of that moment restored. That address becomes a continuation (the jmp throws X86Resume)
++// and the function that called setjmp catches it, as a C++ catch's frame does.
++void Analysis::SetjmpContinuations() {
++    if (cfg.setjmp.empty()) return;
++    std::vector<uint32_t> sites;
++    for (auto& [va, insn] : insns_)
++        if (insn.flow == Flow::Call && cfg.setjmp.count(insn.target)) sites.push_back(va);
++    for (uint32_t va : sites) {
++        uint32_t ret = va + insns_[va].len;
++        MakeFunction(ret);
++        if (!functions.count(ret)) continue;
++        continuations.insert(ret);
++        setjmp_calls.insert(va);
++    }
++    std::fprintf(stderr, "setjmp: %zu calls\n", setjmp_calls.size());
++}
++
+ // MSVC C++ EH: a frame's handler thunk is "mov eax, FuncInfo; jmp __CxxFrameHandler". Its catch blocks and unwind
+ // actions are called through pointers, and a catch block returns in eax where its function resumes.
+ void Analysis::EhContinuations() {
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/tools/recomp/analysis.h /home/claude/tt-port/game/sdk/tools/recomp/analysis.h
+--- upstream/tools/recomp/analysis.h	2026-10-14 22:35:04.222305162 -0700
++++ /home/claude/tt-port/game/sdk/tools/recomp/analysis.h	2026-10-16 21:30:57.436509305 -0700
+@@ -42,6 +42,7 @@
+     std::multimap<uint32_t, Hook> hooks;
+     std::map<uint32_t, uint32_t> function_ends;          // declared entries, exclusive decode limit or 0
+     std::map<uint32_t, std::vector<uint32_t>> switches;  // indirect jmp to its targets
++    std::set<uint32_t> setjmp;  // the CRT's setjmp: where each call returns, longjmp resumes ([xbe] setjmp)
+ };
+ 
+ enum class Flow : uint8_t { Normal, Jcc, Jmp, JmpIndirect, Call, CallIndirect, Ret, Stop, Invalid };
+@@ -78,6 +79,7 @@
+     std::unordered_map<uint32_t, JumpTable> jump_tables;  // keyed by jmp address
+     std::unordered_map<uint32_t, Insn> insns_;
+     std::set<uint32_t> continuations;  // where C++ catch blocks resume, reached by the CRT's jmp eax
++    std::set<uint32_t> setjmp_calls;   // calls to a setjmp: their function catches the longjmp that resumes after them
+ 
+     // body of a function: instruction addresses reachable without entering other entries
+     std::vector<uint32_t> Body(uint32_t entry) const;
+@@ -90,6 +92,7 @@
+     void Adopt(const std::vector<uint32_t>& calls, bool trusted);
+     void GapFill();
+     void EhContinuations();
++    void SetjmpContinuations();
+     void MakeFunction(uint32_t va);
+     bool ReadTable(uint32_t jmp_va, const ZydisDecodedOperand& mem, JumpTable& jt);
+     bool SledTable(uint32_t jmp_va, const uint32_t* ring, int nring, JumpTable& jt);
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/tools/recomp/codegen_emit.cpp /home/claude/tt-port/game/sdk/tools/recomp/codegen_emit.cpp
+--- upstream/tools/recomp/codegen_emit.cpp	2026-10-14 22:35:04.222305162 -0700
++++ /home/claude/tt-port/game/sdk/tools/recomp/codegen_emit.cpp	2026-10-16 22:17:20.169224751 -0700
+@@ -1,3 +1,4 @@
++#include "xbe/image_hash.h"
+ #include <algorithm>
+ #include <cctype>
+ #include <cstdarg>
+@@ -103,6 +104,7 @@
+             ops[0].mem.segment == ZYDIS_REGISTER_FS && ops[0].mem.base == ZYDIS_REGISTER_NONE &&
+             ops[0].mem.index == ZYDIS_REGISTER_NONE && ops[0].mem.disp.value == 0)
+             seh = true;
++        if (an_.setjmp_calls.count(va)) seh = true;  // longjmp resumes here: the same catch as a C++ catch's frame
+     }
+     std::string out;
+     out += F("X86_FUNC(__imp__%s) {\n", FuncName(entry).c_str());
+@@ -271,6 +273,10 @@
+              an_.img.base + an_.img.image_size);
+     map += F("const uint32_t X86EntryPoint = 0x%Xu;\nconst uint32_t X86KernelThunk = 0x%Xu;\n\n", an_.img.entry,
+              an_.img.kernel_thunk);
++    // the image's code and data without its certificate: another copy of the release whose file differs only
++    // there is accepted (runtime/xbe/image_hash.h)
++    map += F("extern const uint64_t kImageSectionsHash;\nconst uint64_t kImageSectionsHash = 0x%llXull;\n\n",
++             (unsigned long long)xbe::SectionsHash(an_.img.file));
+     map += "const X86FuncMapping X86FuncMappings[] = {\n";
+     for (uint32_t f : funcs) map += F("\t{0x%Xu, %s},\n", f, FuncName(f).c_str());
+     map += "\t{0, nullptr},\n};\n";
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/tools/recomp/codegen_int.cpp /home/claude/tt-port/game/sdk/tools/recomp/codegen_int.cpp
 --- upstream/tools/recomp/codegen_int.cpp	2026-10-14 22:35:04.222305162 -0700
 +++ /home/claude/tt-port/game/sdk/tools/recomp/codegen_int.cpp	2026-10-15 06:26:32.562724624 -0700
@@ -13575,6 +13756,18 @@ diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/tools/re
                  emit(F("uint16_t v = (uint16_t)(%s); ctx.esp -= 2; X86_MEM16(ctx.esp) = v;", Read(ops[0], ea).c_str()));
              } else {
                  emit(F("uint32_t v = (uint32_t)(%s); X86_PUSH32(v);", Read(ops[0], ea).c_str()));
+diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/tools/recomp/main.cpp /home/claude/tt-port/game/sdk/tools/recomp/main.cpp
+--- upstream/tools/recomp/main.cpp	2026-10-14 22:35:04.222305162 -0700
++++ /home/claude/tt-port/game/sdk/tools/recomp/main.cpp	2026-10-16 21:30:57.437122941 -0700
+@@ -80,6 +80,8 @@
+     if (auto v = t["xbe"]["path"].value<std::string>()) cfg.xbe_path = *v;
+     if (auto v = t["xbe"]["title"].value<int64_t>()) cfg.title = uint32_t(*v);
+     if (auto v = t["xbe"]["entry"].value<int64_t>()) cfg.entry = uint32_t(*v);
++    if (auto a = t["xbe"]["setjmp"].as_array())
++        for (auto& i : *a) cfg.setjmp.insert(uint32_t(i.value_or(int64_t(0))));
+     if (auto a = t["xbe"]["trace"].as_array())
+         for (auto& i : *a) cfg.trace.insert(uint32_t(i.value_or(int64_t(0))));
+     if (auto v = t["xbe"]["out"].value<std::string>()) cfg.out_dir = *v;
 diff -ruN '--exclude=.git' '--exclude=.github' '--exclude=stb' upstream/xdk/4928/layout.toml /home/claude/tt-port/game/sdk/xdk/4928/layout.toml
 --- upstream/xdk/4928/layout.toml	1969-12-31 16:00:00.000000000 -0800
 +++ /home/claude/tt-port/game/sdk/xdk/4928/layout.toml	2026-10-14 22:14:56.911269801 -0700

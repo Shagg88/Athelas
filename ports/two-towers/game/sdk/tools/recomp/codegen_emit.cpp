@@ -1,3 +1,4 @@
+#include "xbe/image_hash.h"
 #include <algorithm>
 #include <cctype>
 #include <cstdarg>
@@ -103,6 +104,7 @@ std::string CodeGen::EmitFunction(uint32_t entry) {
             ops[0].mem.segment == ZYDIS_REGISTER_FS && ops[0].mem.base == ZYDIS_REGISTER_NONE &&
             ops[0].mem.index == ZYDIS_REGISTER_NONE && ops[0].mem.disp.value == 0)
             seh = true;
+        if (an_.setjmp_calls.count(va)) seh = true;  // longjmp resumes here: the same catch as a C++ catch's frame
     }
     std::string out;
     out += F("X86_FUNC(__imp__%s) {\n", FuncName(entry).c_str());
@@ -271,6 +273,10 @@ bool CodeGen::Run() {
              an_.img.base + an_.img.image_size);
     map += F("const uint32_t X86EntryPoint = 0x%Xu;\nconst uint32_t X86KernelThunk = 0x%Xu;\n\n", an_.img.entry,
              an_.img.kernel_thunk);
+    // the image's code and data without its certificate: another copy of the release whose file differs only
+    // there is accepted (runtime/xbe/image_hash.h)
+    map += F("extern const uint64_t kImageSectionsHash;\nconst uint64_t kImageSectionsHash = 0x%llXull;\n\n",
+             (unsigned long long)xbe::SectionsHash(an_.img.file));
     map += "const X86FuncMapping X86FuncMappings[] = {\n";
     for (uint32_t f : funcs) map += F("\t{0x%Xu, %s},\n", f, FuncName(f).c_str());
     map += "\t{0, nullptr},\n};\n";

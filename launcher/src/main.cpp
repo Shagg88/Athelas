@@ -587,6 +587,7 @@ static bool gold_button(const char *label, ImVec2 size, ImFont *font)
 // App state
 
 struct App {
+    std::string runningExe, runningArgs;   // the port playing, as it was started (to start it again)
     std::string dir;
     // the player's games (this folder's PC game first); cur = the one shown, -1 = none yet
     std::vector<LibGame> lib;
@@ -1739,7 +1740,7 @@ static AchFile read_achievements(const std::string &path)
     return f;
 }
 
-static void achievements_section(const std::string &path)
+static void achievements_section(const std::string &path, bool header = true)
 {
     AchFile f = read_achievements(path);
     int got = 0;
@@ -1747,7 +1748,8 @@ static void achievements_section(const std::string &path)
     char head[64];
     if (f.items.empty()) snprintf(head, sizeof head, "Achievements");
     else snprintf(head, sizeof head, "Achievements  -  %d of %d earned", got, (int)f.items.size());
-    section(head);
+    if (header) section(head);   // otherwise the list goes on under the settings' own Achievements heading
+    else if (!f.items.empty()) ImGui::TextColored(C_GOLD_H, "%d of %d earned", got, (int)f.items.size());
     ImGui::PushTextWrapPos(0);
     if (!f.found || f.items.empty()) {
         ImGui::TextColored(C_DIM, "Play the game once and its achievements appear here. They're earned as you play, "
@@ -1801,7 +1803,7 @@ static void tab_gameplay(App &a)
     ImGui::Checkbox("##discord", &s.discord);
     row_end();
     }
-    achievements_section(g_xboxPage ? rx_data_dir() + "\\achievements.txt" : a.dir + "\\ROTKFix\\achievements.txt");
+    achievements_section(g_xboxPage ? rx_data_dir() + "\\achievements.txt" : a.dir + "\\ROTKFix\\achievements.txt", false);
 }
 
 static void tab_about(App &a)
@@ -2095,6 +2097,7 @@ static void tt_play(App &a, const LibGame &g)
     HANDLE h = port_start(a.tt.exe, args, err);
     if (!h) { set_message(a, err, true); return; }
     a.running = h;
+    a.runningExe = a.tt.exe; a.runningArgs = args;
     a.runningLog = tt_log_path();
     a.runningGame = "The Two Towers";
     SDL_HideWindow(a.win);
@@ -2128,6 +2131,31 @@ static void port_finished(App &a, DWORD code)
     }
     a.running = NULL;
     if (code == 0) { a.quit = true; return; }       // played and quit: close, as after ROTK
+    if (code == 3 && a.runningArgs.find("--any-release") == std::string::npos) {
+        // another release of the game (another revision, or a modified copy): the player decides, as the port asks
+        // when started on its own
+        const SDL_MessageBoxButtonData buttons[] = {
+            { SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT | SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 0, "Cancel" },
+            { 0, 1, "Start anyway" },
+        };
+        std::string text = "This copy of " + a.runningGame + " isn't the release the port was made from (the US "
+                           "release). Other releases may well work, but they haven't been tested and could crash.\n\n"
+                           "Start it anyway?";
+        SDL_MessageBoxData box = { SDL_MESSAGEBOX_WARNING, NULL, "Athelas", text.c_str(), 2, buttons, NULL };
+        int pressed = 0;
+        if (SDL_ShowMessageBox(&box, &pressed) && pressed == 1) {
+            std::string err;
+            HANDLE h = port_start(a.runningExe, a.runningArgs + " --any-release", err);
+            if (h) {
+                a.running = h;
+                a.runningArgs += " --any-release";
+                return;
+            }
+            m = err;
+        } else {
+            m = "Not started: this copy of " + a.runningGame + " isn't the US release the port was made from.";
+        }
+    }
     a.ttLoaded = false;                              // the port may have rewritten its settings
     SDL_ShowWindow(a.win);
     SDL_RaiseWindow(a.win);
@@ -3328,6 +3356,7 @@ static void rx_play(App &a, const LibGame &g)
     HANDLE h = port_start(a.rx.exe, args, err);
     if (!h) { set_message(a, err, true); return; }
     a.running = h;
+    a.runningExe = a.rx.exe; a.runningArgs = args;
     a.runningLog = rx_log_path();
     a.runningGame = "The Return of the King";
     SDL_HideWindow(a.win);

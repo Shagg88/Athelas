@@ -42,6 +42,7 @@ struct Config {
     std::multimap<uint32_t, Hook> hooks;
     std::map<uint32_t, uint32_t> function_ends;          // declared entries, exclusive decode limit or 0
     std::map<uint32_t, std::vector<uint32_t>> switches;  // indirect jmp to its targets
+    std::set<uint32_t> setjmp;  // the CRT's setjmp: where each call returns, longjmp resumes ([xbe] setjmp)
 };
 
 enum class Flow : uint8_t { Normal, Jcc, Jmp, JmpIndirect, Call, CallIndirect, Ret, Stop, Invalid };
@@ -78,6 +79,7 @@ public:
     std::unordered_map<uint32_t, JumpTable> jump_tables;  // keyed by jmp address
     std::unordered_map<uint32_t, Insn> insns_;
     std::set<uint32_t> continuations;  // where C++ catch blocks resume, reached by the CRT's jmp eax
+    std::set<uint32_t> setjmp_calls;   // calls to a setjmp: their function catches the longjmp that resumes after them
 
     // body of a function: instruction addresses reachable without entering other entries
     std::vector<uint32_t> Body(uint32_t entry) const;
@@ -90,6 +92,7 @@ private:
     void Adopt(const std::vector<uint32_t>& calls, bool trusted);
     void GapFill();
     void EhContinuations();
+    void SetjmpContinuations();
     void MakeFunction(uint32_t va);
     bool ReadTable(uint32_t jmp_va, const ZydisDecodedOperand& mem, JumpTable& jt);
     bool SledTable(uint32_t jmp_va, const uint32_t* ring, int nring, JumpTable& jt);

@@ -530,6 +530,7 @@ void Analysis::Run() {
         }
     }
     EhContinuations();
+    SetjmpContinuations();
     // every direct call from decoded code names a function
     for (bool changed = true; changed;) {
         changed = false;
@@ -565,6 +566,24 @@ void Analysis::MakeFunction(uint32_t va) {
     std::vector<uint32_t> calls;
     if (cov == 0) Walk(va, true, &calls);
     functions.insert(va);
+}
+
+// setjmp/longjmp ([xbe] setjmp, the CRT's setjmp): longjmp ends in "jmp [buf+0x14]", the address after the setjmp call,
+// with the registers and esp of that moment restored. That address becomes a continuation (the jmp throws X86Resume)
+// and the function that called setjmp catches it, as a C++ catch's frame does.
+void Analysis::SetjmpContinuations() {
+    if (cfg.setjmp.empty()) return;
+    std::vector<uint32_t> sites;
+    for (auto& [va, insn] : insns_)
+        if (insn.flow == Flow::Call && cfg.setjmp.count(insn.target)) sites.push_back(va);
+    for (uint32_t va : sites) {
+        uint32_t ret = va + insns_[va].len;
+        MakeFunction(ret);
+        if (!functions.count(ret)) continue;
+        continuations.insert(ret);
+        setjmp_calls.insert(va);
+    }
+    std::fprintf(stderr, "setjmp: %zu calls\n", setjmp_calls.size());
 }
 
 // MSVC C++ EH: a frame's handler thunk is "mov eax, FuncInfo; jmp __CxxFrameHandler". Its catch blocks and unwind
