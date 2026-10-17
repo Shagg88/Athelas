@@ -16,9 +16,10 @@ $CXX -Wall -Wextra -Wno-missing-field-initializers -c src/port.cpp -o build/obj/
 $CXX -Wall -Wextra -Wno-missing-field-initializers -c src/ornament.cpp -o build/obj/ornament.o
 $CXX -Wall -Wextra -Wno-missing-field-initializers -c src/gpu.cpp -o build/obj/gpu.o
 $CXX -Wall -Wextra -Wno-missing-field-initializers -c src/gameart.cpp -o build/obj/gameart.o
+[ build/obj/miniz.o -nt third_party/miniz/miniz.c ] || i686-w64-mingw32-gcc -O2 -c third_party/miniz/miniz.c -o build/obj/miniz.o
 $CXX -Wall -Wextra -Wno-missing-field-initializers -c src/update.cpp -o build/obj/update.o
 $CXX -Wall -Wextra -Wno-missing-field-initializers $VDEF -c src/main.cpp -o build/obj/main.o
 printf '#define VERSION_RC %s\n#define VERSION_STR "%s"\n' "$VERSION_RC" "$ROTKFIX_VERSION" > build/obj/version_rc.h
 i686-w64-mingw32-windres -Ibuild/obj src/launcher.rc -O coff -o build/obj/launcher_res.o
 i686-w64-mingw32-g++ -mwindows -static-libgcc -static-libstdc++ -s -o build/Athelas.exe build/obj/*.o \
-  $SDL/lib/libSDL3.dll.a -lshell32 -lole32 -luuid -lwinhttp
+  $SDL/lib/libSDL3.dll.a -lshell32 -lole32 -luuid -lwinhttp -lbcrypt

@@ -85,9 +85,12 @@ NEW VERSIONS
 ------------
 When it starts, the launcher asks GitHub for the number of the newest Athelas
 release, and says so under the settings and on the About tab when a newer one
-is out. Nothing about you or your games is sent and nothing is downloaded.
-Turn it off on the About tab ("Look for new versions"). To update, unzip the
-new version over this folder: your settings, saves and achievements are kept.
+is out. Press "Update now" there: it downloads the new version from GitHub,
+checks it, installs it over this folder and starts again. Your settings, saves
+and achievements are kept. Nothing about you or your games is sent, and
+nothing is downloaded until you press it. Turn the check off on the About tab
+("Look for new versions"). You can also update by hand: unzip the new version
+over this folder.
 
 
 UNINSTALL

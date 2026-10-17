@@ -209,6 +209,9 @@ struct GameInfo {
     // there the keys bound to Start press B, so Esc goes back, and with menu_accept_start the keys bound to A press
     // Start (a game whose menus take Start to go on, "press start" among them)
     void (*file_opened)(const char* name) = nullptr;  // each file the game opens (any thread), to follow its state
+    // a file the game cannot play without (true): when it is missing the run ends with kExitNoGame, naming it, instead
+    // of the game crashing on it (an incomplete copy of the game)
+    bool (*required_file)(const char* name) = nullptr;
     bool (*in_menus)() = nullptr;
     bool menu_accept_start = false;
     // achievements: every one the game has, in the order the lists show them (empty: none)

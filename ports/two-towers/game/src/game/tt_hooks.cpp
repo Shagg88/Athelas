@@ -57,3 +57,50 @@ static void ProfilerSection(uint8_t* base, uint32_t slot) {
 }
 void TT_ProfilerStart(X86Context& ctx, uint8_t* base) { ProfilerSection(base, ctx.eax); }  // 0xE60FC, slot in eax
 void TT_ProfilerEnd(X86Context& ctx, uint8_t* base) { ProfilerSection(base, ctx.edi); }    // 0xE65B1, slot in edi
+
+// The cause (notes/09-startup-crash.md, "The cause"): the profiler keeps a stack of section numbers, the count at
+// 0x6B181C and up to 32 entries from 0x6B1820. 0xE6080 pushes the current section, 0xE6AC0 pops one and starts it
+// again. Neither is atomic: on the Xbox's one core two threads rarely met inside them, but here guest threads run
+// side by side, so the count could be lost or go below 0, and the pop then read a "section" from the data before
+// the stack (a time stamp, or text). The profiler's four routines now run one thread at a time.
+#include <mutex>
+#include "cpu/x86_ops.h"
+
+X86_EXTERN_FUNC(__imp__sub_000E6080);
+X86_EXTERN_FUNC(__imp__sub_000E60B0);
+X86_EXTERN_FUNC(__imp__sub_000E6540);
+X86_EXTERN_FUNC(__imp__sub_000E6AC0);
+
+namespace {
+std::recursive_mutex g_profiler;  // recursive: the pop calls the section start
+}
+
+X86_FUNC(sub_000E6080) {  // push the current section
+    std::lock_guard<std::recursive_mutex> lock(g_profiler);
+    uint32_t& count = *reinterpret_cast<uint32_t*>(base + 0x6B181C);
+    if (count >= 32) {  // a full stack would write over the next variables
+        static std::atomic<int> told{0};
+        if (told++ < 3) LOGI("tt: profiler stack full (%u), push skipped", count);
+        return;
+    }
+    __imp__sub_000E6080(ctx, base);
+}
+X86_FUNC(sub_000E6AC0) {  // pop a section and start it
+    std::lock_guard<std::recursive_mutex> lock(g_profiler);
+    uint32_t& count = *reinterpret_cast<uint32_t*>(base + 0x6B181C);
+    if (count == 0 || count > 32) {  // nothing pushed: section 0, as the guard above would take it
+        static std::atomic<int> told{0};
+        if (told++ < 3) LOGI("tt: profiler stack empty (%u), section 0 started", count);
+        count = 1;
+        *reinterpret_cast<uint32_t*>(base + 0x6B1820) = 0;
+    }
+    __imp__sub_000E6AC0(ctx, base);
+}
+X86_FUNC(sub_000E60B0) {  // start a section
+    std::lock_guard<std::recursive_mutex> lock(g_profiler);
+    __imp__sub_000E60B0(ctx, base);
+}
+X86_FUNC(sub_000E6540) {  // end a section, and at the frame's end swap the slots
+    std::lock_guard<std::recursive_mutex> lock(g_profiler);
+    __imp__sub_000E6540(ctx, base);
+}

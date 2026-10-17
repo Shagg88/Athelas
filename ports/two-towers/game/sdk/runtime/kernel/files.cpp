@@ -301,11 +301,20 @@ Target Resolve(const std::string& xbox_path, uint32_t root_handle) {
     return {MatchCase(best->second, parts).string()};
 }
 
+// a file the game asked for that is not there: logged, and the end of the run when the game cannot do without it
+void Missing(const std::string& name) {
+    LOG_FIRST(200, "missing %s", name.c_str());
+    if (!app::kGame.required_file || !app::kGame.required_file(name.c_str())) return;
+    std::string shown = name.size() > 3 && name[1] == ':' && name[2] == '\\' ? name.substr(3) : name;
+    app::Fail(app::kExitNoGame, L"The game files are incomplete: " + std::wstring(shown.begin(), shown.end()) +
+                                    L" is missing. Copy the whole game again, or make a new disc image, and try again.");
+}
+
 // the disc image is read only: nothing on it is created, replaced or written
 uint32_t OpenOnDisc(const Disc::Entry* e, const std::string& name, uint32_t handle_out, uint32_t iosb, uint32_t disposition,
                     uint32_t options) {
     if (!e && (disposition == 1 || disposition == 4)) {  // FILE_OPEN or FILE_OVERWRITE need an existing file
-        LOG_FIRST(200, "missing %s", name.c_str());
+        Missing(name);
         IoStatus(iosb, kObjectNameNotFound, 5);
         return kObjectNameNotFound;
     }
@@ -399,7 +408,7 @@ KERNEL_EXPORT(190, NtCreateFile, 9) {
             break;
         case 1:  // open
             if (!exists) {
-                LOG_FIRST(200, "missing %s", name.c_str());
+                Missing(name);
                 IoStatus(iosb, kObjectNameNotFound, 5);
                 return kObjectNameNotFound;
             }
@@ -463,7 +472,7 @@ KERNEL_EXPORT(202, NtOpenFile, 6) {
     const std::string& host = t.host;
     std::error_code ec;
     if (host.empty() || !fs::exists(host, ec)) {
-        LOG_FIRST(200, "missing %s", name.c_str());
+        Missing(name);
         IoStatus(iosb, kObjectNameNotFound, 5);
         return host.empty() ? kObjectPathNotFound : kObjectNameNotFound;
     }
@@ -716,7 +725,7 @@ KERNEL_EXPORT(210, NtQueryFullAttributesFile, 2) {
     Target t = Resolve(name, R32(a[0]));
     std::error_code ec;
     if (t.disc ? !t.entry : t.host.empty() || !fs::exists(t.host, ec)) {
-        LOG_FIRST(200, "missing %s", name.c_str());
+        Missing(name);
         return kObjectNameNotFound;
     }
     if (t.disc) FillNetworkInfo(a[1], *t.entry);

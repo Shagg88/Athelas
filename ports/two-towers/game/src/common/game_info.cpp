@@ -1,3 +1,4 @@
+#include <cstring>
 #include "app/app.h"
 
 #ifndef GAME_VERSION
@@ -23,6 +24,16 @@ std::string Activity();
 #ifndef TT_DISCORD_APP_ID
 #define TT_DISCORD_APP_ID nullptr
 #endif
+
+// the stream sound banks (D:\Sound\S_WB_<level>.xwb): the game crashes without one (an incomplete copy), so its
+// absence ends the run with a message that names it
+static bool RequiredFile(const char* name) {
+    size_t n = std::strlen(name);
+    auto lower = [](char c) { return char(c >= 'A' && c <= 'Z' ? c + 32 : c); };
+    if (n < 8 || lower(name[0]) != 'd' || name[1] != ':') return false;
+    const char* ext = name + n - 4;
+    return lower(ext[0]) == '.' && lower(ext[1]) == 'x' && lower(ext[2]) == 'w' && lower(ext[3]) == 'b';
+}
 
 // what the runtime asks of the game; strings must be set, hooks may stay null
 const app::GameInfo app::kGame = {
@@ -93,6 +104,7 @@ const app::GameInfo app::kGame = {
     // the in-game menu: these take effect at once
     .live_settings = {"graphics.fov", "graphics.hud_edges", "gameplay.damage_taken", "gameplay.enemy_damage"},
     .file_opened = tt::FileOpened,
+    .required_file = RequiredFile,
     .in_menus = tt::InMenus,  // Esc goes back in the front end's menus; Enter (A) goes on there as it is
     .achievements = tt::Achievements(),
     .discord_app_id = TT_DISCORD_APP_ID,

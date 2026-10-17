@@ -1822,16 +1822,72 @@ static void tab_gameplay(App &a)
 static std::string ports_ini();
 static bool updates_on() { return GetPrivateProfileIntA("Updates", "Check", 1, ports_ini().c_str()) != 0; }
 
-// About, both ROTK pages: a newer Athelas, and the switch for looking
-static void update_section()
+// "Update Athelas?": asked from the About tab or the header's button, drawn by the main window each frame
+static bool g_askUpdate;
+static void update_popup(App &a)
 {
+    std::string v = update_newer();
+    if (g_askUpdate) { g_askUpdate = false; if (!v.empty()) ImGui::OpenPopup("Update Athelas?"); }
+    // the question, in the launcher's own look: the settings panel's frame and fill, a heading, plate buttons
+    ImGuiViewport *vp = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(vp->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(S(560), 0));
+    ImGui::PushStyleColor(ImGuiCol_PopupBg, rgb(0, 0, 0, 0));
+    ImGui::PushStyleColor(ImGuiCol_Border, rgb(0, 0, 0, 0));
+    ImGui::PushStyleColor(ImGuiCol_ModalWindowDimBg, rgb(0, 0, 0, 0.55f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(S(30), S(26)));
+    if (ImGui::BeginPopupModal("Update Athelas?", NULL,
+                               ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+                               ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImDrawList *dl = ImGui::GetWindowDrawList();
+        ImVec2 p0 = ImGui::GetWindowPos(), p1 = p0 + ImGui::GetWindowSize();
+        dl->PushClipRectFullScreen();
+        orn_panel_fill(dl, p0, p1, ImGui::GetColorU32(rgb(18, 17, 15, 0.97f)));
+        orn_panel_frame(dl, p0, p1);
+        dl->PopClipRect();
+        section("Update Athelas");
+        ImGui::PushTextWrapPos(0);
+        ImGui::Text("Download Athelas %s from GitHub (about 25 MB) and install it here?", v.c_str());
+        ImGui::TextColored(C_DIM, "The launcher starts again when it's done. Your settings, saves and achievements are kept.");
+        if (a.running) ImGui::TextColored(C_WARN, "Close the game first.");
+        ImGui::PopTextWrapPos();
+        ImGui::Dummy(ImVec2(0, S(8)));
+        float bw = S(150), bh = S(40);
+        ImGui::SetCursorPosX(ImGui::GetWindowWidth() - S(30) - bw * 2 - S(12));
+        if (orn_plate_button("Update", ImVec2(bw, bh), a.running == NULL)) { update_install_start(v); ImGui::CloseCurrentPopup(); }
+        ImGui::SameLine(0, S(12));
+        if (orn_plate_button("Not now", ImVec2(bw, bh), true)) ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
+    }
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor(3);
+}
+
+// About, both ROTK pages: a newer Athelas (installed from here, or its page), and the switch for looking
+static void update_section(App &a)
+{
+    (void)a;
     section("Updates");
     std::string v = update_newer();
+    float prog = 0;
+    std::string err;
+    int st = update_install_state(&prog, &err);
     ImGui::PushTextWrapPos(0);
-    if (!v.empty()) {
+    if (st == 1 || st == 2) {
+        ImGui::TextColored(C_GOLD_H, st == 1 ? "Downloading Athelas %s..." : "Installing Athelas %s...", v.c_str());
+        ImGui::PushStyleColor(ImGuiCol_PlotHistogram, rgb(176, 138, 62));
+        ImGui::PushStyleColor(ImGuiCol_FrameBg, rgb(30, 27, 23));
+        ImGui::ProgressBar(prog, ImVec2(-1, S(8)), "");
+        ImGui::PopStyleColor(2);
+        ImGui::TextColored(C_DIM, "%d%%", (int)(prog * 100 + 0.5f));
+    } else if (st == 3) {
+        ImGui::TextColored(C_GOOD, "Athelas %s is installed. Start Athelas again to use it.", v.c_str());
+    } else if (!v.empty()) {
         ImGui::TextColored(C_GOLD_H, "Athelas %s is out (you have " LAUNCHER_VERSION ").", v.c_str());
-        ImGui::TextUnformatted("Download it from its page and unzip it over this folder: your settings, saves and "
-                               "achievements are kept.");
+        if (st == -1) ImGui::TextColored(C_BAD, "%s", err.c_str());
+        else ImGui::TextUnformatted("Your settings, saves and achievements are kept.");
+        if (ImGui::Button("Update now")) g_askUpdate = true;
+        ImGui::SameLine();
         if (ImGui::Button("Open the download page")) ShellExecuteA(NULL, "open", update_page(), NULL, NULL, SW_SHOWNORMAL);
     } else {
         ImGui::TextColored(C_DIM, "Athelas " LAUNCHER_VERSION ". A newer version shows here, and under the settings, "
@@ -1840,7 +1896,8 @@ static void update_section()
     ImGui::PopTextWrapPos();
     bool on = updates_on();
     row_begin("Look for new versions", "When the launcher starts, it asks GitHub for the number of the newest Athelas "
-                                       "release. Nothing about you or your games is sent, and nothing is downloaded.");
+                                       "release. Nothing about you or your games is sent. Updates are only downloaded "
+                                       "when you press Update now.");
     if (ImGui::Checkbox("##updates", &on)) {
         WritePrivateProfileStringA("Updates", "Check", on ? "1" : "0", ports_ini().c_str());
         if (on) update_check_start(LAUNCHER_VERSION);
@@ -1850,7 +1907,7 @@ static void update_section()
 
 static void tab_about(App &a)
 {
-    if (g_xboxPage) { rx_about(a); update_section(); return; }
+    if (g_xboxPage) { rx_about(a); update_section(a); return; }
     games_section(a);
     section("Setup");
     const GameInfo &g = a.game;
@@ -1908,13 +1965,14 @@ static void tab_about(App &a)
         { "EB Garamond", "Fonts - SIL Open Font License" },
         { "Liberation Sans", "Button pictures - SIL Open Font License" },
         { "XboxXBE-Recomp", "Recompiler runtime in the Xbox ports - MIT licence, (c) 2026 TGP482" },
-        { "toml++", "Settings files in the Xbox ports - MIT licence" } };
+        { "toml++", "Settings files in the Xbox ports - MIT licence" },
+        { "miniz", "Unpacking updates - MIT licence" } };
     for (auto &l : lic) { ImGui::TextColored(C_GOLD, "%s", l[0]); ImGui::SameLine(S(230)); ImGui::TextUnformatted(l[1]); }
     ImGui::PopTextWrapPos();
     ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
     ImGui::TextColored(C_DIM, "Launcher version " LAUNCHER_VERSION "  -  made by Shagg, with Claude (Anthropic)");
     ImGui::PopFont();
-    update_section();
+    update_section(a);
 
     section("Remove ROTK Fix");
     ImGui::PushTextWrapPos(0);
@@ -2228,7 +2286,10 @@ static void port_finished(App &a, DWORD code)
     switch (code) {
     case 0: break;
     case 1: m = "The game couldn't start" + (why.empty() ? std::string(".") : ": " + why + ".") + " Details are in " + logName + " in " + logDir + "."; break;
-    case 2: m = "The game files couldn't be found there, or they aren't " + a.runningGame + ". Check the game's location in the About tab."; break;
+    case 2:   // the port says what is wrong with the files (not found, another game, incomplete) when its log has it
+        m = why.empty() ? "The game files couldn't be found there, or they aren't " + a.runningGame + ". Check the game's location in the About tab."
+                        : why + (why.back() == '.' ? "" : ".");
+        break;
     case 3: m = "This copy isn't the US release. Only the US version is supported for now."; break;
     case 4: m = "Direct3D 12 couldn't start. Update your graphics driver; the port needs a DirectX 12 graphics card."; break;
     case 6: m = "The graphics driver stopped responding during play" + (why.empty() ? std::string("") : " (" + why + ")") +
@@ -3878,6 +3939,27 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
         sy += lh;
     }
     ImGui::PopFont();
+    // a newer Athelas: a button under the status, on every page, that asks to install it (and shows the download)
+    {
+        std::string nv = update_newer();
+        float uprog = 0;
+        int ust = update_install_state(&uprog, nullptr);
+        if (!nv.empty() || ust == 1 || ust == 2) {
+            char lbl[64];
+            if (ust == 1 || ust == 2) snprintf(lbl, sizeof lbl, "Updating  %d%%##hdrupd", (int)(uprog * 100 + 0.5f));
+            else snprintf(lbl, sizeof lbl, "Update to %s##hdrupd", nv.c_str());
+            ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
+            float bw = std::max(S(150), ImGui::CalcTextSize(lbl, nullptr, true).x + S(28));
+            ImGui::SetCursorPos(ImVec2(size.x - pad - bw, sy + S(4)));
+            ImGui::PushStyleColor(ImGuiCol_Text, C_GOLD_H);
+            if (orn_plate_button(lbl, ImVec2(bw, S(30)), ust != 1 && ust != 2)) g_askUpdate = true;
+            ImGui::PopStyleColor();
+            if (ImGui::IsItemHovered() && ust != 1 && ust != 2)
+                ImGui::SetTooltip("Athelas %s is out. Your settings, saves and achievements are kept.", nv.c_str());
+            ImGui::PopFont();
+        }
+    }
+    update_popup(a);
 
     // ---- settings panel
     // an elven frame around it; the panel itself sits just inside the frame
@@ -3956,7 +4038,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     {
         float cardW = bx - saveW - S(24) - panelX;   // under the panel, the picture beside it kept clear
         bool msg = !a.message.empty() && ImGui::GetTime() - a.messageAt < (a.messageBad ? 30.0 : 4.0);
-        std::string newer = update_newer();
+        std::string newer = update_install_state(nullptr, nullptr) > 0 ? std::string() : update_newer();   // not while it installs
         float cardH = S(32) + (newer.empty() ? 0.0f : S(18));
         if (msg) {   // room for the message, however many lines it wraps to
             ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
@@ -3975,7 +4057,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
                                 game_kind_playable(a.lib[a.cur].kind) ? "settings in its own launcher" : "not playable yet");
         if (!newer.empty()) {
             ImGui::SetCursorPosX(panelX + S(10));
-            ImGui::TextColored(C_GOLD_H, "Athelas %s is out  -  About tab", newer.c_str());
+            ImGui::TextColored(C_GOLD_H, "Athelas %s is out  -  press Update at the top right", newer.c_str());
         }
         if (msg) {
             ImGui::SetCursorPosX(panelX + S(10));
@@ -4009,6 +4091,14 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
         }
         if (getenv("ROTKFIX_TT_SAVE")) tt_save(a);
     }
+    // an installed update: the new launcher takes over (whichever tab is showing)
+    static bool restarted = false;
+    if (!restarted && update_install_state(nullptr, nullptr) == 3) {
+        restarted = true;
+        if (update_restart()) a.quit = true;
+    }
+    static bool autoUpdate = getenv("ROTKFIX_UPDATE_NOW") != nullptr;   // testing: install a newer release at once
+    if (autoUpdate && !update_newer().empty()) { autoUpdate = false; update_install_start(update_newer()); }
     static bool autoPlay = getenv("ROTKFIX_PLAY") != nullptr;
     if (autoPlay && ttShown) { autoPlay = false; tt_play(a, a.lib[a.cur]); }
     if (autoPlay && rxShown && rx_ready(a)) { autoPlay = false; if (save(a)) rx_play(a, a.lib[a.cur]); }
@@ -4019,6 +4109,12 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
         else if (rxShown) { if (save(a)) rx_play(a, a.lib[a.cur]); }
         else if (save(a)) {
             std::string err;
+            // Athelas was updated since ROTK Fix was set up there: the game gets the new ROTK Fix first
+            if (fix_outdated(a.dir)) {
+                bool denied = false;
+                std::string why;
+                if (!install_to(pc_fix_source(), a.dir, why, denied)) set_message(a, "ROTK Fix couldn't be updated in the game folder (" + why + ") - the game starts with the previous version.", true);
+            }
             if (launch_game(a.dir, err)) a.quit = true;
             else set_message(a, err, true);
         }
@@ -4142,6 +4238,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     if (protectedDir) set_message(a, "This game folder is protected by Windows, so settings can't be saved. "
                                      "Open the launcher again and allow the permission prompt.", true);
 
+    update_tidy();   // what an update left behind
     if (updates_on()) update_check_start(LAUNCHER_VERSION);
 
     while (!a.quit) {

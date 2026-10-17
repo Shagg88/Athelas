@@ -23,6 +23,7 @@ void Load() {
     if (!cfg::Read(SettingsFile().string(), SettingsList(), error)) LOGE("settings: %s", error.c_str());
 }
 void Save() {}
+void SetSettingsNote(const std::string&) {}
 void ApplyDisplay() {}
 Mode Desktop() { return {1280, 720}; }
 Mode Output() { return Desktop(); }

@@ -151,6 +151,7 @@ bool pick_folder(std::string &out, const wchar_t *title = L"Choose the folder wi
 // Copy ROTK Fix from 'src' into the game folder 'dst' (another mod's d3d8/dinput8 kept as *.before-rotkfix).
 // accessDenied is set when Windows refused to write there (Program Files without administrator rights).
 std::string pc_fix_source();
+bool fix_outdated(const std::string &dir);   // the game folder has other ROTK Fix files than the launcher carries
 bool install_to(const std::string &src, const std::string &dst, std::string &err, bool &accessDenied);
 bool start_launcher(const std::string &dir, bool elevated, const std::string &args);
 bool folder_writable(const std::string &dir);   // false = Windows needs administrator rights there

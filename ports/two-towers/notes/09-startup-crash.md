@@ -59,3 +59,30 @@ with no crash; it schedules threads differently.
 as 0 before it is used. The log says so (`tt: profiler section ... out of range`), at most three times a run.
 Checked in the harness by forcing the bad value (0x068BD578) into the field: the line was logged and the game
 went on. The cause is still open.
+
+## The cause (2026-10-17)
+
+The profiler also keeps a stack of section numbers: the count at 0x6B181C and up to 32 entries from 0x6B1820.
+`sub_000E6080` pushes the current section, and `sub_000E6AC0` pops one and starts it again through
+`sub_000E60B0`. Neither is atomic (`mov eax, [0x6B181C]` / `dec eax` / `mov [0x6B181C], eax`).
+
+Two guest threads use them: thread 1C (started at 0xE7AE0, using the profiler from 0.1 s) and the main thread 14
+(from about 1.2 s), so they overlap during startup, which is when the crash came. Thread 1C is the one in the
+crash report above. On the Xbox's single core they almost never met inside these routines. Here guest threads run
+side by side, so an update to the count could be lost and the count could go below 0. A pop then read its
+"section" from below the stack, at 0x6B181C and the data before it: a time stamp (0x068BD578, the crash above) or
+text ("ga-1", 0x312D6167, which the guard caught once on the simulated ARM run).
+
+A start-up loop found it with a debug harness that logs each new thread to call the routines; 400 plain starts of
+the headless harness never hit the race.
+
+The fix, in `tt_hooks.cpp`: host versions of the four profiler routines (push, pop, start, and end with the frame
+swap) take one recursive mutex around the originals, so one thread at a time is inside the profiler. The pop also
+treats an empty or overfull stack as section 0, and the push skips when the stack is full, each logged
+(`tt: profiler stack ...`). The guard from the stopgap stays as a last check.
+
+Checked on the simulated ARM processor (qemu, which times threads very differently): without the fix, 4 of the 13
+sweep levels crashed at startup; with it, all 13 ran their 300 s. In 4 of them the pop still found the stack empty
+once, at about 1.7 s on thread 1C, which logs `profiler stack empty (0), section 0 started` and goes on. So thread
+1C can also pop a section another thread pushed; the routines are now safe either way, and the profiler only
+measures time.

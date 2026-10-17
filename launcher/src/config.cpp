@@ -1265,6 +1265,20 @@ bool install_to(const std::string &src, const std::string &dst, std::string &err
 }
 
 // Can we create files in this folder? (Program Files needs administrator rights.)
+// The game folder's ROTK Fix files are older (or other) than the ones the launcher carries: after an update of
+// Athelas, the PC game still has the previous version until they are copied again
+bool fix_outdated(const std::string &dir)
+{
+    std::string src = pc_fix_source();
+    if (src.empty() || lower(src) == lower(dir)) return false;
+    for (const char *f : { "ROTKFix.dll", "d3d8.dll", "dinput8.dll", "SDL3.dll" }) {
+        std::string a, b;
+        if (!read_file(src + "\\" + f, a)) return false;   // nothing to copy from
+        if (!read_file(dir + "\\" + f, b) || a != b) return true;
+    }
+    return false;
+}
+
 bool folder_writable(const std::string &dir)
 {
     std::string probe = dir + "\\rotkfix-write-test.tmp";
