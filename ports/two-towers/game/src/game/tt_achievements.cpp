@@ -1,6 +1,7 @@
 // The Two Towers: achievements and the Discord status, from the files the game opens (tt_extras.cpp's FileOpened):
-// a level is the world it loads (Worlds\<code>.bfa), and it was completed when the end-of-level screen
+// a level is the world it loads (Worlds\<code>.bfa, .bfl, .bfg or .bfi: one for each hero), and it was completed when the end-of-level screen
 // (UI\endlvl.BFF, the stats and rating the game shows only after a level is won) opens after it.
+#include <cctype>
 #include <cstring>
 #include <mutex>
 #include <string>
@@ -71,7 +72,7 @@ std::vector<ach::Def> Achievements() {
 void AchievementsFile(const std::string& n) {
     auto ends = [&](const char* e) { size_t k = std::strlen(e); return n.size() >= k && n.compare(n.size() - k, k, e) == 0; };
     size_t w = n.find("\\worlds\\");
-    if (w != std::string::npos && ends(".bfa")) {
+    if (w != std::string::npos && (ends(".bfa") || ends(".bfl") || ends(".bfg") || ends(".bfi"))) {
         std::string code = n.substr(w + 8, n.size() - w - 8 - 4);
         if (code.rfind("21orth", 0) == 0) code = "orth";
         std::lock_guard lock(g_lock);
@@ -94,6 +95,15 @@ void AchievementsFile(const std::string& n) {
         std::lock_guard lock(g_lock);
         g_world.clear();
     }
+}
+
+// the level was completed the way the game meant it (its achievement); code as the
+// game names its world, any case
+bool LevelCompleted(std::string code) {
+    for (char& c : code) c = char(std::tolower(static_cast<unsigned char>(c)));
+    if (code.rfind("21orth", 0) == 0) return ach::Has("secret_mission");
+    const Level* l = Find(code);
+    return l && ach::Has(l->id);
 }
 
 std::string Activity() {

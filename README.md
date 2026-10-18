@@ -65,13 +65,13 @@ drawn landscape instead. All game and film artwork belongs to its owners.*
 - **Movies:** cutscenes fill widescreen screens with correct proportions; optional logo skip; a sound delay setting for Bluetooth speakers
 - **Texture packs:** dump the game's textures to PNG and load replacements from a folder (no game art included)
 - **Screenshots:** `\` or Print Screen saves a PNG
-- **Gameplay:** damage taken, enemy damage, and every level and character unlocked (off by default)
+- **Gameplay:** damage taken, enemy damage, every level and character unlocked, every hero in levels you've completed, the games' own cheat codes as switches, and kill points in The Two Towers (all off by default)
 - **Achievements:** in all three games, earned as you play (and from what your saves already hold), with a note on screen and the list in the launcher
 - **Launcher:** every setting in one place, with presets (Original, Balanced, High, Ultra)
 
 ## Requirements
 
-- Windows 10 or 11 (64-bit), or Linux / Steam Deck through Proton (tested in a Deck-like setup, not yet on a real Deck; see README.txt).
+- Windows 10 or 11 (64-bit), or Linux / Steam Deck through Proton (The Two Towers reported working on a real Steam Deck; see README.txt).
 - Your own US copy of each game. No game files are included.
 - **The Return of the King (PC):** a Vulkan 1.3 graphics driver is recommended. Without one, the game runs
   through Windows' Direct3D 8 with the DXVK-only options (sharpening, colour looks, texture filtering)

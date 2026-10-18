@@ -21,6 +21,7 @@
 #include <backends/imgui_impl_win32.h>
 
 #include "app/app.h"
+#include "core/diag.h"
 #include "core/input.h"
 #include "core/log.h"
 #include "gpu/backend.h"
@@ -160,7 +161,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         case WM_KEYDOWN:
             // F3: a frame capture and a thread dump, for testing only (XBE_CAPTURE_DIR set, capture.bat): a player who
             // presses it by accident would otherwise find alarming "error:" lines in the log
-            if (wp == VK_F3 && std::getenv("XBE_CAPTURE_DIR")) DumpThreads();
+            if (wp == VK_F3 && !diag::CaptureDir().empty()) DumpThreads();
             // \, the key above Enter on a US keyboard (VK_OEM_5): a screenshot, once a press
             if (wp == VK_OEM_5 && !(lp & (1 << 30))) gpu::g_screenshot = true;
             // ] (VK_OEM_6): the next colour look, as ROTK Fix

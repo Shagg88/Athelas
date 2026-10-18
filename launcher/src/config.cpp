@@ -8,6 +8,7 @@
 #include <knownfolders.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include <algorithm>
 #include "config.h"
 #include "gamedata.h"
@@ -371,11 +372,20 @@ bool load_settings(const std::string &dir, Settings &s)
     s.damageTaken = clampi(geti(ini, "Gameplay", "DamageTaken", 100), 10, 500);
     s.enemyDamage = clampi(geti(ini, "Gameplay", "EnemyDamage", 100), 10, 500);
     s.unlockAll = geti(ini, "Gameplay", "UnlockAll", 0) != 0;
+    s.allHeroes = geti(ini, "Gameplay", "AllHeroes", 0) != 0;
     s.achNotify = geti(ini, "Achievements", "Notify", 1) != 0;
     s.discord = geti(ini, "Discord", "Enabled", 0) != 0;
     s.pauseBg = geti(ini, "Window", "PauseInBackground", 0) != 0;
     s.muteBg = geti(ini, "Window", "MuteInBackground", 0) != 0;
+    s.bgController = geti(ini, "Window", "BackgroundController", 1) != 0;
     s.kbEnabled = geti(ini, "Keyboard", "Enabled", 1) != 0;
+    s.mouseAim = geti(ini, "Keyboard", "MouseAim", 1) != 0;
+    s.mouseSens = clampi(geti(ini, "Keyboard", "MouseSensitivity", 100), 10, 400);
+    s.mouseMenus = geti(ini, "Keyboard", "MouseMenus", 1) != 0;
+    s.cheatInvulnerable = geti(ini, "Cheats", "Invulnerable", 0) != 0;
+    s.cheatMissiles = geti(ini, "Cheats", "InfiniteMissiles", 0) != 0;
+    s.cheatDevastating = geti(ini, "Cheats", "AlwaysDevastating", 0) != 0;
+    s.cheatPerfect = geti(ini, "Cheats", "PerfectMode", 0) != 0;
     s.kbPlayer = clampi(geti(ini, "Keyboard", "Player", 1), 1, 2);
     for (int i = 0; i < KB_ACTION_COUNT; i++) s.kbKeys[i] = trim(gets(ini, "Keyboard", k_kbKey[i], k_kbDefault[i]));
     s.vibration = clampi(geti(ini, "Gamepad", "Vibration", 100), 0, 100);
@@ -532,6 +542,13 @@ static const std::vector<IniSection> &ini_layout()
             { "DamageTaken", "100", "Damage you take, % of the game's (10-500)" },
             { "EnemyDamage", "100", "Damage your hits do to enemies, % of the game's (10-500)" },
             { "UnlockAll", "0", "1 = every level and character can be chosen" },
+            { "AllHeroes", "0", "Xbox version: 1 = every hero on the character select of a level you've completed" },
+        } },
+        { "Cheats", "Cheats: the game's own secret codes (Xbox version)", {
+            { "Invulnerable", "0", "1 = enemies can't hurt you" },
+            { "InfiniteMissiles", "0", "1 = arrows and throwing weapons never run out" },
+            { "AlwaysDevastating", "0", "1 = every attack is a devastating one" },
+            { "PerfectMode", "0", "1 = the game's Perfect Mode code" },
         } },
         { "Achievements", "Achievements (both versions; the list is in ROTKFix\\achievements.txt)", {
             { "Notify", "1", "1 = a note in the corner when you earn one" },
@@ -539,10 +556,14 @@ static const std::vector<IniSection> &ini_layout()
         { "Window", "In the background (Xbox version)", {
             { "PauseInBackground", "0", "1 = the game stops while another window is in front (Alt-Tab)" },
             { "MuteInBackground", "0", "1 = no sound while another window is in front" },
+            { "BackgroundController", "1", "0 = controllers only reach the game while its window is in front" },
         } },
         { "Keyboard", "Keyboard and mouse (Xbox version; on PC the game's own keyboard controls are used)", {
             { "Enabled", "1", "1 = play with the keyboard and mouse as well as a controller" },
             { "Player", "1", "Which player the keyboard plays as in co-op: 1 or 2" },
+            { "MouseAim", "1", "1 = while the ranged attack is held, moving the mouse aims" },
+            { "MouseSensitivity", "100", "Mouse aiming, % (10-400)" },
+            { "MouseMenus", "1", "1 = in the game's menus the wheel moves up and down and a right click goes back" },
             { "MoveForward", "W", "Keys, comma separated: A-Z, 0-9, F1-F12, Space, Enter, Esc, Tab, Backspace, LShift, LCtrl, LAlt, Up, Down, Left, Right, Numpad0-9, Mouse1-Mouse5 ..." },
             { "MoveBack", "S", nullptr }, { "MoveLeft", "A", nullptr }, { "MoveRight", "D", nullptr },
             { "Walk", "LAlt", "Held: move at half speed" },
@@ -674,11 +695,20 @@ static bool write_rotkfix_ini(const std::string &p, const Settings &s, bool crea
     set("Gameplay", "DamageTaken", std::to_string(s.damageTaken));
     set("Gameplay", "EnemyDamage", std::to_string(s.enemyDamage));
     set("Gameplay", "UnlockAll", std::to_string((int)s.unlockAll));
+    set("Gameplay", "AllHeroes", std::to_string((int)s.allHeroes));
     set("Achievements", "Notify", std::to_string((int)s.achNotify));
     // [Discord] Enabled is written once the games' Discord applications exist (k_discordReady in main.cpp)
     set("Window", "PauseInBackground", std::to_string((int)s.pauseBg));
     set("Window", "MuteInBackground", std::to_string((int)s.muteBg));
+    set("Window", "BackgroundController", std::to_string((int)s.bgController));
     set("Keyboard", "Enabled", std::to_string((int)s.kbEnabled));
+    set("Keyboard", "MouseAim", std::to_string((int)s.mouseAim));
+    set("Keyboard", "MouseSensitivity", std::to_string(s.mouseSens));
+    set("Keyboard", "MouseMenus", std::to_string((int)s.mouseMenus));
+    set("Cheats", "Invulnerable", std::to_string((int)s.cheatInvulnerable));
+    set("Cheats", "InfiniteMissiles", std::to_string((int)s.cheatMissiles));
+    set("Cheats", "AlwaysDevastating", std::to_string((int)s.cheatDevastating));
+    set("Cheats", "PerfectMode", std::to_string((int)s.cheatPerfect));
     set("Keyboard", "Player", std::to_string(s.kbPlayer));
     for (int i = 0; i < KB_ACTION_COUNT; i++) set("Keyboard", k_kbKey[i], s.kbKeys[i]);
     set("Gamepad", "ButtonNames", names[s.buttonNames]);

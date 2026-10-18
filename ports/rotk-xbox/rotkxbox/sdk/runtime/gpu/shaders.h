@@ -21,6 +21,7 @@ enum : uint8_t {
     kTexSharp = 8, // a HUD or menu picture: sharpened at its own texel size (spread: texel step, strength)
     kTexSmooth = 16, // a HUD or menu picture the game reads unfiltered, drawn larger: a bicubic (Catmull-Rom) upscale
                      // through a linear sampler (spread: texel step)
+    kTexCrisp = 32,  // with kTexSmooth, an alpha-only picture (a font): the upscaled edge kept a pixel wide
 };
 
 struct PixelKey {

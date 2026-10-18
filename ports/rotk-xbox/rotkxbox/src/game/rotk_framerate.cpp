@@ -60,8 +60,13 @@ X86_FUNC(sub_000BF1A0) {
 }
 
 // the time step, as 0x9EB20 computes it, from the real time since the last step instead of counted blanks
+namespace rotk {
+void CheatsFrame();  // rotk_cheats.cpp
+}
+
 X86_EXTERN_FUNC(__imp__sub_0009EB20);
 X86_FUNC(sub_0009EB20) {
+    rotk::CheatsFrame();
     if (!rotk::g_unlocked) {
         __imp__sub_0009EB20(ctx, base);
         return;

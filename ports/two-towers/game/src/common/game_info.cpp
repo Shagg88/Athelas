@@ -12,6 +12,9 @@ extern uint32_t g_fov_percent;  // src/game/tt_extras.cpp
 bool Message(void* hwnd, uint32_t msg, uintptr_t wp, intptr_t lp, intptr_t* result);  // tt_extras.cpp: F1 hides the HUD
 extern bool g_skip_logos;  // tt_movies.cpp
 extern bool g_skip_all_videos;  // tt_movies.cpp
+extern bool g_kill_points;      // tt_killpoints.cpp
+extern bool g_all_heroes;       // tt_playas.cpp
+extern bool g_cheat_invulnerable, g_cheat_devastating, g_cheat_missiles, g_cheat_slow;  // tt_cheats.cpp
 void InitRenderer();  // tt_renderer.cpp: the water simulation's targets at the console's size
 extern uint32_t g_damage_taken, g_enemy_damage;  // tt_devsettings.cpp
 void FileOpened(const char* name);  // tt_extras.cpp: the front end or a level
@@ -70,6 +73,23 @@ const app::GameInfo app::kGame = {
                  "How hard you and your allies hit enemies, as a share of the chosen difficulty's own (100). Higher "
                  "is easier.",
                  nullptr, &tt::g_enemy_damage, nullptr, 25, 300},
+                {"gameplay", "kill_points", cfg::Type::Bool, "Kill points",
+                 "Shows the points each killing blow earns after its rating (\"Excellent +150\"), as The Return of "
+                 "the King does. Off: as the game shows it.",
+                 &tt::g_kill_points},
+                {"gameplay", "all_heroes", cfg::Type::Bool, "All heroes in completed levels",
+                 "In a level you've already completed, the level select offers every hero, Isildur too, as it does "
+                 "once the game is beaten. A level not completed yet keeps the game's choice; the Prologue and "
+                 "Weathertop keep the hero the game gives them.",
+                 &tt::g_all_heroes},
+                {"cheats", "invulnerable", cfg::Type::Bool, "Invulnerable",
+                 "The game's own secret code: enemies can't hurt you.", &tt::g_cheat_invulnerable},
+                {"cheats", "always_devastating", cfg::Type::Bool, "Always devastating",
+                 "The game's own secret code: every attack is a devastating one.", &tt::g_cheat_devastating},
+                {"cheats", "infinite_missiles", cfg::Type::Bool, "Infinite missiles",
+                 "The game's own secret code: arrows and throwing weapons never run out.", &tt::g_cheat_missiles},
+                {"cheats", "slow_motion", cfg::Type::Bool, "Slow motion",
+                 "The game's own secret code: the game runs in slow motion.", &tt::g_cheat_slow},
                 {"graphics", "skip_logos", cfg::Type::Bool, "Skip opening logos",
                  "Go straight to the title screen at startup.", &tt::g_skip_logos},
                 {"graphics", "skip_all_videos", cfg::Type::Bool, "Skip any video",
@@ -78,13 +98,13 @@ const app::GameInfo app::kGame = {
     // only in Original (the console's 30): the others are picture quality, as ROTK Fix's
     .presets = {{"Original", {{"graphics.sharpening", "0"}, {"display.render_percent", "\"100\""}, {"graphics.widescreen", "false"},
                               {"graphics.anisotropic_filtering", "\"0\""}, {"graphics.lod_bias", "0.00"}, {"graphics.anti_aliasing", "\"0\""},
-                              {"graphics.fps", "\"30\""}, {"graphics.smooth_2d", "false"}}},
+                              {"graphics.fps", "\"30\""}, {"graphics.smooth_2d", "false"}, {"graphics.console_textures", "true"}}},
                 {"Balanced", {{"graphics.sharpening", "30"}, {"display.render_percent", "\"100\""}, {"graphics.widescreen", "true"},
-                              {"graphics.anisotropic_filtering", "\"8\""}, {"graphics.lod_bias", "0.00"}, {"graphics.anti_aliasing", "\"2\""}, {"graphics.smooth_2d", "true"}}},
+                              {"graphics.anisotropic_filtering", "\"8\""}, {"graphics.lod_bias", "0.00"}, {"graphics.anti_aliasing", "\"2\""}, {"graphics.smooth_2d", "true"}, {"graphics.console_textures", "false"}}},
                 {"High", {{"graphics.sharpening", "60"}, {"display.render_percent", "\"100\""}, {"graphics.widescreen", "true"},
-                          {"graphics.anisotropic_filtering", "\"16\""}, {"graphics.lod_bias", "-0.50"}, {"graphics.anti_aliasing", "\"4\""}, {"graphics.smooth_2d", "true"}}},
+                          {"graphics.anisotropic_filtering", "\"16\""}, {"graphics.lod_bias", "-0.50"}, {"graphics.anti_aliasing", "\"4\""}, {"graphics.smooth_2d", "true"}, {"graphics.console_textures", "false"}}},
                 {"Ultra", {{"graphics.sharpening", "60"}, {"display.render_percent", "\"150\""}, {"graphics.widescreen", "true"},
-                           {"graphics.anisotropic_filtering", "\"16\""}, {"graphics.lod_bias", "-0.50"}, {"graphics.anti_aliasing", "\"8\""}, {"graphics.smooth_2d", "true"}}}},
+                           {"graphics.anisotropic_filtering", "\"16\""}, {"graphics.lod_bias", "-0.50"}, {"graphics.anti_aliasing", "\"8\""}, {"graphics.smooth_2d", "true"}, {"graphics.console_textures", "false"}}}},
     // [controls]: what each Xbox button does, as the game's own controls screen names it; White does nothing, so it
     // keeps its Xbox name
     .button_actions = {"Speed Attack / Fire", "Knock Back", "Parry", "Fierce Attack", "Jump Back", nullptr, "Ranged Weapon",
@@ -102,7 +122,9 @@ const app::GameInfo app::kGame = {
     // [keyboard]: Black is Jump Back here (ROTK's White); White does nothing
     .key_defaults = {{keys::kBlack, "Tab"}, {keys::kWhite, ""}},
     // the in-game menu: these take effect at once
-    .live_settings = {"graphics.fov", "graphics.hud_edges", "gameplay.damage_taken", "gameplay.enemy_damage"},
+    .live_settings = {"graphics.fov", "graphics.hud_edges", "gameplay.damage_taken", "gameplay.enemy_damage",
+                      "cheats.invulnerable", "cheats.always_devastating", "cheats.infinite_missiles",
+                      "cheats.slow_motion"},
     .file_opened = tt::FileOpened,
     .required_file = RequiredFile,
     .in_menus = tt::InMenus,  // Esc goes back in the front end's menus; Enter (A) goes on there as it is

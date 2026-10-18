@@ -96,6 +96,7 @@ struct Pad;
 // app/keyboard.cpp (Windows)
 namespace keys {
 void Merge(int port, input::Pad& pad);  // input::Poll: the keys onto the keyboard player's pad
+void Mouse(void* hwnd, uint32_t msg, uintptr_t wp, intptr_t lp);  // window thread: raw mouse movement, the wheel
 void Latch(uint32_t vk);                 // window thread: a key or mouse button went down (WM_KEYDOWN...)
 bool Claims(int port);                   // the keyboard plays on this port
 bool Over();                             // the game window has the focus and the pointer is over its picture

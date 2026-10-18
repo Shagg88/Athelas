@@ -179,6 +179,12 @@ bool Connected(int port) { return Read(port, false).connected || keys::Claims(po
 
 Pad Poll(int port) {
     Pad p = Read(port, true);
+    // [window] background_input off: the controller stays plugged in but presses nothing without the focus
+    if (!app::Get().background_input && !app::Focused()) {
+        bool connected = p.connected;
+        p = Pad{};
+        p.connected = connected;
+    }
     app::OverlayPad(port, p);  // both stick clicks open the in-game menu; nothing reaches the game while it is open
     if (app::kGame.pad) app::kGame.pad(port, p);
     keys::Merge(port, p);

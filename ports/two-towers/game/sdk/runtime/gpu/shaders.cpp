@@ -392,7 +392,8 @@ std::string TexFetch(const PixelKey& k, int i) {
     };
     auto tex2d = [&](const std::string& uv) {
         if (t.flags & kTexWide) return F("spreadtap(tex%d, smp%d, %s, spread[%d], %s)", i, i, uv.c_str(), i, Hooks().ReadScale(t).c_str());
-        if (t.flags & kTexSmooth) return F("smoothtap(tex%d, smp%d, %s, spread[%d])", i, i, uv.c_str(), i);
+        if (t.flags & kTexSmooth)
+            return F("%s(tex%d, smp%d, %s, spread[%d])", (t.flags & kTexCrisp) ? "crisptap" : "smoothtap", i, i, uv.c_str(), i);
         if (t.flags & kTexSharp) return F("sharptap(tex%d, smp%d, %s, spread[%d])", i, i, uv.c_str(), i);
         return F("tex%d.Sample(smp%d, %s)", i, i, uv.c_str());
     };
@@ -482,6 +483,13 @@ float4 smoothtap(Texture2D t, SamplerState s, float2 uv, float4 w) {
                t.SampleLevel(s, float2(p0.x, p3.y), 0) * w0.x * w3.y + t.SampleLevel(s, float2(p12.x, p3.y), 0) * w12.x * w3.y +
                t.SampleLevel(s, float2(p3.x, p3.y), 0) * w3.x * w3.y;
     return saturate(c);
+}
+// a font's letters upscaled: the smooth alpha's half way line kept as a pixel wide edge, so letters keep clean
+// curves instead of soft steps
+float4 crisptap(Texture2D t, SamplerState s, float2 uv, float4 w) {
+    float4 c = smoothtap(t, s, uv, w);
+    c.a = saturate((c.a - 0.5) / max(fwidth(c.a), 1e-4) + 0.5);
+    return c;
 }
 float4 spreadtap(Texture2D t, SamplerState s, float2 uv, float4 w, float m) {
     float4 c = 0;
@@ -892,7 +900,8 @@ std::string PixelHlsl(const PixelKey& k) {
             else if (t.kind == kTex2D && (t.flags & kTexWide))
                 body += F("float4 t%d = spreadtap(tex%d, smp%d, %s, spread[%d], %s);\n", i, i, i, uv.c_str(), i, Hooks().ReadScale(t).c_str());
             else if (t.kind == kTex2D && (t.flags & kTexSmooth))
-                body += F("float4 t%d = smoothtap(tex%d, smp%d, %s, spread[%d]);\n", i, i, i, uv.c_str(), i);
+                body += F("float4 t%d = %s(tex%d, smp%d, %s, spread[%d]);\n", i,
+                          (t.flags & kTexCrisp) ? "crisptap" : "smoothtap", i, i, uv.c_str(), i);
             else if (t.kind == kTex2D && (t.flags & kTexSharp))
                 body += F("float4 t%d = sharptap(tex%d, smp%d, %s, spread[%d]);\n", i, i, i, uv.c_str(), i);
             else if (t.kind == kTex2D) body += F("float4 t%d = tex%d.Sample(smp%d, %s);\n", i, i, i, uv.c_str());

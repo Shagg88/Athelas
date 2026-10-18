@@ -32,6 +32,7 @@ struct Settings {
     int  damageTaken = 100;
     int  enemyDamage = 100;
     bool unlockAll = false;
+    bool allHeroes = false;       // [Gameplay] AllHeroes (Xbox version): every hero in a level already completed
     bool achNotify = true;        // [Achievements] Notify: a note in the corner when one is earned
     bool discord = false;         // [Discord] Enabled: the Discord status
     // [Video]
@@ -78,7 +79,12 @@ struct Settings {
     // the Xbox version's own (ROTK on PC has the game's own keyboard controls and slows itself in the background)
     bool pauseBg = false;         // [Window] PauseInBackground
     bool muteBg = false;          // [Window] MuteInBackground
+    bool bgController = true;     // [Window] BackgroundController (Xbox version)
     bool kbEnabled = true;        // [Keyboard] Enabled
+    bool mouseAim = true;         // [Keyboard] MouseAim (Xbox version): the mouse aims while the ranged attack is held
+    int  mouseSens = 100;         // [Keyboard] MouseSensitivity, percent
+    bool mouseMenus = true;       // [Keyboard] MouseMenus: the wheel and right click in the game's menus
+    bool cheatInvulnerable = false, cheatMissiles = false, cheatDevastating = false, cheatPerfect = false;  // [Cheats] (Xbox version)
     int  kbPlayer = 1;            // [Keyboard] Player: 1 or 2
     std::string kbKeys[21];       // [Keyboard] each KB_ action's keys ("Mouse1, Enter"); k_kbDefault when not set
 };

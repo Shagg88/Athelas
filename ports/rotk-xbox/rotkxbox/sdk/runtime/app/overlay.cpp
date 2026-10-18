@@ -87,10 +87,10 @@ void Toggle() {
 // the host's settings the menu shows: they all take effect at once
 constexpr const char* kLive[] = {
     "display.show_fps", "display.vsync", "display.render_percent", "graphics.anti_aliasing",
-    "graphics.anisotropic_filtering", "graphics.lod_bias", "graphics.sharpening", "graphics.smooth_2d",
+    "graphics.anisotropic_filtering", "graphics.lod_bias", "graphics.console_textures", "graphics.sharpening", "graphics.smooth_2d",
     "graphics.colour_look", "graphics.look_strength", "graphics.brightness", "graphics.movie_display",
     "graphics.movie_sharpening", "graphics.cutscene_audio_delay", "input.vibration", "input.stick_deadzone",
-    "input.trigger_threshold", "window.pause_unfocused", "window.mute_unfocused", "keyboard.enabled",
+    "input.trigger_threshold", "window.pause_unfocused", "window.mute_unfocused", "window.background_input", "keyboard.mouse_aim", "keyboard.mouse_sensitivity", "keyboard.mouse_menus", "keyboard.enabled",
     "keyboard.player", "achievements.notify", "discord.enabled"};
 
 bool IsLive(const cfg::Desc& d) {
@@ -261,8 +261,13 @@ bool Paused() { return g_open.load() || (Get().pause_unfocused && !g_focus.load(
 bool Held() { return g_held.load(); }
 bool Muted() { return g_held.load() || (Get().mute_unfocused && !g_focus.load()); }
 
+bool Focused() { return g_focus.load(); }
+
 void SetFocus(bool focus) {
-    if (g_focus.exchange(focus) != focus && (Get().pause_unfocused || Get().mute_unfocused))
+    if (g_focus.exchange(focus) == focus) return;
+    // keys held across the switch (Alt-Tab's Alt) wait to be let go, and taps from before it are dropped
+    keys::Swallow();
+    if (Get().pause_unfocused || Get().mute_unfocused || !Get().background_input)
         LOGR("window: %s", focus ? "back in front" : "in the background");
 }
 
@@ -326,6 +331,7 @@ bool OverlayMessage(void* hwnd, uint32_t msg, uintptr_t wp, intptr_t lp, intptr_
         case WM_MBUTTONDOWN: keys::Latch(VK_MBUTTON); break;
         case WM_XBUTTONDOWN: keys::Latch(HIWORD(wp) == XBUTTON1 ? VK_XBUTTON1 : VK_XBUTTON2); break;
     }
+    if (msg == WM_INPUT || msg == WM_MOUSEWHEEL || msg == WM_CREATE || msg == WM_ACTIVATE) keys::Mouse(hwnd, msg, wp, lp);
     switch (msg) {
         case WM_SYSKEYDOWN:
         case WM_KEYDOWN:

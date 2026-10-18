@@ -63,6 +63,11 @@ std::vector<cfg::Desc> SettingsList() {
         {"graphics", "lod_bias", Type::Float, "Texture sharpness",
          "Shows textures at higher detail sooner. Too high can shimmer. 0.00 is the game's own.", nullptr, nullptr,
          nullptr, -100, 0, {}, nullptr, &s.lod_bias},
+        {"graphics", "console_textures", Type::Bool, "Original texture softness",
+         "At high resolutions the game's textures show their full, raw detail (lava, rock and water look grainier "
+         "than on a TV). This draws them at the detail the Xbox used at its own resolution: softer, as you remember "
+         "them. Menus and the HUD are not changed.",
+         &s.console_textures},
         {"graphics", "sharpening", Type::Int, "Sharpening",
          "Crisper picture. 0 turns it off. While playing, [ switches it on and off to compare.", nullptr, &s.sharpening,
          nullptr, 0, 100},
@@ -142,6 +147,10 @@ std::vector<cfg::Desc> SettingsList() {
                  &s.pause_unfocused});
     l.push_back({"window", "mute_unfocused", Type::Bool, "Mute in the background",
                  "No sound while another window is in front; the game keeps running.", &s.mute_unfocused});
+    l.push_back({"window", "background_input", Type::Bool, "Controller in the background",
+                 "Controllers still play the game while another window is in front. Off: only the window in front "
+                 "gets them, so pressing buttons in another program does nothing here.",
+                 &s.background_input});
     l.push_back({"system", "one_core", Type::Bool, "One processor core",
                  "The game's own threads take turns on one processor core, as they did on the Xbox, instead of "
                  "running side by side. A little slower. Try it if the game crashes at random on a Windows on ARM "
@@ -170,6 +179,16 @@ std::vector<cfg::Desc> SettingsList() {
                  "Which player the keyboard and mouse play as. Player 2 lets one person use the keyboard in co-op "
                  "while the other uses a controller.",
                  nullptr, &s.keyboard_player, nullptr, 0, 0, {"1", "2"}, nullptr, nullptr, {"Player 1", "Player 2"}});  // stores 1 or 2
+    l.push_back({"keyboard", "mouse_aim", Type::Bool, "Mouse aiming",
+                 "While the ranged attack is held, moving the mouse aims, as the left stick does on a controller.",
+                 &s.mouse_aim});
+    l.push_back({"keyboard", "mouse_sensitivity", Type::Int, "Mouse sensitivity",
+                 "How far a mouse movement turns the aim, in % (100 is the default).", nullptr, &s.mouse_sensitivity,
+                 nullptr, 10, 400});
+    l.push_back({"keyboard", "mouse_menus", Type::Bool, "Mouse in the menus",
+                 "In the game's menus the mouse wheel moves up and down, a left click chooses and a right click goes "
+                 "back.",
+                 &s.mouse_menus});
     for (uint32_t i = 0; i < keys::kCount; i++) {
         const char* label = keys::kLabels[i];
         if (i >= keys::kA && i <= keys::kRightTrigger && size_t(i - keys::kA) < kGame.button_actions.size() &&

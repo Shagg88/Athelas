@@ -56,6 +56,7 @@ struct Settings {
     bool texture_replace = true;           // draw texture pack files from textures/replace in place of the game's
     float brightness = 1.0f;               // a curve over the picture as shown: 1 the game's own, more lifts the darks
     float lod_bias = 0.0f;                 // added to the game's mip level bias: below 0 picks sharper texture levels
+    bool console_textures = false;         // 3D textures pick the detail level the console did at its own 480 lines
     uint32_t sharpening = 0;               // 0 to 100: contrast adaptive sharpening over the picture as shown
     bool smooth_2d = true;                 // unfiltered 2D pictures (menus, HUD) upscaled bicubic past 1.2x the console's lines
     bool show_fps = false;                 // [display] show_fps: the frames per second in the screen's top right corner
@@ -77,9 +78,13 @@ struct Settings {
     bool keyboard = true;
     uint32_t keyboard_player = 1;          // 1 or 2
     std::string keys[keys::kCount];        // each action's keys, comma separated; keys::kDefaults and the game's
+    bool mouse_aim = true;                 // [keyboard] mouse_aim: while the ranged attack is held, the mouse aims (the left stick)
+    uint32_t mouse_sensitivity = 100;      // [keyboard] mouse_sensitivity, percent
+    bool mouse_menus = true;               // [keyboard] mouse_menus: in the game's menus the wheel moves, right click goes back
     // [window]: when the game window loses the focus (another window in front, Alt-Tab)
     bool pause_unfocused = false;          // the game stops, picture and sound, until it has the focus again
     bool mute_unfocused = false;           // the sound goes quiet while it runs on
+    bool background_input = true;          // [window] background_input: controllers still play while another window has the focus
     bool achievement_notes = true;         // [achievements] notify: a note in the corner when one is earned
     bool discord = false;                  // [discord] enabled: what the game is doing on the player's Discord profile
     std::string discord_app_id;            // [discord] app_id: another Discord application than the game's own
@@ -238,6 +243,7 @@ float UiScale();                             // ImGui font scale for text about 
 // the game stands still (the menu, or [window] pause_unfocused): the title's thread waits at its next Swap, the
 // guest's clocks stop and the sound pauses
 bool Paused();
+bool Focused();  // the game window has the focus
 bool Muted();  // the sound is silent (paused, or [window] mute_unfocused without the focus)
 bool Held();   // the game is waiting in Hold now: its sound stands still too
 // the title's thread at Swap, while Paused: the guest's clocks stop, present shows the last picture again with the

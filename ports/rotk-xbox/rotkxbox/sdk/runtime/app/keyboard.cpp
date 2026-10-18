@@ -9,6 +9,7 @@
 #endif
 #include <windows.h>
 
+#include <algorithm>
 #include <atomic>
 #include <cmath>
 #include <cstring>
@@ -72,6 +73,10 @@ std::atomic<uint64_t> g_swallowed[4];
 // frame still counts
 std::atomic<uint64_t> g_latched[4];
 
+// the mouse since the pad was last read (window thread: Mouse): raw movement in counts, wheel notches
+std::atomic<int32_t> g_mouse_dx{0}, g_mouse_dy{0}, g_wheel{0};
+float g_aim_x = 0, g_aim_y = 0;  // the aim the mouse holds the stick at, easing back when it stops
+
 bool Down(uint8_t vk, bool mouse_ok) {
     bool mouse = vk <= 0x06 && vk != 0x03;
     if (mouse && !mouse_ok) return false;
@@ -94,6 +99,26 @@ void Latch(uint32_t vk) {
     else if (vk == VK_CONTROL) one(VK_LCONTROL), one(VK_RCONTROL);
     else if (vk == VK_MENU) one(VK_LMENU), one(VK_RMENU);
     else if (vk < 256) one(vk);
+}
+
+void Mouse(void* hwnd, uint32_t msg, uintptr_t wp, intptr_t lp) {
+    static bool registered = false;
+    if (!registered && hwnd) {
+        RAWINPUTDEVICE d{0x01, 0x02, 0, static_cast<HWND>(hwnd)};  // generic desktop, mouse; no RIDEV_NOLEGACY
+        registered = RegisterRawInputDevices(&d, 1, sizeof d) != FALSE;
+    }
+    if (msg == WM_INPUT) {
+        RAWINPUT r;
+        UINT size = sizeof r;
+        if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lp), RID_INPUT, &r, &size, sizeof(RAWINPUTHEADER)) != UINT(-1) &&
+            r.header.dwType == RIM_TYPEMOUSE && !(r.data.mouse.usFlags & MOUSE_MOVE_ABSOLUTE)) {
+            g_mouse_dx += r.data.mouse.lLastX;
+            g_mouse_dy += r.data.mouse.lLastY;
+        }
+    } else if (msg == WM_MOUSEWHEEL) {
+        g_wheel += GET_WHEEL_DELTA_WPARAM(wp) / WHEEL_DELTA;
+    }
+    (void)wp;
 }
 
 void Swallow() {
@@ -126,19 +151,50 @@ void Merge(int port, input::Pad& p) {
     HWND w = static_cast<HWND>(app::Window());
     if (!w || GetForegroundWindow() != w || app::OverlayOpen()) return;
     bool mouse_ok = Over();
+    bool menus = app::kGame.in_menus && app::kGame.in_menus();
     bool held[kCount] = {};
     bool any = false;
+    bool right_click = false;  // the right button held, in the menus going back instead of its action
     for (uint32_t a = 0; a < kCount; a++)
-        for (uint8_t vk : b.vk[a])
+        for (uint8_t vk : b.vk[a]) {
+            if (menus && s.mouse_menus && vk == VK_RBUTTON) {
+                right_click = right_click || Down(vk, mouse_ok);
+                continue;
+            }
             if (Down(vk, mouse_ok)) {
                 held[a] = true;
                 any = true;
             }
+        }
     for (auto& w : g_latched) w = 0;  // read once
+    int32_t dx = g_mouse_dx.exchange(0), dy = g_mouse_dy.exchange(0), wheel = g_wheel.exchange(0);
+    if (!mouse_ok) dx = dy = wheel = 0;
+    if (menus && s.mouse_menus) {
+        if (right_click) held[kB] = any = true;
+        if (wheel > 0) held[kDpadUp] = any = true;
+        if (wheel < 0) held[kDpadDown] = any = true;
+    }
+    // mouse aiming: while the ranged attack's keys are held, the mouse's movement holds the left stick over, as far as
+    // it moved (about 40 counts for full tilt at 100%), easing back over a few frames when it stops
+    float ax = 0, ay = 0;
+    if (s.mouse_aim && !menus && held[kLeftTrigger]) {
+        float k = float(s.mouse_sensitivity) / 100.0f / 40.0f;
+        auto toward = [](float cur, float want) {
+            float v = want != 0 ? want : cur * 0.6f;
+            return std::fabs(v) < 0.02f ? 0.0f : std::max(-1.0f, std::min(1.0f, v));
+        };
+        g_aim_x = toward(g_aim_x, float(dx) * k);
+        g_aim_y = toward(g_aim_y, float(-dy) * k);
+        ax = g_aim_x;
+        ay = g_aim_y;
+        if (ax != 0 || ay != 0) any = true;
+    } else {
+        g_aim_x = g_aim_y = 0;
+    }
     if (!any) return;
     if (!g_used.exchange(true)) LOGR("keyboard: first key press");
     // in the game's menus Esc (Start's keys) goes back, and Enter (A's) goes on the way those menus take it
-    if (app::kGame.in_menus && app::kGame.in_menus()) {
+    if (menus) {
         bool start = held[kStart];
         if (app::kGame.menu_accept_start) {
             held[kStart] = held[kA];
@@ -149,12 +205,15 @@ void Merge(int port, input::Pad& p) {
         held[kB] = held[kB] || start;
     }
     // the left stick: the keys' direction at full tilt (a diagonal no further than a straight push), half with walk
-    int dx = int(held[kMoveRight]) - int(held[kMoveLeft]), dy = int(held[kMoveUp]) - int(held[kMoveDown]);
-    if (dx || dy) {
+    int mx = int(held[kMoveRight]) - int(held[kMoveLeft]), my = int(held[kMoveUp]) - int(held[kMoveDown]);
+    if (mx || my) {
         float len = held[kWalk] ? 0.5f : 1.0f;
-        if (dx && dy) len *= 0.70710678f;
-        p.lx = int16_t(std::lround(dx * len * 32767));
-        p.ly = int16_t(std::lround(dy * len * 32767));
+        if (mx && my) len *= 0.70710678f;
+        p.lx = int16_t(std::lround(mx * len * 32767));
+        p.ly = int16_t(std::lround(my * len * 32767));
+    } else if (ax != 0 || ay != 0) {
+        p.lx = int16_t(std::lround(ax * 32767));
+        p.ly = int16_t(std::lround(ay * 32767));
     }
     // the analog buttons, A B X Y black white left trigger right trigger, as input::Pad::analog
     for (uint32_t i = 0; i < 8; i++)

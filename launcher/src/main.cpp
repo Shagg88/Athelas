@@ -874,6 +874,10 @@ static void tab_display(App &a)
         row_begin("Mute in the background", "No sound while another window is in front; the game keeps running.");
         ImGui::Checkbox("##mutebg", &s.muteBg);
         row_end();
+        row_begin("Controller in the background", "Controllers still play the game while another window is in front. "
+                                                  "Off: only the window in front gets them.");
+        ImGui::Checkbox("##bgpad", &s.bgController);
+        row_end();
     }
 }
 
@@ -1438,6 +1442,16 @@ static void tab_controls(App &a)
         static std::string labels[KB_ACTION_COUNT], defaults[KB_ACTION_COUNT];
         for (int k = 0; k < KB_ACTION_COUNT; k++) { labels[k] = k_kbLabel[k]; defaults[k] = k_kbDefault[k]; }
         keyboard_section(a, s.kbEnabled, s.kbPlayer, s.kbKeys, labels, defaults, KB_ACTION_COUNT);
+        section("Mouse");
+        row_begin("Mouse aiming", "While the ranged attack is held, moving the mouse aims, as the left stick does on a controller.");
+        ImGui::Checkbox("##mouseaim", &s.mouseAim);
+        row_end();
+        row_begin("Mouse sensitivity", "How far a mouse movement turns the aim (100% is the default).");
+        ImGui::SliderInt("##mousesens", &s.mouseSens, 10, 400, "%d%%");
+        row_end();
+        row_begin("Mouse in the menus", "In the game's menus the mouse wheel moves up and down, a left click chooses and a right click goes back.");
+        ImGui::Checkbox("##mousemenus", &s.mouseMenus);
+        row_end();
     }
 }
 
@@ -1804,6 +1818,33 @@ static void tab_gameplay(App &a)
                                                   "off again shows only what you've earned.");
     ImGui::Checkbox("##unlockall", &s.unlockAll);
     row_end();
+    {   // both versions: the Xbox port's own hook, ROTK Fix's on PC (gameplay.c)
+        row_begin("All heroes in completed levels", "In a level you've already completed, the character select offers "
+                                                    "every hero, as the game does once it's beaten. A level you haven't "
+                                                    "completed yet keeps the game's choice, and Helm's Deep stays "
+                                                    "Gandalf's. With Unlock all levels and characters on, every hero is "
+                                                    "offered everywhere but Gimli at Helm's Deep, which doesn't load.");
+        ImGui::Checkbox("##allheroes", &s.allHeroes);
+        row_end();
+    }
+    if (g_xboxPage) {
+        section("Cheats");
+        ImGui::PushTextWrapPos(0);
+        ImGui::TextColored(C_DIM, "The game's own secret codes, without entering them on the pause screen.");
+        ImGui::PopTextWrapPos();
+        row_begin("Invulnerable", "Enemies can't hurt you.");
+        ImGui::Checkbox("##chinv", &s.cheatInvulnerable);
+        row_end();
+        row_begin("Infinite missiles", "Arrows and throwing weapons never run out.");
+        ImGui::Checkbox("##chmis", &s.cheatMissiles);
+        row_end();
+        row_begin("Always devastating", "Every attack is a devastating one.");
+        ImGui::Checkbox("##chdev", &s.cheatDevastating);
+        row_end();
+        row_begin("Perfect mode", "The game's Perfect Mode code.");
+        ImGui::Checkbox("##chperf", &s.cheatPerfect);
+        row_end();
+    }
     section(k_discordReady ? "Achievements and Discord" : "Achievements");
     row_begin("Achievement notes", "A note in the corner of the screen when you earn an achievement. The PC version shows it with "
                                    "the Vulkan renderer (the default).");
@@ -2552,7 +2593,7 @@ static int tt_tab_of(const std::string &sec)
     if (sec == "controls" || sec == "input") return 2;
     if (sec == "audio" || sec == "sound") return 3;
     if (sec == "network") return 4;
-    if (sec == "gameplay" || sec == "achievements" || sec == "discord") return 5;
+    if (sec == "gameplay" || sec == "cheats" || sec == "achievements" || sec == "discord") return 5;
     return 1;   // graphics, textures and anything else
 }
 
@@ -2821,7 +2862,7 @@ static void tt_tab_display(App &a)
     if (const PortSetting *ps = tt_setting(a, "display", "show_fps")) tt_setting_row(a, *ps);
     if (tt_setting(a, "window", "pause_unfocused")) {
         section("In the background");
-        for (const char *k : { "pause_unfocused", "mute_unfocused" })
+        for (const char *k : { "pause_unfocused", "mute_unfocused", "background_input" })
             if (const PortSetting *ps = tt_setting(a, "window", k)) tt_setting_row(a, *ps);
     }
 
@@ -2940,6 +2981,14 @@ static void tt_tab_graphics(App &a)
         row_begin(ps->label.empty() ? "Smooth menus and HUD" : ps->label.c_str(),
                   ps->help.empty() ? "Smooths menus, text and the HUD when they are drawn larger than the console's screen." : ps->help.c_str());
         if (ImGui::Checkbox("##ttsmooth2d", &v)) a.ttFile.set(ps->section, ps->key, v ? "true" : "false");
+        row_end();
+    }
+    if (const PortSetting *ps = tt_setting(a, "graphics", "console_textures")) {
+        mark("graphics", "console_textures");
+        bool v = tt_val(a, *ps) == "true";
+        row_begin(ps->label.empty() ? "Original texture softness" : ps->label.c_str(),
+                  ps->help.empty() ? "Draws textures at the detail the Xbox used at its own resolution: softer, as on a TV." : ps->help.c_str());
+        if (ImGui::Checkbox("##ttconsoletex", &v)) a.ttFile.set(ps->section, ps->key, v ? "true" : "false");
         row_end();
     }
     if (const PortSetting *ps = tt_setting(a, "graphics", "colour_look")) {
@@ -3281,6 +3330,12 @@ static void tt_tab_controls(App &a)
             for (int k = 0; k < KB_ACTION_COUNT; k++) if (ps[k]) a.ttFile.set("keyboard", keyNames[k], toml_quote(keys[k]));
         }
     }
+    // the mouse: aiming with the ranged attack held, the wheel and right click in the menus
+    if (tt_setting(a, "keyboard", "mouse_aim")) {
+        section("Mouse");
+        for (const char *k : { "mouse_aim", "mouse_sensitivity", "mouse_menus" })
+            if (const PortSetting *ps = tt_setting(a, "keyboard", k)) tt_setting_row(a, *ps);
+    }
     // anything else the port puts on this tab
     bool more = false;
     for (auto &ps : a.tt.settings) {
@@ -3309,9 +3364,16 @@ static void tt_tab_gameplay(App &a)
     }
     bool more = false;
     for (auto &ps : a.tt.settings) {
-        if (tt_tab_of_setting(ps) != 5 || tt_hidden(ps)) continue;
+        if (tt_tab_of_setting(ps) != 5 || tt_hidden(ps) || ps.section == "cheats") continue;
         if (std::find(done.begin(), done.end(), ps.section + "." + ps.key) != done.end()) continue;
         if (!more) { section(head ? "More" : "Gameplay"); more = true; }
+        tt_setting_row(a, ps);
+    }
+    // [cheats]: the game's own secret codes, as switches
+    bool cheats = false;
+    for (auto &ps : a.tt.settings) {
+        if (ps.section != "cheats") continue;
+        if (!cheats) { section("Cheats"); cheats = true; }
         tt_setting_row(a, ps);
     }
     achievements_section(tt_data_dir() + "\\achievements.txt");

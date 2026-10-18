@@ -36,6 +36,8 @@ extern uint32_t g_fov_percent, g_draw_percent;  // rotk_widescreen.cpp
 extern bool g_alpha_edges, g_hud_edges;          // rotk_widescreen.cpp
 extern bool g_second_controller;                 // rotk_controls.cpp
 extern bool g_unlock_all;                        // rotk_secrets.cpp
+extern bool g_all_heroes;                       // rotk_playas.cpp
+extern bool g_cheat_invulnerable, g_cheat_missiles, g_cheat_devastating, g_cheat_perfect;  // rotk_cheats.cpp
 extern uint32_t g_damage_percent, g_enemy_damage_percent;  // rotk_secrets.cpp
 void LoadControls(const std::string* (*get)(void*, const char*, const char*), void* ctx);
 void InitFrameRate();
@@ -234,9 +236,21 @@ void ApplyIni() {
     r.Int("Gameplay", "DamageTaken", g_damage_percent, 10, 500);
     r.Int("Gameplay", "EnemyDamage", g_enemy_damage_percent, 10, 500);
     r.Bool("Gameplay", "UnlockAll", g_unlock_all);
+    // AllHeroes: every hero on the character select of a level already completed (rotk_playas.cpp)
+    r.Bool("Gameplay", "AllHeroes", g_all_heroes);
+    // [Cheats]: the game's own secret codes that are switches (rotk_cheats.cpp)
+    r.Bool("Cheats", "Invulnerable", g_cheat_invulnerable);
+    r.Bool("Cheats", "InfiniteMissiles", g_cheat_missiles);
+    r.Bool("Cheats", "AlwaysDevastating", g_cheat_devastating);
+    r.Bool("Cheats", "PerfectMode", g_cheat_perfect);
     // [Window]: the Xbox port's own (ROTK on PC slows itself down in the background)
     r.Bool("Window", "PauseInBackground", s.pause_unfocused);
     r.Bool("Window", "MuteInBackground", s.mute_unfocused);
+    r.Bool("Window", "BackgroundController", s.background_input);
+    // the mouse (the Xbox port's own keys): aiming with the ranged attack held, the wheel and right click in menus
+    r.Bool("Keyboard", "MouseAim", s.mouse_aim);
+    r.Int("Keyboard", "MouseSensitivity", s.mouse_sensitivity, 10, 400);
+    r.Bool("Keyboard", "MouseMenus", s.mouse_menus);
     // [Keyboard]: the Xbox port's keyboard and mouse play (on PC the game's own keyboard controls)
     r.Bool("Keyboard", "Enabled", s.keyboard);
     r.Int("Keyboard", "Player", s.keyboard_player, 1, 2);
@@ -323,7 +337,11 @@ void SaveIni() {
     put("Gamepad", "TriggerThreshold", i(s.trigger_threshold));
     put("Window", "PauseInBackground", i(s.pause_unfocused));
     put("Window", "MuteInBackground", i(s.mute_unfocused));
+    put("Window", "BackgroundController", i(s.background_input));
     put("Keyboard", "Enabled", i(s.keyboard));
+    put("Keyboard", "MouseAim", i(s.mouse_aim));
+    put("Keyboard", "MouseSensitivity", i(s.mouse_sensitivity));
+    put("Keyboard", "MouseMenus", i(s.mouse_menus));
     put("Keyboard", "Player", i(s.keyboard_player));
     put("Achievements", "Notify", i(s.achievement_notes));
     if (app::kGame.discord_app_id) put("Discord", "Enabled", i(s.discord));

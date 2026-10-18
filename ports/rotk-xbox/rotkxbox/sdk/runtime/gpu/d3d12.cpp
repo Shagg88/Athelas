@@ -21,6 +21,8 @@
 #include <filesystem>
 #include <fstream>
 #include <mutex>
+#include <thread>
+#include <atomic>
 #include <optional>
 #include <unordered_map>
 #include <unordered_set>
@@ -514,6 +516,7 @@ struct GuestExtent {
 
 class D3D12Backend final : public Backend, public Context {
 public:
+    ~D3D12Backend() override;
     bool Init(uint32_t width, uint32_t height) override;
     void Clear(const State& s, uint32_t count, const uint8_t* rects, uint32_t flags, uint32_t color, float z,
                uint32_t stencil) override;
@@ -778,6 +781,17 @@ private:
     std::unordered_map<uint64_t, ComPtr<ID3DBlob>> blobs_;
     std::unordered_map<uint64_t, uint64_t> shader_src_;  // vertex and pixel program keys to source hash
     std::unordered_map<uint64_t, ComPtr<ID3D12PipelineState>> psos_;
+    // pipeline warm-up: every draw pipeline made is listed in the shader cache (pipelines.bin); at the next start a
+    // background thread makes them again from the cached shaders, before the game asks for them
+    void StartWarmUp();
+    void WarmUp(std::vector<PsoKey> keys);
+    std::thread warm_;
+    std::atomic<bool> warm_stop_{false};
+    std::mutex warm_mu_;
+    std::unordered_map<uint64_t, ComPtr<ID3D12PipelineState>> warm_psos_;  // made ahead, not yet asked for
+    std::unordered_set<uint64_t> warm_taken_;                              // asked for or made: not made again
+    std::unordered_set<uint64_t> listed_;                                  // keys already in pipelines.bin
+    FILE* pso_list_ = nullptr;
     std::unordered_map<uint64_t, uint32_t> samplers_;
     uint32_t smp_used_ = 0;
     std::unordered_map<uint64_t, Target> targets_;
@@ -907,6 +921,7 @@ bool D3D12Backend::Init(uint32_t width, uint32_t height) {
     CreateHeaps();
     CreateBackBufferViews();
     if (!CreateRootSignature()) return false;
+    StartWarmUp();
     CreateFrames();
     CreateGammaLut();
     ImGui_ImplDX12_Init(dev_.Get(), kFrames, bb_fmt_, ui_heap_.Get(),
@@ -1949,6 +1964,23 @@ void D3D12Backend::Blit(ID3D12Resource* src, DXGI_FORMAT fmt, const float uvrect
     DrawFullScreen(pso, cb.gpu, slot, si);
 }
 
+// a compiled shader's file in the shader cache, by Compile's hash: the name covers the source, entry point, profile
+// and compile options; a different compiler or flags make new names
+static const char kCacheSalt[] = "d3dcompile O1 v1";
+std::filesystem::path CachedShaderPath(uint64_t hash) {
+    return app::ShaderCacheDir() / (pack::Name(Hash(kCacheSalt, sizeof(kCacheSalt), hash)) + ".dxbc");
+}
+
+ComPtr<ID3DBlob> ReadCachedShader(uint64_t hash) {
+    ComPtr<ID3DBlob> code;
+    std::ifstream f(CachedShaderPath(hash), std::ios::binary | std::ios::ate);
+    std::streamsize n = f ? std::streamsize(f.tellg()) : 0;
+    if (n <= 0 || FAILED(D3DCreateBlob(SIZE_T(n), &code))) return nullptr;
+    f.seekg(0);
+    if (!f.read(static_cast<char*>(code->GetBufferPointer()), n)) return nullptr;
+    return code;
+}
+
 ID3DBlob* D3D12Backend::Compile(const std::string& src, const char* entry, const char* profile, uint64_t& hash) {
     // one source can hold several entry points
     uint64_t profile_seed = Hash(profile, std::strlen(profile));
@@ -1956,23 +1988,10 @@ ID3DBlob* D3D12Backend::Compile(const std::string& src, const char* entry, const
     hash = Hash(src.data(), src.size(), entry_seed);
     auto it = blobs_.find(hash);
     if (it != blobs_.end()) return it->second.Get();
-    // compiled once and kept in the shader cache (shadercache\ beside the exe, or --shader-cache): a shader the game first uses mid-play (a cutscene
-    // ending, a new effect) does not stall the frame on D3DCompile again in later runs. The file name covers the
-    // source, entry point, profile and compile options; a different compiler or flags make new names.
-    static const char kCacheSalt[] = "d3dcompile O1 v1";
-    std::filesystem::path cached =
-        app::ShaderCacheDir() / (pack::Name(Hash(kCacheSalt, sizeof(kCacheSalt), hash)) + ".dxbc");
-    ComPtr<ID3DBlob> code;
-    {
-        std::ifstream f(cached, std::ios::binary | std::ios::ate);
-        std::streamsize n = f ? std::streamsize(f.tellg()) : 0;
-        if (n > 0 && SUCCEEDED(D3DCreateBlob(SIZE_T(n), &code))) {
-            f.seekg(0);
-            if (!f.read(static_cast<char*>(code->GetBufferPointer()), n)) code = nullptr;
-        } else {
-            code = nullptr;
-        }
-    }
+    // compiled once and kept in the shader cache (shadercache\ beside the exe, or --shader-cache): a shader the game
+    // first uses mid-play (a cutscene ending, a new effect) does not stall the frame on D3DCompile again in later runs
+    std::filesystem::path cached = CachedShaderPath(hash);
+    ComPtr<ID3DBlob> code = ReadCachedShader(hash);
     if (code) {
         blobs_[hash] = code;
         return code.Get();
@@ -2196,6 +2215,17 @@ ID3D12PipelineState* D3D12Backend::EnsurePipeline(const PsoKey& k, ID3DBlob* vs,
     uint64_t h = Hash(&k, sizeof(k));
     auto it = psos_.find(h);
     if (it != psos_.end()) return it->second.Get();
+    {
+        // made ahead by the warm-up: taken over; otherwise the warm-up leaves it to this thread
+        std::lock_guard<std::mutex> lock(warm_mu_);
+        auto w = warm_psos_.find(h);
+        if (w != warm_psos_.end()) {
+            ID3D12PipelineState* p = (psos_[h] = std::move(w->second)).Get();
+            warm_psos_.erase(w);
+            return p;
+        }
+        warm_taken_.insert(h);
+    }
     D3D12_INPUT_ELEMENT_DESC el[16];
     uint32_t n = FillInputLayout(k, el);
     D3D12_GRAPHICS_PIPELINE_STATE_DESC d{};
@@ -2207,7 +2237,93 @@ ID3D12PipelineState* D3D12Backend::EnsurePipeline(const PsoKey& k, ID3DBlob* vs,
     if (FAILED(dev_->CreateGraphicsPipelineState(&d, IID_PPV_ARGS(&pso)))) LOGE("d3d12: pipeline creation failed");
     g_perf.pso += PerfMs(perf_pso);
     psos_[h] = pso;
+    // listed for the next start's warm-up (the list stops growing at 50000)
+    if (pso && pso_list_ && listed_.size() < 50000 && listed_.insert(h).second) {
+        std::fwrite(&k, sizeof(k), 1, pso_list_);
+        std::fflush(pso_list_);
+    }
     return pso.Get();
+}
+
+// pipelines.bin: a header, then PsoKeys as EnsurePipeline built them (zeroed padding, so equal keys are equal bytes)
+struct PipelineListHeader {
+    char magic[4] = {'A', 'P', 'L', '1'};
+    uint32_t key_size = sizeof(PsoKey);
+};
+
+void D3D12Backend::StartWarmUp() {
+    std::filesystem::path file = app::ShaderCacheDir() / "pipelines.bin";
+    std::vector<PsoKey> keys;
+    PipelineListHeader want;
+    bool fresh = true;
+    if (FILE* f = _wfopen(file.c_str(), L"rb")) {
+        PipelineListHeader have;
+        if (std::fread(&have, sizeof(have), 1, f) == 1 && !std::memcmp(&have, &want, sizeof(want))) {
+            fresh = false;
+            PsoKey k;
+            while (std::fread(&k, sizeof(k), 1, f) == 1)
+                if (listed_.insert(Hash(&k, sizeof(k))).second) keys.push_back(k);
+        }
+        std::fclose(f);
+    }
+    std::error_code ec;
+    std::filesystem::create_directories(file.parent_path(), ec);
+    // a list from another build's key layout (or a damaged one) is started again
+    pso_list_ = _wfopen(file.c_str(), fresh ? L"wb" : L"ab");
+    if (pso_list_ && fresh) {
+        std::fwrite(&want, sizeof(want), 1, pso_list_);
+        std::fflush(pso_list_);
+    }
+    if (!pso_list_) LOGW("d3d12: the pipeline list %s can't be written; no warm-up next time", file.string().c_str());
+    if (keys.empty()) return;
+    LOGR("d3d12: warming up %zu pipelines from earlier runs", keys.size());
+    warm_ = std::thread([this, keys = std::move(keys)]() mutable { WarmUp(std::move(keys)); });
+}
+
+void D3D12Backend::WarmUp(std::vector<PsoKey> keys) {
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
+    auto start = PerfClock::now();
+    std::unordered_map<uint64_t, ComPtr<ID3DBlob>> blobs;
+    auto blob = [&](uint64_t hash) -> ID3DBlob* {
+        auto it = blobs.find(hash);
+        if (it == blobs.end()) it = blobs.emplace(hash, ReadCachedShader(hash)).first;
+        return it->second.Get();
+    };
+    size_t made = 0, missing = 0;
+    for (const PsoKey& k : keys) {
+        if (warm_stop_) break;
+        uint64_t h = Hash(&k, sizeof(k));
+        {
+            std::lock_guard<std::mutex> lock(warm_mu_);
+            if (warm_taken_.count(h)) continue;
+        }
+        ID3DBlob* vs = blob(k.vs);
+        ID3DBlob* ps = blob(k.ps);
+        if (!vs || !ps) {
+            missing++;
+            continue;
+        }
+        D3D12_INPUT_ELEMENT_DESC el[16];
+        uint32_t n = FillInputLayout(k, el);
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC d{};
+        d.InputLayout = {el, n};
+        FillPipelineDesc(k, vs, ps, d);
+        ComPtr<ID3D12PipelineState> pso;
+        if (FAILED(dev_->CreateGraphicsPipelineState(&d, IID_PPV_ARGS(&pso)))) continue;
+        std::lock_guard<std::mutex> lock(warm_mu_);
+        if (warm_taken_.insert(h).second) {
+            warm_psos_[h] = std::move(pso);
+            made++;
+        }
+    }
+    LOGR("d3d12: warm-up made %zu pipelines in %.1f s%s", made, PerfMs(start) / 1000.0,
+         missing ? " (some cached shaders were missing)" : "");
+}
+
+D3D12Backend::~D3D12Backend() {
+    warm_stop_ = true;
+    if (warm_.joinable()) warm_.join();
+    if (pso_list_) std::fclose(pso_list_);
 }
 
 TexKind TextureKind(const TextureDesc& d) {
@@ -2553,7 +2669,9 @@ constexpr uint32_t kTexfAnisotropic = 3;
 constexpr uint32_t kTaddressWrap = 1;
 constexpr uint32_t kTaddressClamp = 3;
 
-D3D12_SAMPLER_DESC StageSampler(const State& s, int i, const DrawTextures& stages, bool clamp, uint32_t aniso) {
+// extra: added to the mip bias (console_textures on a 3D draw)
+D3D12_SAMPLER_DESC StageSampler(const State& s, int i, const DrawTextures& stages, bool clamp, uint32_t aniso,
+                                float extra) {
     D3D12_SAMPLER_DESC sd = {};
     const auto& t = s.tss[size_t(i)];
     uint32_t mag = t[kTssMagFilter];
@@ -2578,7 +2696,7 @@ D3D12_SAMPLER_DESC StageSampler(const State& s, int i, const DrawTextures& stage
     sd.AddressU = Address(clamp && t[kTssAddressU] == kTaddressWrap ? kTaddressClamp : t[kTssAddressU]);
     sd.AddressV = Address(clamp && t[kTssAddressV] == kTaddressWrap ? kTaddressClamp : t[kTssAddressV]);
     sd.AddressW = Address(t[kTssAddressW]);
-    sd.MipLODBias = Bits(t[kTssMipLodBias]) + app::Get().lod_bias;  // texture sharpness: 0 as the game asks
+    sd.MipLODBias = Bits(t[kTssMipLodBias]) + app::Get().lod_bias + extra;  // texture sharpness: 0 as the game asks
     sd.MinLOD = float(t[kTssMaxMipLevel]);
     sd.MaxLOD = mip ? D3D12_FLOAT32_MAX : sd.MinLOD;
     Color(t[kTssBorderColor], sd.BorderColor);
@@ -2596,7 +2714,13 @@ D3D12_SAMPLER_DESC StageSampler(const State& s, int i, const DrawTextures& stage
 uint32_t D3D12Backend::EnsureStageSamplers(const State& s, const DrawTextures& stages, bool clamp) {
     D3D12_SAMPLER_DESC sd[4];
     uint32_t aniso = app::Get().aniso;
-    for (int i = 0; i < 4; i++) sd[i] = StageSampler(s, i, stages, clamp, aniso);
+    // console_textures: a 3D draw's textures one mip level softer per doubling of the console's 480 lines, so they
+    // show the detail they had on a TV (2D pictures, render targets and the shadow maps keep theirs)
+    float extra = 0;
+    float lines = scale_ * float(guest_h_);
+    if (app::Get().console_textures && lines > 480.0f && !(g_screen_space_test && g_screen_space_test(s)))
+        extra = std::log2(lines / 480.0f);
+    for (int i = 0; i < 4; i++) sd[i] = StageSampler(s, i, stages, clamp, aniso, stages.rt[i] ? 0.0f : extra);
     uint64_t key = Hash(sd, sizeof(sd));
     auto it = samplers_.find(key);
     if (it != samplers_.end()) return it->second;
@@ -2688,6 +2812,10 @@ bool D3D12Backend::BindStageTexturesAndTargets(const State& s, DrawTextures& sta
             if (s.tss[size_t(i)][kTssMagFilter] >= kTexfLinear) continue;  // filtered already
             LOG_FIRST(1, "d3d12: smooth 2D pictures on (%.0f lines)", scale_ * float(guest_h_));
             t.flags |= kTexSmooth;
+            // an alpha-only picture (A8, swizzled or linear) is a font: its letters keep a crisp edge
+            TextureDesc td;
+            if (s.textures[size_t(i)] && Describe(s.textures[size_t(i)], td) && (td.format == 0x19 || td.format == 0x1F))
+                t.flags |= kTexCrisp;
             D3D12_RESOURCE_DESC rd = stages.res[i]->GetDesc();
             stages.sharp_texel[i][0] = 1.0f / float(std::max<UINT64>(rd.Width, 1));
             stages.sharp_texel[i][1] = 1.0f / float(std::max<UINT>(rd.Height, 1));
@@ -3880,6 +4008,37 @@ void D3D12Backend::CountFps() {
     }
 }
 
+// without XBE_PERF: a frame that took 50 ms or more is logged briefly with what it waited on (shaders compiled,
+// pipelines made, textures uploaded), at most one line a second and 300 a run, so a player's log shows hitches
+void LogHitch() {
+    static PerfClock::time_point last_frame = PerfClock::now(), last_line{};
+    static Perf before;
+    static uint64_t frames = 0, lines = 0, skipped = 0;
+    double frame_ms = PerfMs(last_frame);
+    last_frame = PerfClock::now();
+    const Perf& p = g_perf;
+    if (frame_ms >= 50.0 && frames > 60 && lines < 300) {
+        if (lines && PerfMs(last_line) < 1000.0) {
+            skipped++;
+        } else {
+            // what the renderer did on this thread; the rest is the game's own work or waiting on it
+            double host = (p.draw + p.clear + p.copy + p.present + p.sync) -
+                          (before.draw + before.clear + before.copy + before.present + before.sync);
+            LOGR("hitch: frame %.0f ms | shaders %llu (%.0f ms), pipelines %llu (%.0f ms), textures %llu new (%.0f ms), "
+                 "resources %.0f ms, swap %.0f ms, game and other %.0f ms%s",
+                 frame_ms, (unsigned long long)(p.shaders - before.shaders), p.compile - before.compile,
+                 (unsigned long long)(p.psos - before.psos), p.pso - before.pso,
+                 (unsigned long long)(p.newtex - before.newtex), p.texup - before.texup, p.create - before.create,
+                 p.swap - before.swap, std::max(frame_ms - host, 0.0), skipped ? " (and earlier ones not listed)" : "");
+            last_line = PerfClock::now();
+            skipped = 0;
+            if (++lines == 300) LOGR("hitch: 300 listed, no more this run");
+        }
+    }
+    before = g_perf;
+    frames++;
+}
+
 void LogPerf() {
     static PerfClock::time_point perf_start = PerfClock::now();
     static uint64_t perf_frames = 0;
@@ -3990,6 +4149,7 @@ void D3D12Backend::Present(const Surface& front) {
     ResetFrame();
     CountFps();
     if (diag::Perf()) LogPerf();
+    else LogHitch();
     ApplySettings();
 }
 

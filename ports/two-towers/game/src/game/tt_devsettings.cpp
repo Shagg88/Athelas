@@ -31,15 +31,18 @@ struct Known {
     uint32_t type = 0, addr = 0;
     float original = 0;  // a float's value as the game set it, before any change here
 };
+// a setting registered on a record that isn't there yet (a null base plus the field's offset, seen as 0x0C when the
+// prologue is loaded for Gimli) has no value to read
+bool Readable(uint32_t addr) { return addr >= 0x10000; }
 float ReadFloat(uint32_t addr) {
     float f = 0;
-    if (addr) std::memcpy(&f, ::kernel::HostPtr(addr), 4);
+    if (Readable(addr)) std::memcpy(&f, ::kernel::HostPtr(addr), 4);
     return f;
 }
 std::vector<Known> g_known;
 
 std::string Value(uint32_t type, uint32_t addr) {
-    if (!addr) return "?";
+    if (!Readable(addr)) return "?";
     char b[64];
     if (type == 2) {
         float f;
@@ -110,7 +113,7 @@ void Scale(const char* side, uint32_t percent) {
     t = true;
     for (const char* level : {"Easy", "Normal", "Hard"}) {
         Known* k = Find(std::string("DIFFICULTY/") + side + " " + level);
-        if (!k || !k->addr || k->type != 2) continue;
+        if (!k || !Readable(k->addr) || k->type != 2) continue;
         float f = k->original * float(percent) / 100.0f;
         std::memcpy(::kernel::HostPtr(k->addr), &f, 4);
     }
@@ -148,7 +151,7 @@ void DevSettingsFrame() {
     }();
     for (auto& [n, val] : holds) {
         Known* k = Find(n);
-        if (!k || !k->addr) continue;
+        if (!k || !Readable(k->addr)) continue;
         if (k->type == 2) {
             float f = float(std::atof(val.c_str()));
             std::memcpy(::kernel::HostPtr(k->addr), &f, 4);

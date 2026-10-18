@@ -10,13 +10,19 @@
  *   left alone. A hit that did damage still does at least 1.
  * - 0x4F6F60: returns the developer "unlock all" byte (0x8E5780), which the level map and character select ask.
  *   UnlockAll makes it answer 1: every level (the secret one too) and character can be chosen.
+ * - 0x482530(hero, level, co-op): the character select's question about each hero (0 Aragorn ... 8 Faramir; the
+ *   level an index, 0 Helm's Deep to 12 the Crack of Doom): 0 not offered, 2 to be chosen, 1 otherwise. The Xbox
+ *   0x9E870, the same code. AllHeroes makes it 2 for every hero in a level some hero has completed (the profile in
+ *   play, SLOT in achieve.c: +0x244 + hero * 0x3C, a bit a level, alone and at +4 in co-op), as the game does once it
+ *   is beaten. Helm's Deep stays Gandalf's, the levels with no co-op (9 to 12) stay solo, and a level not completed
+ *   yet keeps the game's own answer. Gimli is never offered Helm's Deep (on Xbox it crashes in its opening).
  *
- * All three are off (100, 100, 0) by default. */
+ * All four are off (100, 100, 0, 0) by default. */
 #include "rotkfix.h"
 #include <stdio.h>
 #include <string.h>
 
-static int g_damageTaken = 100, g_enemyDamage = 100, g_unlockAll = 0;
+static int g_damageTaken = 100, g_enemyDamage = 100, g_unlockAll = 0, g_allHeroes = 0;
 
 static int clamp_pct(int v) { return v < 10 ? 10 : v > 500 ? 500 : v; }
 
@@ -25,10 +31,15 @@ void gameplay_load_settings(const char *ini)
     g_damageTaken = clamp_pct(GetPrivateProfileIntA("Gameplay", "DamageTaken", 100, ini));
     g_enemyDamage = clamp_pct(GetPrivateProfileIntA("Gameplay", "EnemyDamage", 100, ini));
     g_unlockAll = GetPrivateProfileIntA("Gameplay", "UnlockAll", 0, ini) != 0;
+    g_allHeroes = GetPrivateProfileIntA("Gameplay", "AllHeroes", 0, ini) != 0;
 }
 
 #define ADDR_HIT    0x0040CF80u
 #define ADDR_UNLOCK 0x004F6F60u
+#define ADDR_HEROES 0x00482530u
+#define HERO_SLOT   (0x5BCB08u + 2u * 0x988u)   /* the profile in play, as achieve.c */
+/* call 0x4F6F60; test al,al; je +6; mov eax,2; ret - the hero question's start (the call is the 5 bytes replaced) */
+static const BYTE SIG_HEROES[15] = { 0xE8, 0x2B, 0x4A, 0x07, 0x00, 0x84, 0xC0, 0x74, 0x06, 0xB8, 0x02, 0x00, 0x00, 0x00, 0xC3 };
 /* sub esp,8; push esi; mov esi,[esp+10h] - the 8 bytes the jump replaces; then the player test at +0x1A */
 static const BYTE SIG_HIT[8] = { 0x83, 0xEC, 0x08, 0x56, 0x8B, 0x74, 0x24, 0x10 };
 static const BYTE SIG_HIT_PLAYER[5] = { 0x66, 0x83, 0x7E, 0x7A, 0x63 };   /* cmp word [esi+7Ah], 63h */
@@ -77,6 +88,33 @@ static int __cdecl hook_hit_scaled(void *who, int amount, void *by)
     return g_realHit(who, amount, by);
 }
 
+typedef int (__cdecl *Heroes_t)(int hero, int level, int coop);
+static Heroes_t g_realHeroes;
+
+static int level_completed(int level)
+{
+    DWORD any = 0;
+    if (!readable((const void *)(DWORD_PTR)HERO_SLOT, 0x988)) return 0;
+    for (int h = 0; h < 9; h++) {
+        const DWORD *r = (const DWORD *)(DWORD_PTR)(HERO_SLOT + 0x244u + (DWORD)h * 0x3Cu);
+        any |= r[0] | r[1];
+    }
+    any &= 0x1FFF;
+    return level < 13 ? (int)((any >> level) & 1) : any == 0x1FFF;
+}
+
+static int __cdecl hook_heroes(int hero, int level, int coop)
+{
+    int r = g_realHeroes(hero, level, coop);
+    if (level == 0 && hero == 2) return 0;   /* Gimli at Helm's Deep */
+    if (r != 2 && g_allHeroes && hero >= 0 && hero < 9 && level > 0 && !(coop && level >= 9) && level_completed(level)) {
+        static volatile LONG logged;
+        if (InterlockedIncrement(&logged) <= 20) logf_("gameplay: hero %d offered for level %d (AllHeroes; the game said %d)", hero, level, r);
+        return 2;
+    }
+    return r;
+}
+
 void gameplay_patch(void)
 {
     {   /* always: enemies defeated count for the achievements; the damage settings at 100 change nothing */
@@ -96,6 +134,22 @@ void gameplay_patch(void)
                     logf_("gameplay: damage taken %d%%, damage enemies take %d%%", g_damageTaken, g_enemyDamage);
                 else logf_("gameplay: hits followed for the achievements (damage as the game's)");
             }
+        }
+    }
+    {   /* AllHeroes, and Gimli kept out of Helm's Deep */
+        BYTE *fn = (BYTE *)ADDR_HEROES;
+        BYTE *tr = (BYTE *)code_alloc(16);
+        if (!readable(fn, 15) || memcmp(fn, SIG_HEROES, 15) || !tr) {
+            logf_("gameplay: character select not recognised; heroes as the game has them");
+        } else {
+            tr[0] = 0xE8;                                            /* call 0x4F6F60, from the trampoline */
+            *(LONG *)(tr + 1) = (LONG)((DWORD_PTR)ADDR_UNLOCK - ((DWORD_PTR)tr + 5));
+            tr[5] = 0xE9;                                            /* jmp back after the replaced call */
+            *(LONG *)(tr + 6) = (LONG)((DWORD_PTR)(fn + 5) - ((DWORD_PTR)tr + 10));
+            g_realHeroes = (Heroes_t)(void *)tr;
+            BYTE jmp[5] = { 0xE9, 0, 0, 0, 0 };
+            *(LONG *)(jmp + 1) = (LONG)((DWORD_PTR)&hook_heroes - ((DWORD_PTR)fn + 5));
+            if (write_code(fn, jmp, 5) && g_allHeroes) logf_("gameplay: every hero offered in completed levels (AllHeroes)");
         }
     }
     if (g_unlockAll) {

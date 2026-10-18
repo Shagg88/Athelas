@@ -87,6 +87,8 @@ public:
         } else if (FILE* f = std::fopen(snap.c_str(), "r")) {
             std::fclose(f);
             snap_ = 1;
+            // and the first snapped frame's draws listed, as CAP lists them
+            list_ = std::fopen((app::ExeDir() / "snap_draws.txt").string().c_str(), "w");
         }
         static const long scan_at = harness::Env("TEXSCAN");
         if (scan_at && long(frames_) == scan_at) ScanTextures();
@@ -192,16 +194,23 @@ private:
                      s.vs_handle, s.ps ? s.ps->handle : 0, s.rt.data, s.textures[0], s.rs[kRsLighting], s.simple[kMBlendEnable >> 2],
                      s.simple[kMSrcBlend >> 2], s.simple[kMDestBlend >> 2], s.simple[kMColorWriteEnable >> 2],
                      s.simple[kMAlphaTestEnable >> 2], s.rs[kRsZEnable]);
+        {
+            uint32_t rw = 0, rh = 0;
+            SurfaceSize(s.rt, rw, rh);
+            std::fprintf(f, "  rtsize %ux%u\n", rw, rh);
+        }
         const auto& t0 = s.tss[0];
         TextureDesc d;
         if (s.textures[0] && Describe(s.textures[0], d))
-            std::fprintf(f, "  tex %ux%u fmt %X cop %u %X %X aop %u %X %X\n", d.width, d.height, d.format, t0[kTssColorOp],
-                         t0[kTssColorArg1], t0[kTssColorArg2], t0[kTssAlphaOp], t0[kTssAlphaArg1], t0[kTssAlphaArg2]);
+            std::fprintf(f, "  tex %ux%u @%08X fmt %X cop %u %X %X aop %u %X %X mag %u min %u 2d %d\n", d.width, d.height, d.data, d.format,
+                         t0[kTssColorOp], t0[kTssColorArg1], t0[kTssColorArg2], t0[kTssAlphaOp], t0[kTssAlphaArg1],
+                         t0[kTssAlphaArg2], t0[kTssMagFilter], t0[kTssMinFilter],
+                         g_screen_space_test ? int(g_screen_space_test(s)) : -1);
         for (int st = 1; st < 4; st++) {  // the other stages, when bound
             const auto& ts = s.tss[size_t(st)];
             if (s.textures[size_t(st)] && Describe(s.textures[size_t(st)], d))
-                std::fprintf(f, "  tex%d %08X %ux%u fmt %X cop %u %X %X aop %u %X %X tci %X\n", st, s.textures[size_t(st)], d.width,
-                             d.height, d.format, ts[kTssColorOp], ts[kTssColorArg1], ts[kTssColorArg2], ts[kTssAlphaOp],
+                std::fprintf(f, "  tex%d %08X %ux%u @%08X fmt %X cop %u %X %X aop %u %X %X tci %X\n", st, s.textures[size_t(st)], d.width,
+                             d.height, d.data, d.format, ts[kTssColorOp], ts[kTssColorArg1], ts[kTssColorArg2], ts[kTssAlphaOp],
                              ts[kTssAlphaArg1], ts[kTssAlphaArg2], ts[kTssTexCoordIndex]);
         }
         std::fprintf(f, "  ttf %X tci %X addr %u %u t16", t0[kTssTextureTransformFlags], t0[kTssTexCoordIndex], t0[kTssAddressU],

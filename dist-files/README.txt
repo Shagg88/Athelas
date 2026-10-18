@@ -185,6 +185,11 @@ Keyboard and mouse work as well as a controller, as player 1 or player 2
 Each key can be changed on the launcher's Controls tab: click a move, then
 press the key or mouse button.
 
+The mouse: hold the ranged attack (Left Shift) and move the mouse to aim
+("Mouse aiming", with a sensitivity setting). In the game's menus the mouse
+wheel moves up and down, a left click chooses and a right click goes back
+("Mouse in the menus"). Both are on the Controls tab.
+
 F10, or both stick clicks together on a controller, opens the settings menu
 over the game, which stands still behind it. It holds the settings that take
 effect at once (picture, controls, field of view, damage) and saves them when
@@ -194,7 +199,9 @@ its page.
 In the background: "Pause in the background" (Display tab) stops the game,
 picture and sound, while another window is in front, and it carries on where
 it was when you come back. "Mute in the background" only silences it. Both
-are off by default.
+are off by default. "Controller in the background" (on by default) lets
+controllers keep playing while another window is in front; turn it off so
+they only reach the game while its window is.
 
 
 ACHIEVEMENTS (all three games)
@@ -289,8 +296,9 @@ us if it helps.
 STEAM DECK AND LINUX
 --------------------
 All three games run through Proton, Steam's Windows layer. This has been tested
-on Linux in a setup like the Deck's (1280x800, Proton's graphics layers), not
-yet on a real Deck: reports are welcome.
+on Linux in a setup like the Deck's (1280x800, Proton's graphics layers), and
+players have reported The Two Towers working on a real Deck. More reports are
+welcome.
 1. In Desktop Mode, unzip Athelas into a folder of its own, for example
    /home/deck/Games/Athelas.
 2. In Steam: Games > "Add a Non-Steam Game to My Library", choose Athelas.exe.
@@ -363,9 +371,6 @@ The launcher writes ROTKFix.ini in the game folder. You can also edit it in Note
   DisplayMode            borderless, fullscreen or windowed (default borderless)
   Width                  Resolution; 0 = the screen's own (default 0)
   Height                 (default 0)
-  RenderScale            Render resolution: % of that resolution the game is drawn at, then fitted to the
-                         screen (50-200; above 100 = supersampling, costs speed). Fullscreen plays
-                         borderless when this isn't 100 (default 100)
   RefreshRate            Fullscreen only; 0 = the screen's own (default 0)
   VSync                  1 = no tearing (default 1)
   Renderer               dxvk = Vulkan (recommended), native = Windows' own Direct3D 8 (default dxvk)
@@ -378,12 +383,11 @@ The launcher writes ROTKFix.ini in the game folder. You can also edit it in Note
   ColourLook             original, film, vivid or dark. ] switches while playing (default original)
   ColourLookStrength     0-100 (default 100)
   WidescreenFix          1 = see more at the sides instead of a stretched picture (default 1)
+  RenderScale            Render resolution: % of the resolution the game is drawn at, then fitted to the screen (50-200; above 100 = supersampling) (default 100)
+  HUDEdges               Xbox version: 1 = HUD pieces at the screen edges (with WidescreenFix=1) (default 0)
+  SharperText            Xbox version: 1 = text, title and main menu with the PC version's larger fonts and pictures (needs the PC game's Data\Game files here); other menu pictures scaled up sharply (default 0)
   FieldOfView            Percent of the game's own view angle (70-150) (default 100)
   DrawDistance           Percent of the game's own (50-800) (default 100)
-  HUDEdges               Xbox version: 1 = HUD pieces at the screen edges, with WidescreenFix=1 (default 0)
-  SharperText            Xbox version: 1 = text, title and main menu with the PC version's larger fonts and
-                         pictures (needs the PC game's Data\Game files in this folder); other menu
-                         pictures scaled up sharply (default 0)
   UseGameBrightness      1 = the game's own brightness option works in every display mode
 
 [Frame]  Frame rate
@@ -435,29 +439,53 @@ The launcher writes ROTKFix.ini in the game folder. You can also edit it in Note
   RangedAttack           (default LT)
   KillingMove            (default RT)
 
-[Gameplay]  Gameplay (both versions of The Return of the King)
+[Gameplay]  Gameplay
   DamageTaken            Damage you take, % of the game's (10-500) (default 100)
   EnemyDamage            Damage your hits do to enemies, % of the game's (10-500) (default 100)
   UnlockAll              1 = every level and character can be chosen (default 0)
+  AllHeroes              Xbox version: 1 = every hero on the character select of a level you've completed (default 0)
+
+[Cheats]  Cheats: the game's own secret codes (Xbox version)
+  Invulnerable           1 = enemies can't hurt you (default 0)
+  InfiniteMissiles       1 = arrows and throwing weapons never run out (default 0)
+  AlwaysDevastating      1 = every attack is a devastating one (default 0)
+  PerfectMode            1 = the game's Perfect Mode code (default 0)
+
+[Achievements]  Achievements (both versions; the list is in ROTKFix\\achievements.txt)
+  Notify                 1 = a note in the corner when you earn one (default 1)
 
 [Window]  In the background (Xbox version)
-  PauseInBackground      1 = the game stops while another window is in front (default 0)
+  PauseInBackground      1 = the game stops while another window is in front (Alt-Tab) (default 0)
   MuteInBackground       1 = no sound while another window is in front (default 0)
-
-[System]  Windows on ARM (Xbox version)
-  OneCore                1 = the game's threads take turns on one processor core (default 0)
+  BackgroundController   0 = controllers only reach the game while its window is in front (default 1)
 
 [Keyboard]  Keyboard and mouse (Xbox version; on PC the game's own keyboard controls are used)
   Enabled                1 = play with the keyboard and mouse as well as a controller (default 1)
-  Player                 1 or 2: which player the keyboard plays as (default 1)
-  MoveForward ... MenuRight  The keys for each move, comma separated: A-Z, 0-9, F1-F12 (not F3 or F10),
-                         Space, Enter, Esc, Tab, Backspace, CapsLock, LShift, RShift, LCtrl, RCtrl, LAlt, RAlt,
-                         Up, Down, Left, Right, Insert, Delete, Home, End, PageUp, PageDown, Numpad0-9,
-                         NumpadStar, NumpadPlus, NumpadMinus, NumpadDot, NumpadSlash, Minus, Equals, Comma,
-                         Period, Slash, Semicolon, Apostrophe, Grave, Mouse1-Mouse5 (left, right, middle, 4, 5)
-                         Moves: MoveForward MoveBack MoveLeft MoveRight Walk SpeedAttack PhysicalAttack Parry
-                         FierceAttack Action JumpBack RangedAttack KillingMove Pause Back Special RightStick
-                         MenuUp MenuDown MenuLeft MenuRight
+  Player                 Which player the keyboard plays as in co-op: 1 or 2 (default 1)
+  MouseAim               1 = while the ranged attack is held, moving the mouse aims (default 1)
+  MouseSensitivity       Mouse aiming, % (10-400) (default 100)
+  MouseMenus             1 = in the game's menus the wheel moves up and down and a right click goes back (default 1)
+  MoveForward            Keys, comma separated: A-Z, 0-9, F1-F12, Space, Enter, Esc, Tab, Backspace, LShift, LCtrl, LAlt, Up, Down, Left, Right, Numpad0-9, Mouse1-Mouse5 ... (default W)
+  MoveBack               (default S)
+  MoveLeft               (default A)
+  MoveRight              (default D)
+  Walk                   Held: move at half speed (default LAlt)
+  SpeedAttack            (default Mouse1, Enter)
+  PhysicalAttack         Also goes back in menus (default LCtrl, Backspace)
+  Parry                  (default Q)
+  FierceAttack           (default Mouse2)
+  Action                 (default E)
+  JumpBack               (default Tab)
+  RangedAttack           (default LShift)
+  KillingMove            (default Space, Mouse3)
+  Pause                  (default Esc)
+  Back                   (default Grave)
+  Special                (default F5)
+  RightStick             (default )
+  MenuUp                 (default Up)
+  MenuDown               (default Down)
+  MenuLeft               (default Left)
+  MenuRight              (default Right)
 
 [Textures]  Texture packs
   Dump                   1 = save every texture the game uses as a PNG in ROTKFix\textures\dump (for making texture packs) (default 0)
