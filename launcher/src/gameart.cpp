@@ -246,3 +246,62 @@ unsigned char *tt_picture_load(const std::string &entry, int &w, int &h)
     CloseHandle(f);
     return px;
 }
+
+// ---------------------------------------------------------------------------
+// The Fellowship of the Ring: XboxMedia\*.xpr. "XPR0", the file's size, the header's size (2048), then one
+// texture resource: common (type 4 in bits 16-18), data, lock, format (bits 8-15: 0x12 LIN_A8R8G8B8, 0x1E
+// LIN_X8R8G8B8), size (width - 1, height - 1 in bits 12-23, pitch / 64 - 1 in bits 24-31). The pixels (BGRA,
+// rows of the pitch) follow the header.
+void fotr_art_list(const std::string &gameDir, std::vector<std::string> &out)
+{
+    static const char *pics[] = { "XboxMedia\\load_screens\\aragorn_load.xpr", "XboxMedia\\load_screens\\frodo_load.xpr",
+                                  "XboxMedia\\load_screens\\gandalf_load.xpr", "XboxMedia\\menus\\load_game_menu\\load_menu_background.xpr" };
+    DWORD at = GetFileAttributesA(gameDir.c_str());
+    bool iso = at != INVALID_FILE_ATTRIBUTES && !(at & FILE_ATTRIBUTE_DIRECTORY);
+    for (const char *f : pics) {
+        if (iso) {
+            unsigned long long off = 0;
+            uint32_t sz = 0;
+            if (iso_locate(gameDir, f, off, sz)) out.push_back("\002fx:" + std::to_string(off) + ":" + gameDir);
+            continue;
+        }
+        std::string p = gameDir + "\\" + f;
+        if (GetFileAttributesA(p.c_str()) != INVALID_FILE_ATTRIBUTES) out.push_back("\002fx:0:" + p);
+    }
+}
+
+unsigned char *fotr_picture_load(const std::string &entry, int &w, int &h)
+{
+    if (entry.compare(0, 4, "\002fx:")) return nullptr;
+    size_t colon = entry.find(':', 4);
+    if (colon == std::string::npos) return nullptr;
+    unsigned long long start = strtoull(entry.c_str() + 4, nullptr, 10);
+    HANDLE f = CreateFileA(entry.c_str() + colon + 1, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+    if (f == INVALID_HANDLE_VALUE) return nullptr;
+    uint8_t hd[0x24];
+    DWORD got = 0;
+    unsigned char *px = nullptr;
+    LARGE_INTEGER pos; pos.QuadPart = (LONGLONG)start;
+    if (SetFilePointerEx(f, pos, NULL, FILE_BEGIN) && ReadFile(f, hd, sizeof hd, &got, NULL) && got == sizeof hd &&
+        !memcmp(hd, "XPR0", 4)) {
+        uint32_t headerSize = rd32(hd + 8), common = rd32(hd + 12), format = rd32(hd + 24), size = rd32(hd + 28);
+        uint32_t code = (format >> 8) & 0xFF, pw = (size & 0xFFF) + 1, ph = ((size >> 12) & 0xFFF) + 1, pitch = ((size >> 24) + 1) * 64;
+        if (((common >> 16) & 7) == 4 && (code == 0x12 || code == 0x1E) && headerSize >= 0x24 && headerSize <= 0x10000 &&
+            pw >= 64 && ph >= 64 && pw <= 2048 && ph <= 2048 && pitch >= pw * 4 && pitch <= 8192) {
+            std::vector<uint8_t> raw((size_t)pitch * ph);
+            pos.QuadPart = (LONGLONG)(start + headerSize);
+            if (SetFilePointerEx(f, pos, NULL, FILE_BEGIN) && ReadFile(f, raw.data(), (DWORD)raw.size(), &got, NULL) &&
+                got == raw.size() && (px = (unsigned char *)malloc((size_t)pw * ph * 4)) != nullptr) {
+                for (uint32_t y = 0; y < ph; y++)
+                    for (uint32_t x = 0; x < pw; x++) {   // BGRA -> RGBA, opaque
+                        const uint8_t *s = &raw[(size_t)y * pitch + x * 4];
+                        unsigned char *d = px + ((size_t)y * pw + x) * 4;
+                        d[0] = s[2]; d[1] = s[1]; d[2] = s[0]; d[3] = 255;
+                    }
+                w = (int)pw; h = (int)ph;
+            }
+        }
+    }
+    CloseHandle(f);
+    return px;
+}

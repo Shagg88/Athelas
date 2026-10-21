@@ -1,0 +1,1660 @@
+# The Return of the King - Dutch subtitles (our own translation). Interface lines by their name; spoken lines as <level>:<sound number>.
+DEU	Deutsch
+ENG	English
+FRA	Français
+ITA	Italiano
+NLD	Nederlands
+POL	Polski
+POR	Português
+SPA	Español
+SWE	Svenska
+abilitiesUnlocked	Nieuwe vaardigheden vrijgespeeld
+aragorn	Aragorn
+areyousure	Weet je het zeker?
+back	TERUG
+badDisk	Er is een probleem met de disc die je gebruikt. Mogelijk is hij vuil of beschadigd.
+badgames	De opgeslagen spellen in %1s lijken beschadigd te zijn.
+badmedia	De Memory Unit in %1s is niet bruikbaar.
+bla01	De Zwarte Poort
+bla01LockDescCoop	Volbreng De Velden van Pelennor en Minas Tirith - Binnenplaats
+bla01LockDescSingle	Volbreng De Velden van Pelennor en Minas Tirith - Binnenplaats
+blocks	blokken
+cancel	Annuleren
+charSelPlayer1Sel	Speler 1: kies een personage
+charSelPlayer2Sel	Speler 2: kies een personage
+charselCompleted	volbracht
+charselCompletedHelp	Dit personage heeft dit level al volbracht.  Volbreng Het Vuur van de Doemberg om het opnieuw te spelen.
+charselHiddenHelp	Volbreng Het Vuur van de Doemberg om dit verborgen personage vrij te spelen.
+charselLocked	vergrendeld
+charselLockedHelp	Dit personage is op dit moment niet speelbaar.
+charselLockedHobbitHelp	Dit personage speelt het Pad van de Hobbits.   Volbreng het Pad van de Tovenaar, het Pad van de Koning en het Pad van de Hobbits om het voor dit level vrij te spelen.
+charselLockedKingHelp	Dit personage speelt het Pad van de Koning.   Volbreng het Pad van de Tovenaar, het Pad van de Koning en het Pad van de Hobbits om het voor dit level vrij te spelen.
+charselLockedMerryHelp	Volbreng De Zwarte Poort om dit personage vrij te spelen voor het Pad van de Hobbits.
+charselLockedWizardHelp	Dit personage speelt het Pad van de Tovenaar.   Volbreng het Pad van de Tovenaar, het Pad van de Koning en het Pad van de Hobbits om het voor dit level vrij te spelen.
+charselSpecialHelp	Speel Het Vuur van de Doemberg om dit speciale personage vrij te spelen.
+charselTakenHelp	Dit personage is al gekozen.
+charselUnplayableHelp	Je kunt dit personage niet in dit level spelen.
+checkingcard	%1s wordt gecontroleerd.\nVerwijder geen Memory Units en koppel geen controllers los.
+checkingdisk	%1s wordt gecontroleerd.\nZet je Xbox-console niet uit.
+checkpoint	controlepunt
+chooseLang	Kies je taal.
+cir00	Cirith Ungol
+cir00LockDescCoop	Volbreng Shelobs Nest
+cir00LockDescSingle	Volbreng Shelobs Nest
+climb	Klimmen
+code1	Gezondheid herstellen
+code2	Speelstand Perfect
+code3	Altijd verwoestend
+code4	Alle verbeteringen
+code5	Oneindig veel projectielen
+code6	Kinetische projectielen
+code7	Onkwetsbaar
+code8	Doelaanwijzer
+codeInstr1	1) Start een missie
+codeInstr2	2) Druk op START om te pauzeren
+codeInstr3	3) Houd ingedrukt:
+codeInstr4	4) Voer de aangegeven codereeks in
+codeTitle	Geheime codes
+colon	:
+completed	Volbracht
+continue	Doorgaan
+continuewosave	Doorgaan zonder opslaan
+controller	Controller
+controllerConfiguration	Controllerinstellingen
+controllerRemoved1	Sluit de controller opnieuw aan en druk op START om door te gaan.
+controllerRemoved2	Sluit de controller opnieuw aan op controllerpoort %d en druk op START om door te gaan.
+controllerRequired	sluit een controller aan
+coopMissionExp	Missie-ervaring
+coopMissionRating	Missiescore
+coopNewGameWarning	In een teamspel kun je je personage uit elk eerder opgeslagen spel gebruiken. Kies 'ja' als je opnieuw wilt beginnen.
+coopStatsLabel	Statistieken teamspel
+cra01	Het Vuur van de Doemberg
+cra01LockDescCoop	Volbreng De Zwarte Poort en Cirith Ungol
+cra01LockDescSingle	Volbreng De Zwarte Poort en Cirith Ungol
+creditsLabel	Aftiteling
+deletegames	Alle opgeslagen spellen van 'De terugkeer van de koning' verwijderen van %1s?
+deletingfromcard	Bezig met verwijderen van %1s.\nVerwijder geen Memory Units en koppel geen controllers los.
+deletingfromdisk	Bezig met verwijderen van %1s.\nZet je Xbox-console niet uit.
+diskfull	Je Xbox heeft niet genoeg vrije blokken om spellen op te slaan. Je moet nog %2d blokken vrijmaken.  WAARSCHUWING: als je blokken vrijmaakt, verlies je je huidige voortgang.
+dunno	Actie
+emptygame	Leeg spel
+enterCode	Zo voer je een code in:
+exitToMenu	Naar menu
+faramir	Faramir
+fierce	Krachtig
+filemgr	Meer blokken vrijmaken
+formatdeclined	De Memory Unit in %1s is niet geformatteerd.
+freespace	Totaal: %d%s blokken;  Vrij: %d%s blokken
+frodo	Frodo
+gameSetup	Spelinstellingen
+gandalf	Gandalf
+gimli	Gimli
+gradeExcellent	Uitstekend
+gradeFair	Redelijk
+gradeGood	Goed
+gradePerfect	Perfect
+harddisk	Harde schijf
+hel01	Helmsdiepte
+hel01LockDescCoop	Niet speelbaar in teamspel
+hel01LockDescSingle	Wordt nooit aangeroepen
+help	Hulp
+helpChangeModSel	Keuze wijzigen of aanpassen
+helpChangeSel	Keuze wijzigen
+helpGoBack	Terug
+helpLabel	Hulpvenster
+helpLevelInfo	Levelinfo
+helpMakeSel	Kiezen
+helpOptions	Opties
+hobbitPath	Het Pad van de Hobbits
+inGameBadConn	Verbindingsproblemen gevonden
+inGameExit	Naar menu
+inGameNo	nee
+inGameObjective	Missietips
+inGameOptions	Opties
+inGameOptionsPage	Optiescherm
+inGamePressStart	Druk op START
+inGameRestart	Opnieuw proberen
+inGameReturn	Hervatten
+inGameSOD	Je missie is mislukt
+inGameSelect	Kiezen
+inGameSure	Weet je het zeker?
+inGameUpgrades	Verbeteringen tonen
+inGameWin	Debug: winnen
+inGameYes	ja
+ise01	De Weg naar Isengard
+ise01LockDescCoop	Volbreng De Velden van Pelennor
+ise01LockDescSingle	Volbreng Helmsdiepte
+kick	Trap
+killingmove	Genadeklap
+kills	Gedood
+kingPath	Het Pad van de Koning
+leftTriggerBtnName	L
+legal	© MMIII New Line Productions, Inc.  Alle rechten voorbehouden.  The Lord of the Rings§; The Return of the King§ en de namen van de personages, voorwerpen, gebeurtenissen en plaatsen daarin zijn handelsmerken van  The Saul Zaentz Company d/b/a Tolkien Enterprises, in licentie gegeven aan New Line Productions, Inc.  Spelcode en bepaalde audiovisuele elementen © 2003 Electronic Arts Inc. Alle rechten voorbehouden.
+legal2	EA GAMES§ is een merk van Electronic Arts§.
+legolas	Legolas
+level	Niveau
+levelUp	Niveau omhoog!
+load2ndplayer	Wil je een personage uit een ander spel laden?
+loadGame1	Spel 1
+loadGame10	Spel 10
+loadGame2	Spel 2
+loadGame3	Spel 3
+loadGame4	Spel 4
+loadGame5	Spel 5
+loadGame6	Spel 6
+loadGame7	Spel 7
+loadGame8	Spel 8
+loadGame9	Spel 9
+loadLabel	Kies een spel om te laden
+loaderror	Kan %3s niet laden.\nDruk op A om door te gaan.
+loadgame	Kies een spel om te laden
+loading	Bezig met laden
+loadingat	Actie
+loadingatdesc	Gebruik de actieknop om voorwerpen te gebruiken op plekken waar dat kan.
+loadingex	Ervaringsmeter
+loadingexskdesc	Verdien ervaringspunten om het niveau van je personage te verhogen en verbeteringen te kopen.  Vul de vaardigheidsmeter met geavanceerde combo's voor maximale ervaring.
+loadingfromcard	Bezig met laden van %3s.\nVerwijder geen Memory Units en koppel geen controllers los.
+loadingfromdisk	Bezig met laden van %3s.\nZet je Xbox-console niet uit.
+loadingkm	Genadeklap
+loadingkmdesc	Gebruik deze knop om een neergeslagen vijand af te maken.
+loadingsk	Vaardigheidsmeter
+loadingsp	Speciale vaardigheid
+loadingspdesc	Gebruik deze knoppencombinatie voor de speciale vaardigheid van je personage.
+loadnocard	%5s is tijdens het gebruik verwijderd.\nLaden mislukt.\nDruk op A om door te gaan.
+mainMenuCoop	Teamspel
+mainMenuCredits	Aftiteling
+mainMenuOnline	Online
+mainMenuOptions	Opties
+mainMenuPressStart	Druk op de START-knop
+mainMenuPressStart_XBOX	Druk op START
+mainMenuSingle	Eén speler
+mediaalmostfull	Geen opgeslagen spellen gevonden.\nJe hebt %6d blokken nodig om op te slaan.
+mediafull	%1s is vol.
+memcardSlotA	Uitbreidingssleuf_A
+memcardSlotB	Uitbreidingssleuf_B
+memoryunitA	Memory Unit_%dA
+memoryunitB	Memory Unit_%dB
+merry	Merijn
+min00	Minas Tirith - Op de Muur
+min00LockDescCoop	Volbreng De Weg naar Isengard
+min00LockDescSingle	Volbreng De Weg naar Isengard
+min02	De Zuidelijke Poort
+min02LockDescCoop	Volbreng De Koning der Doden
+min02LockDescSingle	Volbreng De Koning der Doden
+min04	Minas Tirith - Binnenplaats
+min04LockDescCoop	Volbreng Minas Tirith - Op de Muur
+min04LockDescSingle	Volbreng Minas Tirith - Op de Muur
+muA	MU_%dA
+muB	MU_%dB
+newdiskfull	Je Xbox heeft niet genoeg vrije blokken om spellen op te slaan. Je moet nog %2d blokken vrijmaken.  WAARSCHUWING: als je blokken vrijmaakt, verlies je niet-opgeslagen wijzigingen.
+newgame	Nieuw spel
+newloadDebug	Debugspel
+newloadLoad	Spel laden
+newloadNew	Nieuw spel
+newplay	Verder spelen
+newstarting	Spel wordt gestart...
+no	Nee
+nogames	Geen opgeslagen spellen gevonden.
+nomedia	Geen Memory Unit in %1s
+notsaved	%0sJe spel is niet opgeslagen.\nDoorgaan zonder opslaan?
+objective0	Druk op de zwarte knop om voorwerpen te gebruiken.
+objective1	Breek vijandelijke schilden met krachtige aanvallen.
+objective10	Verbrand webben en cocons met fakkels.
+objective11	Hobbits kunnen met de R-trekker vijanden in de rug steken terwijl ze gecamoufleerd zijn.
+objective12	Duw Gollem met krachtige of lichamelijke aanvallen over de rand.
+objective14	Verdoof Gorbag om hem te kunnen verwonden.
+objective15	Dood de dode soldaten om de Koning kwetsbaar te maken.
+objective16	Overleef 20 golven om uit de Palantír te ontsnappen en meer ervaring te krijgen.
+objective17	Overleef 20 golven om uit de Palantír te ontsnappen en meer ervaring te krijgen.
+objective2	Met combo's dood je vijanden sneller.
+objective3	Klim boven op de muur om de poort te openen.
+objective4	Ballista's en oorlogsspiesen breken het pantser van de Mûmakil in één klap.
+objective5	Blijf dicht bij de Reisgenoten om ze in leven te houden.
+objective6	Pareer om vijandelijke aanvallen te blokkeren en pijlen af te weren.
+objective7	Gooi ladders om met lichamelijke aanvallen en laat zo de Overmachtsmeter dalen.
+objective8	Druk op beide trekkers om de speciale vaardigheid van je personage te activeren.
+objective9	Druk op beide trekkers om de speciale vaardigheid van je personage te activeren.
+ok	OK
+optionsDifficulty	Moeilijkheid
+optionsEasy	Makkelijk
+optionsGameVol	Spelvolume
+optionsHard	Moeilijk
+optionsLabel	Opties
+optionsMono	Mono
+optionsMusicVol	Muziekvolume
+optionsNormal	Normaal
+optionsOff	Uit
+optionsOn	Aan
+optionsRespawn	Debug: herrijzen
+optionsSound	Geluid
+optionsStereo	Stereo
+optionsSubtitles	Ondertiteling
+optionsSurround	Surround
+optionsVOVol	Stemvolume
+optionsVibration	Trillen
+osg01	Ontsnapping uit Osgiliath
+osg01LockDescCoop	Volbreng De Zwarte Poort
+osg01LockDescSingle	Volbreng Helmsdiepte
+overwrite	Weet je zeker dat je %3s wilt overschrijven?
+parry	Pareren
+pat01	De Paden der Doden
+pat01LockDescCoop	Volbreng Helmsdiepte
+pat01LockDescSingle	Volbreng Helmsdiepte
+pat02	De Koning der Doden
+pat02LockDescCoop	Volbreng De Paden der Doden
+pat02LockDescSingle	Volbreng De Paden der Doden
+pel01	De Velden van Pelennor
+pel01LockDescCoop	Volbreng De Zuidelijke Poort
+pel01LockDescSingle	Volbreng De Zuidelijke Poort
+perfectMode	Speelstand Perfect!
+pippin	Pepijn
+playanyway	Spel starten
+player	Speler
+plus	+
+purchased	Gekocht
+purgegames	Opgeslagen spellen verwijderen
+ranged	Afstand
+replay	Opnieuw spelen
+replayAreYouSure	Weet je het zeker? De resultaten van je laatste poging in deze missie gaan verloren.
+respawnInLabel	Herrijzen over
+retry	Opnieuw proberen
+rightTriggerBtnName	R
+sam	Sam
+save2ndplayer	Wil je je spel opslaan?
+saveLabel	Kies een opslagplek
+saved	%0sOpslaan voltooid.
+saveerror	Kan %4s niet opslaan.\nDruk op A om door te gaan.
+savegame	Kies waar je wilt opslaan
+savegameformat	%s - 1S:_%d%% Team:_%d%% - %02d/%02d_@_%02d:%02d
+savenocard	%5s is tijdens het gebruik verwijderd.\nOpslaan mislukt.\nDruk op A om door te gaan.
+savingtocard	Bezig met opslaan van %4s op %1s.\nVerwijder geen Memory Units en koppel geen controllers los.
+savingtodisk	Bezig met opslaan van %4s op %1s.\nZet je Xbox-console niet uit.
+sceneSelAreYouSure	Weet je het zeker? Alle niet-opgeslagen voortgang in dit spel gaat verloren.
+sceneSelAvailable	Beschikbaar
+sceneSelHel01Complete	Helmsdiepte is al volbracht. Volbreng Het Vuur van de Doemberg om het opnieuw te spelen.
+sceneSelLabel	Kies een missie
+sceneSelLocked	Vergrendeld
+sceneSelUnplayed	Niet gespeeld
+scoringMissionExp	Missie-ervaring :
+scoringMissionRating	Missiescore :
+scoringPopupFair	De score Redelijk is het makkelijkst te halen, maar levert de minste ervaringspunten op.
+scoringPopupGood	De scores Goed en Uitstekend leveren meer op. Daarvoor moet je meerdere treffers achter elkaar maken zonder zelf geraakt te worden.
+scoringPopupLevelUp	Verdien ervaringspunten om het niveau van je personage te verhogen en sterkere vaardigheden en verbeteringen vrij te spelen.
+scoringPopupMomentum	De vaardigheidsmeter bepaalt de score per gedode vijand. Maak treffers achter elkaar voor een hogere score.
+scoringPopupPerfect	Als je de vaardigheidsmeter tot Perfect vult, richten je aanvallen meer schade aan en verdien je maximaal veel ervaringspunten.
+secretCharacter	Geheim personage
+secretLevel	Geheime levels en extra's
+she01	Shelobs Nest
+she01LockDescCoop	Volbreng Ontsnapping uit Osgiliath
+she01LockDescSingle	Volbreng Ontsnapping uit Osgiliath
+skill	Vaardigheid
+specialFeature	Vrij te spelen extra
+specialhelm1	Conceptkunst van de film
+specialhelm1LockDesc	Volbreng Helmsdiepte
+specialhelm1UnlockDesc	Conceptkunst voor de film door Jeremy Bennett, John Howe, Paul Lasaine en Alan Lee
+specialhelm2	Hobbits over gamen
+specialhelm2LockDesc	Volbreng Helmsdiepte
+specialhelm2UnlockDesc	De Hobbits praten over de game 'In de ban van de Ring'
+specialhelm3	Het maken van de game
+specialhelm3LockDesc	Volbreng Helmsdiepte
+specialhelm3UnlockDesc	Een kijkje achter de schermen bij het maken van de game 'In de ban van de Ring'
+specialise01	Interview met Christopher Lee
+specialise01LockDesc	Volbreng De Weg naar Isengard
+specialise01UnlockDesc	Christopher Lee over het spelen van Saruman in de game 'In de ban van de Ring'
+specialmin00	Interview met Ian McKellen
+specialmin00LockDesc	Volbreng Minas Tirith - Op de Muur
+specialmin00UnlockDesc	Ian McKellen over het spelen van Gandalf in de game 'In de ban van de Ring'
+specialmin02	Productiefoto's van de film
+specialmin02LockDesc	Volbreng De Zuidelijke Poort
+specialmin02UnlockDesc	Productiefoto's van de films 'In de ban van de Ring'
+specialosg01	Interview met Sean Astin
+specialosg01LockDesc	Volbreng Ontsnapping uit Osgiliath
+specialosg01UnlockDesc	Sean Astin over het spelen van Sam in de game 'In de ban van de Ring'
+specialpat01	Conceptkunst van de game
+specialpat01LockDesc	Volbreng De Paden der Doden
+specialpat01UnlockDesc	Conceptkunst voor de game 'In de ban van de Ring'
+specialshe01	Interview met Elijah Wood
+specialshe01LockDesc	Volbreng Shelobs Nest
+specialshe01UnlockDesc	Elijah Wood over het spelen van Frodo in de game 'In de ban van de Ring'
+specialtree1	Palantír van Saruman
+specialtree1LockDesc	Volbreng Het Vuur van de Doemberg
+specialtree1UnlockDesc	De geheime Palantír-levels
+specialtree2	Interview met Billy Boyd
+specialtree2LockDesc	Volbreng Het Vuur van de Doemberg
+specialtree2UnlockDesc	Billy Boyd over het spelen van Pepijn in de game 'In de ban van de Ring'
+specialtree3	Interview met Dom Monaghan
+specialtree3LockDesc	Volbreng Het Vuur van de Doemberg
+specialtree3UnlockDesc	Dom Monaghan over het spelen van Merijn in de game 'In de ban van de Ring'
+specialtree4	Interview met Andy Serkis
+specialtree4LockDesc	Volbreng Het Vuur van de Doemberg
+specialtree4UnlockDesc	Andy Serkis over het spelen van Gollem in de game 'In de ban van de Ring'
+specialtree5	Interview met David Wenham
+specialtree5LockDesc	Volbreng Het Vuur van de Doemberg
+specialtree5UnlockDesc	David Wenham over het spelen van Faramir in de game 'In de ban van de Ring'
+specialtree6	Geheime codes
+specialtree6LockDesc	Volbreng Het Vuur van de Doemberg
+specialtree6UnlockDesc	Geheime codes om de verborgen extra's van de game 'In de ban van de Ring' vrij te spelen
+specialtree7	Palantír van Sauron
+specialtree7LockDesc	Volbreng Het Vuur van de Doemberg en bereik niveau 10 met 3 personages: Gandalf, Sam en Aragorn, Legolas of Gimli
+specialtree7UnlockDesc	De geheime Palantír-levels
+speed	Snel
+test	Dit is een test.
+total	Totaal
+totalExperience	Totale ervaring
+totalUpgradePoints	Totale ervaring:
+up	EP
+upgradeAll	Alle
+upgradeAraAbility1	Zwaardmeester uit Gondor
+upgradeAraAbility1Desc	Met deze speciale vaardigheid richt je meer schade aan en bereik je sneller de speelstand Perfect.
+upgradeAraAbility2	Koningsmaker
+upgradeAraAbility2Desc	Richt meer schade aan en bereik de speelstand Perfect nog sneller. (Vereist Zwaardmeester uit Gondor)
+upgradeAraDamage1	Zwaardbeheersing der Koningen
+upgradeAraDamage1Desc	Verhoogt de schade van je snelle aanval.
+upgradeAraDev1	Verwoestende aanval
+upgradeAraDev1Desc	Verwoestende aanval
+upgradeAraDev2	Razernij van de Doler
+upgradeAraDev2Desc	Een verwoestende aanval die bliksemschade aanricht.
+upgradeAraDev3	Woede van de Wildernis
+upgradeAraDev3Desc	Een nog verwoestender aanval die vijanden in brand steekt. (Vereist Razernij van de Doler)
+upgradeAraDev4	Toorn van Númenor
+upgradeAraDev4Desc	Een uiterst verwoestende aanval die een ring van vuurballen uitstoot. (Vereist Woede van de Wildernis)
+upgradeAraHealth1	Kracht van Steen
+upgradeAraHealth1Desc	Verhoogt je gezondheid permanent.
+upgradeAraHealth2	Kracht van IJzer
+upgradeAraHealth2Desc	Verhoogt je gezondheid permanent.  (Vereist Kracht van Steen)
+upgradeAraHealth3	Kracht van het Reisgenootschap
+upgradeAraHealth3Desc	Verhoogt je gezondheid permanent.  (Vereist Kracht van IJzer)
+upgradeAraHealth4	Kracht van de Avondster
+upgradeAraHealth4Desc	Verhoogt je gezondheid permanent.  (Vereist Kracht van het Reisgenootschap)
+upgradeAraRange1	Essenhouten pijlen
+upgradeAraRange1Desc	Essenhouten pijlen
+upgradeAraRange2	Dúnedain-pijlen
+upgradeAraRange2Desc	Deze gezegende Elfenpijlen richten extra schade aan.
+upgradeAraRange3	Rivendel-pijlen
+upgradeAraRange3Desc	Deze pijlen geven bij inslag een bliksemboog af. (Vereist Dúnedain-pijlen)
+upgradeAraRange4	Mithril-pijlen
+upgradeAraRange4Desc	Deze magische pijlen steken je vijanden in brand. (Vereist Rivendel-pijlen)
+upgradeCharacter	Personage
+upgradeCombo1	Orkhakker
+upgradeCombo1Desc	COMBO: een doeltreffende combo om vijanden zonder schild uit te schakelen.
+upgradeCombo2	Laatste oordeel
+upgradeCombo2Desc	COMBO: verwond sterke vijanden, sla ze neer en maak ze af met deze combo.
+upgradeCombo3	Balrogs gambiet
+upgradeCombo3Desc	COMBO: verwond je vijand, sla hem neer en raak hem met deze combinatieaanval.
+upgradeCombo4	Duistere verlossing
+upgradeCombo4Desc	COMBO: doeltreffend om vijanden met schild snel af te maken.
+upgradeCombo5	Schildsplijter
+upgradeCombo5Desc	COMBO: gebruik dit tegen sterke vijanden om hun schild te breken, ze neer te slaan en toe te slaan.
+upgradeCombo6	Bliksemslag
+upgradeCombo6Desc	COMBO: een reeks snelle, krachtige slagen die een of meer vijanden zonder schild vellen.
+upgradeCombo7	Helms Hamer
+upgradeCombo7Desc	COMBO: een dodelijke combinatie die vijandelijke schilden verbrijzelt en opnieuw toeslaat.
+upgradeCombo8	Snelrecht
+upgradeCombo8Desc	COMBO: een snelle combinatie, dodelijk tegen vijanden zonder schild.
+upgradeDamage1	Kracht van het Reisgenootschap
+upgradeDamage1Desc	Verhoogt de schade die een lid van het Reisgenootschap met een bepaalde aanval aanricht.
+upgradeDividerLeft	£
+upgradeDividerRight	¥
+upgradeDoneBuyingAreYouSure	Ben je klaar met het kopen van verbeteringen?
+upgradeEarned	Verdiend
+upgradeEntryPopup1	Met ervaringspunten kun je verbeteringen kopen voor je huidige personage of voor het hele Reisgenootschap.
+upgradeEntryPopup2	Een verbetering voor het Reisgenootschap werkt alleen bij personages die het daarvoor vereiste niveau hebben bereikt.
+upgradeEntryPopup3	Gefeliciteerd!  Je hebt in de laatste missie genoeg ervaring verdiend om het niveau van je personage te verhogen.
+upgradeFF	Dubbele houw
+upgradeFFDesc	Een krachtige combinatie die vijandelijke schilden verbrijzelt.
+upgradeFellowship	Reisgenootschap
+upgradeGanAbility1	Kracht van de Tovenaar
+upgradeGanAbility1Desc	Het magische schild richt meer schade aan en houdt langer stand.
+upgradeGanAbility2	Kracht van de Palantír
+upgradeGanAbility2Desc	Het magische schild slaat vijanden verder weg en houdt langer stand. (Vereist Kracht van de Tovenaar)
+upgradeGanAbility3	Betovering van de Havens
+upgradeGanAbility3Desc	Het magische schild slaat vijanden tegen de grond en houdt langer stand. (Vereist Kracht van de Palantír)
+upgradeGanDamage1	Kracht van de Istari
+upgradeGanDamage1Desc	Verhoogt de schade van je afstandsaanvallen en verwoestende aanvallen
+upgradeGanDev1	Verwoestende aanval
+upgradeGanDev1Desc	Verwoestende aanval
+upgradeGanDev2	Oorlogsmist
+upgradeGanDev2Desc	Deze aanval roept een uitdijende mistwolk op die vijanden van hun voeten slaat.
+upgradeGanDev3	Toorn van Anor
+upgradeGanDev3Desc	Een nog verwoestender aanval die een ring van bliksem oproept. (Vereist Oorlogsmist)
+upgradeGanDev4	Vlam van Udûn
+upgradeGanDev4Desc	Een uiterst verwoestende aanval die een vlammenring oproept die vijanden in brand steekt. (Vereist Toorn van Anor)
+upgradeGanHealth1	Kracht van Steen
+upgradeGanHealth1Desc	Verhoogt je gezondheid permanent.
+upgradeGanHealth2	Kracht van IJzer
+upgradeGanHealth2Desc	Verhoogt je gezondheid permanent.  (Vereist Kracht van Steen)
+upgradeGanHealth3	Kracht van het Reisgenootschap
+upgradeGanHealth3Desc	Verhoogt je gezondheid permanent.  (Vereist Kracht van IJzer)
+upgradeGanRange1	Afstandsaanval
+upgradeGanRange1Desc	Afstandsaanval
+upgradeGanRange2	Licht van de Pelgrim
+upgradeGanRange2Desc	Deze bliksemschicht richt meer schade aan.
+upgradeGanRange3	Licht van de Smidsen
+upgradeGanRange3Desc	Dit magische projectiel steekt vijanden in brand. (Vereist Licht van de Pelgrim)
+upgradeGanRange4	Licht van de Valar
+upgradeGanRange4Desc	Dit projectiel van zuiver licht gaat door meerdere vijanden heen en steekt ze in brand. (Vereist Licht van de Smidsen)
+upgradeGimAbility1	Kennis van de Eenzame Berg
+upgradeGimAbility1Desc	Met deze speciale vaardigheid richt je meer schade aan en bereik je sneller de speelstand Perfect.
+upgradeGimAbility2	Bijlbeheersing der Koningen
+upgradeGimAbility2Desc	Richt meer schade aan en bereik de speelstand Perfect nog sneller. (Vereist Kennis van de Eenzame Berg)
+upgradeGimDamage1	Bijlbeheersing der Dwergen
+upgradeGimDamage1Desc	Verhoogt de schade van je krachtige aanval.
+upgradeGimDev1	Verwoestende aanval
+upgradeGimDev1Desc	Verwoestende aanval
+upgradeGimDev2	Dwergenwoede
+upgradeGimDev2Desc	Een verwoestende aanval die bliksemschade aanricht.
+upgradeGimDev3	Woede van de Bergen
+upgradeGimDev3Desc	Een nog verwoestender aanval die vijanden in brand steekt. (Vereist Dwergenwoede)
+upgradeGimDev4	Toorn van Moria
+upgradeGimDev4Desc	Een uiterst verwoestende aanval die een ring van vuurballen uitstoot. (Vereist Woede van de Bergen)
+upgradeGimHealth1	Kracht van Steen
+upgradeGimHealth1Desc	Verhoogt je gezondheid permanent.
+upgradeGimHealth2	Kracht van IJzer
+upgradeGimHealth2Desc	Verhoogt je gezondheid permanent.  (Vereist Kracht van Steen)
+upgradeGimHealth3	Kracht van het Reisgenootschap
+upgradeGimHealth3Desc	Verhoogt je gezondheid permanent.  (Vereist Kracht van IJzer)
+upgradeGimHealth4	Kracht van Glóin
+upgradeGimHealth4Desc	Verhoogt je gezondheid permanent.  (Vereist Kracht van het Reisgenootschap)
+upgradeGimHealth5	Kracht van Khazad-dûm
+upgradeGimHealth5Desc	Verhoogt je gezondheid permanent.  (Vereist Kracht van Glóin)
+upgradeGimRange1	Werpbijlen
+upgradeGimRange1Desc	Werpbijlen
+upgradeGimRange2	Bijlen van Erebor
+upgradeGimRange2Desc	Deze betoverde werpbijlen richten extra schade aan.
+upgradeGimRange3	Bijlen van Moria
+upgradeGimRange3Desc	Deze betoverde bijlen geven bij inslag een bliksemboog af. (Vereist Bijlen van Erebor)
+upgradeHobAbility1	Mantel van Haldir
+upgradeHobAbility1Desc	Een hobbit blijft langer verborgen onder zijn Elfenmantel.
+upgradeHobAbility2	Mantel van Celeborn
+upgradeHobAbility2Desc	Een hobbit blijft langer verborgen onder zijn Elfenmantel. (Vereist Mantel van Haldir)
+upgradeHobAbility3	Mantel van Galadriel
+upgradeHobAbility3Desc	Een hobbit blijft langer verborgen onder zijn Elfenmantel. (Vereist Mantel van Celeborn)
+upgradeHobDamage1	Kracht van de Gabber
+upgradeHobDamage1Desc	Verhoogt de schade van alle zwaardaanvallen als je een vijand van achteren aanvalt.
+upgradeHobDev1	Verwoestende aanval
+upgradeHobDev1Desc	Verwoestende aanval
+upgradeHobDev2	Giftige Kling
+upgradeHobDev2Desc	Een verwoestende aanval die aanhoudend schade aanricht.
+upgradeHobDev3	Schaduwwolk
+upgradeHobDev3Desc	Roept een gifwolk op die aanhoudend schade aanricht. (Vereist Giftige Kling)
+upgradeHobDev4	Wolk van Woede
+upgradeHobDev4Desc	Een uiterst verwoestende gifwolk die aanhoudend schade aanricht. (Vereist Schaduwwolk)
+upgradeHobHealth1	Kracht van Steen
+upgradeHobHealth1Desc	Verhoogt je gezondheid permanent.
+upgradeHobHealth2	Kracht van IJzer
+upgradeHobHealth2Desc	Verhoogt je gezondheid permanent.  (Vereist Kracht van Steen)
+upgradeHobHealth3	Kracht van het Reisgenootschap
+upgradeHobHealth3Desc	Verhoogt je gezondheid permanent.  (Vereist Kracht van IJzer)
+upgradeHobHealth4	Halflingkracht
+upgradeHobHealth4Desc	Verhoogt je gezondheid permanent.  (Vereist Kracht van het Reisgenootschap)
+upgradeHobHealth5	Balingskracht
+upgradeHobHealth5Desc	Verhoogt je gezondheid permanent.  (Vereist Halflingkracht)
+upgradeHobRange1	Werpmessen
+upgradeHobRange1Desc	Werpmessen
+upgradeHobRange2	Hobbitzintuig
+upgradeHobRange2Desc	Vergroot de afstand waarop een hobbit vijanden kan richten.
+upgradeHobRange3	Gifdolken
+upgradeHobRange3Desc	Elke dolk die een vijand raakt, richt aanhoudend schade aan.
+upgradeHobRange4	Morgul-dolken
+upgradeHobRange4Desc	De dodelijkste afstandsaanval van de hobbits. (Vereist Gifdolken)
+upgradeKill1	Genadeslag
+upgradeKill1Desc	Genadeslag
+upgradeLabel	Verbeteringen
+upgradeLegAbility1	Licht van Lothlórien
+upgradeLegAbility1Desc	Met deze speciale vaardigheid richt je meer schade aan en bereik je sneller de speelstand Perfect.
+upgradeLegAbility2	Geschenk van Galadriel
+upgradeLegAbility2Desc	Richt meer schade aan en bereik de speelstand Perfect nog sneller. (Vereist Licht van Lothlórien)
+upgradeLegDamage1	Boogbeheersing der Elfen
+upgradeLegDamage1Desc	Schiet met één schot twee pijlen af op twee doelen.
+upgradeLegDev1	Verwoestende aanval
+upgradeLegDev1Desc	Verwoestende aanval
+upgradeLegDev2	Elfenwoede
+upgradeLegDev2Desc	Een verwoestende aanval die bliksemschade aanricht.
+upgradeLegDev3	Elronds Toorn
+upgradeLegDev3Desc	Een nog verwoestender aanval die vijanden in brand steekt. (Vereist Elfenwoede)
+upgradeLegHealth1	Kracht van Steen
+upgradeLegHealth1Desc	Verhoogt je gezondheid permanent.
+upgradeLegHealth2	Kracht van IJzer
+upgradeLegHealth2Desc	Verhoogt je gezondheid permanent.  (Vereist Kracht van Steen)
+upgradeLegHealth3	Kracht van het Reisgenootschap
+upgradeLegHealth3Desc	Verhoogt je gezondheid permanent.  (Vereist Kracht van IJzer)
+upgradeLegRange1	Essenhouten pijlen
+upgradeLegRange1Desc	Essenhouten pijlen
+upgradeLegRange2	Demsterwold-pijlen
+upgradeLegRange2Desc	Deze gezegende Elfenpijlen richten extra schade aan.
+upgradeLegRange3	Lothlórien-pijlen
+upgradeLegRange3Desc	Deze pijlen geven bij inslag een bliksemboog af. (Vereist Demsterwold-pijlen)
+upgradeLegRange4	Pijlen van de Valar
+upgradeLegRange4Desc	Deze magische pijlen steken je vijanden in brand. (Vereist Lothlórien-pijlen)
+upgradeLegRange5	Mithril-pijlen
+upgradeLegRange5Desc	Deze pijlen doorboren alle vijanden op hun pad en steken ze in brand. (Vereist Pijlen van de Valar)
+upgradeLink1	Orkverderf
+upgradeLink1Desc	GEKOPPELDE ACTIE: pareer en dood dan direct een aanvallende ork.
+upgradeLink2	Krijgersverderf
+upgradeLink2Desc	GEKOPPELDE ACTIE: pareer en dood dan direct een vijand van mensformaat.
+upgradeLink3	Verderf van Sauron
+upgradeLink3Desc	GEKOPPELDE ACTIE: pareer en dood dan direct een aanvallende Uruk.
+upgradeLocked	Nog niet vrijgespeeld.
+upgradeNA	n.v.t.
+upgradeNoMoney	Je hebt niet genoeg ervaringspunten verzameld om deze verbetering te kopen.
+upgradePerfect1	Dodelijke zone
+upgradePerfect1Desc	Je blijft in een gevecht langer in de speelstand Perfect.
+upgradePoints	Ervaringspunten
+upgradePointsColon	Ervaringspunten :
+upgradePurchased	Gekocht
+upgradeRising1	Wraak bij opstaan
+upgradeRising1Desc	Val aan terwijl je opstaat en verras je vijanden.
+upgradeSSS	Drievoudige slag
+upgradeSSSDesc	Een snelle combinatie, doeltreffend tegen kleinere vijanden zonder schild.
+upgradeWantToBuy	Weet je zeker dat je deze verbetering wilt kopen?
+useAbilities	Gebruik je verbeteringen voor het Reisgenootschap
+wantToSave	Wil je je spel opslaan?
+wizardPath	Het Pad van de Tovenaar
+yes	Ja
+bla01:0x02010100	We hebben zijn leger naar de Zwarte Poort gelokt ...
+bla01:0x02010200	Voor onszelf is er geen hoop ... dit is onze laatste daad om Frodo tijd te geven ...  tijd om dit kwaad te beëindigen dat zich voor ons verzamelt.
+bla01:0x02010300	Help me!
+bla01:0x02010301	Help me!
+bla01:0x02010400	Hierheen!
+bla01:0x02010500	Versla ze allemaal, of we zijn verloren!
+bla01:0x02010600	De Vlam van Arnor beveelt!
+bla01:0x02010700	Je kent hun zwakte! Gebruik die!
+bla01:0x020C0000	Je zult niet langer voor Sauron spreken!
+bla01:0x020C0100	Jij bent het ... die zal lijden!
+bla01:0x020C0200	Dit is voor Frodo!
+bla01:0x020C0300	Op je post!
+bla01:0x020C0400	Houd stand, zonen van Gondor, van Rohan ... mijn broeders!
+bla01:0x020C0500	Verbrand ze!
+bla01:0x020C0600	Dat was hard nodig.
+bla01:0x020C0601	Het lot is gunstig.
+bla01:0x020C0602	Het lot is mij goedgezind.
+bla01:0x020D0000	Mijn Meester, Sauron de Grote, heet u welkom ...
+bla01:0x020D0100	Er is meer nodig dan een gebroken Elfenzwaard om een Koning te maken.
+bla01:0x020D0101	Goed ... goed. De Halfling was je dierbaar, zie ik.
+bla01:0x020D0200	Weet dat de Halfling zwaar geleden heeft onder de handen van zijn gastheer.
+bla01:0x020D0300	Je kunt de Nazgûl niet tegenhouden!
+bla01:0x020D0400	Weg met jou, zwakkeling!
+bla01:0x020D0401	Onderga je ondergang!
+bla01:0x020D0402	We zullen je ziel stelen!
+bla01:0x020D0403	Dit gaat jou niet aan.
+bla01:0x02110000	Ze zullen ons allemaal doden!
+bla01:0x02110001	Houd ze tegen!
+bla01:0x02110002	Rustig, mannen!
+bla01:0x02110003	Houd je positie, mannen van Rohan!
+bla01:0x02120000	Help me!
+bla01:0x02120100	Hierheen!
+bla01:0x02120200	Mijn zwakte neemt af.
+bla01:0x02120201	Dit is een mooi geschenk.
+bla01:0x02130000	Help me!
+bla01:0x02130100	Hierheen!
+bla01:0x02130200	We hebben niet genoeg mannen!
+bla01:0x02130201	Er komt geen eind aan!
+bla01:0x02130300	Dank je, vriend!
+bla01:0x02130301	De pijn is voorbij.
+bla01:0x02130302	Het gevaar is geweken.
+bla01:0x02130303	Het is maar een schram!
+bla01:0x30000000	Maar ik heb een teken dat ik u moest tonen ...
+bla01:0x30000001	Frodo's mithrilhemd! De arme Hobbit moet dood zijn!
+bla01:0x30000002	Ik geef je een boodschap mee voor je meester!
+bla01:0x30000003	De Ringgeesten komen!
+bla01:0x30000004	De Zwarte Ruiters!
+bla01:0x30000005	Achteruit!
+bla01:0x30000006	Heer Sauron heeft zijn geduld verloren.
+bla01:0x30000007	Voor onszelf is er geen hoop.
+bla01:0x30000008	Dit is onze laatste daad om Frodo tijd te geven...
+bla01:0x30000009	...tijd om dit kwaad te beëindigen dat zich voor ons verzamelt.
+bla01:0x3000000A	Het zijn er te veel!
+bla01:0x3000000B	Vecht door, Gimli!
+bla01:0x3000000C	Daarmee zijn de onderhandelingen dus voorbij.
+bla01:0x3000000D	Neem verdedigende posities in!
+bla01:0x3000000E	Verspreid je ... houd ze aan alle kanten van de heuvel tegen!
+bla01:0x3000000F	Maar ik heb een teken dat ik u moest tonen ...
+bla01:0x30000010	Frodo's mithrilhemd! De arme Hobbit moet dood zijn!
+bla01:0x30000011	Ik geef je een boodschap mee voor je meester!
+bla01:0x30000012	De Ringgeesten komen!
+bla01:0x30000013	De Zwarte Ruiters!
+bla01:0x30000014	Achteruit!
+bla01:0x30000015	Heer Sauron heeft zijn geduld verloren.
+bla01:0x30000016	Voor onszelf is er geen hoop.
+bla01:0x30000017	Dit is onze laatste daad om Frodo tijd te geven...
+bla01:0x30000018	...tijd om dit kwaad te beëindigen dat zich voor ons verzamelt.
+bla01:0x30000019	Het zijn er te veel!
+bla01:0x3000001A	Vecht door, Gimli!
+bla01:0x3000001B	Daarmee zijn de onderhandelingen dus voorbij.
+bla01:0x3000001C	Neem verdedigende posities in!
+bla01:0x3000001D	Verspreid je ... houd ze aan alle kanten van de heuvel tegen!
+cir00:0x02080000	Saurons schepsels zijn ++++++met elkaar in oorlog! Hak er veel neer en ze vluchten naar de toren! Daar wordt Frodo vastgehouden!
+cir00:0x020E0000	Indringer!!
+cir00:0x020E0001	Indringer!!
+cir00:0x020E0002	Indringer!!
+cir00:0x020E0003	Indringer!!
+cir00:0x020E0100	Grijp dat onderdeurtje!
+cir00:0x020E0200	Ik hak je wel kleiner!
+cir00:0x02110000	Meneer Frodo zit boven in die toren, en om daar te komen moet ik al die Orks zien te verslaan!
+cir00:0x02110100	Daarboven is de deur ... als ik maar een weg naar boven vind.
+cir00:0x02110200	Hoe kom ik daar nou doorheen?
+cir00:0x02110201	Hoe kom ik daar nou doorheen?
+cir00:0x02110202	Hoe kom ik daar nou doorheen?
+cir00:0x02110300	Dat zou een weg naar binnen kunnen zijn!
+cir00:0x02110301	Dat zou een weg naar binnen kunnen zijn!
+cir00:0x02110400	Hopelijk is het hier boven veilig!
+cir00:0x02110500	Dat moet ik op de een of andere manier tegen ze kunnen gebruiken!
+cir00:0x02110600	Dit leidt ze misschien af!
+cir00:0x02110700	Geen zorgen, meneer Frodo! Ik ben u niet vergeten!
+cir00:0x02110701	Geen zorgen, meneer Frodo! Ik ben u niet vergeten!
+cir00:0x02110800	Misschien kom ik zo de Toren in!
+cir00:0x02110801	Misschien kom ik zo de Toren in!
+cir00:0x02110802	Misschien kom ik zo de Toren in!
+cir00:0x02110803	Misschien kom ik zo de Toren in!
+cir00:0x02110900	Daar lijkt een weg naar boven te zijn!
+cir00:0x02110901	Daar lijkt een weg naar boven te zijn!
+cir00:0x02110A00	Kom op, Samwijs. Je moet een weg die toren in zien te vinden.
+cir00:0x02110B00	Ik kan ze niet allemaal neerhakken!
+cir00:0x02110B01	Ik kan ze niet allemaal neerhakken!
+cir00:0x02110B02	Ik kan ze niet allemaal neerhakken!
+cir00:0x02110C00	Misschien kan ik ze hiermee afleiden!
+cir00:0x02110C01	Misschien kan ik ze hiermee afleiden!
+cir00:0x02110D00	Volgens mij krijg ik de slag te pakken!
+cir00:0x02110D01	Volgens mij krijg ik de slag te pakken!
+cir00:0x02110D02	Volgens mij krijg ik de slag te pakken!
+cir00:0x30000000	Sam!
+cir00:0x30000001	Help me!
+cir00:0x30000002	Die made probeerde me neer te steken.
+cir00:0x30000003	...We laten die stinkende Mordor-ratten de boel niet overnemen!
+cir00:0x30000004	We hebben hier een stel jongens die zin hebben in een gevecht.
+cir00:0x30000005	Verdeel ze! Neem de beste plekken in! Maak er een eind aan ... nu!
+cir00:0x30000006	Laat die ophaalbrug zakken!
+cir00:0x30000007	We krijgen een pak slaag! Terugtrekken!
+cir00:0x30000008	De Toren in, jongens! Opschieten!
+cir00:0x30000009	Sam!
+cir00:0x3000000A	Help me!
+cir00:0x3000000B	Die made probeerde me neer te steken.
+cir00:0x3000000C	...We laten die stinkende Mordor-ratten de boel niet overnemen!
+cir00:0x3000000D	We hebben hier een stel jongens die zin hebben in een gevecht.
+cir00:0x3000000E	Verdeel ze! Neem de beste plekken in! Maak er een eind aan ... nu!
+cir00:0x3000000F	Laat die ophaalbrug zakken!
+cir00:0x30000010	We krijgen een pak slaag! Terugtrekken!
+cir00:0x30000011	De Toren in, jongens! Opschieten!
+cir01:0x30000000	Hé, schoft! Handen af van dat glimmende hemd, dat is van mij.
+cir01:0x30000002	Laat hem gaan of ik maak je af, Orkentuig!
+cir01:0x30000003	Sam!!!!!!
+cir01:0x30000004	Kom op, meneer Frodo! Ik weet hoe we hier uitkomen!
+cir01:0x30000005	Dank je, Sam.
+cir01:0x30000006	We zijn nu dicht bij de Doemberg! Nog een klein stukje, en dan bent u van die Ring verlost!
+cir01:0x30000007	Hé, schoft! Handen af van dat glimmende hemd, dat is van mij.
+cir01:0x30000009	Laat hem gaan of ik maak je af, Orkentuig!
+cir01:0x3000000A	Sam!!!!!!
+cir01:0x3000000B	Kom op, meneer Frodo! Ik weet hoe we hier uitkomen!
+cir01:0x3000000C	Dank je, Sam.
+cir01:0x3000000D	We zijn nu dicht bij de Doemberg! Nog een klein stukje, en dan bent u van die Ring verlost!
+cra01:0x020C0000	We moeten hem verslaan, meneer Frodo! Ik zeg: we duwen hem met die vervloekte Ring het vuur in!
+cra01:0x020C0100	We zijn niet uit dat fort ontsnapt en mijlen door dampende woestenij getrokken om nu tegengehouden te worden!
+cra01:0x020D0000	Weg bij ons! Jij bent geen Meester meer! Wij zijn de Meester! Gollem is vrij! Gollem! Gollem!
+cra01:0x020D0100	Laat ons met rust! We haat je!
+cra01:0x020D0200	We zweert dat we Meester doden ... We zweert op ... op de schaaat ...
+cra01:0x020D0300	Hij doet ons pijn! Hij doet arme Sméagol pijn!
+cra01:0x020D0400	Nu koken we jou!
+cra01:0x020D0500	Stomme hobbit! We hoopt dat het je verbrandt!!!
+cra01:0x020D0600	Stomme meester, de schat is van mij!
+cra01:0x020D0700	Gemeen! Mag de Schat niet pakken!
+cra01:0x020D0800	Domme hobbit kan Schat niet doden! Dat laat we niet toe!!!
+cra01:0x020D0900	Nooit! Wij is Meester! Wij wint! Wij wint!
+cra01:0x020D0901	Nooit! Wij is Meester! Wij wint! Wij wint!
+cra01:0x020D0A00	Wij wint altijd!!!
+cra01:0x020D0B00	Wij ... wint ... altijd!!!
+cra01:0x020E0000	Geef dat terug!  Al bijt je mijn vinger eraf, je houdt me niet tegen!
+cra01:0x020E0100	Je gaat hier niet weg met de Ring, dat beloof ik je!!
+cra01:0x020E0200	Liggen, kruipend gedrocht!
+cra01:0x020E0300	We zitten in de val!
+cra01:0x020E0400	Ik weet niet wat ervoor nodig is om van je af te komen!
+cra01:0x020E0500	Je bent bezeten, Sméagol! Zo snel heb ik je nog nooit gezien!
+cra01:0x020E0600	Je krijgt hem nooit terug! Nooit!
+cra01:0x020E0700	Je tijd is voorbij!
+cra01:0x020E0800	We zijn allemaal verloren, Gollem! Alles hier stort in!
+cra01:0x020E0900	Je wordt zwakker, hè?!
+cra01:0x020E0A00	Deze keer niet, Gollem!
+cra01:0x020E0B00	Deze keer wint niemand!
+cra01:0x020E0C00	Deze keer is het voorbij.
+cra01:0x30000000	Schat! Mijn Schat!
+cra01:0x30000001	Onze Schat! Van ons!
+cra01:0x30000002	Van mij! ++++++
+cra01:0x30000003	We haat je! We haat je altijd!
+cra01:0x30000004	We draait zijn smerige nekje om!
+cra01:0x30000005	Terug, Sam!
+cra01:0x30000006	Stomme hobbit! We hoopt dat het je verbrandt!!!
+cra01:0x30000007	Schat is +++++van mij!
+cra01:0x30000008	Schat! Mijn Schat!
+cra01:0x30000009	Onze Schat! Van ons!
+cra01:0x3000000A	Van mij! ++++++
+cra01:0x3000000B	We haat je! We haat je altijd!
+cra01:0x3000000C	We draait zijn smerige nekje om!
+cra01:0x3000000D	Terug, Sam!
+cra01:0x3000000E	Stomme hobbit! We hoopt dat het je verbrandt!!!
+cra01:0x3000000F	Schat is +++++van mij!
+hel01:0x02010100	Voor alle vrije volken!
+hel01:0x02010101	Weg!!
+hel01:0x02010102	Terug!!
+hel01:0x02010200	Ik ben hier, Legolas!
+hel01:0x02010300	Ik kom eraan, Aragorn!
+hel01:0x020E0000	Snel, Gandalf!
+hel01:0x020E0001	Snel, Gandalf!
+hel01:0x020E0002	Snel, Gandalf!
+hel01:0x020E0100	Die ballista is geladen!
+hel01:0x020E0101	Die ballista is geladen!
+hel01:0x020E0102	Keer hun werktuigen tegen ze!
+hel01:0x020E0103	Keer hun werktuigen tegen ze!
+hel01:0x020E0104	Vuur dat af! Haal ze neer!
+hel01:0x020E0105	Vuur dat af! Haal ze neer!
+hel01:0x020E0106	Probeer dat eens af te vuren!
+hel01:0x020E0107	Probeer dat eens af te vuren!
+hel01:0x020E0108	Vuur die werktuigen af!
+hel01:0x020E0109	Vuur die werktuigen af!
+hel01:0x020E010A	Gebruik hun kwaad tegen ze!
+hel01:0x020E010B	Gebruik hun kwaad tegen ze!
+hel01:0x020E0200	Keer hun wapens tegen ze!
+hel01:0x020E0201	Keer hun wapens tegen ze!
+hel01:0x020E0202	Gebruik hun speren!
+hel01:0x020E0203	Gebruik hun speren!
+hel01:0x020E0204	Grijp elk wapen!
+hel01:0x020E0205	Grijp elk wapen!
+hel01:0x020E0206	Gooi hun wapens naar ze terug!
+hel01:0x020E0207	Gooi hun wapens naar ze terug!
+hel01:0x020F0000	Ze kunnen hem niet weerstaan!
+hel01:0x020F0001	Mithrandir maait ze neer!
+hel01:0x020F0002	Mithrandir maait ze neer!
+hel01:0x020F0003	Hun slagen deren hem niet!
+hel01:0x020F0004	Hij is een demon!
+hel01:0x020F0005	Hij is een demon!
+hel01:0x020F0100	Veeg ze van het veld!
+hel01:0x020F0101	Hak ze allemaal neer!
+hel01:0x020F0102	Terug! Terug!
+hel01:0x020F0103	Ik heb hem!
+hel01:0x020F0104	Het veld is van ons!
+hel01:0x020F0105	Naar de burcht!
+hel01:0x020F0106	Rohan zal zegevieren!
+hel01:0x020F0200	Weg!
+hel01:0x020F0201	Weg!
+hel01:0x020F0202	Weg!
+hel01:0x020F0203	Waar is Saruman!?!
+hel01:0x020F0204	Waar is Saruman!?!
+hel01:0x020F0205	We moeten vluchten!
+hel01:0x020F0206	We moeten vluchten!
+hel01:0x020F0207	We moeten vluchten!
+hel01:0x02100000	Gandalf! Welkom terug!
+hel01:0x02100100	Neem er een paar van mij voor je rekening, als je wilt!
+hel01:0x02100200	Val deze Uruk-hai snel aan!
+hel01:0x02100201	Val deze Uruk-hai snel aan!
+hel01:0x02100202	Val deze Uruk-hai snel aan!
+hel01:0x02100203	Ik zou een snelle aanval proberen!
+hel01:0x02100204	Ik zou een snelle aanval proberen!
+hel01:0x02100205	Ik zou een snelle aanval proberen!
+hel01:0x02100206	Val snel aan, Gandalf!
+hel01:0x02100207	Val snel aan, Gandalf!
+hel01:0x02100208	Val snel aan, Gandalf!
+hel01:0x02100300	Sla hun schilden kapot met krachtige slagen!
+hel01:0x02100301	Gebruik krachtige aanvallen tegen schilden!
+hel01:0x02100302	Gebruik krachtige aanvallen tegen schilden!
+hel01:0x02100303	Gebruik krachtige aanvallen tegen schilden!
+hel01:0x02100304	Gebruik krachtige aanvallen tegen schilden!
+hel01:0x02100305	Gebruik krachtige aanvallen tegen schilden!
+hel01:0x02100306	Val krachtig aan! Dan breken de schilden!
+hel01:0x02100307	Val krachtig aan! Dan breken de schilden!
+hel01:0x02100400	De nieuwe Gandalf heeft nogal een humeur!
+hel01:0x02100401	De nieuwe Gandalf heeft nogal een humeur!
+hel01:0x02110000	Vernietig ze met je magie!
+hel01:0x02110001	Verzamel je kracht en laat haar los!
+hel01:0x02110002	Verzamel je kracht en laat haar los!
+hel01:0x02110003	Bundel je kracht!
+hel01:0x02110004	Werp je kracht op ze!
+hel01:0x02110005	Vel ze met je magie!
+hel01:0x02110006	Val deze Uruk-hai van een afstand aan!
+hel01:0x02110100	Sla hun pijlen opzij!
+hel01:0x02110101	Sla hun pijlen opzij!
+hel01:0x02110102	Sla hun pijlen neer!
+hel01:0x02110103	Pareer hun pijlen!
+hel01:0x02110104	Pareer hun pijlen!
+hel01:0x02110200	Dun hun gelederen uit!
+hel01:0x30000000	Legolas!
+hel01:0x30000001	Gandalf!
+hel01:0x30000002	Hierboven! De muur moet verdedigd worden!
+hel01:0x30000003	Snel! Er komen er meer!
+hel01:0x30000004	Deze ladder op!
+hel01:0x30000005	Gandalf! Help me de dam vrij te maken!
+hel01:0x30000006	Breng het buskruit!
+hel01:0x30000007	Dood ze allemaal!
+hel01:0x30000008	We kunnen niet wachten! Naar Aragorn!
+hel01:0x30000009	Keer terug naar je meester, schepsels van de schaduw!
+hel01:0x3000000A	Legolas!
+hel01:0x3000000B	Gandalf!
+hel01:0x3000000C	Hierboven! De muur moet verdedigd worden!
+hel01:0x3000000D	Snel! Er komen er meer!
+hel01:0x3000000E	Deze ladder op!
+hel01:0x3000000F	Gandalf! Help me de dam vrij te maken!
+hel01:0x30000010	Breng het buskruit!
+hel01:0x30000011	Dood ze allemaal!
+hel01:0x30000012	We kunnen niet wachten! Naar Aragorn!
+hel01:0x30000013	Keer terug naar je meester, schepsels van de schaduw!
+ise01:0x02010100	Ik ben teruggestuurd om jouw mantel over te nemen, om jouw onrecht te herstellen!
+ise01:0x02010101	Saruman, je brengt schande over onze Orde! Je sluwe geest is verteerd door oorlog!
+ise01:0x02010200	Saruman, de bomen van Fangorn zijn ontwaakt!
+ise01:0x02010300	Ranken zoeken, takken verpletteren, wortels begraven alles wat er over is van je ijdelheid!
+ise01:0x02010301	Ranken zoeken, takken verpletteren, wortels begraven alles wat er over is van je ijdelheid!
+ise01:0x02010400	Saruman, het uur van de vernietiging is aangebroken!
+ise01:0x02010401	Saruman, het uur van de vernietiging is aangebroken!
+ise01:0x02010500	Mogen de Valar je beschermen!
+ise01:0x02010501	Mogen de Valar je beschermen!
+ise01:0x02010600	Saruman! GANDALF komt naar Isengard ...
+ise01:0x02010700	... maar niet langer voor jouw raad!
+ise01:0x02010800	Nu help ik de Enten de laatste steunpilaar neer te halen!
+ise01:0x02010801	Nu help ik de Enten de laatste steunpilaar neer te halen!
+ise01:0x020E0000	Houd stand!
+ise01:0x020E0001	Dit is geen bedreiging!
+ise01:0x020E0100	Wie durft!?!
+ise01:0x020E0200	Hak hem neer!!!
+ise01:0x020E0201	Hak hem neer!!!
+ise01:0x020E0300	Vuur!!
+ise01:0x020E0400	Makkelijke prooi daarachter! Pak hem!
+ise01:0x020E0401	Makkelijke prooi daarachter! Pak hem!
+ise01:0x020E0402	Makkelijke prooi daarachter! Pak hem!
+ise01:0x020E0500	Hak hem in stukken, jongens!
+ise01:0x020E0600	Kunnen jullie hem niet tegenhouden?!
+ise01:0x020E0700	Verdedig de torens!!
+ise01:0x020E0800	Wat ben jij??!
+ise01:0x020E0801	Ik zal je breken!
+ise01:0x020E0802	Wat is er nodig om jou te doden?!
+ise01:0x020E0900	Ze hebben onze aanvoerder neergehakt!!
+ise01:0x020E0901	Ze hebben onze aanvoerder neergehakt!!
+ise01:0x020E0902	Ze zijn niet te stoppen!
+ise01:0x020E0903	Ze zijn niet te stoppen!
+ise01:0x020E0904	Hak je een weg door ze heen!
+ise01:0x020E0905	Hak je een weg door ze heen!
+ise01:0x020E0A00	Aanvallen! Verdrijf hem!
+ise01:0x02120000	Rook stijgt op uit Isengard++++++, het uur wordt laat, en nu kom je naar Isengard om mijn raad te vragen.
+ise01:0x02120100	Want daarom ben je toch gekomen... mijn vriend?
+ise01:0x02120200	Jij bent het die angst zaait onder de onschuldigen.
+ise01:0x02120300	Verbrand ze allemaal, zeg ik, en opgeruimd staat netjes.
+ise01:0x02120400	Wat een woede! Ik heb medelijden met je!
+ise01:0x02120500	Die bomen zijn een oeroude ++++++++waanzin. Ze moeten verbrand worden, voordat ze iedereen vernietigen die +++in hun buurt woont.
+ise01:0x02120600	Je kunt de Enten niet tegenhouden!
+ise01:0x02120601	Verpletter ze!  Vermorzel ze!
+ise01:0x02120602	We zullen ze allemaal verpletteren!
+ise01:0x02120603	We zijn hoogst ontstemd!
+ise01:0x02120604	Je einde is gekomen!
+ise01:0x02120605	Een mooie treffer!
+ise01:0x02120700	Haast je naar Isengard!
+ise01:0x02120701	Breng Saruman ten val
+ise01:0x02120702	We dulden jullie vuren niet!
+ise01:0x02120703	Jullie leven is verbeurd!
+ise01:0x02120704	Jullie kunnen onze toorn niet weerstaan!
+ise01:0x02120705	Jullie kwaad eindigt vandaag!
+ise01:0x02120800	Sarumans schepsels zijn zwak!
+ise01:0x02120801	Jullie hebben jezelf veroordeeld!
+ise01:0x02120802	Jullie hebben jezelf veroordeeld!
+ise01:0x02120803	Laat niemand ontsnappen!
+ise01:0x02120804	Op naar Isengard
+ise01:0x02120805	Daar zijn ze! Daarboven!
+ise01:0x02120806	Ze zullen niet ontkomen!
+ise01:0x02120807	Ze zullen niet ontkomen!
+ise01:0x02120900	Zoveel macht ... zo verspild!
+ise01:0x30000000	Haast je naar Isengard! Ik reken wel af met deze hier!
+ise01:0x30000001	Haast je naar Isengard! Ik reken wel af met deze hier!
+min00:0x02010100	Onze katapulten zijn van levensbelang! Daarmee vernietigen we die torens!
+min00:0x02010101	Onze katapulten zijn van levensbelang! Daarmee vernietigen we die torens!
+min00:0x02010200	Haast je met mij mee! Leen me je zwaarden!
+min00:0x02010300	Gooi hun ladders om!  Anders worden we onder de voet gelopen!
+min00:0x02010400	Mannen van Gondor!+++ We moeten deze schepsels van jullie muren houden! Het lot van de Witte Stad hangt ervan af!
+min00:0x02010500	Belegeringstorens! Gooi ze om!
+min00:0x02010600	Houd ze tegen met de katapulten!
+min00:0x02010700	Ik vrees dat de Duistere Heer verschrikkelijke schepsels zal sturen om mijn plan te dwarsbomen ...
+min00:0x02010800	De duisternis wordt dieper.
+min00:0x02010900	Houd stand! De muren van Gondor moeten het houden!
+min00:0x02010901	Houd de muren zo lang je kunt!
+min00:0x02010A00	Grond, gesmeed uit de boosaardigheid van de Duistere Heer!
+min00:0x02010B00	Onze poorten zijn er niet tegen bestand!
+min00:0x02040000	Snel naar beneden!
+min00:0x02040001	Verdedig de poorten!
+min00:0x02040002	Naar beneden, naar de binnenmuur!
+min00:0x02040003	Naar beneden, naar de poort!
+min00:0x02040004	Versterk het plein!
+min00:0x02040005	Alle mannen naar de poort!
+min00:0x02040100	Ruim het gebied!
+min00:0x02040101	Weg!
+min00:0x02040102	Weg!
+min00:0x02040103	Pas op!
+min00:0x02040300	Houd ze tegen! Nu!!!
+min00:0x02040301	We zijn hier niet veilig!
+min00:0x02040302	Hierheen! Ik ben ... Ahhh!
+min00:0x02040303	Help ons, Gandalf!
+min00:0x02040304	Help die mannen!
+min00:0x02040305	Orks op de muren!
+min00:0x02040306	Ze komen over de muren!
+min00:0x02040307	Houd stand!
+min00:0x02040308	Rustig, mannen!
+min00:0x02040309	Bemand de muren!
+min00:0x0204030A	Bemand de muren!
+min00:0x0204030B	We zijn hier niet veilig!
+min00:0x0204030C	Ze zijn niet te stoppen!
+min00:0x0204030D	Help de mannen!
+min00:0x0204030E	Daar komen ze!
+min00:0x0204030F	Houd ze tegen!
+min00:0x02040400	Ik zal je breken!
+min00:0x02040401	Jullie kunnen ons niet tegenhouden!
+min00:0x02040402	Sla alles kapot!
+min00:0x02040403	Pak ze allemaal!
+min00:0x02040404	Naar boven! Veeg ze weg!
+min00:0x02040405	We gaan ons tegoed doen aan deze stad!
+min00:0x02040406	Hak hem neer!!!
+min00:0x02040407	Verpletter ze allemaal!
+min00:0x02040408	Hun stad brokkelt af!
+min00:0x02040409	Haal ze neer!
+min00:0x0204040A	Ze zijn zwak!!
+min00:0x0204040B	Pak ze!!
+min00:0x0204040C	Slacht ze allemaal af!
+min00:0x0204040D	Hak ze neer!!
+min00:0x0204040E	Jij bent de volgende!
+min00:0x0204040F	Vernietig hem!
+min00:0x02040410	Je bent niets!
+min00:0x02040411	Sterf, zwakkeling!
+min00:0x02040412	Ik blaas je uit!
+min00:0x02040413	Je bent van mij!
+min00:0x02040414	Maai ze neer!
+min00:0x02040415	Voor de Duistere Heer!
+min00:0x02040416	Ze zijn verslagen!
+min00:0x02040417	Dood ze allemaal!
+min00:0x02040418	Hun muren zijn van ons!!
+min00:0x02040419	Verbrand de stad!!
+min00:0x0204041A	De muur is van ons!
+min00:0x30000000	Laat ze er niet in!
+min00:0x30000001	Laat ze er niet in!
+min02:0x02100000	We moeten voorbij deze buitenpoort zien te komen!
+min02:0x02100100	Blijf alert! Wees voorzichtig!
+min02:0x02100200	Katapulten!
+min02:0x02100201	Vuur deze op ze af!
+min02:0x02100202	Vuur hun eigen katapulten op ze af!
+min02:0x02100300	Hierboven! Snel!
+min02:0x02100400	Hinderlaag!
+min02:0x02100500	Je houdt me niet tegen.
+min02:0x02100600	Klim over het puin! Snel!
+min02:0x02100700	Verkeerde kant!
+min02:0x02100701	Verkeerde kant!
+min02:0x02100800	Maak ze snel af!
+min02:0x02100900	Daarboven! We moeten de lier van de poort gebruiken!
+min02:0x02100A00	Blijf hem raken!
+min02:0x02100A01	Blijf hem raken!
+min02:0x02100B00	Mûmak!
+min02:0x02110000	Wat een grimmig tafereel ...
+min02:0x02110100	Ik ruik Ork, zelfs van deze afstand ...
+min02:0x02110200	Laten we naar boven gaan en de poort openen!
+min02:0x02110300	Het is een val!
+min02:0x02110301	Het is een val!
+min02:0x02110302	Het is een val!
+min02:0x02110303	Het is een val!
+min02:0x02110400	Speel niet met hem. Dood hem!
+min02:0x02110500	Mooie katapulten!
+min02:0x02110600	Orks! Aan alle kanten!
+min02:0x02110700	Die verhoudingen bevallen me wel!
+min02:0x02110800	Bah! Laat ze maar komen!
+min02:0x02110900	Dat moet lukken!
+min02:0x02110A00	Zo wordt hakwerk een stuk leuker!
+min02:0x02120000	We moeten langs hem zien te komen!
+min02:0x02120100	Drijf ze terug, dan kunnen we de lier gebruiken!
+min02:0x02120101	Drijf ze terug, dan kunnen we de lier gebruiken!
+min02:0x02120200	Verkeerde kant!
+min02:0x02120201	Ga niet die kant op!
+min02:0x02120300	Ze zijn over ons heen!
+min02:0x02120400	Maak die boogschutters af!
+min02:0x30000000	Gewapend met een eed van ++++++++trouw van een leger dat lang geleden stierf,|leidt Aragorns weg hem eindelijk terug naar de Witte Stad.
+min02:0x30000001	Hij trekt naar het noorden, en dan door de Zuidelijke Poort van Gondor...
+min02:0x30000002	...om zich hier bij de grote veldslag van onze tijd te voegen.
+min02:0x30000003	De toren is van ons!
+min02:0x30000004	Er komt iemand aan!
+min02:0x30000005	Ze proberen ons de weg te versperren!
+min02:0x30000006	De hoorns van Rohan! Eindelijk komt er hulp!
+min02:0x30000007	Haast je naar ze toe, voordat de slag gewonnen is!
+min02:0x30000008	Een smerig schepsel uit het zuiden!
+min02:0x30000009	Dit is meer dan deze Dwerg verdient!
+min02:0x3000000A	Gewapend met een eed van ++++++++trouw van een leger dat lang geleden stierf,|leidt Aragorns weg hem eindelijk terug naar de Witte Stad.
+min02:0x3000000B	Hij trekt naar het noorden, en dan door de Zuidelijke Poort van Gondor...
+min02:0x3000000C	...om zich hier bij de grote veldslag van onze tijd te voegen.
+min02:0x3000000D	De toren is van ons!
+min02:0x3000000E	Er komt iemand aan!
+min02:0x3000000F	Ze proberen ons de weg te versperren!
+min02:0x30000010	De hoorns van Rohan! Eindelijk komt er hulp!
+min02:0x30000011	Haast je naar ze toe, voordat de slag gewonnen is!
+min02:0x30000012	Een smerig schepsel uit het zuiden!
+min02:0x30000013	Dit is meer dan deze Dwerg verdient!
+min04:0x02010100	Moed is je beste verdediging tegen de storm die op komst is!
+min04:0x02010200	Achteruit! Hun schoten raken steeds dezelfde plekken!
+min04:0x02010300	Het zijn levende wezens! Ze kunnen geveld worden!
+min04:0x02010301	Redeloos geweld zal je niet baten!
+min04:0x02010302	Ik zal de stad zuiveren van jouw soort!
+min04:0x02010400	Zelfs de bezetenen moeten vallen!
+min04:0x02010500	Keer terug naar het niets dat je wacht!
+min04:0x02010501	Je bent niet tegen me opgewassen, gebroed van Sauron!
+min04:0x020F0000	Verdedig onze stad!
+min04:0x020F0001	Verdedig onze stad!
+min04:0x020F0002	Verdedig onze stad!
+min04:0x020F0003	Verdedig onze stad!
+min04:0x020F0004	Verdedig onze stad!
+min04:0x020F0100	Vlucht!
+min04:0x020F0101	Vlucht!
+min04:0x020F0102	Vlucht!
+min04:0x020F0103	Vlucht!
+min04:0x020F0200	Zoek dekking!
+min04:0x020F0201	Zoek dekking!
+min04:0x020F0202	Zoek dekking!
+min04:0x020F0203	Zoek dekking!
+min04:0x020F0300	Onze huizen staan in brand!
+min04:0x020F0301	Onze huizen staan in brand!
+min04:0x020F0302	Onze huizen staan in brand!
+min04:0x020F0303	Onze huizen staan in brand!
+min04:0x020F0400	Verdedig ons!
+min04:0x020F0401	Verdedig ons!
+min04:0x020F0402	Verdedig ons!
+min04:0x020F0403	Verdedig ons!
+min04:0x020F0500	Red ons, alsjeblieft!
+min04:0x020F0501	Red ons, alsjeblieft!
+min04:0x020F0502	Red ons, alsjeblieft!
+min04:0x020F0503	Red ons, alsjeblieft!
+min04:0x020F0600	Alles is verloren!
+min04:0x020F0601	Alles is verloren!
+min04:0x020F0700	Haal me hier weg!
+min04:0x020F0701	Haal me hier weg!
+min04:0x020F0702	Haal me hier weg!
+min04:0x020F0703	Haal me hier weg!
+min04:0x020F0800	Ze zullen ons allemaal doden!
+min04:0x020F0900	Help ons!!
+min04:0x020F0A00	Verdedig je ons?!
+min04:0x020F0B00	Bescherm deze stad!
+min04:0x020F0C00	Houd de linie!
+min04:0x020F0C01	Houd de linie!
+min04:0x020F0C02	Houd de linie!
+min04:0x020F0D00	Formatie! Formatie!
+min04:0x020F0E00	Houd stand! Niet wankelen!
+min04:0x020F0F00	Pas op!
+min04:0x020F1000	Katapult! Vuuraanval!
+min04:0x020F1001	Vuurballen!!
+min04:0x020F1002	Kijk uit! Vuur boven je!
+min04:0x020F1003	Vuuraanvallen!!
+min04:0x020F1100	De stad staat in brand!
+min04:0x020F1200	We kunnen hem niet tegenhouden!
+min04:0x020F1201	Trollen! Enorme Trollen!
+min04:0x020F1300	Laat hem niet bij je in de buurt komen!
+min04:0x020F1301	Houd die dingen op afstand!!
+min04:0x020F1302	Ze scheuren de stad uiteen!!
+min04:0x020F1303	Pas op voor zijn hamer!
+min04:0x020F1400	Niemand kan hem tegenhouden!
+min04:0x020F1401	Hij breekt erdoorheen!
+min04:0x020F1500	Verbrand alles!
+min04:0x020F1501	Alles zal branden!
+min04:0x020F1502	Roosteren!
+min04:0x020F1503	Kijk ze branden!
+min04:0x020F1600	Makkelijke prooi, jongens!
+min04:0x020F1601	Maak er puin van!
+min04:0x020F1602	Sla alles kapot!
+min04:0x020F1603	Verpletter ze!
+min04:0x020F1700	Scheur ze open!
+min04:0x020F1701	Sla hun stad kapot!
+min04:0x020F1702	We zijn binnen! Dood ze nu!
+min04:0x020F1703	Dood ze hier!
+min04:0x020F1704	Dood aan jullie allemaal!
+min04:0x020F1800	Minas Tirith staat in vlammen!
+min04:0x30000000	Hier houden we stand!
+min04:0x30000001	De vijand slacht je volk af! We moeten iedereen redden die we kunnen!
+min04:0x30000002	Dood ze hier!
+min04:0x30000003	Terugtrekken!
+min04:0x30000004	Deze strijd is voorbij.
+min04:0x30000005	Vlucht naar de binnenmuren!
+min04:0x30000006	Dood aan jullie allemaal!
+min04:0x30000007	Hier houden we stand!
+min04:0x30000008	De vijand slacht je volk af! We moeten iedereen redden die we kunnen!
+min04:0x30000009	Dood ze hier!
+min04:0x3000000A	Terugtrekken!
+min04:0x3000000B	Deze strijd is voorbij.
+min04:0x3000000C	Vlucht naar de binnenmuren!
+min04:0x3000000D	Dood aan jullie allemaal!
+osg01:0x02120000	Pak deze!
+osg01:0x02120001	Op ze af!
+osg01:0x02120002	Ik heb hem!
+osg01:0x02120003	Hij zal vallen!
+osg01:0x02120100	Pak die zwakkelingen!
+osg01:0x02120101	Daar komen ze!
+osg01:0x02120102	Daar komen ze!
+osg01:0x02120103	Sterf!!
+osg01:0x02120200	Spionnen uit Gondor! Pak ze!
+osg01:0x02120300	Makkelijke prooi, jongens!
+osg01:0x02150000	Zie je! Zie je waar hij ons in heeft gestort!
+osg01:0x02150001	Zie je! Zie je waar hij ons in heeft gestort!
+osg01:0x02150100	Voorzichtig! Hij brengt ons midden in een veldslag!
+osg01:0x02150101	Voorzichtig! Hij brengt ons midden in een veldslag!
+osg01:0x02150200	We moeten van deze daken af!
+osg01:0x02150201	We moeten van deze daken af!
+osg01:0x02150300	Doodlopend! Mooie gids ben jij!
+osg01:0x02150301	Doodlopend! Mooie gids ben jij!
+osg01:0x02150400	Het staat hier onder water!
+osg01:0x02150401	Het staat hier onder water!
+osg01:0x02150500	Doorlopen!
+osg01:0x02150501	Doorlopen!
+osg01:0x02150502	Doorlopen, meneer Frodo!
+osg01:0x02150503	Doorlopen, meneer Frodo!
+osg01:0x02150600	Het is ons gelukt!
+osg01:0x02150601	Het is ons gelukt!
+osg01:0x02160000	Ze hebben de Dikke gezien! Stomme Hobbit!
+osg01:0x02160001	Ze hebben de Dikke gezien! Stomme Hobbit!
+osg01:0x02160002	Ze hebben de Dikke gezien! Stomme Hobbit!
+osg01:0x02160100	Meester! Gemene Orksen hierboven!!
+osg01:0x02160101	Meester! Gemene Orksen hierboven!!
+osg01:0x02160200	Hierboven! We ruikt een weg!
+osg01:0x02160300	De Nazgûl komt terug!
+osg01:0x02160400	Gemene Geesten, altijd achter Meester aan!
+osg01:0x02160500	We vindt dit, ja, dat doet we. Nu naar beneden!
+osg01:0x02160501	We vindt dit, ja, dat doet we. Nu naar beneden!
+osg01:0x02160502	We vindt dit, ja, dat doet we. Nu naar beneden!
+osg01:0x02160600	Sméagol laat het zien! Goeie Sméagol!
+osg01:0x02160601	Sméagol laat het zien! Goeie Sméagol!
+osg01:0x02160602	Sméagol laat het zien! Goeie Sméagol!
+osg01:0x02160603	Sméagol laat het zien! Goeie Sméagol!
+osg01:0x02160700	Snel! We moeten hier zo snel mogelijk doorheen!
+osg01:0x02160701	Snel! We moeten hier zo snel mogelijk doorheen!
+osg01:0x02160800	Hier! We vindt een weg naar binnen!!
+osg01:0x02160801	Hier! We vindt een weg naar binnen!!
+osg01:0x02160802	Hier! We vindt een weg naar binnen!!
+osg01:0x02160803	Hier! We vindt een weg naar binnen!!
+osg01:0x02160900	Zacht en snel als schaduwen moeten we zijn.
+osg01:0x02160901	Zacht en snel als schaduwen moeten we zijn.
+osg01:0x02160A00	Niet blijven! We laat ze ons zien! Omhoog! Omhoog!
+osg01:0x02160B00	Orkboogschutters!
+osg01:0x02160B01	Orkboogschutters!
+osg01:0x02160C00	Voorzichtig nu, of je voegt je bij de doden in deze nare stad.
+osg01:0x02160C01	Voorzichtig nu, of je voegt je bij de doden in deze nare stad.
+osg01:0x02160D00	We gaat niet terug! We gaat erdoorheen!
+osg01:0x02160D01	We gaat niet terug! We gaat erdoorheen!
+osg01:0x02160E00	Ja, o ja. We ruikt buiten.
+osg01:0x02160E01	Ja, o ja. We ruikt buiten.
+osg01:0x02160E02	Ja, o ja. We ruikt buiten.
+osg01:0x02160F00	Ze zoeken de Ring!!
+osg01:0x02161000	Vreselijk! Vreselijk! Laat ze je niet zien!
+osg01:0x02161001	Vreselijk! Vreselijk! Laat ze je niet zien!
+osg01:0x02161002	Vreselijk! Vreselijk! Laat ze je niet zien!
+osg01:0x02161100	Hierin! Niet meer spelen! We moet nu weg!
+osg01:0x02161101	Hierin! Niet meer spelen! We moet nu weg!
+osg01:0x02161102	Hierin! Niet meer spelen! We moet nu weg!
+osg01:0x02161103	Nu naar binnen! Hobbits ontsnapt. Schat ontsnapt!
+osg01:0x02161104	Nu naar binnen! Hobbits ontsnapt. Schat ontsnapt!
+osg01:0x02161105	Nu naar binnen! Hobbits ontsnapt. Schat ontsnapt!
+osg01:0x02161200	Stomme Hobbits!
+osg01:0x02161201	Stomme Hobbits!
+osg01:0x02161300	Kom, Meester! Nu kan het alleen nog zo!
+osg01:0x02161301	Kom, Meester! Nu kan het alleen nog zo!
+osg01:0x02161302	Kom, Meester! Nu kan het alleen nog zo!
+osg01:0x02161303	Snel lopen!
+osg01:0x02161304	Snel lopen!
+osg01:0x02161305	Snel lopen!
+osg01:0x02161306	Niet ver meer!
+osg01:0x02161307	Niet ver meer!
+osg01:0x02161308	Niet ver meer!
+osg01:0x02161309	Niet ver meer!
+osg01:0x02161400	Gewoon doorlopen!!!
+osg01:0x02161500	Hij doet ons pijn! Hij doet arme Sméagol pijn!
+osg01:0x02161600	De Ring roept hem, Sam ... Het oog heeft me bijna gevonden...
+osg01:0x02161601	De Ring roept hem, Sam ... Het oog heeft me bijna gevonden...
+osg01:0x30000000	Meneer Frodo!  Bukken!
+osg01:0x30000001	Kom op, Hobbits! Nog een lange weg te gaan! Sméagol wijst jullie de weg ... volg mij!
+osg01:0x30000002	Frodo!
+osg01:0x30000003	Neeeee!
+osg01:0x30000004	Weg hier, snel nu!  Lieve Sméagol brengt ons weg!
+osg01:0x30000005	Snel, hobbitsen, snel!  Zie je?  Zie je?  We heeft jullie naar buiten geleid!
+osg01:0x30000006	Sméagol zorgt voor meester!
+osg01:0x30000007	Meneer Frodo!  Bukken!
+osg01:0x30000008	Kom op, Hobbits! Nog een lange weg te gaan! Sméagol wijst jullie de weg ... volg mij!
+osg01:0x30000009	Frodo!
+osg01:0x3000000A	Neeeee!
+osg01:0x3000000B	Weg hier, snel nu!  Lieve Sméagol brengt ons weg!
+osg01:0x3000000C	Snel, hobbitsen, snel!  Zie je?  Zie je?  We heeft jullie naar buiten geleid!
+osg01:0x3000000D	Sméagol zorgt voor meester!
+pal01:0x02010100	Ik zal de geest van je dienaren bevrijden en ze angst leren! Ik maak ze nutteloos voor je!
+pal01:0x02010200	Redeloos geweld zal je niet baten!
+pal01:0x02010300	Ik zal jullie schepsels vellen!
+pal01:0x02010400	Keer terug naar het niets dat je wacht!
+pal01:0x02010500	Zelfs de bezetenen moeten vallen!
+pal01:0x02010600	Je bent niet tegen me opgewassen, gebroed van Sauron!
+pal01:0x02010700	Terug naar jullie holen!
+pal01:0x02010800	Je rekt je einde alleen maar!
+pal01:0x02100000	Ik begrijp waarom Mensen deze plek vrezen!
+pal01:0x02100100	Weg met jou, redeloos beest!
+pal01:0x02100200	Ze verzamelen zich hier in groten getale!
+pal01:0x02100300	Je houdt me niet tegen.
+pal01:0x02100400	Terug, smerig ding!
+pal01:0x02100500	Weg met jou, redeloos beest!
+pal01:0x02100600	Je tijd is voorbij.
+pal01:0x02100700	Je zult me niet overtreffen!
+pal01:0x02120000	Ik denk dat ik de Elf voorbijstreef voordat dit voorbij is!
+pal01:0x02120001	Ik denk dat ik de Elf voorbijstreef voordat dit voorbij is!
+pal01:0x02120100	Deze moeten eerst een kopje kleiner gemaakt worden.
+pal01:0x02120200	Ik ben in tegenstelling tot jou getraind!
+pal01:0x02120300	Je kunt het nu beter opgeven!
+pal01:0x02120400	Ik zal je eens laten zien hoe het moet!
+pal01:0x02120500	Jij bent vast slecht gehumeurd!
+pal01:0x02120600	Jij bent een lelijke!
+pal01:0x02120700	Hier buig je voor mij!
+pal01:0x02130000	Wat voor kwade tovenarij is dit?!
+pal01:0x02130100	Terug, dienaren van de duisternis!
+pal01:0x02130200	Ik maak hier en nu een eind aan je kwaad!
+pal01:0x02130300	Terug, dienaren van de duisternis!
+pal01:0x02130400	Er komt geen eind aan!
+pal01:0x02130500	Als ik je moet vernietigen, dan zal ik dat doen!
+pal01:0x02130600	Boosaardig schepsel!
+pal01:0x02130700	Je kunt niet tegen me op!
+pal01:0x02140000	Ik weet niet of je van zo'n plek ooit terugkomt!
+pal01:0x02140001	Ik weet niet of je van zo'n plek ooit terugkomt!
+pal01:0x02140100	Mijn ouwe Gabber zou hier wel het een en ander over te zeggen hebben!
+pal01:0x02140200	Hier kan er maar één winnen!
+pal01:0x02140300	Wat is er nodig om van ze af te komen!!
+pal01:0x02140400	Ze blijven maar achter ons aan komen!
+pal01:0x02140500	Je kunt Sam de Dappere niet verslaan!
+pal01:0x02140600	Hier heb ik al mijn kracht voor nodig!
+pal01:0x02140700	Nou, Samwijs! Tijd om een held te zijn!
+pal01:0x02160000	Dit is een oeroude, kwade plek.
+pal01:0x02160100	Ik zal je laten zien wie er kan vechten!
+pal01:0x02160200	Sterf, monsters!
+pal01:0x02160300	Nu pak ik je!
+pal01:0x02160400	Het is een nieuw kwaad!
+pal01:0x02160500	Keer terug naar de schaduw!
+pal01:0x02160600	Neem het tegen me op als je durft!
+pal01:0x02160700	Je zult niet meer bestaan!
+pal01:0x02170000	Sauron, voor Gondor zal ik je onder ogen komen!
+pal01:0x02170100	Dit is een smerige, smerige plek!
+pal01:0x02170200	Sterf nu, schepsel uit de diepte!
+pal01:0x02170300	Er komt een nieuw kwaad aan!
+pal01:0x02170400	Zoek je soms de dood?
+pal01:0x02170500	Buig voor je meerdere!
+pal01:0x02170600	Ik zal je laten zien hoe je vecht!
+pal01:0x02170700	Je kunt dit niet winnen, hoor!
+pal01:0x02180000	Ik weet niet of het een goed idee was om hierheen te komen!
+pal01:0x02180100	Ik kan je nog verrassen!
+pal01:0x02180200	Ik ben misschien klein, maar ik ben taai!
+pal01:0x02180300	Oké ... laten we het maar achter de rug hebben!
+pal01:0x02180400	Kleine Gouwers komen je halen!
+pal01:0x02180500	Nu maak je me boos!
+pal01:0x02180600	Ik geloof dat ik hier aanleg voor heb.
+pal01:0x02180700	Hobbits zijn geen tussendoortje!
+pal01:0x02190000	O, wat gezellig: de eigen open haard van de Duistere Heer!
+pal01:0x02190100	Weinig Hobbits kunnen tegen mijn zwaardkunst op!
+pal01:0x02190200	Ik denk dat je de verkeerde Hobbit tegen het lijf bent gelopen!
+pal01:0x02190300	Ik denk dat ik de betere vechter ben!
+pal01:0x02190400	Ik kom uit een lang geslacht van krijgers!
+pal01:0x02190500	Dit verrast je vast!
+pal01:0x02190600	Het gaat me prima af, dank je!
+pal01:0x02190700	Het is duidelijk wie hier de vakman is!
+pat01:0x02010100	In oorlog moet veel gewaagd worden.
+pat01:0x020F0000	Kom, de doden dwalen rond op dit pad ... maar we moeten het tot het eind volgen.
+pat01:0x020F0100	Wees paraat! Deze geesten wekken oeroude botten tot leven!
+pat01:0x020F0101	Wees paraat! Deze geesten wekken oeroude botten tot leven!
+pat01:0x020F0102	Wees paraat! Deze geesten wekken oeroude botten tot leven!
+pat01:0x020F0200	Hak je een weg naar buiten!!
+pat01:0x020F0201	Hak je een weg naar buiten!!
+pat01:0x020F0300	Ze verzamelen zich hier in groten getale!
+pat01:0x020F0301	Ze verzamelen zich hier in groten getale!
+pat01:0x020F0400	Deze kant op! Snel!
+pat01:0x020F0401	Deze kant op! Snel!
+pat01:0x020F0500	Kijk uit! Blijf in beweging!
+pat01:0x020F0501	Kijk uit! Blijf in beweging!
+pat01:0x020F0600	Hoe groot het gevaar ook is, we moeten hier over!
+pat01:0x020F0601	Hoe groot het gevaar ook is, we moeten hier over!
+pat01:0x020F0700	Houd stand en vecht!
+pat01:0x020F0701	Houd stand en vecht!
+pat01:0x020F0800	We zijn dichtbij nu!
+pat01:0x020F0900	Hiermee kun je hem openen!
+pat01:0x020F0A00	Goed gevochten, mijn vrienden!
+pat01:0x020F0A01	We moeten verder!
+pat01:0x020F0A02	Ik begrijp waarom Mensen deze plek vrezen!
+pat01:0x020F0B00	Kom! We hebben hun betovering verbroken!
+pat01:0x020F0B01	Kom! We hebben hun betovering verbroken!
+pat01:0x02110000	Wat voor leger zou op zo'n plek blijven rondhangen?
+pat01:0x02110100	Ik kan een geest niets doen!
+pat01:0x02110200	Ik heb niet geleerd om de doden te doden!
+pat01:0x02110300	Het lijkt wel een val!
+pat01:0x02110400	We kunnen er niet langs!
+pat01:0x02110500	Dwergen zouden nooit zulke wankele dingen bouwen!
+pat01:0x02110600	Ik heb een heel slecht voorgevoel over deze plek ...
+pat01:0x02110700	We zitten hier als ratten in de val!
+pat01:0x02110800	Die klingen snijden, ook al zijn ze roestig!
+pat01:0x02110801	Die klingen snijden, ook al zijn ze roestig!
+pat01:0x02110900	Ik wilde HEN alleen maar bang maken!
+pat01:0x02110A00	Ik zou nu pareren, als ik jou was!
+pat01:0x02110A01	Ik zou nu pareren, als ik jou was!
+pat01:0x02110A02	Ik zou nu pareren, als ik jou was!
+pat01:0x02110A03	Pareer hun aanvallen!
+pat01:0x02110A04	Pareer hun aanvallen!
+pat01:0x02110B00	Deze Spookberg zit vol verrassingen!
+pat01:0x02110B01	Deze Spookberg zit vol verrassingen!
+pat01:0x02110C00	Heb je dan niets geleerd over de koppigheid van Dwergen?
+pat01:0x02110C01	Heb je dan niets geleerd over de koppigheid van Dwergen?
+pat01:0x02110C02	Heb je dan niets geleerd over de koppigheid van Dwergen?
+pat01:0x02110C03	Zelfs zij zijn nu bang voor een Dwerg!
+pat01:0x02110D00	Ze willen ons duidelijk niet binnen hebben!
+pat01:0x02110D01	Ze willen ons duidelijk niet binnen hebben!
+pat01:0x02110D02	Het is oud, maar het werkt nog!
+pat01:0x02110D03	Het is oud, maar het werkt nog!
+pat01:0x02110E00	Geen wonder dat niemand deze paden overleeft!
+pat01:0x02110E01	Geen wonder dat niemand deze paden overleeft!
+pat01:0x02110E02	Het lot lacht ons toe!!
+pat01:0x02110E03	Het lot lacht ons toe!!
+pat01:0x02110E04	Eindelijk ontsnapt!
+pat01:0x02120000	Ik vrees de doden niet.
+pat01:0x02120100	De geesten van de doden!
+pat01:0x02120200	Nog meer schimmen!
+pat01:0x02120300	Een nieuwe betovering!
+pat01:0x02120400	We zitten hier vast! We moeten snel een weg naar de overkant vinden...
+pat01:0x02120500	De schimmen zijn terug!
+pat01:0x02120600	Hoe komen we hier doorheen?
+pat01:0x02120700	Dit is een hoofdpoort!
+pat01:0x02120800	Hier verzamelen de doden zich. Het is een plek van groot kwaad.
+pat01:0x02120900	Er komt geen eind aan!!
+pat01:0x02120A00	Wees niet bang, Gimli. Dat past je niet.
+pat01:0x02120B00	Hun nevels kolken hier ook!
+pat01:0x02120C00	Daar komen ze!
+pat01:0x30000000	De weg is gesloten. Hij werd gemaakt door hen die dood zijn, en de doden bewaken hem. De weg is gesloten.
+pat01:0x30000001	Er hangt boosaardigheid in de lucht.
+pat01:0x30000002	Deze kant op!
+pat01:0x30000003	Elke weg is me nu best!
+pat01:0x30000004	De weg is gesloten. Hij werd gemaakt door hen die dood zijn, en de doden bewaken hem. De weg is gesloten.
+pat01:0x30000005	Er hangt boosaardigheid in de lucht.
+pat01:0x30000006	Deze kant op!
+pat01:0x30000007	Elke weg is me nu best!
+pat02:0x020C0000	Vergeten volk! Kom tot mij!
+pat02:0x020C0100	Niemand keert terug van mijn berg!
+pat02:0x020C0101	Jullie overleven deze weg niet!!
+pat02:0x020C0102	Kom tot mij, krijgsmakkers!
+pat02:0x020C0103	De weg is gesloten! Wij doden bewaken hem!
+pat02:0x020C0104	Ik roep jullie op uit de grijze schemering!
+pat02:0x020C0105	Uit de duisternis van de berg ... Kom!
+pat02:0x020D0000	Zelfs in de levende dood gehoorzamen ze!
+pat02:0x020D0100	... Herstel je eer! Als dit land van Sauron is gezuiverd, zul je vrede hebben en mogen gaan. Wat zeg je ervan!
+pat02:0x020D0200	Ik zal je verslaan!
+pat02:0x30000000	...waar een Koning van hen die lang dood zijn beslist over het lot van wie nog niet geboren is.
+pat02:0x30000001	Hij moet gedwongen worden zich over te geven.
+pat02:0x30000002	Wie betreedt mijn rijk???
+pat02:0x30000003	Iemand die je aan je eed wil houden!
+pat02:0x30000004	De doden laten de levenden niet passeren!
+pat02:0x30000005	Wind van de berg ... ik beveel je!
+pat02:0x30000006	Vecht voor mij en ik verlos je van deze levende dood! Wat zeg je ervan!
+pat02:0x30000007	Ik geef me ooovvveeer!!++++++
+pat02:0x30000008	We moeten hier weg!!!
+pat02:0x30000009	Wind van de berg ... ik beveel je!
+pat02:0x3000000A	Wind van de berg ... ik beveel je!
+pat02:0x3000000B	...waar een Koning van hen die lang dood zijn beslist over het lot van wie nog niet geboren is.
+pat02:0x3000000C	Hij moet gedwongen worden zich over te geven.
+pat02:0x3000000D	Wie betreedt mijn rijk???
+pat02:0x3000000E	Iemand die je aan je eed wil houden!
+pat02:0x3000000F	De doden laten de levenden niet passeren!
+pat02:0x30000010	Wind van de berg ... ik beveel je!
+pat02:0x30000011	Vecht voor mij en ik verlos je van deze levende dood! Wat zeg je ervan!
+pat02:0x30000012	Ik geef me ooovvveeer!!++++++
+pat02:0x30000013	We moeten hier weg!!!
+pat02:0x30000014	Wind van de berg ... ik beveel je!
+pat02:0x30000015	Wind van de berg ... ik beveel je!
+pat03:0x020C0000	Snel! Alles stort in!
+pat03:0x020C0100	Alles stort in! Snel!!!
+pat03:0x020C0200	De doden zijn er nog!
+pat03:0x020C0201	De doden zijn er nog!
+pat03:0x020E0000	We zitten hier vast!
+pat03:0x020E0100	Sluwe kleine spookjes!
+pat03:0x020E0101	Ik laat me nu niet meer tegenhouden!
+pat03:0x020F0000	Het is versperd!!!
+pat03:0x020F0100	We moeten eruit!
+pat03:0x30000000	Hebben we gefaald?
+pat03:0x30000001	De doden zullen vechten wanneer jullie volk het dichtst bij ons is!
+pat03:0x30000002	Hebben we gefaald?
+pat03:0x30000003	De doden zullen vechten wanneer jullie volk het dichtst bij ons is!
+pel02:0x02100000	Drijf ze terug!
+pel02:0x02100100	We mogen de Rohirrim niet laten vernietigen!
+pel02:0x02100200	Mûmakil klaar voor de aanval!
+pel02:0x02100300	Vuur dat af! Haal ze neer!
+pel02:0x02100400	Keer hun werktuigen tegen ze!
+pel02:0x02100500	Verdrijf ze! Snel!
+pel02:0x02100600	Maak je klaar! Ze sturen versterkingen!
+pel02:0x02110000	Mannen van het Oosten! Voorwaarts!
+pel02:0x02110001	Ten aanval, mannen van het Oosten!
+pel02:0x02110002	Laat het leger los!
+pel02:0x02110003	Voorwaarts, Oosterlingen!
+pel02:0x02110100	Toon geen genade!
+pel02:0x02110101	Slacht ze allemaal af!
+pel02:0x02110102	Hergroeperen!
+pel02:0x02110103	Hergroepeer het voetvolk!
+pel02:0x02110200	Ja! Dood is onze naam!
+pel02:0x02110201	Ze zijn zwak!
+pel02:0x02110202	Ja! Vernietig ze!
+pel02:0x02110300	Laat je niet tegenhouden!
+pel02:0x02110301	Hak ze neer!
+pel02:0x02110302	Pak ze allemaal!
+pel02:0x02110303	Laat niemand in leven!
+pel02:0x02110400	Mûmakil! Voorwaarts!
+pel02:0x02110401	Verpletter ze allemaal!
+pel02:0x02110402	Voorwaarts, mannen van Harad!
+pel02:0x02110403	Vernietig ze allemaal!
+pel02:0x02110404	Laat niemand in leven!
+pel02:0x02110405	Veeg ze van het veld!
+pel02:0x02110500	De Mûmakil komen weer!
+pel02:0x02120000	Het lijkt erop dat ze ons omsingelen!
+pel02:0x02120100	Het zijn maar twee legers. Waar maak je je zorgen over?
+pel02:0x02120200	Dan moeten we maar eens iets aan deze kerels doen!
+pel02:0x02120300	Ik geloof dat ze er nog een paar bij hebben gehaald!
+pel02:0x02120400	Nu heb je hem volgens mij boos gemaakt!
+pel02:0x02120500	Ze zullen allemaal vertrapt worden!
+pel02:0x02120600	Ik zou maar oppassen voor zijn voeten!
+pel02:0x02120700	We zullen ons een weg naar boven moeten vechten!
+pel02:0x02130000	We hebben niet genoeg mannen!
+pel02:0x02130100	De Rohirrim lijden zware verliezen!
+pel02:0x02130200	De Rohirrim lijden zware verliezen!
+pel02:0x02130201	De Rohirrim worden bijna afgeslacht!
+pel02:0x02160000	Help me!
+pel02:0x02160100	Hierheen!
+pel02:0x02160200	Nee!! Blijf weg!
+pel02:0x30000000	Daar komen ze!
+pel02:0x30000001	Oosterlingen!
+pel02:0x30000002	Orks!
+pel02:0x30000003	Pak ze allemaal!
+pel02:0x30000004	De Mûmakil vernietigen alles op hun pad! Houd ze tegen voordat ze Éowyn en Merijn bereiken!
+pel02:0x30000005	Vrouwe, ik laat u niet achter!
+pel02:0x30000006	Ze moeten gered worden!
+pel02:0x30000007	Merijn!
+pel02:0x30000008	Zielige krijger!
+pel02:0x30000009	Ik dood je als je hem aanraakt!
+pel02:0x3000000A	Mij doden? Gij dwaas. Geen levende man kan mij doden!
+pel02:0x3000000B	Ik ben geen man! Je kijkt naar een vrouw!
+pel02:0x3000000C	Ik heb geen bijl die groot genoeg is voor deze!
+pel02:0x3000000D	Zie! De Doden zijn gekomen ... om de levenden te redden!
+pel02:0x3000000E	Te laat!
+pel02:0x3000000F	We hebben gefaald!
+pel02:0x30000010	Help ze!
+pel02:0x30000011	Houd dat beest tegen!
+pel02:0x30000012	De Heksenkoning cirkelt boven ons!
+pel02:0x30000013	Val hem aan! Snel!
+pel02:0x30000014	De Mûmakil komen weer!
+pel02:0x30000015	Daar komen ze!
+pel02:0x30000016	Oosterlingen!
+pel02:0x30000017	Orks!
+pel02:0x30000018	Pak ze allemaal!
+pel02:0x30000019	De Mûmakil vernietigen alles op hun pad! Houd ze tegen voordat ze Éowyn en Merijn bereiken!
+pel02:0x3000001A	Vrouwe, ik laat u niet achter!
+pel02:0x3000001B	Ze moeten gered worden!
+pel02:0x3000001C	Merijn!
+pel02:0x3000001D	Zielige krijger!
+pel02:0x3000001E	Ik dood je als je hem aanraakt!
+pel02:0x3000001F	Mij doden? Gij dwaas. Geen levende man kan mij doden!
+pel02:0x30000020	Ik ben geen man! Je kijkt naar een vrouw!
+pel02:0x30000021	Ik heb geen bijl die groot genoeg is voor deze!
+pel02:0x30000022	Zie! De Doden zijn gekomen ... om de levenden te redden!
+pel02:0x30000023	Te laat!
+pel02:0x30000024	We hebben gefaald!
+pel02:0x30000025	Help ze!
+pel02:0x30000026	Houd dat beest tegen!
+pel02:0x30000027	De Heksenkoning cirkelt boven ons!
+pel02:0x30000028	Val hem aan! Snel!
+pel02:0x30000029	De Mûmakil komen weer!
+she01:0x020C0000	Help me!
+she01:0x020C0001	Terug! !
+she01:0x020C0002	Terug! !
+she01:0x020C0200	Hé! Wat is dat?!
+she01:0x020C0201	Hé! Wat is dat?!
+she01:0x020C0300	We hebben een indringer! Pak hem, jongens!
+she01:0x020C0400	Het is maar een klein onderdeurtje!
+she01:0x020C0500	Steek hem neer!
+she01:0x020C0501	Steek hem neer!
+she01:0x020C0700	Wat hebben we hier?!!
+she01:0x020C0800	Ons besluipen, hè? Pak hem!
+she01:0x020C0900	Hebbes! Klein tuig!
+she01:0x020C0A00	Daar is hij!
+she01:0x020C0B00	Pak hem!
+she01:0x020F0000	Oké, Samwijs. Meneer Frodo rekent erop dat je hem redt. Wat er ook gebeurt.
+she01:0x020F0001	Oké, Samwijs. Meneer Frodo rekent erop dat je hem redt. Wat er ook gebeurt.
+she01:0x020F0100	Spin!
+she01:0x020F0200	Als je het zo wilt!!!
+she01:0x020F0201	Als je het zo wilt!!!
+she01:0x020F0300	Samwijs Gewissies... waar heb je je nu weer in gewerkt?!
+she01:0x020F0301	Samwijs Gewissies... waar heb je je nu weer in gewerkt?!
+she01:0x020F0302	Samwijs Gewissies... waar heb je je nu weer in gewerkt?!
+she01:0x020F0400	Frodo!
+she01:0x020F0401	Hij moet gered worden!
+she01:0x020F0402	Hij moet gered worden!
+she01:0x020F0403	Hou vol, meneer Frodo!
+she01:0x020F0404	Hou vol, meneer Frodo!
+she01:0x020F0405	Sneller, Samwijs! Sneller!
+she01:0x020F0406	Sneller, Samwijs! Sneller!
+she01:0x020F0407	Kom op, je kunt het, Sam! Jawel!
+she01:0x020F0408	Kom op, je kunt het, Sam! Jawel!
+she01:0x020F0409	Hou je vast! Ik kom eraan!
+she01:0x020F040A	Hou je vast! Ik kom eraan!
+she01:0x020F040B	Hou vol, meneer Frodo! Ik kom eraan!
+she01:0x020F040C	Hou vol, meneer Frodo! Ik kom eraan!
+she01:0x020F040D	Ik ben hier, meneer Frodo!!
+she01:0x020F040E	Ik ben hier, meneer Frodo!!
+she01:0x020F040F	Meneer Frodo! Waar bent u?!
+she01:0x020F0410	Meneer Frodo! Waar bent u?!
+she01:0x020F0411	Geen tijd te verliezen!
+she01:0x020F0412	Geen tijd te verliezen!
+she01:0x020F0413	Ik ben hier, meneer Frodo! Ik ben hier!
+she01:0x020F0414	Ik ben hier, meneer Frodo! Ik ben hier!
+she01:0x020F0415	Je bent gek, Samwijs Gewissies ... Dat weet je toch!
+she01:0x020F0416	Je bent gek, Samwijs Gewissies ... Dat weet je toch!
+she01:0x020F0417	Frodo!
+she01:0x020F0500	Jij houdt me niet tegen!
+she01:0x020F0501	Jij houdt me helemaal niet tegen!
+she01:0x020F0502	Kom op, Samwijs! Laat meneer Frodo niet in de steek!
+she01:0x020F0600	Ik laat me nu echt niet door jou tegenhouden!!
+she01:0x020F0700	Niet zo makkelijk als je denkt!
+she01:0x020F0701	Niet zo makkelijk als je denkt!
+she01:0x020F0702	Daar ga je!!
+she01:0x020F0703	Daar ga je!!
+she01:0x020F0704	Nee!!!
+she01:0x020F0705	Vooruit! Ga gewoon weg!!!
+she01:0x020F0706	Doorgaan, Samwijs! Ze geven het gewoon niet op!
+she01:0x020F0707	Doorgaan, Samwijs! Ze geven het gewoon niet op!
+she01:0x020F0800	Uit de weg!
+she01:0x020F0801	Uit de weg!
+she01:0x020F0900	Ga uit de weg!!
+she01:0x020F0901	Ga uit de weg!!
+she01:0x020F0902	Terug! Terug!!
+she01:0x020F0903	Terug! Terug!!
+she01:0x020F0904	O nee, dat doe je niet!
+she01:0x020F0A00	Wat is er nodig om van ze af te komen!!
+she01:0x020F0B00	Ik moet er op de een of andere manier omheen!
+she01:0x020F0C00	Ik ben hier, meneer Frodo! Ik ben hier!
+she01:0x020F0D00	Daar kan ik niet langs sluipen!!
+she01:0x020F0D01	Daar kan ik niet langs sluipen!!
+she01:0x020F0E00	Maar hiermee lukt het misschien ...
+she01:0x020F0F00	Wegwezen, kleine monsters!
+she01:0x020F0F01	Wegwezen, kleine monsters!
+she01:0x020F1000	Terug, ellendige beesten!
+she01:0x020F1001	Terug, ellendige beesten!
+she01:0x020F1002	Terug, ellendige beesten!
+she01:0x020F1100	Daar moet ik naartoe...
+she01:0x020F1200	Kom op, smeerlap!
+she01:0x020F1300	Jij raakt hem nooit meer aan!
+she01:0x020F1400	Zo is dat!
+she01:0x020F1500	Ik ben het die je moet hebben!
+she01:0x020F1600	... en ik ga jou ook te grazen nemen!
+she01:0x020F1700	Het maakt niet uit ...
+she01:0x020F1800	... hoe groot je bent!
+she01:0x020F1900	... Ik ga je hakken ...
+she01:0x020F1A00	... en snijden ...
+she01:0x020F1B00	... tot je ...
+she01:0x020F1C00	... hem loslaat!!!!!
+she01:0x020F1D00	Ik heb je kinderen geplet ...
+she01:0x020F1E00	Kom op en maak het af!
+she01:0x020F1F00	Kom op!
+she01:0x020F2000	Jij en ik!
+she01:0x020F2100	Nog één keer!
+she01:0x020F2200	Voor meneer Frodo!!!!!
+she01:0x020F2300	Red me! Ze zijn overal!
+she01:0x02100000	Help, help Sam, alsjeblieft!
+she01:0x02100001	Help, help Sam, alsjeblieft!
+she01:0x02100100	O, Sam! Vind me, alsjeblieft!
+she01:0x02100101	O, Sam! Vind me, alsjeblieft!
+she01:0x02100200	Sam!
+she01:0x02100201	Help me!
+she01:0x02100202	Hierheen!
+she01:0x02100203	Hellup! Hellup!
+she01:0x02100204	O, Sam! Vind me, alsjeblieft!
+she01:0x02100205	O, Sam! Vind me, alsjeblieft!
+she01:0x02100206	Hallo! Is daar iemand?!
+she01:0x02100207	Hallo! Is daar iemand?!
+she01:0x02100208	Sméagol! Waar ben je?!
+she01:0x02100209	Hij heeft ons in de val gelokt!
+she01:0x0210020A	Sam, help me!
+she01:0x0210020B	Sam, help me!
+she01:0x0210020C	O neee! Ga weg!
+she01:0x0210020D	Sméagol?! Sam?!
+she01:0x0210020E	Hellup!!
+she01:0x0210020F	O, neeeeee!!
+she01:0x02100210	O, neeeeee!!
+she01:0x02100211	O, neeeeee!!
+she01:0x02100212	O, neeeeee!!
+she01:0x02100213	Help, help Sam, alsjeblieft!
+she01:0x02100214	Help, help Sam, alsjeblieft!
+she01:0x02100215	Teruggg!!!
+she01:0x02100216	Teruggg!!!
+she01:0x02100217	Sam!
+she01:0x02100218	Sam!
+she01:0x02100219	Help! Help!
+she01:0x0210021A	Sam!
+she01:0x02100300	Help me, Sam!
+she01:0x02100301	Help me, Sam!
+she01:0x02100302	Help me!
+she01:0x02100303	Help me!
+she01:0x02100400	Aiya Earendil Elenion Ancalima!
+she01:0x02100401	Aiya Earendil Elenion Ancalima!
+she01:0x02100500	Blijf bij me vandaan!
+she01:0x02100600	O, Sam! Vind me, alsjeblieft!
+she01:0x02100700	Terug!
+she01:0x02100701	Terug!
+she01:0x02100702	Aiya Earendil Elenion Ancalima!
+she01:0x02100703	Aiya Earendil Elenion Ancalima!
+she01:0x02100704	O neee! Ga weg!
+she01:0x02100705	O neee! Ga weg!
+she01:0x02100706	Blijf bij me vandaan!
+she01:0x02100707	Blijf bij me vandaan!
+she01:0x02100800	Hellup!!
+she01:0x30000000	Toch blijft er altijd hoop.
+she01:0x30000001	Sam ... Sam!
+she01:0x30000002	Neeeee!
+she01:0x30000003	Je kunt me niet tegenhouden!
+she01:0x30000004	Kom terug, jij! Ik ben nog niet klaar ... !!
+she01:0x30000005	Meneer Frodo!
+she01:0x30000006	Ik ben het, Sam! Word wakker!
+she01:0x30000007	Niet in slaap ... dood.
+she01:0x30000008	Zo te zien heeft ouwe Shelob zich vermaakt!
+she01:0x30000009	Dat kleine tuig wordt wakker ... en wenst dat hij nooit geboren was!
+she01:0x3000000A	Breng hem terug naar het fort!
+she01:0x3000000B	Toch blijft er altijd hoop.
+she01:0x3000000C	Sam ... Sam!
+she01:0x3000000D	Neeeee!
+she01:0x3000000E	Je kunt me niet tegenhouden!
+she01:0x3000000F	Kom terug, jij! Ik ben nog niet klaar ... !!
+she01:0x30000010	Meneer Frodo!
+she01:0x30000011	Ik ben het, Sam! Word wakker!
+she01:0x30000012	Niet in slaap ... dood.
+she01:0x30000013	Zo te zien heeft ouwe Shelob zich vermaakt!
+she01:0x30000014	Dat kleine tuig wordt wakker ... en wenst dat hij nooit geboren was!
+she01:0x30000015	Breng hem terug naar het fort!

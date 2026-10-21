@@ -2,6 +2,7 @@
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
+#include <map>
 #include <shlobj.h>
 #include <shellapi.h>
 #include <shobjidl.h>
@@ -18,6 +19,10 @@
 
 // sharpText: the Xbox version's sharper text and menus (the PC version's fonts and pictures), on past Original
 struct PresetValues { int msaa; int aniso; float lod; int sharpen; int shadows; bool charHigh; int sfx; bool sharpText; };
+const char *const k_subtitleCodes[10] = { "off", "de", "fr", "es", "it", "pt", "pl", "nl", "sv", "ru" };
+const char *const k_subtitleNames[10] = { "Off", "Deutsch", "Fran\xC3\xA7" "ais", "Espa\xC3\xB1" "ol", "Italiano", "Portugu\xC3\xAA" "s (Brasil)",
+                                          "Polski", "Nederlands", "Svenska", "\xD0\xA0\xD1\x83\xD1\x81\xD1\x81\xD0\xBA\xD0\xB8\xD0\xB9" };
+
 static const PresetValues k_presets[4] = {
     /* Original */ { 0,  0,  0.0f,  0, 2, true, 2, false },
     /* Balanced */ { 2,  8,  0.0f, 40, 2, true, 2, true },
@@ -192,11 +197,22 @@ std::string ansi_path(const wchar_t *w)
 
 std::string exe_dir()
 {
-    char p[MAX_PATH];
-    DWORD n = GetModuleFileNameA(NULL, p, MAX_PATH);
-    std::string s(p, n);
-    size_t k = s.find_last_of("\\/");
-    return k == std::string::npos ? "." : s.substr(0, k);
+    // the wide name, so a folder whose name the code page can't hold (a Cyrillic user name on English Windows, say)
+    // comes back as its short name instead of with question marks in it
+    static const std::string cached = [] {
+        std::string s;
+        wchar_t w[MAX_PATH * 2];
+        DWORD wn = GetModuleFileNameW(NULL, w, MAX_PATH * 2);
+        if (wn > 0 && wn < MAX_PATH * 2) s = ansi_path(w);
+        if (s.empty()) {
+            char p[MAX_PATH];
+            DWORD n = GetModuleFileNameA(NULL, p, MAX_PATH);
+            s.assign(p, n);
+        }
+        size_t k = s.find_last_of("\\/");
+        return k == std::string::npos ? std::string(".") : s.substr(0, k);
+    }();
+    return cached;
 }
 
 static std::string documents_dir()
@@ -373,6 +389,13 @@ bool load_settings(const std::string &dir, Settings &s)
     s.enemyDamage = clampi(geti(ini, "Gameplay", "EnemyDamage", 100), 10, 500);
     s.unlockAll = geti(ini, "Gameplay", "UnlockAll", 0) != 0;
     s.allHeroes = geti(ini, "Gameplay", "AllHeroes", 0) != 0;
+    s.eowyn = geti(ini, "Gameplay", "Eowyn", 0) != 0;
+    {
+        std::string w = trim(gets(ini, "Language", "Subtitles", "off"));
+        for (char &c : w) c = (char)tolower((unsigned char)c);
+        s.subLang = 0;
+        for (int i = 0; i < 10; i++) if (w == k_subtitleCodes[i]) s.subLang = i;
+    }
     s.achNotify = geti(ini, "Achievements", "Notify", 1) != 0;
     s.discord = geti(ini, "Discord", "Enabled", 0) != 0;
     s.pauseBg = geti(ini, "Window", "PauseInBackground", 0) != 0;
@@ -543,12 +566,16 @@ static const std::vector<IniSection> &ini_layout()
             { "EnemyDamage", "100", "Damage your hits do to enemies, % of the game's (10-500)" },
             { "UnlockAll", "0", "1 = every level and character can be chosen" },
             { "AllHeroes", "0", "Xbox version: 1 = every hero on the character select of a level you've completed" },
+            { "Eowyn", "0", "Xbox version: 1 = Eowyn instead of Faramir (character select, HUD, levels)" },
         } },
         { "Cheats", "Cheats: the game's own secret codes (Xbox version)", {
             { "Invulnerable", "0", "1 = enemies can't hurt you" },
             { "InfiniteMissiles", "0", "1 = arrows and throwing weapons never run out" },
             { "AlwaysDevastating", "0", "1 = every attack is a devastating one" },
             { "PerfectMode", "0", "1 = the game's Perfect Mode code" },
+        } },
+        { "Language", "Translation subtitles (Xbox version)", {
+            { "Subtitles", "off", "off, de, fr, es, it, pt, pl, nl, sv, ru: the game's text and spoken lines translated at the bottom of the screen" },
         } },
         { "Achievements", "Achievements (both versions; the list is in ROTKFix\\achievements.txt)", {
             { "Notify", "1", "1 = a note in the corner when you earn one" },
@@ -580,6 +607,9 @@ static const std::vector<IniSection> &ini_layout()
         } },
         { "Extras", "Extras", {
             { "DeveloperButtons", "0", "1 = show the hidden developer menu buttons (testing)" },
+        } },
+        { "System", "Windows on ARM (Xbox version)", {
+            { "OneCore", "0", "1 = the game's threads take turns on one processor core, as on the Xbox (try it if the game crashes at random)" },
         } },
         { "Log", "Log (ROTKFix.log)", {
             { "Enabled", "1", nullptr },
@@ -696,6 +726,8 @@ static bool write_rotkfix_ini(const std::string &p, const Settings &s, bool crea
     set("Gameplay", "EnemyDamage", std::to_string(s.enemyDamage));
     set("Gameplay", "UnlockAll", std::to_string((int)s.unlockAll));
     set("Gameplay", "AllHeroes", std::to_string((int)s.allHeroes));
+    set("Gameplay", "Eowyn", std::to_string((int)s.eowyn));
+    set("Language", "Subtitles", k_subtitleCodes[s.subLang >= 0 && s.subLang < 10 ? s.subLang : 0]);
     set("Achievements", "Notify", std::to_string((int)s.achNotify));
     // [Discord] Enabled is written once the games' Discord applications exist (k_discordReady in main.cpp)
     set("Window", "PauseInBackground", std::to_string((int)s.pauseBg));
@@ -782,6 +814,7 @@ static bool write_rotkfix_ini(const std::string &p, const Settings &s, bool crea
 int pick_refresh(const std::vector<int> &hz, int fps)
 {
     if (hz.empty()) return 0;
+    if (fps <= 0) return hz.back();   // a frame rate edited by hand to 0 or a word
     for (int h : hz) if (h == fps) return h;
     for (int h : hz) if (h > fps && h % fps == 0) return h;
     return hz.back();
@@ -1035,9 +1068,41 @@ bool uninstall(const std::string &dir, std::vector<std::string> &done, std::stri
         done.push_back("Removed SDL3.dll");
     for (const char *f : { "ROTKFix.ini", "ROTKFix.log", LAUNCHER_EXE_OLD })
         if (file_exists(dir + "\\" + f) && DeleteFileA((dir + "\\" + f).c_str())) done.push_back(std::string("Removed ") + f);
-    if (GetFileAttributesA((dir + "\\ROTKFix").c_str()) != INVALID_FILE_ATTRIBUTES) {
-        if (delete_tree(dir + "\\ROTKFix")) done.push_back("Removed the ROTKFix folder");
-        else done.push_back("Could not remove the ROTKFix folder completely");
+    // the ROTKFix folder, but not what is the player's: the achievements earned and texture packs (textures\\replace,
+    // and textures\\dump, made by the player); with those the folder stays, holding only them
+    std::string fixDir = dir + "\\ROTKFix";
+    if (GetFileAttributesA(fixDir.c_str()) != INVALID_FILE_ATTRIBUTES) {
+        auto has_files = [](const std::string &d) {
+            WIN32_FIND_DATAA fd; HANDLE h = FindFirstFileA((d + "\\*").c_str(), &fd);
+            if (h == INVALID_HANDLE_VALUE) return false;
+            bool any = false;
+            do any = any || (strcmp(fd.cFileName, ".") && strcmp(fd.cFileName, "..")); while (!any && FindNextFileA(h, &fd));
+            FindClose(h);
+            return any;
+        };
+        bool keepAch = file_exists(fixDir + "\\achievements.txt");
+        bool keepTex = has_files(fixDir + "\\textures\\replace") || has_files(fixDir + "\\textures\\dump");
+        bool ok = true;
+        if (!keepAch && !keepTex) ok = delete_tree(fixDir);
+        else {
+            WIN32_FIND_DATAA fd; HANDLE h = FindFirstFileA((fixDir + "\\*").c_str(), &fd);
+            if (h != INVALID_HANDLE_VALUE) {
+                do {
+                    std::string n = fd.cFileName;
+                    if (n == "." || n == ".." || (keepAch && !_stricmp(n.c_str(), "achievements.txt")) ||
+                        (keepTex && !_stricmp(n.c_str(), "textures")))
+                        continue;
+                    std::string f = fixDir + "\\" + n;
+                    ok &= (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? delete_tree(f) : DeleteFileA(f.c_str()) != 0;
+                } while (FindNextFileA(h, &fd));
+                FindClose(h);
+            }
+        }
+        if (!ok) done.push_back("Could not remove the ROTKFix folder completely");
+        else if (keepAch || keepTex)
+            done.push_back(std::string("Removed the ROTKFix folder, keeping your ") +
+                           (keepAch && keepTex ? "achievements and texture packs" : keepAch ? "achievements" : "texture packs"));
+        else done.push_back("Removed the ROTKFix folder");
     }
 
     // 5. Under Wine/Proton: the per-program DLL settings PLAY wrote for rotk.exe
@@ -1307,6 +1372,30 @@ bool fix_outdated(const std::string &dir)
         if (!read_file(dir + "\\" + f, b) || a != b) return true;
     }
     return false;
+}
+
+// The version a ROTK Fix DLL reports in its log's first line ("ROTK Fix 1.1.2 loaded"), "" when unreadable: what
+// the launcher carries and what a game folder has, so an old copy shows instead of being installed quietly
+std::string fix_dll_version(const std::string &dll)
+{
+    // asked every frame by the About tab: read again only when the file changes
+    struct Seen { FILETIME t; std::string v; };
+    static std::map<std::string, Seen> seen;
+    WIN32_FILE_ATTRIBUTE_DATA fa;
+    if (!GetFileAttributesExA(dll.c_str(), GetFileExInfoStandard, &fa)) return "";
+    auto it = seen.find(dll);
+    if (it != seen.end() && CompareFileTime(&it->second.t, &fa.ftLastWriteTime) == 0) return it->second.v;
+    Seen &s = seen[dll];
+    s.t = fa.ftLastWriteTime;
+    s.v.clear();
+    std::string d;
+    if (!read_file(dll, d)) return "";
+    static const char key[] = "ROTK Fix ";
+    for (size_t at = d.find(key); at != std::string::npos; at = d.find(key, at + 1)) {
+        size_t v = at + sizeof key - 1, e = d.find(" loaded", v);
+        if (e != std::string::npos && e > v && e - v < 24) return s.v = d.substr(v, e - v);
+    }
+    return "";
 }
 
 bool folder_writable(const std::string &dir)

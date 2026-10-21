@@ -137,6 +137,22 @@ int32_t PulseEvent(Object& o);
 int32_t ReleaseSemaphore(Object& o, int32_t count, uint32_t& status);
 int32_t ReleaseMutant(Object& o, uint32_t& status);
 int64_t Now100ns();                           // system time, 100 ns since 1601
+void HostTimeZone(uint8_t* user);             // the PC's time zone into the EEPROM's user settings (timezone.cpp)
+// what the game's threads did since the last TakeFrameWork (frame_work.cpp), for the renderer's hitch lines
+struct FrameWork {
+    int64_t read_ns = 0, wait_ns = 0, sleep_ns = 0;
+    uint64_t reads = 0, read_bytes = 0;
+};
+int64_t WorkNow();                                                      // steady nanoseconds
+void CountRead(int64_t ns, uint32_t bytes, const std::string& name);   // a file read (NtReadFile and scatter)
+void CountWait(int64_t ns);                                             // a wait on objects
+void CountSleep(int64_t ns);                                            // KeDelayExecutionThread
+// the game's thread that presents (d3d8's swap), whose work the hitch lines call the game thread's; the renderer's
+// own thread presents for it with the render thread on, so it is marked there and not where the work is taken
+void MarkFrameThread();
+// called once a frame by the renderer: the game thread's work and every other thread's since the last call, and the
+// slowest read (its file) among them
+void TakeFrameWork(FrameWork& mine, FrameWork& others, std::string& slowest, double& slowest_ms);
 // the guest's own clock, steady nanoseconds that stand still while the game is paused (app::Paused): the interrupt
 // time, performance counter, tick count and vertical blanks follow it, so a pause is no jump in the game's time
 int64_t GuestNs();
@@ -195,6 +211,10 @@ bool DeleteSymbolicLink(const std::string& link);
 std::string QuerySymbolicLink(const std::string& link);
 std::string ResolvePath(const std::string& xbox_path, uint32_t root_handle);  // host path or empty
 bool ReadGameFile(const std::string& xbox_path, std::vector<uint8_t>& out);  // from a host folder or the disc image
+// A game file served from memory, read only, instead of the disc image or the folder: the provider is asked as each file
+// is opened, with its path as the game names it in lower case; null leaves the file as it is
+using FileData = std::shared_ptr<const std::vector<uint8_t>>;
+void SetFileProvider(FileData (*provider)(const std::string& xbox_path));
 
 // boot
 bool Boot(std::vector<uint8_t> xbe, const std::string& xbe_name, const std::string& game_dir, const std::string& data_dir);

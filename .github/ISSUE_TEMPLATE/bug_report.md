@@ -18,6 +18,8 @@ labels: bug
 <!-- Windows version, graphics card, controller if you use one -->
 
 **The log** (drag the file into this box)
+Easiest: in Athelas, About tab > "Make a problem report" makes one zip with the logs and settings (and fills
+in this page); drag that zip here. Or attach the log itself:
 - The Return of the King (PC): `ROTKFix.log` in the game folder
 - The Return of the King (Xbox): `ROTK-Xbox\rotkx.log` beside the launcher
 - The Two Towers: `TT-Xbox\tt.log` beside the launcher

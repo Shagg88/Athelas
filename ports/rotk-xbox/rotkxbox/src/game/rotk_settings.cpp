@@ -37,6 +37,8 @@ extern bool g_alpha_edges, g_hud_edges;          // rotk_widescreen.cpp
 extern bool g_second_controller;                 // rotk_controls.cpp
 extern bool g_unlock_all;                        // rotk_secrets.cpp
 extern bool g_all_heroes;                       // rotk_playas.cpp
+extern bool g_eowyn;                            // rotk_eowyn.cpp
+extern uint32_t g_subtitles;                    // rotk_lang.cpp
 extern bool g_cheat_invulnerable, g_cheat_missiles, g_cheat_devastating, g_cheat_perfect;  // rotk_cheats.cpp
 extern uint32_t g_damage_percent, g_enemy_damage_percent;  // rotk_secrets.cpp
 void LoadControls(const std::string* (*get)(void*, const char*, const char*), void* ctx);
@@ -201,6 +203,7 @@ void ApplyIni() {
     r.Bool("Graphics", "AlphaEdgeSmoothing", g_alpha_edges);
     r.Bool("Graphics", "HUDEdges", g_hud_edges);       // the Xbox port's own keys, for now
     r.Bool("System", "OneCore", s.one_core);          // Windows on ARM: the guest's threads on one core
+    r.Word("Language", "Subtitles", g_subtitles, {"off", "de", "fr", "es", "it", "pt", "pl", "nl", "sv", "ru"});
     r.Bool("Graphics", "SharperText", g_sharp_text);
     // the shared SDK's smooth menus: off under ROTK Fix (its own SharperText redraws the text and menu pictures)
     s.smooth_2d = false;
@@ -238,6 +241,8 @@ void ApplyIni() {
     r.Bool("Gameplay", "UnlockAll", g_unlock_all);
     // AllHeroes: every hero on the character select of a level already completed (rotk_playas.cpp)
     r.Bool("Gameplay", "AllHeroes", g_all_heroes);
+    // Eowyn: Éowyn in Faramir's place, on the character select and in the levels (rotk_eowyn.cpp)
+    r.Bool("Gameplay", "Eowyn", g_eowyn);
     // [Cheats]: the game's own secret codes that are switches (rotk_cheats.cpp)
     r.Bool("Cheats", "Invulnerable", g_cheat_invulnerable);
     r.Bool("Cheats", "InfiniteMissiles", g_cheat_missiles);

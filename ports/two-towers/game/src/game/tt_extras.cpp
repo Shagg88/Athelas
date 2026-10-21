@@ -18,20 +18,24 @@
 
 namespace tt {
 // the front end (title, main menu, the screens between levels) or a level, from the files the game opens: a world
-// (Worlds\*.bfa, .bfl, .bfg or .bfi, by the hero) starts a level; the front end's own screens (UI\*.BFF but loading pictures and options, which a
-// pause in a level may open too) end one. For the keyboard: Esc goes back in the front end's menus.
+// (Worlds\*.bfa, .bfl, .bfg or .bfi, by the hero) starts a level; the front end's own screens (UI\*.BFF but loading
+// pictures, options and the moves lists upgrade*/upgbig*, which a pause in a level opens too: Show Moves, #11) end
+// one. For the keyboard: Esc goes back in the front end's menus, and Enter or the left button presses Start as well
+// (the title's "press start", #8), so a pause taken for the front end paused again on every click.
 std::atomic<bool> g_front_end{true};
 void AchievementsFile(const std::string& lower_name);  // tt_achievements.cpp
+void GandalfWorld(const std::string& lower_name);      // tt_gandalf.cpp
 void FileOpened(const char* name) {
     std::string n = name;
     for (char& c : n) c = char(std::tolower(static_cast<unsigned char>(c)));
     AchievementsFile(n);
+    GandalfWorld(n);
     auto ends = [&](const char* e) { size_t k = std::strlen(e); return n.size() >= k && n.compare(n.size() - k, k, e) == 0; };
     bool was = g_front_end;
     if (n.find("\\worlds\\") != std::string::npos && (ends(".bfa") || ends(".bfl") || ends(".bfg") || ends(".bfi")))
         g_front_end = false;
     else if (n.find("\\ui\\") != std::string::npos && ends(".bff") && n.find("\\ui\\load") == std::string::npos &&
-             n.find("\\ui\\options") == std::string::npos)
+             n.find("\\ui\\options") == std::string::npos && n.find("\\ui\\upg") == std::string::npos)
         g_front_end = true;
     if (was != g_front_end) LOGI("tt: %s (%s)", g_front_end ? "front end" : "in a level", name);
 }

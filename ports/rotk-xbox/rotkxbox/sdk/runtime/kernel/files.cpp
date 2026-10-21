@@ -72,6 +72,7 @@ struct File : Object {
     std::string xbox;
     FILE* fp = nullptr;
     const Disc::Entry* entry = nullptr;  // on the disc image instead of a host path
+    FileData mem;                        // served from memory (SetFileProvider)
     bool dir = false;
     uint64_t pos = 0;
     std::vector<fs::directory_entry> entries;
@@ -310,6 +311,32 @@ void Missing(const std::string& name) {
                                     L" is missing. Copy the whole game again, or make a new disc image, and try again.");
 }
 
+FileData (*g_provider)(const std::string&) = nullptr;
+constexpr uint64_t kMemoryFileTime = 0x01C3B4A000000000ull;  // a file from memory: 2003, the game's year
+
+// the name as the game gave it, from a folder it opened when it names one (the drives' root, ObDosDevices, is no file)
+FileData Provided(const std::string& name, uint32_t root) {
+    if (!g_provider) return nullptr;
+    std::string lower = name;
+    if (root)
+        if (auto f = FileFromHandle(root)) lower = f->xbox + "\\" + name;
+    for (char& ch : lower) ch = char(std::tolower(uint8_t(ch)));
+    return g_provider(lower);
+}
+
+// a file from memory: opened as it is (FILE_OPEN, FILE_OPEN_IF), read only
+uint32_t OpenInMemory(FileData data, const std::string& name, uint32_t handle_out, uint32_t iosb, uint32_t options) {
+    auto f = std::make_shared<File>();
+    f->xbox = Normalize(name);
+    f->mem = std::move(data);
+    f->async = !(options & 0x30);
+    W32(handle_out, NewHandle(f));
+    IoStatus(iosb, kSuccess, 1);
+    LOG_FIRST(400, "open %s (from memory, %zu bytes)", name.c_str(), f->mem->size());
+    if (app::kGame.file_opened) app::kGame.file_opened(name.c_str());
+    return kSuccess;
+}
+
 // the disc image is read only: nothing on it is created, replaced or written
 uint32_t OpenOnDisc(const Disc::Entry* e, const std::string& name, uint32_t handle_out, uint32_t iosb, uint32_t disposition,
                     uint32_t options) {
@@ -342,6 +369,8 @@ uint32_t OpenOnDisc(const Disc::Entry* e, const std::string& name, uint32_t hand
 
 std::string ResolvePath(const std::string& xbox_path, uint32_t root_handle) { return Resolve(xbox_path, root_handle).host; }
 
+void SetFileProvider(FileData (*provider)(const std::string&)) { g_provider = provider; }
+
 bool ReadGameFile(const std::string& xbox_path, std::vector<uint8_t>& out) {
     Target t = Resolve(xbox_path, 0);
     if (t.disc) {
@@ -362,6 +391,8 @@ KERNEL_EXPORT(190, NtCreateFile, 9) {
     (void)access;
     uint32_t root;
     std::string name = ObjectName(attrs, &root);
+    if (disposition == 1 || disposition == 3)
+        if (FileData m = Provided(name, root)) return OpenInMemory(std::move(m), name, handle_out, iosb, options);
     Target t = Resolve(name, root);
     if (t.disc) return OpenOnDisc(t.entry, name, handle_out, iosb, disposition, options);
     const std::string& host = t.host;
@@ -467,6 +498,7 @@ KERNEL_EXPORT(202, NtOpenFile, 6) {
     uint32_t handle_out = a[0], attrs = a[2], iosb = a[3], options = a[5];
     uint32_t root;
     std::string name = ObjectName(attrs, &root);
+    if (FileData m = Provided(name, root)) return OpenInMemory(std::move(m), name, handle_out, iosb, options);
     Target t = Resolve(name, root);
     if (t.disc) return OpenOnDisc(t.entry, name, handle_out, iosb, 1, options);
     const std::string& host = t.host;
@@ -513,8 +545,8 @@ static uint64_t Offset(File& f, uint32_t off) {
 static uint32_t Transfer(const Args& a, bool write, uint32_t pages) {
     uint32_t h = a[0], event = a[1], apc = a[2], apc_ctx = a[3], iosb = a[4], buf = a[5], len = a[6], off = a[7];
     auto f = FileFromHandle(h);
-    if (!f || (!f->fp && !f->entry)) return kInvalidHandle;
-    if (write && f->entry) return kAccessDenied;
+    if (!f || (!f->fp && !f->entry && !f->mem)) return kInvalidHandle;
+    if (write && (f->entry || f->mem)) return kAccessDenied;
     ResetEvent(*f);
     std::lock_guard<std::mutex> lock(f->io);
     uint64_t pos = Offset(*f, off);
@@ -523,7 +555,11 @@ static uint32_t Transfer(const Args& a, bool write, uint32_t pages) {
     while (n < len) {
         uint32_t at = pages ? R32(pages + n / 0x1000 * 8) + n % 0x1000 : buf + n;
         uint32_t chunk = pages ? std::min(len - n, 0x1000 - n % 0x1000) : len;
-        size_t done = f->entry ? MountedDisc()->Read(*f->entry, pos + n, HostPtr(at), chunk)
+        size_t done = f->mem ? (pos + n < f->mem->size()
+                                    ? std::min<size_t>(chunk, f->mem->size() - size_t(pos + n)) : 0)
+                      : 0;
+        if (f->mem) std::memcpy(HostPtr(at), f->mem->data() + std::min<size_t>(size_t(pos + n), f->mem->size()), done);
+        else done = f->entry ? MountedDisc()->Read(*f->entry, pos + n, HostPtr(at), chunk)
                       : write  ? std::fwrite(HostPtr(at), 1, chunk, f->fp)
                                : std::fread(HostPtr(at), 1, chunk, f->fp);
         n += uint32_t(done);
@@ -535,10 +571,19 @@ static uint32_t Transfer(const Args& a, bool write, uint32_t pages) {
     return Finish(*f, kSuccess, n, event, apc, apc_ctx, iosb);
 }
 
-KERNEL_EXPORT(219, NtReadFile, 8) { return Transfer(a, false, 0); }
+// reads are counted for the hitch lines (frame_work.cpp)
+static uint32_t TimedRead(const Args& a, uint32_t pages) {
+    int64_t t = WorkNow();
+    uint32_t r = Transfer(a, false, pages);
+    auto f = FileFromHandle(a[0]);
+    CountRead(WorkNow() - t, a[6], f ? f->xbox : std::string());
+    return r;
+}
+
+KERNEL_EXPORT(219, NtReadFile, 8) { return TimedRead(a, 0); }
 KERNEL_EXPORT(236, NtWriteFile, 8) { return Transfer(a, true, 0); }
 // the buffer argument is an array of one page per element
-KERNEL_EXPORT(220, NtReadFileScatter, 8) { return Transfer(a, false, a[5]); }
+KERNEL_EXPORT(220, NtReadFileScatter, 8) { return TimedRead(a, a[5]); }
 KERNEL_EXPORT(237, NtWriteFileGather, 8) { return Transfer(a, true, a[5]); }
 
 KERNEL_EXPORT(211, NtQueryInformationFile, 5) {
@@ -546,7 +591,7 @@ KERNEL_EXPORT(211, NtQueryInformationFile, 5) {
     auto f = FileFromHandle(h);
     if (!f) return kInvalidHandle;
     std::error_code ec;
-    uint64_t size = f->dir ? 0 : f->entry ? f->entry->size : fs::file_size(f->host, ec);
+    uint64_t size = f->dir ? 0 : f->mem ? f->mem->size() : f->entry ? f->entry->size : fs::file_size(f->host, ec);
     if (f->fp) {
         std::fflush(f->fp);
         size = fs::file_size(f->host, ec);
@@ -554,7 +599,7 @@ KERNEL_EXPORT(211, NtQueryInformationFile, 5) {
     std::memset(HostPtr(out), 0, len);
     switch (cls) {
         case 4: {  // FileBasicInformation
-            uint64_t t = f->entry ? MountedDisc()->Time() : ToFileTime(fs::last_write_time(f->host, ec));
+            uint64_t t = f->mem ? kMemoryFileTime : f->entry ? MountedDisc()->Time() : ToFileTime(fs::last_write_time(f->host, ec));
             for (int i = 0; i < 4; i++) W64(out + i * 8, t);
             W32(out + 0x20, f->dir ? 0x10 : 0x80);
             IoStatus(iosb, kSuccess, 0x28);
@@ -578,7 +623,8 @@ KERNEL_EXPORT(211, NtQueryInformationFile, 5) {
             IoStatus(iosb, kSuccess, 8);
             return kSuccess;
         case 34:  // FileNetworkOpenInformation
-            if (f->entry) FillNetworkInfo(out, *f->entry);
+            if (f->mem) FillNetworkInfo(out, kMemoryFileTime, size, false);
+            else if (f->entry) FillNetworkInfo(out, *f->entry);
             else FillNetworkInfo(out, f->host);
             IoStatus(iosb, kSuccess, 0x38);
             return kSuccess;
@@ -596,7 +642,7 @@ KERNEL_EXPORT(226, NtSetInformationFile, 5) {
     uint32_t h = a[0], iosb = a[1], in = a[2], cls = a[4];
     auto f = FileFromHandle(h);
     if (!f) return kInvalidHandle;
-    if (f->entry && cls != 14 && cls != 4) return kAccessDenied;
+    if ((f->entry || f->mem) && cls != 14 && cls != 4) return kAccessDenied;
     std::error_code ec;
     switch (cls) {
         case 14:  // position
@@ -722,6 +768,10 @@ KERNEL_EXPORT(207, NtQueryDirectoryFile, 10) {
 
 KERNEL_EXPORT(210, NtQueryFullAttributesFile, 2) {
     std::string name = ReadAnsiString(R32(a[0] + 4));
+    if (FileData m = Provided(name, R32(a[0]))) {
+        FillNetworkInfo(a[1], kMemoryFileTime, m->size(), false);
+        return kSuccess;
+    }
     Target t = Resolve(name, R32(a[0]));
     std::error_code ec;
     if (t.disc ? !t.entry : t.host.empty() || !fs::exists(t.host, ec)) {

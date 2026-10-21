@@ -10,10 +10,13 @@
 #define DIR_ROTK_PC   "ROTK-PC"
 #define DIR_ROTK_XBOX "ROTK-Xbox"
 #define DIR_TT_XBOX   "TT-Xbox"
+#define DIR_FOTR_XBOX "FOTR-Xbox"
 #define ATHELAS_INI   "Athelas.ini"
 #include <string>
 #include <vector>
 
+extern const char *const k_subtitleCodes[10];   // [Language] Subtitles: off, de, fr, es, it, pt, pl, nl, sv, ru
+extern const char *const k_subtitleNames[10];   // as each language names itself
 struct Settings {
     // [Frame]
     int  targetFps = 60;
@@ -33,6 +36,8 @@ struct Settings {
     int  enemyDamage = 100;
     bool unlockAll = false;
     bool allHeroes = false;       // [Gameplay] AllHeroes (Xbox version): every hero in a level already completed
+    bool eowyn = false;           // [Gameplay] Eowyn (Xbox version): Éowyn in Faramir's place
+    int subLang = 0;              // [Language] Subtitles (Xbox version): an index into k_subtitleCodes, 0 off
     bool achNotify = true;        // [Achievements] Notify: a note in the corner when one is earned
     bool discord = false;         // [Discord] Enabled: the Discord status
     // [Video]
@@ -157,7 +162,8 @@ bool pick_folder(std::string &out, const wchar_t *title = L"Choose the folder wi
 // Copy ROTK Fix from 'src' into the game folder 'dst' (another mod's d3d8/dinput8 kept as *.before-rotkfix).
 // accessDenied is set when Windows refused to write there (Program Files without administrator rights).
 std::string pc_fix_source();
-bool fix_outdated(const std::string &dir);   // the game folder has other ROTK Fix files than the launcher carries
+bool fix_outdated(const std::string &dir);
+std::string fix_dll_version(const std::string &dll);   // "1.1.2" from a ROTKFix.dll, "" when unreadable   // the game folder has other ROTK Fix files than the launcher carries
 bool install_to(const std::string &src, const std::string &dst, std::string &err, bool &accessDenied);
 bool start_launcher(const std::string &dir, bool elevated, const std::string &args);
 bool folder_writable(const std::string &dir);   // false = Windows needs administrator rights there

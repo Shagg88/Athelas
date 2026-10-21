@@ -10,8 +10,9 @@ packs are supported but I have not done any of those.  I'll be open to accepting
 - **The Return of the King (PC, 2003)**, through **ROTK Fix** (This is the recommended way to play The Return of the King, at least in my opinion)
 - **The Return of the King (Xbox)**, through a native PC port
 - **The Two Towers (Xbox)**, through a native PC port
+- **The Fellowship of the Ring (Xbox)**, through a native PC port (new in 1.4)
 
-Download it from [Releases](../../releases): one zip with the launcher, ROTK Fix and both ports.
+Download it from [Releases](../../releases): one zip with the launcher, ROTK Fix and all three ports.
 
 > Not affiliated with or endorsed by Electronic Arts, New Line Cinema, Warner Bros. or the Tolkien Estate.
 > No game files are included. You need your own copy of each game: the PC game installed, or your own Xbox disc as
@@ -50,6 +51,7 @@ drawn landscape instead. All game and film artwork belongs to its owners.*
 | `src/`, `build.sh` | ROTK Fix, for the PC game |
 | `ports/two-towers/` | The Two Towers PC port ([its README](ports/two-towers/README.md)) |
 | `ports/rotk-xbox/` | The Return of the King Xbox PC port ([its README](ports/rotk-xbox/README.md)) |
+| `ports/fellowship/` | The Fellowship of the Ring Xbox PC port ([its README](ports/fellowship/README.md)) |
 | `dist-files/README.txt` | The README that comes in the download, with every setting |
 | `docs/` | Release notes and engine notes |
 | `scripts/` | Packaging the release zip |
@@ -66,7 +68,7 @@ drawn landscape instead. All game and film artwork belongs to its owners.*
 - **Texture packs:** dump the game's textures to PNG and load replacements from a folder (no game art included)
 - **Screenshots:** `\` or Print Screen saves a PNG
 - **Gameplay:** damage taken, enemy damage, every level and character unlocked, every hero in levels you've completed, the games' own cheat codes as switches, and kill points in The Two Towers (all off by default)
-- **Achievements:** in all three games, earned as you play (and from what your saves already hold), with a note on screen and the list in the launcher
+- **Achievements:** in all four games, earned as you play (and from what your saves already hold), with a note on screen and the list in the launcher
 - **Launcher:** every setting in one place, with presets (Original, Balanced, High, Ultra)
 
 ## Requirements
@@ -76,7 +78,7 @@ drawn landscape instead. All game and film artwork belongs to its owners.*
 - **The Return of the King (PC):** a Vulkan 1.3 graphics driver is recommended. Without one, the game runs
   through Windows' Direct3D 8 with the DXVK-only options (sharpening, colour looks, texture filtering)
   turned off. The launcher's About tab shows which renderer you'll get.
-- **The Two Towers and The Return of the King (Xbox):** a DirectX 12 graphics card.
+- **The Two Towers, The Return of the King and The Fellowship of the Ring (Xbox):** a DirectX 12 graphics card.
 
 ## The Two Towers (Xbox)
 
@@ -102,10 +104,21 @@ Played through its PC port, `ROTKXbox.exe`, started from the launcher with the s
 - Two-player co-op on one PC, or online by streaming (Parsec, or Steam Remote Play Together).
 - Problem reports: `ROTK-Xbox\rotkx.log`, plus the newest `.dmp` in `ROTK-Xbox\CrashDumps` after a crash.
 
+## The Fellowship of the Ring (Xbox)
+
+Played through its PC port, `FOTRXbox.exe`, started from the launcher. New in 1.4, a first version.
+
+- Supported: the US Xbox release, as a disc image (`.iso`) or the extracted files.
+- As on the Xbox by default (30 fps, 4:3); frame rates up to 240 at normal game speed, the game's own widescreen
+  mode and ultrawide (21:9, 32:9), field of view, difficulty, sharper upscaled cutscenes, logo skip.
+- The game's text in nine languages (our own translations), the game's own cheat codes as switches, and
+  achievements for each part of the journey.
+- Problem reports: `FOTR-Xbox\fotrx.log`, plus the newest `.dmp` in `FOTR-Xbox\CrashDumps` after a crash.
+
 ## Reporting a problem
 
 Open an [issue](../../issues) and choose **Bug report**. Attach the game's log: `ROTKFix.log` in the PC game's folder,
-`ROTK-Xbox\rotkx.log` or `TT-Xbox\tt.log` beside the launcher. After an Xbox port crashes, add the newest `.dmp` from its
+`ROTK-Xbox\rotkx.log`, `TT-Xbox\tt.log` or `FOTR-Xbox\fotrx.log` beside the launcher. After an Xbox port crashes, add the newest `.dmp` from its
 `CrashDumps` folder, zipped first (GitHub doesn't take `.dmp` files as they are).
 
 ## Antivirus and SmartScreen

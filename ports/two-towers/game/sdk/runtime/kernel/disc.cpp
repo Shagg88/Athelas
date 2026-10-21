@@ -2,7 +2,11 @@
 
 #include <algorithm>
 #include <cctype>
+#include <condition_variable>
 #include <cstring>
+#include <deque>
+#include <mutex>
+#include <thread>
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -36,6 +40,15 @@ constexpr uint32_t kMaxTable = 16 << 20;
 
 std::unique_ptr<Disc> g_mounted;
 
+// Small reads during play (a level's streamed parts, sound, video) are served from blocks of the image held in
+// memory, and the block after one being read is fetched in the background. A drive or file system with a high
+// cost per read then costs once per megabyte: on an ARM laptop 64 KB stream reads took 30-80 ms each (issue 12).
+// Reads of half a block or more (whole files at a level load) go to the file directly.
+constexpr uint32_t kBlock = 1u << 20;
+constexpr size_t kBlocks = 48;
+constexpr uint32_t kDirect = kBlock / 2;
+constexpr size_t kMaxAhead = 4;
+
 bool SameName(std::string_view a, std::string_view b) {
     return a.size() == b.size() && std::equal(a.begin(), a.end(), b.begin(), [](char x, char y) {
                return std::toupper(uint8_t(x)) == std::toupper(uint8_t(y));
@@ -49,7 +62,74 @@ std::string Upper(std::string s) {
 
 }  // namespace
 
+struct Disc::Cache {
+    struct Block {
+        uint64_t index = ~0ull;
+        std::vector<uint8_t> data;
+        uint32_t size = 0;
+        uint64_t used = 0;
+        bool ready = false;
+    };
+    const Disc* disc;
+    std::mutex m;
+    std::condition_variable filled, work;
+    std::vector<Block> blocks{kBlocks};
+    uint64_t tick = 0;
+    std::deque<uint64_t> ahead;
+    bool stop = false;
+    std::thread worker;
+
+    explicit Cache(const Disc* d) : disc(d) {
+        worker = std::thread([this] {
+            std::unique_lock<std::mutex> lock(m);
+            for (;;) {
+                work.wait(lock, [this] { return stop || !ahead.empty(); });
+                if (stop) return;
+                uint64_t index = ahead.front();
+                ahead.pop_front();
+                if (!Find(index)) Fill(index, lock);
+            }
+        });
+    }
+    ~Cache() {
+        {
+            std::lock_guard<std::mutex> lock(m);
+            stop = true;
+        }
+        work.notify_all();
+        worker.join();
+    }
+    Block* Find(uint64_t index) {
+        for (Block& b : blocks)
+            if (b.index == index) return &b;
+        return nullptr;
+    }
+    // with the lock held; the block read happens without it, the block marked as not ready meanwhile
+    Block* Fill(uint64_t index, std::unique_lock<std::mutex>& lock) {
+        Block* victim = nullptr;
+        for (Block& b : blocks)
+            if (b.ready || b.index == ~0ull)
+                if (!victim || b.used < victim->used) victim = &b;
+        if (!victim) return nullptr;  // every block is being read
+        victim->index = index;
+        victim->ready = false;
+        victim->used = ++tick;
+        if (victim->data.size() != kBlock) victim->data.resize(kBlock);
+        lock.unlock();
+        uint32_t got = disc->ReadAt(index * kBlock, victim->data.data(), kBlock);
+        lock.lock();
+        victim->size = got;
+        victim->ready = true;
+        if (!got) victim->index = ~0ull;  // a failed read is tried again next time
+        filled.notify_all();
+        return victim;
+    }
+};
+
+Disc::Disc() = default;
+
 Disc::~Disc() {
+    cache_.reset();
     if (file_ == -1) return;
 #ifdef _WIN32
     CloseHandle(HANDLE(file_));
@@ -102,6 +182,7 @@ bool Disc::Open(const std::filesystem::path& path, std::string& error) {
             error = "its folders cannot be read";
             return false;
         }
+        cache_ = std::make_unique<Cache>(this);
         return true;
     }
     error = "no Xbox disc image";
@@ -168,9 +249,42 @@ const Disc::Entry* Disc::Find(std::string_view path) const {
     return Find(parts);
 }
 
+uint32_t Disc::ReadCached(uint64_t at, void* out, uint32_t len) const {
+    if (!cache_ || len >= kDirect) return ReadAt(at, out, len);
+    Cache& c = *cache_;
+    std::unique_lock<std::mutex> lock(c.m);
+    uint32_t done = 0;
+    while (done < len) {
+        uint64_t index = (at + done) / kBlock;
+        Cache::Block* b = c.Find(index);
+        while (b && !b->ready) {
+            c.filled.wait(lock);
+            b = c.Find(index);
+        }
+        if (!b) b = c.Fill(index, lock);
+        if (!b) {  // no block free: read past the cache
+            lock.unlock();
+            return done + ReadAt(at + done, static_cast<uint8_t*>(out) + done, len - done);
+        }
+        b->used = ++c.tick;
+        uint32_t in = uint32_t(at + done - index * kBlock);
+        if (in >= b->size) break;  // the image's end
+        uint32_t n = std::min(len - done, b->size - in);
+        std::memcpy(static_cast<uint8_t*>(out) + done, b->data.data() + in, n);
+        done += n;
+        // past the middle of a block, the next one is wanted soon
+        if (in + n > kBlock / 2 && b->size == kBlock && !c.Find(index + 1) && c.ahead.size() < kMaxAhead &&
+            std::find(c.ahead.begin(), c.ahead.end(), index + 1) == c.ahead.end()) {
+            c.ahead.push_back(index + 1);
+            c.work.notify_one();
+        }
+    }
+    return done;
+}
+
 uint32_t Disc::Read(const Entry& file, uint64_t pos, void* out, uint32_t len) const {
     if (file.dir || pos >= file.size) return 0;
-    return ReadAt(file.offset + pos, out, uint32_t(std::min<uint64_t>(len, file.size - pos)));
+    return ReadCached(file.offset + pos, out, uint32_t(std::min<uint64_t>(len, file.size - pos)));
 }
 
 bool Disc::Load(std::string_view path, std::vector<uint8_t>& out) const {

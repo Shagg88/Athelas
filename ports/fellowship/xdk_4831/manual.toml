@@ -1,0 +1,13 @@
+# hand-proven XDK 4831 addresses for The Fellowship of the Ring ([symbols] / [data] name = 0xADDR), applied over the
+# merged config (they win over both xbe_symbols and XbSymbolDatabase)
+[symbols]
+D3DDevice_DrawIndexedVerticesUP = 0x190100  # XbSymbolDatabase names it; xbe_symbols' list lacks it
+D3D_CommonSetRenderTarget       = 0x193AF0  # XbSymbolDatabase; LTCG callers reach it directly (19 sites), ret 0xC: (target, depth, flag)
+IDirectSoundBuffer_AddRef       = 0x16ECFF  # XbSymbolDatabase; the game calls it on buffers the host made
+[data]
+D3D_DirtyFlags                  = 0x19E024  # D3DDevice_SetTexture 0x18ED6C ors 0x4800 into it (as 4928)
+D3D_SimpleRenderStateEncode     = 0x1CA558  # the game's SetRenderState 0xCF495 reads [state * 4 + it] for SetRenderState_Simple; same bytes as TT's 0x18AA58
+D3D_IndexData                   = 0x19E2C4  # D3DDevice_SetIndices 0x18EEAA stores the index data
+DSound_StreamVtable2            = 0x1BEBDC  # CDirectSoundStream constructor 0x171AB4 stores it at +4 (Vtable 0x1BEBE8 at +0, as TT 4928)
+[abi]
+D3D_InternalRelease             = ["esi"]  # 0x18E280 reads esi, ret (no stack); xbe_symbols found it by constants

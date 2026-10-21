@@ -1,0 +1,458 @@
+# The Two Towers - Brazilian Portuguese subtitles (our own translation; line numbers are the game's text IDs)
+2	Ajuda
+4	Pressione o botão START
+6	Continuar
+7	Repetir
+8	Ligado
+9	Desligado
+10	Navegar
+11	Selecionar
+12	Voltar
+13	@ 2002 New Line Productions, Inc. O Senhor dos Anéis e os personagens, nomes e lugares nele contidos, * The Saul Zaentz Company d/b/a Tolkien Enterprises sob licença para a New Line Productions, Inc. Todos os direitos reservados.
+14	EA GAMES* é uma marca da Electronic Arts*.
+15	Código do jogo e determinados elementos audiovisuais @ 2002 Electronic Arts Inc. Todos os direitos reservados.
+16	Novo jogo
+17	Carregar jogo
+18	Opções
+19	Modo de depuração
+20	Extras
+21	Salvar jogo
+24	Pressione START para continuar
+25	Opções
+26	Configuração do controle
+27	Configurar jogo
+38	Dificuldade:
+39	Fácil
+40	Normal
+41	Especialista
+42	Mono
+43	Estéreo
+44	Surround
+45	Configurar jogo
+46	Volume das vozes:
+47	Volume da música:
+48	Legendas:
+49	Vibração:
+50	Volume do jogo:
+51	Som:
+53	Selecione o jogo a carregar:
+54	Selecione onde salvar:
+55	Selecione o slot de MEMORY CARD:
+56	Disco rígido do Xbox
+57	Slot de MEMORY CARD 2
+58	Selecione o slot de MEMORY CARD:
+59	Cancelar
+60	Sim
+61	Não
+62	Tem certeza?
+63	Tem certeza de que deseja comprar esta melhoria?
+64	Tem certeza? Os resultados da sua última partida nesta missão serão perdidos.
+65	Tem certeza? Todo o progresso não salvo neste jogo será perdido.
+66	Tem certeza? O progresso nesta missão será perdido.
+67	Tem certeza de que deseja substituir este jogo?
+68	Terminou de comprar melhorias?
+69	Salvar jogo no disco rígido
+70	Carregar jogo do disco rígido
+75	Selecione a dificuldade
+76	Fácil
+77	Normal
+78	Especialista
+80	Bloqueada
+81	Concluída
+83	Não jogada
+85	Prólogo
+86	Topo do Vento
+87	Portões de Moria
+88	Túmulo de Balin
+89	Amon Hen
+90	Floresta de Fangorn
+91	Planícies de Rohan
+92	Folde Oeste
+93	Desfiladeiro de Rohan
+94	A Muralha do Abismo
+95	Muralha Rompida
+96	Pátio do Forte da Trombeta
+97	Torre de Orthanc
+98	Abismo de Helm:
+99	Zoológico da New Line
+100	Escolha um vídeo para assistir:
+101	Abertura
+102	Final
+116	Aragorn
+117	Legolas
+118	Gimli
+119	Isildur
+120	Andar
+128	Pontos de melhoria:
+129	4) Insira a sequência de código indicada.
+130	Códigos secretos
+131	Sempre devastador:
+132	2 jogadores:
+133	Inimigos pequenos:
+134	Todas as melhorias:
+135	Invulnerável:
+136	Câmera lenta:
+137	Para inserir um código:
+138	1) Inicie uma missão.
+139	2) Pressione o botão START para pausar.
+140	3) Puxe e segure
+141	Saúde infinita:
+142	Projéteis infinitos:
+143	Terminar missão:
+144	Modo de pausa:
+145	Adicionar experiência:
+146	Subir de nível:
+147	Restaurar saúde:
+148	Restaurar projéteis:
+149	Melhoria de projéteis:
+150	Mostrar melhorias
+151	Sair para o menu
+152	Ir para a próxima missão
+153	Você falhou na missão.
+154	Repetir missão
+155	Sair para o menu
+156	Tentar novamente
+161	Créditos
+176	Repetir missão
+180	Selecione um idioma.
+181	Inglês
+196	Velocidade
+197	Feroz
+198	Golpe final
+199	Especial
+200	Combo
+207	Comprada
+208	Ainda não desbloqueada. Pressione o botão A para continuar.
+209	Você não tem pontos de melhoria suficientes para comprar esta melhoria. Pressione o botão A para continuar.
+210	ou
+211	após aparar
+212	no chão
+230	Espaço vazio
+231	Jogo 2
+232	Jogo 3
+233	Jogo 4
+234	Jogo 5
+235	Jogo 6
+236	Jogo 7
+237	Jogo 8
+238	Jogo 9
+239	Jogo 10
+240	Jogo 11
+270	Nenhum Memory Card (PS2) inserido. São necessários pelo menos 80 KB para salvar os dados deste jogo. Deseja continuar?
+271	Espaço insuficiente no Memory Card (PS2) do slot de MEMORY CARD 1. São necessários pelo menos 80 KB para salvar os dados deste aplicativo. Deseja continuar?
+272	Espaço insuficiente no Memory Card (PS2) do slot de MEMORY CARD 2. São necessários pelo menos 80 KB para salvar os dados deste aplicativo. Deseja continuar?
+273	Espaço insuficiente nos Memory Cards (PS2) dos slots de MEMORY CARD. São necessários pelo menos 80 KB para salvar os dados deste aplicativo. Deseja continuar?
+274	Nenhum Memory Card (PS2) inserido no slot de MEMORY CARD 1. Pressione o botão X para continuar.
+275	Nenhum Memory Card (PS2) inserido no slot de MEMORY CARD 2. Pressione o botão X para continuar.
+276	Reconecte o controle e pressione START para continuar.
+277	O Memory Card (PS2) do slot de MEMORY CARD 2 não está formatado. Formatar o Memory Card (PS2)?
+278	Seu Xbox não tem blocos livres suficientes para salvar jogos. Pressione A para continuar sem salvar ou B para liberar pelo menos
+279	Reconecte o controle e pressione START para continuar
+280	O disco rígido não tem blocos livres suficientes para este jogo salvo.
+281	blocos precisam ser liberados.
+282	Falha na formatação! Erro no Memory Card (PS2) do slot de MEMORY CARD 2! Pressione o botão X para continuar.
+283	Não foi possível salvar o jogo. Pressione o botão A para continuar.
+284	Não foi possível salvar o jogo. Pressione o botão A para continuar.
+285	Jogo salvo. Pressione o botão A para continuar.
+286	Jogo salvo com sucesso no Memory Card (PS2) do slot de MEMORY CARD 2! Pressione o botão X para continuar.
+287	Salvando dados no Memory Card (PS2) do slot de MEMORY CARD 1. Não remova o Memory Card (PS2), não reinicie nem desligue o console.
+288	Salvando dados no Memory Card (PS2) do slot de MEMORY CARD 2. Não remova o Memory Card (PS2), não reinicie nem desligue o console.
+289	Carregando dados do Memory Card (PS2) do slot de MEMORY CARD 1. Não remova o Memory Card (PS2), não reinicie nem desligue o console.
+290	Carregando dados do Memory Card (PS2) do slot de MEMORY CARD 2. Não remova o Memory Card (PS2), não reinicie nem desligue o console.
+291	Não foi possível carregar o jogo. Pressione o botão A para continuar.
+292	Não foi possível carregar o jogo. Pressione o botão A para continuar.
+293	Deseja salvar o seu jogo?
+294	Nenhum jogo salvo. Pressione o botão A para continuar.
+295	Nenhum jogo salvo. Pressione o botão A para continuar.
+296	blocos.
+297	O Memory Card (PS2) do slot de MEMORY CARD 1 não está formatado. Pressione o botão X para continuar.
+298	O Memory Card (PS2) do slot de MEMORY CARD 2 não está formatado. Pressione o botão X para continuar.
+299	Lendo dados do Memory Card (PS2) do slot de MEMORY CARD 1. Não remova o Memory Card (PS2), não reinicie nem desligue o console.
+300	Lendo dados do Memory Card (PS2) do slot de MEMORY CARD 2. Não remova o Memory Card (PS2), não reinicie nem desligue o console.
+301	Há um problema com o disco que você está usando. Ele pode estar sujo ou danificado.
+320	Missão 1
+321	Missão 2
+322	Missão 3
+323	Missão 4
+324	Missão 5
+325	Missão 6
+326	Missão 7
+327	Missão 8
+328	Missão 9
+329	Missão 10
+330	Missão 11
+331	Missão 12
+332	Missão 13
+333	Missão A
+334	Missão B
+335	Missão C
+336	Missão D
+401	Experiência na missão:
+403	Avaliação da missão:
+405	Total de pontos de melhoria:
+450	Perfeito
+451	Excelente
+452	Bom
+453	Regular
+454	Fraco
+455	Habilidade
+460	Ataque
+461	Forte
+462	Defesa
+463	Rápido
+464	Ataque
+465	Feroz
+500	Uma combinação rápida. Eficaz contra inimigos menores e sem escudo.
+501	Uma combinação poderosa para destruir obstáculos ou despedaçar escudos inimigos.
+502	Puxe e segure o gatilho esquerdo para usar. Atire com o botão A (segure para aumentar o dano).
+503	Esta estocada acaba com qualquer inimigo derrubado.
+504	Afasta os inimigos de você, para fora do alcance de ataque.
+505	Bloqueia ataques e projéteis inimigos.
+506	Um ataque devastador. Pressione e segure o botão Y para usar.
+507	Aumenta sua saúde permanentemente.
+508	Avance e derrube inimigos sem escudo.
+509	Ataque enquanto se levanta, pegando os inimigos de surpresa.
+510	Um combo muito eficaz para eliminar inimigos sem escudo.
+511	Muito eficaz para despachar inimigos com escudo o mais rápido possível.
+512	MOVIMENTO VINCULADO: Mate instantaneamente um gobelim que esteja atacando.
+513	Disparadas como no Arco Dúnedain, as flechas farpadas dos Rohirrim causam dano sério.
+514	Aumenta sua saúde permanentemente. (Requer Força dos Regentes)
+515	Avance de longe para derrubar inimigos sem escudo. (Requer Ataque Veloz)
+516	Fira, derrube e golpeie seu inimigo com este ataque combinado.
+517	Use este combo para golpear um inimigo sem escudo, acabar com ele e golpear outro rapidamente.
+518	MOVIMENTO VINCULADO: Mate instantaneamente um orc que esteja atacando.
+519	Aumenta sua saúde permanentemente. (Requer Força de Isildur)
+520	Um ataque ainda mais devastador. (Requer Fúria do Guardião)
+521	Aumenta o dano do seu Ataque Rápido.
+522	Fira, derrube e acabe com inimigos poderosos com este combo.
+523	Aumenta sua saúde permanentemente. (Requer Força de Elendil)
+524	Este ataque devastador incendeia vários inimigos. (Requer Fúria Selvagem)
+525	As flechas de ferro de Gondor causam dano terrível. (Requer Arco de Rohan)
+526	MOVIMENTO VINCULADO: Mate instantaneamente um Uruk-Hai que esteja atacando.
+527	Use contra um inimigo poderoso para despedaçar o escudo dele, derrubá-lo e golpeá-lo.
+528	Nada
+529	Nada
+530	Uma combinação rápida. Eficaz contra inimigos menores e sem escudo.
+531	Uma combinação poderosa para destruir obstáculos ou despedaçar escudos inimigos.
+532	Puxe e segure o gatilho esquerdo para usar. Arremesse com o botão A (segure para aumentar o dano).
+533	Este golpe de machado acaba com qualquer inimigo derrubado.
+534	Afasta os inimigos de você, para fora do alcance de ataque.
+535	Bloqueia ataques e projéteis inimigos.
+536	Um ataque devastador. Pressione e segure o botão Y para usar.
+537	Aumenta sua saúde permanentemente.
+538	Aumenta sua saúde permanentemente. (Requer Poder da Rocha)
+539	Avance e derrube inimigos sem escudo.
+540	Um combo muito eficaz para eliminar inimigos sem escudo.
+541	Muito eficaz para despachar inimigos com escudo o mais rápido possível.
+542	MOVIMENTO VINCULADO: Mate instantaneamente um gobelim que esteja atacando.
+543	Aumenta sua saúde permanentemente. (Requer Poder do Ferro)
+544	Avance de longe para derrubar inimigos sem escudo. (Requer Ataque Veloz)
+545	Ataque enquanto se levanta, pegando os inimigos de surpresa.
+546	Fira, derrube e golpeie seu inimigo com este ataque combinado.
+547	Use este combo para golpear um inimigo sem escudo, acabar com ele e golpear outro rapidamente.
+548	MOVIMENTO VINCULADO: Mate instantaneamente um orc que esteja atacando.
+549	Aumenta sua saúde permanentemente. (Requer Runa de Proteção)
+550	Aumenta sua saúde permanentemente. (Requer Poder de Balin)
+551	Arremessados como os Machados de Erebor, os afiadíssimos machados de Moria causam ainda mais dano.
+552	Um ataque ainda mais devastador. (Requer Fúria Anã)
+553	Fira, derrube e acabe com inimigos poderosos com este combo.
+554	Aumenta sua saúde permanentemente. (Requer Poder de Glóin)
+555	Este ataque devastador incendeia vários inimigos. (Requer Fúria da Montanha)
+556	Estas lâminas com fio de mithril causam dano terrível. (Requer Machados de Moria)
+557	Aumenta o dano do seu Ataque Feroz.
+558	MOVIMENTO VINCULADO: Mate instantaneamente um Uruk-Hai que esteja atacando.
+559	Use contra um inimigo poderoso para despedaçar o escudo dele, derrubá-lo e golpeá-lo.
+560	Uma combinação rápida. Eficaz contra inimigos menores e sem escudo.
+561	Uma combinação poderosa para destruir obstáculos ou despedaçar escudos inimigos.
+562	Puxe e segure o gatilho esquerdo para usar. Atire com o botão A (segure para aumentar o dano).
+563	Esta estocada acaba com qualquer inimigo derrubado.
+564	Afasta os inimigos de você, para fora do alcance de ataque.
+565	Bloqueia ataques e projéteis inimigos.
+566	Um ataque devastador. Pressione e segure o botão Y para usar.
+567	Aumenta sua saúde permanentemente.
+568	Avance e derrube inimigos sem escudo.
+569	Disparadas como no Arco Longo da Floresta das Trevas, as flechas de freixo de Valfenda causam ainda mais dano.
+570	Um combo muito eficaz para eliminar inimigos sem escudo.
+571	Muito eficaz para despachar inimigos com escudo o mais rápido possível.
+572	MOVIMENTO VINCULADO: Mate instantaneamente um gobelim que esteja atacando.
+573	Avance de longe para derrubar inimigos sem escudo. (Requer Ataque Veloz)
+574	As flechas encantadas de Lothlórien causam dano terrível. (Requer Arco Longo de Valfenda)
+575	Fira, derrube e golpeie seu inimigo com este ataque combinado.
+576	Use este combo para golpear um inimigo sem escudo, acabar com ele e golpear outro rapidamente.
+577	Estas flechas mágicas incendeiam seus inimigos. (Requer Arco Longo de Lothlórien)
+578	Aumenta sua saúde permanentemente. (Requer Força de Celeborn)
+579	Um ataque ainda mais devastador. (Requer Fúria Élfica)
+580	MOVIMENTO VINCULADO: Mate instantaneamente um orc que esteja atacando.
+581	Fira, derrube e acabe com inimigos poderosos com este combo.
+582	Estas flechas perfuram e ferem todos os inimigos em seu caminho. (Requer Flechas de Fogo de Dragão)
+583	Ataque enquanto se levanta, pegando os inimigos de surpresa.
+584	Aumenta o dano de cada flecha que você dispara.
+585	MOVIMENTO VINCULADO: Mate instantaneamente um Uruk-Hai que esteja atacando.
+586	Use contra um inimigo poderoso para despedaçar o escudo dele, derrubá-lo e golpeá-lo.
+600	Golpe Triplo
+601	Talho Duplo
+602	Arco Dúnedain
+603	Golpe das Sombras
+604	Chute de Combate
+605	Aparar com Espada
+606	Fúria do Guardião
+607	Força dos Regentes
+608	Ataque Veloz
+609	Ataque Ascendente
+610	Terror Ágil de Isildur
+611	Libertação de Isildur
+612	Flagelo dos Gobelins
+613	Arco de Rohan
+614	Força de Isildur
+615	Ataque de Investida
+616	Investida Mortal de Isildur
+617	Estratagema de Isildur
+618	Flagelo dos Orcs
+619	Força de Elendil
+620	Fúria Selvagem
+621	Mestre Espadachim
+622	Avanço de Guerra de Isildur
+623	Força dos Argonath
+624	Ira de Númenor
+625	Arco de Gondor
+626	Flagelo de Saruman
+627	Julgamento de Isildur
+628	Nada
+629	Nada
+630	Golpe Triplo
+631	Talho Duplo
+632	Machados de Erebor
+633	Golpe das Sombras
+634	Estocada de Machado
+635	Aparar com Machado
+636	Fúria Anã
+637	Poder da Rocha
+638	Poder do Ferro
+639	Ataque Veloz
+640	Terror Ágil de Balin
+641	Libertação de Balin
+642	Flagelo dos Gobelins
+643	Runa de Proteção
+644	Ataque de Investida
+645	Ataque Ascendente
+646	Investida Mortal de Balin
+647	Estratagema de Balin
+648	Flagelo dos Orcs
+649	Poder de Balin
+650	Poder de Glóin
+651	Machados de Moria
+652	Fúria da Montanha
+653	Avanço de Guerra de Balin
+654	Poder de Khazad-dûm
+655	Ira de Moria
+656	Machados das Montanhas Sombrias
+657	Maestria Real com o Machado
+658	Flagelo de Saruman
+659	Julgamento de Balin
+660	Golpe Triplo
+661	Talho Duplo
+662	Arco Longo da Floresta das Trevas
+663	Golpe das Sombras
+664	Chute de Combate
+665	Aparar com Faca
+666	Fúria Élfica
+667	Força de Celeborn
+668	Ataque Veloz
+669	Arco Longo de Valfenda
+670	Terror Ágil de Elrond
+671	Libertação de Elrond
+672	Flagelo dos Gobelins
+673	Ataque de Investida
+674	Arco Longo de Lothlórien
+675	Investida Mortal de Elrond
+676	Estratagema de Elrond
+677	Flechas de Fogo de Dragão
+678	Força de Galadriel
+679	Fúria de Gil-galad
+680	Flagelo dos Orcs
+681	Avanço de Guerra de Elrond
+682	Flechas de Mithril
+683	Ataque Ascendente
+684	Maestria com o Arco Élfico
+685	Flagelo de Saruman
+686	Julgamento de Elrond
+700	Nível
+800	Apare para bloquear ataques inimigos e desviar flechas.
+801	Aparar
+802	Puxe e segure o gatilho esquerdo para mudar para sua Arma de Longo Alcance. Pressione o botão A para atirar. Use o direcional analógico esquerdo para mirar.
+804	Arma de Longo Alcance
+805	Atirar
+806	Use um Ataque Rápido para golpear inimigos sem escudo.
+807	Use o Ataque Feroz para quebrar escudos inimigos.
+808	Ataque Feroz
+809	Ataque Rápido
+810	Ganhe Pontos de Experiência para aumentar o Nível do seu personagem e comprar melhorias valiosas.
+811	Pontos de Experiência ganhos
+812	Use combinações avançadas e evite ser atingido pelos inimigos para encher o Medidor de Habilidade e ganhar o máximo de Pontos de Experiência.
+813	Medidor de Habilidade
+814	Mirar
+815	Saltar para trás
+816	Golpe Mortal
+817	Empurrar
+818	Atirar/Ataque Rápido
+819	Mover/Mirar
+820	Pausar
+840	Entrevista
+841	Peter Jackson e Barrie Osborne
+842	Elijah Wood
+843	Ian McKellen
+844	O Senhor dos Anéis
+845	O making of do videogame
+846	O Senhor dos Anéis
+847	Cenas exclusivas do filme
+848	'A Sociedade do Anel'
+849	Fotos da produção
+850	Fangorn e Orthanc
+851	Rohan e o Abismo de Helm
+852	Viggo Mortensen
+853	Orlando Bloom
+854	John Rhys-Davies
+855	Códigos secretos
+856	Jogar com Aragorn
+857	Jogar com Legolas
+858	Jogar com Gimli
+859	Jogar com Isildur
+860	Missão Secreta
+861	Jogar com o Personagem Secreto
+862	Arte conceitual
+900	Vença Portões de Moria para desbloquear
+901	Vença Túmulo de Balin para desbloquear
+902	Vença Amon Hen para desbloquear
+903	Vença Floresta de Fangorn para desbloquear
+904	Vença Planícies de Rohan para desbloquear
+905	Vença Folde Oeste para desbloquear
+906	Vença Desfiladeiro de Rohan para desbloquear
+907	Vença Abismo de Helm: A Muralha do Abismo para desbloquear
+908	Vença Abismo de Helm: Muralha Rompida para desbloquear
+909	Alcance o nível 5 com Aragorn
+910	Alcance o nível 5 com Legolas
+911	Alcance o nível 5 com Gimli
+912	Vença Abismo de Helm: Pátio do Forte da Trombeta e alcance o nível 10 com Aragorn
+913	Vença Abismo de Helm: Pátio do Forte da Trombeta e alcance o nível 10 com Legolas
+914	Vença Abismo de Helm: Pátio do Forte da Trombeta e alcance o nível 10 com Gimli
+915	Vença a Missão Secreta com qualquer personagem
+916	Vença a Missão Secreta com o personagem secreto
+917	Peter Jackson e Barrie Osborne falam sobre o filme e o jogo
+918	Elijah Wood fala sobre interpretar Frodo no videogame de 'O Senhor dos Anéis'
+919	Ian McKellen fala sobre interpretar Gandalf no videogame de 'O Senhor dos Anéis'
+920	Um olhar nos bastidores da criação do videogame de 'O Senhor dos Anéis'
+921	Fotos de personagens e cenários de 'A Sociedade do Anel'
+922	Fotos de personagens e cenários de Fangorn e Orthanc
+923	Arte de John Howe e Alan Lee inspirada em 'O Senhor dos Anéis'
+924	Fotos de personagens e cenários de Rohan e do Abismo de Helm
+925	Viggo Mortensen fala sobre interpretar Aragorn no videogame de 'O Senhor dos Anéis'
+926	Orlando Bloom fala sobre interpretar Legolas no videogame de 'O Senhor dos Anéis'
+927	John Rhys-Davies fala sobre interpretar Gimli no videogame de 'O Senhor dos Anéis'
+928	Códigos secretos para desbloquear os recursos ocultos do videogame de 'O Senhor dos Anéis'
+950	Mudar seleção
+951	Confirmar seleção
+952	Voltar
+953	Mudar ou modificar seleção
+954	Sair para o menu principal
+955	Mudar imagem
+956	Use seus Pontos de Melhoria para comprar aprimoramentos para seu personagem.

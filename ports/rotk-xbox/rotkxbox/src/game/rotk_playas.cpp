@@ -17,7 +17,9 @@
 // kept off its select screen even with UnlockAll.
 //
 // The test build: ROTK_PLAY_AS=<0..8> sets the first player's hero (0x16D584) as the level loads (0x9C090 gives the
-// scene loader his character file), to load any level as any hero without the select screen.
+// scene loader his character file), to load any level as any hero without the select screen. ROTK_PLAY_AS2=<0..8>
+// makes the level co-op (0x1764DC) with that hero for the second player (0x16D588; his file from 0x9C100), for a run
+// with a second pad (SCRIPT2).
 #include <cstdint>
 #include <cstdlib>
 
@@ -34,7 +36,7 @@ X86_EXTERN_FUNC(__imp__sub_0009C090);
 X86_EXTERN_FUNC(__imp__sub_0009E870);
 
 namespace {
-constexpr uint32_t kHero = 0x16D584, kLevel = 0x16D554;
+constexpr uint32_t kHero = 0x16D584, kLevel = 0x16D554, kCoop = 0x1764DC;  // kHero + 4: the second player's
 constexpr uint32_t kSlot = 0x1C4FE0 + 2 * 0x988;  // the profile in play
 constexpr uint32_t kAllLevels = 0x1FFF;
 const char* const kHeroes[] = {"Aragorn", "Legolas", "Gimli", "Gandalf", "Sam", "Frodo", "Pippin", "Merry", "Faramir"};
@@ -77,6 +79,16 @@ X86_FUNC(sub_0009C090) {  // the first player's character file, as a level loads
             LOGI("rotk: level %d played as %s (ROTK_PLAY_AS) instead of %s", int32_t(kernel::R32(kLevel)),
                  kHeroes[env - 1], was < 9 ? kHeroes[was] : "?");
         }
+    }
+    static const uint32_t env2 = [] {
+        const char* e = std::getenv("ROTK_PLAY_AS2");
+        return e ? uint32_t(std::atoi(e) + 1) : 0u;
+    }();
+    if (env2 >= 1 && env2 <= 9) {
+        kernel::W32(kHero + 4, env2 - 1);
+        kernel::G<uint8_t>(kCoop) = 1;
+        LOGI("rotk: level %d in co-op, the second player as %s (ROTK_PLAY_AS2)", int32_t(kernel::R32(kLevel)),
+             kHeroes[env2 - 1]);
     }
     __imp__sub_0009C090(ctx, base);
 }

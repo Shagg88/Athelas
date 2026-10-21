@@ -52,6 +52,7 @@ static long g_logBytes;
 static int  g_logInterval = 5;   /* seconds between stats lines */
 static int  g_spinUs      = 1000;/* final busy-wait window, microseconds */
 static int  g_skipAllVideos = 1; /* make every video skippable */
+static int  g_cachedReads = 1;   /* [Extras] CachedFileReads: the game's data files through Windows' file cache */
 
 /* ---- State ---- */
 char                 g_dir[MAX_PATH];
@@ -190,12 +191,16 @@ static void load_settings(void)
                   "EnemyDamage = 100\n"
                   "UnlockAll   = 0\n"
                   "AllHeroes   = 0\n"
+                  "Eowyn       = 0\n"
                   "\n"
                   "[Cheats]\n"
                   "Invulnerable      = 0\n"
                   "InfiniteMissiles  = 0\n"
                   "AlwaysDevastating = 0\n"
                   "PerfectMode       = 0\n"
+                  "\n"
+                  "[Language]\n"
+                  "Subtitles = off\n"
                   "\n"
                   "[Achievements]\n"
                   "Notify = 1\n"
@@ -240,6 +245,9 @@ static void load_settings(void)
                   "[Extras]\n"
                   "DeveloperButtons = 0\n"
                   "\n"
+                  "[System]\n"
+                  "OneCore = 0\n"
+                  "\n"
                   "[Log]\n"
                   "Enabled  = 1\n"
                   "Detailed = 0\n"
@@ -262,6 +270,7 @@ static void load_settings(void)
     if (g_spinUs > 4000)   g_spinUs = 4000;
     if (g_logInterval < 1) g_logInterval = 1;
     g_skipAllVideos = GetPrivateProfileIntA("Video", "AllowSkippingAllVideos", 1, ini);
+    g_cachedReads = GetPrivateProfileIntA("Extras", "CachedFileReads", 1, ini);
     {
         char mb[32];
         GetPrivateProfileStringA("Video", "MovieDisplay", "auto", mb, sizeof mb, ini);
@@ -393,11 +402,25 @@ static HANDLE WINAPI hook_CreateFileA(LPCSTR n, DWORD a, DWORD sh, LPSECURITY_AT
     InterlockedIncrement(&g_hitch[HITCH_FILES]);
     if (n && !IsBadStringPtrA(n, MAX_PATH)) { note_level_file(n); achieve_file(n); }
     if (n) { const char *b = strrchr(n, '\\'); lstrcpynA(g_lastFile, b ? b + 1 : n, sizeof g_lastFile); }
+    /* The game's file layer (0x4A5D50) opens every data file with FILE_FLAG_NO_BUFFERING, so each small read
+     * while playing (32-64 KB of a level's streamed parts, sound, movies) goes to the drive, with no read-ahead.
+     * Where the drive is slow to answer, each of those reads is a stutter: 25-40 ms on an ARM laptop
+     * (issue 12). Without the flag the same reads come from Windows' file cache; the game's reads stay
+     * sector-aligned, which buffered files also accept. Read-only files only. */
+    if (g_cachedReads && (fl & FILE_FLAG_NO_BUFFERING) && a == GENERIC_READ) {
+        static LONG logged;
+        fl &= ~(DWORD)FILE_FLAG_NO_BUFFERING;
+        if (!InterlockedExchange(&logged, 1)) logf_("files: the game's data files are read through Windows' file cache (it opens them unbuffered)");
+    }
     return g_realCreateFileA(n, a, sh, sa, cd, fl, t);
 }
 static BOOL WINAPI hook_ReadFile(HANDLE h, LPVOID buf, DWORD n, LPDWORD got, LPOVERLAPPED ov)
 {
+    LARGE_INTEGER t0, t1;
+    QueryPerformanceCounter(&t0);
     BOOL r = g_realReadFile(h, buf, n, got, ov);
+    QueryPerformanceCounter(&t1);
+    if (g_freq.QuadPart) InterlockedExchangeAdd(&g_hitch[HITCH_READUS], (LONG)((t1.QuadPart - t0.QuadPart) * 1000000 / g_freq.QuadPart));
     static DWORD rem;
     DWORD b = (r && got) ? *got : n;
     rem += b;
@@ -604,8 +627,8 @@ static void hitch_frame(LONGLONG now, LONGLONG us)
     if (g_presT0 > g_lastFrame && g_presT1 >= g_presT0 && g_presT1 <= now) {
         work = (g_presT0 - g_lastFrame) * f; pres = (g_presT1 - g_presT0) * f; after = (now - g_presT1) * f;
     }
-    logf_("slow frame %.1f ms: game %.1f, present %.1f, after %.1f | files %ld (%s) read %ld KB | draws %ld (3D %ld) | new textures %ld, new buffers %ld | 2D copies %ld KB",
-          us / 1000.0, work, pres, after, (long)c[HITCH_FILES], c[HITCH_FILES] ? g_lastFile : "-", (long)c[HITCH_READKB],
+    logf_("slow frame %.1f ms: game %.1f, present %.1f, after %.1f | files %ld (%s) read %ld KB in %.1f ms | draws %ld (3D %ld) | new textures %ld, new buffers %ld | 2D copies %ld KB",
+          us / 1000.0, work, pres, after, (long)c[HITCH_FILES], c[HITCH_FILES] ? g_lastFile : "-", (long)c[HITCH_READKB], c[HITCH_READUS] / 1000.0,
           (long)c[HITCH_DRAWS], (long)c[HITCH_DRAWS3D], (long)c[HITCH_TEXNEW], (long)c[HITCH_VBNEW], (long)c[HITCH_VBKB]);
     if (g_detailLog && us >= 30000 && us < 2000000) stall_report();
     g_presT0 = g_presT1 = 0;

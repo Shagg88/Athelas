@@ -1,0 +1,458 @@
+# The Two Towers - German subtitles (our own translation; line numbers are the game's text IDs)
+2	Hilfe
+4	START-Taste drücken
+6	Weiter
+7	Wiederholen
+8	Ein
+9	Aus
+10	Navigieren
+11	Auswählen
+12	Zurück
+13	@ 2002 New Line Productions, Inc.  Der Herr der Ringe sowie die darin vorkommenden Figuren, Namen und Orte, * The Saul Zaentz Company d/b/a Tolkien Enterprises, unter Lizenz an New Line Productions, Inc.  Alle Rechte vorbehalten.
+14	EA GAMES* ist eine Marke von Electronic Arts*.
+15	Spielcode und bestimmte audiovisuelle Elemente @ 2002 Electronic Arts Inc. Alle Rechte vorbehalten.
+16	Neues Spiel
+17	Spiel laden
+18	Optionen
+19	Debug-Modus
+20	Bonus-Features
+21	Spiel speichern
+24	START drücken, um fortzufahren
+25	Optionen
+26	Controller-Belegung
+27	Spiel-Setup
+38	Schwierigkeit:
+39	Leicht
+40	Normal
+41	Experte
+42	Mono
+43	Stereo
+44	Surround
+45	Spiel-Setup
+46	Sprachlautstärke:
+47	Musiklautstärke:
+48	Untertitel:
+49	Vibration:
+50	Spiellautstärke:
+51	Sound:
+53	Zu ladendes Spiel wählen:
+54	Speicherort wählen:
+55	MEMORY CARD-Steckplatz wählen:
+56	Xbox-Festplatte
+57	MEMORY CARD-Steckplatz 2
+58	MEMORY CARD-Steckplatz wählen:
+59	Abbrechen
+60	Ja
+61	Nein
+62	Bist du sicher?
+63	Willst du dieses Upgrade wirklich kaufen?
+64	Bist du sicher? Die Ergebnisse deines letzten Durchgangs dieser Mission gehen verloren.
+65	Bist du sicher? Alle nicht gespeicherten Fortschritte in diesem Spiel gehen verloren.
+66	Bist du sicher? Der Fortschritt in dieser Mission geht verloren.
+67	Willst du dieses Spiel wirklich überschreiben?
+68	Bist du mit dem Kauf von Upgrades fertig?
+69	Spiel auf der Festplatte speichern
+70	Spiel von der Festplatte laden
+75	Schwierigkeit wählen
+76	Leicht
+77	Normal
+78	Experte
+80	Gesperrt
+81	Abgeschlossen
+83	Noch nicht gespielt
+85	Prolog
+86	Wetterspitze
+87	Tore von Moria
+88	Balins Grab
+89	Amon Hen
+90	Fangorn
+91	Ebenen von Rohan
+92	Westernis
+93	Schlucht von Rohan
+94	Der Klammwall
+95	Die Bresche
+96	Innenhof der Hornburg
+97	Turm von Orthanc
+98	Helms Klamm:
+99	New Line-Zoo
+100	Abzuspielende Filmsequenz wählen:
+101	Intro
+102	Finale
+116	Aragorn
+117	Legolas
+118	Gimli
+119	Isildur
+120	Boden
+128	Upgrade-Punkte:
+129	4) Gib die angegebene Codefolge ein.
+130	Geheimcodes
+131	Immer verheerend:
+132	2 Spieler:
+133	Kleine Gegner:
+134	Alle Upgrades:
+135	Unverwundbar:
+136	Zeitlupe:
+137	So gibst du einen Code ein:
+138	1) Beginne eine Mission.
+139	2) Drücke START, um das Spiel anzuhalten.
+140	3) Gedrückt halten
+141	Unendliche Gesundheit:
+142	Unendliche Geschosse:
+143	Mission beenden:
+144	Pausenmodus:
+145	Erfahrung hinzufügen:
+146	Levelaufstieg:
+147	Gesundheit auffüllen:
+148	Geschosse auffüllen:
+149	Geschoss-Upgrade:
+150	Upgrades anzeigen
+151	Zum Menü
+152	Weiter zur nächsten Mission
+153	Du hast die Mission nicht geschafft.
+154	Mission wiederholen
+155	Zum Menü
+156	Neuer Versuch
+161	Mitwirkende
+176	Mission wiederholen
+180	Bitte wähle eine Sprache.
+181	Englisch
+196	Schneller Angriff
+197	Sturmangriff
+198	Todesstoß
+199	Spezial
+200	Kombi
+207	Gekauft
+208	Noch nicht freigeschaltet. Drücke die A-Taste, um fortzufahren.
+209	Du hast nicht genug Upgrade-Punkte für dieses Upgrade gesammelt. Drücke die A-Taste, um fortzufahren.
+210	oder
+211	nach Parade
+212	am Boden
+230	Freier Platz
+231	Spiel 2
+232	Spiel 3
+233	Spiel 4
+234	Spiel 5
+235	Spiel 6
+236	Spiel 7
+237	Spiel 8
+238	Spiel 9
+239	Spiel 10
+240	Spiel 11
+270	Es ist keine Memory Card (PS2) eingesteckt. Zum Speichern dieser Spieldaten werden mindestens 80 KB benötigt. Möchtest du fortfahren?
+271	Nicht genug Speicherplatz auf der Memory Card (PS2) in MEMORY CARD-Steckplatz 1.  Zum Speichern dieser Anwendungsdaten werden mindestens 80 KB benötigt. Möchtest du fortfahren?
+272	Nicht genug Speicherplatz auf der Memory Card (PS2) in MEMORY CARD-Steckplatz 2.  Zum Speichern dieser Anwendungsdaten werden mindestens 80 KB benötigt. Möchtest du fortfahren?
+273	Nicht genug Speicherplatz auf den Memory Cards (PS2) in den MEMORY CARD-Steckplätzen. Zum Speichern dieser Anwendungsdaten werden mindestens 80 KB benötigt. Möchtest du fortfahren?
+274	Keine Memory Card (PS2) in MEMORY CARD-Steckplatz 1 eingesteckt. Drücke die X-Taste, um fortzufahren.
+275	Keine Memory Card (PS2) in MEMORY CARD-Steckplatz 2 eingesteckt. Drücke die X-Taste, um fortzufahren.
+276	Bitte schließe den Controller wieder an und drücke START, um fortzufahren.
+277	Die Memory Card (PS2) in MEMORY CARD-Steckplatz 2 ist nicht formatiert. Memory Card (PS2) formatieren?
+278	Deine Xbox hat nicht genug freie Blöcke, um Spiele zu speichern.  Drücke A, um ohne Speichern fortzufahren, oder B, um mindestens
+279	Bitte schließe den Controller wieder an und drücke START, um fortzufahren
+280	Auf der Festplatte sind nicht genug freie Blöcke für diesen Spielstand vorhanden.
+281	Blöcke müssen freigegeben werden.
+282	Formatieren fehlgeschlagen! Fehler bei der Memory Card (PS2) in MEMORY CARD-Steckplatz 2! Drücke die X-Taste, um fortzufahren.
+283	Speichern nicht möglich. Drücke die A-Taste, um fortzufahren.
+284	Speichern nicht möglich. Drücke die A-Taste, um fortzufahren.
+285	Spiel gespeichert.  Drücke die A-Taste, um fortzufahren.
+286	Speichern auf der Memory Card (PS2) in MEMORY CARD-Steckplatz 2 erfolgreich! Drücke die X-Taste, um fortzufahren.
+287	Daten werden auf der Memory Card (PS2) in MEMORY CARD-Steckplatz 1 gespeichert. Memory Card (PS2) nicht entfernen, Konsole nicht zurücksetzen oder ausschalten.
+288	Daten werden auf der Memory Card (PS2) in MEMORY CARD-Steckplatz 2 gespeichert. Memory Card (PS2) nicht entfernen, Konsole nicht zurücksetzen oder ausschalten.
+289	Daten werden von der Memory Card (PS2) in MEMORY CARD-Steckplatz 1 geladen. Memory Card (PS2) nicht entfernen, Konsole nicht zurücksetzen oder ausschalten.
+290	Daten werden von der Memory Card (PS2) in MEMORY CARD-Steckplatz 2 geladen. Memory Card (PS2) nicht entfernen, Konsole nicht zurücksetzen oder ausschalten.
+291	Laden nicht möglich. Drücke die A-Taste, um fortzufahren.
+292	Laden nicht möglich. Drücke die A-Taste, um fortzufahren.
+293	Willst du dein Spiel speichern?
+294	Keine Spielstände vorhanden. Drücke die A-Taste, um fortzufahren.
+295	Keine Spielstände vorhanden. Drücke die A-Taste, um fortzufahren.
+296	Blöcke freizugeben.
+297	Die Memory Card (PS2) in MEMORY CARD-Steckplatz 1 ist nicht formatiert. Drücke die X-Taste, um fortzufahren.
+298	Die Memory Card (PS2) in MEMORY CARD-Steckplatz 2 ist nicht formatiert. Drücke die X-Taste, um fortzufahren.
+299	Daten werden von der Memory Card (PS2) in MEMORY CARD-Steckplatz 1 gelesen. Memory Card (PS2) nicht entfernen, Konsole nicht zurücksetzen oder ausschalten.
+300	Daten werden von der Memory Card (PS2) in MEMORY CARD-Steckplatz 2 gelesen. Memory Card (PS2) nicht entfernen, Konsole nicht zurücksetzen oder ausschalten.
+301	Mit der verwendeten Disc gibt es ein Problem. Sie ist möglicherweise verschmutzt oder beschädigt.
+320	Mission 1
+321	Mission 2
+322	Mission 3
+323	Mission 4
+324	Mission 5
+325	Mission 6
+326	Mission 7
+327	Mission 8
+328	Mission 9
+329	Mission 10
+330	Mission 11
+331	Mission 12
+332	Mission 13
+333	Mission A
+334	Mission B
+335	Mission C
+336	Mission D
+401	Missionserfahrung:
+403	Missionsbewertung:
+405	Upgrade-Punkte insgesamt:
+450	Perfekt
+451	Exzellent
+452	Gut
+453	Passabel
+454	Schwach
+455	Fähigkeit
+460	Schnell
+461	Stark
+462	Verteidigen
+463	Angriff
+464	Sturmangriff
+465	Angriff
+500	Eine schnelle Kombination.  Wirksam gegen kleinere Gegner ohne Schild.
+501	Eine wuchtige Kombination, die Hindernisse durchbricht und feindliche Schilde zertrümmert.
+502	Halte den linken Schalter gedrückt, um sie einzusetzen.  Feuere mit der A-Taste (gedrückt halten für mehr Schaden).
+503	Dieser Stoß erledigt jeden niedergestreckten Gegner.
+504	Stoße Gegner von dir weg und aus ihrer Schlagweite.
+505	Blockt feindliche Angriffe und Geschosse.
+506	Ein verheerender Angriff.  Halte die Y-Taste gedrückt, um ihn einzusetzen.
+507	Erhöht dauerhaft deine Gesundheit.
+508	Stürme vor und wirf Gegner ohne Schild zu Boden.
+509	Greife beim Aufstehen an und überrasche deine Gegner.
+510	Eine sehr wirksame Kombi gegen Gegner ohne Schild.
+511	Sehr wirksam, um Gegner mit Schild so schnell wie möglich zu erledigen.
+512	KOMBINATIONSANGRIFF: Töte einen angreifenden Goblin auf der Stelle.
+513	Die Widerhakenpfeile der Rohirrim werden wie mit dem Bogen der Dunedain abgefeuert und richten schweren Schaden an.
+514	Erhöht dauerhaft deine Gesundheit.  (Erfordert Stärke des Truchsess)
+515	Stürme aus großer Entfernung vor und wirf Gegner ohne Schild zu Boden. (Erfordert Schnelle Attacke)
+516	Mit dieser Kombination verwundest du deinen Gegner, wirfst ihn nieder und schlägst zu.
+517	Triff mit dieser Kombi einen Gegner ohne Schild, erledige ihn und greife sofort den nächsten an.
+518	KOMBINATIONSANGRIFF: Töte einen angreifenden Ork auf der Stelle.
+519	Erhöht dauerhaft deine Gesundheit.  (Erfordert Isildurs Stärke)
+520	Ein noch verheerenderer Angriff.  (Erfordert Zorn des Waldläufers)
+521	Erhöht den Schaden deines schnellen Angriffs.
+522	Mit dieser Kombi verwundest du starke Gegner, wirfst sie nieder und erledigst sie.
+523	Erhöht dauerhaft deine Gesundheit.  (Erfordert Stärke Elendils)
+524	Dieser verheerende Angriff setzt mehrere Gegner in Brand.  (Erfordert Zorn der Wildnis)
+525	Die eisernen Pfeile Gondors richten schrecklichen Schaden an.  (Erfordert Bogen von Rohan)
+526	KOMBINATIONSANGRIFF: Töte einen angreifenden Uruk-Hai auf der Stelle.
+527	Setze dies gegen einen starken Gegner ein, um seinen Schild zu zertrümmern, ihn zu Boden zu werfen und zuzuschlagen.
+528	Nichts
+529	Nichts
+530	Eine schnelle Kombination.  Wirksam gegen kleinere Gegner ohne Schild.
+531	Eine wuchtige Kombination, die Hindernisse durchbricht und feindliche Schilde zertrümmert.
+532	Halte den linken Schalter gedrückt, um sie einzusetzen.  Wirf mit der A-Taste (gedrückt halten für mehr Schaden).
+533	Dieser Axthieb erledigt jeden niedergestreckten Gegner.
+534	Stoße Gegner von dir weg und aus ihrer Schlagweite.
+535	Blockt feindliche Angriffe und Geschosse.
+536	Ein verheerender Angriff.  Halte die Y-Taste gedrückt, um ihn einzusetzen.
+537	Erhöht dauerhaft deine Gesundheit.
+538	Erhöht dauerhaft deine Gesundheit.  (Erfordert Macht des Felsen)
+539	Stürme vor und wirf Gegner ohne Schild zu Boden.
+540	Eine sehr wirksame Kombi gegen Gegner ohne Schild.
+541	Sehr wirksam, um Gegner mit Schild so schnell wie möglich zu erledigen.
+542	KOMBINATIONSANGRIFF: Töte einen angreifenden Goblin auf der Stelle.
+543	Erhöht dauerhaft deine Gesundheit.  (Erfordert Macht des Eisens)
+544	Stürme aus großer Entfernung vor und wirf Gegner ohne Schild zu Boden.  (Erfordert Schnelle Attacke)
+545	Greife beim Aufstehen an und überrasche deine Gegner.
+546	Mit dieser Kombination verwundest du deinen Gegner, wirfst ihn nieder und schlägst zu.
+547	Triff mit dieser Kombi einen Gegner ohne Schild, erledige ihn und greife sofort den nächsten an.
+548	KOMBINATIONSANGRIFF: Töte einen angreifenden Ork auf der Stelle.
+549	Erhöht dauerhaft deine Gesundheit.  (Erfordert Schutzrune)
+550	Erhöht dauerhaft deine Gesundheit.  (Erfordert Macht Balins)
+551	Die rasiermesserscharfen Äxte Morias werden wie die Äxte Erebors geworfen und richten noch mehr Schaden an.
+552	Ein noch verheerenderer Angriff.  (Erfordert Zorn der Zwerge)
+553	Mit dieser Kombi verwundest du starke Gegner, wirfst sie nieder und erledigst sie.
+554	Erhöht dauerhaft deine Gesundheit.  (Erfordert Macht Gloins)
+555	Dieser verheerende Angriff setzt mehrere Gegner in Brand.  (Erfordert Zorn der Berge)
+556	Diese Klingen mit Mithrilschneide richten schrecklichen Schaden an.  (Erfordert Äxte Morias)
+557	Erhöht den Schaden deines Sturmangriffs.
+558	KOMBINATIONSANGRIFF: Töte einen angreifenden Uruk-Hai auf der Stelle.
+559	Setze dies gegen einen starken Gegner ein, um seinen Schild zu zertrümmern, ihn zu Boden zu werfen und zuzuschlagen.
+560	Eine schnelle Kombination.  Wirksam gegen kleinere Gegner ohne Schild.
+561	Eine wuchtige Kombination, die Hindernisse durchbricht und feindliche Schilde zertrümmert.
+562	Halte den linken Schalter gedrückt, um sie einzusetzen.  Feuere mit der A-Taste (gedrückt halten für mehr Schaden).
+563	Dieser Stoß erledigt jeden niedergestreckten Gegner.
+564	Stoße Gegner von dir weg und aus ihrer Schlagweite.
+565	Blockt feindliche Angriffe und Geschosse.
+566	Ein verheerender Angriff.  Halte die Y-Taste gedrückt, um ihn einzusetzen.
+567	Erhöht dauerhaft deine Gesundheit.
+568	Stürme vor und wirf Gegner ohne Schild zu Boden.
+569	Die Eschenpfeile aus Bruchtal werden wie mit dem Langbogen aus Düsterwald abgefeuert und richten noch mehr Schaden an.
+570	Eine sehr wirksame Kombi gegen Gegner ohne Schild.
+571	Sehr wirksam, um Gegner mit Schild so schnell wie möglich zu erledigen.
+572	KOMBINATIONSANGRIFF: Töte einen angreifenden Goblin auf der Stelle.
+573	Stürme aus großer Entfernung vor und wirf Gegner ohne Schild zu Boden.  (Erfordert Schnelle Attacke)
+574	Die verzauberten Pfeile aus Lothlorien richten grauenhaften Schaden an.  (Erfordert Langbogen aus Bruchtal)
+575	Mit dieser Kombination verwundest du deinen Gegner, wirfst ihn nieder und schlägst zu.
+576	Triff mit dieser Kombi einen Gegner ohne Schild, erledige ihn und greife sofort den nächsten an.
+577	Diese magischen Pfeile setzen deine Gegner in Brand.  (Erfordert Langbogen aus Lothlorien)
+578	Erhöht dauerhaft deine Gesundheit.  (Erfordert Macht Celeborns)
+579	Ein noch verheerenderer Angriff.  (Erfordert Elbenzorn)
+580	KOMBINATIONSANGRIFF: Töte einen angreifenden Ork auf der Stelle.
+581	Mit dieser Kombi verwundest du starke Gegner, wirfst sie nieder und erledigst sie.
+582	Diese Pfeile durchschlagen und verletzen alle Gegner in ihrer Flugbahn.  (Erfordert Drachenpfeile)
+583	Greife beim Aufstehen an und überrasche deine Gegner.
+584	Erhöht den Schaden jedes Pfeils, den du abfeuerst.
+585	KOMBINATIONSANGRIFF: Töte einen angreifenden Uruk-Hai auf der Stelle.
+586	Setze dies gegen einen starken Gegner ein, um seinen Schild zu zertrümmern, ihn zu Boden zu werfen und zuzuschlagen.
+600	Dreifachschlag
+601	Doppelschlag
+602	Bogen der Dunedain
+603	Schattenschlag
+604	Kampftritt
+605	Schwertparade
+606	Zorn des Waldläufers
+607	Stärke des Truchsess
+608	Schnelle Attacke
+609	Konterangriff
+610	Isildurs Zorn
+611	Isildurs Rettung
+612	Goblin-Klinge
+613	Bogen von Rohan
+614	Isildurs Stärke
+615	Sturmangriff
+616	Isildurs Todesangriff
+617	Isildurs Gambit
+618	Ork-Klinge
+619	Stärke Elendils
+620	Zorn der Wildnis
+621	Schwertmeister
+622	Isildurs Sturmangriff
+623	Stärke der Argonath
+624	Zorn Numenors
+625	Bogen Gondors
+626	Sarumans Untergang
+627	Isildurs Rat
+628	Nichts
+629	Nichts
+630	Dreifachschlag
+631	Doppelschlag
+632	Äxte Erebors
+633	Schattenschlag
+634	Axtangriff
+635	Axtparade
+636	Zorn der Zwerge
+637	Macht des Felsen
+638	Macht des Eisens
+639	Schnelle Attacke
+640	Balins Rache
+641	Balins Rettung
+642	Goblin-Klinge
+643	Schutzrune
+644	Sturmangriff
+645	Konterangriff
+646	Balins Todesangriff
+647	Balins Gambit
+648	Ork-Klinge
+649	Macht Balins
+650	Macht Gloins
+651	Äxte Morias
+652	Zorn der Berge
+653	Balins Sturmangriff
+654	Macht Khazad-dums
+655	Zorn Morias
+656	Äxte des Nebelgebirges
+657	Axtmeister der Könige
+658	Sarumans Untergang
+659	Balins Rat
+660	Dreifachschlag
+661	Doppelschlag
+662	Langbogen aus Düsterwald
+663	Schattenschlag
+664	Kampftritt
+665	Messerparade
+666	Elbenzorn
+667	Macht Celeborns
+668	Schnelle Attacke
+669	Langbogen aus Bruchtal
+670	Elronds Zorn
+671	Elronds Rettung
+672	Goblin-Klinge
+673	Sturmangriff
+674	Langbogen aus Lothlorien
+675	Elronds Todesangriff
+676	Elronds Gambit
+677	Drachenpfeile
+678	Macht Galadriels
+679	Gil-Galads Zorn
+680	Ork-Klinge
+681	Elronds Sturmangriff
+682	Mithrilpfeile
+683	Konterangriff
+684	Elbischer Bogenmeister
+685	Sarumans Untergang
+686	Elronds Rat
+700	Level
+800	Pariere, um feindliche Angriffe zu blocken und Pfeile abzulenken.
+801	Parieren
+802	Halte den linken Schalter gedrückt, um zur Fernwaffe zu wechseln.  Drücke die A-Taste zum Feuern.  Ziele mit dem linken Ministick.
+804	Fernwaffe
+805	Feuern
+806	Setze einen schnellen Angriff gegen Gegner ohne Schild ein.
+807	Zerbrich feindliche Schilde mit dem Sturmangriff.
+808	Sturmangriff
+809	Schneller Angriff
+810	Sammle Erfahrungspunkte, um den Level deiner Figur zu steigern und wertvolle Upgrades zu kaufen.
+811	Erhaltene Erfahrungspunkte
+812	Setze fortgeschrittene Kombinationen ein und lass dich nicht treffen, um die Fähigkeitsanzeige zu füllen und die meisten Erfahrungspunkte zu erhalten.
+813	Fähigkeitsanzeige
+814	Zielen
+815	Zurückspringen
+816	Todesstoß
+817	Zurückstoßen
+818	Feuern/Schneller Angriff
+819	Bewegen/Zielen
+820	Pause
+840	Interview
+841	Peter Jackson und Barrie Osborne
+842	Elijah Wood
+843	Ian McKellen
+844	Der Herr der Ringe
+845	Das Making-of zum Videospiel
+846	Der Herr der Ringe
+847	Exklusive Filmclips
+848	'Die Gefährten'
+849	Fotos von den Dreharbeiten
+850	Fangorn und Orthanc
+851	Rohan und Helms Klamm
+852	Viggo Mortensen
+853	Orlando Bloom
+854	John Rhys-Davies
+855	Geheimcodes
+856	Als Aragorn spielen
+857	Als Legolas spielen
+858	Als Gimli spielen
+859	Als Isildur spielen
+860	Geheime Mission
+861	Als geheime Figur spielen
+862	Konzeptzeichnungen
+900	Zum Freischalten Tore von Moria abschließen
+901	Zum Freischalten Balins Grab abschließen
+902	Zum Freischalten Amon Hen abschließen
+903	Zum Freischalten Fangorn abschließen
+904	Zum Freischalten Ebenen von Rohan abschließen
+905	Zum Freischalten Westernis abschließen
+906	Zum Freischalten Schlucht von Rohan abschließen
+907	Zum Freischalten Helms Klamm: Der Klammwall abschließen
+908	Zum Freischalten Helms Klamm: Die Bresche abschließen
+909	Erreiche mit Aragorn Level 5
+910	Erreiche mit Legolas Level 5
+911	Erreiche mit Gimli Level 5
+912	Schließe Helms Klamm: Innenhof der Hornburg ab und erreiche mit Aragorn Level 10
+913	Schließe Helms Klamm: Innenhof der Hornburg ab und erreiche mit Legolas Level 10
+914	Schließe Helms Klamm: Innenhof der Hornburg ab und erreiche mit Gimli Level 10
+915	Schließe die geheime Mission mit einer beliebigen Figur ab
+916	Schließe die geheime Mission mit der geheimen Figur ab
+917	Peter Jackson und Barrie Osborne sprechen über den Film und das Spiel
+918	Elijah Wood erzählt, wie er Frodo im Videospiel 'Der Herr der Ringe' spielt
+919	Ian McKellen spricht darüber, wie er Gandalf im Videospiel 'Der Herr der Ringe' spielt
+920	Ein Blick hinter die Kulissen: So entstand das Videospiel 'Der Herr der Ringe'
+921	Fotos von Figuren und Schauplätzen aus 'Die Gefährten'
+922	Fotos von Figuren und Schauplätzen aus Fangorn und Orthanc
+923	Von 'Der Herr der Ringe' inspirierte Kunstwerke von John Howe und Alan Lee
+924	Fotos von Figuren und Schauplätzen aus Rohan und Helms Klamm
+925	Viggo Mortensen erzählt, wie er Aragorn im Videospiel 'Der Herr der Ringe' spielt
+926	Orlando Bloom spricht darüber, wie er Legolas im Videospiel 'Der Herr der Ringe' spielt
+927	John Rhys-Davies erzählt, wie er Gimli im Videospiel 'Der Herr der Ringe' spielt
+928	Geheimcodes zum Freischalten versteckter Inhalte im Videospiel 'Der Herr der Ringe'
+950	Auswahl wechseln
+951	Auswählen
+952	Zurück
+953	Auswahl wechseln oder anpassen
+954	Zum Hauptmenü
+955	Bild wechseln
+956	Kaufe mit deinen Upgrade-Punkten Verbesserungen für deine Figur.

@@ -1,0 +1,458 @@
+# The Two Towers - French subtitles (our own translation; line numbers are the game's text IDs)
+2	Aide
+4	Appuyez sur START
+6	Continuer
+7	Rejouer
+8	Activé
+9	Désactivé
+10	Naviguer
+11	Sélectionner
+12	Retour
+13	@ 2002 New Line Productions, Inc. Le Seigneur des Anneaux ainsi que ses personnages, noms et lieux, * The Saul Zaentz Company d/b/a Tolkien Enterprises, sous licence accordée à New Line Productions, Inc. Tous droits réservés.
+14	EA GAMES* est une marque d'Electronic Arts*.
+15	Code du jeu et certains éléments audiovisuels @ 2002 Electronic Arts Inc. Tous droits réservés.
+16	Nouvelle partie
+17	Charger une partie
+18	Options
+19	Mode débogage
+20	Bonus
+21	Sauvegarder la partie
+24	Appuyez sur START pour reprendre
+25	Options
+26	Configuration de la manette
+27	Paramètres du jeu
+38	Difficulté :
+39	Facile
+40	Normal
+41	Expert
+42	Mono
+43	Stéréo
+44	Surround
+45	Paramètres du jeu
+46	Volume des voix :
+47	Volume de la musique :
+48	Sous-titres :
+49	Vibrations :
+50	Volume du jeu :
+51	Son :
+53	Partie à charger :
+54	Emplacement de sauvegarde :
+55	Choisissez la fente MEMORY CARD :
+56	Disque dur Xbox
+57	Fente MEMORY CARD 2
+58	Choisissez la fente MEMORY CARD :
+59	Annuler
+60	Oui
+61	Non
+62	Êtes-vous sûr ?
+63	Voulez-vous vraiment acheter cette compétence ?
+64	Êtes-vous sûr ? Les résultats de votre dernière partie de cette mission seront perdus.
+65	Êtes-vous sûr ? Toute progression non sauvegardée sera perdue.
+66	Êtes-vous sûr ? Votre progression dans cette mission sera perdue.
+67	Voulez-vous vraiment écraser cette sauvegarde ?
+68	Avez-vous fini d'acheter vos compétences ?
+69	Sauvegarder sur le disque dur
+70	Charger depuis le disque dur
+75	Choisissez la difficulté
+76	Facile
+77	Normal
+78	Expert
+80	Verrouillé
+81	Terminé
+83	Non jouée
+85	Prologue
+86	Le Mont Venteux
+87	La porte de la Moria
+88	La tombe de Balin
+89	Amon Hen
+90	La forêt de Fangorn
+91	Les plaines de Rohan
+92	L'Ouestfolde
+93	La Trouée de Rohan
+94	Le mur du Gouffre
+95	La brèche
+96	La cour de Fort-le-Cor
+97	La tour d'Orthanc
+98	Le Gouffre de Helm :
+99	Le zoo New Line
+100	Choisissez une vidéo à lire :
+101	Introduction
+102	Fin
+116	Aragorn
+117	Legolas
+118	Gimli
+119	Isildur
+120	Étage
+128	Points de compétence :
+129	4) Saisissez la séquence du code.
+130	Codes secrets
+131	Toujours dévastateur :
+132	2 joueurs :
+133	Petits ennemis :
+134	Toutes les compétences :
+135	Invulnérable :
+136	Ralenti :
+137	Pour saisir un code :
+138	1) Lancez une mission.
+139	2) Appuyez sur START pour faire pause.
+140	3) Maintenez
+141	Santé infinie :
+142	Projectiles infinis :
+143	Terminer la mission :
+144	Mode pause :
+145	Ajouter de l'expérience :
+146	Niveau supérieur :
+147	Restaurer la santé :
+148	Restaurer les projectiles :
+149	Amélioration des projectiles :
+150	Afficher les compétences
+151	Retour au menu
+152	Mission suivante
+153	Mission échouée.
+154	Rejouer la mission
+155	Retour au menu
+156	Réessayer
+161	Générique
+176	Rejouer la mission
+180	Choisissez une langue.
+181	Anglais
+196	Rapide
+197	Féroce
+198	Mise à mort
+199	Spécial
+200	Combo
+207	Achetée
+208	Pas encore débloquée. Appuyez sur la touche A pour continuer.
+209	Vous n'avez pas assez de points de compétence pour acheter cette compétence. Appuyez sur la touche A pour continuer.
+210	ou
+211	après une parade
+212	au sol
+230	Emplacement vide
+231	Partie 2
+232	Partie 3
+233	Partie 4
+234	Partie 5
+235	Partie 6
+236	Partie 7
+237	Partie 8
+238	Partie 9
+239	Partie 10
+240	Partie 11
+270	Aucune carte mémoire (PS2) n'est insérée. Au moins 80 Ko sont nécessaires pour sauvegarder les données de cette partie. Voulez-vous continuer ?
+271	Espace insuffisant sur la carte mémoire (PS2) de la fente MEMORY CARD 1. Au moins 80 Ko sont nécessaires pour sauvegarder les données de cette application. Voulez-vous continuer ?
+272	Espace insuffisant sur la carte mémoire (PS2) de la fente MEMORY CARD 2. Au moins 80 Ko sont nécessaires pour sauvegarder les données de cette application. Voulez-vous continuer ?
+273	Espace insuffisant sur les cartes mémoire (PS2) des fentes MEMORY CARD. Au moins 80 Ko sont nécessaires pour sauvegarder les données de cette application. Voulez-vous continuer ?
+274	Aucune carte mémoire (PS2) n'est insérée dans la fente MEMORY CARD 1. Appuyez sur la touche X pour continuer.
+275	Aucune carte mémoire (PS2) n'est insérée dans la fente MEMORY CARD 2. Appuyez sur la touche X pour continuer.
+276	Reconnectez la manette et appuyez sur START pour continuer.
+277	La carte mémoire (PS2) de la fente MEMORY CARD 2 n'est pas formatée. Formater la carte mémoire (PS2) ?
+278	Votre Xbox n'a pas assez de blocs libres pour sauvegarder des parties. Appuyez sur A pour continuer sans sauvegarder ou sur B pour libérer au moins
+279	Reconnectez la manette et appuyez sur START pour continuer
+280	Le disque dur n'a pas assez de blocs libres pour cette sauvegarde.
+281	blocs doivent être libérés.
+282	Échec du formatage ! Erreur de la carte mémoire (PS2) de la fente MEMORY CARD 2 ! Appuyez sur la touche X pour continuer.
+283	Impossible de sauvegarder la partie. Appuyez sur la touche A pour continuer.
+284	Impossible de sauvegarder la partie. Appuyez sur la touche A pour continuer.
+285	Partie sauvegardée. Appuyez sur la touche A pour continuer.
+286	Sauvegarde réussie sur la carte mémoire (PS2) de la fente MEMORY CARD 2 ! Appuyez sur la touche X pour continuer.
+287	Sauvegarde des données sur la carte mémoire (PS2) de la fente MEMORY CARD 1. Ne retirez pas la carte mémoire (PS2), ne réinitialisez pas et n'éteignez pas la console.
+288	Sauvegarde des données sur la carte mémoire (PS2) de la fente MEMORY CARD 2. Ne retirez pas la carte mémoire (PS2), ne réinitialisez pas et n'éteignez pas la console.
+289	Chargement des données depuis la carte mémoire (PS2) de la fente MEMORY CARD 1. Ne retirez pas la carte mémoire (PS2), ne réinitialisez pas et n'éteignez pas la console.
+290	Chargement des données depuis la carte mémoire (PS2) de la fente MEMORY CARD 2. Ne retirez pas la carte mémoire (PS2), ne réinitialisez pas et n'éteignez pas la console.
+291	Impossible de charger la partie. Appuyez sur la touche A pour continuer.
+292	Impossible de charger la partie. Appuyez sur la touche A pour continuer.
+293	Voulez-vous sauvegarder la partie ?
+294	Aucune partie sauvegardée. Appuyez sur la touche A pour continuer.
+295	Aucune partie sauvegardée. Appuyez sur la touche A pour continuer.
+296	blocs.
+297	La carte mémoire (PS2) de la fente MEMORY CARD 1 n'est pas formatée. Appuyez sur la touche X pour continuer.
+298	La carte mémoire (PS2) de la fente MEMORY CARD 2 n'est pas formatée. Appuyez sur la touche X pour continuer.
+299	Lecture des données de la carte mémoire (PS2) de la fente MEMORY CARD 1. Ne retirez pas la carte mémoire (PS2), ne réinitialisez pas et n'éteignez pas la console.
+300	Lecture des données de la carte mémoire (PS2) de la fente MEMORY CARD 2. Ne retirez pas la carte mémoire (PS2), ne réinitialisez pas et n'éteignez pas la console.
+301	Un problème est survenu avec le disque utilisé. Il est peut-être sale ou endommagé.
+320	Mission 1
+321	Mission 2
+322	Mission 3
+323	Mission 4
+324	Mission 5
+325	Mission 6
+326	Mission 7
+327	Mission 8
+328	Mission 9
+329	Mission 10
+330	Mission 11
+331	Mission 12
+332	Mission 13
+333	Mission A
+334	Mission B
+335	Mission C
+336	Mission D
+401	Expérience de la mission :
+403	Évaluation de la mission :
+405	Total des points de compétence :
+450	Parfait
+451	Excellent
+452	Bien
+453	Passable
+454	Médiocre
+455	Compétence
+460	Attaque
+461	Puissante
+462	Défense
+463	Rapide
+464	Attaque
+465	Féroce
+500	Un enchaînement rapide, efficace contre les petits ennemis sans bouclier.
+501	Un enchaînement puissant pour enfoncer les obstacles ou briser les boucliers ennemis.
+502	Maintenez la gâchette G pour l'utiliser. Tirez avec la touche A (maintenez-la pour augmenter les dommages).
+503	Ce coup d'estoc achève tout ennemi à terre.
+504	Repousse les ennemis loin de vous, hors de portée de leurs coups.
+505	Bloque les attaques et projectiles ennemis.
+506	Une attaque dévastatrice. Maintenez la touche Y pour l'utiliser.
+507	Augmente définitivement votre santé.
+508	Foncez pour renverser les ennemis sans bouclier.
+509	Attaquez en vous relevant pour prendre vos ennemis par surprise.
+510	Un combo très efficace pour éliminer les ennemis sans bouclier.
+511	Très efficace pour éliminer au plus vite les ennemis équipés d'un bouclier.
+512	ENCHAÎNEMENT : tue instantanément un Goblin qui vous attaque.
+513	Tirées comme avec l'Arc dunedain, les flèches barbelées des Rohirrims infligent de lourds dommages.
+514	Augmente définitivement votre santé. (Nécessite Force des Régents)
+515	Foncez de loin pour renverser les ennemis sans bouclier. (Nécessite Attaque éclair)
+516	Blessez, renversez puis frappez votre ennemi avec cet enchaînement.
+517	Ce combo permet de frapper un ennemi sans bouclier, de l'achever, puis d'en frapper rapidement un autre.
+518	ENCHAÎNEMENT : tue instantanément un Orque qui vous attaque.
+519	Augmente définitivement votre santé. (Nécessite Force d'Isildur)
+520	Une version encore plus dévastatrice de l'attaque. (Nécessite Furie de Rôdeur)
+521	Augmente les dommages de votre attaque Rapide.
+522	Blessez, renversez puis achevez les ennemis puissants avec ce combo.
+523	Augmente définitivement votre santé. (Nécessite Force d'Elendil)
+524	Cette attaque dévastatrice embrase plusieurs ennemis. (Nécessite Rage sauvage)
+525	Les flèches de fer du Gondor infligent de terribles dommages. (Nécessite Arc du Rohan)
+526	ENCHAÎNEMENT : tue instantanément un Ourouk-haï qui vous attaque.
+527	À utiliser contre un ennemi puissant pour briser son bouclier, le jeter à terre et le frapper.
+528	Rien
+529	Rien
+530	Un enchaînement rapide, efficace contre les petits ennemis sans bouclier.
+531	Un enchaînement puissant pour enfoncer les obstacles ou briser les boucliers ennemis.
+532	Maintenez la gâchette G pour l'utiliser. Lancez avec la touche A (maintenez-la pour augmenter les dommages).
+533	Ce coup de hache achève tout ennemi à terre.
+534	Repousse les ennemis loin de vous, hors de portée de leurs coups.
+535	Bloque les attaques et projectiles ennemis.
+536	Une attaque dévastatrice. Maintenez la touche Y pour l'utiliser.
+537	Augmente définitivement votre santé.
+538	Augmente définitivement votre santé. (Nécessite Puissance de la roche)
+539	Foncez pour renverser les ennemis sans bouclier.
+540	Un combo très efficace pour éliminer les ennemis sans bouclier.
+541	Très efficace pour éliminer au plus vite les ennemis équipés d'un bouclier.
+542	ENCHAÎNEMENT : tue instantanément un Goblin qui vous attaque.
+543	Augmente définitivement votre santé. (Nécessite Puissance du fer)
+544	Foncez de loin pour renverser les ennemis sans bouclier. (Nécessite Attaque éclair)
+545	Attaquez en vous relevant pour prendre vos ennemis par surprise.
+546	Blessez, renversez puis frappez votre ennemi avec cet enchaînement.
+547	Ce combo permet de frapper un ennemi sans bouclier, de l'achever, puis d'en frapper rapidement un autre.
+548	ENCHAÎNEMENT : tue instantanément un Orque qui vous attaque.
+549	Augmente définitivement votre santé. (Nécessite Rune de protection)
+550	Augmente définitivement votre santé. (Nécessite Puissance de Balin)
+551	Lancées comme les Haches d'Erebor, les haches de la Moria, aussi affûtées que des rasoirs, infligent encore plus de dommages.
+552	Une version encore plus dévastatrice de l'attaque. (Nécessite Furie de Nain)
+553	Blessez, renversez puis achevez les ennemis puissants avec ce combo.
+554	Augmente définitivement votre santé. (Nécessite Puissance de Gloin)
+555	Cette attaque dévastatrice embrase plusieurs ennemis. (Nécessite Rage des montagnes)
+556	Ces lames bordées de Mithril infligent de terribles dommages. (Nécessite Haches de la Moria)
+557	Augmente les dommages de votre attaque Féroce.
+558	ENCHAÎNEMENT : tue instantanément un Ourouk-haï qui vous attaque.
+559	À utiliser contre un ennemi puissant pour briser son bouclier, le jeter à terre et le frapper.
+560	Un enchaînement rapide, efficace contre les petits ennemis sans bouclier.
+561	Un enchaînement puissant pour enfoncer les obstacles ou briser les boucliers ennemis.
+562	Maintenez la gâchette G pour l'utiliser. Tirez avec la touche A (maintenez-la pour augmenter les dommages).
+563	Ce coup d'estoc achève tout ennemi à terre.
+564	Repousse les ennemis loin de vous, hors de portée de leurs coups.
+565	Bloque les attaques et projectiles ennemis.
+566	Une attaque dévastatrice. Maintenez la touche Y pour l'utiliser.
+567	Augmente définitivement votre santé.
+568	Foncez pour renverser les ennemis sans bouclier.
+569	Tirées comme avec l'Arc long de la Forêt Noire, les flèches en frêne de Fondcombe infligent encore plus de dommages.
+570	Un combo très efficace pour éliminer les ennemis sans bouclier.
+571	Très efficace pour éliminer au plus vite les ennemis équipés d'un bouclier.
+572	ENCHAÎNEMENT : tue instantanément un Goblin qui vous attaque.
+573	Foncez de loin pour renverser les ennemis sans bouclier. (Nécessite Attaque éclair)
+574	Les flèches enchantées de Lothlorien infligent des dommages effroyables. (Nécessite Arc long de Fondcombe)
+575	Blessez, renversez puis frappez votre ennemi avec cet enchaînement.
+576	Ce combo permet de frapper un ennemi sans bouclier, de l'achever, puis d'en frapper rapidement un autre.
+577	Ces flèches magiques embrasent vos ennemis. (Nécessite Arc long de Lothlorien)
+578	Augmente définitivement votre santé. (Nécessite Force de Céléborn)
+579	Une version encore plus dévastatrice de l'attaque. (Nécessite Furie elfique)
+580	ENCHAÎNEMENT : tue instantanément un Orque qui vous attaque.
+581	Blessez, renversez puis achevez les ennemis puissants avec ce combo.
+582	Ces flèches transpercent et blessent tous les ennemis sur leur trajectoire. (Nécessite Flèches de feu de Dragon)
+583	Attaquez en vous relevant pour prendre vos ennemis par surprise.
+584	Augmente les dommages de chacune de vos flèches.
+585	ENCHAÎNEMENT : tue instantanément un Ourouk-haï qui vous attaque.
+586	À utiliser contre un ennemi puissant pour briser son bouclier, le jeter à terre et le frapper.
+600	Triple frappe
+601	Coup double
+602	Arc dunedain
+603	Frappe de l'Ombre
+604	Coup de pied de combat
+605	Parade à l'épée
+606	Furie de Rôdeur
+607	Force des Régents
+608	Attaque éclair
+609	Attaque montante
+610	Éclair de terreur d'Isildur
+611	Délivrance d'Isildur
+612	Fléau des Goblins
+613	Arc du Rohan
+614	Force d'Isildur
+615	Charge
+616	Charge finale d'Isildur
+617	Stratagème d'Isildur
+618	Fléau des Orques
+619	Force d'Elendil
+620	Rage sauvage
+621	Maître épéiste
+622	Charge héroïque d'Isildur
+623	Force de l'Argonath
+624	Colère de Numénor
+625	Arc du Gondor
+626	Fléau de Saroumane
+627	Jugement d'Isildur
+628	Rien
+629	Rien
+630	Triple frappe
+631	Coup double
+632	Haches d'Erebor
+633	Frappe de l'Ombre
+634	Poussée tranchante
+635	Parade à la hache
+636	Furie de Nain
+637	Puissance de la roche
+638	Puissance du fer
+639	Attaque éclair
+640	Éclair de terreur de Balin
+641	Délivrance de Balin
+642	Fléau des Goblins
+643	Rune de protection
+644	Charge
+645	Attaque montante
+646	Charge finale de Balin
+647	Stratagème de Balin
+648	Fléau des Orques
+649	Puissance de Balin
+650	Puissance de Gloin
+651	Haches de la Moria
+652	Rage des montagnes
+653	Charge héroïque de Balin
+654	Puissance de Khazad-dûm
+655	Colère de la Moria
+656	Haches des Monts Brumeux
+657	Maître des haches
+658	Fléau de Saroumane
+659	Jugement de Balin
+660	Triple frappe
+661	Coup double
+662	Arc long de la Forêt Noire
+663	Frappe de l'Ombre
+664	Coup de pied de combat
+665	Parade au couteau
+666	Furie elfique
+667	Force de Céléborn
+668	Attaque éclair
+669	Arc long de Fondcombe
+670	Éclair de terreur d'Elrond
+671	Délivrance d'Elrond
+672	Fléau des Goblins
+673	Charge
+674	Arc long de Lothlorien
+675	Charge finale d'Elrond
+676	Stratagème d'Elrond
+677	Flèches de feu de Dragon
+678	Force de Galadriel
+679	Rage de Gil-galad
+680	Fléau des Orques
+681	Charge héroïque d'Elrond
+682	Flèches de Mithril
+683	Attaque montante
+684	Maître archer elfe
+685	Fléau de Saroumane
+686	Jugement d'Elrond
+700	Niveau
+800	Parez pour bloquer les attaques ennemies et dévier les flèches.
+801	Parade
+802	Maintenez la gâchette G pour passer à votre Arme à distance. Appuyez sur la touche A pour tirer. Visez avec le stick G.
+804	Arme à distance
+805	Tirer
+806	Utilisez l'Attaque rapide pour frapper les ennemis sans bouclier.
+807	Utilisez l'Attaque féroce pour briser les boucliers ennemis.
+808	Attaque féroce
+809	Attaque rapide
+810	Gagnez des points d'expérience pour faire monter votre personnage de niveau et acheter de précieuses compétences.
+811	Points d'expérience gagnés
+812	Utilisez des enchaînements avancés et évitez les coups ennemis pour remplir l'Indicateur de compétence et gagner un maximum de points d'expérience.
+813	Indicateur de compétence
+814	Viser
+815	Saut en arrière
+816	Coup de grâce
+817	Repousser
+818	Tirer/Attaque rapide
+819	Déplacement/Viser
+820	Pause
+840	Interview
+841	Peter Jackson et Barrie Osborne
+842	Elijah Wood
+843	Ian McKellen
+844	Le Seigneur des Anneaux
+845	Les coulisses du jeu vidéo
+846	Le Seigneur des Anneaux
+847	Extraits du film en exclusivité
+848	'La Communauté de l'Anneau'
+849	Photos de tournage
+850	Fangorn et Orthanc
+851	Rohan et le Gouffre de Helm
+852	Viggo Mortensen
+853	Orlando Bloom
+854	John Rhys-Davies
+855	Codes secrets
+856	Jouer avec Aragorn
+857	Jouer avec Legolas
+858	Jouer avec Gimli
+859	Jouer avec Isildur
+860	Mission secrète
+861	Jouer avec le personnage secret
+862	Art conceptuel
+900	Terminez « La porte de la Moria » pour débloquer
+901	Terminez « La tombe de Balin » pour débloquer
+902	Terminez « Amon Hen » pour débloquer
+903	Terminez « La forêt de Fangorn » pour débloquer
+904	Terminez « Les plaines de Rohan » pour débloquer
+905	Terminez « L'Ouestfolde » pour débloquer
+906	Terminez « La Trouée de Rohan » pour débloquer
+907	Terminez « Le Gouffre de Helm : Le mur du Gouffre » pour débloquer
+908	Terminez « Le Gouffre de Helm : La brèche » pour débloquer
+909	Atteignez le niveau 5 avec Aragorn
+910	Atteignez le niveau 5 avec Legolas
+911	Atteignez le niveau 5 avec Gimli
+912	Terminez « Le Gouffre de Helm : La cour de Fort-le-Cor » et atteignez le niveau 10 avec Aragorn
+913	Terminez « Le Gouffre de Helm : La cour de Fort-le-Cor » et atteignez le niveau 10 avec Legolas
+914	Terminez « Le Gouffre de Helm : La cour de Fort-le-Cor » et atteignez le niveau 10 avec Gimli
+915	Terminez la Mission secrète avec n'importe quel personnage
+916	Terminez la Mission secrète avec le personnage secret
+917	Peter Jackson et Barrie Osborne parlent du film et du jeu
+918	Elijah Wood parle de son rôle de Frodon dans le jeu vidéo 'Le Seigneur des Anneaux'
+919	Ian McKellen évoque son rôle de Gandalf dans le jeu vidéo 'Le Seigneur des Anneaux'
+920	Dans les coulisses de la création du jeu vidéo 'Le Seigneur des Anneaux'
+921	Photos des personnages et des décors de 'La Communauté de l'Anneau'
+922	Photos des personnages et des décors de Fangorn et d'Orthanc
+923	Illustrations de John Howe et Alan Lee inspirées par 'Le Seigneur des Anneaux'
+924	Photos des personnages et des décors de Rohan et du Gouffre de Helm
+925	Viggo Mortensen parle de son rôle d'Aragorn dans le jeu vidéo 'Le Seigneur des Anneaux'
+926	Orlando Bloom évoque son rôle de Legolas dans le jeu vidéo 'Le Seigneur des Anneaux'
+927	John Rhys-Davies parle de son rôle de Gimli dans le jeu vidéo 'Le Seigneur des Anneaux'
+928	Codes secrets pour débloquer les bonus cachés du jeu vidéo 'Le Seigneur des Anneaux'
+950	Changer la sélection
+951	Valider la sélection
+952	Revenir
+953	Changer ou modifier la sélection
+954	Retour au menu principal
+955	Changer d'image
+956	Utilisez vos points de compétence pour acheter des améliorations pour votre personnage.

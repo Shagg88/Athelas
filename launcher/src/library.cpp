@@ -12,6 +12,7 @@
 // Title IDs from the games' default.xbe (the publisher code 'EA' + a number)
 static const uint32_t TID_TT   = 0x45410010;   // The Two Towers
 static const uint32_t TID_ROTK = 0x4541003E;   // The Return of the King
+static const uint32_t TID_FOTR = 0x56550004;   // The Fellowship of the Ring ('VU' + a number)
 
 const char *game_kind_name(GameKind k)
 {
@@ -19,6 +20,7 @@ const char *game_kind_name(GameKind k)
     case GK_ROTK_PC:   return "The Return of the King  -  PC";
     case GK_ROTK_XBOX: return "The Return of the King  -  Xbox";
     case GK_TT_XBOX:   return "The Two Towers  -  Xbox";
+    case GK_FOTR_XBOX: return "The Fellowship of the Ring  -  Xbox";
     default:           return "Unknown game";
     }
 }
@@ -36,7 +38,7 @@ const char *game_region_name(const LibGame &g)
 
 static const char *kind_key(GameKind k)
 {
-    return k == GK_ROTK_PC ? "rotk-pc" : k == GK_ROTK_XBOX ? "rotk-xbox" : k == GK_TT_XBOX ? "tt-xbox" : "none";
+    return k == GK_ROTK_PC ? "rotk-pc" : k == GK_ROTK_XBOX ? "rotk-xbox" : k == GK_TT_XBOX ? "tt-xbox" : k == GK_FOTR_XBOX ? "fotr-xbox" : "none";
 }
 static GameKind kind_from_key(const char *s)
 {
@@ -93,7 +95,7 @@ static bool xbe_title(Reader &r, unsigned long long off, uint32_t &tid, std::str
 
 static GameKind kind_from_tid(uint32_t tid)
 {
-    return tid == TID_TT ? GK_TT_XBOX : tid == TID_ROTK ? GK_ROTK_XBOX : GK_NONE;
+    return tid == TID_TT ? GK_TT_XBOX : tid == TID_ROTK ? GK_ROTK_XBOX : tid == TID_FOTR ? GK_FOTR_XBOX : GK_NONE;
 }
 
 // ---- Xbox disc images (XDVDFS) -----------------------------------------------
@@ -229,6 +231,7 @@ static GameKind detect_folder(const std::string &dir, LibGame &out)
     // other regions may use other title IDs: go by the files
     if (k == GK_NONE && any_file(dir + "\\Worlds\\*.bfa")) k = GK_TT_XBOX;
     if (k == GK_NONE && exists(dir + "\\Data\\Game\\GlobScen.scx")) k = GK_ROTK_XBOX;
+    if (k == GK_NONE && exists(dir + "\\Scenes\\Media\\Textures.xpr")) k = GK_FOTR_XBOX;
     return k;
 }
 
@@ -251,9 +254,23 @@ GameKind detect_game_at(const std::string &path, LibGame &out)
 static std::string lib_file(const std::string &launcherDir) { return launcherDir + "\\" ATHELAS_INI; }
 static std::string lib_file_old(const std::string &launcherDir) { return launcherDir + "\\ROTKFix\\games.ini"; }
 
+// games on a drive that isn't there this time (a USB drive, a network share): not shown, but kept in the list
+static std::vector<std::string> g_offline;   // "kind|path"
+static bool drive_there(const std::string &path)
+{
+    std::string root;
+    if (path.size() >= 2 && path[1] == ':') root = path.substr(0, 2) + "\\";
+    else if (path.rfind("\\\\", 0) == 0) {   // \\server\share\...
+        size_t a = path.find('\\', 2), b = a == std::string::npos ? a : path.find('\\', a + 1);
+        root = b == std::string::npos ? path : path.substr(0, b) + "\\";
+    } else return true;
+    return GetFileAttributesA(root.c_str()) != INVALID_FILE_ATTRIBUTES;
+}
+
 std::vector<LibGame> library_load(const std::string &launcherDir)
 {
     std::vector<LibGame> out;
+    g_offline.clear();
     FILE *f = fopen(lib_file(launcherDir).c_str(), "rb");
     if (!f) f = fopen(lib_file_old(launcherDir).c_str(), "rb");   // an earlier test build's list
     if (!f) return out;
@@ -270,7 +287,11 @@ std::vector<LibGame> library_load(const std::string &launcherDir)
         GameKind saved = kind_from_key(v.substr(0, bar).c_str());
         LibGame g;
         // check again: the folder may have moved, or a port may now read it differently
-        if (detect_game_at(v.substr(bar + 1), g) == GK_NONE || g.kind != saved) continue;
+        if (detect_game_at(v.substr(bar + 1), g) == GK_NONE) {
+            if (!drive_there(v.substr(bar + 1))) g_offline.push_back(v);   // its drive unplugged: kept for next time
+            continue;
+        }
+        if (g.kind != saved) continue;
         library_add(out, g);
     }
     fclose(f);
@@ -295,11 +316,20 @@ bool library_save(const std::string &launcherDir, const std::vector<LibGame> &ga
     std::string s = "; Athelas's settings: the games it knows about (Game = kind|location) and, under [Ports], a port\r\n"
                     "; program chosen by hand. Edited by Athelas.\r\n[Games]\r\n";
     for (auto &g : games) s += std::string("Game = ") + kind_key(g.kind) + "|" + g.path + "\r\n";
+    for (auto &v : g_offline) {
+        bool listed = false;
+        for (auto &g : games) listed = listed || !_stricmp(v.substr(v.find('|') + 1).c_str(), g.path.c_str());
+        if (!listed) s += "Game = " + v + "\r\n";
+    }
     s += keep;
-    FILE *f = fopen(lib_file(launcherDir).c_str(), "wb");
+    // written next to it and then swapped in, so a crash or a full disk never leaves half the file
+    std::string path = lib_file(launcherDir), tmp = path + ".new";
+    FILE *f = fopen(tmp.c_str(), "wb");
     if (!f) return false;
     bool ok = fwrite(s.data(), 1, s.size(), f) == s.size();
-    return fclose(f) == 0 && ok;
+    ok = fclose(f) == 0 && ok;
+    if (!ok || !MoveFileExA(tmp.c_str(), path.c_str(), MOVEFILE_REPLACE_EXISTING)) { DeleteFileA(tmp.c_str()); return false; }
+    return true;
 }
 
 int library_add(std::vector<LibGame> &games, const LibGame &g)

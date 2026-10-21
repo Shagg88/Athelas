@@ -1,0 +1,458 @@
+# The Two Towers - Swedish subtitles (our own translation; line numbers are the game's text IDs)
+2	Hjälp
+4	Tryck på START
+6	Fortsätt
+7	Spela igen
+8	På
+9	Av
+10	Navigera
+11	Välj
+12	Tillbaka
+13	@ 2002 New Line Productions, Inc.  Sagan om ringen samt figurerna, namnen och platserna däri, * The Saul Zaentz Company d/b/a Tolkien Enterprises under licens till New Line Productions, Inc.  Alla rättigheter förbehållna.
+14	EA GAMES* är ett varumärke från Electronic Arts*.
+15	Spelkod och vissa audiovisuella element @ 2002 Electronic Arts Inc. Alla rättigheter förbehållna.
+16	Nytt spel
+17	Ladda spel
+18	Alternativ
+19	Felsökningsläge
+20	Extramaterial
+21	Spara spel
+24	Tryck på START för att fortsätta
+25	Alternativ
+26	Handkontrollsinställningar
+27	Spelinställningar
+38	Svårighetsgrad:
+39	Lätt
+40	Normal
+41	Expert
+42	Mono
+43	Stereo
+44	Surround
+45	Spelinställningar
+46	Röstvolym:
+47	Musikvolym:
+48	Undertexter:
+49	Vibration:
+50	Spelvolym:
+51	Ljud:
+53	Välj spel att ladda:
+54	Välj var du vill spara:
+55	Välj MEMORY CARD-uttag:
+56	Xbox-hårddisk
+57	MEMORY CARD-uttag 2
+58	Välj MEMORY CARD-uttag:
+59	Avbryt
+60	Ja
+61	Nej
+62	Är du säker?
+63	Vill du verkligen köpa den här uppgraderingen?
+64	Är du säker? Resultaten från din senaste genomspelning av det här uppdraget går förlorade.
+65	Är du säker? Alla osparade framsteg i det här spelet går förlorade.
+66	Är du säker? Framstegen i det här uppdraget går förlorade.
+67	Vill du verkligen skriva över det här spelet?
+68	Är du klar med dina uppgraderingsköp?
+69	Spara spel på hårddisken
+70	Ladda spel från hårddisken
+75	Välj svårighetsgrad
+76	Lätt
+77	Normal
+78	Expert
+80	Låst
+81	Avklarat
+83	Ej spelat
+85	Prolog
+86	Väderklint
+87	Morias portar
+88	Balins grav
+89	Amon Hen
+90	Fangornskogen
+91	Rohans slätter
+92	Västfold
+93	Rohans gap
+94	Klyftmuren
+95	Den genombrutna muren
+96	Hornborgens borggård
+97	Orthancs torn
+98	Helms klyfta:
+99	New Line Zoo
+100	Välj filmsekvens att spela upp:
+101	Inledning
+102	Slut
+116	Aragorn
+117	Legolas
+118	Gimli
+119	Isildur
+120	Golv
+128	Uppgraderingspoäng:
+129	4) Ange den angivna kodsekvensen.
+130	Hemliga koder
+131	Alltid förödande:
+132	2 spelare:
+133	Små fiender:
+134	Alla uppgraderingar:
+135	Osårbar:
+136	Slow motion:
+137	Så här anger du en kod:
+138	1) Starta ett uppdrag.
+139	2) Tryck på START för att pausa.
+140	3) Tryck in och håll
+141	Oändlig hälsa:
+142	Oändligt med projektiler:
+143	Avsluta uppdrag:
+144	Pausläge:
+145	Lägg till erfarenhet:
+146	Gå upp en nivå:
+147	Återställ hälsa:
+148	Fyll på projektiler:
+149	Projektiluppgradering:
+150	Visa uppgraderingar
+151	Avsluta till menyn
+152	Gå till nästa uppdrag
+153	Du har misslyckats med uppdraget.
+154	Spela om uppdraget
+155	Avsluta till menyn
+156	Försök igen
+161	Medverkande
+176	Spela om uppdraget
+180	Välj ett språk.
+181	Engelska
+196	Snabb
+197	Kraft
+198	Dödsstöt
+199	Special
+200	Kombo
+207	Köpt
+208	Inte upplåst än. Tryck på A-knappen för att fortsätta.
+209	Du har inte samlat tillräckligt med uppgraderingspoäng för att köpa den här uppgraderingen. Tryck på A-knappen för att fortsätta.
+210	eller
+211	efter parad
+212	på marken
+230	Tom plats
+231	Spel 2
+232	Spel 3
+233	Spel 4
+234	Spel 5
+235	Spel 6
+236	Spel 7
+237	Spel 8
+238	Spel 9
+239	Spel 10
+240	Spel 11
+270	Inget Memory Card (PS2) är isatt. Minst 80 KB krävs för att spara speldata. Vill du fortsätta?
+271	Inte tillräckligt med utrymme på Memory Card (PS2) i MEMORY CARD-uttag 1.  Minst 80 KB krävs för att spara programdata. Vill du fortsätta?
+272	Inte tillräckligt med utrymme på Memory Card (PS2) i MEMORY CARD-uttag 2.  Minst 80 KB krävs för att spara programdata. Vill du fortsätta?
+273	Inte tillräckligt med utrymme på Memory Card (PS2) i MEMORY CARD-uttagen. Minst 80 KB krävs för att spara programdata. Vill du fortsätta?
+274	Inget Memory Card (PS2) är isatt i MEMORY CARD-uttag 1. Tryck på X-knappen för att fortsätta.
+275	Inget Memory Card (PS2) är isatt i MEMORY CARD-uttag 2. Tryck på X-knappen för att fortsätta.
+276	Anslut handkontrollen igen och tryck på START för att fortsätta.
+277	Memory Card (PS2) i MEMORY CARD-uttag 2 är inte formaterat. Vill du formatera Memory Card (PS2)?
+278	Din Xbox har inte tillräckligt med lediga block för att spara spel.  Tryck på A för att fortsätta utan att spara eller på B för att frigöra minst
+279	Anslut handkontrollen igen och tryck på START för att fortsätta
+280	Hårddisken har inte tillräckligt med lediga block för det här sparade spelet.
+281	block måste frigöras.
+282	Formateringen misslyckades! Fel på Memory Card (PS2) i MEMORY CARD-uttag 2! Tryck på X-knappen för att fortsätta.
+283	Det gick inte att spara spelet. Tryck på A-knappen för att fortsätta.
+284	Det gick inte att spara spelet. Tryck på A-knappen för att fortsätta.
+285	Spelet har sparats.  Tryck på A-knappen för att fortsätta.
+286	Spelet har sparats på Memory Card (PS2) i MEMORY CARD-uttag 2! Tryck på X-knappen för att fortsätta.
+287	Sparar data på Memory Card (PS2) i MEMORY CARD-uttag 1. Ta inte ut Memory Card (PS2), återställ inte och stäng inte av konsolen.
+288	Sparar data på Memory Card (PS2) i MEMORY CARD-uttag 2. Ta inte ut Memory Card (PS2), återställ inte och stäng inte av konsolen.
+289	Laddar data från Memory Card (PS2) i MEMORY CARD-uttag 1. Ta inte ut Memory Card (PS2), återställ inte och stäng inte av konsolen.
+290	Laddar data från Memory Card (PS2) i MEMORY CARD-uttag 2. Ta inte ut Memory Card (PS2), återställ inte och stäng inte av konsolen.
+291	Det gick inte att ladda spelet. Tryck på A-knappen för att fortsätta.
+292	Det gick inte att ladda spelet. Tryck på A-knappen för att fortsätta.
+293	Vill du spara ditt spel?
+294	Inga sparade spel. Tryck på A-knappen för att fortsätta.
+295	Inga sparade spel. Tryck på A-knappen för att fortsätta.
+296	block.
+297	Memory Card (PS2) i MEMORY CARD-uttag 1 är inte formaterat. Tryck på X-knappen för att fortsätta.
+298	Memory Card (PS2) i MEMORY CARD-uttag 2 är inte formaterat. Tryck på X-knappen för att fortsätta.
+299	Läser data från Memory Card (PS2) i MEMORY CARD-uttag 1. Ta inte ut Memory Card (PS2), återställ inte och stäng inte av konsolen.
+300	Läser data från Memory Card (PS2) i MEMORY CARD-uttag 2. Ta inte ut Memory Card (PS2), återställ inte och stäng inte av konsolen.
+301	Det är något fel på skivan du använder. Den kan vara smutsig eller skadad.
+320	Uppdrag 1
+321	Uppdrag 2
+322	Uppdrag 3
+323	Uppdrag 4
+324	Uppdrag 5
+325	Uppdrag 6
+326	Uppdrag 7
+327	Uppdrag 8
+328	Uppdrag 9
+329	Uppdrag 10
+330	Uppdrag 11
+331	Uppdrag 12
+332	Uppdrag 13
+333	Uppdrag A
+334	Uppdrag B
+335	Uppdrag C
+336	Uppdrag D
+401	Erfarenhet i uppdraget:
+403	Uppdragsbetyg:
+405	Totalt antal uppgraderingspoäng:
+450	Perfekt
+451	Utmärkt
+452	Bra
+453	Godkänt
+454	Svagt
+455	Skicklighet
+460	Snabb
+461	Stark
+462	Försvar
+463	Attack
+464	Kraftfull
+465	attack
+500	En snabb kombination.  Effektiv mot mindre fiender utan sköld.
+501	En kraftfull kombination som slår sönder hinder och krossar fiendens sköldar.
+502	Tryck in och håll vänster avtryckare för att använda.  Skjut med A-knappen (håll in för mer skada).
+503	Den här stöten gör slut på varje nedslagen fiende.
+504	Slå bort fiender från dig och utom räckhåll.
+505	Blockerar fiendens attacker och projektiler.
+506	En förödande attack.  Tryck och håll in Y-knappen för att använda.
+507	Ökar din hälsa permanent.
+508	Storma framåt och slå fiender utan sköld till marken.
+509	Attackera medan du reser dig och överraska fienden.
+510	En mycket effektiv kombo mot fiender utan sköld.
+511	Mycket effektiv för att göra av med fiender med sköld så snabbt som möjligt.
+512	LÄNKAT DRAG: Döda en anfallande vätte direkt.
+513	Rohirrims hullingförsedda pilar skjuts som med Dúnedainbågen och gör svår skada.
+514	Ökar din hälsa permanent.  (Kräver Ståthållarnas styrka)
+515	Storma framåt från långt håll och slå fiender utan sköld till marken. (Kräver Rusningsattack)
+516	Såra, slå ner och träffa din fiende med den här kombinationsattacken.
+517	Använd den här kombon för att träffa en fiende utan sköld, göra av med honom och snabbt slå till mot nästa.
+518	LÄNKAT DRAG: Döda en anfallande orch direkt.
+519	Ökar din hälsa permanent.  (Kräver Isildurs styrka)
+520	En ännu mer förödande attack.  (Kräver Utbygdsjägarens raseri)
+521	Ökar skadan från din snabbattack.
+522	Såra, slå ner och gör sedan slut på mäktiga fiender med den här kombon.
+523	Ökar din hälsa permanent.  (Kräver Elendils styrka)
+524	Den här förödande attacken sätter eld på flera fiender.  (Kräver Vildmarkens vrede)
+525	Gondors järnpilar gör fruktansvärd skada.  (Kräver Rohanbågen)
+526	LÄNKAT DRAG: Döda en anfallande uruk-hai direkt.
+527	Använd mot en mäktig fiende för att krossa hans sköld, slå honom till marken och träffa honom.
+528	Ingenting
+529	Ingenting
+530	En snabb kombination.  Effektiv mot mindre fiender utan sköld.
+531	En kraftfull kombination som slår sönder hinder och krossar fiendens sköldar.
+532	Tryck in och håll vänster avtryckare för att använda.  Kasta med A-knappen (håll in för mer skada).
+533	Det här yxhugget gör slut på varje nedslagen fiende.
+534	Slå bort fiender från dig och utom räckhåll.
+535	Blockerar fiendens attacker och projektiler.
+536	En förödande attack.  Tryck och håll in Y-knappen för att använda.
+537	Ökar din hälsa permanent.
+538	Ökar din hälsa permanent.  (Kräver Klippans makt)
+539	Storma framåt och slå fiender utan sköld till marken.
+540	En mycket effektiv kombo mot fiender utan sköld.
+541	Mycket effektiv för att göra av med fiender med sköld så snabbt som möjligt.
+542	LÄNKAT DRAG: Döda en anfallande vätte direkt.
+543	Ökar din hälsa permanent.  (Kräver Järnets makt)
+544	Storma framåt från långt håll och slå fiender utan sköld till marken.  (Kräver Rusningsattack)
+545	Attackera medan du reser dig och överraska fienden.
+546	Såra, slå ner och träffa din fiende med den här kombinationsattacken.
+547	Använd den här kombon för att träffa en fiende utan sköld, göra av med honom och snabbt slå till mot nästa.
+548	LÄNKAT DRAG: Döda en anfallande orch direkt.
+549	Ökar din hälsa permanent.  (Kräver Skyddsrunan)
+550	Ökar din hälsa permanent.  (Kräver Balins makt)
+551	De rakbladsvassa Moriayxorna kastas som Ereboryxorna och gör ännu mer skada.
+552	En ännu mer förödande attack.  (Kräver Dvärgraseri)
+553	Såra, slå ner och gör sedan slut på mäktiga fiender med den här kombon.
+554	Ökar din hälsa permanent.  (Kräver Glóins makt)
+555	Den här förödande attacken sätter eld på flera fiender.  (Kräver Bergets vrede)
+556	Dessa mithrileggade blad gör fruktansvärd skada.  (Kräver Moriayxor)
+557	Ökar skadan från din kraftattack.
+558	LÄNKAT DRAG: Döda en anfallande uruk-hai direkt.
+559	Använd mot en mäktig fiende för att krossa hans sköld, slå honom till marken och träffa honom.
+560	En snabb kombination.  Effektiv mot mindre fiender utan sköld.
+561	En kraftfull kombination som slår sönder hinder och krossar fiendens sköldar.
+562	Tryck in och håll vänster avtryckare för att använda.  Skjut med A-knappen (håll in för mer skada).
+563	Den här stöten gör slut på varje nedslagen fiende.
+564	Slå bort fiender från dig och utom räckhåll.
+565	Blockerar fiendens attacker och projektiler.
+566	En förödande attack.  Tryck och håll in Y-knappen för att använda.
+567	Ökar din hälsa permanent.
+568	Storma framåt och slå fiender utan sköld till marken.
+569	Vattnadals askpilar skjuts som med Mörkmårdens långbåge och gör ännu mer skada.
+570	En mycket effektiv kombo mot fiender utan sköld.
+571	Mycket effektiv för att göra av med fiender med sköld så snabbt som möjligt.
+572	LÄNKAT DRAG: Döda en anfallande vätte direkt.
+573	Storma framåt från långt håll och slå fiender utan sköld till marken.  (Kräver Rusningsattack)
+574	Lothlóriens förtrollade pilar gör förfärlig skada.  (Kräver Vattnadals långbåge)
+575	Såra, slå ner och träffa din fiende med den här kombinationsattacken.
+576	Använd den här kombon för att träffa en fiende utan sköld, göra av med honom och snabbt slå till mot nästa.
+577	Dessa magiska pilar sätter eld på dina fiender.  (Kräver Lothlóriens långbåge)
+578	Ökar din hälsa permanent.  (Kräver Celeborns kraft)
+579	En ännu mer förödande attack.  (Kräver Alvraseri)
+580	LÄNKAT DRAG: Döda en anfallande orch direkt.
+581	Såra, slå ner och gör sedan slut på mäktiga fiender med den här kombon.
+582	Dessa pilar tränger igenom och skadar alla fiender i sin väg.  (Kräver Drakeldspilar)
+583	Attackera medan du reser dig och överraska fienden.
+584	Ökar skadan från varje pil du skjuter.
+585	LÄNKAT DRAG: Döda en anfallande uruk-hai direkt.
+586	Använd mot en mäktig fiende för att krossa hans sköld, slå honom till marken och träffa honom.
+600	Trippelslag
+601	Dubbelhugg
+602	Dúnedainbågen
+603	Skuggslag
+604	Stridsspark
+605	Svärdsparad
+606	Utbygdsjägarens raseri
+607	Ståthållarnas styrka
+608	Rusningsattack
+609	Uppresningsattack
+610	Isildurs snabba skräck
+611	Isildurs befrielse
+612	Vättarnas bane
+613	Rohanbågen
+614	Isildurs styrka
+615	Stormanfall
+616	Isildurs dödsanfall
+617	Isildurs gambit
+618	Orchernas bane
+619	Elendils styrka
+620	Vildmarkens vrede
+621	Svärdsmästare
+622	Isildurs krigsrusning
+623	Argonaths styrka
+624	Númenors vrede
+625	Gondorbågen
+626	Sarumans bane
+627	Isildurs dom
+628	Ingenting
+629	Ingenting
+630	Trippelslag
+631	Dubbelhugg
+632	Ereboryxor
+633	Skuggslag
+634	Yxstöt
+635	Yxparad
+636	Dvärgraseri
+637	Klippans makt
+638	Järnets makt
+639	Rusningsattack
+640	Balins snabba skräck
+641	Balins befrielse
+642	Vättarnas bane
+643	Skyddsrunan
+644	Stormanfall
+645	Uppresningsattack
+646	Balins dödsanfall
+647	Balins gambit
+648	Orchernas bane
+649	Balins makt
+650	Glóins makt
+651	Moriayxor
+652	Bergets vrede
+653	Balins krigsrusning
+654	Khazad-dûms makt
+655	Morias vrede
+656	Dimmiga bergens yxor
+657	Kungarnas yxmästarskap
+658	Sarumans bane
+659	Balins dom
+660	Trippelslag
+661	Dubbelhugg
+662	Mörkmårdens långbåge
+663	Skuggslag
+664	Stridsspark
+665	Knivparad
+666	Alvraseri
+667	Celeborns kraft
+668	Rusningsattack
+669	Vattnadals långbåge
+670	Elronds snabba skräck
+671	Elronds befrielse
+672	Vättarnas bane
+673	Stormanfall
+674	Lothlóriens långbåge
+675	Elronds dödsanfall
+676	Elronds gambit
+677	Drakeldspilar
+678	Galadriels kraft
+679	Gil-galads vrede
+680	Orchernas bane
+681	Elronds krigsrusning
+682	Mithrilpilar
+683	Uppresningsattack
+684	Alviskt bågmästarskap
+685	Sarumans bane
+686	Elronds dom
+700	Nivå
+800	Parera för att blockera fiendens attacker och avvärja pilar.
+801	Parera
+802	Tryck in och håll vänster avtryckare för att byta till ditt avståndsvapen.  Tryck på A-knappen för att skjuta.  Sikta med vänster styrspak.
+804	Avståndsvapen
+805	Skjut
+806	Använd en snabbattack för att träffa fiender utan sköld.
+807	Använd kraftattacken för att krossa fiendens sköldar.
+808	Kraftattack
+809	Snabbattack
+810	Samla erfarenhetspoäng för att höja din figurs nivå och köpa värdefulla uppgraderingar.
+811	Intjänade erfarenhetspoäng
+812	Använd avancerade kombinationer och undvik att bli träffad för att fylla skicklighetsmätaren och få maximalt med erfarenhetspoäng.
+813	Skicklighetsmätare
+814	Sikta
+815	Hoppa bakåt
+816	Dödsstöt
+817	Slå bakåt
+818	Skjut/Snabbattack
+819	Förflytta/Sikta
+820	Paus
+840	Intervju
+841	Peter Jackson och Barrie Osborne
+842	Elijah Wood
+843	Ian McKellen
+844	Sagan om ringen
+845	Så gjordes tv-spelet
+846	Sagan om ringen
+847	Exklusiva filmklipp
+848	'Sagan om ringen'
+849	Produktionsfoton
+850	Fangorn och Orthanc
+851	Rohan och Helms klyfta
+852	Viggo Mortensen
+853	Orlando Bloom
+854	John Rhys-Davies
+855	Hemliga koder
+856	Spela som Aragorn
+857	Spela som Legolas
+858	Spela som Gimli
+859	Spela som Isildur
+860	Hemligt uppdrag
+861	Spela som hemlig figur
+862	Konceptkonst
+900	Klara Morias portar för att låsa upp
+901	Klara Balins grav för att låsa upp
+902	Klara Amon Hen för att låsa upp
+903	Klara Fangornskogen för att låsa upp
+904	Klara Rohans slätter för att låsa upp
+905	Klara Västfold för att låsa upp
+906	Klara Rohans gap för att låsa upp
+907	Klara Helms klyfta: Klyftmuren för att låsa upp
+908	Klara Helms klyfta: Den genombrutna muren för att låsa upp
+909	Nå nivå 5 med Aragorn
+910	Nå nivå 5 med Legolas
+911	Nå nivå 5 med Gimli
+912	Klara Helms klyfta: Hornborgens borggård och nå nivå 10 med Aragorn
+913	Klara Helms klyfta: Hornborgens borggård och nå nivå 10 med Legolas
+914	Klara Helms klyfta: Hornborgens borggård och nå nivå 10 med Gimli
+915	Klara det hemliga uppdraget med valfri figur
+916	Klara det hemliga uppdraget med den hemliga figuren
+917	Peter Jackson och Barrie Osborne pratar om filmen och spelet
+918	Elijah Wood berättar om att spela Frodo i tv-spelet 'Sagan om ringen'
+919	Ian McKellen pratar om att spela Gandalf i tv-spelet 'Sagan om ringen'
+920	En titt bakom kulisserna på hur tv-spelet 'Sagan om ringen' gjordes
+921	Foton på figurer och miljöer från 'Sagan om ringen'
+922	Foton på figurer och miljöer från Fangorn och Orthanc
+923	Konst inspirerad av 'Sagan om ringen' av John Howe och Alan Lee
+924	Foton på figurer och miljöer från Rohan och Helms klyfta
+925	Viggo Mortensen berättar om att spela Aragorn i tv-spelet 'Sagan om ringen'
+926	Orlando Bloom pratar om att spela Legolas i tv-spelet 'Sagan om ringen'
+927	John Rhys-Davies berättar om att spela Gimli i tv-spelet 'Sagan om ringen'
+928	Hemliga koder som låser upp dolda funktioner i tv-spelet 'Sagan om ringen'
+950	Ändra val
+951	Välj
+952	Gå tillbaka
+953	Ändra eller justera val
+954	Avsluta till huvudmenyn
+955	Byt bild
+956	Använd dina uppgraderingspoäng för att köpa förbättringar till din figur.

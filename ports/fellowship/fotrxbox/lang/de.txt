@@ -1,0 +1,2405 @@
+# The Fellowship of the Ring - German game text (our own translation, shown in the game's own menus and boxes; keys are the game's text names)
+hud:1stPersonClue001	Du musst in den Zielmodus wechseln, um Hals Wetterfahne mit einem Stein zu treffen.
+hud:1stPersonClue002	Klicke den rechten Stick, um in den Zielmodus zu wechseln.
+hud:1stPersonClue003	Ziele mit dem linken Stick.  Drücke <A>, um einen Gegenstand zu werfen.
+hud:21st_Hall	Die 21. Halle
+hud:2nd_Hall	Die 2. Halle
+hud:3_passages	3 Gänge
+hud:Abyss	Die Brücke von Khazad-dûm
+hud:Anduin_1	Amon Hen
+hud:Anduin_Aragorn	Der Gipfel des Amon Hen
+hud:AppleClue001	Schlag gegen den Stamm eines Apfelbaums, damit ein Apfel herunterfällt.
+hud:Aragorn006a	Gebt acht, wohin ihr hier tretet.  Ein Fehltritt könnte euer letzter sein.
+hud:Aragorn018	Jetzt, Legolas!  Erledige die üble Bestie!
+hud:Aragorn029	Ich habe den vermissten Hobbit noch nicht gefunden. Ich muss weitersuchen.
+hud:Aragorn035	Ah, diese Melonen geben gute Hobbitköpfe ab.  Im Dunkeln zerbrechen sie überzeugend.
+hud:Aragorn038	Diese kleinen Holzscheite geben meinen Attrappen im Dunkeln glaubhafte Arme und Beine.  Der Torwächter wird sie kaum vermissen.
+hud:Aragorn070	Mit diesen Lumpen wirken meine Attrappen echter.
+hud:Aragorn073	Mit diesem Heu kann ich meine kleinen Attrappen ausstopfen.
+hud:Aragorn113	Der alte Butterblume führt sein Gasthaus gut, für einen so Begriffsstutzigen.
+hud:Aragorn114	In den Ställen sollte Heu für die Attrappen sein.
+hud:Aragorn120	Amon Sûl ... einst stolz, nun eine zerbrochene Erinnerung.
+hud:Aragorn121	Trolle ... welches Teufelswerk treiben sie hier?
+hud:Aragorn123	Dieser Troll!  So einen habe ich noch nie gesehen!
+hud:Aragorn124	Die Ruinen des Turms sehen anders aus als bei meinem letzten Besuch ... als hätte darin ein großer Kampf getobt.
+hud:Aragorn125	Hobbits sind gute Köche, wenn auch keine Kämpfer.
+hud:Aragorn127	Athelas!  Das sollte Frodos Wunde eine Weile lindern.
+hud:Aragorn128	Wir nähern uns Bruchtal ... halte durch, Frodo!
+hud:Aragorn129	Mehr Trolle als sonst hier ... eine düstere Kunde.
+hud:Aragorn130	Die Orks ziehen nach Lothlórien ... ich fürchte, sie wollen bald angreifen!
+hud:Aragorn134	Die Nazgûl haben ihre Pferde ersetzt ... durch Flugbestien!
+hud:Aragorn137	Ich sollte bald zum Tänzelnden Pony zurückkehren.  Der Feind darf die Hobbits nicht finden!
+hud:Aragorn138	Die Orks lassen uns nicht ohne Kampf gehen!
+hud:Aragorn139	Verschlossen.  Ich muss einen Weg finden, diese Tür zu öffnen, und zwar schnell!
+hud:Aragorn140	Hier muss es irgendwo einen Hebel oder Schalter geben ... etwas, das diese Tür öffnet!
+hud:Aragorn141	Der Weg ist frei!
+hud:Aragorn143	Ohne Hebel funktioniert der Schalter nicht.
+hud:Aragorn144a	Hm. Verschlossen. Und so, wie es hier aussieht, zu Recht.
+hud:Aragorn145	Gewöhnliche Waffen nützen nichts gegen die Nazgûl!  Feuer ist meine einzige Hoffnung!
+hud:Arch_Room	Bogensaal
+hud:async_loading	Lädt ...
+hud:AthelasClue001	Benutze Athelas, um Vergiftungen zu heilen.
+hud:AthelasFrodoClue001	Benutze dieses Athelas bei Frodo, um die Wirkung seiner Morgulwunde zu verlangsamen.
+hud:AttackClue001	Drücke <A>, um Bienen anzugreifen.
+hud:AutoSaveConfirm	Automatisch gespeichert.
+hud:Bag_End	Beutelsend
+hud:Bag_End_Night	Beutelsend bei Nacht
+hud:Balins_Tomb	Balins Grab
+hud:BalrogNoFire	Feuer macht den Balrog nur stärker!
+hud:BalrogNoFire001	Feuer macht den Balrog nur stärker!
+hud:Barrow_Downs_Backside	Hügelgräberhöhen - Rückseite
+hud:Barrow_Downs_Frontside	Hügelgräberhöhen - Vorderseite
+hud:Barrow_Wight_Lair	Hort des Grabunholds
+hud:BarrowClue	Ich muss einen Weg aus dem Alten Wald finden!
+hud:BeatFellBeastClue001	Besiege die Flugbestie des Nazgûl!
+hud:BeatWillowClue001	Schlag auf die "Arme" des Baumes!
+hud:BeatWraithClue001	Du musst gegen den Ringgeist kämpfen!
+hud:BeeClue	Bienen kommen aus Bienenstöcken!  Halte <B> gedrückt, um ihre Angriffe abzuwehren.
+hud:BeeClue2	Um diese Biene anzuvisieren, wende dich ihr zu und halte <LT> gedrückt.
+hud:BellAmmo	Das hat wohl nicht genug Aufmerksamkeit erregt.
+hud:Bilbos_Room	Gemach in Bruchtal
+hud:Bombadil001	Hei dol! Lustig dol! Klinge-dong-dillo!
+hud:Bombadil002	Klinge-dong! Hüpf voran! Fallala, die Weide!
+hud:Bombadil003	Tom Bom, fröhlicher Tom, Tom Bombadillo!
+hud:Bombadil012	Hei! Komm, derry dol! Hüpft voran, ihr Lieben!
+hud:Bombadil013	Hobbits!  Ponys alle!  Wir lieben frohe Feste!
+hud:Bombadil014	Nun lasst den Spaß beginnen!  Lasst uns zusammen singen!
+hud:Bombadil020	Ho! Tom Bombadil, Tom Bombadillo!
+hud:Bombadil021	Bei Wasser, Wald und Hügel, bei Schilfrohr und bei Weide,
+hud:Bombadil022	Bei Feuer, Sonne, Mond, horch auf und hör uns rufen!
+hud:Bombadil023	Komm, Tom Bombadil, denn groß ist unsre Not!
+hud:Bombadil024	Hinaus, alter Unhold!  Vergeh im Sonnenlicht!
+hud:Bombadil025	Schrumpf wie kalter Nebel, bis die Welt geheilt ist!
+hud:Bombadil026	Hinaus ins öde Land, weit hinter den Bergen!
+hud:Bombadil027	Komm nie mehr hierher!  Lass dein Hügelgrab leer!
+hud:Bombadil028	Verloren und vergessen sei, dunkler als das Dunkel,
+hud:Bombadil029	Wo Tore ewig verschlossen sind, bis die Welt geheilt ist.
+hud:Boromir005a	Ich finde noch immer, wir hätten nach Gondor gehen sollen.
+hud:BreakThingsClue	Drücke <A>, um Behälter mit deinem Wanderstab zu zerschlagen. In manchen Behältern in deinem Haus findest du nützliche Dinge.
+hud:BrokenSwitchAgain	Noch ein kaputter Schalter.
+hud:Bywater	Wasserau
+hud:Bywater_Night	Wasserau bei Nacht
+hud:CombatRange	Übungsplatz Frodo
+hud:CombatRange1	Übungsplatz Aragorn
+hud:CombatRange2	Übungsplatz Gandalf
+hud:Common_House_Interior	Bei den Gamdschies
+hud:Common_interior	Hobbithaus in Bree
+hud:Commonhouse_bywater	Bei den Bolgers
+hud:CorruptionClue001	Schafe können lästig sein, aber es bringt nichts, sie zu schlagen!
+hud:CorruptionClue002	Schweine können lästig sein, aber es bringt nichts, sie zu schlagen!
+hud:CorruptionClue003	Hühner können lästig sein, aber es bringt nichts, sie zu schlagen!
+hud:CorruptionClue004	Pferde sind so edle Tiere.  Es bringt nichts, sie zu schlagen!
+hud:CorruptionTotal	Reinheit: %d / %d
+hud:CountHUD	Anzahl: %d
+hud:DamageHUD	Schaden: %d
+hud:Dell	Die Senke
+hud:dialog_continue	<X> Weiter
+hud:dialog_continue_a	<A> Weiter
+hud:dialog_skip	<A> Überspringen
+hud:DoorNoKey	Der Tür fehlt ein Schlüssel.
+hud:DurationHUD	Dauer: %d
+hud:DwarvenShotFound	Du hast Zwergenkugeln aufgehoben.
+hud:EnemiesDefeated	Besiegte Feinde: %d
+hud:FireClue	Feuer zu berühren tut weh!
+hud:FireworksClue001	Für ein Feuerwerk wirf einen Knallfrosch in die Feuerwerkskiste!
+hud:FoundApple001	Du hast einen faulen Apfel aufgehoben.
+hud:FoundElvinArrows	Du hast Elbenpfeile aufgehoben.
+hud:FoundElvinShot	Du hast Elbenkugeln aufgehoben.
+hud:FoundEssence	Du hast eine Flasche Geisteressenz erhalten.
+hud:FoundHinge001	Du hast ein Scharnier gefunden.
+hud:FoundRamPart001	Du hast ein Teil für den Rammbock gefunden.
+hud:FoundSilverlode	Du hast ein Fläschchen Silberlauf-Wasser erhalten.
+hud:FoundTome	Du hast ein uraltes Elbenbuch erhalten.
+hud:Frodo006	Es muss einen Weg geben, dieses Tor hochzuziehen!
+hud:Frodo053b	Ich könnte mich auf den Weg machen, genau wie Bilbo!
+hud:Frodo060a	Aber Gandalf kam nicht zurück.  Und als die Nächte länger wurden, beschloss ich, dass ich wohl ohne ihn aufbrechen musste.
+hud:Frodo060b	Am Morgen meines Geburtstags, dem 22. September, machte ich einen letzten Spaziergang durchs Auenland.
+hud:Frodo060c	Ich musste mich von meinen Nachbarn verabschieden ... und mein Haus an Lobelia Sackheim-Beutlin verkaufen.
+hud:Frodo060d	Danach wollte ich den Ring in Beutelsend holen und am Abend aufbrechen ...
+hud:Frodo091	Ich muss den Schlüssel von Beutelsend zum Ohm Gamdschie bringen, Beutelhaldenweg Nummer 3!
+hud:Frodo130	Der Reiter!  Er hat mich gesehen!
+hud:Frodo131	Weg mit dir!  Bleib zurück!
+hud:Frodo132	Noch ein dunkler Reiter!
+hud:Frodo133	Ich muss versteckt bleiben!
+hud:Frodo134	Ich kann nicht lange hierbleiben.
+hud:Frodo135	Der umgestürzte Baum da vorn sieht nach einem guten Versteck aus!
+hud:Frodo136	Ich muss zu Maggots Hof!
+hud:Frodo150b	Ja, allerdings.
+hud:Frodo213	Wir aßen unsere erste gute Mahlzeit seit Langem, sangen Lieder und erzählten Geschichten bis spät in die Nacht.
+hud:Frodo213a	Wir schliefen friedlich und waren erholt genug, um unsere Reise fortzusetzen.
+hud:Frodo223	Ho! Tom Bombadil, Tom Bombadillo!
+hud:Frodo224	Bei Wasser, Wald und Hügel, bei Schilfrohr und bei Weide,
+hud:Frodo225	Bei Feuer, Sonne, Mond, horch auf und hör uns rufen!
+hud:Frodo226	Komm, Tom Bombadil, denn groß ist unsre Not!
+hud:Frodo237	Ich bleibe lieber drinnen.  Viel sicherer, würde ich meinen!
+hud:Frodo258	Verschlossen.  Ich sollte wohl erst mit dem Wirt sprechen.
+hud:Frodo271	Das wirst du nicht mehr brauchen, Schurke!
+hud:Frodo272	Ich muss die anderen finden, bevor diese Halunken sie erwischen!
+hud:Frodo280	Es gibt ein Gasthaus, ein lustiges Gasthaus
+hud:Frodo281	Am Fuß von einem alten grauen Hügel,
+hud:Frodo282	Und dort kocht man einen Eintopf so braun,
+hud:Frodo283	Dass selbst der Mann im Mond herabgeflogen kam,
+hud:Frodo284	Um sich nachts sattzuessen.
+hud:Frodo338	Ich muss einen Weg finden, die Glocke anzuschlagen.
+hud:Frodo354	Bilbo ... wohin ihn der Weg wohl geführt hat?
+hud:Frodo356	Keine Zeit für Spielereien ... zu viel zu tun!
+hud:Frodo360	Wenn doch nur Zeit für ein Nickerchen wäre!
+hud:Frodo361	Dieses Gästezimmer hat schon viele Besucher gesehen.  Gandalf den Zauberer, Thorin, den König unter dem Berge ...
+hud:Frodo363	Aus diesem Kürbis wird ein wunderbarer Kuchen!
+hud:Frodo365	Oh!  Du wirst ein bisschen rund, alter Junge!
+hud:Frodo366	Ein bequemes Kissen, das da.
+hud:Frodo367	Ach, Bilbo ... dein Geschmack ist tadellos!
+hud:Frodo368	Seltsam, diese Sachen wegzuräumen ... ich kann mir nicht vorstellen, dass sie anderswo hingehören!
+hud:Frodo369	Was für ein hübscher Vogel!
+hud:Frodo372	Ah, der Festbaum!  So ein Fest wie Onkel Bilbos einundelfzigsten Geburtstag wird er nie wieder erleben!
+hud:Frodo375	Die Brücke nach Wasserau.  Derselbe Weg, den Bilbo vor langer Zeit zu Beginn seines Abenteuers nahm.
+hud:Frodo384	Was er wohl mit seinem Schwanz machen würde, wenn er ihn erwischt?
+hud:Frodo385	Der einzige Drache im Auenland ist dieser hier, Gott sei Dank!
+hud:Frodo392	Typisch Merry und Pippin, mir die gefährliche Arbeit zu überlassen!
+hud:Frodo395	Hier ist eins der Kräuterpäckchen, von denen Noakes gesprochen hat.
+hud:Frodo396	Noch ein Kräuterbündel von Noakes.
+hud:Frodo400	Ziemlich dunkel heute Abend ... und so trübe ...
+hud:Frodo401	Das Glockenläuten überlasse ich lieber den Landbütteln!
+hud:Frodo402	Was für eine Kälte in der Luft ... wie ungewöhnlich, selbst für den Herbst!
+hud:Frodo408	Der Baum war eben noch nicht da!  Er hat sich bewegt, um den Weg zu versperren!
+hud:Frodo410	Diese Spinnen!  Die sind riesig!
+hud:Frodo411	Sams Zuhause.  Ob er es so vermissen wird wie ich Beutelsend?
+hud:Frodo418	Streicher!  Hilfe!
+hud:Frodo421	Der Ring ... mir ist so seltsam ... als läge eine Last auf mir.
+hud:Frodo425	Ah!  Eine Lilie!
+hud:Frodo426	Hier ist noch eine Lilie.  Wer wohl diese Goldbeere ist?
+hud:Frodo428	Sam, dieser Eintopf riecht köstlich!
+hud:Frodo429	Wie alt Toms Haus wohl ist ... sicher nicht so alt wie er selbst!
+hud:Frodo432	Das alte Baumhaus!  Es steht noch ... als Kind habe ich darin gespielt!
+hud:Frodo433	Das sind ein paar von Gandalfs Feuerwerkskörpern!  Irgendein junger Lausebengel muss sie stibitzt haben, als er nicht hinsah!
+hud:Frodo434	Niemand scheint zu Hause zu sein.  Tom und Goldbeere müssen woanders sein!
+hud:Frodo435	Die Hügelgräberhöhen ... selbst Tom ist an diesem Ort vorsichtig!
+hud:Frodo438	Hoffentlich reicht unser Proviant hier draußen.
+hud:Frodo441	Wo wohl der Wirt ist?  Das scheint sein Pult zu sein!
+hud:Frodo448	Woher dieser Teppich wohl stammt ... eine farbenfrohe Arbeit, wahrhaftig!
+hud:Frodo449	Der Wirt muss ein eifriger Leser sein ... seine Bibliothek ist sehr gut bestückt!
+hud:Frodo455	Kaum jemand im Land hat eine Bibliothek wie Elrond!
+hud:Frodo456	Hätte ich doch Zeit, die Hälfte dieser Bücher zu lesen! Dafür müsste ich so lange leben wie ein Elb!
+hud:Frodo458	Bilbos Buch!  Ich hoffe, er beendet es eines Tages.
+hud:Frodo459	Was für eine schöne Aussicht!  Dieser Ort ist wahrhaft kostbar.
+hud:Frodo460	Dieser Ort ... Caras Galadhon ... nie habe ich solche Schönheit gesehen!
+hud:Frodo462	Hm.  Sieht aus, als fehlte der Klöppel der Warnglocke.
+hud:Frodo463	Ich glaube, es ist Zeit für mich ... und den Ring ..., Hobbingen zu verlassen und diese Reise anzutreten.
+hud:Frodo464	Der Ring muss warten.  Ich habe in Hobbingen noch mehr zu erledigen.
+hud:Frodo465	Die Landbüttel wissen jetzt von den Wölfen.  Ich läute die Warnglocke besser nicht noch einmal!
+hud:Frodo465a	Ich läute die Warnglocke besser nicht noch einmal!
+hud:Frodo479	Ich habe noch einiges zu erledigen, bevor ich zum Alten Wald aufbreche.
+hud:Frodo482	Es wäre am besten, mit den anderen aufzubrechen.
+hud:Frodo495	Ein zerbrochener Pilz wäre eine gute Markierung ... ich will mich nicht verirren wie die anderen!
+hud:Frodo496	Um hier hineinzukommen, braucht es mehr als einen Wanderstab!
+hud:Frodo496a	Um hier hineinzukommen, braucht es mehr als Steine!
+hud:Frodo496b	Um hier hineinzukommen, braucht es mehr als Knallfrösche!
+hud:Frodo496c	Um hier hineinzukommen, braucht es mehr als Äpfel!
+hud:Frodo496d	Vielleicht sind sie hier drinnen gefangen!
+hud:Frodo497	Diese Plattformen sind wirklich ein kniffliges Rätsel.
+hud:Frodo512	Die Karte zum Erebor, dem Einsamen Berg ... von Bilbos Reise vor langer Zeit.  Was war das für ein Abenteuer!
+hud:Frodo513	Sam wird sein Zuhause sehr vermissen ... er war noch nie lange fort von hier.
+hud:Frodo514	Sam hat eine ganz schöne Büchersammlung! Der Ohm war misstrauisch, als Bilbo Sam das Lesen beibrachte, aber er glaubt, Bilbo hat es nicht böse gemeint.
+hud:Frodo515	Ich weiß noch, wie der Ohm und Sam diese Bänke fertig gebaut haben.
+hud:Frodo516	Sieht aus, als hätte Sam sein Bündel fast fertig gepackt.  Hoffentlich denkt er an ein Seil!
+hud:Frodo517	Die Mühle ist nicht gut in Schuss.  Hoffentlich beißt mich keine Ratte!
+hud:Frodo519	Was Dick wohl damit vorhat?
+hud:Frodo521	Niemand zu Hause ... schade.
+hud:Frodo522	Es ist zu spät, um die Nachbarn zu besuchen.
+hud:Frodo523	Sie müssen draußen auf den Feldern sein.  Schade.
+hud:Frodo524	Es ist spät, und Wölfe sind unterwegs ... nun, kein Grund, Aufruhr zu verursachen.
+hud:Frodo525	Ich muss Lobelia finden und ihr Beutelsend verkaufen.
+hud:Frodo526	Also dann, wie setze ich dieses vertrackte Ding in Gang?
+hud:FrodoLocked	Verschlossen.  Ich will lieber nicht eindringen.
+hud:FrodoMissingSwitch	Jemand hat sich mit dem Griff dieses Schalters davongemacht.  Weit kann er nicht gekommen sein!
+hud:FrodoPoisonedAgain	Frodos Morgulwunde ist zu stark.  Er bräuchte mehr Athelas.
+hud:FrodoRunicKeyClue	Das muss zu einer Tür hier in der Nähe gehören.
+hud:FrodoSong1	 
+hud:FrodoSong2	 
+hud:FullHUD	Heilungen: Voll
+hud:GameOverAragorn	Aragorn ist gestorben.\n\n<A> Erneut versuchen\n<X> Spielstand laden\n<B> Beenden
+hud:GameOverFrodo	Frodo ist gestorben.\n\n<A> Erneut versuchen\n<X> Spielstand laden\n<B> Beenden
+hud:GameOverFrodoCorruption	Frodo ist den Mächten der Verderbnis erlegen.  Drücke <A> für einen Neustart oder <B> zum Beenden.
+hud:GameOverGandalf	Gandalf ist gestorben.\n\n<A> Erneut versuchen\n<X> Spielstand laden\n<B> Beenden
+hud:GameOverGeneric	Deine Fahrt ist gescheitert.\n\n<A> Erneut versuchen\n<X> Spielstand laden\n<B> Beenden
+hud:GameOverQuote	Eure Fahrt steht auf Messers Schneide.  Weicht nur ein wenig ab, und sie wird scheitern ... zum Untergang aller.
+hud:Gandalf007	Es ist, wie Ori verkündete ... hinter Durins Antlitz liegt ein Geheimnis!
+hud:Gandalf009	Dieser Ort verdient eine Untersuchung ... alte Geheimnisse könnten sich hier offenbaren!
+hud:Gandalf010	Auf dem Grab steht ... Balin, Sohn des Fundin, Herr von Moria.
+hud:Gandalf011	Hier ruht der letzte Zwergenkönig von Moria.
+hud:Gandalf012	Wir sollten bald aufbrechen.
+hud:Gandalf019	Seht dort!  Ein Runenschlüssel!
+hud:Gandalf020	Einer der Orks hat ihn bei sich getragen.
+hud:Gandalf021	Ohne den passenden Schlüssel öffnet sich die Tür nicht.
+hud:Gandalf022	Das Glück ist uns hold.
+hud:Gandalf023	Flieht!  Verlasst diesen Ort!  Eine große Dunkelheit naht!
+hud:Gandalf037	Da haben wir die Bescherung!
+hud:Gandalf044	Die Bestie wird schwächer. Haltet stand!
+hud:Gandalf045	Die Bestie ist betäubt!  Jetzt ist die Gelegenheit, die Tore zu öffnen!
+hud:Gandalf049	Nicht, solange die Bestie noch zuschlägt!
+hud:Gandalf051	Drei Gänge stehen zur Wahl.
+hud:Gandalf052	Der Geruch des linken gefällt mir nicht.  Dort unten ist etwas Übles.
+hud:Gandalf053	Auch beim mittleren habe ich kein gutes Gefühl.
+hud:Gandalf054	Der rechte Gang ist der beste.  Er sollte uns weiterführen.
+hud:Gandalf056	Ich bin ein Diener des Geheimen Feuers, Gebieter über die Flamme von Anor. Du kannst nicht vorbei!
+hud:Gandalf057	Geh zurück in die Schatten, Flamme von Udûn!  Du kannst nicht vorbei!
+hud:Gandalf095	Mellon!
+hud:Gandalf097	Es muss einen Weg um diese Grube herum geben.  Vielleicht lässt sie sich füllen ... mit den losen Felsen dort oben!
+hud:Gandalf097a	Mit genug Kraft lassen sich diese Steine lösen und stürzen in die Tiefe!
+hud:Gandalf110	Wir können nicht lange hierbleiben ... der Feind rückt gegen uns vor!
+hud:Gandalf111	Was von diesem Pfad übrig ist, sollte uns zu den Toren von Hulsten und weiter nach Moria führen.
+hud:Gandalf112	Dieses Wasser ... so düster und faulig.  Wir müssen einen Weg darum herum finden!
+hud:Gandalf113	Nun, das ist entschieden.  Es gibt nur einen Ausweg, und der liegt auf der anderen Seite von Moria.
+hud:Gandalf114	Die Wände hier sind vom Alter brüchig.  Wir müssen hier vorsichtig gehen!
+hud:Gandalf116	Überall in den Minen fließt Wasser, doch ich würde es nicht trinken.
+hud:Gandalf118	Wie ich befürchtet habe ... die Orks haben Moria nicht verlassen.
+hud:Gandalf119	Solche Hebel gibt es überall in Moria.  Viele funktionieren trotz ihres hohen Alters noch.
+hud:Gandalf120	Diese Plattform sieht stabil aus.  Ich glaube, man kann sie irgendwie in die Tiefe hinablassen.
+hud:Gandalf123	Dieser Aufzug scheint zu funktionieren, doch wie die Orks ihn instand gehalten haben, weiß ich nicht.
+hud:Gandalf126	Seht dort ...!  Ein Zwerg!  Wir müssen ihn von den Orks befreien!
+hud:Gandalf128	Agh!  Ich wusste doch, dass es hier unten nach etwas Üblem riecht!
+hud:Gandalf129	Das würde die Hitze erklären, die mir vorhin aufgefallen ist.
+hud:Gandalf130	Die Statue eines Zwergenhelden, oder vielleicht eines Königs ... vielleicht ist es Durin selbst.
+hud:Gandalf132	Hm.  Der Schalter für diese Brücke liegt jenseits der Kluft.  Ich muss ihn irgendwie treffen, wenn ich hinüber will.
+hud:Gandalf133	Die Tore von Moria sind nah ... irgendwo in der Felswand, glaube ich.
+hud:Gandalf135	Der Hebel für diesen Schalter fehlt.
+hud:Gandalf136	Um diese Steine zu lösen, braucht es mehr als einen Hieb mit Glamdring.
+hud:Gandalf137	Seltsam ... der Lichtstrahl zeigt keine Wirkung.
+hud:Gandalf138	Die Felsen sind wärmer, ja ... aber immer noch da.
+hud:Gandalf139	Der Blitz richtet hier leider nichts aus.
+hud:Gandalf140	Die Tore von Moria sind nah. Irgendwo in der Felswand, glaube ich.
+hud:GandalfBridgeWarning	Ich muss mich der Bestie stellen!
+hud:GandalfHelp	Ich werde die Gefährten nicht im Stich lassen!
+hud:GandalfHelp2	Die Tore von Moria sind nah ... irgendwo in der Felswand, glaube ich.
+hud:GandalfTemp001	Der Kristall dort oben ... ich glaube, er hat mit diesem Rätsel zu tun! Ob ich ihn wohl mit einem Feuerstoß treffen kann?
+hud:GandalfTrapBlocked	Etwas blockiert die Tür.
+hud:Gates_of_Moria	Die Tore von Moria
+hud:GearNoPin	Diesen Zahnrädern scheint ein Metallstift zu fehlen.
+hud:Gimli017b	Die Orks werden den Tag bereuen, an dem sie diesen Ort entweiht haben!
+hud:GiveAppleHint001	Gib Milo den faulen Apfel (samt Wurm), indem du ihn auswählst und <BL> drückst.
+hud:GiveClue	Um einen Gegenstand zu übergeben, wähle ihn aus und drücke <BL>.
+hud:GiveDeedHint001	Gib Lobelia die Urkunde, indem du sie auswählst und <BL> drückst.
+hud:GiveHerbHint001	Gib dem alten Noakes die Kräuter, indem du sie auswählst und <BL> drückst.
+hud:GiveKeyHint001	Gib dem Ohm den Schlüssel von Beutelsend, indem du ihn auswählst und <BL> drückst.
+hud:GloinSurprise	Dann muss ich dir helfen.
+hud:Goldberry001	Nun lasst das Lied beginnen!  Lasst uns zusammen singen!
+hud:Goldberry002	Von Sonne, Sternen, Mond und Dunst, von Regen und von Wolken!
+hud:Goldberry003	Licht auf dem knospenden Blatt, Tau auf der Feder,
+hud:Goldberry004	Wind auf dem offenen Hügel, Glöckchen auf der Heide,
+hud:Goldberry005	Schilf am schattigen Teich, Lilien auf dem Wasser;
+hud:Goldberry006	Der alte Tom Bombadil und die Tochter des Flusses!
+hud:GoldberrySong1	 
+hud:Gollum019	Mein Schatzzz ... gollum ... mein Schatzzz!
+hud:GotSilverware	Du hast etwas Silberbesteck erhalten.
+hud:GrainClue	Die Schweine brauchen wohl einen Anreiz, um zu bleiben!
+hud:Green_Dragon	Der Grüne Drache
+hud:Green_Hill_Country	Grünbergland
+hud:Green_Hill_Country_Night	Grünbergland bei Nacht
+hud:Hall_of_Statues	Halle der Statuen
+hud:HealsHUD	Heilungen: %d
+hud:HealthTotal	Gesundheit: %d / %d
+hud:Hobbiton	Hobbingen
+hud:Hobbiton_Night	Hobbingen bei Nacht
+hud:House_of_Elrond	Elronds Haus
+hud:IGC_chamber	Elbengemach
+hud:IGC_forest	Wälder von Lórien
+hud:IGC_mirror	Galadriels Garten
+hud:itemAragorn1	Andúril
+hud:itemAragorn2	Ursprünglich Narsil genannt, zerbrach es im Kampf gegen Sauron.  Von elbischen Schmieden neu geschmiedet, nannte Aragorn es Andúril - Flamme des Westens.
+hud:itemAragorn3	Bogen
+hud:itemAragorn4	Getragen von Jägern, Waldläufern und Bogenschützen in ganz Mittelerde.
+hud:itemAragorn5	Langschwert
+hud:itemAragorn6	Eine robuste Klinge, verbreitet in allen Landen Mittelerdes.
+hud:itemArrow1	Feuerpfeile
+hud:itemArrow10	Leichte Metallpfeile, die schnell durch die Luft fliegen.
+hud:itemArrow2	Besonders gefertigte Pfeile, die im Flug brennen.
+hud:itemArrow3	Stahlpfeile
+hud:itemArrow4	Kriegspfeile mit scharfen Metallspitzen.
+hud:itemArrow5	Fackel
+hud:itemArrow6	Eine einfache Lichtquelle.
+hud:itemArrow7	Holzpfeile
+hud:itemArrow8	Gewöhnliche Jagdpfeile, wie man sie überall in Mittelerde findet.
+hud:itemArrow9	Elbenpfeile
+hud:itemFrodo1	Der Eine Ring
+hud:itemFrodo10	Eine scharfe Kurzklinge, in alter Zeit von den Menschen von Westernis geschmiedet.
+hud:itemFrodo11	Stich
+hud:itemFrodo12	Ein elbisches Kurzschwert, im Ersten Zeitalter von den Schmieden Gondolins geschmiedet - messerscharf, leuchtet es blau, wenn Orks in der Nähe sind.
+hud:itemFrodo13	Ein schönes Lied von Tom Bombadil, nur in der größten Not zu gebrauchen.
+hud:itemFrodo13a	Bombadils Lied
+hud:itemFrodo14	Dicks Wanderstab
+hud:itemFrodo15	Ein großer, kunstvoll gearbeiteter Stock, aus feinstem Holz geschnitzt.
+hud:itemFrodo2	Der Herrscherring der Macht, im Zweiten Zeitalter vom Dunklen Herrscher Sauron in den Feuern des Schicksalsberges geschmiedet.
+hud:itemFrodo3	Mithrilhemd
+hud:itemFrodo4	Ein feines Kettenhemd aus Mithril, dem stärksten und kostbarsten Metall Mittelerdes.
+hud:itemFrodo5	Wanderstab
+hud:itemFrodo6	Ein fein geschnitzter, kräftiger Holzstock, wie geschaffen für Spaziergänge auf dem Land.
+hud:itemFrodo7	Dietrich-Set
+hud:itemFrodo8	Eine Sammlung von Nachschlüsseln, Dietrichen und anderen Werkzeugen, mit denen man Schlösser knacken kann.
+hud:itemFrodo9	Dolch von Westernis
+hud:itemGandalf1	Glamdring
+hud:itemGandalf10	Ein feuriger Stoß schießt aus Gandalfs Hand.
+hud:itemGandalf11	Heilen
+hud:itemGandalf12	Gandalfs Wunden schwinden, wenn dieser Zauber gewirkt wird.
+hud:itemGandalf13	Lähmung
+hud:itemGandalf14	Von diesem Zauber getroffene Feinde erstarren auf der Stelle.
+hud:itemGandalf15	Stabschlag
+hud:itemGandalf16	Eine Kraftwelle geht von Gandalfs Stab aus.
+hud:itemGandalf17	Stablicht
+hud:itemGandalf18	Ein Licht am Stab, das den Weg erhellt, durch das man aber leichter entdeckt wird.
+hud:itemGandalf2	Bekannt als Feindhammer, leuchtet das scharfe elbische Langschwert in fahlem Licht, wenn Feinde nahe sind.
+hud:itemGandalf3	Lichtstrahl
+hud:itemGandalf4	Ein machtvoller Strahl aus reinem weißem Licht.
+hud:itemGandalf5	Kettenblitz
+hud:itemGandalf6	Ein wilder Blitz springt von Feind zu Feind.
+hud:itemGandalf7	Verwirrung
+hud:itemGandalf8	Beugt den schwachen Geist der Feinde, sodass sie gegeneinander kämpfen.
+hud:itemGandalf9	Feuerstoß
+hud:itemHealing1	Athelasblatt
+hud:itemHealing10	Der Trank von Imladris.  Ein kräftigender Trank, gebraut von den Elben Bruchtals.
+hud:itemHealing11	Pilze
+hud:itemHealing12	Schmackhafte Pilze, die man überall in Mittelerde findet.  Im Auenland eine besonders beliebte Speise.
+hud:itemHealing13	Honigwabe
+hud:itemHealing14	Eine süße Leckerei voller Energie.  Verleiht mehr Kraft.
+hud:itemHealing14a	Eine süße Leckerei voller Energie.  Erhöht die Geschwindigkeit.
+hud:itemHealing15	Beryll
+hud:itemHealing16	Ein kostbarer Edelstein, von vielen in Mittelerde geschätzt.
+hud:itemHealing17	Seerose
+hud:itemHealing18	Goldbeeres Lieblingsblume.
+hud:itemHealing19	Heilkräuter
+hud:itemHealing2	Die Blätter der Athelaspflanze besitzen neben ihrem angenehmen Duft große Heilkraft. Heilt Vergiftungen.
+hud:itemHealing20	Königskraut, ein scharf riechendes Unkraut, dem man heilende Wirkung nachsagt.
+hud:itemHealing3	Athelaspflanze
+hud:itemHealing4	Eine Pflanze, bekannt für ihre starke Heilkraft, von den Númenórern nach Mittelerde gebracht.
+hud:itemHealing5	Cram
+hud:itemHealing6	Ein fades, aber nahrhaftes Reisebrot, das die Menschen des Nordens für Reisen in die Wildnis backen.
+hud:itemHealing7	Lembas
+hud:itemHealing8	Köstliche goldene Kuchen, in Mallornblätter gewickelt - das Reisebrot der Elben Lóriens.  Stellt alle verlorene Gesundheit wieder her.
+hud:itemHealing9	Miruvor
+hud:itemquest1	Angelicas Geschenk
+hud:itemquest10	Hübsche Kleinigkeiten für die Tochter des Flusses.
+hud:itemquest11	Gandalfs Steinmal
+hud:itemquest12	Ein kleiner Stein mit Gandalfs Zeichen.
+hud:itemquest13	Gandalfs Brief
+hud:itemquest14	Ein Brief von Gandalf an Frodo.
+hud:itemquest17	Heubündel
+hud:itemquest18	Ein Haufen frisch geschnittenes Heu.
+hud:itemquest2	Ein kleiner Spiegel, von Bilbo für Angelica.
+hud:itemquest21	Schlüssel zum Hobbitzimmer
+hud:itemquest22	Der Schlüssel zu einem Zimmer im Gasthaus Zum Tänzelnden Pony, das eigens für Hobbits gebaut wurde.
+hud:itemquest23	Lobelias Geschenk
+hud:itemquest24	Ein Satz Silberlöffel, von Bilbo für Lobelia.
+hud:itemquest25	Melonen
+hud:itemquest26	Reife, pralle Früchte.
+hud:itemquest27	Alte Kleider
+hud:itemquest28	Abgetragene Arbeitskleidung.
+hud:itemquest29	Seite aus dem Buch von Mazarbul
+hud:itemquest3	Urkunde von Beutelsend
+hud:itemquest30	Eine aus einem Tagebuch gerissene Seite, die die Geschichte von Balins Volk in Moria festhält.
+hud:itemquest30a	... zogen mit Macht aus ... 21. Halle.  Die Handwerker fanden eine Falle ... viele\nOrks ... der dritte Sohn fiel ... vor dem zweiten.  Balin ehrte sie ...
+hud:itemquest31	Runenschlüssel
+hud:itemquest32	Damit öffnet man raffinierte Zwergenschlösser.
+hud:itemquest33	Kleine Holzscheite
+hud:itemquest34	Ein Haufen Anmachholz.
+hud:itemquest35	Fauler Fisch
+hud:itemquest36	Ein Geschenk von Gollum.
+hud:itemquest37	Stift der Wetterfahne
+hud:itemquest38	Ein kleiner Metallstift.
+hud:itemquest39	Glockenklöppel
+hud:itemquest4	Die Urkunde für Beutelsend, eine recht berühmte Hobbithöhle.
+hud:itemquest40	Damit bringt man die Warnglocke zum Läuten.
+hud:itemquest41	Durins Axt
+hud:itemquest42	Die große Axt eines Zwergenkönigs, lange für verloren gehalten.
+hud:itemquest43	Bogen der Galadhrim
+hud:itemquest44	Ein feiner Bogen, lang und kräftig, mit einer Sehne aus Elbenhaar bespannt.
+hud:itemquest45	Númenórisches Schwert
+hud:itemquest46	Eine Klinge aus dem alten Númenor, vor langer Zeit von den Orks erbeutet.
+hud:itemquest47	Fauler Apfel
+hud:itemquest48	Ein verdorbener Apfel, samt Wurm.
+hud:itemquest49	Ei
+hud:itemquest5	Schlüssel von Beutelsend
+hud:itemquest50	Ein hoffrisches Hühnerei.
+hud:itemquest51	Sack Getreide
+hud:itemquest52	Geeignet als Tierfutter.
+hud:itemquest53	Scharnier
+hud:itemquest54	Ein kräftiges Torscharnier.
+hud:itemquest55	Dicks Salbe
+hud:itemquest56	Ein Geschenk von Bilbo an Dick.  Erhöht die maximale Gesundheit um 25 Prozent.
+hud:itemquest57	Zwergentrunk
+hud:itemquest58	Erhöht die maximale Gesundheit um 35 Prozent.
+hud:itemquest59	Fläschchen Silberlauf-Wasser
+hud:itemquest6	Ein abgenutzter, robuster Metallschlüssel.  Öffnet die Tür von Beutelsend.
+hud:itemquest60	Erhöht die maximale Gesundheit um 50 Prozent.
+hud:itemquest61	Geisteressenz
+hud:itemquest62	Erhöht Gandalfs maximale Geisteskraft.
+hud:itemquest63	Uraltes Elbenbuch
+hud:itemquest64	Ein Buch elbischer Runen, das Gandalf nutzen kann.
+hud:itemquest65	Silberbesteck
+hud:itemquest66	Ein besonderes Silberbesteck in Hobbitgröße, in Gasthäusern und Wirtshäusern sehr begehrt.
+hud:itemquest67	Schalterhebel
+hud:itemquest68	Betätigt den Schalter, wenn man daran zieht.
+hud:itemquest69	Spiegel
+hud:itemquest7	Brosche
+hud:itemquest70	Liefert ein nützliches Spiegelbild
+hud:itemquest71	Kriegsaxt
+hud:itemquest72	Langbogen
+hud:itemquest73	Dolch von Westernis
+hud:itemquest74	Langschwert
+hud:itemquest75	Keine
+hud:itemquest8	Eine schöne Brosche mit einem blauen Stein.
+hud:itemquest9	Schmetterlinge
+hud:itemThrown1	Äpfel
+hud:itemThrown10	Leichte Metallkugeln, von den Elben alter Zeit gefertigt.
+hud:itemThrown2	Schmackhaftes, aber hartes Obst.
+hud:itemThrown3	Zwergenkugeln
+hud:itemThrown4	Harte Stahlkugeln, von den Zwergen alter Zeit gefertigt.
+hud:itemThrown5	Steine
+hud:itemThrown6	Glatte, runde Steine, ideal zum Werfen.
+hud:itemThrown7	Knallfrösche
+hud:itemThrown8	Kleiner Sprengkörper.  Kann brennbare Dinge entzünden.
+hud:itemThrown9	Elbenkugeln
+hud:Jail_Room	Kerker
+hud:KillOrcsClue	Einer dieser Orks muss den Hebel haben!
+hud:LadderClue001	Geh nah an den Fuß einer Leiter, um automatisch hinaufzuklettern.
+hud:Lobelia007	Fort mit dir!  Beutelsend gehört jetzt einer echten Beutlin!
+hud:Lookout_mound	Aussichtshügel
+hud:MaggotDone	Das war der letzte von Maggots Pilzen!
+hud:MaggotMore	Es sind noch ein paar Pilze übrig!
+hud:MaggotMushroom1	Bauer Maggot hat sich seinen Pilz zurückgeholt!
+hud:MaggotMushroom2	Bauer Maggot hat sich seine 2 Pilze zurückgeholt!
+hud:MaggotMushroom3	Bauer Maggot hat sich seine 3 Pilze zurückgeholt!
+hud:MaggotMushroom4	Bauer Maggot hat sich seine 4 Pilze zurückgeholt!
+hud:MaggotMushroom5	Bauer Maggot hat sich seine 5 Pilze zurückgeholt!
+hud:MaggotMushroom6	Bauer Maggot hat sich seine 6 Pilze zurückgeholt!
+hud:map_region_1_description_1	Das Land der Hobbits westlich des Brandyweins.  Hobbingen, die Heimat von Frodo Beutlin, liegt im Westviertel.
+hud:map_region_1_description_2	Das Land der Hobbits westlich des Brandyweins.  Hobbingen, die Heimat von Frodo Beutlin, liegt im Westviertel.  Wasserau liegt nahe Hobbingen und der Großen Oststraße.  Viele Hobbits kehren im Gasthaus Zum Grünen Drachen ein, um gut zu essen und den neuesten Klatsch zu hören.
+hud:map_region_1_description_3	Das Land der Hobbits westlich des Brandyweins.  Hobbingen, die Heimat von Frodo Beutlin, liegt im Westviertel.  Wasserau liegt nahe Hobbingen und der Großen Oststraße.  Viele Hobbits kehren im Gasthaus Zum Grünen Drachen ein, um gut zu essen und den neuesten Klatsch zu hören.  Hinter dem Ostviertel liegt Bockland, eine Hobbitsiedlung.  Es liegt zwischen dem Auenland und dem Alten Wald, einem Ort, den viele Hobbits nicht zu betreten wagen.
+hud:map_region_1_name	Auenland
+hud:map_region_2_description_1	Seltsame und bösartige Bäume machen die Reise durch den Wald gefährlich.
+hud:map_region_2_description_2	Seltsame und bösartige Bäume machen die Reise durch den Wald gefährlich.  Das Haus von Tom Bombadil und Goldbeere liegt am Rand des Alten Waldes, kurz vor dem unheimlichen Land, das man die Hügelgräberhöhen nennt.
+hud:map_region_2_description_3	Seltsame und bösartige Bäume machen die Reise durch den Wald gefährlich.  Das Haus von Tom Bombadil und Goldbeere liegt am Rand des Alten Waldes, kurz vor dem unheimlichen Land, das man die Hügelgräberhöhen nennt.  Auf den Höhen liegen zahlreiche uralte Grabhügel.  Legenden erzählen, dass in diesen Gräbern Geister umgehen.
+hud:map_region_2_name	Alter Wald
+hud:map_region_3_description_1	Im Dorf Bree gibt es sowohl gemütliche Hobbithöhlen als auch die Steinhäuser der Menschen.
+hud:map_region_3_description_2	Im Dorf Bree gibt es sowohl gemütliche Hobbithöhlen als auch die Steinhäuser der Menschen.  Das Gasthaus Zum Tänzelnden Pony ist eine beliebte Herberge im Breeland.  Gerstenmann Butterblume, der Wirt, ist ein freundlicher, wenn auch etwas vergesslicher Kerl.
+hud:map_region_3_description_3	Im Dorf Bree gibt es sowohl gemütliche Hobbithöhlen als auch die Steinhäuser der Menschen.  Das Gasthaus Zum Tänzelnden Pony ist eine beliebte Herberge im Breeland.  Gerstenmann Butterblume, der Wirt, ist ein freundlicher, wenn auch etwas vergesslicher Kerl.  Bree zieht viele Reisende der Oststraße und des Grünwegs an, zweier uralter Fernstraßen.
+hud:map_region_3_name	Bree
+hud:map_region_4_description_1	Auf dem Gipfel dieses Hügels, auch Amon Sûl genannt, stand einst ein mächtiger Turm.
+hud:map_region_4_description_2	Auf dem Gipfel dieses Hügels, auch Amon Sûl genannt, stand einst ein mächtiger Turm.  Die Überreste des Turms sind eine düstere Erinnerung an ein fernes Zeitalter.
+hud:map_region_4_description_3	Auf dem Gipfel dieses Hügels, auch Amon Sûl genannt, stand einst ein mächtiger Turm.  Die Überreste des Turms sind eine düstere Erinnerung an ein fernes Zeitalter.  Jenseits der Wetterspitze liegt ein Waldstück namens Trollhöhen, benannt nach den furchterregenden Kreaturen, die dort jagen.
+hud:map_region_4_name	Wetterspitze
+hud:map_region_5_description_1	Das "Letzte Heimelige Haus" östlich des Meeres ist eine verborgene Zuflucht, gegründet vom großen Elrond.
+hud:map_region_5_description_2	Das "Letzte Heimelige Haus" östlich des Meeres ist eine verborgene Zuflucht, gegründet vom großen Elrond.  Es liegt in einem Tal nahe dem Nebelgebirge und wird von den Elben Imladris genannt. Bruchtal ist eine Zuflucht für alle Wohlgesinnten, durch Elronds Macht vor den schrecklichen Kräften Saurons geschützt.
+hud:map_region_5_name	Bruchtal
+hud:map_region_6_description_1	Die Zwergenstadt Khazad-dûm liegt unter dem Nebelgebirge.
+hud:map_region_6_description_2	Die Zwergenstadt Khazad-dûm liegt unter dem Nebelgebirge. Einst die Heimat von Durins Volk, zeugen ihre vielen großen Hallen von der Kunstfertigkeit der Zwerge.
+hud:map_region_6_description_3	Die Zwergenstadt Khazad-dûm liegt unter dem Nebelgebirge. Einst die Heimat von Durins Volk, zeugen ihre vielen großen Hallen von der Kunstfertigkeit der Zwerge.  Moria fiel nach einer großen Belagerung.  Seither wird es von Orks verwüstet und von einem Übel heimgesucht, das in den Tiefen des schwarzen Abgrunds geweckt wurde.
+hud:map_region_6_name	Moria
+hud:map_region_7_description_1	In diesem lange geschützten Zufluchtsort, bekannt als der Goldene Wald von Wilderland, leben die Galadhrim ("Baumvolk").
+hud:map_region_7_description_2	In diesem lange geschützten Zufluchtsort, bekannt als der Goldene Wald von Wilderland, leben die Galadhrim ("Baumvolk").  Caras Galadhon, die Heimat der Herrin Galadriel und des Herrn Celeborn, liegt im Herzen des Waldes.  Nur sehr wenige haben die prächtige Elbenstadt je mit eigenen Augen gesehen.
+hud:map_region_7_name	Lothlórien
+hud:map_region_8_description_1	Der Anduin, auch der Große Strom genannt, fließt südwärts durch Mittelerde, bis er in der Bucht von Belfalas ins Meer mündet.
+hud:map_region_8_description_2	Der Anduin, auch der Große Strom genannt, fließt südwärts durch Mittelerde, bis er in der Bucht von Belfalas ins Meer mündet.  Etwa in der Mitte seines Laufs liegt der große See Nen Hithoel.
+hud:map_region_8_description_3	Der Anduin, auch der Große Strom genannt, fließt südwärts durch Mittelerde, bis er in der Bucht von Belfalas ins Meer mündet.  Etwa in der Mitte seines Laufs liegt der große See Nen Hithoel.  Auf der Seeinsel Tol Brandir befand sich einst einer der sieben Sehenden Steine. Der See ergießt sich in die großen Fälle von Rauros, umgeben von den Hügeln des Emyn Muil.
+hud:map_region_8_name	Der Anduin
+hud:MeleeWeapon	Waffe: %s
+hud:menu_attract_press_start	Bitte drücke START, um zu beginnen.
+hud:menu_cheat_accept	Cheat-Code akzeptiert
+hud:menu_cheat_ammunition	Munition
+hud:menu_cheat_and	und
+hud:menu_cheat_enabled	aktiviert
+hud:menu_cheat_health	Gesundheit
+hud:menu_cheat_infinite	Unendlich
+hud:menu_cheat_invalid	Ungültiger Cheat-Code
+hud:menu_cheat_ring	Ring
+hud:menu_cheat_spirit	Geisteskraft
+hud:menu_cheat1_code	Unendlich Ring benutzen: <Y><B><A><B><Y><X>
+hud:menu_cheat1_off	Unendliche Ringbenutzung deaktiviert
+hud:menu_cheat1_on	Unendliche Ringbenutzung aktiviert
+hud:menu_cheat2_code	Unendliche Gesundheit: <Y><A><X><B><A><Y>
+hud:menu_cheat2_off	Unendliche Gesundheit deaktiviert
+hud:menu_cheat2_on	Unendliche Gesundheit aktiviert
+hud:menu_cheat3_code	Unendliche Geisteskraft: <X><Y><A><X><B><X>
+hud:menu_cheat3_off	Unendliche Geisteskraft deaktiviert
+hud:menu_cheat3_on	Unendliche Geisteskraft aktiviert
+hud:menu_cheat4_code	Unendliche Munition: <X><B><Y><A><X><B>
+hud:menu_cheat4_off	Unendliche Munition deaktiviert
+hud:menu_cheat4_on	Unendliche Munition aktiviert
+hud:menu_fellowship_aragorn_d	"Nicht jeder, der wandert, ist verloren."  Aragorn, Streicher genannt, ist ein Waldläufer.  Er durchstreift das Land vom Auenland im Norden bis Gondor im Süden und darüber hinaus, um die freien Völker Mittelerdes zu verteidigen.  Er ist kriegserfahren, aber nicht vom Krieg verhärtet.  Er ist ein alter Freund des Zauberers Gandalf und hat geschworen, Frodo, den Ringträger, mit seinem Leben zu schützen.
+hud:menu_fellowship_aragorn_n	Aragorn
+hud:menu_fellowship_boromir_d	"Durch unsere Tapferkeit werden die wilden Völker des Ostens noch im Zaum gehalten und der Schrecken von Morgul in Schach."  Boromir ist ein starker, tapferer Krieger, gestählt durch Jahre der Verteidigung Gondors gegen die Mächte Mordors.  Er ist der Sohn des Truchsessen von Gondor, der herrscht, solange das Reich keinen rechtmäßigen König hat.  Boromir ist ein stolzer Mann, begierig, Waffen gegen Sauron zu finden.
+hud:menu_fellowship_boromir_n	Boromir
+hud:menu_fellowship_frodo_d	"Im Herzen des ängstlichsten Hobbits steckt ein Samenkorn des Mutes."  Frodo ist ein tatkräftiger und kluger Hobbit.  Als Waise wurde er von seinem Onkel Bilbo adoptiert und bei ihm aufgenommen. Andere Hobbits fanden Bilbo seltsam, weil er sich mit einem Zauberer anfreundete und mit Zwergen auszog, um einen Drachen zu besiegen. Nicht so Frodo, der davon träumte, in wilde Länder zu reisen und sein eigenes großes Abenteuer zu erleben.
+hud:menu_fellowship_frodo_n	Frodo Beutlin
+hud:menu_fellowship_gandalf_d	"Misch dich nicht in die Angelegenheiten von Zauberern, denn sie sind empfindlich und schnell erzürnt."  Gandalf ist ein Zauberer von gewaltiger Macht und Weisheit.  Er ist einer von fünf Zauberern, die nach Mittelerde gesandt wurden, um den freien Völkern im Widerstand gegen Saurons Bosheit beizustehen.  Er hat die entlegensten Winkel der Welt bereist und sich die Bewunderung der Weisen und das Misstrauen vieler anderer erworben.  Er sieht das Potenzial zu Großem in den unscheinbarsten Leuten.
+hud:menu_fellowship_gandalf_n	Gandalf der Graue
+hud:menu_fellowship_gimli_d	"Meine Axt ruht unruhig in meiner Hand.  Gebt mir eine Reihe Orkhälse und Platz zum Ausholen."  Gimli ist ein tapferer Zwerg mit schroffem Temperament und großem Herzen.  Sein Vater ist Glóin, einer der zwölf Zwerge, die mit Bilbo zum Einsamen Berg zogen.  Er sagt offen und furchtlos, was er denkt.  Gimli kennt sich mit Stein und Erde aus und ist ein Kämpfer, der seinesgleichen sucht.
+hud:menu_fellowship_gimli_n	Gimli
+hud:menu_fellowship_legolas_d	"Zum Schwimmen nimm einen Otter, und um leichtfüßig über Gras und Laub oder Schnee zu laufen, einen Elben."  Legolas Grünblatt ist ein schneller, gewandter Waldelb.  Er ist entschlossen und ehrenhaft, hegt aber einen Groll gegen die Zwerge.  Als Sohn von König Thranduil aus dem Düsterwald reist Legolas als Abgesandter der Waldelben nach Bruchtal.  Er ist ein Meister der Kriegskunst wie der Künste des Friedens.
+hud:menu_fellowship_legolas_n	Legolas
+hud:menu_fellowship_merry_d	"Wir haben schreckliche Angst - aber wir kommen mit dir, oder wir folgen dir wie Hunde."  Merry ist ein selbstbewusster und fröhlicher Hobbit. Als Sohn des Herrn von Bockland besitzt er eine natürliche Anmut und viel Charme. Merry, ein geborener Anführer, liebt es, mit seinen Freunden sorgfältig Streiche zu planen und Verschwörungen auszuhecken. Er ist recht belesen und weiß viel über Orte jenseits des Auenlands.
+hud:menu_fellowship_merry_n	Meriadoc „Merry“ Brandybock
+hud:menu_fellowship_pippin_d	"Törichter Tuk!"  Pippin ist ein flinker junger Hobbit, der oft etwas töricht und unbedacht handelt. Noch in seinen Zwienzigern, ist er naiv und neigt zum Jammern.  Doch sein Humor und seine verspielte Art machen viele Fehler wett. Als Sohn des Thain, des militärischen Oberhaupts des Auenlands, wurde Pippin in Wohlstand und Bequemlichkeit geboren. Er ist einer von Frodos engsten Freunden.
+hud:menu_fellowship_pippin_n	Peregrin „Pippin“ Tuk
+hud:menu_fellowship_sam_d	"Trau deinem Kopf nicht, Samweis, er ist nicht dein bester Teil."  Sam ist ein Hobbit, der frei heraus spricht und stur und beharrlich sein kann.  Er ist zwar nicht der gebildetste Hobbit, hat aber tiefe Menschenkenntnis.  Er kann mit dem Herzen denken, und das lässt ihn nie im Stich.  Aufgewachsen, um die Gärten des Auenlands zu pflegen, ist er neugierig auf die Welt.  Seine Gutmütigkeit und sein gesunder Menschenverstand sind Frodo auf der gefährlichen Reise wertvolle Stützen.
+hud:menu_fellowship_sam_n	Samweis „Sam“ Gamdschie
+hud:menu_gamma_directions	Stelle die Helligkeit deines Fernsehers so ein, dass alle Farbbalken über der grauen Linie sichtbar sind.
+hud:menu_hours_plural	Stunden
+hud:menu_hours_singular	Stunde
+hud:menu_inventory1	Waffen
+hud:menu_inventory2	Gegenstände
+hud:menu_inventory3	Gegenstandsname
+hud:menu_inventory4	Gegenstandsbeschreibung
+hud:menu_load_game_1	Spiel laden
+hud:menu_load_game_2	Xbox-Festplatte
+hud:menu_load_game_3	Blöcke gesamt: 50.000+
+hud:menu_load_game_4	Freie Blöcke: 50.000+
+hud:menu_load_game_cancel	<B> Abbrechen
+hud:menu_load_game_delete	<Y> Spielstand löschen
+hud:menu_load_game_load	<A> Spielstand laden
+hud:menu_loadsave_cheats	Glückwunsch. Deine große Tapferkeit und deine großen Taten waren nicht ganz vergebens.\n\n
+hud:menu_loadsave_continue	<A> Weiter
+hud:menu_loadsave_delete	Spielstand löschen?\n\nDrücke <A> zum Löschen oder <B> zum Abbrechen.
+hud:menu_loadsave_load_success	Spiel geladen.
+hud:menu_loadsave_loadfailed	Spielstand konnte nicht geladen werden.\n\nDrücke <A>, um fortzufahren.
+hud:menu_loadsave_loading	Spiel wird von der Xbox-Festplatte geladen. Bitte schalte deine Xbox-Konsole nicht aus.
+hud:menu_loadsave_max_games	Es sind maximal 4096 Spielstände möglich.  Drücke <B> zum Abbrechen.
+hud:menu_loadsave_no_space	Auf deiner Xbox sind keine %d freien Blöcke zum Speichern vorhanden.\n\nDrücke <A>, um ohne Speichern fortzufahren, oder <B>, um das Xbox Dashboard zu starten.
+hud:menu_loadsave_nosave	Hier kannst du nicht speichern. Bitte suche sicheren, festen Boden und versuche es erneut.  Drücke <B>, um zurückzukehren.
+hud:menu_loadsave_overwrite	Vorhandenen Spielstand überschreiben?\n\nDrücke <A> zum Überschreiben oder <B> zum Abbrechen.
+hud:menu_loadsave_save_success	Spiel gespeichert.
+hud:menu_loadsave_savefailed	Auf deiner Xbox sind nicht genug freie Blöcke zum Speichern vorhanden.  Bitte gib %d Blöcke frei.\n\nDrücke <A>, um fortzufahren.
+hud:menu_loadsave_saving	Spiel wird auf der Xbox-Festplatte gespeichert. Bitte schalte deine Xbox-Konsole nicht aus.
+hud:menu_map1	Auenland
+hud:menu_map2	Alter Wald
+hud:menu_map3	Bree
+hud:menu_map4	Wetterspitze
+hud:menu_map5	Bruchtal
+hud:menu_map6	Moria
+hud:menu_map7	Lothlórien
+hud:menu_map8	Der Anduin
+hud:menu_map9	<B> Zurück
+hud:menu_minutes_plural	Minuten
+hud:menu_minutes_singular	Minute
+hud:menu_options_Audio	Audioeinstellungen
+hud:menu_options_back	<B> Zurück
+hud:menu_options_boolean0	Aus
+hud:menu_options_boolean1	An
+hud:menu_options_GameOptions	Spieloptionen
+hud:menu_options_gamma	Helligkeit:
+hud:menu_options_gamma1	Drücke <A> zum Einstellen
+hud:menu_options_invert	Ego-Perspektive:
+hud:menu_options_invert1	Normal
+hud:menu_options_invert2	Invertiert
+hud:menu_options_Music	Musik:
+hud:menu_options_percent	%d%%
+hud:menu_options_Sound	Soundeffekte:
+hud:menu_options_Subtitles	Untertitel:
+hud:menu_options_Vibration	Vibration:
+hud:menu_options_video	Videoeinstellungen
+hud:menu_options_widescreen	Breitbild:
+hud:menu_pause1	Inventar
+hud:menu_pause10	<B> Fortsetzen
+hud:menu_pause11	Gefährten
+hud:menu_pause2	Weltkarte
+hud:menu_pause3	Aufgabenbuch
+hud:menu_pause4	Optionen
+hud:menu_pause5	Spiel speichern
+hud:menu_pause6	Spiel laden
+hud:menu_pause7	Fortsetzen
+hud:menu_pause8	Beenden
+hud:menu_pause9	<A> Auswählen
+hud:menu_quest01_1	Finde die Urkunde von Beutelsend in Beutelsend
+hud:menu_quest01_2	Bring die Urkunde zu Lobelia Sackheim-Beutlin in Wasserau
+hud:menu_quest01_3	Finde den verschwundenen Klöppel der Warnglocke
+hud:menu_quest01_4	Repariere die Warnglocke mit dem Klöppel
+hud:menu_quest01_5	Läute die Warnglocke
+hud:menu_quest01_d1	Verkaufe Beutelsend an Lobelia Sackheim-Beutlin
+hud:menu_quest01_t1	Der Verkauf von Beutelsend
+hud:menu_quest02_1	Hol den Einen Ring aus Beutelsend
+hud:menu_quest02_2	Hol den Schlüssel von Beutelsend
+hud:menu_quest02_3	Gib den Schlüssel von Beutelsend Hamfast Gamdschie, Beutelhaldenweg Nummer 3
+hud:menu_quest02_4	Triff Merry, Pippin und Sam auf Bauer Maggots Hof
+hud:menu_quest02_d1	Hol den Ring und sprich mit dem Ohm bei ihm zu Hause
+hud:menu_quest02_t1	Bereite die Reise nach Bruchtal vor
+hud:menu_quest03_1	Reise durch den Alten Wald, um den Schwarzen Reitern zu entgehen
+hud:menu_quest03_2	Rette Merry und Pippin vor dem Alten Weidenmann
+hud:menu_quest03_3	Besiege den Grabunhold
+hud:menu_quest03_4	Kehre im Gasthaus Zum Tänzelnden Pony ein
+hud:menu_quest03_5	Finde 12 Lilien für Goldbeere
+hud:menu_quest03_6	Gib Tom Bombadil 12 Lilien
+hud:menu_quest03_d1	Reise sicher zur Zuflucht der Elben
+hud:menu_quest03_t1	Beginne die Reise nach Bruchtal
+hud:menu_quest04_1	Rette Ted Sandigmann
+hud:menu_quest04_2	Finde Sam
+hud:menu_quest04_3	Finde Merry
+hud:menu_quest04_4	Finde Pippin
+hud:menu_quest04_d1	Finde Merry, Pippin und Sam im Alten Wald
+hud:menu_quest04_t1	Finde die vermissten Hobbits
+hud:menu_quest05_1	Finde Merry
+hud:menu_quest05_d1	Suche im Dorf Bree nach Merry
+hud:menu_quest05_t1	Finde Merry
+hud:menu_quest06_1	Befreie das Haus einer alten Hobbitfrau von Ratten.
+hud:menu_quest06_2	Sammle Kleider
+hud:menu_quest06_3	Sammle kleine Holzscheite
+hud:menu_quest06_4	Sammle Melonen
+hud:menu_quest06_5	Sammle ein Heubündel
+hud:menu_quest06_6	Kehre zum Tänzelnden Pony zurück
+hud:menu_quest06_d1	Finde Dinge, aus denen sich Hobbit-Attrappen bauen lassen
+hud:menu_quest06_t1	Sammle Teile für die Attrappen
+hud:menu_quest07_1	Erreiche den Gipfel der Wetterspitze
+hud:menu_quest07_2	Besiege den Olog-hai
+hud:menu_quest07_3	Beschütze Frodo vor den Nazgûl
+hud:menu_quest07_4	Finde Athelas, um Frodos Wunde zu behandeln
+hud:menu_quest07_5	Führe Frodo durch die Trollhöhen
+hud:menu_quest07_d1	Beschütze Frodo auf seiner Reise nach Bruchtal
+hud:menu_quest07_t1	Geleite Frodo und die Hobbits nach Bruchtal
+hud:menu_quest08_1	Reise durch Moria
+hud:menu_quest08_2	Reise den Anduin entlang
+hud:menu_quest08_d1	Reise zum Schicksalsberg
+hud:menu_quest08_t1	Die Reise zum Schicksalsberg
+hud:menu_quest09_1	Finde den Eingang nach Moria
+hud:menu_quest09_2	Besiege die Warge
+hud:menu_quest09_3	Fülle die Spalte im Bergpfad
+hud:menu_quest09_4	Besiege den Wächter im Wasser
+hud:menu_quest09_5	Öffne die Tore von Moria
+hud:menu_quest09_d1	Führe die Gefährten zu den Minen von Moria
+hud:menu_quest09_t1	Betritt die Minen von Moria
+hud:menu_quest10_1	Finde einen Weg aus dem Bergbaugebiet
+hud:menu_quest10_2	Entkomme aus der 21. Halle.
+hud:menu_quest10_3	Besiege den Höhlentroll
+hud:menu_quest10_4	Besiege den Orkhäuptling
+hud:menu_quest10_5	Verlasse Balins Grab
+hud:menu_quest10_6	Erreiche Durins Brücke
+hud:menu_quest10_7	Beschütze die Gefährten vor dem Balrog
+hud:menu_quest10_d1	Die Gefährten müssen durch Moria reisen
+hud:menu_quest10_t1	Flucht aus Moria
+hud:menu_quest11_1	Überwinde den Ork-Damm
+hud:menu_quest11_2	Besiege Gollum im Lager
+hud:menu_quest11_3	Erreiche den Gipfel der Insel
+hud:menu_quest11_4	Rette Sam
+hud:menu_quest11_5	Besiege den Nazgûl und seine Flugbestie
+hud:menu_quest11_d1	Bahne einen Weg näher nach Mordor
+hud:menu_quest11_t1	Folge dem Anduin Richtung Mordor
+hud:menu_quest12_1	Finde den verschwundenen Metallstift
+hud:menu_quest12_2	Repariere die Mühlensteuerung mit dem Stift
+hud:menu_quest12_d1	(Optional) Hilf einem Hobbitnachbarn
+hud:menu_quest12_t1	Repariere Ted Sandigmanns Mühle
+hud:menu_quest13_1	Finde 4 Heilkräuter im Grünbergland
+hud:menu_quest13_2	Gib dem alten Noakes in Wasserau 4 Heilkräuter
+hud:menu_quest13_d1	(Optional) Finde Heilkräuter und bring sie dem Postboten des Auenlands
+hud:menu_quest13_t1	Finde Heilkräuter für den alten Noakes
+hud:menu_quest14_1	Sammle 6 Pilze auf Maggots Hof
+hud:menu_quest14_d1	(Optional) Sammle leckere Pilze
+hud:menu_quest14_t1	Nimm Maggots Pilze
+hud:menu_quest15_1	Finde alle 5 Schweine und bring sie in den Schweinestall zurück
+hud:menu_quest15_2	Finde einen Sack Getreide, um die Schweine zu füttern
+hud:menu_quest15_3	Fülle den Schweinetrog mit Getreide
+hud:menu_quest15_d1	(Optional) Hilf Milo Lochner, seine Schweine in den Stall zurückzubringen
+hud:menu_quest15_t1	Hilf einem Hobbitnachbarn, seine Schweine einzufangen
+hud:menu_quest16_1	Hilf, Hals Wetterfahne zu reparieren
+hud:menu_quest16_d1	(Optional) Hilf Hal, seine Wetterfahne zu reparieren
+hud:menu_quest16_t1	Hilf einem Hobbit bei einer handfesten Aufgabe
+hud:menu_quest17_1	Finde einen Wurm für Milo
+hud:menu_quest17_2	Gib Milo den Wurm
+hud:menu_quest17_d1	(Optional) Finde einen Wurm, um Milo zu helfen
+hud:menu_quest17_t1	Hilf Milo Lochner beim Angeln
+hud:menu_quest18_1	Gib Dick ein Ei
+hud:menu_quest18_2	Gib Dick eine Honigwabe
+hud:menu_quest18_d1	(Optional) Finde die Kuchenzutaten für Dick
+hud:menu_quest18_t1	Hilf Dick, einen Kuchen zu backen
+hud:menu_quest19_1	Finde das Apfelweinfass
+hud:menu_quest19_2	Trag das Apfelweinfass zum Ausschank im Grünen Drachen
+hud:menu_quest19_d1	(Optional) Finde das Fass Apfelwein für Rose
+hud:menu_quest19_t1	Hilf Rose bei ihrer Arbeit
+hud:menu_quest20_1	Finde das Torscharnier
+hud:menu_quest20_2	Repariere das Tor mit dem Scharnier
+hud:menu_quest20_d1	Finde das fehlende Teil, um das Tor zu reparieren
+hud:menu_quest20_t1	Repariere das Tor von Hobbingen
+hud:menu_save_game_back	<B> Abbrechen
+hud:menu_save_game_delete	<Y> Spielstand löschen
+hud:menu_save_game_empty	Neuer Spielstand
+hud:menu_save_game_gameinfo	%d von %d Spielständen\n%s\n%d %s %d %s gespielt\nGespeichert am %d/%d/%d\n%d Blöcke
+hud:menu_save_game_no_games	Keine Spielstände vorhanden
+hud:menu_save_game_select	<A> Spiel speichern
+hud:menu_save_game_title	Spiel speichern
+hud:menu_start1	Neues Spiel starten
+hud:menu_start2	Gespeichertes Spiel fortsetzen
+hud:menu_start3	Spieloptionen
+hud:menu_start4	Spiel beenden
+hud:menu_start5	<A> Auswählen
+hud:menu_start6	Mitwirkende
+hud:Merry065a	Wir sollten uns besser beeilen, bevor noch mehr von diesen Dingern hinter uns her sind!
+hud:MerryPippinDead	Weh!  Merry und Pippin sind umgekommen.
+hud:MGeneratorClue001	Aus manchen Bauwerken kommen Feinde.  Zerstöre sie, um weitere Feinde aufzuhalten!
+hud:Mill_Interior	Die Mühle
+hud:MillGiveKey001	Warte.  Ich muss dem Ohm noch den Schlüssel bringen.
+hud:MirrorOverhead	Drücke <A>, um fortzufahren
+hud:MirrorPickup	Du hast einen Spiegel aufgehoben.
+hud:Narrator002e	Die Seiten deines Tagebuchs zeigen Inventar, Aufgaben, Karten und die Freunde, die du gefunden hast.  Drücke <LT> oder <RT>, um zwischen den Seiten zu wechseln.
+hud:Narrator003e	Aufgabenbuch aktualisiert.  Drücke BACK, um das Aufgabenbuch zu öffnen.
+hud:Narrator004e	Zerstöre die zwei Tentakel, die dem Tor am nächsten sind!
+hud:Narrator005e	Die Urkunde wird in einer Truhe in Beutelsend sicher aufbewahrt.
+hud:Narrator006e	Milos fünf Schweine sind wohl ausgebüxt!  Jemand sollte sie zurück in ihren Stall bringen, wo sie hingehören.  Aufgabenbuch aktualisiert.
+hud:Narrator007e	Du hast ein paar Knallfrösche aufgehoben.
+hud:Narrator008e	Du hast einen Apfel aufgehoben.
+hud:Narrator009e	Du hast einen Pilz aufgehoben.
+hud:Narrator009e2	Du hast einen Pilz aufgehoben.  Damit kannst du deine Gesundheit auffrischen.
+hud:Narrator010e	Du hast einen Metallstift aufgehoben.  Aufgabenbuch aktualisiert.
+hud:Narrator010e2	Du hast einen Metallstift aufgehoben.
+hud:Narrator010e3	Das sieht nach einer guten Stelle für den Metallstift aus.
+hud:Narrator011e	Du hast ein Dietrich-Set aufgehoben.
+hud:Narrator012e	Du hast die Urkunde aufgehoben.  Aufgabenbuch aktualisiert.
+hud:Narrator013e	Du hast etwas Miruvor aufgehoben.
+hud:Narrator013e2	Du hast etwas Miruvor aufgehoben.  Damit kannst du deine Geisteskraft auffrischen.
+hud:Narrator014e	Du hast eine Seite aus einem uralten Zwergenbuch aufgehoben.
+hud:Narrator015e	Du hast einen Laib Cram aufgehoben.
+hud:Narrator015e2	Du hast einen Laib Cram aufgehoben.  Damit kannst du deine Gesundheit auffrischen.
+hud:Narrator016e	Du hast etwas Lembas aufgehoben.
+hud:Narrator016e2	Du hast etwas Lembas aufgehoben.  Damit kannst du deine Gesundheit auffrischen.
+hud:Narrator017e	Du hast einen Runenschlüssel aufgehoben.
+hud:Narrator018e	Du hast den Glockenklöppel aufgehoben.
+hud:Narrator019e	Du hast eine Honigwabe aufgehoben.
+hud:Narrator020e	Du hast einen Schalterhebel aufgehoben.
+hud:Narrator021e	Du hast ein Ei aufgehoben.
+hud:Narrator030a	Aufgabenbuch aktualisiert.
+hud:Narrator030z	Du hast den Schlüssel von Beutelsend aufgehoben.
+hud:Narrator035	Verschlossen.  Ein Dietrich-Set wäre jetzt praktisch.
+hud:Narrator035e	Um das Dietrich-Set zu benutzen, wähle es mit dem Steuerkreuz aus und drücke <BL>.
+hud:Narrator037	Du bist noch nicht bereit, den Ring zu nehmen und deine Reise zu beginnen. Du hast Beutelsend noch nicht an Lobelia Sackheim-Beutlin verkauft.
+hud:Narrator047	Du hast noch nicht alle Teile für die Attrappen.
+hud:Narrator048	Du hast jetzt alle Teile für die Attrappen.
+hud:Narrator050	Frodo wird angegriffen!
+hud:Narrator052	Frodo ist im Kampf gefallen.
+hud:Narrator980	Sam scheint etwas gesehen zu haben.  Ich sollte mich vorsichtig bewegen!
+hud:Narrator981	Pippin scheint etwas gesehen zu haben.  Ich sollte mich vorsichtig bewegen!
+hud:Narrator982	Merry scheint etwas gesehen zu haben.  Ich sollte mich vorsichtig bewegen!
+hud:Narrator983	Besiege die 2 Spinnen, die Ted bewachen!
+hud:Narrator987	Ich bin mir nicht so sicher, ob ich das tun sollte ...
+hud:NarratorDagger	Du hast einen Dolch von Westernis aufgehoben.
+hud:NarratorDoorClue001	Drücke <X>, um Türen zu öffnen.
+hud:NarratorGrain	Du hast einen Sack Getreide aufgehoben.
+hud:NarratorLiftHelp	Um Gegenstände hochzuheben, zu tragen oder abzusetzen, drücke <X> und bewege dabei den linken Stick.
+hud:NarratorPushHelp	Um Gegenstände zu schieben oder zu ziehen, halte <X> gedrückt und bewege dabei den linken Stick.
+hud:NarratorSign001	Nach Wasserau
+hud:NarratorSign002	Nach Hobbingen
+hud:NarratorSign003	Zum Grünbergland
+hud:NarratorSign004	Nach Krickloch
+hud:NarratorSign005	Maggots Hof
+hud:NarratorSign006	Beutelsend
+hud:NarratorSign006a	Nach Beutelsend
+hud:NarratorSign007	Gamdschie
+hud:NarratorSign008	Sandigmanns Mühle
+hud:NarratorSign009	Lochner
+hud:NarratorSign010	Zweifuß
+hud:NarratorSign011	Boffin
+hud:NarratorSign012	Grubb
+hud:NarratorSign013	Brockhaus
+hud:NarratorSign014	Hornbläser
+hud:NarratorSign015	Bolger
+hud:NarratorSign016	Gutleib
+hud:NarratorSign017	Noakes
+hud:NarratorSign018	Stolzfuß
+hud:NarratorSign019	Der Grüne Drache
+hud:NarratorSign020	Der Efeubusch
+hud:NarratorSign021	Straffgürtel
+hud:NarratorSign022	Pausbacken
+hud:NarratorSign023	Sandigmann
+hud:NarratorSign024	Kleinbau
+hud:NarratorSign025	Gasthaus Zum Tänzelnden Pony
+hud:NarratorSign026	Ställe
+hud:NarratorSongEffect	Vielleicht sollte ich um Hilfe rufen!
+hud:NarratorSongNoEffect	Bombadils Lied hat im Moment keine Wirkung.
+hud:NarratorTom	Du hast Bombadils Lied erhalten.
+hud:NarratorXHelp	Drücke <X>, um mit Gegenständen zu interagieren.
+hud:Network_of_Stairs	Treppengewirr
+hud:NewBow	Du hast den Bogen der Galadhrim aufgehoben.
+hud:NewSword	Du hast das númenórische Schwert aufgehoben.
+hud:NiceClue	Es ist wichtig, die Sachen der Nachbarn in Ruhe zu lassen.
+hud:NoBlock	Ich kann gerade nicht abwehren.
+hud:NoBlockWeapon	Es gibt keine geeignete Waffe zum Abwehren!
+hud:NoKeyClue	Finde den Schlüssel von Beutelsend irgendwo in Beutelsend.
+hud:NoRingHere	Auf so geweihtem Boden darf der Ring nicht benutzt werden!
+hud:NotForFrodo	Dieser Gegenstand ist nicht für mich bestimmt.
+hud:NoThrow	Von hier aus kann ich nicht werfen.
+hud:Orc_Dam	Ork-Damm
+hud:Orc_Dam_Camp	Lager am Fluss
+hud:Orc_Dam_Gollum	Lager am Ufer
+hud:ParalysisGiven	Das Buch hat einen Zauber offenbart.
+hud:PickedUp	%s gefunden.
+hud:Pippin066a	Sieht aus, als hätten die alten Weiber gewusst, wovon sie reden!  Dieser Ort ist grässlich!
+hud:PoisonClue001	Du wurdest vergiftet!
+hud:PoisonClue002	Die meisten Gifte lassen mit der Zeit nach, und manche Gegenstände heilen die Wirkung von Gift.
+hud:PoisonClue003	Du bist geheilt!
+hud:Prancing_Pony	Das Gasthaus Zum Tänzelnden Pony
+hud:PurityDropClue001	Manche Taten bringen Frodo tiefer unter den bösen Einfluss des Einen Rings.
+hud:PurityRaiseClue001	Manche Taten schwächen den verderblichen Einfluss des Einen Rings auf Frodo.
+hud:RingClue001	Wenn sich der Eine Ring dreht, ist ein verborgener Bereich in der Nähe.
+hud:RingClue002	Diese Bereiche kann man nur betreten, während man den Ring trägt.
+hud:RingTutorial001	Du kannst den Einen Ring tragen, um unsichtbar zu werden.  Doch das hat seinen Preis.
+hud:RingTutorial002	Solange du den Ring trägst, verdirbt er dich langsam.  Trägst du ihn zu lange, erliegst du seiner Macht.
+hud:RingTutorial003	Gute Taten und Heldenmut tilgen einen Teil der Verderbnis des Rings.
+hud:RingUses	Ringbenutzungen: %d
+hud:Rot_Bridge	Drehbrücken
+hud:Sam078a	Ach, ich hab versucht, mich nicht zu verlaufen, Herr Frodo, ehrlich, aber die Bäume hatten was anderes vor!
+hud:Sam083	Ahh! Aaaaagh!
+hud:Secret_Cave_1	Verborgene Höhle auf dem Land
+hud:Secret_Cave_2	Verborgene Höhle im Dorf
+hud:Secret_Cave_4	Verborgene Labyrinthhöhle
+hud:Secret_Cave_5	Verborgene Höhle am Pfad
+hud:Secret_Cave_6	Verborgene Höhle bei den Gräbern
+hud:Secret_Cave_7	Verborgene Höhle am Fluss
+hud:Secret_well	Verborgener Brunnen von Hobbingen
+hud:SelectThingsClue	Um einen Gegenstand im Inventar auszuwählen, drücke das Steuerkreuz nach rechts, um das Inventarfeld zu markieren, und nach oben oder unten, um durch deine Gegenstände zu blättern.
+hud:ShareMushrooms	Merry und Pippin haben 4 Pilze genommen.
+hud:Sign3Bagshot	Beutelhaldenweg Nummer 3
+hud:SignBagshotRow	Beutelhaldenweg
+hud:SignSilo	Freies Getreide für alle!
+hud:SignToBagshot	Zum Beutelhaldenweg
+hud:Silo_Interior	Der Speicher
+hud:SpellNoEffect	Der Zauber zeigt keine Wirkung.
+hud:SpiritHUD	Geisteskosten: %d
+hud:SpiritTotal	Geisteskraft: %d / %d
+hud:standard_loading	Lädt ...
+hud:StartMillClue001	Um die Mühle in Gang zu setzen, stell dich neben den Schalter und drücke <X>.
+hud:StealPig	Milos Schweine gehören in ihren Stall!
+hud:StealthClue001	Das Licht in der Mitte der Statusleiste zeigt an, ob Frodo von einem Feind entdeckt wurde.
+hud:StealthClue002	Ist das Licht gelb, ahnt ein Feind in der Nähe Frodos Anwesenheit, hat ihn aber noch nicht entdeckt.
+hud:StealthClue003	Wird das Licht jedoch rot, hat der Feind Frodo entdeckt!
+hud:StealthClue004	Um dich an einem Feind vorbeizuschleichen, bewege den linken Stick leicht in die gewünschte Richtung.
+hud:StealthClue005	Wenn du einem Feind erfolgreich ausweichst, wird das Licht grün.
+hud:SwitchFixed	Der Schalter wurde repariert.
+hud:TalkingClue	Drücke <X>, um mit anderen Figuren zu sprechen.
+hud:toms	Bei den Bombadils
+hud:TomSong0	 
+hud:TomSong1	 
+hud:TomSong2	 
+hud:TomSong3	 
+hud:TomSong4	 
+hud:Trans_Hobbiton_Night	An jenem Abend steckte ich den Ring in die Tasche und traf meine letzten Vorbereitungen, um Hobbingen zu verlassen.
+hud:Trans_Hobbiton_Night2	Ich musste nur noch zum Beutelhaldenweg Nummer 3 gehen und dem Ohm Gamdschie den Schlüssel von Beutelsend geben.
+hud:Tree_Labyrinth	Baumlabyrinth
+hud:Troll_Shaws	Trollhöhen
+hud:TrunkHit	Den Stamm des Baumes zu verletzen ist eine schlechte Idee!
+hud:Tube_Bridges	Röhrenbrücken
+hud:Two_Hundred_Stairs	200 Stufen
+hud:UnknownHerbs	Du hast ein paar Kräuter aufgehoben.
+hud:UnlockMaggotGate001	Bauer Maggots Tor ist verschlossen ... nichts, womit ein Dietrich-Set nicht fertig würde!
+hud:UseLeverClue001	Drücke <X>, um an einem Hebel zu ziehen.
+hud:UsePinHint001	Setze den Metallstift in das Mühlenzahnrad ein, indem du ihn auswählst und <BL> drückst.
+hud:user_settings_damaged	Die Benutzereinstellungen sind beschädigt. Standardeinstellungen werden wiederhergestellt.\n\nDrücke <A>, um fortzufahren.
+hud:Village_of_Bree	Bree
+hud:WargClue	Besiege die vier Warge, die die Gefährten angreifen!
+hud:warning_bad_game_disc	Mit der verwendeten Disc gibt es ein Problem. Sie ist möglicherweise verschmutzt oder beschädigt.\n\nDrücke <A>, um fortzufahren.
+hud:warning_load_game	Wenn du ein Spiel lädst, geht dein aktuelles Spiel verloren.\n\nDrücke <A> zum Laden oder <B>, um zum vorherigen Menü zurückzukehren.
+hud:warning_lost_controller	Bitte schließe den Controller wieder an und drücke START, um fortzufahren.
+hud:warning_quit_confirmation	Willst du das Spiel wirklich beenden?\n\nDrücke <A> zum Beenden oder <B>, um zum Spiel zurückzukehren.
+hud:Weathertop_Newest	Wetterspitze
+hud:Wight001	Kalt sei Hand und Herz und Gebein,
+hud:Wight002	Und kalt der Schlaf unterm Stein;
+hud:Wight003	Nie mehr erwachen auf steinernem Bett,
+hud:Wight004	Nie, bis die Sonne verlischt und der Mond ist tot.
+hud:Wight005	Im schwarzen Wind sollen die Sterne vergehn,
+hud:Wight006	Und hier auf Gold sollen sie liegen und ruhn,
+hud:Wight007	Bis der dunkle Herrscher die Hand erhebt
+hud:Wight008	Über totes Meer und verdorrtes Land.
+hud:Withywindle_Path	Pfad an der Weidenwinde
+hud:Wrestlers	Die stört man besser nicht.
+hud:xbox_dings_test	<A> <B> <X> <Y> <LT> <RT> <BL> <W>
+hud:warning_damaged_save	Beschädigter Spielstand
+dlg:1stPersonClue002	Klicke den rechten Stick, um in den Zielmodus zu wechseln.
+dlg:Angelica004	Hallo, Frodo.
+dlg:Angelica005	Wir werden dich schrecklich vermissen, Frodo.
+dlg:Angelica006	Du gehst ja so furchtbar weit weg.  Fast bis ans andere Ende der Welt!
+dlg:Angelica007	Das ist so eine weite Reise.  Ich hoffe, du kannst eines Tages nach Hobbingen zurückkommen.
+dlg:Angelica008	Leb wohl, Frodo.
+dlg:Angelica009	Frodo, hast du mein kleines Hündchen gesehen?  Er ist schon so spät dran für sein Bad, und er ist nirgends zu finden!
+dlg:Appledore001	Ich mag euch Hobbits nicht besonders.  Verschwinde!
+dlg:Appledore002	Das Mäuschen tritt gleich mit seinem haarigen Fuß in die Rattenfalle!
+dlg:Appledore003	Du da!
+dlg:Appledore004	Wa...?
+dlg:Appledore005	Äh ...
+dlg:Appledore006	Agh!
+dlg:Appledore007	Uff!
+dlg:Appledore008	Yiiieee!
+dlg:Appledore009	Guhh ... uunngh.
+dlg:Appledore010	Yaarrr!
+dlg:Appledore011	He!  Hier drüben!
+dlg:Appledore012	(leises, gelangweiltes Pfeifen)
+dlg:Appledore013	Ich brauche hier Hilfe!
+dlg:Aragorn001	Sie bevorzugen die tieferen Ebenen ... trotz des Schattens der Furcht, der darüber liegt.
+dlg:Aragorn002	Die Brücke von Durin ist nah.  Mit etwas Glück überqueren wir sie ohne Zwischenfall.
+dlg:Aragorn003	Wie heben wir diese Sicherung auf?
+dlg:Aragorn004	Ein Höhlentroll!
+dlg:Aragorn005	Moria ist weit und tief.  Mit etwas Glück können wir allen Orks aus dem Weg gehen.
+dlg:Aragorn006	Gebt acht, wohin ihr hier tretet.  Ein Fehltritt könnte euer letzter sein.
+dlg:Aragorn007	Ich werde gehen, aber ich sage euch allen ... hütet euch vor den Geheimnissen Morias!
+dlg:Aragorn008	Gandalf, hast du das gehört?
+dlg:Aragorn009	Gandalf spricht wahr. Unsere Not könnte schlimmer werden, und zwar früher, als uns lieb ist!
+dlg:Aragorn010	Wo der Warg heult, schleicht der Ork ... wir sollten nicht säumen.
+dlg:Aragorn011	Ich fürchte, wir können den Orks nicht ewig ausweichen.  Wir müssen bereit sein.
+dlg:Aragorn012	Die Hobbits brauchen Rast, Gandalf.  Das scheint ein guter Lagerplatz zu sein.
+dlg:Aragorn013	Zu den Waffen!  Zu den Waffen!
+dlg:Aragorn014	Nein, Frodo!
+dlg:Aragorn015	Der Ringträger soll sich in Sicherheit bringen ... es ist Zeit, dass Andúril zuschlägt!
+dlg:Aragorn016	Du solltest jetzt gehen, Frodo, solange du noch kannst!
+dlg:Aragorn017	Elendil!
+dlg:Aragorn018	Jetzt, Legolas!  Erledige die üble Bestie!
+dlg:Aragorn019	Frodo!  Boromir!  Macht euch bereit ... die Orks haben Befestigungen errichtet!
+dlg:Aragorn020	Der Weg ist frei, fürs Erste.
+dlg:Aragorn021	Was ist das?  Etwas regt sich!
+dlg:Aragorn022	Gollum!  Bleib stehen, Kreatur!
+dlg:Aragorn023	Halt still, dann geschieht dir nichts!  Warum bist du hier?
+dlg:Aragorn024	Geschenke?  Sprich deutlich!
+dlg:Aragorn025	Er ist mir entwischt!
+dlg:Aragorn026	Geschenke.  Wie seltsam ..
+dlg:Aragorn027	Komm her, du!
+dlg:Aragorn028	Nun ist Gollum mir zweimal entwischt.  Doch das ist kein allzu schwerer Fehler.  Schließlich ist die vom Ring verdorbene Kreatur sogar dem Gewahrsam der Elben entkommen.
+dlg:Aragorn030	Da sind Sie ja, Merry!
+dlg:Aragorn031	Man nennt mich Streicher.  Ich bin ein Freund von Gandalf.
+dlg:Aragorn032	Gehen Sie zurück ins Gasthaus und suchen Sie Ihre Freunde.  Sagen Sie Butterblume, er soll Sie in meinem Zimmer unterbringen!
+dlg:Aragorn033	Ich glaube, es ist Zeit, diese Feinde auf eine falsche Fährte zu locken.
+dlg:Aragorn034	Ich sammle ein paar Dinge, um Attrappen von euch Hobbits zu bauen. Ihr werdet schon sehen.  Und jetzt geht!
+dlg:Aragorn036	Das ist meine Sache.
+dlg:Aragorn038a	Diese kleinen Holzscheite geben meinen Attrappen im Dunkeln glaubhafte Arme und Beine.  Der Torwächter wird sie kaum vermissen.
+dlg:Aragorn043	Saurons Macht ist an diesen Ring gebunden.  Wir müssen ihn tief nach Mordor bringen und im Feuer des Schicksalsberges vernichten.
+dlg:Aragorn045	Die Elbenschmiede haben Narsil neu geschmiedet, die Klinge meiner Vorfahren. Ihr habt mir eine große Ehre erwiesen.
+dlg:Aragorn046	Es soll einen neuen Namen tragen ... Andúril, Flamme des Westens!
+dlg:Aragorn047	Hab Dank, Arwen Undómiel. Und meine Liebe.
+dlg:Aragorn048	Elrond hat deine Gefährten gut gewählt, Frodo.  Wir werden dich nicht im Stich lassen!
+dlg:Aragorn049	Hier, Sam.  Keine Sorge, ich bin noch bei dir!
+dlg:Aragorn051	Ich war viele lange Jahre nicht hier, aber ich kenne den Weg nach Caras Galadhon noch, der Baumstadt der Elben.
+dlg:Aragorn054	Halt.  Wir gehen alle mit verbundenen Augen.
+dlg:Aragorn054a	Sollen wir die Elben und ihre steifen Nacken verwünschen?  Der ganzen Gemeinschaft soll es gleich ergehen. Verbinde uns allen die Augen, Haldir.
+dlg:Aragorn055	In diesem Land und bei seinem Volk gibt es nichts Böses, außer ein Mann bringt es selbst hierher.
+dlg:Aragorn058	Was Sie getan haben, war schlimmer als alles, was Ihr Freund hätte sagen können!
+dlg:Aragorn059	Ich möchte Sie an einem ruhigen Ort sprechen.
+dlg:Aragorn060	Man nennt mich Streicher.  Und wenn Ihnen nützt, was ich sage, dann möchte ich, dass Sie mich mitnehmen.
+dlg:Aragorn061	Ausgezeichnet.  Sie scheinen nach Ihrem Missgeschick wieder zur Besinnung zu kommen.
+dlg:Aragorn061a	Ich bin Aragorn, Arathorns Sohn.  Und wenn ich Sie durch Leben oder Tod retten kann, werde ich es tun.
+dlg:Aragorn062	Ich dachte, ich müsste Sie ohne Beweise überzeugen ... aber mein Aussehen spricht gegen mich.
+dlg:Aragorn062a	Aber sehe übel aus?
+dlg:Aragorn064	Bleibt hier.  Ich finde ihn.
+dlg:Aragorn065	Ihr solltet schlafen, alle.  Ich halte in der Nacht Wache.  Wir brechen im Morgengrauen auf.
+dlg:Aragorn066	Nach Bruchtal.  Aber nicht über die Hauptstraße.
+dlg:Aragorn067	Meine Abkürzungen gehen nicht schief.
+dlg:Aragorn068	Geht dich nichts an, Pferdedieb.
+dlg:Aragorn069	Das habe ich schon.  Und jetzt verschwinde!
+dlg:Aragorn071	Große Worte für einen dreckigen Orkbalg aus Mordor.
+dlg:Aragorn072	Sucht euch ein sichereres Quartier.  Es könnten noch mehr von diesen Männern unterwegs sein.
+dlg:Aragorn076	Ich bin nicht sicher.  Es ist zu weit weg, um es zu erkennen.  Aber es scheint von der Wetterspitze zu kommen.
+dlg:Aragorn077	Wir wissen mehr, wenn wir die Wetterspitze erreichen.
+dlg:Aragorn078	Ihr habt nicht mit den Augen eines Waldläufers geschaut!  Seht ihr den Steinmal?  Da sind Runen darauf!
+dlg:Aragorn079	Es scheint ein G und eine 3 zu sein.
+dlg:Aragorn080	Und die 3 könnte ein Datum bedeuten ... der 3. Oktober ist noch nicht lange her.
+dlg:Aragorn081	Wenn er hier war, ist er in Eile aufgebrochen.  Vielleicht ist er auf Trolle gestoßen.  Oder Schlimmeres ...
+dlg:Aragorn082	Die Ringgeister von Mordor.  Wir müssen rasch weiterziehen.
+dlg:Aragorn083	Fürs Erste.  Die Ringgeister warten, bis Frodo seiner Wunde erliegt, bevor sie angreifen ... erneut.
+dlg:Aragorn084	Dieses Messer im Dunkeln.  Die Wunde überwältigt ihn und macht ihn zu einem niederen Geist.
+dlg:Aragorn084a	Ich kann ihn nicht heilen ... aber ich kann die Dunkelheit verlangsamen, die in ihm wächst.
+dlg:Aragorn085	Ich brauche eine Heilpflanze namens Athelas, die aus dem alten Land Númenor stammt.  Ihr kennt sie vielleicht als Königskraut.
+dlg:Aragorn086	Ich glaube, sie wächst hier in der Gegend wild.
+dlg:Aragorn087	Die Schwarzen Reiter verstecken sich und warten, bis ihr Morgulmesser Frodo überwältigt. Doch Frodos Widerstand ist stark. Wir müssen nach Bruchtal eilen!
+dlg:Aragorn089	Nur Mut, Frodo!  Wir schaffen das gemeinsam!
+dlg:Aragorn090	Ich kann in der Wildnis jagen und Nahrung finden.
+dlg:Aragorn091	Schnallt den Gürtel enger und denkt an das Festmahl an Elronds Tafel in Bruchtal.
+dlg:Aragorn092	Das sehe ich.
+dlg:Aragorn093	Das ist Glorfindel aus dem Hause Elronds in Bruchtal.
+dlg:Aragorn094	Hier.  Frodo hat eine Morgulwunde.  Er muss nach Bruchtal.
+dlg:Aragorn095	Ach, Herrin!  Gandalf stürzte in die Schatten.  Er ist Moria nicht entkommen.
+dlg:Aragorn096	Weckt die anderen und macht euch zum Aufbruch bereit.  Heimlichkeit nützt uns hier vielleicht nichts ... wir müssen womöglich kämpfen.
+dlg:Aragorn097	Guten Abend.
+dlg:Aragorn098	Sind Sie zum ersten Mal in einem Gasthaus, Herr Unterberg?
+dlg:Aragorn099	Heh ... verstehe.  Nun, wenn Sie hier übernachten wollen, sollten Sie mit dem Wirt sprechen.  Warten Sie zu lange, schlafen Sie im Stall!
+dlg:Aragorn101	Hnngh!
+dlg:Aragorn102	Aagh!
+dlg:Aragorn103	Nnaaargh!
+dlg:Aragorn104	Hnf!
+dlg:Aragorn105	Ohhh ... agh!
+dlg:Aragorn106	Ugh!
+dlg:Aragorn107	Naaaah!
+dlg:Aragorn108	Hiih!
+dlg:Aragorn109	Mmph!
+dlg:Aragorn111	Herr Unterberg?  An Ihrer Stelle würde ich Ihren Freund zum Schweigen bringen.
+dlg:Aragorn112	Sie sollten schnell etwas unternehmen!
+dlg:Aragorn135	Gandalf!  Nimm das!
+dlg:Aragorn136	Seien Sie hier auf der Hut, Herr Unterberg.  Sie werden merken, dass Bree nicht so freundlich ist wie das Auenland.
+dlg:Aragorn142	Die Orks sind in Bewegung ... und in größerer Zahl!  Macht euch kampfbereit!
+dlg:Aragorn150	Was ist los?
+dlg:Aragorn151	Ruft einen Rattenfänger.
+dlg:Aragorn152	Ein Einbrecher ...?
+dlg:Aragorn153	Hm ... vielleicht sehe ich doch mal nach.
+dlg:Aragorn154	Euer Keller ist frei.  Dürfte ich zum Lohn ein paar Eurer Lumpen haben?
+dlg:Aragorn155	Vielen Dank.  An Eurer Stelle würde ich ins Haus gehen ...
+dlg:Aragorn156	Natürlich.  Gute Nacht.
+dlg:Arwen001	Erneuert wird die Klinge, die zerbrochen war.  Der Kronenlose wird wieder König sein.
+dlg:Arwen002	Du erweist uns Ehre, sie gegen unseren gemeinsamen Feind zu führen, Aragorn, Arathorns Sohn, Sohn der Könige von Númenor.
+dlg:Arwen003	Möge sie das Ende des Dunklen Herrschers sehen und dich dann sicher zu mir zurückbringen, mein Liebster.
+dlg:Arwen004	Mae govannen, mellon.
+dlg:Arwen006	Dein Weg wird mühsam sein, Ringträger.  Mögen die Sterne auf dein Antlitz scheinen!
+dlg:Bilbo001	Da bist du ja, Frodo, mein Junge!  Ich habe ein paar Geschenke für dich, für den Weg, der vor dir liegt.
+dlg:Bilbo002	Zuerst Stich!  Die Klinge eines Elbenprinzen. Du wirst sie brauchen, wette ich.
+dlg:Bilbo003	Das ist ein Mithrilhemd aus dem Drachenschatz.  Sehr leicht, aber stärker als jeder Stahl.
+dlg:Bilbo004	Dir helfen?  Ich habe ein schreckliches Schicksal über dich gebracht.
+dlg:Bilbo004a	Ich würde den albernen alten Ring selbst nehmen, aber ohne ihn haben mich die Jahre eingeholt.  Ich bin nicht mehr "gut erhalten".
+dlg:Bilbo005	Ah, ja.  Pass gut auf dich auf, Frodo!  Und bring alle Neuigkeiten mit, die du kriegen kannst!  Ich schreibe ein Buch über dein Abenteuer.
+dlg:Bob001	Tut mir leid, Herr.  Die Ställe sind alle zu.  Ich muss sie sauber machen, bevor der Chef mir das Fell über die Ohren zieht!
+dlg:Bob002	Ich kenn keinen Beutlin, ich schwör's!
+dlg:Bob003	Ich verdanke Ihnen mein Leben, Herr.  Diese Männer aus dem Süden ... die wollten mich umbringen!
+dlg:Bob004	Recht haben Sie, Herr!  Die dreckigen Pferdeboxen können warten!
+dlg:Bombadil004	Holla!  Langsam, ihr kleinen Leute!  Wohin wollt ihr denn, he, keuchend wie ein Blasebalg?  Was ist denn los?
+dlg:Bombadil005	Ich bin Tom Bombadil!
+dlg:Bombadil006	Na kommt!  Erzählt mir, was euch fehlt!
+dlg:Bombadil007	Der Alte Weidenmann?  Für den kenne ich den Reim!  Ich sing ihm das Mark kalt, wenn er sich nicht benimmt.
+dlg:Bombadil008	Lass sie wieder raus, Alter Weidenmann!  Du solltest nicht wach sein!  Iss Erde!  Trink Wasser!  Schlaf ein!  Bombadil spricht!
+dlg:Bombadil009	Nun, meine kleinen Leute!  Ihr sollt ins Haus von Tom Bombadil kommen
+dlg:Bombadil010	Kommt jetzt und helft Tom, Lilien für die schöne Frau Goldbeere zu finden!
+dlg:Bombadil011	Für Fragen ist am Abendbrottisch Zeit genug!
+dlg:Bombadil015	Hier ist meine Goldbeere!
+dlg:Bombadil016	He? Was? Kennt ihr meinen Namen nicht?  Das ist die einzige Antwort.  Denn wer seid ihr ohne euren Namen?
+dlg:Bombadil016a	Aber ihr seid jung, und ich bin alt.  Der Älteste, das bin ich.
+dlg:Bombadil017	Sein Schatz von einem Ring hat keine Macht über Tom Bombadil ...  Und nun, fröhliche Freunde, ist es Zeit für unser Abendbrot!
+dlg:Bombadil018	Bleibt auf dem grünen Gras, wenn ihr geht, Jungs!  Rührt keine alten Steine an und schnüffelt nicht in den Häusern der alten, toten Grabunholde herum!
+dlg:Bombadil019	Hier ist ein Lied zum Singen, falls ihr in Gefahr geratet.
+dlg:Bombadil030	Nun, kleine Freunde!  Der alte Tom hat euren Ruf gehört.
+dlg:Bombadil031	Lasst uns hinaus aufs saubere Gras gehen.
+dlg:Bombadil032	Der Bann über diesem Hügelgrab ist gebrochen, und nie wieder wird ein Unhold hierher zurückkehren.
+dlg:Bombadil033	Ich habe die Schätze des Grabes verstreut.  Sie gehören jedem, der sie findet!
+dlg:Bombadil034	Der alte Tom hat ein hübsches Spielzeug für seine Frau genommen, und hier sind ein paar feine Klingen für junge Hobbits, die in Dunkelheit und Gefahr hineinmarschieren!
+dlg:Bombadil035	Sie wurden vor langer Zeit geschmiedet, von den Menschen von Westernis jenseits des Meeres, im alten Númenor.
+dlg:Bombadil035a	Sie legten Zauber auf ihre Klingen, zum Verderben des Dunklen Herrschers.
+dlg:Bombadil035b	Ihre Könige von Númenor sind jetzt vergessen, doch ihre Söhne wandern einsam umher und schützen einfache Leute vor bösen Dingen.
+dlg:Bombadil036	Der alte Tom bringt euch sicher über die Grenzen seines Landes.  Von dort reist ihr nach Bree, einem schönen Dorf!
+dlg:Bombadil036a	Übernachtet im Gasthaus Zum Tänzelnden Pony.
+dlg:Bombadil037	Danach setzen wir uns an einen Tisch voll Sahne, Honigwaben und Weißbrot mit Butter!
+dlg:Bombadil038	Hüpf voran, kleiner Kerl!  Mehr Lilien für die schöne Goldbeere.
+dlg:Bombadil039	Schöne Lilien für die schöne Tochter des Flusses!  Kommt, lasst uns zu ihr gehen!
+dlg:Bombadil040	Was?  So eilig?  Goldbeere und das Abendbrot sind da, wenn wir da sind, mein Junge!  Denk an die Lilien!
+dlg:Boromir001	Genug vom Vergangenen geredet ... mich kümmert die Gegenwart.  Rasten wir oder ziehen wir weiter?
+dlg:Boromir002	Hoffen wir, dass uns keine Orks besuchen, während wir in diesem riesigen Loch schlafen.
+dlg:Boromir003	Ein Hobbitstreich vielleicht?
+dlg:Boromir004	Unser Glück scheint in letzter Zeit zu versiegen.
+dlg:Boromir005	Ich finde noch immer, wir hätten nach Gondor gehen sollen.
+dlg:Boromir005a	Ich finde noch immer, wir hätten nach Gondor gehen sollen.
+dlg:Boromir006	Das ist ein Name von übler Vorbedeutung.  Doch in Gondor werden wir starke Verbündete haben.
+dlg:Boromir007	Ich gehe nicht, es sei denn, die ganze Gemeinschaft stimmt gegen mich.
+dlg:Boromir008	Die Stimme des Ringträgers sollte gehört werden.
+dlg:Boromir009	Zu den Waffen!  Gondor!
+dlg:Boromir010	Das ist Torheit.  Wir sollten sofort nach Gondor ziehen!
+dlg:Boromir011	Kennst du das Wort, Gandalf?
+dlg:Boromir012	Wir müssen weiter, und zwar bald ... bevor die Orks kommen.
+dlg:Boromir013	Die Geschichten, die ich als Kind über diesen Ort hörte, werden ihm nicht gerecht.
+dlg:Boromir014	Zu den Waffen!  Gondor!
+dlg:Boromir016	Nicht Aragorn bereitet mir Sorgen, sondern du.  Ein schwerer Weg liegt vor dir.
+dlg:Boromir017	 Und doch ... leidest du unnötig?
+dlg:Boromir018	Was für eine Warnung ist das?
+dlg:Boromir019	Unsere Stärke hat euer kleines Auenland lange beschützt!
+dlg:Boromir020	Noch gibt es Hoffnung, dass Gondor nicht fällt.
+dlg:Boromir021	Ja, der Ring ... Wir können seine Macht zum Guten nutzen!
+dlg:Boromir025	Was sollen wir deiner Meinung nach tun?
+dlg:Boromir026	Denk über meinen Rat nach, Frodo ... mehr verlange ich nicht von dir.
+dlg:Boromir027	Genug!  Ich sage, wir benutzen den Ring als Waffe!  Denn keiner von euch ist mächtig genug, den Ring nach Mordor zu tragen!
+dlg:Boromir027a	Ihn vernichten?  Du willst unsere größte Waffe direkt vor die Haustür unseres Feindes bringen?
+dlg:Boromir030	Ich kam nach Bruchtal, um Antworten auf einen Traum zu finden ... eine Vision, die sagte, der Halbling werde hervortreten.
+dlg:Boromir030a	Bist du dieser Halbling?  Diese Aufgabe ist so groß, und du bist so klein ...
+dlg:Boromir031	Ich bin mir dieser Elbenherrin und ihrer Absichten nicht allzu sicher.
+dlg:Boromir033	In meiner Heimat werden treue Verbündete auf dich warten.  Gondor allein steht gegen die Heere Mordors!
+dlg:Butterbur001	Einen Augenblick, wenn's beliebt!
+dlg:Butterbur002	Nob!  Wo steckst du?  Wir haben Gäste!  Ein bisschen flott!
+dlg:Butterbur003	So denn ... guten Abend, kleiner Herr.  Gerstenmann Butterblume, zu Diensten! Was darf es sein?
+dlg:Butterbur004	Sie kommen aus dem Auenland, wie's sich anhört.  Aus dem Auenland kommen heutzutage nicht viele.
+dlg:Butterbur004a	Auenland ... woran erinnert mich das nur?  Darf ich nach Ihrem Namen fragen?
+dlg:Butterbur005	Da haben wir's.  Schon wieder weg.  Es fällt mir schon wieder ein, wenn ich Zeit zum Nachdenken habe.
+dlg:Butterbur006	Ich lauf mir heute Abend mit all den Reisenden die Füße wund.  So ein Gedränge im Haus hatten wir seit vielen Jahren nicht!
+dlg:Butterbur007	Ein Glück, dass Sie ein Hobbit sind.  So ein Zimmer ist das Einzige, was wir noch haben.  Hier ist Ihr Schlüssel!
+dlg:Butterbur008	Nob!  Nob, du wollfüßige Schnecke!  Wo bist du?
+dlg:Butterbur009	Wo ist Bob? Such ihn, aber dalli!  Er muss sofort ein paar Ponys in den Stall bringen!
+dlg:Butterbur010	Entschuldigen Sie mich, Herr ... ich muss mich um eine Gruppe Zwerge kümmern, und dann all die Fremden, die aus dem Süden den Grünweg heraufkommen!  Geschäftige Zeiten sind das!
+dlg:Butterbur011	Verzeihung, ich müsste Sie kurz sprechen.
+dlg:Butterbur012	Mir ist wieder eingefallen, was ich vergessen hatte.
+dlg:Butterbur013	Es geht um einen Hobbit aus dem Auenland namens Beutlin, der sich aber Unterberg nennt.
+dlg:Butterbur014	Gandalf, der Zauberer.  Er bat mich, Ihnen diesen Brief ins Auenland zu schicken, aber ich hab's vergessen.  Er verwandelt mich bestimmt in einen Holzklotz.
+dlg:CaveTroll001	Hah!
+dlg:CaveTroll002	Uhh?!
+dlg:CaveTroll003	Hmmnn ...
+dlg:CaveTroll004	Urr!
+dlg:CaveTroll005	Hrrrrgh!
+dlg:CaveTroll006	Eiiieaaar!
+dlg:CaveTroll007	Eeeeeaagh!
+dlg:CaveTroll008	Grrraaaar!
+dlg:CaveTroll009	Roooar!
+dlg:CaveTroll010	(schweres Atmen)
+dlg:CaveTroll011	Raaarr!
+dlg:Celeborn001	Hier sind es acht, doch neun haben Bruchtal verlassen, so lautete die Botschaft.
+dlg:Celeborn002	In all den langen Jahren voller schmerzlicher Nachrichten ist dies die schlimmste.
+dlg:Celeborn003	Die Geschichte hören wir ein andermal, denn ihr seid müde und tief betrübt.
+dlg:Celeborn004	Wir werden tun, was wir können, um euch zu helfen, vor allem dem, der die Last trägt.
+dlg:Celeborn005	Ruht euch aus, und lasst uns eine Weile nicht vom Weg sprechen, der vor euch liegt.
+dlg:Dwarf001	Nali, zu Diensten.
+dlg:Dwarf002	Und wie gefällt Ihnen Bree, Unterberg?  Ist es nach Ihrem Geschmack?
+dlg:Dwarf003	Sie kennen den Erebor?  Wie ich meine ferne Heimat vermisse!
+dlg:Dwarf004	Bald kehre ich dorthin zurück, sobald meine Geschäfte im Westen abgeschlossen sind.  Ich werde froh sein, wieder bei meinem Volk zu sein!
+dlg:Dwarf005	Und Ihnen, guter Unterberg!  Möge Ihr Auenland immer grün und schön bleiben!
+dlg:Dwarf006	Der Einsame Berg ruft mich ... Erebor, Erebor!  Bald wandle ich wieder durch deine ehrwürdigen Hallen.
+dlg:Dwarf007	Wo ist er hin? Zauberei!
+dlg:Dwarf008	Lasst uns ein Lied singen!
+dlg:Elrond001	Meine Freunde, dies ist der Hobbit Frodo, Drogos Sohn.  Er hat viel geopfert, um den Einen Ring nach Bruchtal zu bringen.
+dlg:Elrond002	Frodo, dies sind die Anführer der Freien Völker Mittelerdes.
+dlg:Elrond003	Gimli, Glóins Sohn, aus dem Zwergenreich Erebor, das der Dunkle Herrscher Sauron mit einem Einfall bedroht.
+dlg:Elrond004	Legolas, Thranduils Sohn, König der Waldelben. Sie bekämpfen Saurons Truppen im Düsterwald.
+dlg:Elrond005	Boromir, Sohn des Truchsessen von Gondor.  Die Menschen Gondors erleiden schwere Verluste, um uns alle vor Saurons Heeren zu schützen.
+dlg:Elrond006	Eine kleine, heimliche Schar kann Erfolg haben, wo ein großes Heer scheitern würde.
+dlg:Elrond011	Ich glaube, diese Aufgabe ist dir bestimmt, Frodo.  Wenn du den Weg nicht findest, wird ihn niemand finden.
+dlg:Elrond012	Nein, gewiss nicht, denn man kann dich ja nicht von ihm trennen, Sam Gamdschie!
+dlg:Elrond014	Gandalf soll eine Gemeinschaft der Freien Völker gegen Sauron anführen. Neun Wanderer gegen Sauron und seine neun Reiter.
+dlg:Elrond016	Legolas soll für die Elben gehen und Gimli für die Zwerge.  Für die Menschen sollen Aragorn und Boromir aus Gondor gehen.  Für die übrigen zwei werde ich große Helden rufen, wie --
+dlg:Elrond017	Ihr könnt euch die Gefahr, die vor euch liegt, nicht einmal vorstellen ...
+dlg:Elrond018	Nun gut.  Die Gefährten des Rings sollen nach Mordor aufbrechen.
+dlg:Elrond020	Die Zeit ist noch nicht gekommen, dass du Bruchtal verlässt.
+dlg:Elrond021	Deine Reise beginnt bald, Ringträger.  Ruh dich jetzt aus!
+dlg:Elrond022	Elbenspäher haben die Diener des Feindes in der Nähe vertrieben.  Der Ring zieht sicher nach Süden bis an unsere Grenzen.
+dlg:Elrond025	Der Ringträger darf den Ring weder fortwerfen noch zulassen, dass er dem Feind in die Hände fällt.
+dlg:Elrond026	Die anderen gehen als freie Gefährten mit ihm.  Kein Eid und keine Verpflichtung zwingt euch, weiter zu gehen, als ihr wollt.
+dlg:Elrond028	Gandalf wird euch nun führen. Möge der Segen aller Freien Völker mit euch sein.
+dlg:FalseStrider001	Hallo!  Ich möchte Ihnen einen guten Rat geben, junger Hobbit.
+dlg:FalseStrider002	Heute Nacht treibt sich gefährliches Volk herum.  Ich hoffe, Sie bleiben in Sicherheit!
+dlg:FalseStrider003	Ich auch.  Genießen Sie Ihren Aufenthalt!
+dlg:FalseStrider004	Ich bin froh zu sehen, dass Sie in Sicherheit sind.
+dlg:FalseStrider005	Entschuldigung, Herr ... äh, Unterberg, nicht wahr?
+dlg:FalseStrider006	Dürfte ich Sie kurz sprechen?
+dlg:FalseStrider007	Verzeihung, aber ich habe gehört, Sie reisen nach Osten. Wussten Sie, dass die Straße für unschuldige Leute nicht sicher ist?
+dlg:FalseStrider008	Ich ziehe selbst nach Osten.  Ich würde mit Ihrer Gruppe reisen, ohne dass es Sie etwas kostet.
+dlg:FalseStrider009	Ich bin ein sehr erfahrener Führer und ein ausgezeichneter Jäger.  Unterwegs kann ich köstliche Mahlzeiten zubereiten.
+dlg:FalseStrider010	Nun, dann ist es abgemacht, mein Freund! Wir reisen zusammen!
+dlg:FalseStrider011	Ausgezeichnet!  Kommen Sie mit.  Wir besprechen unsere Reisepläne.
+dlg:FalseStrider012	Nein?  Eine unkluge Wahl, Herr Unterberg.  Wirklich sehr unklug!
+dlg:FalseStrider013	Was für eine schöne Waffe Sie haben, Herr Unterberg. Schade, dass Sie sie nicht mehr brauchen werden!
+dlg:FalseStrider014	Für dich gibt's eine hübsche Belohnung, mein Junge ... eine wirklich hübsche Belohnung!
+dlg:Fatty001	Hallo, Frodo!
+dlg:Fatty002	Allerdings.  Ich habe eine kleine Wette mit Robin Kleinbau laufen.  Er meint, ich schaffe es nicht, an einem Nachmittag einen Kuchen zu backen!  Ha!
+dlg:Fatty003	Nun, ich wollte einen Apfelkuchen backen, aber alle meine Äpfel sind verdorben!  Die wimmeln geradezu vor Würmern!  Grässlich!
+dlg:Fatty004	Nicht wahr?  Ein Apfelkuchen kam also nicht infrage.  Gut, dass ich genug Kürbisse zur Hand hatte, was?
+dlg:Fatty005	Behalt's für dich, Frodo, aber ich habe dem alten Kleinbau einen kleinen Streich gespielt.  Mit seinem kostbaren Glockenklöppel habe ich mein Mehl gemahlen!  Ich kann's kaum erwarten, sein Gesicht zu sehen, wenn er's merkt!
+dlg:Fatty006	Ein Notfall? Im Auenland? Du hast zu viele Drachengeschichten von deinem Onkel Bilbo gehört.
+dlg:Fatty007	Aber du hast wohl recht. Würdest du den Klöppel zurückbringen? Ich bin furchtbar beschäftigt mit diesem Kuchen.
+dlg:Fatty008	Den besten! Sobald ich ein paar Honigwaben und Eier gefunden habe. Dann zeige ich diesem Robin Kleinbau, wer hier backen kann!
+dlg:Fatty009	Sag mal ... du hast nicht zufällig eine Honigwabe dabei?  Oder ein paar Eier?
+dlg:Fatty010	Du hast wohl nicht zufällig eine Honigwabe, oder?  Die könnte ich für den Kuchen wirklich gebrauchen!
+dlg:Fatty011	Ich brauche ein paar Eier, wenn ich diesen Kuchen backen will.
+dlg:Fatty012	Danke, Frodo!  Diese Honigwabe sieht wirklich süß aus!
+dlg:Fatty013	Das sind prächtige Eier, Frodo.  Mein Kompliment an die Henne!
+dlg:Fatty014	So!  Alles beisammen. Jetzt backe ich den Kuchen!
+dlg:Fatty015	Vielen Dank, Frodo!  Du bist ein guter Freund.  Hier.
+dlg:Fatty016	Und jetzt entschuldige mich ... ich habe eine Wette zu gewinnen!
+dlg:Fatty017	Ich besuche dich in Krickloch, sobald ich kann, Frodo.  Nur verlang nicht, dass ich Boot fahre!
+dlg:Ferny001	He!  Was willst du, Dickerchen?
+dlg:Ferny002	Warum stellst du dich nicht mit den anderen Kindern ans Feuer?  Lutz Farning will seine Ruhe haben!
+dlg:Ferny003	Du schon wieder?  Verschwinde, bevor ich dich an meine Hunde verfüttere, du lästige Ratte!
+dlg:Ferny004	Pah!  Ein Gauklertrick, weiter nichts.
+dlg:Ferny005	Was willst du, Langbein?
+dlg:Ferny006	Was?  Willst du mich etwa einen Pferdedieb nennen?
+dlg:Ferny007	Du hast deine Nase in die falschen Dinge gesteckt!  Ich hab gesehen, wie du mit den Auenland-Ratten geredet hast!
+dlg:Ferny007a	Du willst die Belohnung für Beutlin ganz für dich allein!  Aber die kriegst du nicht!
+dlg:Ferny008	Hah!  Hab dich!
+dlg:Ferny009	Hä?!
+dlg:Ferny010	Ähhh ...
+dlg:Ferny011	Au!
+dlg:Ferny012	Agh!
+dlg:Ferny013	Yaaaah!
+dlg:Ferny014	Oooooh ... ugh
+dlg:Ferny015	Na warte!
+dlg:Ferny016	He!  Hier drüben!
+dlg:Ferny017	(gelangweiltes Summen)
+dlg:Ferny018	He!  Hilfe!
+dlg:FMV2001	In den Schatten Mordors schmiedete der Dunkle Herrscher Sauron den Einen Ring, um alle Elben, Zwerge und Menschen Mittelerdes zu knechten.
+dlg:FMV2002	Die Freien Völker Mittelerdes stürzten Sauron, doch der Ring ging verloren.
+dlg:FMV2003	Nun ist der Feind zurückgekehrt, und von seinem dunklen Turm in Mordor aus sucht er seinen Ring.
+dlg:FMV2004	Wir müssen den Ring zuerst finden und ihn vernichten.
+dlg:FMV2005	Doch wer kann es ertragen, den Ring zu tragen?
+dlg:FMV2006	Die Schwachen würden verdorben.
+dlg:FMV2007	Die Mächtigen würden zu einer Bedrohung, so groß wie Sauron.
+dlg:FMV2008	Wer kann den Ring überstehen?
+dlg:FMV2009	Doch wer kann den Ring tragen?
+dlg:FMV3001	O Elbereth! Gilthoniel!
+dlg:FMV3002	(Schmerzensschrei, als er getroffen wird)
+dlg:FMV3003	(Ein schriller Schrei)
+dlg:FMV4001	Bei Elbereth und Lúthien, ihr bekommt weder den Ring noch mich!
+dlg:FMV4002	Unh! (fällt vom Pferd)
+dlg:FMV5001	Du kannst nicht vorbei!
+dlg:FMV5002	Flieht, ihr Narren!
+dlg:FMV5003	Gandalf! Nein!
+dlg:FMV5004	Gandalf!
+dlg:FMV5005	Nein!
+dlg:FMV6001	(Todesschrei)
+dlg:FMV7001	Die Gefährten des Rings haben gesiegt.
+dlg:FMV7002	Sie haben den fliegenden Ringgeist zu Fall gebracht.
+dlg:FMV7003	Sie haben Frodo sicher bis an den Rand von Mordor gebracht.
+dlg:FMV7004	So haben die Gefährten ihr Ziel erreicht.
+dlg:FMV7005	Doch ich sehe den Ringträger allein, als er das Schwarze Land betritt.
+dlg:FMV7006	Doch nicht ganz allein.
+dlg:FMV7007	Doch ich sehe den Ringträger allein das Schwarze Land betreten.
+dlg:FMV7008	Aber nicht ganz allein.
+dlg:FMV7009	Doch nicht allein.
+dlg:FMV7010	Doch nicht allein.
+dlg:FMV7011	Schatz!
+dlg:FMV7012	Mein Schatz!
+dlg:FOTR001	Die Gefährten
+dlg:Frodo005	Ja, aber sag den anderen Landbütteln, sie sollen im Auenland auf weitere Gefahren achten.
+dlg:Frodo007	Ich hoffe, du hast recht.
+dlg:Frodo008	Ich werde das Gefühl nicht los, dass wir verfolgt werden.
+dlg:Frodo009	Wir sitzen wohl in der Falle.  Eine Tür ... wurde in der Nacht verschlossen.
+dlg:Frodo010	Für das Auenland!
+dlg:Frodo011	Lasst uns rasten, solange wir können.
+dlg:Frodo012	Ob Bilbo sich auch so gefühlt hat, als er sich unter dem Nebelgebirge verirrt hatte?
+dlg:Frodo013	Der Ori, der mit Bilbo gereist ist?
+dlg:Frodo014	Ori!  Er ist vor langer Zeit mit Bilbo gereist.
+dlg:Frodo015	Sollen wir umkehren?
+dlg:Frodo016	Wohin gehen wir?
+dlg:Frodo017	Ich möchte nicht gehen ... aber ich möchte auch Gandalfs Rat nicht in den Wind schlagen.
+dlg:Frodo018	Saurons Arm reicht wahrhaftig weit.
+dlg:Frodo019	Hier ist ein Tor?
+dlg:Frodo020	Das klingt wie ein Hammer ... jemand dort unten sendet Signale.
+dlg:Frodo021	Ich behalte Stich im Auge ... wenn es leuchtet, sind Orks in der Nähe!
+dlg:Frodo022	Sam!
+dlg:Frodo023	Das ist meine Schuld!  Dieser Ringgeist hat Sam für mich gehalten. Ich muss es wiedergutmachen!
+dlg:Frodo024	Sam!  Bist du in Ordnung?
+dlg:Frodo025	Ich überlasse dich nicht den Nazgûl.
+dlg:Frodo046b	Eines Tages kam Gandalf der Zauberer in dringenden Geschäften ins Auenland.
+dlg:Frodo047	Willkommen zurück, Gandalf.  Gibt es Feuerwerk?  Elbischunterricht?  Geschichten vom alten Númenor?
+dlg:Frodo048	Onkel Bilbos Zauberring?
+dlg:Frodo049	Nein!
+dlg:Frodo050	Ich sehe ... feine Linien ... Linien aus Feuer!  In einer fließenden Schrift!  Was steht da?
+dlg:Frodo051	Lass ihn uns vernichten!
+dlg:Frodo052	Bring ihn dorthin! Nimm ihn!
+dlg:Frodo053	Dann ... dann muss ich den Ring hüten.
+dlg:Frodo053a	Ich bin eine Gefahr für das Auenland.  Ich muss fort.
+dlg:Frodo053b	Ich könnte mich auf den Weg machen, genau wie Bilbo!
+dlg:Frodo054	Er tut dir nichts ... beantworte einfach seine Frage!
+dlg:Frodo055	Behalt es für dich, Sam ... oder ich hoffe, Gandalf verwandelt dich in eine gefleckte Kröte!
+dlg:Frodo055a	Aber wohin sollen wir gehen?
+dlg:Frodo055b	Ich könnte im Herbst aufbrechen, an meinem Geburtstag.
+dlg:Frodo056	Nach Osten ... ich erzähle allen, dass ich ein Haus in Krickloch kaufe, bei meinen Verwandten in Bockland.
+dlg:Frodo057	Ich muss Beutelsend verkaufen.  Die Sackheim-Beutlins versuchen seit Jahren, sich das Haus unter den Nagel zu reißen; schade, es ihnen zu überlassen.
+dlg:Frodo058	Leb wohl, Gandalf!
+dlg:Frodo059	Du kannst Sam vertrauen.
+dlg:Frodo060	Ich verstehe. Leb wohl, Gandalf.
+dlg:Frodo061	Guten Abend, Meister Gamdschie.
+dlg:Frodo062	Ich lege keinen Wert auf seine Bekanntschaft.
+dlg:Frodo063	Wo ist Sam?
+dlg:Frodo064	Was haben die vor?
+dlg:Frodo065	Nun, hier ist der Schlüssel von Beutelsend für Lobelia. Ich treffe Sam dann wohl auf Maggots Hof.  Guten Abend, Meister Gamdschie.
+dlg:Frodo066	Ein Reiter!  Ganz in Schwarz.
+dlg:Frodo073	Guten Morgen, Sam.  Bereit, nach Bockland aufzubrechen?
+dlg:Frodo074	Lobelia Sackheim-Beutlin kauft das Haus. Du musst in Beutelsend nie wieder Unkraut jäten.
+dlg:Frodo075	Beutelsend hat dank deiner Arbeit den schönsten Garten im Auenland.
+dlg:Frodo076	So einen langen Weg hier heraus, nur für ein Bier ... was die wohl für einen Unfug vorhaben?
+dlg:Frodo077	Wir werden sehen ...
+dlg:Frodo077a	Bald, Sam.  Ich muss vorher noch ein paar Dinge erledigen.
+dlg:Frodo078	Hallo, Angelica.
+dlg:Frodo079	Allerdings.
+dlg:Frodo079a	Allerdings.
+dlg:Frodo080	Nur bis ans andere Ende des Auenlands.
+dlg:Frodo081	Ich auch.
+dlg:Frodo082	Leb wohl, Angelica.
+dlg:Frodo083	So!  Ich habe die Warnglocke geläutet.
+dlg:Frodo084	Ich habe die Glocke geläutet. Lobelia lässt ausrichten, dass Wölfe im Auenland sind!
+dlg:Frodo085	Oh.
+dlg:Frodo086	Ich bin froh, dass das Auenland gut beschützt wird.
+dlg:Frodo087	Hallo, Lobelia.
+dlg:Frodo088	Das kann ich nicht sagen. Nun, wegen Beutelsend ...
+dlg:Frodo089	Ich bin sicher, der Landbüttel sorgt für die Sicherheit aller.
+dlg:Frodo090	Läuten Sie einfach die Warnglocke. Wenn er irgendwo in Wasserau ist, kommt er angerannt.
+dlg:Frodo092	Hallo, Meister Gamdschie.
+dlg:Frodo093	Er ist ein sehr guter Arbeiter, Meister Gamdschie.
+dlg:Frodo094	Wölfe?  Im Auenland?
+dlg:Frodo095	Hoffentlich verschwinden die Wölfe so schnell, wie sie gekommen sind. Auf Wiedersehen, Meister Gamdschie.
+dlg:Frodo096	Allerdings.  Sie duften, nicht wahr?
+dlg:Frodo097	Verstehe.
+dlg:Frodo098	Danke, Herr.
+dlg:Frodo099	Hallo, Noakes!  Schön, dich wieder auf den Beinen zu sehen.
+dlg:Frodo100	Freut mich zu hören.
+dlg:Frodo101	Gut. Nun, ich muss los zu --
+dlg:Frodo102	Das muss ein ganz besonderer Tee sein. Und jetzt muss ich --
+dlg:Frodo103	Vielleicht kann ich helfen.
+dlg:Frodo104	Nein. Ich muss sie erst noch holen.
+dlg:Frodo105	Hier ist die Urkunde von Beutelsend.
+dlg:Frodo106	Ich muss noch ein paar Sachen herausholen.  Wenn es Ihnen recht ist, lasse ich den Schlüssel von Beutelsend bei Meister Gamdschie, Beutelhaldenweg Nummer 3.
+dlg:Frodo107	Guten Tag, Lobelia.
+dlg:Frodo108	Das hoffe ich doch.
+dlg:Frodo109	Es geht um Beutelsend. Sie sagten, Sie wollten es kaufen.
+dlg:Frodo110	Ah ... die muss ich in Beutelsend gelassen haben!
+dlg:Frodo111	Lass Sam mal beiseite. Was führt euch zwei Halunken den ganzen Weg nach Wasserau?
+dlg:Frodo112	Ihr seid den ganzen Weg nur fürs Frühstück gekommen?
+dlg:Frodo113	Ich erinnere mich an seine wilden Hunde!
+dlg:Frodo114	Der alte Maggot hat gedroht, mich ihre Zähne spüren zu lassen.
+dlg:Frodo115	Ich liebe Pilze ...
+dlg:Frodo117	Hallo, Landbüttel.  Ich verabschiede mich nur.
+dlg:Frodo118	Was?  Abenteuer?  Ich habe keine Abenteuer.
+dlg:Frodo119	Natürlich.  Nun, leb wohl, Robin.
+dlg:Frodo120	Hallo, Rosie.
+dlg:Frodo121	Ich hole ihn ein, bevor ich aufbreche.
+dlg:Frodo122	Das hoffe ich sehr.
+dlg:Frodo123	Was hat er angestellt?
+dlg:Frodo123a	Ich bin sicher, so etwas würde Sam nie tun.
+dlg:Frodo124	Vielen Dank, Vater Zweifuß.
+dlg:Frodo125	Ich auch.
+dlg:Frodo126	Das Leben ist jetzt ruhiger.
+dlg:Frodo127	Ich bin froh, dass dir nichts passiert ist, Robin.
+dlg:Frodo128	Hab ich gehört.
+dlg:Frodo129	Dass ich mich besser auf den Weg mache.
+dlg:Frodo137	Hallo.
+dlg:Frodo138	Frodo.
+dlg:Frodo139	Frodo.
+dlg:Frodo140	Gute Reise!
+dlg:Frodo144	Gern geschehen, Hal.
+dlg:Frodo149	Hallo, Hal.
+dlg:Frodo150	Ja, allerdings.
+dlg:Frodo150a	Ja, allerdings.
+dlg:Frodo151	Was ist denn damit?
+dlg:Frodo152	Das tut mir leid.
+dlg:Frodo153	Ich sehe sie mir an, bevor ich gehe.
+dlg:Frodo154	Ich bin froh, dass sie wieder funktioniert.
+dlg:Frodo155	Oh, danke, Ted.  Guten Tag.
+dlg:Frodo156	Hallo, Ted.  Ich wollte mich verabschieden, bevor ich ...
+dlg:Frodo157	Ehrlich gesagt, nein.  Du scheinst nur herumzustehen.
+dlg:Frodo158	Funktioniert die Mühle deshalb nicht?
+dlg:Frodo159	Ich sag dir Bescheid, wenn ich ihn sehe. Wie sieht er aus?
+dlg:Frodo161	Wie bitte?
+dlg:Frodo162	Aber ich bin ein armer Hobbit vom Land und habe kein Gold übrig!
+dlg:Frodo163	Was für ein Stock?
+dlg:Frodo163a	Der kühne Landbüttel hat endlich den gefürchteten Wegelagerer gefasst!
+dlg:Frodo163b	Gib mir den Stab aus der Mühle.
+dlg:Frodo163c	Du sagst besser die Wahrheit.
+dlg:Frodo164	Egal warum ... aber ich kann nicht bleiben.  Ich muss sofort aufbrechen ... nach Krickloch.
+dlg:Frodo165	Aber ... woher wusstet ihr das?
+dlg:Frodo165a	Wie?
+dlg:Frodo165b	Anscheinend kann ich niemandem trauen!
+dlg:Frodo166	Äh ... schön, Sie wiederzusehen, Herr.
+dlg:Frodo167	In mein neues Zuhause in Krickloch.
+dlg:Frodo168	Nun ... ich glaube, es ist Zeit, dass wir gehen.
+dlg:Frodo169	Danke, Herr.
+dlg:Frodo170	Schade, dass ich solche Angst vor Ihren Hunden hatte.  Mir ist ein guter Freund entgangen.
+dlg:Frodo171	Diese verfluchten Köter!
+dlg:Frodo172	Das wäre dann ich, Herr.
+dlg:Frodo173	Einbrecher ...?
+dlg:Frodo174	Nein! Ich meine, ganz recht, Herr.
+dlg:Frodo178	Ich muss los, Robin!
+dlg:Frodo179	Halt durch, Robin!
+dlg:Frodo180	Frau Galadriel?  Ihr tragt einen der Ringe der Macht.  Warum kann ich, wenn ich den Einen Ring trage, nicht in Euren Geist sehen oder in den der anderen?
+dlg:Frodo181	Aragorn ist schon eine Weile fort.  Hoffentlich verläuft seine Erkundung gut!
+dlg:Frodo183	Ja ... ich weiß, was ich tun sollte ... aber ich habe Angst davor.
+dlg:Frodo184	Ich weiß, du willst, dass ich den Ring nach Gondor trage.  Und das scheint weise ... wäre da nicht die Warnung in meinem Herzen.
+dlg:Frodo185	Eine Warnung vor dem leichten Weg.  Davor, meine Last abzulehnen.  Und, wenn es gesagt werden muss, davor, der Stärke und Aufrichtigkeit des Großen Volkes der Welt zu vertrauen.
+dlg:Frodo186	Ich zweifle nicht an der Tapferkeit Gondors.  Aber was, wenn sie nicht genügt?
+dlg:Frodo187	Solange der Ring existiert, gibt es keine Hoffnung.
+dlg:Frodo188	Alles, was mit dem Ring getan wird, wendet sich zum Bösen!
+dlg:Frodo190	Alle können verdorben werden.  Manche schneller als andere.
+dlg:Frodo192	Ich habe das Gefühl, dass wir verfolgt werden ... aber wovon?
+dlg:Frodo193	Hallo!  Merry!  Pippin!  Sam!  Wo seid ihr?
+dlg:Frodo194	Bleibt, wo ihr seid!  Ich finde euch!
+dlg:Frodo195	Wer ist das ... Ted?  Ted Sandigmann?
+dlg:Frodo196a	Gern geschehen, Ted.  Bist du in Ordnung?
+dlg:Frodo197	Was machst du hier?
+dlg:Frodo199	Leb wohl, Ted.
+dlg:Frodo201a	Eine gute Mahlzeit wird mich an diesem Ort sicher beruhigen.
+dlg:Frodo202	Kannst du uns um das Tal herumführen, Merry?
+dlg:Frodo203	Lasst uns hier rasten und uns morgen darum sorgen.
+dlg:Frodo204	Wir können noch nicht schlafen. Wir müssen weg von diesem Ort!
+dlg:Frodo205	Seltsam ... ich höre es auch ... werde so müde.
+dlg:Frodo206	W-was?!  Dieser Baum ...! Er hat Merry und Pippin!  Sam!  Wach auf!
+dlg:Frodo207	Wer?  Wer will euch zerquetschen?!
+dlg:Frodo208	Was denn jetzt?!
+dlg:Frodo209	Hilfe!
+dlg:Frodo210	Wer ... wer bist du?
+dlg:Frodo211	Meine Freunde sind in dieser Weide gefangen!
+dlg:Frodo212	Danke!
+dlg:Frodo212a	Wer bist du?
+dlg:Frodo212b	Danke!
+dlg:Frodo212c	Danke!
+dlg:Frodo214	Danke, Tom Bombadil.
+dlg:Frodo215	Großartig!  Wenn wir dieses Tempo halten, verlassen wir die Hügelgräberhöhen morgen bei Sonnenuntergang!
+dlg:Frodo216	Tom ist der Einzige, auf den der Ring keine Wirkung hat.  Woran das wohl liegt?
+dlg:Frodo217	Sam!  Merry!  Pippin!  Wo seid ihr?!
+dlg:Frodo218	Wo können sie nur sein?  Sam!  Merry!  Irgendjemand!
+dlg:Frodo219	Wo seid ihr?!
+dlg:Frodo220	Was ist das?
+dlg:Frodo221	Sam!  Merry!  Wacht auf, alle!
+dlg:Frodo222	Ich muss sie befreien ... sie hier herausholen!
+dlg:Frodo228	Wir können dir gar nicht genug danken!
+dlg:Frodo229	Danke, Tom.
+dlg:Frodo230	Ob diese Klinge einem der Schwarzen Reiter wohl schaden kann ...
+dlg:Frodo231	Ein guter Rat. Geh voraus.
+dlg:Frodo234	Warum nicht?  Tom hat es empfohlen.
+dlg:Frodo235	Keine Sorge, Sam.  Das wird schon gut gehen.
+dlg:Frodo236	Ich kümmere mich beim Wirt um alles, während ihr drei etwas zu essen sucht. Und denkt daran:  Ab jetzt heiße ich Herr Unterberg.
+dlg:Frodo238	Freut mich.  Mein Name ist Unterberg.
+dlg:Frodo239	Nein, das heißt, ich bin zum ersten Mal in diesem Gasthaus.
+dlg:Frodo240	Gut!  Danke für den Rat.
+dlg:Frodo241	Wir sind bald genug wieder weg, Sam.  Keine Sorge.
+dlg:Frodo242	Ach?
+dlg:Frodo243	Bestimmt.
+dlg:Frodo244	Für das Essen ist später Zeit.  Ich muss mich noch um eine Unterkunft kümmern.
+dlg:Frodo245	Hallo.
+dlg:Frodo246	Nein!  Unterberg ... mein Name ist Unterberg.
+dlg:Frodo247	Was führt Sie nach Bree?
+dlg:Frodo248	Ach ...?
+dlg:Frodo249	Verstehe.
+dlg:Frodo250	Das ist ... eigentlich ein Familienerbstück.  Mein Großvater hat es vom Alten Tuk persönlich bekommen!
+dlg:Frodo251	Ein guter Rat.  Vielen Dank.
+dlg:Frodo252	Machen Sie es sich nicht zu bequem ... die Dinge könnten sich ändern.
+dlg:Frodo253	Wie bitte?
+dlg:Frodo254	Hallo.
+dlg:Frodo255	Freut mich.  Mein Name ist Unterberg.
+dlg:Frodo256	Es ist ganz angenehm, auch wenn es nicht das Auenland ist ... oder das Königreich unter dem Berge, möchte ich wetten!
+dlg:Frodo257	Viel Glück, Nali.
+dlg:Frodo259	Hallo.  Ich hätte gern --
+dlg:Frodo260	Ein Zimmer für vier, bitte.
+dlg:Frodo261	Herr Unterberg.
+dlg:Frodo262	Ja.
+dlg:Frodo263	Was wollen Sie?
+dlg:Frodo264	Das habe ich gehört.
+dlg:Frodo265	Das ist ein großzügiges Angebot.
+dlg:Frodo266	Was ...?  Wo bin ich?
+dlg:Frodo267	Wer immer dieser Mann war, er führt nichts Gutes im Schilde.  Ich muss sofort von hier fliehen!
+dlg:Frodo270	Kopfgeldjäger! Dieser Ort ist wirklich gefährlich!
+dlg:Frodo272	Ich muss die anderen finden, bevor diese Halunken sie erwischen!
+dlg:Frodo278	Leute von Bree! Danke für den freundlichen Empfang!
+dlg:Frodo279	Also gut ... ein Lied.
+dlg:Frodo280	Es gibt ein Gasthaus, ein lustiges Gasthaus
+dlg:Frodo281	Am Fuß von einem alten grauen Hügel,
+dlg:Frodo282	Und dort kocht man einen Eintopf so braun,
+dlg:Frodo283	Dass selbst der Mann im Mond herabgeflogen kam,
+dlg:Frodo284	Um sich nachts sattzuessen.
+dlg:Frodo285	Das war ein Versehen!
+dlg:Frodo286	Ich würde einer solchen Sache nicht zustimmen, bevor ich viel mehr über Sie weiß.
+dlg:Frodo287	Was?
+dlg:Frodo288	Wer hat Ihnen das erzählt?
+dlg:Frodo291	Sein wahrer Name ist Aragorn ...
+dlg:Frodo292	Ich habe Ihnen geglaubt ... oder wollte es.  Die Spione des Feindes sehen gut aus und wirken übel. Sie dagegen wirken gut ...
+dlg:Frodo293	Schwarze Reiter!  Hoffentlich klappt dieser Plan!
+dlg:Frodo297	Streicher!  Was ist das für ein Licht?
+dlg:Frodo298	Das ist wie ein Blitz!
+dlg:Frodo299	G für Gandalf!
+dlg:Frodo300	Gandalf war hier!
+dlg:Frodo301	Schwarze Reiter!  Sie ziehen unten die Straße entlang!
+dlg:Frodo302	Was ist geschehen?  Wo ist der bleiche König?
+dlg:Frodo303	Ich gehe, so gut ich kann ...
+dlg:Frodo305	Unser Proviant geht zur Neige.  Er wird nicht bis Bruchtal reichen.
+dlg:Frodo306	Die Ruinen in diesem Land sind so seltsam ... als wäre ein großes und schönes Königreich zu Schutt zerfallen.
+dlg:Frodo307	Ein Reiter kommt!
+dlg:Frodo308	Von Gandalf?
+dlg:Frodo310	Gandalf!
+dlg:Frodo311	Dann haben wir es geschafft.  Aber ... wir haben dich gebraucht, Gandalf
+dlg:Frodo311a	Danke, dass du Aragorn geschickt hast.  Ich wusste nicht, dass er gegen Ringgeister kämpfen kann!  Ich dachte, er sei nur ein Waldläufer.
+dlg:Frodo312	Ich werde den Ring nehmen, obwohl ich den Weg nicht kenne.
+dlg:Frodo313	Danke für alles, was du getan hast, um mir zu helfen.
+dlg:Frodo313a	Wie du einst sagtest: "Das Alte, das stark ist, verdorrt nicht."  Du solltest deine eigenen Worte beherzigen!
+dlg:Frodo314	Nun, da sind wir!  Eine Gemeinschaft von ... acht?
+dlg:Frodo315	Was werden wir sehen?
+dlg:Frodo316	Ich werde hineinsehen.
+dlg:Frodo317	Ich sehe ein Land im Schatten ... und einen alten Mann, der auf mich zukommt.  Gandalf?  Nein ... weiße Gewänder ... Saruman?
+dlg:Frodo318	Da ist das Meer ... ein hohes Schiff aus dem Westen ... und eine weiße Festung mit sieben Türmen.
+dlg:Frodo319	Noch ein Schiff, mit schwarzen Segeln und dem Wappen eines weißen Baumes!
+dlg:Frodo320	Ich sehe eine große Schlacht ... und ein Auge ... von Feuer umrandet!
+dlg:Frodo322	Wofür entscheidet Ihr Euch, Herrin?
+dlg:Frodo323	Ich würde Euch den Ring geben, wenn Ihr darum bittet.
+dlg:Frodo326	Hast du's nicht gehört? Die Mühle läuft wieder!
+dlg:Frodo327	Ich habe den Stift gefunden.
+dlg:Frodo328	Gern geholfen!
+dlg:Frodo331	Als es kein Entkommen mehr zu geben schien, rettete er uns. Und er stürzte.
+dlg:Frodo335a	Aber Elrond hat ihn gewählt.  Er ist tapfer und treu.
+dlg:Frodo337	So ein Pech!  Jetzt könnte ich meinen Dolch wirklich gebrauchen!
+dlg:Frodo339	Dieser Reiter darf mich nicht sehen.
+dlg:Frodo340	Wenn ich die anderen nicht bald finde ...
+dlg:Frodo341	Um dieses Ding aufzuhalten, braucht es eine besondere Waffe ... wenn überhaupt etwas hilft!
+dlg:Frodo342	Warum haben wir nicht auf Tom gehört ... wartet!  Vielleicht ist Tom in der Nähe!
+dlg:Frodo344	Ungh!
+dlg:Frodo345	Aagh!
+dlg:Frodo346	Aiiieeah!
+dlg:Frodo347	Ohh ...
+dlg:Frodo348	Nein! Aaagh ...
+dlg:Frodo349	Ugh!
+dlg:Frodo350	Wooooaah!
+dlg:Frodo351	Uff!
+dlg:Frodo352	Umpf!
+dlg:Frodo419	Und da ist Bilbo ... er wirkt besorgt ... aber worüber?
+dlg:Frodo420	"Sei gegrüßt, Freund" ... glaube ich zumindest.
+dlg:Frodo432	Das alte Baumhaus!  Es steht noch. Als Kind habe ich darin gespielt!
+dlg:Frodo466	Dir auch einen schönen Tag, Lotho.  Ist deine Mutter in Wasserau?  Ich muss mit ihr sprechen.
+dlg:Frodo467	Dann wirst du dich vielleicht wundern. Guten Tag, Lotho.
+dlg:Frodo468	Heute nicht, Milo. Beißen die Fische?
+dlg:Frodo469	Was für einen Köder nimmst du denn?
+dlg:Frodo470	Also wirklich, Milo ... du musst deine Angst vor Würmern überwinden, wenn du Angler werden willst.
+dlg:Frodo471	Nun, wenn mir Würmer über den Weg laufen, bringe ich sie dir.
+dlg:Frodo472	Hier, Milo.  Dieser Wurm sollte es tun!
+dlg:Frodo473	Was soll ein Wurm denn sonst sein?
+dlg:Frodo474	Danke, Milo.  Viel Glück mit den Fischen!
+dlg:Frodo475	Ich weiß nicht ... der alte Maggot ist der Schrecken aller Eindringlinge.
+dlg:Frodo476	Er hat eine ganze Meute Hunde!
+dlg:Frodo478	Wir sollten uns lieber beeilen, bevor der alte Maggot uns erwischt.
+dlg:Frodo480	Ich glaube, es wäre am besten, so bald wie möglich aufzubrechen.
+dlg:Frodo481	Ich muss mich noch um ein paar Dinge kümmern.  Es dauert nicht lange.
+dlg:Frodo485	Hallo, Milo.
+dlg:Frodo486	Ach?  Was ist passiert?
+dlg:Frodo487	Warum tut jemand so etwas, frage ich mich?
+dlg:Frodo488	Verstehe. Nun, viel Glück.
+dlg:Frodo489	Wie bitte?
+dlg:Frodo490	Vielleicht kann ich etwas tun.
+dlg:Frodo491	So. Das war der letzte der Racker.
+dlg:Frodo492	Gern geschehen. Viel Glück beim Angeln.
+dlg:Frodo494	Du hast recht. Ich gehe ihm aus dem Weg.
+dlg:Frodo500	Wir würden uns über die Gesellschaft freuen.
+dlg:Frodo501	Danke, aber wir reisen lieber allein.
+dlg:Frodo502	Ich warte nicht gern, aber ich vertraue in dieser Sache auf Aragorns Urteil.
+dlg:Frodo503	Hallo, Bilbo.  Es sieht so aus, als würden wir bald aufbrechen. Ich wollte vorbeischauen und mich verabschieden.
+dlg:Frodo504	Pass auf dich auf, Onkel Bilbo. Ich bringe alle Neuigkeiten mit, die ich kriegen kann! Und alte Lieder und Geschichten noch dazu.
+dlg:Frodo505	Sei auch du gegrüßt, Freund.
+dlg:Frodo526	Also dann, wie setze ich dieses vertrackte Ding in Gang?
+dlg:Frodo539	Hallo, Minto. Was ist denn los?
+dlg:Frodo540	Lobelia? Warum?
+dlg:Frodo541	Was hast du getan?
+dlg:Frodo542	Versuch, keine guten Äpfel auf diese Weise zu verschwenden.
+dlg:Frodo543	Das meinst du doch nicht ernst, Minto.
+dlg:Frodo544	Hallo, Dick.  Backst du heute?
+dlg:Frodo545	Aha!  Was für Kuchen backst du denn?
+dlg:Frodo546	Wie schrecklich!
+dlg:Frodo547	Allerdings.
+dlg:Frodo548	Aber wie soll er das Auenland dann vor einem Notfall warnen?
+dlg:Frodo549	Na schön, Dick.  Aber das sollte besser ein großartiger Kuchen werden!
+dlg:Frodo550	Viel Glück, Dick.
+dlg:Frodo551	Danke, Dick!
+dlg:Frodo552	Es war nur ein dummer Streich.
+dlg:Frodo553	Gewiss, Rose.
+dlg:Frodo554	Ich sehe, was ich tun kann.
+dlg:Frodo555	Ja, nun, ich habe dringende Geschäfte, Landbüttel. Würden Sie mir bitte das Tor öffnen?
+dlg:Frodo556	Dieser Reiter ... war er schwarz gekleidet?
+dlg:Frodo557	Ich helfe Ihnen, das Tor zu reparieren. Ich möchte wirklich heute Nacht noch aufbrechen.
+dlg:Frodo558	Das sollte genügen, Landbüttel!
+dlg:Gaffer001	Guten Abend, Herr Frodo.  Ein seltsamer Reiter war hier und hat nach Ihnen gefragt.
+dlg:Gaffer002	Ich auch nicht. Mir lief's kalt den Rücken runter, nur weil ich seine hohle Stimme gehört hab.
+dlg:Gaffer003	Er hat auf Sie gewartet, aber dieser verflixte Pippin Tuk kam und hat ihn abgeholt!  Sie wollten Sie auf Maggots Hof treffen, sagten sie.  Irgendwas von einer Abkürzung.
+dlg:Gaffer004	Das haben sie nicht gesagt.  Aber Pippin war recht zufrieden mit sich, und Sam war darüber gar nicht glücklich.  Der stellt hoffentlich nichts an!
+dlg:Gaffer005	Nein, Herr Beutlin ist fortgegangen.  Heute Morgen abgereist.
+dlg:Gaffer006	Warum, das geht weder mich was an noch Sie!
+dlg:Gaffer007	Das ist kein Geheimnis.  Er geht zu Fuß nach Bockenburg oder so einem Ort.
+dlg:Gaffer008	Ja, ein ganzes Stück die Oststraße hinunter.  So weit war ich selbst noch nie.  Komisches Volk in Bockland.
+dlg:Gaffer009	Nein, ich richte keine Nachricht aus. Und nun gute Nacht!
+dlg:Gaffer010	Na, hallo, junger Herr Frodo.  Ich hoffe, mein Sam macht seine Sache gut in Ihrem Garten da draußen in Krickloch.  Wenn er nachlässt, geben Sie mir nur Bescheid.
+dlg:Gaffer011	Er ist nichts weiter als ein Einfaltspinsel. Aber es ist gütig von Ihnen, den Jungen mitzunehmen!
+dlg:Gaffer011a	Seien Sie bloß vorsichtig da draußen auf der Straße. Man hört von seltsamen Vorgängen.  Im Südviertel hat man hungrige Wölfe gesehen!
+dlg:Gaffer011b	Oder ... so hab ich's von Hugo Straffgürtel im Gasthaus Zum Efeubusch gehört.
+dlg:Gaffer012	Genau das hab ich ihm auch gesagt. Wölfe im Auenland?!
+dlg:Gaffer012a	Wölfe gab's nicht mehr seit dem Grimmigen Winter, als der Brandywein zufror und weiße Wölfe aus dem Norden herunterkamen.
+dlg:Gaffer013	Mein alter Vater hat mir diese Geschichten erzählt, als ich noch ein Bub war!  Hätte nie gedacht, dass ich solche Zeiten erlebe.
+dlg:Gaffer014	Sollen die Wölfe heulen, so viel sie wollen, solange sie meine Kartoffeln in Ruhe lassen!
+dlg:Gaffer015a	Guten Abend, junger Herr Frodo.
+dlg:Gaffer016	An Ihrer Stelle würde ich mich von diesem Reiter fernhalten.  Ich hab ja nichts gegen das Große Volk, aber der bringt Ärger!
+dlg:Galadriel001	Dies ist der Spiegel Galadriels.  Ich habe dich hergebracht, damit du hineinschaust ... wenn du willst.
+dlg:Galadriel002	Dinge, die du zu sehen wünschst, und Dinge, die ungerufen kommen.  Dinge, die waren, die sind und die vielleicht noch sein werden.
+dlg:Galadriel003	Würdest du dich von Frodos Aufgabe abwenden?
+dlg:Galadriel004	Möchtest du jetzt hineinschauen, Frodo?
+dlg:Galadriel005	Ich weiß, was du gesehen hast, denn es ist auch in meinem Geist.  Doch der Feind kann dir hier nichts anhaben.
+dlg:Galadriel006	Dieses Land wird nicht allein durch Gesang oder Pfeile bewahrt.  Sieh Nenya, den Ring aus Adamant!  Ein Ring, den Sauron nicht beherrschen kann.
+dlg:Galadriel007	Es sei denn, du scheiterst und er erlangt den Ring.  Dann lägen wir schutzlos vor ihm.
+dlg:Galadriel008	Doch wenn du Erfolg hast, schwindet meine Macht, und Lothlórien wird vergehen.
+dlg:Galadriel009	Meine Liebe zu meinem Volk ist tiefer als das Meer.  Doch ich würde lieber alles aufgeben, als mich Sauron zu unterwerfen!  Ich wünsche, dass du den Ring vernichtest.
+dlg:Galadriel011	Du würdest mir den Ring freiwillig geben?  Anstelle des Dunklen Herrschers würdest du eine Königin einsetzen!
+dlg:Galadriel012	Und ich werde nicht dunkel sein, sondern schön und schrecklich wie der Morgen und die Nacht!
+dlg:Galadriel013	Alle werden mich lieben und verzweifeln!
+dlg:Galadriel014	Nein ... ich habe die Prüfung bestanden. Ich werde schwinden, in den Westen gehen und Galadriel bleiben.
+dlg:Galadriel015	Weil du es nicht versucht hast.  Doch ich warne dich davor.
+dlg:Galadriel016	Du müsstest weit stärker werden und deinen Willen darin üben, andere zu beherrschen.
+dlg:Galadriel016a	Und dann würdest du die eine Tugend verlieren, die dich fähiger macht, dem Ring zu widerstehen, als alle Weisen und Mächtigen.
+dlg:Galadriel017	Wir wollen nicht mehr davon sprechen. Lass uns gehen.
+dlg:Galadriel018	Gandalf der Graue ist mit euch aufgebrochen.  Wo ist er jetzt?
+dlg:Galadriel019	Eure Fahrt steht auf Messers Schneide.  Weicht nur ein wenig ab, und sie wird scheitern ... zum Untergang aller.
+dlg:Galadriel020	Doch es bleibt Hoffnung, solange die Gefährten treu sind!
+dlg:Gandalf001	Der Ausgang ist nah.  Bald liegen die Minen von Moria sicher hinter uns!
+dlg:Gandalf002	Ich glaube, wir sind in den oberen Hallen ... vielleicht der 20. oder 21.  Sie sind gründlich geplündert und für die Orks kaum von Belang.
+dlg:Gandalf003	Durins Fluch ... ein dunkles Wesen, vor langer Zeit von Zwergen geweckt, die nach Mithril suchten.  Sie gruben zu gierig und zu tief.
+dlg:Gandalf004	Wir rasten ... dieser Ort ist so sicher wie jeder andere.  Morgen ziehen wir weiter.
+dlg:Gandalf005	Der Nordausgang wird uns weiterführen; er sollte sich öffnen, sobald dieses Zwergenrätsel gelöst ist!
+dlg:Gandalf006	Und so fällt das Licht auf das Antlitz Durins, des Vaters aller Zwerge!  Ein neuer Weg liegt vor uns ... lasst ihn uns erkunden.
+dlg:Gandalf008	Die Axt Durins ... das ist eine Beute, die die Orks niemals bekommen werden!
+dlg:Gandalf010	Auf dem Grab steht ... Balin, Sohn des Fundin, Herr von Moria.
+dlg:Gandalf011	Hier ruht der letzte Zwergenkönig von Moria.
+dlg:Gandalf012	Wir sollten bald aufbrechen.
+dlg:Gandalf013	Das Buch ist eine Chronik von Balins Zeit in Moria.
+dlg:Gandalf014	Ich fürchte, die Kunde ist wahrhaft düster.  Anfangs hatten sie Glück und vertrieben eine Schar Bilwisse.  Dann entdeckten sie Mithril ... den Reichtum Morias.
+dlg:Gandalf015	Weiter wird von Balins Tod berichtet ... ein Angriff der Orks ... langsam, aber sicher wurden die Zwerge zurückgedrängt und eingeschlossen.
+dlg:Gandalf016	Die letzten Zeilen lauten: "Wir können nicht hinaus.  Das Ende naht. Trommeln ... Trommeln in der Tiefe.. Sie kommen."
+dlg:Gandalf017	Hier haben sie ihren letzten Kampf gefochten.  Der Versuch, Moria zurückzuerobern, war tapfer, aber töricht. Wir sollten weiterziehen.
+dlg:Gandalf018	Haltet stand!
+dlg:Gandalf019	Seht dort!  Ein Runenschlüssel!
+dlg:Gandalf020	Einer der Orks hat ihn bei sich getragen.
+dlg:Gandalf021	Ohne den passenden Schlüssel öffnet sich die Tür nicht.
+dlg:Gandalf024	Das kann ich nicht mit Gewissheit sagen.  Drei oder vier Tagesmärsche, sofern wir uns nicht verirren oder in Schwierigkeiten geraten.
+dlg:Gandalf025	Derselbe.
+dlg:Gandalf026	Ruh dich aus, Ori ... deine Wunden sind sehr schwer.
+dlg:Gandalf027	Was meinst du?
+dlg:Gandalf028	Er ... ist dahingegangen ...
+dlg:Gandalf029	Ich kenne diesen Zwerg!
+dlg:Gandalf030	In der Tat ... und er ist zu Balin und den anderen gegangen.  Ruhe sanft, alter Freund.
+dlg:Gandalf031	Der Caradhras hat uns besiegt.
+dlg:Gandalf032	In Bruchtal ist der Ring nicht sicher.
+dlg:Gandalf033	Es gibt noch einen anderen Weg ... die Minen von Moria.
+dlg:Gandalf034	Damit rechnet der Feind, also darf der Ring nicht in die Nähe von Gondor.
+dlg:Gandalf035	Die Hunde Saurons sind über uns!  Macht euch bereit!
+dlg:Gandalf036	Wir müssen Moria erreichen, und zwar bald!
+dlg:Gandalf038	Wir sind am Westtor von Moria angelangt.  Hier endete das Elbenland Hulsten.
+dlg:Gandalf039	Zwergentüren sind nicht dazu gemacht, gesehen zu werden, wenn sie geschlossen sind ... Seht!
+dlg:Gandalf040	Dort steht: "Die Tore Durins, Herr von Moria.  Sprich, Freund, und tritt ein."
+dlg:Gandalf042	Wenn du ein Freund bist, sprich das Losungswort, um die Tore zu öffnen.
+dlg:Gandalf043	Wenn man mir ein wenig Ruhe gönnt, werde ich nach dem Wort suchen!
+dlg:Gandalf046	Das Losungswort ist das elbische Wort für Freund.  Mellon!
+dlg:Gandalf047	Nicht genug Zeit!    Die Bestie greift wieder an!
+dlg:Gandalf048	Ich habe schlecht gewählt ... die Tür bleibt verschlossen!
+dlg:Gandalf050	Törichter Tuk!  Stürz dich das nächste Mal selbst hinein, dann sind wir dich los!
+dlg:Gandalf055	Geht!  Dieser Feind ist euch allen überlegen!  Ich muss mich dem Balrog allein stellen!
+dlg:Gandalf058	Nun gut, Gimli.  Wir lagern hier ... aber nicht lange!  Orks streifen umher!
+dlg:Gandalf059	Heute müssen wir über einen Schatten der Vergangenheit sprechen. Der Ring, den du geerbt hast, könnte sehr gefährlich sein.
+dlg:Gandalf060	Zauberringe, wie du sie nennst, wurden von Elben gemacht. Doch dieser Ring, glaube ich, wurde von einem anderen gemacht ...  Gib mir den Ring.
+dlg:Gandalf061	Sieh genau hin.
+dlg:Gandalf062	Ein Ring, sie zu knechten, sie alle zu finden, ins Dunkel zu treiben und ewig zu binden.
+dlg:Gandalf063	Dies ist der Eine Ring, sie zu knechten.
+dlg:Gandalf064	Die alten Könige der Elben, Zwerge und Menschen nutzten die Ringe der Macht, um über ihre Länder zu herrschen.
+dlg:Gandalf064a	Der Dunkle Herrscher Sauron schuf diesen Ring, um alle anderen zu beherrschen. Als er im Kampf fiel, verlor er ihn.
+dlg:Gandalf064b	Das seltsame Geschöpf namens Gollum fand den Ring und wurde von ihm verdorben.  Bilbo gewann ihn von Gollum, und nun gehört er dir.
+dlg:Gandalf064c	Doch der Herr der Ringe ist zurückgekehrt, und all sein Sinnen ist darauf gerichtet, den Ring zu finden.
+dlg:Gandalf065	Er kann nur dort vernichtet werden, wo er geschmiedet wurde ... im Schicksalsberg, dem Feuerberg in Mordor.
+dlg:Gandalf066	Nein! Führe mich nicht in Versuchung! Wenn ich den Ring trüge, würde ich wie der Dunkle Herrscher selbst!
+dlg:Gandalf066a	Und ich werde dir helfen, diese Last zu tragen, solange sie dir zu tragen bestimmt ist.
+dlg:Gandalf067	Mein lieber Frodo! Hobbits sind wirklich erstaunliche Geschöpfe!\n
+dlg:Gandalf068	Aber du musst nicht allein gehen, wenn es jemanden gibt, dem du vertrauen kannst. Doch sei vorsichtig. Der Feind hat viele Spione!
+dlg:Gandalf069	Was machst du in Beutelsend?
+dlg:Gandalf070	So? Das Geräusch der Schere hat schon vor einer Weile aufgehört.  Wie lange lauschst du schon?
+dlg:Gandalf071	Sei kein Narr!  Was hast du gehört?
+dlg:Gandalf072	Mir ist etwas Besseres eingefallen ... Er wird mit dir gehen, Frodo!
+dlg:Gandalf073	Der Gefahr entgegen, aber nicht zu überstürzt und nicht zu geradewegs. Und du darfst nicht einfach verschwinden. Nimm dir Zeit, deine Angelegenheiten zu ordnen, bevor du gehst.
+dlg:Gandalf074	In der Tat.  Und nun muss ich gehen. Ich habe viel zu erledigen.
+dlg:Gandalf075	Sorg dafür, dass Samweis Gamdschie nicht plaudert!  Sonst verwandle ich ihn in eine gefleckte Kröte!
+dlg:Gandalf076	Wenn du aufbrichst, reise als Herr Unterberg. Der Name Beutlin ist außerhalb des Auenlands nicht sicher!
+dlg:Gandalf076a	Und ... benutze den Ring nicht, denn er kann das unschuldigste Herz verderben.
+dlg:Gandalf076b	Leb wohl, Frodo ... Zu deinem Geburtstag bin ich zurück.
+dlg:Gandalf077	Lieber Frodo,
+dlg:Gandalf078	Schlechte Nachrichten.  Du musst vor Ende Juli nach Bruchtal aufbrechen.  Warte nicht bis zu deinem Geburtstag.  Ich treffe dich, wenn ich kann, oder folge dir, wenn nicht.
+dlg:Gandalf079	Du kannst dem Waldläufer namens Streicher vertrauen, aber vergewissere dich, dass es der echte Streicher ist. Sein wahrer Name ist ...
+dlg:Gandalf082	Ja, ich bin hier.  Und du kannst von Glück sagen, dass du überhaupt irgendwo bist, nach all den Torheiten, die du begangen hast!
+dlg:Gandalf083	Ich wurde durch den Verrat Sarumans des Weißen, des Obersten der Zauberer, gefangen gehalten.
+dlg:Gandalf084	Doch nun bin ich frei und erstaunt, dass du den Ring den ganzen Weg hierher gebracht hast!  Hobbits scheinen dem Bösen des Rings besonders gut zu widerstehen.
+dlg:Gandalf085	Nur ein Waldläufer?  Mein lieber Frodo, die Waldläufer sind der letzte Überrest der Könige des alten Númenor.
+dlg:Gandalf086	Doch nun ist dein Anteil an der Fahrt zum Schicksalsberg erfüllt.  Du wirst in vielen Beratungen alles darüber hören.  Du sollst Gast beim Rat von Elrond sein.
+dlg:Gandalf086a	Wir können ihn nicht benutzen.  Er verdirbt alle, die ihn tragen.  Je mächtiger der Träger, desto gefährlicher wird er!
+dlg:Gandalf086b	Ich fürchte mich, den Ring zu nehmen, um ihn zu verbergen. Ich werde den Ring nicht nehmen, um ihn zu gebrauchen.
+dlg:Gandalf086c	Frodo kann es nicht.  Und ich auch nicht.  Selbst die größten Fürsten der Elben könnten sich keinen Weg durch Mordor erzwingen.  Ich vertraue lieber auf Hobbitfreundschaft als auf uralte Macht.
+dlg:Gandalf088	Als ihr auf der Wetterspitze Feuer und Blitze saht, saht ihr die Folgen meines Kampfes mit den Ringgeistern.  Wäre ich drei Tage später gekommen, hätte ich euch getroffen.
+dlg:Gandalf089	Die Gefährten sind bereit, Elrond.
+dlg:Gandalf094	Edro, Annon!
+dlg:Gandalf095	Mellon!
+dlg:Gandalf095a	Öffne dich, öffne dich!
+dlg:Gandalf095b	Edro, öffne dich!
+dlg:Gandalf096	Nun gut, aber nicht später. Zieh nach Osten nach Bruchtal und suche den Rat von Elrond Halbelb.
+dlg:Gandalf098	Nun denn!    Samweis Gamdschie, nicht wahr?
+dlg:Gandalf099	Uff!
+dlg:Gandalf100	Hurrgh!
+dlg:Gandalf101	Gaaaah!
+dlg:Gandalf102	Mmf!
+dlg:Gandalf103	Agh!  Ahhhh ...
+dlg:Gandalf104	Ugh!
+dlg:Gandalf105	Ooooh!
+dlg:Gandalf131	Schade, dass ich den Nazgûl nicht vernichten konnte, als wir auf der Wetterspitze aneinandergerieten!
+dlg:Gandalf134	Ich bin zu erschöpft, um einen solchen Zauber zu wirken.
+dlg:GandalfHelp	Ich werde die Gefährten nicht im Stich lassen!
+dlg:Gimli001	Möge die Axt Durins wieder Orkschädel spalten!  Baruk Khazâd!
+dlg:Gimli002	Die Herrlichkeit von Khazad-dûm!  Seht seine Pracht!
+dlg:Gimli003	Mein Volk hat solche Schutzvorrichtungen gegen Eindringlinge gebaut.  Wir haben den Auslöser wohl in der Nacht versehentlich berührt.
+dlg:Gimli004	Ich wette, es hat mit diesen Kristallen zu tun ... Kristalle und Licht.   Wir müssen irgendwie Licht auf sie lenken!
+dlg:Gimli005	Wärst du vielleicht lieber zurückgeblieben, bei diesem Ding im See?
+dlg:Gimli006	Khazad-dûm ist mehr als nur Bergbau, mein Freund.
+dlg:Gimli007	Das ist Ori, ein Freund meines Vaters und Held des Erebor!
+dlg:Gimli008	Leider nein ... nur wir neun.
+dlg:Gimli009	Durins Axt ...?  Wir hielten sie lange für verloren!
+dlg:Gimli010	Ori ... sei stark!  Bleib bei uns!
+dlg:Gimli011	Er wird gerächt!  Das schwört Gimli, Glóins Sohn!
+dlg:Gimli012	Das ist Ori, ein Freund meines Vaters und Held des Erebor!
+dlg:Gimli013	Er hat das Schlimmste der Orks ertragen und überlebt!  Er ist ein Zeichen der Hoffnung, dass die Orks Moria nicht ewig halten können!
+dlg:Gimli013a	Du wirst gerächt werden, Ehrwürdiger.  Baruk Khazâd!
+dlg:Gimli014	Ich folge dir nach Moria und werde die große unterirdische Stadt Khazad-dûm schauen.
+dlg:Gimli015	Orks fielen in Moria ein und raubten unseren Schatz, um die Heere Mordors aufzubauen.  Doch unser alter Freund Balin führte eine Unternehmung an, um Khazad-dûm zurückzugewinnen.
+dlg:Gimli015a	Wenn wir nach Moria gehen, kann Balin unserer Fahrt helfen!
+dlg:Gimli016	Hmm ... das sieht nach einem guten Rastplatz aus.  Haltet euch aber von diesem Brunnen fern!
+dlg:Gimli017	Die Orks werden den Tag bereuen, an dem sie diesen Ort entweiht haben!
+dlg:Gimli017a	Die Orks werden den Tag bereuen, an dem sie diesen Ort entweiht haben!
+dlg:Gimli018	Durins Fluch ist gekommen!
+dlg:Gimli019	Gewiss, Gandalf!  Ich werde sie in Ehren tragen und zum Einsamen Berg zurückbringen, wo sie hingehört!
+dlg:Gimli020	Einverstanden.  Hier ist es so gut wie an jedem anderen Ort in der Nähe.
+dlg:Gimli021	Wir müssen das Ungeheuer ablenken, während sie unseren Kameraden retten!  Baruk Khazâd!  In den Kampf!
+dlg:Gimli022	Je eher wir das Ende des Anduin erreichen, desto besser.  Mir gefällt die Zahl der Bilwisse nicht, die ich gesehen habe!
+dlg:Gimli023	Mächtig genug, um Mordor zu betreten? Alle Heere Mittelerdes zusammen könnten Mordor nicht betreten!
+dlg:Gimli024	Mein Vater Glóin ist vor Jahren mit deinem Onkel Bilbo gereist.  Die Zwerge vom Einsamen Berg verehren Bilbo noch heute neben unseren größten Helden!
+dlg:Gimli024a	Wenigstens fliehen die Zwerge nicht aus Mittelerde!  Aber die Elben segeln in unserer dunkelsten Stunde davon, in die Sicherheit des Westens!
+dlg:Gimli024b	Sein Mut half, unsere Bergheimat vom Drachen Smaug zurückzugewinnen.  Ein höchst ehrenwerter Hobbit ist Bilbo Beutlin!
+dlg:Gimli025	Treulos ist, wer Lebewohl sagt, wenn die Straße dunkel wird!
+dlg:Gimli026	Ich bin kein Spion!  Ich gehe nicht blind wie ein Gefangener!  Mein Volk dient nicht dem Feind!
+dlg:Gimli027	Ich gehe frei weiter!
+dlg:Gimli028	Ha ha ha!  Eine lustige Narrentruppe werden wir abgeben.  Ich bin zufrieden, wenn Legolas meine Blindheit teilt.
+dlg:Gimli029	Frau Galadriel!  Es überrascht mich, das zu sagen, aber sie ist unglaublich schön!  Wahrlich, es gibt keine Schönere, in keinem Land.
+dlg:Gimli031	Wenn wir das Nebelgebirge überqueren, reisen wir vielleicht durch Moria, die große unterirdische Stadt, die die Zwerge Khazad-dûm nennen!
+dlg:Gloin001	Glóin, zu Diensten.  Der Dunkle Herrscher Sauron schickte Boten zum Zwergenkönig, die nach deinem Onkel Bilbo suchten.
+dlg:Gloin002	Die Handlanger Mordors wussten, dass Bilbo mit Zwergen unterwegs war, als er den Ring fand. Sie drohten uns und boten uns viel Gold, wenn wir ihnen hülfen, Bilbo und den Ring zu finden.
+dlg:Gloin003	Aber wir haben sie davongejagt!  Eher ziehen wir gegen Mordor in den Krieg, als die Hobbits zu verraten!
+dlg:Gloin004	Ich sehe Sorge in deinem Gesicht, mein Junge!  Sei ganz ruhig! Du wirst deiner Familie Ehre machen!
+dlg:Glorfindel001	Ai na vedui Dúnadan!
+dlg:Glorfindel001a	Mae govannen, mellon!
+dlg:Glorfindel002	Heil, und endlich treffen wir uns!  Man hat uns gesagt, wir sollten nach euch Ausschau halten.
+dlg:Glorfindel003	Nein.  Elrond erhielt Nachricht von euch durch Elben, die nahe dem Auenland unterwegs waren.  Sobald er erfuhr, dass etwas nicht stimmte, sandte er Reiter in alle Richtungen aus.
+dlg:Glorfindel004	Dann soll er mein Pferd Asfaloth reiten.
+dlg:Glorfindel005	Sein Gang ist sanft, und er lässt keinen Reiter von seinem Rücken fallen.
+dlg:Glorfindel006	Flieh!  Der Feind ist über uns!  Flieh zur Furt!
+dlg:Glorfindel007	Reite!  Noro lim!  Noro lim, Asfaloth!
+dlg:Goatleaf001	Halt!  Was treibst du hier draußen?
+dlg:Goatleaf002	Jetzt ist es meine Sache.  Du wirst betteln, es mir zu erzählen, wenn meine Freunde mit dir fertig sind!
+dlg:Goatleaf003	Wer da?!
+dlg:Goatleaf004	Aah!
+dlg:Goatleaf005	Hmmm ...
+dlg:Goatleaf006	Ai!
+dlg:Goatleaf007	Agh!
+dlg:Goatleaf008	Aaaaah!
+dlg:Goatleaf009	Ohhhh ...
+dlg:Goatleaf010	Yaah!
+dlg:Goatleaf011	Hier drüben! Hier drüben!
+dlg:Goatleaf012	(unverständliches Gemurmel)
+dlg:Goatleaf013	Hülfe!  Hüüülfe!
+dlg:GoblinSA001	A hah!
+dlg:GoblinSA002	Aah!
+dlg:GoblinSA003	Hä?
+dlg:GoblinSA004	Yii!
+dlg:GoblinSA005	Eiii!
+dlg:GoblinSA006	Yaah!
+dlg:GoblinSA007	Ullk ... uggh ...
+dlg:GoblinSA008	Feuer!
+dlg:GoblinSA009	He!  He!
+dlg:GoblinSA010	(unverständliches Gemurmel)
+dlg:GoblinSA011	Haaaah!
+dlg:Goldberry007	Kommt, liebe Leute!  Lacht und seid fröhlich!  Ich bin Goldbeere, die Tochter des Flusses.
+dlg:Goldberry008	Vielleicht fürchtet ihr euch noch vor Nebel und Baumschatten.  Fürchtet nichts! Denn heute Nacht seid ihr unter dem Dach von Tom Bombadil.
+dlg:Goldberry008a	Tom war hier, noch bevor es den Fluss und die Bäume gab.  Tom erinnert sich an den ersten Regentropfen, an das erste Große Volk und das erste Kleine Volk.
+dlg:Goldberry008b	Er war hier vor den Königen und den Grabunholden, bevor die Elben westwärts zogen und bevor die Meere gekrümmt wurden.  Bevor der Dunkle Herrscher von Draußen kam.
+dlg:Goldberry009	Eilt nun, liebe Gäste! Nach Norden, den Wind im linken Auge, und Segen auf euren Schritten!  Beeilt euch, solange die Sonne scheint!
+dlg:Goldberry010	Lebt wohl, Freunde ... es war ein fröhliches Treffen!
+dlg:Gollum001	Sss!  Wo ist er?  Der Schatzzz!
+dlg:Gollum002	Hssss!  Waldläufer!  Er wird uns wehtun, jaaa!
+dlg:Gollum003	Iiiih!  Tu uns nicht weh, bitte, nicht dem kleinen Sméagol, gollum!
+dlg:Gollum004	Hier, um Geschenkesss zu geben, ja, gollum.  Geschenkesss!
+dlg:Gollum005	Geschenkesss für Waldläufer, jaaa.  Geschenkesss!
+dlg:Gollum006	Waldläufer würde uns wehtun, Schatzzz, ja!  Jetzt tun die Orks dem Waldläufer weh!
+dlg:Gollum007	Orks!  Kommen, um ihnen wehzutun, Schatzzz!  Kommen, um ihnen jetzt wehzutun!
+dlg:Gollum008	Da ist esss ... jaaa ...
+dlg:Gollum009	Aiie! Tu uns nicht weh, Schatzzz!
+dlg:Gollum010	Hmmm ...
+dlg:Gollum011	Iiiiih!
+dlg:Gollum012	Waah!
+dlg:Gollum013	Yiiieeee!
+dlg:Gollum014	Iiiih! Bitte tu uns nicht weh, Schatzzz, wir sind auch brav, jaaa!
+dlg:Gollum015	Rrraagh!
+dlg:Gollum016	Orksss!  Orksss! Garssstige Orks, jaaa!
+dlg:Gollum017	Mmm ... gollum, gollum ...
+dlg:Gollum018	Hilfe!  Hilf uns, Schatzzz!
+dlg:Gollum020	Ohh ... gollum ... <sniff> ahh, mein Schatzzz ...
+dlg:Hal001	Meine Wetterfahne dreht sich leider immer noch nicht.
+dlg:Hal002	Die Wetterfahne dreht sich wie neu.  Hab vielen Dank dafür!
+dlg:Hal003	Du hast einem alten Mann geholfen, wo andere es vielleicht nicht getan hätten, und dafür danke ich dir.  Ich muss doch hier irgendwas als Belohnung haben.
+dlg:Hal007	Oh, hallo, Frodo. Du hast einen herrlichen Tag für den Aufbruch nach Krickloch.
+dlg:Hal008	Für so lange Wanderungen bin ich zu alt.  Ich kann nicht mal hoch genug klettern, um meine Wetterfahne zu reparieren.
+dlg:Hal009	Das Ding klemmt.
+dlg:Hal010	Dieser Lausebengel Sancho Stolzfuß hat Stöcke danach geworfen.  Jetzt dreht sie sich gar nicht mehr.
+dlg:Hal011	Na, das wäre mir recht!  Die Leiter steht gleich da drüben.
+dlg:Hal012	Die Leute in Krickloch haben Glück, so einen hilfsbereiten Kerl wie dich zum Nachbarn zu bekommen.
+dlg:Hal013	Hallo, Frodo.
+dlg:Hal014	Du hast einem alten Mann geholfen, wo andere es vielleicht nicht getan hätten, und dafür danke ich dir.
+dlg:Hal016	Hier. Nimm ein paar Eier!  Heute frisch gelegt!
+dlg:Haldir001	Seid unbesorgt.  Ich bin Haldir aus Lórien.
+dlg:Haldir002	Ich folge euch schon eine Weile.  Ihr atmet so laut, dass ich euch im Dunkeln erschießen könnte!
+dlg:Haldir003	Habt keine Furcht.  Frau Galadriel erwartet euch.  Doch der Zwerg darf unser Land nicht betreten.
+dlg:Haldir004	Nun gut.  Aber er muss mit verbundenen Augen gehen.
+dlg:Haldir005	So lautet unser Gesetz.
+dlg:Haldir006	So sei es.  Ich führe euch sicher nach Caras Galadhon, wo Herr Celeborn und Frau Galadriel euch erwarten.
+dlg:Heathertoes001	Grab dir ein Loch, Knirps!
+dlg:Heathertoes002	Rede, du kleine Maus!  Rede, oder ich bring dich zum Quieken!
+dlg:Heathertoes003	Arrr ... dich bring ich auch zum Quieken, Herumtreiber!
+dlg:Heathertoes004	Stehen bleiben!
+dlg:Heathertoes005	Wa ...?!
+dlg:Heathertoes006	Ähm ...
+dlg:Heathertoes007	Umpf!
+dlg:Heathertoes008	Yerrg!
+dlg:Heathertoes009	Aaaagh!
+dlg:Heathertoes010	(schmerzerfülltes Stöhnen)
+dlg:Heathertoes011	Stirb!  Aaar!
+dlg:Heathertoes012	He!  Hier drüben!
+dlg:Heathertoes013	(rülpst, dann ein zufriedenes Grunzen)
+dlg:Heathertoes014	Helft mir, ihr Hunde!
+dlg:Legolas001	Ich auch. Ich bin dieses Ortes überdrüssig ... er ist so kalt und dunkel.
+dlg:Legolas002	Ich sehne mich danach, unter Bäumen zu sein, frische Luft zu atmen, den Himmel zu sehen.
+dlg:Legolas003	Wie lange brauchen wir, um durch diesen Ort zu kommen?
+dlg:Legolas004	Hier stinkt es überall nach Ork!
+dlg:Legolas005	Moria ... die schwarze Grube ... wo die Sonne für immer ausgelöscht ist!
+dlg:Legolas006	Horcht ... was ist das für ein Geräusch?
+dlg:Legolas007	Ich bin nicht sicher, aber ich glaube, uns folgt etwas ... leise ... im Dunkeln.
+dlg:Legolas008	Ai! Ai!  Ein Balrog!
+dlg:Legolas009	Ich bin der Schnellste!  Ich verfolge den Nazgûl!
+dlg:Legolas010	Wir müssen schnell sein, Freunde.  Dieser geflügelte Nazgûl wird bald über uns sein!
+dlg:Legolas011	Elbereth Gilthoniel!
+dlg:Legolas012	Das geflügelte Ross wird schwächer!
+dlg:Legolas013	Ai!  Gebt acht!  Es kommt zurück!
+dlg:Legolas014	Schlagt jetzt zu, solange die Bestie betäubt ist! Trefft die verwundbare Stelle!
+dlg:Legolas015	Die Bestie ist wieder bei Kräften!  Wir müssen sie zermürben, wenn wir siegen wollen!
+dlg:Legolas016	Diese bösen Kreaturen mögen versuchen, weiter nach Norden zu marschieren, doch die Elben Lóriens werden sie aufhalten.
+dlg:Legolas018a	Wir haben erfahren, dass das seltsame Geschöpf namens Gollum dem Dunklen Herrscher verraten hat, dass Beutlin aus dem Auenland den Ring nahm.
+dlg:Legolas018b	Gollum wurde von den Waldelben gefangen gehalten, doch er ist entkommen. Er sucht noch immer nach dem Ring.
+dlg:Legolas021	Die Elben singen ein Klagelied für Gandalf.  Ich teile ihre Trauer.
+dlg:Legolas021a	Die Elben trauern um Gandalf.  Ich teile ihre Trauer.
+dlg:Legolas022	Fluch über die Zwerge und ihre steifen Nacken!
+dlg:Legolas023	Aber ich bin ein Elb!  Ich bin hier ein Verwandter.
+dlg:Legolas024	Ein dunkles Rätsel.  Wer mächtig genug ist, Mordor zu betreten, wagt es nicht, den Ring zu berühren.
+dlg:Legolas025	Die Elben haben versucht, sich mit den Zwergen gegen Sauron zu verbünden.  Doch die Zwerge versteckten sich lieber in ihren dunklen Höhlen und zählten ihre Schätze.
+dlg:Legolas026	Im Düsterwald sprechen wir noch immer gern von deinem Onkel Bilbo. Es braucht Mut, mit einem Drachen Rätsel zu spielen.
+dlg:Lobelia008	Keine Zeit zum Plaudern, Junge!  Läute die Glocke!
+dlg:Lobelia009	Wo ist der Landbüttel? Wo ist dieser faule Robin Kleinbau?
+dlg:Lobelia010	Das ist doch alles egal. Es gibt Wölfe im Auenland!
+dlg:Lobelia011	Wie denn? Ich habe ihm von den Wölfen ja noch gar nichts erzählt!  Geh weg, Frodo.  Ich brauche den Landbüttel!
+dlg:Lobelia012	Dann steh nicht nur herum!  Läute die Warnglocke!
+dlg:Lobelia013	Du schon wieder?  Hoffentlich hast du die Urkunde von Beutelsend mitgebracht!
+dlg:Lobelia014	Du musst deinen stumpfen Verstand schärfen und mir diese Urkunde bringen!  Und jetzt fort mit dir!
+dlg:Lobelia015	Oh! Ich kann es kaum glauben!  Die Urkunde von Beutelsend!
+dlg:Lobelia016	Was? Gamdschie?  Dieser dreckige Kartoffelbuddler und sein Sohn könnten mitten in der Nacht ganz Beutelsend ausplündern!
+dlg:Lobelia016a	Oh!  Warum du dich mit solchem Volk abgibst, werde ich nie verstehen, Frodo!
+dlg:Lobelia016b	Bauern und Zwerge und Zauberer als Gesellschaft, und nie lädst du dein eigenes Fleisch und Blut zum Tee ein!   Also wirklich!
+dlg:Lobelia017	Ja, ja, wirklich ein sehr guter Tag!  Mein süßer kleiner Lotho wird so glücklich sein! Endlich Beutelsend!
+dlg:Lobelia018	Na also!  Endlich ist jemand zur Vernunft gekommen und hat die Glocke geläutet!  Jetzt haben wir Sicherheit und Ordnung im Auenland.
+dlg:Lobelia019	Also ... worüber wolltest du mit mir sprechen?  Mach schnell, ich habe eine Menge zu erledigen!
+dlg:Lobelia020	Was? Aber ich dachte, du lügst, du hinterlistiger Junge.  Das glaube ich erst, wenn ich die Urkunde in der Hand halte.  Hast du sie mitgebracht?
+dlg:Lobelia021	Abscheulicher Junge!  Bring mir die Urkunde, dann reden wir darüber.  Bis dahin ... guten Tag!
+dlg:Lotho001	Na, wenn das nicht Herr Frodo Halb-Beutlin höchstpersönlich ist, auf einem Spaziergang unter dem gemeinen Volk!
+dlg:Lotho004	Lass dir einen Rat geben, Frodo.  Leg dich nicht mit den Sackheim-Beutlins an. Eines Tages werde ich Herr von Beutelsend sein, und von noch viel mehr.
+dlg:Lotho004a	Dann werden wir sehen, lieber Frodo.  Wir werden sehen, wer der Herr ist und wer gedemütigt wird!
+dlg:Lotho007	Sieh an, sieh an!  Mutter sagt, du bist zur Vernunft gekommen und hast uns Beutelsend verkauft. Wurde auch Zeit, dass du uns als die Besseren anerkennst!
+dlg:Lotho007a	In Beutelsend werden jetzt erstklassige Hobbits wohnen und nicht diese Art von Zwergen und Zauberern, die du und Bilbo so zu mögen scheint.
+dlg:Lotho008	Sieh zu, dass du bis zum vereinbarten Tag aus Beutelsend raus bist!
+dlg:Lotho008a	Es täte mir leid, wenn der Landbüttel dich in Ketten aus deinem geliebten Zuhause schleifen müsste ... ich meine, aus meinem geliebten Zuhause.
+dlg:Lotho009	Mutter?  Ja, sie ist hier ... ich glaube, sie ist im Gasthaus Zum Efeubusch, aber ich bezweifle, dass sie mit deinesgleichen reden will.
+dlg:Maggot001	Greif!  Fang!  Wolf!  Kommt, Jungs!
+dlg:Maggot002	Was soll das Geschwätz zu dieser Nachtstunde? Raus mit der Sprache!
+dlg:Maggot003	Na, wenn das nicht Peregrin Tuk ist.  Du hast Glück, dass ich dich kenne.  Ich wollte schon meine Hunde loslassen!
+dlg:Maggot004	Hier ist ein höchst sonderbarer Kerl durchgeritten und hat seltsame Fragen gestellt.   He!  Wer ist das bei dir, Pippin?
+dlg:Maggot005	Frodo Beutlin!
+dlg:Maggot006	Beutlin!  Ist das nicht das Seltsamste von allem!  Was glaubt ihr, wonach dieser Fremde gefragt hat?
+dlg:Maggot007	Er kam auf einem schwarzen Pferd angeritten, in schwarzem Mantel und mit Kapuze. Und er fragte nach Beutlin!
+dlg:Maggot007a	Ich hab ihm gesagt, alle Beutlins wohnen in Hobbingen.  Er sagt, Beutlin ist zu Fuß nach Osten unterwegs.  Und jetzt taucht Frodo Beutlin auf meinem Hof auf!
+dlg:Maggot007b	Derselbe Frodo Beutlin, der einer der schlimmsten jungen Lausbuben weit und breit war, möchte ich hinzufügen.
+dlg:Maggot007c	Wohin seid ihr unterwegs?
+dlg:Maggot008	Ich sehe, du steckst in Schwierigkeiten, Frodo. Du hättest dich nie mit diesem seltsamen Volk aus Hobbingen einlassen sollen!
+dlg:Maggot008a	Ich wette, dieser Fremdländer ist hinter dem Gold her, das Bilbo aus der Fremde mitgebracht hat.
+dlg:Maggot009	Nein, er wird auf der Lauer liegen!  Ihr fahrt in meinem Wagen hinaus, versteckt vor neugierigen Blicken.
+dlg:Maggot010	Und wir schicken euch mit einer ordentlichen Schüssel von Frau Maggots Pilzen los!
+dlg:Maggot011	Gewiss.  Sollen wir jetzt aufbrechen?
+dlg:Maggot012	Sag mir einfach Bescheid, wenn ihr bereit seid.
+dlg:Maggot013	Ich mache den Wagen fertig.
+dlg:Maggot014	Bereit zum Aufbruch?
+dlg:Maggot015	Lasst euch nicht die ganze Nacht Zeit!
+dlg:Maggot016	Ich hole den Wagen.
+dlg:Maggot017	Greif!  Fang!  Wolf!   Was soll der Lärm?
+dlg:Maggot018	Sieh an, sieh an. Wir haben einen Einbrecher auf den Feldern.
+dlg:Maggot019	Fertig mit dem Pilzediebstahl? Oder möchtest du das lieber mit den Jungs ausmachen?
+dlg:Maggot020	Und jetzt verschwinde, oder die Jungs erledigen dich ordentlich!
+dlg:Maggot021	Und jetzt fort, ehe ich es mir anders überlege!
+dlg:Maggot022	Du schon wieder?!  Raus!  Raus mit dir, oder du wirst Futter für meine Hunde!
+dlg:MAGoblin001	Wassndas?
+dlg:MAGoblin002	Yah!
+dlg:MAGoblin003	Ärrr ...
+dlg:MAGoblin004	Ack!
+dlg:MAGoblin005	Yiee!
+dlg:MAGoblin006	Yaaagh!
+dlg:MAGoblin007	Ulllggh!
+dlg:MAGoblin008	Yaaa!
+dlg:MAGoblin009	(scharfer Pfiff)
+dlg:MAGoblin010	(scharfer Pfiff)
+dlg:MAOrc001	Hinterhältig, was?
+dlg:MAOrc002	Ahh!
+dlg:MAOrc003	Ähm ...
+dlg:MAOrc004	Ugh!
+dlg:MAOrc005	Aagh!
+dlg:MAOrc006	Yaawgh!
+dlg:MAOrc007	Gaaargh!
+dlg:MAOrc008	Feuer!
+dlg:MAOrc009	Eindringlinge!
+dlg:MAOrc010	(spuckt)
+dlg:MAOrc011	Hilfe!
+dlg:Merry001	Ich hätte nie gedacht, dass Zwerge einen so riesigen Ort bauen!
+dlg:Merry002	Ärger mit Orks.
+dlg:Merry003	Wie lange es wohl gedauert hat, das alles aus dem Fels zu hauen?
+dlg:Merry004	Diese Warge waren groß genug, um auf ihnen zu reiten!
+dlg:Merry005	Was bedeutet das ... "Sprich, Freund, und tritt ein" ...?
+dlg:Merry006	Pippin, das ist keine ... gute Idee.
+dlg:Merry007	Vielleicht waren Lawinen doch das kleinere Übel.
+dlg:Merry013	Hat dieser Faulpelz Sam Gamdschie vergessen, dir zu sagen, dass wir hier sind?
+dlg:Merry014	Setz dich zu uns.
+dlg:Merry015	Sag es ihm nicht ... oh, zu spät.  Unsere Verschwörung ist aufgeflogen.  Dann können wir ihm jetzt auch gleich alles erzählen!
+dlg:Merry016	Drei sind eine schöne Gesellschaft!  Wie in alten Zeiten!  Weißt du noch, die Pilze?
+dlg:Merry017	Ich glaube, Frodo hat Angst!  Hast du Angst, Pippin?
+dlg:Merry018	Nur weil er dich erwischt hat!
+dlg:Merry019	Weißt du noch, wie diese Pilze beim Braten gerochen haben?
+dlg:Merry020	Dann ist es abgemacht!
+dlg:Merry022	Was hat dich aufgehalten, Vetter?  Auf dem Weg noch beim Grünen Drachen vorbeigeschaut?
+dlg:Merry023	Du meinst Bruchtal.  Und wir kommen mit dir.
+dlg:Merry023a	Eigentlich hast du das den Sackheim-Beutlins zu verdanken. Ich übte eines Tages gerade, mich an Bilbo heranzuschleichen, als er Lotho nach ihm rufen hörte.
+dlg:Merry023b	Bilbo steckte den Ring an und verschwand!  Danach hielten wir die Augen offen.  Wir haben dich und Gandalf belauscht.
+dlg:Merry023c	Du kannst dich darauf verlassen, dass wir bis zum bitteren Ende zu dir halten!
+dlg:Merry023d	Aber du kannst dich nicht darauf verlassen, dass wir dich allein in Gefahr gehen lassen!
+dlg:Merry024	So viel zum Thema, vor dem Aufbruch noch ein paar Pilze zu stibitzen.
+dlg:Merry025	Oh. Das wäre dann ein anderer Beutlin.
+dlg:Merry026	Diese Elbenboote sind ein Wunder!  So etwas habe ich noch nie gesehen!
+dlg:Merry027	Wir sind hier drüben!
+dlg:Merry029	Ganz nah am Tal der Weidenwinde.  Aber näher sollten wir nicht herangehen.
+dlg:Merry030	Das Tal der Weidenwinde ist der seltsamste Teil des ganzen Waldes!  Sozusagen der Mittelpunkt, von dem all das Seltsame ausgeht!
+dlg:Merry031	Ich dachte, ich könnte es, aber so, wie diese Bäume sich verschieben, weiß ich es nicht!  Es ... es ist, als würden sie uns dorthin führen ...
+dlg:Merry032	Es tut mir leid, dass ich uns an einen so gefährlichen Ort geführt habe. Aber wenigstens haben wir diesen Schwarzen Reiter abgeschüttelt!
+dlg:Merry032a	Er galoppiert die Oststraße auf und ab und fragt: Beutlin?  Beutlin?  Wir haben ihn hereingelegt!
+dlg:Merry033	Kann nicht mehr ... muss ein Nickerchen machen!
+dlg:Merry034	Halt! Hör auf!  Er zerquetscht mich in zwei Teile, wenn du nicht aufhörst!
+dlg:Merry035	Ja, danke!
+dlg:Merry036	Nach meiner Rechnung sind wir nicht weit von der Hauptstraße.
+dlg:Merry037	Und was meinte er wohl mit "Der Älteste"?
+dlg:Merry038	Wenn auch nur die Hälfte der Geschichten über die Hügelgräberhöhen stimmt, müssen wir gut Wache halten.
+dlg:Merry039	Es ist vollkommen sauber.  Von der Zeit unberührt.
+dlg:Merry040	Oh, Sam!  Das ist so gut wie ein Gasthaus zu Hause ... nur viel größer!
+dlg:Merry041	Gut.  Komm, Sam, Pippin.  Auf Wiedersehen, Herr Unterberg.
+dlg:Merry042	Wir hätten schon längst herkommen sollen! Gutes Essen und ausgezeichnete Getränke!
+dlg:Merry043	Darüber mache ich mir Sorgen, wenn es so weit ist.  Bis dahin ruhe ich meine müden Füße aus und genieße die hiesige Gastfreundschaft.
+dlg:Merry044	Stell dir vor ... Hobbits und Große Leute, die in einem Dorf miteinander auskommen.
+dlg:Merry045	Wohin gehen wir?
+dlg:Merry046	Wer sind Sie?
+dlg:Merry047	Nun gut, Freund.  Was sollen wir jetzt tun?
+dlg:Merry048	Und was ist mit Ihnen?
+dlg:Merry049	Wie bitte?
+dlg:Merry058	Und auch keine Spur von Gandalf.
+dlg:Merry059	Du bist in Sicherheit.
+dlg:Merry060	Die Reiter könnten überall sein ... direkt über uns!  Es ist so dunkel draußen.  Wir sollten weiterziehen, statt herumzusitzen und zu warten!
+dlg:Merry061	Merry und Pippin!
+dlg:Merry062	Ich will Meister Elronds Karten und Bücher studieren, solange wir hier sind.  Es gibt viel zu lernen!
+dlg:Merry063	Stell dir vor, Frodo ... all das, in und auf riesigen Bäumen gebaut!  Es ist wunderbar, wahrhaft wunderbar!
+dlg:Merry064	Ich will lieber nicht warten, bis dieser dunkle Reiter zurückkommt.
+dlg:Merry065	Wir sollten uns besser beeilen, bevor noch mehr von diesen Dingern hinter uns her sind!
+dlg:Merry068	Da bist du ja, Vetter.
+dlg:Merry069	Das ist nur ein räudiger alter Köter.
+dlg:Merry070	Nur drei.
+dlg:Merry072	Ehrlich, Frodo, du bist langsamer als Maggots Hunde!
+dlg:Merry073	Gut gemacht, Frodo.
+dlg:Merry074	Dieser schreckliche Baum! Er wollte Pippin und mich fressen!
+dlg:Merry075	Du hast uns eine Weile Sorgen gemacht, Vetter.  Gott sei Dank konnte Meister Elrond deine schreckliche Wunde heilen!
+dlg:Milo009	Willst du auch angeln, Frodo?  Dick hat mich im Stich gelassen, um ausgerechnet einen Kuchen zu backen!
+dlg:Milo010	Ach, überhaupt nicht!  Ich glaube, ich bin verflucht!
+dlg:Milo011	Äh ... Köder?  Hehe ... nun ja ...
+dlg:Milo012	Du hast wohl recht, Frodo ... ich wüsste allerdings nicht, wo ich einen finden soll.
+dlg:Milo013	Ach ... nun, wenn es keine Umstände macht ...
+dlg:Milo014	Immer noch kein Glück!  Äh ... Würmer gefunden?
+dlg:Milo015	Igitt!  Warum müssen die nur so ... so ... wurmig sein?!
+dlg:Milo016	Schon gut, schon gut ... eine Hand wäscht die andere.  Nimm die hier!
+dlg:Milo017	Ich hab versucht, sie als Senkblei zu benutzen, aber ...
+dlg:Milo018	Scheint, als mögen die Fische Würmer genauso wenig wie ich!
+dlg:Milo019	Keine Zeit zum Reden, Frodo!  Meine Schweine sind ausgebüxt!
+dlg:Milo020	Ich weiß es nicht!  Ich wollte sie füttern, und da liefen sie überall auf der Weide herum!  Jemand muss sie aus dem Stall gelassen haben!
+dlg:Milo021	Ich weiß es nicht, aber wenn sie nicht wieder im Stall sind, bevor meine Frau nach Hause kommt, kriege ich mächtig Ärger!
+dlg:Milo022	Warte!  Warte! Hilfst du mir?
+dlg:Milo023	Nun, ich wollte eigentlich mit Dick Bolger angeln gehen. Ich kann ja schlecht angeln, wenn meine Schweine frei herumlaufen!
+dlg:Milo024	Das hoffe ich!
+dlg:Milo025	Die Schweine laufen immer noch frei auf der Weide herum!  Ach, so komme ich nie zum Angeln!
+dlg:Milo026	Du bist ein guter Kerl, Frodo!
+dlg:Milo027	Danke. Das kann ich gebrauchen!  Mach's gut, Frodo.
+dlg:Minto001	Hallo, Herr Beutlin.
+dlg:Minto002	Frau Sackheim-Beutlin wollte mich mit ihrem Schirm hauen.
+dlg:Minto003	Ich hab Sancho Stolzfuß an Beutelsend vorbei gejagt. Sie hat gesagt, das ist kein Ort für kleine Rabauken.
+dlg:Minto004	Als sie sich umgedreht hat, hab ich einen Apfel geworfen! Hätte sie fast getroffen!
+dlg:Minto005	Sie hat mich angeschaut, dass die Milch sauer wird, und ist dann nach Wasserau runtergegangen.  Gut, dass sie weg ist, sag ich!
+dlg:Minto006	Sie haben recht!  Ein Stein wäre besser gewesen!
+dlg:Minto007	Entschuldigung, Herr Beutlin.  Na dann, auf Wiedersehen.
+dlg:Minto008	Haben Sie Sancho Stolzfuß gesehen?  Er hat ein paar von meinen Knallfröschen genommen!
+dlg:MMGoblin001	Wassndas?
+dlg:MMGoblin002	Iii!
+dlg:MMGoblin003	Ähhh ...
+dlg:MMGoblin004	Ehh!
+dlg:MMGoblin005	Hiih!
+dlg:MMGoblin006	Haaargh!
+dlg:MMGoblin007	Ohhh ...
+dlg:MMGoblin008	Aaaah!
+dlg:MMGoblin009	(scharfer Pfiff)
+dlg:MMGoblin010	N/A
+dlg:MMGoblin011	(scharfer Pfiff)
+dlg:MMOrc001	Halt, du da!
+dlg:MMOrc002	Hä?!
+dlg:MMOrc003	Ähm ...
+dlg:MMOrc004	Gah!
+dlg:MMOrc005	Umpf!
+dlg:MMOrc006	Gaagh!
+dlg:MMOrc007	Ulk!  Uhhh ....
+dlg:MMOrc008	Yaaaaah!
+dlg:MMOrc009	Eindringlinge!
+dlg:MMOrc010	(leises Knurren)
+dlg:MMOrc011	Hilfe!
+dlg:Mugwort001	Guten Tag, Junge. Du bist doch ein Beutlin ... Bilbo?
+dlg:Mugwort002	Frodo Beutlin!  Wohnst in dem prächtigen Haus oben auf dem Bühl!  Bilbos Haus.  Wie geht's dir denn, Bilbo?
+dlg:Mugwort003	Frodo!  Richtig ... nun, keine Zeit zum Plaudern. Ich muss nach Bree ... in einem Auftrag für Ted Sandigmann, Teile für die Mühle besorgen.
+dlg:Mugwort004	Danke, Bilbo.  Ich ginge lieber nicht, aber wir brauchen die Mühle, und Ted sagt, er ist zu wichtig, um selbst zu gehen.
+dlg:Mugwort005	Guten Tag, Bilbo.  Keine Zeit zum Reden.  Ich muss nach Bree, die Mühle reparieren.
+dlg:Mugwort006	Hallo.  Sie kommen mir bekannt vor!   Beutlin, nicht wahr?  Aus dem Auenland!
+dlg:Mugwort007	Unterberg ... Sie sehen genauso aus wie ein Beutlin, den ich kenne.
+dlg:Mugwort008	Ted Sandigmann hat mich hierher nach Bree geschickt, um Teile für das Mühlrad zu holen.
+dlg:Mugwort009	Jawohl.  Dem verfluchten Ding ist neulich ein Stift rausgesprungen.  Ohne den läuft es nicht!
+dlg:Mugwort010	Sagen Sie, Unterberg ... das ist eine feine Klinge, die Sie da haben.  So was hab ich noch nie gesehen!  Wo haben Sie die her?
+dlg:Mugwort011	Ein königliches Geschenk war das!  An Ihrer Stelle würde ich sie versteckt halten.
+dlg:Mugwort012	Hallo noch mal.  Bree ist ein ganz schön lebhafter Ort, was, Herr Unterberg?
+dlg:Mugwort013	So ein Glück!  Hat Sandigmann sie repariert?
+dlg:Mugwort014	Dann hab ich das also dir zu verdanken!  Und ich danke dir auch!
+dlg:Mugwort015	Nun, ich mache mich besser auf den Rückweg zur Mühle, Bilbo.  Sandigmann will, dass ich arbeite, und nicht übers Land spaziere!
+dlg:Narrator001	Wähle ein Losungswort.
+dlg:Narrator030	Aufgabenbuch aktualisiert.
+dlg:Narrator031	<X> Ja
+dlg:Narrator032	<B> Nein
+dlg:Narrator033	<X> Ja
+dlg:Narrator034	<B> Nein
+dlg:Narrator040	Bist du bereit, den Ring zu nehmen und deine Reise zu beginnen?
+dlg:Narrator041	<X> Ja
+dlg:Narrator042	<B> Nein
+dlg:Narrator049	Frodo ist seiner Morgulwunde erlegen.
+dlg:Narrator053	<A> Edro, Annon, <B> Mellon,
+dlg:Narrator054	<X> Öffne dich, öffne dich, <Y> Edro, öffne dich
+dlg:Narrator899	Welchen Gegenstand möchtest du haben?
+dlg:Narrator899a	<X> Dicks Wanderstab
+dlg:Narrator899b	<B> Dicks Salbe
+dlg:Narrator899c	<X> Zwergentrunk
+dlg:Narrator899d	<X> Feuerpfeile
+dlg:Narrator899e	<B> Stahlpfeile
+dlg:NarratorChoice	Wähle eine Figur.
+dlg:NarratorOptions1	<X> Frodo, <B> Aragorn,
+dlg:NarratorOptions2	<Y> Gandalf
+dlg:Naz001	Beutlin ... der Ring ...
+dlg:Naz002	(Zischen)
+dlg:Naz003	(Zischen)
+dlg:Naz004	(Zischen, raues Knurren)
+dlg:Naz005	(Zischen, raues Stöhnen)
+dlg:Naz006	(lautes Schnüffeln)
+dlg:NazM001	Du kannst nicht siegen!
+dlg:NazM002	Das kann nicht sein!
+dlg:NazM003	Unterwirf dich, Narr!
+dlg:NazM004	Beende diese Torheit ... gib den Ring heraus!
+dlg:Noakes001	Schon ein paar von den Kräutern gefunden?
+dlg:Noakes002	Hallo, junger Beutlin.
+dlg:Noakes003	Oh, jawohl ... aber der Tee bewirkt die Wunder. Nicht der Geruch!
+dlg:Noakes004	Ich brauche nicht alle diese Kräuter ... behalt doch ein paar für dich selbst.
+dlg:Noakes005	Auf deine Gesundheit, junger Beutlin! Und eine fröhliche Wanderung nach Krickloch.
+dlg:Noakes006	Ei, danke schön. Ich bin wieder gesund wie ein Pferd. Die Leute werden mich bald "gut erhalten" nennen, wie deinen Onkel Bilbo, Gott hab ihn selig.
+dlg:Noakes007	Ei, das kommt von diesem neuen Kräutertee, den ich trinke!
+dlg:Noakes008	Meine alten Knochen sind nicht mehr steif und wund, das ist Tatsache! Ein wahres Wunder.
+dlg:Noakes009	Gar nichts Besonderes. Die Kräuter wachsen wild im Nordland. Petersilie, Kiefernnadeln und Königskraut.
+dlg:Noakes010	Ich kann ein paar von diesen Kräutern riechen. Ich glaube, du hast welche.
+dlg:Noakes011	Guten Tag, junger Beutlin!  Ich weiß ja, deine Verwandten in Bockland treiben Unfug mit Booten, aber halt du dich von denen fern!
+dlg:Noakes012	Ich hatte vier Kräuterbündel ... bis dieser Sancho Stolzfuß sie genommen hat!  Überall verstreut hat er sie!
+dlg:Noakes013	Ich brauche noch ein paar Kräuter mehr, aber hab herzlichen Dank für die Hilfe!
+dlg:Nob001	Bin gleich bei Ihnen, Herr.
+dlg:Nob002	Guten Abend, Herr.
+dlg:Nob003	Hier, Herr!  Hier bin ich!
+dlg:Nob003a	Hier, Herr!
+dlg:Nob004	Ich kümmere mich sofort darum, Herr.
+dlg:OldTimer001	He!  Sie da!  Hilfe!
+dlg:OldTimer002	Ratten, das ist los, und jede Menge davon!  Unten in meinem Keller sind sie!  Zernagen all meine Sachen!
+dlg:OldTimer003	Das ist noch nicht alles!  Da unten ist auch noch ein Einbrecher!
+dlg:OldTimer004a	Ein hinterlistiger kleiner Kerl, wie's aussieht!  Ich hab ihn reingehen sehen! Aber als ich ihm nach bin, hat mich eine Ratte gebissen!
+dlg:OldTimer005	Dann passen Sie auf, wo Sie hintreten!  Überall da unten verfluchte Ratten!  So was hab ich noch nicht erlebt!
+dlg:OldTimer006	He, Sie!  Schon die Ratten losgeworden?  Oder den Einbrecher?
+dlg:OldTimer007	Und?  Ist mein Keller rattenfrei?  Ich hab den kleinen Rabauken rauslaufen sehen!  Ist aber abgehauen, bevor ich ihm eins überziehen konnte!
+dlg:OldTimer008	Bedienen Sie sich!  Ich kann sie sowieso nicht mehr brauchen, wo die Ratten sie zerfetzt haben!
+dlg:OldTimer009	Das müssen Sie mir nicht zweimal sagen!  Heute Nacht treibt sich allerlei seltsames, herumstreunendes Gesindel herum ... Anwesende natürlich ausgenommen.
+dlg:OlogH001	O ho!
+dlg:OlogH002	Huum?
+dlg:OlogH003	Hurrm ...
+dlg:OlogH004	Urrr!
+dlg:OlogH005	Rurrr!
+dlg:OlogH006	Raarrgh!
+dlg:OlogH007	Ooog ... uuugh ...
+dlg:OlogH008	Roooaar!
+dlg:OlogH009	(knurrender Magen)
+dlg:Ori001	Du ehrst mich, Glóins Sohn. Und Gandalf!  Mein alter Freund.
+dlg:Ori002	Sind die Söhne Durins gekommen, um Rache zu nehmen? Seid ihr mit einem Heer von Zwergen hier?
+dlg:Ori003	Dann muss ich euch helfen.
+dlg:Ori004	Sucht ... die Kammer von Mazarbul. Dort findet ihr ... die große Axt ... Durins.
+dlg:Ori005	Ihr müsst ... sie ... zu unserem Volk bringen.
+dlg:Ori006b	Licht ... auf das Antlitz ... Durins ... weist den Weg ... nnn ...
+dlg:Pippin001	Angst wovor?
+dlg:Pippin002	Ich glaube, dieser Teil gefällt mir besser als die Minenstollen.
+dlg:Pippin003	Ich war's nicht, ich schwör's!
+dlg:Pippin004	Ärger?  Was für Ärger?!
+dlg:Pippin005	Können Orks nicht im Dunkeln sehen?
+dlg:Pippin006	Hätte ich doch auf Elrond gehört!  Ich tauge nicht für so was ... für den Kampf!
+dlg:Pippin007	Was steht da geschrieben?
+dlg:Pippin008	Na, du bist ein kleiner Fang, Sam.  Es würde dich wahrscheinlich wieder zurückwerfen!
+dlg:Pippin009	Wenn hier noch Zwerge übrig sind, haben sie hoffentlich eine gut gefüllte Speisekammer.  Ich verhungere!
+dlg:Pippin015	Hallo, Frodo!  Was hat so lange gedauert?
+dlg:Pippin016	Frühstück, obwohl wir inzwischen beim Mittagessen sind!
+dlg:Pippin017	Kann ich nicht sagen. Das ist eine Verschwörung.
+dlg:Pippin018	Da du ja an Bauer Maggots Hof vorbeikommst, dachten wir, wir nehmen uns seinen Garten noch einmal vor.
+dlg:Pippin019	Ich habe nie Angst, Merry. Hunde, die bellen, beißen nicht!
+dlg:Pippin020	Sei diesmal nur vorsichtig.
+dlg:Pippin021	Wir treffen dich auf Maggots Hof.
+dlg:Pippin023	Da ist er ja, der alte Faulpelz!
+dlg:Pippin024	Du dachtest, du wärst so schlau.  Aber unsere Verschwörung hat dich überlistet!  Wir wissen alles über den Ring und den Dunklen Herrscher!
+dlg:Pippin024a	Also kommen wir mit.  Um dich zu beschützen.
+dlg:Pippin024b	Wie sollten wir es nicht wissen? Wo du doch ständig vor dich hin murmelst: "Ob ich dieses Tal wohl je wiedersehe?"
+dlg:Pippin024c	Durch unseren obersten Verschwörer.  Bis er erwischt wurde!
+dlg:Pippin024d	Wir haben dein Geheimnis besser bewahrt als du!
+dlg:Pippin024e	Auch wenn wir schreckliche Angst haben.  Wir kommen mit dir oder folgen dir wie Hunde!
+dlg:Pippin024f	Nein, Sam.  Hunde.
+dlg:Pippin025	Und der alte Maggot auch, wie es sich anhört.
+dlg:Pippin026	Guten Abend, Bauer Maggot.
+dlg:Pippin027	Ihr erinnert Euch an Meriadoc Brandybock.  Darf ich vorstellen: Samweis Gamdschie und --
+dlg:Pippin028	Frodo benimmt sich heutzutage viel besser.
+dlg:Pippin029	He!  Frodo!
+dlg:Pippin030a	Ich hätte nie gedacht, dass Kartoffeln so gut riechen können!
+dlg:Pippin031	Weißt du, dass einer dieser Bäume einen Ast nach mir ausgestreckt hat?  Hätte mich beinahe zu Fall gebracht!
+dlg:Pippin032	Unter den Weiden ist es kühl ... weniger Fliegen!
+dlg:Pippin033	D-der Baum!  Der sagt das!
+dlg:Pippin034	Sehr sogar!
+dlg:Pippin035	Glaubst du etwa nicht an die Geschichten über alte, tote Grabunholde?
+dlg:Pippin035a	Und warum hat er keinen Speck aufgetischt? Oder Koteletts? Oder Würstchen?
+dlg:Pippin036	Ich vermisse Frau Goldbeeres Abendbrot!  Ach, was für ein Festmahl!  Können wir jetzt zurück?
+dlg:Pippin037	Ja, nochmals danke!
+dlg:Pippin038	Je größer das Gasthaus, desto größer die Portionen!
+dlg:Pippin039	Vielleicht findet Sam ein Kartoffelbeet zum Schlafen.
+dlg:Pippin040	Ich weiß nicht, was Sam hat!  Das ist ein feines Gasthaus!  Mit einem feinen Koch in der Küche, möchte ich hinzufügen!  Probiert den Eintopf!
+dlg:Pippin041	Oh, ja.  Im Stall schlafen will ja keiner!
+dlg:Pippin042	Hast du den Eintopf schon probiert? Ich glaube, ich nehme noch einen Nachschlag ... vielleicht sogar zwei!
+dlg:Pippin043	Warte, warte, warte ... gleich kommt das Beste!
+dlg:Pippin044	Und das war ein feiner Trick!
+dlg:Pippin045	Hallo!  Wer sind Sie, und was wollen Sie?
+dlg:Pippin046	Jeder hier will einen mal sprechen.
+dlg:Pippin047	Ha ha ... oh.
+dlg:Pippin049	Ah, das hätte ich mir denken können ... noch mehr Abkürzungen und lange Verzögerungen!  Als wir das das letzte Mal versucht haben, hat uns fast ein Baum gefressen!
+dlg:Pippin052	Nun, da sind wir!  Kalt, windig und von Trollen belagert!
+dlg:Pippin053	Die Reiter sind fort!
+dlg:Pippin054	Wurzeln und Beeren ... pff!  Was für ein aufregendes Essen ... bäh!
+dlg:Pippin055	Ich bin so hungrig, dass mir diese Wurzeln und Beeren langsam schmecken.
+dlg:Pippin056	Hobbits sind auch ein Freies Volk!
+dlg:Pippin057	Elrond kann von Glück sagen, dass er Merry und mich mitkommen ließ!  Wir hatten schon die nächste Verschwörung geplant, falls sie uns nicht gehen lassen!
+dlg:Pippin058	Hast du diese Elbenleckereien probiert?  So etwas habe ich noch nie gegessen.  Stell dir vor, Tausende von Jahren an seinen Rezepten zu feilen!
+dlg:Pippin059	Das Auenland scheint so weit weg!  Ich wusste, dass die Welt groß ist, aber nicht so groß!
+dlg:Pippin060	Von dem ganzen Warten bin ich hungrig geworden.  Ich muss wohl Frodos Pilze essen!
+dlg:Pippin061	Es war das beste Fest aller Zeiten!  Feuerwerk, wie es nur ein Zauberer machen kann!
+dlg:Pippin062	Der alte Bilbo fängt eine lange, langweilige Rede an.  Aber er hat einen Trick im Ärmel ... oder in der Tasche!
+dlg:Pippin062a	Also sagt Bilbo zu den hundertvierundvierzig Hobbits auf dem Fest: Ihr seid ein Gros Hobbits!  Alle sind so beleidigt, dass keiner sieht, wie seine Hand in die Tasche wandert ...
+dlg:Pippin065	Worauf warten wir?  Je eher wir die Lilien finden, desto eher können wir essen!
+dlg:Pippin066	Sieht aus, als hätten die alten Weiber gewusst, wovon sie reden!  Dieser Ort ist grässlich!
+dlg:Pippin067	Was hat er gerade gesagt?
+dlg:Pippin068	Bereit, dich über Bauer Maggots Pilze herzumachen?
+dlg:Pippin069	Also wirklich, Frodo. Du machst dir viel zu viele Sorgen.
+dlg:Pippin071	Du verschwendest Zeit, Frodo.  Je eher du die Pilze holst, desto eher können wir essen!
+dlg:Pippin072	Endlich Pilze!
+dlg:Pippin073	Diese Goldbeere ... meinst du, sie kocht gut?
+dlg:Pippin074	Ich verstehe, warum Bilbo hierbleibt ... Bruchtal ist herrlich!  Ich glaube, ich werde nie wieder so gut essen ... nie wieder!
+dlg:Robin001	Was ist denn jetzt los?  Ich halte nichts von leichtsinnigem Glockenläuten!
+dlg:Robin002	Oh. Ist das alles?  Ich hab das Gerücht gehört, aber ich glaube, keiner hat diese Wölfe gesehen. Nicht mal Lobelia.
+dlg:Robin003	Wenn sich Wölfe dem Auenland nähern, jagen die Grenzer sie davon, genau wie Füchse und dergleichen.
+dlg:Robin004	Und wenn das alles war, im Grünen Drachen wartet ein Krug auf mich.
+dlg:Robin005	Nichts ist mir lieber als ein Krug oder zwei auf meiner Landbüttelrunde, während ich den neuesten Klatsch höre.
+dlg:Robin006	Diese Lobelia ...  Die hat immer was zu meckern.
+dlg:Robin006a	In Krickloch musst du ihr aber wohl nicht mehr zuhören!
+dlg:Robin006b	Ein Hoch auf weite Entfernungen zu lästigen Verwandten!
+dlg:Robin007	Hallo, Frodo.  Hast du Zeit, einen Krug mit mir zu trinken?
+dlg:Robin008	Auf zu Abenteuern?
+dlg:Robin009	Warum nicht? Alle großen Drachen verstecken sich vor den furchtbaren Beutlins?  Ha!  Keine Sorge, Frodo.  War nur ein kleiner Scherz!
+dlg:Robin009a	Jeder weiß, dass du ein anständiger Hobbit bist, anders als dein Onkel Bilbo, Gott hab ihn selig.
+dlg:Robin010	Guten Abend, Frodo.  Halt die Augen offen ... der Wolf jagt oft nachts!
+dlg:Robin011	Ah, Frodo!  Ich stehe in deiner Schuld!
+dlg:Robin012	Wärst du nicht gekommen, wäre ich ein Mitternachtshappen für dieses Biest gewesen.
+dlg:Robin013	Seit hundert Jahren haben wir keine Wölfe mehr gesehen.
+dlg:Robin014	Das ist ein böses Omen.  Was mag das bedeuten?
+dlg:Robin015	Was? Oh, ganz recht, Frodo.  Und ich sollte wieder auf Streife gehen!
+dlg:Robin016	Ja, natürlich!  Ich zittere immer noch wegen dieses Biests, weißt du!
+dlg:Robin016a	Ich bin doch nur Landbüttel geworden, damit ich übers Land laufen und mit den Leuten reden kann. Hätte ich gewusst, dass es so gefährlich ist ...
+dlg:Robin017	Leb wohl, Frodo.
+dlg:Robin018	Ein Wolf!  Jetzt ist es aus mit mir!
+dlg:Robin019	Frodo!  Pass auf!
+dlg:Robin022	Ach, übrigens, Frodo ... sag deinem Freund Dick Bolger, dass ich gesehen habe, wie er sich mit dem Glockenklöppel davongemacht hat.
+dlg:Rose001	Hallo noch mal, Frodo.  Dürfte ich dich um einen Gefallen bitten?
+dlg:Rose002	Und dir auch einen guten Tag, Frodo Beutlin!  Ich wünsche dir schönes Wetter für deine Reise.  Äh ... wo ist Samweis?
+dlg:Rose003	Du kommst doch ab und zu zurück, nicht wahr, Frodo?
+dlg:Rose004	Nun, vielleicht kannst du diesem Samweis ein paar Manieren beibringen!
+dlg:Rose005	Erwischt habe ich ihn bei nichts, aber ... er ist bestimmt einer von diesen Spaßvögeln, die mit Steinen die Warnglocke von Wasserau läuten!
+dlg:Rose005a	Wenn wir die Glocke je läuten müssen, achtet Landbüttel Robin vielleicht nicht darauf, weil er es für einen Kinderstreich hält.
+dlg:Rose005b	Vielleicht ... nun, viel Glück in Wasserau.  Komm zurück, so oft du kannst!
+dlg:Rose006	Ich hätte nie gedacht, dass du die Warnglocke läutest, Frodo.  Hoffentlich irrt sich Lobelia mit den Wölfen.
+dlg:Rose007	Würdest du das Fass Apfelwein hierherbringen?  Es ist furchtbar schwer.
+dlg:Rose008	Vielen, vielen Dank, Frodo.  Wäre dieser Samweis doch nur so nett wie du!
+dlg:Rose009	Vielen Dank, Frodo.  Hier. Ich habe etwas für dich. Ein Geschenk zum Einzug.
+dlg:Rose011	Gern geschehen.  Ich hoffe, du denkst an deine alten Freunde, wenn du dich in Krickloch eingelebt hast.
+dlg:Sam001	Wo sind wir eigentlich, Herr Gandalf?
+dlg:Sam002	Man könnte ganz Beutelsend in eine einzige Kammer hier stellen und hätte noch Platz übrig!
+dlg:Sam003	Ich nicht, Herr Gimli!  Ich versuche mein Glück lieber hier drinnen!
+dlg:Sam004	Wenn hier unten Zwerge sind, hoffe ich, sie kommen bald!  Wir könnten Hilfe gebrauchen!
+dlg:Sam005	Mir ist das Herz in die Hose gerutscht, aber gefressen hat man uns noch nicht!
+dlg:Sam006	Wer weiß, was da unten herumschwimmt und nach einer Mahlzeit sucht?
+dlg:Sam007	Hier drinnen wächst nichts außer üblem Schleim.  Was ist ein Zuhause ohne Garten?
+dlg:Sam008	Gut genug, um hier rauszukommen, so viel ist sicher!  Ich dachte, ich wäre das Abendessen von diesem Ding!
+dlg:Sam009	Ahh!  Tun Sie mir nichts!
+dlg:Sam010	Nichts, Herr!  Ich schneide nur das Gras unterm Fenster!
+dlg:Sam011	Gelauscht? Ich hab doch nur Gras geschnitten, ehrlich.
+dlg:Sam012	Oh, Herr Frodo!  Lassen Sie nicht zu, dass er mich in was Unnatürliches verwandelt!
+dlg:Sam013	Nun ... ich hab vieles gehört, was ich nicht verstanden hab ... von Herrschern und Ringen und einem feurigen Berg ... und von Elben, Herr! Ich musste einfach lauschen! Ich würde so schrecklich gern Elben sehen!
+dlg:Sam014	Ich, Herr ...? Elben sehen und alles?
+dlg:Sam015	Oh, ja! Kein Wort von Sam Gamdschie!
+dlg:Sam016	Elben!  Ich werde Elben sehen!
+dlg:Sam023	Guten Morgen, Herr Frodo.
+dlg:Sam024	Alles bereit.  Oder gleich, sobald ich mich um Beutelsend gekümmert hab.
+dlg:Sam025	Ich würde diese Sackheim-Beutlins gern aus Beutelsend rausjäten, wenn Sie verstehen, was ich meine.
+dlg:Sam025a	Nein, ich muss den Garten ein letztes Mal jäten, Herr Frodo. Mich von ihm verabschieden. Ihn in Ordnung bringen, bevor Lotho und Lobelia ihn verderben.
+dlg:Sam026	Oh, nein, äh, es gibt bestimmt viele schönere ...  Oh!  Merry und Pippin wollen, dass Sie sie im Gasthaus Zum Grünen Drachen treffen.
+dlg:Sam027	Verzeihung, Herr, aber im Grünen Drachen findet man kaum Unfug.  Das lässt der Wirt nicht zu.
+dlg:Sam028	Gehen wir bald die Elben besuchen, Herr Frodo?
+dlg:Sam029	Herr Frodo!
+dlg:Sam030	Und Gandalf hat ja gesagt, nehmen Sie die mit, denen Sie vertrauen können!
+dlg:Sam031	Hunde!
+dlg:Sam031a	Maggots Hunde!  Sie kommen!
+dlg:Sam032	Ich muss sagen, Bootfahren ist nichts für mich!
+dlg:Sam033	Und verirrt, wie es aussieht!  Diese Bäume haben ihren eigenen Kopf!
+dlg:Sam034a	Das Abendessen ist bald fertig.
+dlg:Sam035a	Wo sind wir, außer im Alten Wald?
+dlg:Sam036	Warum nicht?
+dlg:Sam037	Merry dachte, er kennt sich in diesem Wald aus.  Aber wie soll man den Weg finden, wenn der Wald nicht stillhält?
+dlg:Sam038	Ich mag diesen Baum nicht ... trau ihm nicht ... hören Sie, wie er vom Schlafen singt?  Das ist nicht richtig ... ganz und gar nicht richtig!
+dlg:Sam039	Ich ... ich weiß es nicht!
+dlg:Sam041	Sie werden zerquetscht!
+dlg:Sam042	Wo ...?
+dlg:Sam043	Nicht früh genug, wenn's nach mir geht.  Ich trau dem nicht, was sich im Nebel auf den Hügelgräberhöhen versteckt.
+dlg:Sam044	Bis heute nicht.  Aber Tom hat was anderes gesagt.
+dlg:Sam045	Er war hier, bevor der Dunkle Herrscher von Draußen kam.  Draußen von was, frage ich mich?
+dlg:Sam046	Ich verbringe die Nacht nicht gern zwischen diesen Grabsteinen.  Die sehen aus wie riesige Zähne, die aus dem Boden wachsen.
+dlg:Sam047	Wir bleiben doch nicht etwa in diesem Gasthaus, oder?
+dlg:Sam048	Ich dachte, wir könnten vielleicht bei ein paar Bree-Hobbits unterkommen.  Das wär ... heimeliger.
+dlg:Sam049	Mir gefällt dieser Ort immer noch nicht.
+dlg:Sam050	Das ist ja meine Sorge, wenn Sie verstehen, Herr ... wir werden weg sein ... für immer weg!
+dlg:Sam051	Was ist das für ein Koch, der keine Kartoffeln in den Eintopf tut?  Ohne Kartoffeln ist ein Eintopf kein Eintopf, hat mein alter Ohm immer gesagt.
+dlg:Sam056	Meinen Sie, wir sollten bald aufbrechen, Herr Frodo?
+dlg:Sam058	Moment mal!  Wo ist Merry?  Er ist immer noch nicht von seinem Spaziergang zurück!
+dlg:Sam059	Was für ein Tag!  Ich kann kaum noch die Augen offen halten.
+dlg:Sam061	Was steht da?
+dlg:Sam062	Bleicher König? Hier sind nur wir, Herr Frodo!
+dlg:Sam063	Was meinen Sie?
+dlg:Sam064	Wie?
+dlg:Sam066	Bruchtal!  Endlich sehe ich Elben!
+dlg:Sam067	Hoffentlich sind hier nicht noch mehr Trolle!
+dlg:Sam068	Sie schicken ihn doch nicht allein?
+dlg:Sam069	Es wird gut sein, solche Gesellschaft auf unserer Reise zu haben, Herr Frodo.
+dlg:Sam070	Wo ist Streicher?
+dlg:Sam071	Elben!
+dlg:Sam072	Ah!
+dlg:Sam073	Ob ich wohl ein bisschen Elbenzauber sehe, solange wir hier sind?
+dlg:Sam074	Ich riskiere mal einen Blick.
+dlg:Sam075	Da sind nur Sterne ... wartet!  Was ... das ist Ted Sandigmann, der all unsere Bäume fällt!  Den fäll ich gleich mit!
+dlg:Sam076	Oh, Teufelswerk!  Sie haben den Beutelhaldenweg umgegraben!  Sie haben meinen alten Ohm verjagt!   Ich muss ins Auenland!
+dlg:Sam076a	Äh ... nein.
+dlg:Sam078	Ach, ich hab versucht, mich nicht zu verlaufen, Herr Frodo, ehrlich, aber die Bäume hatten was anderes vor!
+dlg:Sam079	Nein!
+dlg:Sam080	Ein Elb!
+dlg:Sam081	Ich bin froh, dass dieser Tom Bombadil gerade rechtzeitig kam!
+dlg:Sam082	Kaum zu glauben, dass ich hier bin ... in Bruchtal ... mit Elben und Zwergen und allem!  Wenn mich mein alter Ohm jetzt nur sehen könnte!
+dlg:Sancho004	Halt, Geld oder Leben!
+dlg:Sancho005	Ich bin der gefürchtete Wegelagerer Sancho, und ich verlange Wegzoll, mein Herr!
+dlg:Sancho006	Das hat Ted Sandigmann auch gesagt.  Also musste der gefürchtete Wegelagerer einen Stab aus der Mühle nehmen!  Hab sie ganz stillgelegt!
+dlg:Sancho007	Den gefürchteten Wegelagerer kannst du nicht fangen.
+dlg:Sancho007a	Dem gefürchteten Wegelagerer machst du keine Angst!
+dlg:Sancho007b	Ich hab ihn nicht!  Ich hab ihn nach einer Wetterfahne geworfen, und jetzt steckt er da oben fest!
+dlg:Sancho008	Ohne Kampf kriegst du mich nicht, du Grenzer! Ich bin der mächtige Stolzfuß!
+dlg:Shirriff001	Herr Beutlin!  Das ist nicht die beste Nacht für einen Spaziergang, wenn Sie verstehen.
+dlg:Shirriff002	Das würde ich gern, aber einer vom Großen Volk kam zu Pferd vorbei und hat das Scharnier kaputt gemacht!  Mich hätte er auch kaputt gemacht, wenn ich nicht gerannt wäre.
+dlg:Shirriff003	Jawohl, von Kopf bis Fuß. Und ein großes schwarzes Pferd!
+dlg:Shirriff004	Drüben in Sandigmanns Mühle gibt es Ersatzteile!  Ich würde ja gehen, aber ich muss meine Arbeit tun.  Aber wenn dieser Reiter zurückkommt, weiß ich nicht, was ich mache.
+dlg:Shirriff005	Glück gehabt, Herr Beutlin?  Keiner kommt durch dieses Tor, bis wir das Scharnier repariert haben!
+dlg:Shirriff006	Jawohl, das wird es! Gut gemacht, Herr Beutlin!  Viel Glück!
+dlg:Shirriff007	Hoffentlich bleibt dieser Reiter, wo immer er hin ist, und kommt nie wieder!
+dlg:Ted005	Na, Beutlin?  Den Metallstift gefunden ...?  Oder hat dich das Mittagessen abgelenkt?
+dlg:Ted006	Sieh an, sieh an!  Das Mühlrad dreht sich wieder ... ausgerechnet dank Frodo Beutlin!
+dlg:Ted007	Du hast mir heute einen wertvollen Dienst erwiesen, Beutlin.
+dlg:Ted008	Siehst du nicht, dass ich beschäftigt bin?
+dlg:Ted009	Nun, wenn du etwas von Mühlen verstündest, wüsstest du, dass ich einen sehr wichtigen Metallstift suche, der aus meinem Mühlrad gefallen sein muss.
+dlg:Ted010	Ach, kümmere dich nicht darum, ob sie läuft oder nicht!  Ich habe Beifuß nach Bree geschickt, um Ersatz zu holen.
+dlg:Ted011	Wenn ich ihn noch nicht gefunden habe, findest du ihn erst recht nicht.  Aber, äh ... er sieht aus wie ein einfacher Metallstift.  Und nun guten Tag!
+dlg:Ted013	Ich habe meinen Mann wegen des Teils nach Bree geschickt ... alles umsonst.  So ein Pech!
+dlg:Ted014	He!  Ist da jemand?  Hilfe!
+dlg:Ted015	Frodo?  Frodo Beutlin?!  Steh nicht nur da!  Hilf mir!
+dlg:Ted016	Hätte nie gedacht, dass ich das mal sage, aber ... danke. Wärst du nicht gekommen ...
+dlg:Ted017a	So gut, wie man es erwarten kann, wenn man fast das Abendessen dieser Dinger geworden wäre!
+dlg:Ted018	Ich war auf dem Weg ins Dorf Bree und beschloss, eine Abkürzung durch den Alten Wald zu nehmen ... damit ich über diese Narren lachen kann, die an Legenden von Baummännern und dergleichen glauben.
+dlg:Ted021	Aber jetzt gehe ich zurück ins Auenland, so schnell ich kann!
+dlg:Ted022	Du verlässt den Alten Wald nicht?  Dann bist du ein Narr!
+dlg:Ted025	Also wirklich, Beutlin, wenn dir die Mühle so am Herzen liegt, warum reparierst du sie nicht selbst?
+dlg:Ted026	Wenn du unbedingt weiterwillst, wirst du das hier brauchen.  Es öffnet ein Tor am Waldrand.  Verlier es bloß nicht!
+dlg:Ted027	Es hat mich eine hübsche Summe gekostet, damit du's weißt.  Verlierst du es, erwarte ich Entschädigung!
+dlg:Ted028	Und jetzt entschuldige mich, ich verlasse diesen elenden Ort.  Leb wohl ... Beutlin.
+dlg:Ted029	Ich habe rund um das Getriebe hinter der Mühle alles abgesucht, und er war nirgends zu finden.
+dlg:Trans_Bree_Weathertop	Früh am nächsten Morgen führte ich die vier Hobbits sicher aus Bree hinaus in die trollverseuchte Wildnis dahinter. Wir näherten uns dem Hügel, den die Elben Amon Sûl und die Menschen Wetterspitze nennen.
+dlg:Trans_Lothlorien_Anduin	Am nächsten Tag nahmen wir Abschied von Lórien. Celeborn und Galadriel gaben uns Boote elbischer Machart, und wir brachen auf dem Großen Strom Anduin auf, Richtung Mordor.
+dlg:Trans_Moria_Lothlorien	Wir kämpften uns weiter, heraus aus den dunklen Tiefen Morias. Und bald erreichten wir den Goldenen Wald ... Lothlórien.
+dlg:Trans_OldForest_Bree	Wir verließen die kalten Steinfelder der Hügelgräberhöhen und erreichten das Dorf Bree am Hang, wo Hobbits wie Große Leute zu Hause sind.  Wir verabschiedeten uns von Tom und betraten Bree, auf der Suche nach einem warmen Feuer und einer Tür zwischen uns und der Nacht. Schließlich fanden wir ein fröhliches Gasthaus mit dem Schild des Tänzelnden Ponys.
+dlg:Trans_Rivendell_Moria	Es war Dezember, als wir uns auf den Weg nach Mordor machten, durch das alte Land Hulsten. Von allen Seiten bedrängte uns Saurons Macht, denn Vögel und Tiere und sogar das Wetter konnten Saurons Willen unterworfen werden. Der Dunkle Herrscher schleuderte uns einen tobenden Schneesturm entgegen, als wir den großen Berg Caradhras zu überqueren versuchten.  Wir kämpften uns weiter, bis uns eine Lawine zwang, den Berg aufzugeben und einen anderen Weg zu suchen ...
+dlg:Trans_Shire_OldForest	Bauer Maggots Wagen brachte uns sicher von seinem Hof fort bis an die Grenzen von Bockland.  Doch der Schwarze Reiter donnerte noch immer die Oststraße entlang.  Wir beschlossen, nach Süden zu gehen und den Alten Wald zu durchqueren.  Merry war schon im Alten Wald gewesen und kannte sich ein wenig darin aus. Es ist ein dunkler, geheimnisvoller Ort, aber nicht so gefährlich wie ein Schwarzer Reiter.
+dlg:Trans_Weathertop_Rivendell	Auf Elronds Befehl rissen die Wasser des Flusses Bruinen die Ringgeister fort.  Wir betraten das verborgene Elbental Bruchtal. Elrond, der Herr von Bruchtal, heilte die Wunde, die die Morgulklinge geschlagen hatte.  Frodo erwachte und sah ein vertrautes Gesicht.
+dlg:Troll001	He! Du!
+dlg:Troll002	Wuh?!
+dlg:Troll003	Ähm ...
+dlg:Troll004	Guuh!
+dlg:Troll005	Rruuh!
+dlg:Troll006	Eeaaggh!
+dlg:Troll007	Uh!  Uhhhh ...
+dlg:Troll008	Waaaagh!
+dlg:Troll009	He!  Hier rüber!
+dlg:Troll010	(rülpst)
+dlg:Troll011	He!  Hilfe!
+dlg:Twofoot001	Hallo, junger Beutlin.  Alles Gute zum Geburtstag!
+dlg:Twofoot002	Deinen Zaubererfreund hab ich in letzter Zeit nicht gesehen!  Ich vermisse dieses Feuerwerk!
+dlg:Twofoot003	Ich weiß noch, wie all die Zwerge Herrn Bilbo besuchen kamen.  Zwerge und ein Zauberer!
+dlg:Twofoot004	Ob es ruhiger ist, weiß ich nicht.  Heutzutage hört man so seltsame Geschichten!
+dlg:Twofoot004a	Längst tote Grabunholde, die beim Alten Wald erwachen.  Große Heere im Osten und Süden!
+dlg:Twofoot004b	Zwerge und Große Leute auf der Flucht.  Elben, die nach Westen ziehen und nie zurückkehren ... Ach, aber ich schwatze und schwatze ... gute Reise!
+dlg:Twofoot005	Du und Sam, seid vorsichtig da draußen auf der Straße, Frodo.  Bockland liegt mir zu nah am Alten Wald!
+dlg:Twofoot005a	Halt dich von diesen Baummännern fern, von denen man so hört.  Und wander bloß nicht auf diese Hügelgräberhöhen!
+dlg:Undead001	(scharfes Zischen)
+dlg:Undead002	(raues Stöhnen)
+dlg:Undead003	(raues Stöhnen, Zischen)
+dlg:Undead004	(langes Stöhnen)
+dlg:Undead005	(Stöhnen, das in Stille verklingt)
+dlg:Undead006	(scharfes Zischen)
+dlg:Uruk001	Halt!
+dlg:Uruk002	Grrr!
+dlg:Uruk003	Hmm ...
+dlg:Uruk004	Umpf!
+dlg:Uruk005	Agh!
+dlg:Uruk006	Yaagh!
+dlg:Uruk007	Glllk ... ugh ... aaah ...
+dlg:Uruk008	Rraaaaggh!
+dlg:Uruk009	(scharfer Pfiff)
+dlg:Uruk010	(kehliges Knurren)
+dlg:Urukhai666	Bwuh huh huh huhhh!
+dlg:Wight001	Kalt sei Hand und Herz und Gebein,
+dlg:Wight002	Und kalt der Schlaf unterm Stein;
+dlg:Wight003	Nie mehr erwachen auf steinernem Bett,
+dlg:Wight004	Nie, bis die Sonne verlischt und der Mond ist tot.
+dlg:Wight005	Im schwarzen Wind sollen die Sterne vergehn,
+dlg:Wight006	Und hier auf Gold sollen sie liegen und ruhn,
+dlg:Wight007	Bis der dunkle Herrscher die Hand erhebt
+dlg:Wight008	Über totes Meer und verdorrtes Land.
+dlg:Wight009	Da bist du ja!
+dlg:Wight010	Hnnh?!
+dlg:Wight011	Hissss ...
+dlg:Wight012	Rrrrrr!
+dlg:Wight013	Raaargh!
+dlg:Wight014	Sssss!
+dlg:Willow001	Sterbt ... Tod euch allen ...
+dlg:Wraith001	Warum ... ist Beutlinsss fortgegangen?
+dlg:Wraith002	Wohinnn ... ist Beutlinsss ... gegangen?
+dlg:Wraith003	Issst ... dieser Ort ... weit von hier?
+dlg:Wraith004	Kannst du ... eine Nachricht ssssenden?

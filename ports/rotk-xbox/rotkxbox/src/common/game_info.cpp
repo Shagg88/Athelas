@@ -1,4 +1,7 @@
 #include "app/app.h"
+#ifndef GAME_VERSION
+#define GAME_VERSION "1.4.0"  // CMakeLists.txt sets it (XBE_VERSION); the headless harness does not
+#endif
 
 namespace rotk {
 extern bool g_skip_all_videos;                  // src/game/rotk_movies.cpp
@@ -32,7 +35,7 @@ const app::GameInfo app::kGame = {
     .name = L"ROTKXbox",                  // window classes, crash dumps, handover event
     .log = "rotkx",                       // log file prefix
     .settings = "settings.toml",          // settings file beside the exe, unless --config names another
-    .version = "rotkx-port 1.0.3",        // --version
+    .version = "rotkx-port " GAME_VERSION,        // --version
     .splash = L"splash",                  // optional splash.png or splash.bmp beside the exe
     .missing = L"The game files couldn't be found. Put the game in the assets folder: its disc image (.iso), or default.xbe with its folders beside it.",
     .title_id = 0x4541003E,

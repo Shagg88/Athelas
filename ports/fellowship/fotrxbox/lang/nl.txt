@@ -1,0 +1,2405 @@
+# The Fellowship of the Ring - Dutch game text (our own translation, shown in the game's own menus and boxes; keys are the game's text names)
+hud:1stPersonClue001	Je moet de richtmodus gebruiken om Hals windwijzer met een steen te raken.
+hud:1stPersonClue002	Druk de rechterstick in om de richtmodus te openen.
+hud:1stPersonClue003	Richt je worp met de linkerstick.  Druk op <A> om een voorwerp te gooien.
+hud:21st_Hall	De 21e Zaal
+hud:2nd_Hall	De 2e Zaal
+hud:3_passages	3 Gangen
+hud:Abyss	De Brug van Khazad-dûm
+hud:Anduin_1	Amon Hen
+hud:Anduin_Aragorn	De Top van Amon Hen
+hud:AppleClue001	Sla tegen de stam van een appelboom om een appel te laten vallen.
+hud:Aragorn006a	Let goed op waar je hier loopt.  Eén misstap kan je laatste zijn.
+hud:Aragorn018	Nu, Legolas!  Maak het smerige beest af!
+hud:Aragorn029	Ik heb de vermiste Hobbit nog niet gevonden. Ik moet blijven zoeken.
+hud:Aragorn035	Ahh, deze meloenen zijn prima vervangers voor Hobbithoofden.  In het donker breken ze heel overtuigend.
+hud:Aragorn038	Deze houtblokjes geven mijn lokpoppen in het donker overtuigende armen en benen.  De poortwachter zal ze vast niet missen.
+hud:Aragorn070	Met deze vodden worden mijn lokpoppen overtuigender.
+hud:Aragorn073	Met dit hooi worden mijn lokpoppen wat dikker.
+hud:Aragorn113	Ouwe Boterbloem houdt zijn herberg goed bij, voor iemand die zo traag van begrip is.
+hud:Aragorn114	In de stallen moet hooi liggen voor de lokpoppen.
+hud:Aragorn120	Amon Sûl...ooit trots, nu een gebroken herinnering.
+hud:Aragorn121	Trollen...wat voor duivelswerk voeren ze uit?
+hud:Aragorn123	Die trol!  Zoiets heb ik nog nooit gezien!
+hud:Aragorn124	De ruïnes van de Toren zien er anders uit dan de vorige keer...alsof er een zware strijd is gevoerd.
+hud:Aragorn125	De hobbits zijn goede koks, al zijn het geen vechters.
+hud:Aragorn127	Athelas!  Dit moet Frodo's wond een tijdlang verzachten.
+hud:Aragorn128	We naderen Rivendel...hou vol, Frodo!
+hud:Aragorn129	Meer trollen dan gewoonlijk hier...een onheilspellend teken.
+hud:Aragorn130	De orks trekken op naar Lothlórien...ik vrees dat ze het binnenkort willen aanvallen!
+hud:Aragorn134	De Nazgûl hebben hun paarden vervangen...door gevleugelde gedrochten!
+hud:Aragorn137	Ik moet snel terug naar De Steigerende Pony.  De vijand mag de Hobbits niet vinden!
+hud:Aragorn138	De orks laten ons niet zonder gevecht gaan!
+hud:Aragorn139	Op slot.  Ik moet een manier vinden om deze deur te openen, en snel!
+hud:Aragorn140	Er moet hier ergens een hendel of schakelaar zijn...iets om die deur te openen!
+hud:Aragorn141	De weg is vrij!
+hud:Aragorn143	De schakelaar werkt niet zonder hendel.
+hud:Aragorn144a	Hm. Op slot. En terecht, zo te zien.
+hud:Aragorn145	Gewone wapens doen de Nazgûl niets!  Vuur is mijn enige hoop!
+hud:Arch_Room	Boogzaal
+hud:async_loading	Laden...
+hud:AthelasClue001	Gebruik Athelas om vergiftiging te genezen.
+hud:AthelasFrodoClue001	Gebruik deze Athelas bij Frodo om de werking van zijn Morgulwond te vertragen.
+hud:AttackClue001	Druk op <A> om bijen aan te vallen.
+hud:AutoSaveConfirm	Automatisch opslaan gelukt.
+hud:Bag_End	Zakeinde
+hud:Bag_End_Night	Zakeinde bij nacht
+hud:Balins_Tomb	Balins Graf
+hud:BalrogNoFire	Vuur maakt de Balrog alleen maar sterker!
+hud:BalrogNoFire001	Vuur maakt de Balrog alleen maar sterker!
+hud:Barrow_Downs_Backside	Grafheuvels - achterzijde
+hud:Barrow_Downs_Frontside	Grafheuvels - voorzijde
+hud:Barrow_Wight_Lair	Hol van de Grafgeest
+hud:BarrowClue	Ik moet een weg uit het Oude Woud vinden!
+hud:BeatFellBeastClue001	Versla het gevleugelde gedrocht van de Nazgûl!
+hud:BeatWillowClue001	Sla op de 'armen' van de boom!
+hud:BeatWraithClue001	Je moet de strijd aangaan met de Ringgeest!
+hud:BeeClue	Bijen komen uit bijenkorven!  Houd <B> ingedrukt om hun aanvallen af te weren.
+hud:BeeClue2	Kijk naar deze bij en houd <LT> ingedrukt om haar als doelwit te kiezen.
+hud:BellAmmo	Dat trok blijkbaar niet genoeg aandacht.
+hud:Bilbos_Room	Kamer in Rivendel
+hud:Bombadil001	Hei dol! Vrolijk dol! Bel een dong dillo!
+hud:Bombadil002	Bel een dong! Spring maar mee! Fal lal de wilg!
+hud:Bombadil003	Tom Bom, lustige Tom, Tom Bombadillo!
+hud:Bombadil012	Hei! Kom derrie dol! Spring maar mee, mijn beste!
+hud:Bombadil013	Hobbits! Pony's allemaal! Wij houden van feesten!
+hud:Bombadil014	Laat nu de pret beginnen!  Laten we samen zingen!
+hud:Bombadil020	Ho! Tom Bombadil, Tom Bombadillo!
+hud:Bombadil021	Bij water, woud en heuvel, bij het riet en de wilg,
+hud:Bombadil022	Bij vuur, zon en maan, luister nu en hoor ons!
+hud:Bombadil023	Kom, Tom Bombadil, want onze nood is nabij!
+hud:Bombadil024	Weg jij, oude Geest!  Verdwijn in het zonlicht!
+hud:Bombadil025	Verschrompel als de koude mist, tot de wereld is hersteld!
+hud:Bombadil026	Weg naar de dorre landen, ver voorbij de bergen!
+hud:Bombadil027	Kom hier nooit meer terug!  Laat je grafheuvel leeg!
+hud:Bombadil028	Verloren en vergeten zij je, duisterder dan het duister,
+hud:Bombadil029	Waar poorten eeuwig gesloten blijven, tot de wereld is hersteld.
+hud:Boromir005a	Ik vind nog steeds dat we naar Gondor hadden moeten gaan.
+hud:BreakThingsClue	Druk op <A> om met je wandelstok kisten en vaten kapot te slaan. Sommige daarvan in je huis bevatten nuttige voorwerpen.
+hud:BrokenSwitchAgain	Weer een kapotte schakelaar.
+hud:Bywater	Bijwater
+hud:Bywater_Night	Bijwater bij nacht
+hud:CombatRange	Oefenterrein Frodo
+hud:CombatRange1	Oefenterrein Aragorn
+hud:CombatRange2	Oefenterrein Gandalf
+hud:Common_House_Interior	Huize Gewissies
+hud:Common_interior	Hobbithuis in Bree
+hud:Commonhouse_bywater	Huize Bolger
+hud:CorruptionClue001	Schapen kunnen lastig zijn, maar je wint er niets mee als je ze slaat!
+hud:CorruptionClue002	Varkens kunnen lastig zijn, maar je wint er niets mee als je ze slaat!
+hud:CorruptionClue003	Kippen kunnen lastig zijn, maar je wint er niets mee als je ze slaat!
+hud:CorruptionClue004	Paarden zijn zulke edele dieren.  Je wint er niets mee als je ze slaat!
+hud:CorruptionTotal	Zuiverheid: %d / %d
+hud:CountHUD	Aantal: %d
+hud:DamageHUD	Schade: %d
+hud:Dell	Het Dal
+hud:dialog_continue	<X> Verder
+hud:dialog_continue_a	<A> Verder
+hud:dialog_skip	<A> Overslaan
+hud:DoorNoKey	Voor deze deur ontbreekt een sleutel.
+hud:DurationHUD	Duur: %d
+hud:DwarvenShotFound	Je hebt Dwergenkogels opgepakt.
+hud:EnemiesDefeated	Vijanden verslagen: %d
+hud:FireClue	Vuur aanraken doet pijn!
+hud:FireworksClue001	Gooi een voetzoeker in de vuurwerkkist voor een vuurwerkshow!
+hud:FoundApple001	Je hebt een Rotte Appel opgepakt.
+hud:FoundElvinArrows	Je hebt Elfenpijlen opgepakt.
+hud:FoundElvinShot	Je hebt Elfenkogels opgepakt.
+hud:FoundEssence	Je hebt een Fles Geestessence ontvangen.
+hud:FoundHinge001	Je hebt een Scharnier gevonden.
+hud:FoundRamPart001	Je hebt een Onderdeel van de Stormram gevonden.
+hud:FoundSilverlode	Je hebt een Flesje Zilverstroomwater ontvangen.
+hud:FoundTome	Je hebt een Oud Elfenboek ontvangen.
+hud:Frodo006	Er moet een manier zijn om dit hek op te halen!
+hud:Frodo053b	Ik zou net als Bilbo de weg op kunnen gaan!
+hud:Frodo060a	Maar Gandalf kwam niet terug.  En toen de nachten langer werden, besloot ik dat ik misschien zonder hem moest vertrekken.
+hud:Frodo060b	Op de ochtend van mijn verjaardag, 22 september, maakte ik een laatste wandeling door de Gouw.
+hud:Frodo060c	Ik moest afscheid nemen van mijn buren...en mijn huis verkopen aan Lobelia Zakkin-Balings.
+hud:Frodo060d	Daarna zou ik de Ring ophalen uit Zakeinde en 's avonds de weg op gaan...
+hud:Frodo091	Ik moet de sleutel van Zakeinde naar de Ouwe Gewissies brengen, op Zakkerspad nummer 3!
+hud:Frodo130	De ruiter!  Hij heeft me gezien!
+hud:Frodo131	Ga weg!  Blijf uit mijn buurt!
+hud:Frodo132	Nog een zwarte ruiter!
+hud:Frodo133	Ik moet verborgen blijven!
+hud:Frodo134	Ik kan hier niet lang blijven.
+hud:Frodo135	Die omgevallen boom daar lijkt me een goede schuilplaats!
+hud:Frodo136	Ik moet naar de boerderij van Boer Made!
+hud:Frodo150b	Ja, zeker.
+hud:Frodo213	We aten onze eerste goede maaltijd in lange tijd, en zongen liedjes en vertelden verhalen tot diep in de nacht.
+hud:Frodo213a	We sliepen rustig en waren uitgerust genoeg om onze reis voort te zetten.
+hud:Frodo223	Ho! Tom Bombadil, Tom Bombadillo!
+hud:Frodo224	Bij water, woud en heuvel, bij het riet en de wilg,
+hud:Frodo225	Bij vuur, zon en maan, luister nu en hoor ons!
+hud:Frodo226	Kom, Tom Bombadil, want onze nood is nabij!
+hud:Frodo237	Ik blijf maar binnen.  Veel veiliger, lijkt me!
+hud:Frodo258	Het is op slot.  Ik moet het eerst maar aan de waard vragen.
+hud:Frodo271	Dit heb je niet meer nodig, schurk!
+hud:Frodo272	Ik moet de anderen vinden voordat die schurken ze te pakken krijgen!
+hud:Frodo280	Er is een herberg, een vrolijke herberg
+hud:Frodo281	Onder een oude grijze heuvel,
+hud:Frodo282	En daar maken ze een stoofpot zo bruin
+hud:Frodo283	Dat de Man in de Maan zelf kwam aangevlogen
+hud:Frodo284	Om 's nachts zijn buik vol te eten.
+hud:Frodo338	Ik moet een manier vinden om de klok te luiden.
+hud:Frodo354	Bilbo...waar zou de weg hem naartoe hebben gebracht?
+hud:Frodo356	Geen tijd voor spelletjes...er is nog te veel te doen!
+hud:Frodo360	Had ik maar tijd voor een dutje!
+hud:Frodo361	Deze logeerkamer heeft heel wat bezoekers gezien.  Gandalf de tovenaar, Thorin, Koning onder de Berg...
+hud:Frodo363	Van deze pompoen kan ik een heerlijke taart maken!
+hud:Frodo365	Oh!  Je wordt een beetje rond, ouwe jongen!
+hud:Frodo366	Lekker kussen, dat.
+hud:Frodo367	Ach, Bilbo...je smaak is onberispelijk!
+hud:Frodo368	Vreemd om deze spullen te verplaatsen...ze horen nergens anders thuis!
+hud:Frodo369	Wat een mooie vogel!
+hud:Frodo372	Ah, de Feestboom!  Zo'n feest als Oom Bilbo's honderdelfde verjaardag zal hij nooit meer zien!
+hud:Frodo375	De brug naar Bijwater.  Hetzelfde pad dat Bilbo lang geleden nam, toen zijn avontuur begon.
+hud:Frodo384	Wat zou hij met zijn staart doen als hij hem ooit te pakken kreeg?
+hud:Frodo385	Gelukkig is dit de enige draak in de Gouw!
+hud:Frodo392	Echt iets voor Merijn en Pepijn om het riskante werk aan mij over te laten!
+hud:Frodo395	Hier is een van die pakjes kruiden waar Noakes het over had.
+hud:Frodo396	Nog een bundeltje kruiden van Noakes.
+hud:Frodo400	Nogal donker vanavond...en somber ook...
+hud:Frodo401	Laat het luiden van de klok maar aan de gouwwachters over!
+hud:Frodo402	Wat een kilte in de lucht...hoe ongewoon, zelfs voor de herfst!
+hud:Frodo408	Die boom stond daar zonet nog niet!  Hij heeft zich verplaatst om het pad te blokkeren!
+hud:Frodo410	Die spinnen!  Ze zijn enorm!
+hud:Frodo411	Sams huis.  Zal hij het net zo missen als ik Zakeinde?
+hud:Frodo418	Stapper!  Help!
+hud:Frodo421	De Ring...ik voel me zo vreemd...alsof er een last op me drukt.
+hud:Frodo425	Ah!  Een lelie!
+hud:Frodo426	Hier is nog een lelie.  Wie zou die Goudbes toch zijn?
+hud:Frodo428	Sam, die stoofpot ruikt heerlijk!
+hud:Frodo429	Hoe oud zou Toms huis zijn...vast niet zo oud als hijzelf!
+hud:Frodo432	De oude boomhut!  Hij staat er nog...als jongen speelde ik erin!
+hud:Frodo433	Dit is vuurwerk van Gandalf!  Een of andere kwajongen heeft het vast meegenomen toen hij even niet keek!
+hud:Frodo434	Er lijkt niemand thuis te zijn.  Tom en Goudbes zijn zeker ergens anders!
+hud:Frodo435	De Grafheuvels...zelfs Tom is voorzichtig met deze plek!
+hud:Frodo438	Ik hoop dat ons eten het hier lang genoeg uithoudt.
+hud:Frodo441	Waar zou de waard zijn?  Dit lijkt zijn bureau te zijn!
+hud:Frodo448	Waar zou dit kleed vandaan komen...wel een kleurrijk stuk!
+hud:Frodo449	De waard leest zeker graag...zijn bibliotheek is goed gevuld!
+hud:Frodo455	Weinigen in dit land kunnen tippen aan de bibliotheek van Elrond!
+hud:Frodo456	Had ik maar tijd om de helft van deze boeken te lezen! Dan moest ik zo oud worden als een Elf!
+hud:Frodo458	Bilbo's boek!  Ik hoop echt dat hij het ooit afmaakt.
+hud:Frodo459	Wat een prachtig uitzicht!  Deze plek is werkelijk kostbaar.
+hud:Frodo460	Deze plek...Caras Galadhon...nooit heb ik zulke schoonheid gezien!
+hud:Frodo462	Hm.  De klepel van de Alarmklok lijkt te ontbreken.
+hud:Frodo463	Ik denk dat het tijd is dat ik...en de Ring...Hobbitstee verlaten en aan deze reis beginnen.
+hud:Frodo464	De Ring moet wachten.  Ik heb in Hobbitstee nog meer te doen.
+hud:Frodo465	De gouwwachters weten nu van de wolven.  Ik kan de Alarmklok beter niet nog eens luiden!
+hud:Frodo465a	Ik kan de Alarmklok beter niet nog eens luiden!
+hud:Frodo479	Ik moet nog een paar dingen regelen voordat ik naar het Oude Woud vertrek.
+hud:Frodo482	Ik kan beter samen met de anderen vertrekken.
+hud:Frodo495	Een gebroken paddenstoel is een goed herkenningsteken...ik wil niet verdwalen zoals de anderen!
+hud:Frodo496	Er is meer dan een wandelstok nodig om hier binnen te komen!
+hud:Frodo496a	Er is meer dan stenen nodig om hier binnen te komen!
+hud:Frodo496b	Er is meer dan voetzoekers nodig om hier binnen te komen!
+hud:Frodo496c	Er is meer dan appels nodig om hier binnen te komen!
+hud:Frodo496d	Misschien zitten ze hierbinnen opgesloten!
+hud:Frodo497	Deze platforms zijn werkelijk een slim raadsel.
+hud:Frodo512	De kaart naar Erebor, de Eenzame Berg...van Bilbo's reis, lang geleden.  Wat een avontuur was dat!
+hud:Frodo513	Sam zal zijn huis vreselijk missen...hij is er nooit lang weg geweest.
+hud:Frodo514	Sam heeft een hele verzameling boeken! De Ouwe vond het maar niks toen Bilbo Sam leerde lezen, maar hij denkt dat Bilbo het niet kwaad bedoelde.
+hud:Frodo515	Ik weet nog dat de Ouwe en Sam deze bankjes afmaakten.
+hud:Frodo516	Sams rugzak is zo te zien bijna klaar.  Ik hoop maar dat hij aan touw denkt!
+hud:Frodo517	De molen wordt niet goed onderhouden.  Ik hoop dat ik niet door een rat word gebeten!
+hud:Frodo519	Wat zou Dikkie hiermee willen maken?
+hud:Frodo521	Niemand thuis...jammer.
+hud:Frodo522	Het is te laat om bij de buren langs te gaan.
+hud:Frodo523	Ze zijn vast op het land.  Jammer.
+hud:Frodo524	Het is laat, en met die wolven in de buurt... nee, ik hoef geen opschudding te veroorzaken.
+hud:Frodo525	Ik moet Lobelia vinden en Zakeinde aan haar verkopen.
+hud:Frodo526	Zo, hoe krijg ik dat vervloekte ding aan de gang?
+hud:FrodoLocked	Het is op slot.  Ik kan beter niet binnendringen.
+hud:FrodoMissingSwitch	Iemand is er met de hendel van deze schakelaar vandoor.  Ver kan hij niet zijn!
+hud:FrodoPoisonedAgain	Frodo's Morgulwond is te sterk.  Hij kan wel meer Athelas gebruiken.
+hud:FrodoRunicKeyClue	Deze moet bij een deur hier in de buurt horen.
+hud:FrodoSong1	 
+hud:FrodoSong2	 
+hud:FullHUD	Genezing: vol
+hud:GameOverAragorn	Aragorn is gestorven.\n\n<A> Opnieuw proberen\n<X> Opgeslagen spel laden\n<B> Stoppen
+hud:GameOverFrodo	Frodo is gestorven.\n\n<A> Opnieuw proberen\n<X> Opgeslagen spel laden\n<B> Stoppen
+hud:GameOverFrodoCorruption	Frodo is bezweken voor de krachten van het verderf.  Druk op <A> om opnieuw te beginnen of op <B> om te stoppen.
+hud:GameOverGandalf	Gandalf is gestorven.\n\n<A> Opnieuw proberen\n<X> Opgeslagen spel laden\n<B> Stoppen
+hud:GameOverGeneric	Je queeste is mislukt.\n\n<A> Opnieuw proberen\n<X> Opgeslagen spel laden\n<B> Stoppen
+hud:GameOverQuote	Je queeste balanceert op de rand van een mes.  Wijk ook maar een beetje af, en ze zal mislukken...tot ondergang van allen.
+hud:Gandalf007	Het is zoals Ori verkondigde...er ligt een geheim achter Durins Aangezicht!
+hud:Gandalf009	Deze plek verdient onderzoek... hier kunnen oude geheimen worden onthuld!
+hud:Gandalf010	Op het graf staat... Balin, zoon van Fundin, Heer van Moria.
+hud:Gandalf011	Hier rust het lichaam van de laatste Dwergkoning van Moria.
+hud:Gandalf012	We moeten zo verder.
+hud:Gandalf019	Kijk daar!  Een Runensleutel!
+hud:Gandalf020	Een van de Orks had hem bij zich.
+hud:Gandalf021	Zonder de bijpassende sleutel gaat de deur niet open.
+hud:Gandalf022	Het geluk lacht ons toe.
+hud:Gandalf023	Vlucht!  Verlaat deze plek!  Er nadert een grote duisternis!
+hud:Gandalf037	Dat is een mooie boel!
+hud:Gandalf044	Het beest verzwakt. Houd stand!
+hud:Gandalf045	Het beest is verdoofd!  Nu kunnen we de deuren openen!
+hud:Gandalf049	Niet zolang het beest nog toeslaat!
+hud:Gandalf051	Drie gangen om uit te kiezen.
+hud:Gandalf052	De geur van de linker bevalt me niet.  Daar beneden huist iets smerigs.
+hud:Gandalf053	De middelste geeft me ook geen goed gevoel.
+hud:Gandalf054	De rechtergang is de beste.  Die moet ons verder helpen.
+hud:Gandalf056	Ik ben een dienaar van het Geheime Vuur, drager van de vlam van Anor. Gij kunt niet passeren!
+hud:Gandalf057	Ga terug naar de Schaduw, vlam van Udûn!  Gij kunt niet passeren!
+hud:Gandalf095	Mellon!
+hud:Gandalf097	Er moet een weg om deze put heen zijn.  Misschien kan hij worden opgevuld...met die losse rotsen daarboven!
+hud:Gandalf097a	Met flink wat kracht kan ik deze stenen losmaken en naar beneden laten storten!
+hud:Gandalf110	We kunnen hier niet lang blijven...de vijand trekt tegen ons op!
+hud:Gandalf111	Wat er nog van dit pad over is, moet ons naar de Poorten van Hulsthaar en Moria daarachter leiden.
+hud:Gandalf112	Dit water...zo somber en smerig.  We moeten er een weg omheen vinden!
+hud:Gandalf113	Nou, dat is dan beslist.  Er is maar één uitweg, en die ligt aan de andere kant van Moria.
+hud:Gandalf114	De muren hier zijn verzwakt door de ouderdom.  We moeten voorzichtig lopen!
+hud:Gandalf116	Overal in de mijnen stroomt water, al zou ik het niet drinken.
+hud:Gandalf118	Zoals ik vreesde...de orks hebben Moria niet verlaten.
+hud:Gandalf119	Overal in Moria zijn zulke hendels te vinden.  Veel werken nog, ondanks hun hoge ouderdom.
+hud:Gandalf120	Dit platform lijkt stevig.  Ik geloof dat het op de een of andere manier naar de diepte kan worden neergelaten.
+hud:Gandalf123	Deze lift lijkt te werken, al weet ik niet hoe de orks hem hebben onderhouden.
+hud:Gandalf126	Kijk daar...!  Een dwerg!  We moeten hem van de orks bevrijden!
+hud:Gandalf128	Bah!  Ik wist wel dat ik hier beneden iets smerigs rook!
+hud:Gandalf129	Dat verklaart de hitte die me eerder opviel.
+hud:Gandalf130	Een standbeeld van een Dwergenheld, of misschien een koning...misschien wel van Durin zelf.
+hud:Gandalf132	Hm.  De schakelaar voor deze brug ligt aan de overkant van de kloof.  Ik moet hem op de een of andere manier raken als ik erover wil.
+hud:Gandalf133	De Poorten van Moria zijn dichtbij...ergens in de rotswand, geloof ik.
+hud:Gandalf135	De hendel van deze schakelaar ontbreekt.
+hud:Gandalf136	Er is meer nodig dan een slag van Glamdring om deze stenen los te krijgen.
+hud:Gandalf137	Vreemd...de lichtstraal heeft geen effect.
+hud:Gandalf138	De rotsen zijn wel warmer...maar ze liggen er nog.
+hud:Gandalf139	De bliksem doet zijn werk niet, vrees ik.
+hud:Gandalf140	De Poorten van Moria zijn dichtbij. Ergens in de rotswand, geloof ik.
+hud:GandalfBridgeWarning	Ik moet het beest het hoofd bieden!
+hud:GandalfHelp	Ik laat het reisgenootschap niet in de steek!
+hud:GandalfHelp2	De Poorten van Moria zijn dichtbij...ergens in de rotswand, geloof ik.
+hud:GandalfTemp001	Dat kristal daarboven...ik geloof dat het iets met dit raadsel te maken heeft! Misschien kan ik het met een vuurstoot raken.
+hud:GandalfTrapBlocked	Er blokkeert iets de deur.
+hud:Gates_of_Moria	De Poorten van Moria
+hud:GearNoPin	Het lijkt erop dat deze tandwielen een metalen pen missen.
+hud:Gimli017b	De Orks zullen de dag berouwen dat ze deze plek hebben bezoedeld!
+hud:GiveAppleHint001	Geef de Rotte Appel (met worm) aan Milo door hem te selecteren en op <BL> te drukken.
+hud:GiveClue	Selecteer een voorwerp en druk op <BL> om het te geven.
+hud:GiveDeedHint001	Geef de Akte aan Lobelia door hem te selecteren en op <BL> te drukken.
+hud:GiveHerbHint001	Geef de Kruiden aan Ouwe Noakes door ze te selecteren en op <BL> te drukken.
+hud:GiveKeyHint001	Geef de sleutel van Zakeinde aan de Ouwe door hem te selecteren en op <BL> te drukken.
+hud:GloinSurprise	Dan moet ik je helpen.
+hud:Goldberry001	Laat nu het lied beginnen!  Laten we samen zingen!
+hud:Goldberry002	Van zon, sterren, maan en mist, regen en bewolkt weer!
+hud:Goldberry003	Licht op het jonge blad, dauw op de veren,
+hud:Goldberry004	Wind op de open heuvel, klokjes op de heide,
+hud:Goldberry005	Riet bij de schaduwvijver, lelies op het water;
+hud:Goldberry006	Ouwe Tom Bombadil en de Riviervrouwe!
+hud:GoldberrySong1	 
+hud:Gollum019	Mijn schatssss...gollem...mijn schatssss!
+hud:GotSilverware	Je hebt zilveren bestek ontvangen.
+hud:GrainClue	Het lijkt erop dat de varkens wat aanmoediging nodig hebben om te blijven!
+hud:Green_Dragon	De Groene Draak
+hud:Green_Hill_Country	Het Groene Heuvelland
+hud:Green_Hill_Country_Night	Het Groene Heuvelland bij nacht
+hud:Hall_of_Statues	Zaal der Beelden
+hud:HealsHUD	Genezing: %d
+hud:HealthTotal	Gezondheid: %d / %d
+hud:Hobbiton	Hobbitstee
+hud:Hobbiton_Night	Hobbitstee bij nacht
+hud:House_of_Elrond	Het Huis van Elrond
+hud:IGC_chamber	Elfenkamer
+hud:IGC_forest	Bossen van Lórien
+hud:IGC_mirror	Galadriels Tuin
+hud:itemAragorn1	Andúril
+hud:itemAragorn2	Oorspronkelijk heette het Narsil en het brak in de strijd met Sauron.  Door Elfensmeden opnieuw gesmeed; Aragorn noemde het Andúril – Vlam van het Westen.
+hud:itemAragorn3	Boog
+hud:itemAragorn4	Gedragen door jagers, Dolers en boogschutters overal in Midden-aarde.
+hud:itemAragorn5	Langzwaard
+hud:itemAragorn6	Een stevig zwaard, veelvoorkomend in de landen van Midden-aarde.
+hud:itemArrow1	Vuurpijlen
+hud:itemArrow10	Lichte metalen pijlen die snel door de lucht vliegen.
+hud:itemArrow2	Speciaal vervaardigde pijlen die branden terwijl ze vliegen.
+hud:itemArrow3	Stalen Pijlen
+hud:itemArrow4	Oorlogspijlen met scherpe metalen punten.
+hud:itemArrow5	Fakkel
+hud:itemArrow6	Een eenvoudige lichtbron.
+hud:itemArrow7	Houten Pijlen
+hud:itemArrow8	Gewone jachtpijlen, overal in Midden-aarde te vinden.
+hud:itemArrow9	Elfenpijlen
+hud:itemFrodo1	De Ene Ring
+hud:itemFrodo10	Een scherp kort zwaard, in oude tijden gesmeed door de Mensen van Westernis.
+hud:itemFrodo11	Prik
+hud:itemFrodo12	Een Elfenkortzwaard, in de Eerste Era gesmeed door de smeden van Gondolin -- vlijmscherp, het gloeit blauw als er Orks in de buurt zijn.
+hud:itemFrodo13	Een mooi lied van Tom Bombadil, alleen te gebruiken in de hoogste nood.
+hud:itemFrodo13a	Lied van Bombadil
+hud:itemFrodo14	Dikkies Wandelstok
+hud:itemFrodo15	Een grote, prachtig bewerkte stok, gesneden uit het fijnste hout.
+hud:itemFrodo2	De Regerende Ring van Macht, in de Tweede Era gesmeed door de Duistere Heer Sauron in de vuren van de Doemberg .
+hud:itemFrodo3	Mithrilmaliënkolder
+hud:itemFrodo4	Een fijn maliënhemd van mithril, het sterkste en kostbaarste metaal van Midden-aarde.
+hud:itemFrodo5	Wandelstok
+hud:itemFrodo6	Een fraai gesneden, stevige houten stok, ideaal voor wandelingen op het land.
+hud:itemFrodo7	Slotenkrakersset
+hud:itemFrodo8	Een verzameling lopers, haakjes en ander gereedschap om sloten open te krijgen.
+hud:itemFrodo9	Dolk van Westernis
+hud:itemGandalf1	Glamdring
+hud:itemGandalf10	Een vurige stoot schiet uit Gandalfs hand.
+hud:itemGandalf11	Genezen
+hud:itemGandalf12	Gandalfs wonden vervagen als deze spreuk wordt uitgesproken.
+hud:itemGandalf13	Verlamming
+hud:itemGandalf14	Vijanden blijven als aan de grond genageld staan als deze spreuk hen raakt.
+hud:itemGandalf15	Stafslag
+hud:itemGandalf16	Een golf van kracht gaat uit van Gandalfs staf.
+hud:itemGandalf17	Staflicht
+hud:itemGandalf18	Een licht op de staf dat de weg verlicht, maar waardoor je ook makkelijker wordt opgemerkt.
+hud:itemGandalf2	Bekend als Vijandhamer; het scherpe Elfenlangzwaard gloeit met bleek licht als er vijanden in de buurt zijn.
+hud:itemGandalf3	Lichtstraal
+hud:itemGandalf4	Een krachtige straal van zuiver wit licht.
+hud:itemGandalf5	Kettingbliksem
+hud:itemGandalf6	Een wilde bliksemschicht die van vijand naar vijand springt.
+hud:itemGandalf7	Verwarring
+hud:itemGandalf8	Verbuigt de zwakke geest van de vijand, zodat ze elkaar gaan bevechten.
+hud:itemGandalf9	Vuurstoot
+hud:itemHealing1	Athelasblad
+hud:itemHealing10	Het Hartversterkertje van Imladris.  Een krachtige, herstellende drank van de Elfen van Rivendel.
+hud:itemHealing11	Paddenstoelen
+hud:itemHealing12	Smakelijke zwammen, overal in Midden-aarde te vinden.  Bijzonder geliefd in de Gouw.
+hud:itemHealing13	Honingraat
+hud:itemHealing14	Een zoete lekkernij vol energie.  Geeft extra kracht.
+hud:itemHealing14a	Een zoete lekkernij vol energie.  Verhoogt de snelheid.
+hud:itemHealing15	Berilsteen
+hud:itemHealing16	Een kostbaar juweel, door velen in Midden-aarde gekoesterd.
+hud:itemHealing17	Waterlelie
+hud:itemHealing18	Goudbes' lievelingsbloem.
+hud:itemHealing19	Geneeskrachtige Kruiden
+hud:itemHealing2	De bladeren van de Athelasplant hebben grote geneeskracht en een aangename geur. Geneest vergiftiging.
+hud:itemHealing20	Koningsblad, een scherp ruikend onkruid dat geneeskrachtig zou zijn.
+hud:itemHealing3	Athelasplant
+hud:itemHealing4	Een plant die bekendstaat om zijn sterke geneeskracht, door de Númenoreeërs naar Midden-aarde gebracht.
+hud:itemHealing5	Kram
+hud:itemHealing6	Een smakeloos maar voedzaam reisbrood, gebakken door de mensen van het Noorden voor tochten in de Wildernis.
+hud:itemHealing7	Lembas
+hud:itemHealing8	Heerlijke gouden koeken, gewikkeld in mallornbladeren – door de Elfen van Lórien gebruikt als reisbrood.  Herstelt alle verloren gezondheid.
+hud:itemHealing9	Miruvor
+hud:itemquest1	Cadeau voor Angelica
+hud:itemquest10	Mooie kleine dingetjes voor de Riviervrouwe.
+hud:itemquest11	Steenhoop van Gandalf
+hud:itemquest12	Een steentje met het teken van Gandalf.
+hud:itemquest13	Brief van Gandalf
+hud:itemquest14	Een brief van Gandalf aan Frodo.
+hud:itemquest17	Hooibaal
+hud:itemquest18	Een stapel vers gemaaid hooi.
+hud:itemquest2	Een spiegeltje, van Bilbo voor Angelica.
+hud:itemquest21	Sleutel van de Hobbitkamer
+hud:itemquest22	Een sleutel van een kamer in herberg De Steigerende Pony, speciaal gebouwd voor Hobbits.
+hud:itemquest23	Cadeau voor Lobelia
+hud:itemquest24	Een set zilveren lepels, van Bilbo voor Lobelia.
+hud:itemquest25	Meloenen
+hud:itemquest26	Rijpe, mollige vruchten.
+hud:itemquest27	Oude Kleren
+hud:itemquest28	Versleten werkkleding.
+hud:itemquest29	Bladzijde uit het Boek van Mazarbul
+hud:itemquest3	Akte van Zakeinde
+hud:itemquest30	Een bladzijde gescheurd uit een kroniek over de geschiedenis van Balins volk in Moria.
+hud:itemquest30a	...trokken in groten getale uit...21e zaal.  De ambachtslieden vonden een val...veel\norks...de derde zoon viel...vóór de tweede.  Balin eerde hen...
+hud:itemquest31	Runensleutel
+hud:itemquest32	Gebruikt om vernuftige Dwergensloten te openen.
+hud:itemquest33	Houtblokjes
+hud:itemquest34	Een stapel aanmaakhout.
+hud:itemquest35	Rotte Vis
+hud:itemquest36	Een cadeau van Gollem.
+hud:itemquest37	Pen van de Windwijzer
+hud:itemquest38	Een kleine metalen pen.
+hud:itemquest39	Klepel
+hud:itemquest4	De akte van Zakeinde, een vrij beroemd Hobbithol.
+hud:itemquest40	Hiermee laat je de Alarmklok luiden.
+hud:itemquest41	Durins Bijl
+hud:itemquest42	De grote bijl van een Dwergkoning, lang verloren gewaand.
+hud:itemquest43	Boog van de Galadhrim
+hud:itemquest44	Een fraaie boog, lang en stevig, bespannen met een pees van Elfenhaar.
+hud:itemquest45	Númenoreaans Zwaard
+hud:itemquest46	Een zwaard uit het oude Númenor, lang geleden door de Orks buitgemaakt.
+hud:itemquest47	Rotte Appel
+hud:itemquest48	Een bedorven appel, compleet met worm.
+hud:itemquest49	Ei
+hud:itemquest5	Sleutel van Zakeinde
+hud:itemquest50	Een boerderijvers kippenei.
+hud:itemquest51	Zak Graan
+hud:itemquest52	Geschikt als veevoer.
+hud:itemquest53	Scharnier
+hud:itemquest54	Een sterk scharnier voor een hek.
+hud:itemquest55	Dikkies Zalf
+hud:itemquest56	Een geschenk van Bilbo aan Dikkie.  Verhoogt de maximale Gezondheid van de gebruiker met 25 procent.
+hud:itemquest57	Dwergentonicum
+hud:itemquest58	Verhoogt de maximale Gezondheid van de gebruiker met 35 procent.
+hud:itemquest59	Flesje Zilverstroomwater
+hud:itemquest6	Een versleten, stevige metalen sleutel.  Opent de deur van Zakeinde.
+hud:itemquest60	Verhoogt de maximale Gezondheid van de gebruiker met 50 procent.
+hud:itemquest61	Geestessence
+hud:itemquest62	Verhoogt Gandalfs maximale Geestkracht.
+hud:itemquest63	Oud Elfenboek
+hud:itemquest64	Boek met Elfenrunen dat Gandalf kan gebruiken.
+hud:itemquest65	Zilveren Bestek
+hud:itemquest66	Een bijzondere set bestek op hobbitmaat, zeer gewild bij herbergen en eethuizen.
+hud:itemquest67	Hendel
+hud:itemquest68	Bedient een schakelaar als je eraan trekt.
+hud:itemquest69	Spiegel
+hud:itemquest7	Broche
+hud:itemquest70	Geeft een nuttige weerspiegeling
+hud:itemquest71	Strijdbijl
+hud:itemquest72	Handboog
+hud:itemquest73	Dolk van Westernis
+hud:itemquest74	Langzwaard
+hud:itemquest75	Geen
+hud:itemquest8	Een prachtige broche, gezet met een blauwe steen.
+hud:itemquest9	Vlinders
+hud:itemThrown1	Appels
+hud:itemThrown10	Lichte metalen kogels, gemaakt door de Elfen van weleer.
+hud:itemThrown2	Lekker maar hard fruit.
+hud:itemThrown3	Dwergenkogels
+hud:itemThrown4	Harde stalen kogels, gemaakt door de Dwergen van weleer.
+hud:itemThrown5	Stenen
+hud:itemThrown6	Gladde ronde stenen, ideaal om mee te gooien.
+hud:itemThrown7	Voetzoekers
+hud:itemThrown8	Klein explosief.  Kan brandbare voorwerpen activeren.
+hud:itemThrown9	Elfenkogels
+hud:Jail_Room	Kerker
+hud:KillOrcsClue	Een van deze Orks moet de Hendel hebben!
+hud:LadderClue001	Ga dicht bij de voet van een ladder staan om automatisch te gaan klimmen.
+hud:Lobelia007	Wegwezen jij!  Zakeinde is nu van een echte Balings!
+hud:Lookout_mound	Uitkijkheuvel
+hud:MaggotDone	Dat was de laatste paddenstoel van Made!
+hud:MaggotMore	Er zijn nog een paar paddenstoelen over!
+hud:MaggotMushroom1	Boer Made heeft zijn paddenstoel teruggepakt!
+hud:MaggotMushroom2	Boer Made heeft zijn 2 paddenstoelen teruggepakt!
+hud:MaggotMushroom3	Boer Made heeft zijn 3 paddenstoelen teruggepakt!
+hud:MaggotMushroom4	Boer Made heeft zijn 4 paddenstoelen teruggepakt!
+hud:MaggotMushroom5	Boer Made heeft zijn 5 paddenstoelen teruggepakt!
+hud:MaggotMushroom6	Boer Made heeft zijn 6 paddenstoelen teruggepakt!
+hud:map_region_1_description_1	Het land van de Hobbits ten westen van de Brandewijnrivier.  Hobbitstee, het thuis van Frodo Balings, ligt in de Westkwart.
+hud:map_region_1_description_2	Het land van de Hobbits ten westen van de Brandewijnrivier.  Hobbitstee, het thuis van Frodo Balings, ligt in de Westkwart.  Bijwater ligt vlak bij Hobbitstee en de Grote Oostweg.  Veel hobbits gaan naar herberg De Groene Draak voor een goede maaltijd en de laatste roddels.
+hud:map_region_1_description_3	Het land van de Hobbits ten westen van de Brandewijnrivier.  Hobbitstee, het thuis van Frodo Balings, ligt in de Westkwart.  Bijwater ligt vlak bij Hobbitstee en de Grote Oostweg.  Veel hobbits gaan naar herberg De Groene Draak voor een goede maaltijd en de laatste roddels.  Voorbij de Oostkwart ligt Bokland, een hobbitnederzetting.  Het ligt tussen de Gouw en het Oude Woud, een plek waar veel hobbits niet durven te komen.
+hud:map_region_1_name	De Gouw
+hud:map_region_2_description_1	Vreemde, kwaadaardige bomen maken een tocht door het woud gevaarlijk.
+hud:map_region_2_description_2	Vreemde, kwaadaardige bomen maken een tocht door het woud gevaarlijk.  Het huis van Tom Bombadil en Goudbes ligt aan de rand van het Oude Woud, vlak voor het griezelige land dat de Grafheuvels heet.
+hud:map_region_2_description_3	Vreemde, kwaadaardige bomen maken een tocht door het woud gevaarlijk.  Het huis van Tom Bombadil en Goudbes ligt aan de rand van het Oude Woud, vlak voor het griezelige land dat de Grafheuvels heet.  Op de Heuvels liggen een aantal oude grafheuvels.  Volgens de legenden waren er geesten in deze graven rond.
+hud:map_region_2_name	Het Oude Woud
+hud:map_region_3_description_1	Het dorp Bree zit vol knusse hobbitholen en stenen huizen van Mensen.
+hud:map_region_3_description_2	Het dorp Bree zit vol knusse hobbitholen en stenen huizen van Mensen.  Herberg De Steigerende Pony is een geliefd logement in Breeland.  Gerstemout Boterbloem, de eigenaar, is een vriendelijke, zij het wat vergeetachtige kerel.
+hud:map_region_3_description_3	Het dorp Bree zit vol knusse hobbitholen en stenen huizen van Mensen.  Herberg De Steigerende Pony is een geliefd logement in Breeland.  Gerstemout Boterbloem, de eigenaar, is een vriendelijke, zij het wat vergeetachtige kerel.  Bree trekt veel reizigers van de Oostweg en de Groenweg, twee eeuwenoude heerwegen.
+hud:map_region_3_name	Bree
+hud:map_region_4_description_1	De heuvel, ook bekend als Amon Sûl, had ooit een machtige toren op zijn top.
+hud:map_region_4_description_2	De heuvel, ook bekend als Amon Sûl, had ooit een machtige toren op zijn top.  De resten van de toren herinneren grimmig aan een ver verleden.
+hud:map_region_4_description_3	De heuvel, ook bekend als Amon Sûl, had ooit een machtige toren op zijn top.  De resten van de toren herinneren grimmig aan een ver verleden.  Voorbij Weertop ligt een bosgebied dat de Trollenkreupels heet, naar de vreselijke wezens die er jagen.
+hud:map_region_4_name	Weertop
+hud:map_region_5_description_1	Het 'Laatste Gastvrije Huis' ten oosten van de zee is een verborgen toevluchtsoord, gesticht door de grote Elrond.
+hud:map_region_5_description_2	Het 'Laatste Gastvrije Huis' ten oosten van de zee is een verborgen toevluchtsoord, gesticht door de grote Elrond.  Het ligt in een dal bij de Nevelbergen en de Elfen noemen het Imladris. Rivendel is een toevluchtsoord voor alle welwillende volken, door de macht van Elrond beschermd tegen de gevreesde krachten van Sauron.
+hud:map_region_5_name	Rivendel
+hud:map_region_6_description_1	De Dwergenstad Khazad-dûm ligt onder de Nevelbergen.
+hud:map_region_6_description_2	De Dwergenstad Khazad-dûm ligt onder de Nevelbergen. Ooit het thuis van Durins volk; de vele grote zalen getuigen van het vakmanschap van de Dwergen.
+hud:map_region_6_description_3	De Dwergenstad Khazad-dûm ligt onder de Nevelbergen. Ooit het thuis van Durins volk; de vele grote zalen getuigen van het vakmanschap van de Dwergen.  Moria viel na een lang beleg.  Sindsdien wordt het geplunderd door Orks en geteisterd door een kwaad dat werd gewekt in de diepten van de zwarte put.
+hud:map_region_6_name	Moria
+hud:map_region_7_description_1	In dit lang beschermde toevluchtsoord, bekend als het Gouden Woud van Wilderland, wonen de Galadhrim ('boomvolk').
+hud:map_region_7_description_2	In dit lang beschermde toevluchtsoord, bekend als het Gouden Woud van Wilderland, wonen de Galadhrim ('boomvolk').  Caras Galadhon, het thuis van Vrouwe Galadriel en Heer Celeborn, ligt in het hart van het woud.  Slechts weinigen hebben de majestueuze Elfenstad met eigen ogen gezien.
+hud:map_region_7_name	Lothlórien
+hud:map_region_8_description_1	De Anduin, bekend als de Grote Rivier, stroomt zuidwaarts door Midden-aarde tot hij bij de Baai van Belfalas de zee bereikt.
+hud:map_region_8_description_2	De Anduin, bekend als de Grote Rivier, stroomt zuidwaarts door Midden-aarde tot hij bij de Baai van Belfalas de zee bereikt.  Halverwege de Anduin ligt het grote meer Nen Hithoel.
+hud:map_region_8_description_3	De Anduin, bekend als de Grote Rivier, stroomt zuidwaarts door Midden-aarde tot hij bij de Baai van Belfalas de zee bereikt.  Halverwege de Anduin ligt het grote meer Nen Hithoel.  Het eiland Tol Brandir in het meer was ooit de plek van een van de zeven ziende stenen. Het meer stort uit in de grote Watervallen van Rauros, omringd door de heuvels van Emyn Muil.
+hud:map_region_8_name	De Anduin
+hud:MeleeWeapon	Wapen: %s
+hud:menu_attract_press_start	Druk op START om te beginnen.
+hud:menu_cheat_accept	Cheatcode geaccepteerd
+hud:menu_cheat_ammunition	munitie
+hud:menu_cheat_and	en
+hud:menu_cheat_enabled	ingeschakeld
+hud:menu_cheat_health	gezondheid
+hud:menu_cheat_infinite	Oneindig
+hud:menu_cheat_invalid	Ongeldige cheatcode
+hud:menu_cheat_ring	Ring
+hud:menu_cheat_spirit	geestkracht
+hud:menu_cheat1_code	Oneindig Ringgebruik: <Y><B><A><B><Y><X>
+hud:menu_cheat1_off	Oneindig Ringgebruik uitgeschakeld
+hud:menu_cheat1_on	Oneindig Ringgebruik ingeschakeld
+hud:menu_cheat2_code	Oneindige gezondheid: <Y><A><X><B><A><Y>
+hud:menu_cheat2_off	Oneindige gezondheid uitgeschakeld
+hud:menu_cheat2_on	Oneindige gezondheid ingeschakeld
+hud:menu_cheat3_code	Oneindige geestkracht: <X><Y><A><X><B><X>
+hud:menu_cheat3_off	Oneindige geestkracht uitgeschakeld
+hud:menu_cheat3_on	Oneindige geestkracht ingeschakeld
+hud:menu_cheat4_code	Oneindige munitie: <X><B><Y><A><X><B>
+hud:menu_cheat4_off	Oneindige munitie uitgeschakeld
+hud:menu_cheat4_on	Oneindige munitie ingeschakeld
+hud:menu_fellowship_aragorn_d	"Niet al wie dwaalt, is verloren."  Aragorn, Stapper genoemd, is een Doler.  Hij zwerft door het land, van de Gouw in het Noorden tot Gondor in het Zuiden en verder, om de vrije volken van Midden-aarde te beschermen.  Hij is door de oorlog gelouterd, maar niet verhard.  Hij is een oude vriend van Gandalf de tovenaar en heeft gezworen Frodo, de Ringdrager, met zijn leven te beschermen.
+hud:menu_fellowship_aragorn_n	Aragorn
+hud:menu_fellowship_boromir_d	"Door onze moed worden de wilde volken van het Oosten nog in toom gehouden en wordt de verschrikking van Morgul op afstand gehouden."  Boromir is een sterke, dappere krijger, gehard door jarenlange verdediging van Gondor tegen de krachten van Mordor.  Hij is de zoon van de Stadhouder van Gondor, die regeert zolang het koninkrijk geen rechtmatige koning heeft.  Boromir is een trots man die graag wapens wil vinden om tegen Sauron te gebruiken.
+hud:menu_fellowship_boromir_n	Boromir
+hud:menu_fellowship_frodo_d	"Er zit een zaadje van moed verborgen in het hart van de schuchterste hobbit."  Frodo is een energieke en slimme Hobbit.  Hij is wees; zijn Oom Bilbo adopteerde hem en nam hem bij zich in huis. Andere hobbits vonden Bilbo maar vreemd, omdat hij bevriend was met een Tovenaar en met Dwergen op reis was gegaan om een Draak te verslaan. Frodo niet: hij droomde ervan zelf naar wilde landen te reizen, op zijn eigen grote avontuur.
+hud:menu_fellowship_frodo_n	Frodo Balings
+hud:menu_fellowship_gandalf_d	"Bemoei je niet met de zaken van tovenaars, want ze zijn subtiel en snel kwaad."  Gandalf is een tovenaar van enorme macht en wijsheid.  Hij is een van de vijf tovenaars die naar Midden-aarde zijn gezonden om de vrije volken te helpen Saurons kwaad te weerstaan.  Hij heeft de verste uithoeken van de wereld bereisd en oogstte de bewondering van de wijzen en het wantrouwen van vele anderen.  Hij ziet aanleg voor grootheid in de meest onverwachte personen.
+hud:menu_fellowship_gandalf_n	Gandalf de Grijze
+hud:menu_fellowship_gimli_d	"Mijn bijl is onrustig in mijn hand.  Geef me een rij orknekken en ruimte om uit te halen."  Gimli is een dappere Dwerg met een kort lontje en een groot hart.  Zijn vader is Glóin, een van de twaalf Dwergen die met Bilbo meereisden op de Tocht naar de Eenzame Berg.  Hij zegt moedig en zonder angst wat hij denkt.  Gimli is wijs in de wegen van steen en aarde, en als vechter heeft hij weinig gelijken.
+hud:menu_fellowship_gimli_n	Gimli
+hud:menu_fellowship_legolas_d	"Kies een otter om te zwemmen, en om licht over gras en blad of sneeuw te rennen, een Elf."  Legolas Groenblad is een snelle, behendige bos-Elf.  Hij is besluitvaardig en eervol, maar koestert een wrok tegen de Dwergen.  Als zoon van Koning Thranduil van het Demsterwold reist Legolas naar Rivendel als vertegenwoordiger van de Silvan-Elfen.  Hij is een meester in de kunst van oorlog en de kunst van vrede.
+hud:menu_fellowship_legolas_n	Legolas
+hud:menu_fellowship_merry_d	"We zijn vreselijk bang, maar we gaan met je mee, of we volgen je als honden."  Merijn is een zelfverzekerde en opgewekte Hobbit. Als zoon van de Meester van Bokland heeft hij een natuurlijke gratie en charme. Merijn is een geboren leider en zint graag zorgvuldig op streken en samenzweringen met zijn vrienden. Hij is behoorlijk geleerd en weet veel over plaatsen buiten de Gouw.
+hud:menu_fellowship_merry_n	Meriadoc „Merijn” Brandebok
+hud:menu_fellowship_pippin_d	"Dwaze Toek!"  Pepijn is een vlugge jonge Hobbit die nogal dwaas en impulsief kan zijn. Hij is nog in zijn tienerjaren, naïef en geneigd tot klagen.  Zijn gevoel voor humor en speelse aard maken echter veel goed. Als zoon van de Thain, de militaire bevelhebber van de Gouw, werd Pepijn geboren in voorrecht en comfort. Hij is een van Frodo's beste vrienden.
+hud:menu_fellowship_pippin_n	Peregrijn „Pepijn” Toek
+hud:menu_fellowship_sam_d	"Vertrouw niet op je hoofd, Samwijs, dat is niet je beste deel."  Sam is een eenvoudige, rechtdoorzee Hobbit, die koppig en vasthoudend kan zijn.  Hij is niet de best opgeleide Hobbit, maar hij heeft veel mensenkennis.  Hij denkt met zijn hart, en dat laat hem nooit in de steek.  Hij is opgegroeid met het verzorgen van de tuinen van de Gouw en is nieuwsgierig naar de wereld.  Zijn goede inborst en gezonde verstand zijn van grote waarde voor Frodo op de gevaarlijke tocht.
+hud:menu_fellowship_sam_n	Samwijs „Sam” Gewissies
+hud:menu_gamma_directions	Stel de helderheid van je tv zo in dat alle kleurbalken boven de grijze lijn zichtbaar zijn.
+hud:menu_hours_plural	uur
+hud:menu_hours_singular	uur
+hud:menu_inventory1	Wapens
+hud:menu_inventory2	Voorwerpen
+hud:menu_inventory3	Naam voorwerp
+hud:menu_inventory4	Beschrijving voorwerp
+hud:menu_load_game_1	Spel laden
+hud:menu_load_game_2	Xbox-harde schijf
+hud:menu_load_game_3	Totaal aantal blokken: 50.000+
+hud:menu_load_game_4	Beschikbare blokken: 50.000+
+hud:menu_load_game_cancel	<B> Annuleren
+hud:menu_load_game_delete	<Y> Opgeslagen spel verwijderen
+hud:menu_load_game_load	<A> Opgeslagen spel laden
+hud:menu_loadsave_cheats	Gefeliciteerd. Je grote moed en grote daden waren niet geheel tevergeefs.\n\n
+hud:menu_loadsave_continue	<A> Verder
+hud:menu_loadsave_delete	Opgeslagen spel verwijderen?\n\nDruk op <A> om te verwijderen of op <B> om te annuleren.
+hud:menu_loadsave_load_success	Spel geladen.
+hud:menu_loadsave_loadfailed	Kan opgeslagen spel niet laden.\n\nDruk op <A> om verder te gaan.
+hud:menu_loadsave_loading	Spel wordt geladen van de Xbox-harde schijf. Zet je Xbox-console niet uit.
+hud:menu_loadsave_max_games	Er kunnen maximaal 4096 spellen worden opgeslagen.  Druk op <B> om te annuleren.
+hud:menu_loadsave_no_space	Je Xbox heeft geen %d vrije blokken om spellen op te slaan.\n\nDruk op <A> om verder te gaan zonder op te slaan of op <B> om het Xbox Dashboard te starten.
+hud:menu_loadsave_nosave	Je kunt hier niet opslaan. Zoek een veilige, stabiele plek en probeer het opnieuw.  Druk op <B> om terug te gaan.
+hud:menu_loadsave_overwrite	Bestaand opgeslagen spel overschrijven?\n\nDruk op <A> om te overschrijven of op <B> om te annuleren.
+hud:menu_loadsave_save_success	Spel opgeslagen.
+hud:menu_loadsave_savefailed	Je Xbox heeft niet genoeg vrije blokken om spellen op te slaan.  Maak %d blokken vrij.\n\nDruk op <A> om verder te gaan.
+hud:menu_loadsave_saving	Spel wordt opgeslagen op de Xbox-harde schijf. Zet je Xbox-console niet uit.
+hud:menu_map1	De Gouw
+hud:menu_map2	Het Oude Woud
+hud:menu_map3	Bree
+hud:menu_map4	Weertop
+hud:menu_map5	Rivendel
+hud:menu_map6	Moria
+hud:menu_map7	Lothlórien
+hud:menu_map8	De Anduin
+hud:menu_map9	<B> Terug
+hud:menu_minutes_plural	minuten
+hud:menu_minutes_singular	minuut
+hud:menu_options_Audio	Geluid aanpassen
+hud:menu_options_back	<B> Terug
+hud:menu_options_boolean0	Uit
+hud:menu_options_boolean1	Aan
+hud:menu_options_GameOptions	Spelopties
+hud:menu_options_gamma	Helderheid:
+hud:menu_options_gamma1	Druk op <A> om aan te passen
+hud:menu_options_invert	Eerstepersoonsblik:
+hud:menu_options_invert1	Standaard
+hud:menu_options_invert2	Omgekeerd
+hud:menu_options_Music	Muziek:
+hud:menu_options_percent	%d%%
+hud:menu_options_Sound	Geluidseffecten:
+hud:menu_options_Subtitles	Ondertiteling:
+hud:menu_options_Vibration	Trilling:
+hud:menu_options_video	Beeld aanpassen
+hud:menu_options_widescreen	Breedbeeld:
+hud:menu_pause1	Inventaris
+hud:menu_pause10	<B> Hervatten
+hud:menu_pause11	Reisgenootschap
+hud:menu_pause2	Wereldkaart
+hud:menu_pause3	Queestelogboek
+hud:menu_pause4	Opties
+hud:menu_pause5	Spel opslaan
+hud:menu_pause6	Spel laden
+hud:menu_pause7	Hervatten
+hud:menu_pause8	Stoppen
+hud:menu_pause9	<A> Kiezen
+hud:menu_quest01_1	Vind de akte van Zakeinde in Zakeinde
+hud:menu_quest01_2	Breng de akte naar Lobelia Zakkin-Balings in Bijwater
+hud:menu_quest01_3	Vind de vermiste klepel van de Alarmklok
+hud:menu_quest01_4	Herstel de Alarmklok met de klepel
+hud:menu_quest01_5	Luid de Alarmklok
+hud:menu_quest01_d1	Verkoop Zakeinde aan Lobelia Zakkin-Balings
+hud:menu_quest01_t1	De verkoop van Zakeinde
+hud:menu_quest02_1	Haal de Ene Ring uit Zakeinde
+hud:menu_quest02_2	Pak de sleutel van Zakeinde
+hud:menu_quest02_3	Geef de sleutel van Zakeinde aan Hamfast Gewissies op Zakkerspad nummer 3
+hud:menu_quest02_4	Ontmoet Merijn, Pepijn en Sam op de boerderij van Boer Made
+hud:menu_quest02_d1	Haal de Ring en praat met de Ouwe bij hem thuis
+hud:menu_quest02_t1	Bereid je voor op de reis naar Rivendel
+hud:menu_quest03_1	Reis door het Oude Woud om de Zwarte Ruiters te ontwijken
+hud:menu_quest03_2	Red Merijn en Pepijn uit de Oude Wilg
+hud:menu_quest03_3	Versla de Grafgeest
+hud:menu_quest03_4	Meld je in herberg De Steigerende Pony
+hud:menu_quest03_5	Vind 12 lelies voor Goudbes
+hud:menu_quest03_6	Geef 12 lelies aan Tom Bombadil
+hud:menu_quest03_d1	Reis veilig naar het toevluchtsoord van de Elfen
+hud:menu_quest03_t1	Begin de reis naar Rivendel
+hud:menu_quest04_1	Red Ted Zandman
+hud:menu_quest04_2	Vind Sam
+hud:menu_quest04_3	Vind Merijn
+hud:menu_quest04_4	Vind Pepijn
+hud:menu_quest04_d1	Vind Merijn, Pepijn en Sam in het Oude Woud
+hud:menu_quest04_t1	Vind de vermiste Hobbits
+hud:menu_quest05_1	Vind Merijn
+hud:menu_quest05_d1	Doorzoek het dorp Bree naar Merijn
+hud:menu_quest05_t1	Vind Merijn
+hud:menu_quest06_1	Verjaag de ratten uit het huis van een oude Hobbitvrouw.
+hud:menu_quest06_2	Verzamel kleren
+hud:menu_quest06_3	Verzamel houtblokjes
+hud:menu_quest06_4	Verzamel meloenen
+hud:menu_quest06_5	Verzamel een hooibaal
+hud:menu_quest06_6	Keer terug naar De Steigerende Pony
+hud:menu_quest06_d1	Vind spullen om Hobbit-lokpoppen van te maken
+hud:menu_quest06_t1	Verzamel onderdelen voor lokpoppen
+hud:menu_quest07_1	Bereik de top van Weertop
+hud:menu_quest07_2	Versla de Olog-hai
+hud:menu_quest07_3	Bescherm Frodo tegen de Nazgûl
+hud:menu_quest07_4	Vind Athelas om Frodo's wond te behandelen
+hud:menu_quest07_5	Leid Frodo door de Trollenkreupels
+hud:menu_quest07_d1	Bescherm Frodo op zijn reis naar Rivendel
+hud:menu_quest07_t1	Begeleid Frodo en de Hobbits naar Rivendel
+hud:menu_quest08_1	Reis door Moria
+hud:menu_quest08_2	Reis langs de Anduin
+hud:menu_quest08_d1	Reis naar de Doemberg
+hud:menu_quest08_t1	Tocht naar de Doemberg
+hud:menu_quest09_1	Vind de ingang van Moria
+hud:menu_quest09_2	Versla de Wargs
+hud:menu_quest09_3	Vul de kloof in het bergpad
+hud:menu_quest09_4	Versla de Wachter in het water
+hud:menu_quest09_5	Open de Poorten van Moria
+hud:menu_quest09_d1	Leid het Reisgenootschap naar de Mijnen van Moria
+hud:menu_quest09_t1	Betreed de Mijnen van Moria
+hud:menu_quest10_1	Vind een uitweg uit het mijngebied
+hud:menu_quest10_2	Ontsnap uit de 21e Zaal.
+hud:menu_quest10_3	Versla de Grottrol
+hud:menu_quest10_4	Versla het Orkopperhoofd
+hud:menu_quest10_5	Verlaat Balins Graf
+hud:menu_quest10_6	Bereik de Brug van Durin
+hud:menu_quest10_7	Bescherm het Reisgenootschap tegen de Balrog
+hud:menu_quest10_d1	Het Reisgenootschap moet door Moria trekken
+hud:menu_quest10_t1	Ontsnap uit Moria
+hud:menu_quest11_1	Kom voorbij de Orkendam
+hud:menu_quest11_2	Versla Gollem in het kamp
+hud:menu_quest11_3	Bereik de top van het eiland
+hud:menu_quest11_4	Red Sam
+hud:menu_quest11_5	Versla de Nazgûl en zijn gevleugelde gedrocht
+hud:menu_quest11_d1	Baan een weg dichter naar Mordor
+hud:menu_quest11_t1	Volg de Anduin richting Mordor
+hud:menu_quest12_1	Vind de vermiste metalen pen
+hud:menu_quest12_2	Herstel de bediening van de molen met de pen
+hud:menu_quest12_d1	(Optioneel) Help een buurhobbit een handje
+hud:menu_quest12_t1	Repareer de molen van Ted Zandman
+hud:menu_quest13_1	Vind 4 Geneeskrachtige Kruiden in het Groene Heuvelland
+hud:menu_quest13_2	Geef 4 Geneeskrachtige Kruiden aan Ouwe Noakes in Bijwater
+hud:menu_quest13_d1	(Optioneel) Vind Geneeskrachtige Kruiden en breng ze naar de postbode van de Gouw
+hud:menu_quest13_t1	Vind Geneeskrachtige Kruiden voor Ouwe Noakes
+hud:menu_quest14_1	Verzamel 6 paddenstoelen op de boerderij van Made
+hud:menu_quest14_d1	(Optioneel) Verzamel lekkere paddenstoelen
+hud:menu_quest14_t1	Pik de paddenstoelen van Made in
+hud:menu_quest15_1	Vind alle 5 varkens en breng ze terug naar het hok
+hud:menu_quest15_2	Vind een zak graan om de varkens te voeren
+hud:menu_quest15_3	Vul de varkenstrog met graan
+hud:menu_quest15_d1	(Optioneel) Help Milo Burrows zijn varkens terug in hun hok te krijgen
+hud:menu_quest15_t1	Help een buurhobbit zijn varkens te vangen
+hud:menu_quest16_1	Help Hals windwijzer te repareren
+hud:menu_quest16_d1	(Optioneel) Help Hal zijn windwijzer te repareren
+hud:menu_quest16_t1	Help een hobbit met een klusje
+hud:menu_quest17_1	Vind een worm voor Milo
+hud:menu_quest17_2	Geef de worm aan Milo
+hud:menu_quest17_d1	(Optioneel) Vind een worm om Milo te helpen
+hud:menu_quest17_t1	Help Milo Burrows met vissen
+hud:menu_quest18_1	Geef een ei aan Dikkie
+hud:menu_quest18_2	Geef een honingraat aan Dikkie
+hud:menu_quest18_d1	(Optioneel) Vind de taartingrediënten voor Dikkie
+hud:menu_quest18_t1	Help Dikkie een taart te bakken
+hud:menu_quest19_1	Vind het vat cider
+hud:menu_quest19_2	Breng het vat cider naar de bar van De Groene Draak
+hud:menu_quest19_d1	(Optioneel) Vind het vat cider voor Roosje
+hud:menu_quest19_t1	Help Roosje met haar werk
+hud:menu_quest20_1	Vind het scharnier van het hek
+hud:menu_quest20_2	Herstel het hek met het scharnier
+hud:menu_quest20_d1	Vind het ontbrekende onderdeel om het hek te repareren
+hud:menu_quest20_t1	Repareer het hek van Hobbitstee
+hud:menu_save_game_back	<B> Annuleren
+hud:menu_save_game_delete	<Y> Opgeslagen spel verwijderen
+hud:menu_save_game_empty	Nieuw opslagbestand
+hud:menu_save_game_gameinfo	%d van %d opgeslagen spellen\n%s\n%d %s %d %s verstreken\nOpgeslagen op %d-%d-%d\n%d blokken
+hud:menu_save_game_no_games	Geen opgeslagen spellen aanwezig
+hud:menu_save_game_select	<A> Spel opslaan
+hud:menu_save_game_title	Spel opslaan
+hud:menu_start1	Nieuw spel starten
+hud:menu_start2	Opgeslagen spel voortzetten
+hud:menu_start3	Spelopties
+hud:menu_start4	Spel afsluiten
+hud:menu_start5	<A> Kiezen
+hud:menu_start6	Aftiteling
+hud:Merry065a	We kunnen maar beter gaan, voordat er meer van die dingen op ons afkomen!
+hud:MerryPippinDead	Helaas!  Merijn en Pepijn zijn omgekomen.
+hud:MGeneratorClue001	Uit sommige bouwwerken komen vijanden.  Vernietig ze om te voorkomen dat er nog meer vijanden komen!
+hud:Mill_Interior	De Molen
+hud:MillGiveKey001	Wacht.  Ik moet de sleutel nog naar de Ouwe brengen.
+hud:MirrorOverhead	Druk op <A> om verder te gaan
+hud:MirrorPickup	Je hebt een Spiegel opgepakt.
+hud:Narrator002e	De bladzijden in je Dagboek tonen je inventaris, queesten, kaarten en de vrienden die je hebt gemaakt.  Druk op <LT> of <RT> om van bladzijde te wisselen.
+hud:Narrator003e	Queestelogboek bijgewerkt.  Druk op BACK om het Queestelogboek te openen.
+hud:Narrator004e	Vernietig de twee tentakels die het dichtst bij de poort zijn!
+hud:Narrator005e	De Akte wordt voor de veiligheid bewaard in een kist in Zakeinde.
+hud:Narrator006e	Zo te zien lopen de vijf varkens van Milo los!  Iemand moet ze terugbrengen naar hun hok, waar ze horen.  Queestelogboek bijgewerkt.
+hud:Narrator007e	Je hebt voetzoekers opgepakt.
+hud:Narrator008e	Je hebt een Appel opgepakt.
+hud:Narrator009e	Je hebt een Paddenstoel opgepakt.
+hud:Narrator009e2	Je hebt een Paddenstoel opgepakt.  Gebruik deze om je Gezondheid aan te vullen.
+hud:Narrator010e	Je hebt een Metalen Pen opgepakt.  Queestelogboek bijgewerkt.
+hud:Narrator010e2	Je hebt een Metalen Pen opgepakt.
+hud:Narrator010e3	Dit lijkt een goede plek voor de Metalen Pen.
+hud:Narrator011e	Je hebt een Slotenkrakersset opgepakt.
+hud:Narrator012e	Je hebt de Akte opgepakt.  Queestelogboek bijgewerkt.
+hud:Narrator013e	Je hebt wat Miruvor opgepakt.
+hud:Narrator013e2	Je hebt wat Miruvor opgepakt.  Gebruik dit om je Geestkracht aan te vullen.
+hud:Narrator014e	Je hebt een Bladzijde uit een Oud Dwergenboek opgepakt.
+hud:Narrator015e	Je hebt een brood Kram opgepakt.
+hud:Narrator015e2	Je hebt een brood Kram opgepakt.  Gebruik dit om je Gezondheid aan te vullen.
+hud:Narrator016e	Je hebt wat Lembas opgepakt.
+hud:Narrator016e2	Je hebt wat Lembas opgepakt.  Gebruik dit om je Gezondheid aan te vullen.
+hud:Narrator017e	Je hebt een Runensleutel opgepakt.
+hud:Narrator018e	Je hebt de Klepel opgepakt.
+hud:Narrator019e	Je hebt een Honingraat opgepakt.
+hud:Narrator020e	Je hebt een Hendel opgepakt.
+hud:Narrator021e	Je hebt een Ei opgepakt.
+hud:Narrator030a	Queestelogboek bijgewerkt.
+hud:Narrator030z	Je hebt de sleutel van Zakeinde opgepakt.
+hud:Narrator035	Het is op slot.  Een Slotenkrakersset zou nu handig zijn.
+hud:Narrator035e	Selecteer de Slotenkrakersset met de richtingstoetsen en druk op <BL> om hem te gebruiken.
+hud:Narrator037	Je bent nog niet klaar om de Ring mee te nemen en aan je reis te beginnen. Je hebt Zakeinde nog niet aan Lobelia Zakkin-Balings verkocht.
+hud:Narrator047	Je hebt nog niet alle onderdelen voor de lokpoppen.
+hud:Narrator048	Je hebt nu alle onderdelen voor de lokpoppen.
+hud:Narrator050	Frodo wordt aangevallen!
+hud:Narrator052	Frodo is gevallen in de strijd.
+hud:Narrator980	Het lijkt erop dat Sam iets heeft gezien.  Ik moet voorzichtig zijn!
+hud:Narrator981	Het lijkt erop dat Pepijn iets heeft gezien.  Ik moet voorzichtig zijn!
+hud:Narrator982	Het lijkt erop dat Merijn iets heeft gezien.  Ik moet voorzichtig zijn!
+hud:Narrator983	Versla de 2 spinnen die Ted bewaken!
+hud:Narrator987	Ik weet niet of ik dit wel moet doen...
+hud:NarratorDagger	Je hebt een Dolk van Westernis opgepakt.
+hud:NarratorDoorClue001	Druk op <X> om deuren te openen.
+hud:NarratorGrain	Je hebt een Zak Graan opgepakt.
+hud:NarratorLiftHelp	Druk op <X> terwijl je de linkerstick beweegt om voorwerpen op te tillen, te dragen of neer te zetten.
+hud:NarratorPushHelp	Houd <X> ingedrukt terwijl je de linkerstick beweegt om voorwerpen te duwen of te trekken.
+hud:NarratorSign001	Naar Bijwater
+hud:NarratorSign002	Naar Hobbitstee
+hud:NarratorSign003	Naar het Groene Heuvelland
+hud:NarratorSign004	Naar Krikkenhol
+hud:NarratorSign005	Boerderij Made
+hud:NarratorSign006	Zakeinde
+hud:NarratorSign006a	Naar Zakeinde
+hud:NarratorSign007	Gewissies
+hud:NarratorSign008	Molen Zandman
+hud:NarratorSign009	Burrows
+hud:NarratorSign010	Tweevoet
+hud:NarratorSign011	Boffin
+hud:NarratorSign012	Grubb
+hud:NarratorSign013	Dassenhuis
+hud:NarratorSign014	Hoornblazer
+hud:NarratorSign015	Bolger
+hud:NarratorSign016	Goedlijf
+hud:NarratorSign017	Noakes
+hud:NarratorSign018	Trotsvoet
+hud:NarratorSign019	De Groene Draak
+hud:NarratorSign020	De Klimopstruik
+hud:NarratorSign021	Bracegirdle
+hud:NarratorSign022	Chubb
+hud:NarratorSign023	Zandman
+hud:NarratorSign024	Kleinhol
+hud:NarratorSign025	Herberg De Steigerende Pony
+hud:NarratorSign026	Stallen
+hud:NarratorSongEffect	Misschien moet ik om hulp roepen!
+hud:NarratorSongNoEffect	Het Lied van Bombadil heeft nu geen effect.
+hud:NarratorTom	Je hebt het Lied van Bombadil ontvangen.
+hud:NarratorXHelp	Druk op <X> om iets met voorwerpen te doen.
+hud:Network_of_Stairs	Trappenstelsel
+hud:NewBow	Je hebt de Boog van de Galadhrim opgepakt.
+hud:NewSword	Je hebt het Númenoreaanse Zwaard opgepakt.
+hud:NiceClue	Het is belangrijk om de spullen van de buren met rust te laten.
+hud:NoBlock	Ik kan nu niet afweren.
+hud:NoBlockWeapon	Er is geen geschikt wapen om mee af te weren!
+hud:NoKeyClue	Vind de sleutel van Zakeinde ergens in Zakeinde.
+hud:NoRingHere	De Ring mag op zulke gewijde grond niet worden gebruikt!
+hud:NotForFrodo	Dit voorwerp is niet voor mij bedoeld.
+hud:NoThrow	Ik kan vanaf deze plek niet gooien.
+hud:Orc_Dam	Orkendam
+hud:Orc_Dam_Camp	Rivierkamp
+hud:Orc_Dam_Gollum	Strandkamp
+hud:ParalysisGiven	Het boek heeft een spreuk onthuld.
+hud:PickedUp	%s gevonden.
+hud:Pippin066a	Die ouwe wijven wisten blijkbaar waar ze het over hadden!  Deze plek is verschrikkelijk!
+hud:PoisonClue001	Je bent vergiftigd!
+hud:PoisonClue002	De meeste gifstoffen werken na een tijdje uit, en met sommige voorwerpen kun je de gevolgen van vergif genezen.
+hud:PoisonClue003	Je bent genezen!
+hud:Prancing_Pony	Herberg De Steigerende Pony
+hud:PurityDropClue001	Door sommige daden raakt Frodo dieper onder de kwade invloed van de Ene Ring.
+hud:PurityRaiseClue001	Door sommige daden wordt de verderfelijke invloed van de Ene Ring op Frodo minder.
+hud:RingClue001	Als de Ene Ring draait, ligt er een verborgen gebied in de buurt.
+hud:RingClue002	Deze gebieden kun je alleen betreden als je de Ring draagt.
+hud:RingTutorial001	Je kunt de Ene Ring dragen om onzichtbaar te worden.  Maar daar hangt een prijs aan.
+hud:RingTutorial002	Zolang je de Ring draagt, bederft hij je langzaam.  Draag je hem te lang, dan bezwijk je voor zijn macht.
+hud:RingTutorial003	Goede daden en heldenmoed nemen een deel van het verderf van de Ring weg.
+hud:RingUses	Ringgebruik: %d
+hud:Rot_Bridge	Draaiende Bruggen
+hud:Sam078a	Ah, ik heb echt geprobeerd niet te verdwalen, meneer Frodo, eerlijk waar, maar de bomen dachten er anders over!
+hud:Sam083	Ahh! Aaaaah!
+hud:Secret_Cave_1	Verborgen Grot op het Land
+hud:Secret_Cave_2	Verborgen Grot bij het Dorp
+hud:Secret_Cave_4	Verborgen Doolhofgrot
+hud:Secret_Cave_5	Verborgen Grot bij het Pad
+hud:Secret_Cave_6	Verborgen Grafgrot
+hud:Secret_Cave_7	Verborgen Riviergrot
+hud:Secret_well	Verborgen Put van Hobbitstee
+hud:SelectThingsClue	Druk op de richtingstoets naar rechts om het inventarisvak te markeren, en omhoog of omlaag om door je voorwerpen te bladeren.
+hud:ShareMushrooms	Merijn en Pepijn hebben 4 paddenstoelen gepakt.
+hud:Sign3Bagshot	Zakkerspad nummer 3
+hud:SignBagshotRow	Zakkerspad
+hud:SignSilo	Gratis graan voor iedereen!
+hud:SignToBagshot	Naar Zakkerspad
+hud:Silo_Interior	De Silo
+hud:SpellNoEffect	De spreuk heeft geen effect.
+hud:SpiritHUD	Geestkosten: %d
+hud:SpiritTotal	Geestkracht: %d / %d
+hud:standard_loading	Laden...
+hud:StartMillClue001	Ga naast de schakelaar staan en druk op <X> om de molen te starten.
+hud:StealPig	De varkens van Milo horen in hun hok!
+hud:StealthClue001	Het lampje in het midden van de statusbalk geeft aan of Frodo door een vijand is opgemerkt.
+hud:StealthClue002	Is het lampje geel, dan heeft een vijand in de buurt Frodo's aanwezigheid gemerkt, maar hem nog niet gezien.
+hud:StealthClue003	Wordt het lampje rood, dan heeft de vijand Frodo ontdekt!
+hud:StealthClue004	Beweeg de linkerstick een klein beetje in de gewenste richting om ongemerkt langs een vijand te sluipen.
+hud:StealthClue005	Als je een vijand met succes ontwijkt, wordt het lampje groen.
+hud:SwitchFixed	De schakelaar is gerepareerd.
+hud:TalkingClue	Druk op <X> om met andere personages te praten.
+hud:toms	Huize Bombadil
+hud:TomSong0	 
+hud:TomSong1	 
+hud:TomSong2	 
+hud:TomSong3	 
+hud:TomSong4	 
+hud:Trans_Hobbiton_Night	Die avond stak ik de Ring in mijn zak en trof ik mijn laatste voorbereidingen om Hobbitstee te verlaten.
+hud:Trans_Hobbiton_Night2	Ik hoefde alleen nog naar Zakkerspad nummer 3 te lopen en de sleutel van Zakeinde bij de Ouwe Gewissies achter te laten.
+hud:Tree_Labyrinth	Bomendoolhof
+hud:Troll_Shaws	Trollenkreupels
+hud:TrunkHit	De stam van de boom beschadigen is geen goed idee!
+hud:Tube_Bridges	Buisbruggen
+hud:Two_Hundred_Stairs	200 Treden
+hud:UnknownHerbs	Je hebt wat kruiden opgepakt.
+hud:UnlockMaggotGate001	Het hek van Boer Made is op slot...niets wat een Slotenkrakersset niet aankan!
+hud:UseLeverClue001	Druk op <X> om aan een hendel te trekken.
+hud:UsePinHint001	Gebruik de Metalen Pen op de tandwielen van de molen door hem te selecteren en op <BL> te drukken.
+hud:user_settings_damaged	Gebruikersinstellingen zijn beschadigd. Standaardinstellingen worden hersteld.\n\nDruk op <A> om verder te gaan.
+hud:Village_of_Bree	Bree
+hud:WargClue	Versla de vier Wargs die het Reisgenootschap aanvallen!
+hud:warning_bad_game_disc	Er is een probleem met de disc die je gebruikt. Hij is mogelijk vuil of beschadigd.\n\nDruk op <A> om verder te gaan.
+hud:warning_load_game	Als je een spel laadt, gaat je huidige spel verloren.\n\nDruk op <A> om te laden of op <B> om terug te gaan naar het vorige menu.
+hud:warning_lost_controller	Sluit de controller opnieuw aan en druk op START om verder te gaan.
+hud:warning_quit_confirmation	Weet je zeker dat je wilt stoppen?\n\nDruk op <A> om te stoppen of op <B> om terug te gaan naar het spel.
+hud:Weathertop_Newest	Weertop
+hud:Wight001	Koud zij hand en hart en been,
+hud:Wight002	En koud de slaap onder de steen;
+hud:Wight003	Nooit meer te ontwaken op stenen bed,
+hud:Wight004	Nooit, tot de Zon dooft en de Maan is gedood.
+hud:Wight005	In de zwarte wind zullen de sterren sterven,
+hud:Wight006	En laat hen hier nog op goud liggen,
+hud:Wight007	Tot de duistere heer zijn hand heft
+hud:Wight008	Over dode zee en verdord land.
+hud:Withywindle_Path	Pad langs de Wilgewinde
+hud:Wrestlers	Ik kan ze beter niet storen.
+hud:xbox_dings_test	<A> <B> <X> <Y> <LT> <RT> <BL> <W>
+hud:warning_damaged_save	Beschadigd opslagbestand
+dlg:1stPersonClue002	Druk de rechterstick in om de richtmodus te openen.
+dlg:Angelica004	Hallo, Frodo.
+dlg:Angelica005	We zullen je vreselijk missen, Frodo.
+dlg:Angelica006	Je gaat zo ontzettend ver weg.  Bijna naar het andere eind van de wereld!
+dlg:Angelica007	Het is zo'n verre reis.  Ik hoop dat je ooit naar Hobbitstee terugkomt.
+dlg:Angelica008	Dag, Frodo.
+dlg:Angelica009	Frodo, heb jij mijn hondje gezien?  Hij is zo laat voor zijn bad, en hij is nergens te vinden!
+dlg:Appledore001	Ik moet niet veel van jullie Hobbits hebben.  Ga weg!
+dlg:Appledore002	Het muisje stapt zo met zijn harige voet in een rattenval!
+dlg:Appledore003	Hé, jij daar!
+dlg:Appledore004	Wa...?
+dlg:Appledore005	Uhh...
+dlg:Appledore006	Agh!
+dlg:Appledore007	Oef!
+dlg:Appledore008	Jiiieee!
+dlg:Appledore009	Guhh...uunngh.
+dlg:Appledore010	Jaarrr!
+dlg:Appledore011	Hé!  Hier!
+dlg:Appledore012	(zacht, verveeld gefluit)
+dlg:Appledore013	Ik heb hier hulp nodig!
+dlg:Aragorn001	Ze verkiezen de lagere niveaus...ondanks de schaduw van angst die erover ligt.
+dlg:Aragorn002	De Brug van Durin is dichtbij.  Met wat geluk steken we hem zonder problemen over.
+dlg:Aragorn003	Hoe heffen we deze beveiliging op?
+dlg:Aragorn004	Een Grottrol!
+dlg:Aragorn005	Moria is groot en diep.  Met wat geluk kunnen we alle Orks ontlopen.
+dlg:Aragorn006	Let goed op waar je hier loopt.  Eén misstap kan je laatste zijn.
+dlg:Aragorn007	Ik ga mee, maar ik zeg jullie allen... pas op voor de geheimen van Moria!
+dlg:Aragorn008	Gandalf, hoorde je dat?
+dlg:Aragorn009	Gandalf spreekt de waarheid. Onze problemen kunnen erger worden, en eerder dan ons lief is!
+dlg:Aragorn010	Waar de warg huilt, sluipt de Ork...we moeten niet talmen.
+dlg:Aragorn011	Ik vrees dat we de Orks niet eeuwig kunnen ontlopen.  We moeten klaar zijn.
+dlg:Aragorn012	De Hobbits hebben rust nodig, Gandalf.  Dit lijkt een goede plek om te kamperen.
+dlg:Aragorn013	Te wapen!  Te wapen!
+dlg:Aragorn014	Nee, Frodo!
+dlg:Aragorn015	Laat de Ringdrager een veilig heenkomen zoeken...het is tijd dat Andúril toeslaat!
+dlg:Aragorn016	Ga nu, Frodo, nu je nog de kans hebt!
+dlg:Aragorn017	Elendil!
+dlg:Aragorn018	Nu, Legolas!  Maak het smerige beest af!
+dlg:Aragorn019	Frodo!  Boromir!  Maak je klaar...de Orks hebben verschansingen gebouwd!
+dlg:Aragorn020	De weg is vrij, voorlopig.
+dlg:Aragorn021	Wat is dit?  Er beweegt iets!
+dlg:Aragorn022	Gollem!  Blijf staan waar je staat, schepsel!
+dlg:Aragorn023	Blijf stil en je wordt geen kwaad gedaan!  Waarom ben je hier?
+dlg:Aragorn024	Cadeautjes?  Spreek duidelijk!
+dlg:Aragorn025	Hij is me ontglipt!
+dlg:Aragorn026	Cadeautjes.  Hoe vreemd..
+dlg:Aragorn027	Kom hier, jij!
+dlg:Aragorn028	Nu is Gollem me al twee keer ontglipt.  Toch is dat geen al te ernstige fout.  Dit door de Ring bedorven schepsel is zelfs aan de bewaking van de Elfen ontsnapt.
+dlg:Aragorn030	Daar ben je, Merijn!
+dlg:Aragorn031	Ze noemen me Stapper.  Ik ben een vriend van Gandalf.
+dlg:Aragorn032	Ga terug naar de herberg en zoek je vrienden.  Zeg tegen Boterbloem dat hij jullie in mijn kamer onderbrengt!
+dlg:Aragorn033	Ik denk dat het tijd is om deze vijanden op een dwaalspoor te brengen.
+dlg:Aragorn034	Ik ga wat spullen verzamelen om lokpoppen van jullie Hobbits te maken. Je zult het zien.  Ga nu!
+dlg:Aragorn036	Dat zijn mijn zaken.
+dlg:Aragorn038a	Deze houtblokjes geven mijn lokpoppen in het donker overtuigende armen en benen.  De poortwachter zal ze vast niet missen.
+dlg:Aragorn043	Saurons macht is aan deze Ring gebonden.  We moeten hem diep Mordor in brengen en vernietigen in de vuren van de Doemberg.
+dlg:Aragorn045	De Elfensmeden hebben Narsil opnieuw gesmeed, het zwaard van mijn voorvaderen. U hebt mij een grote eer bewezen.
+dlg:Aragorn046	Het krijgt een nieuwe naam... Andúril, Vlam van het Westen!
+dlg:Aragorn047	Ik dank je, Arwen Undómiel. En ik heb je lief.
+dlg:Aragorn048	Elrond heeft je metgezellen goed gekozen, Frodo.  We zullen je niet teleurstellen!
+dlg:Aragorn049	Hier, Sam.  Maak je geen zorgen, ik ben nog altijd bij je!
+dlg:Aragorn051	Ik ben hier vele lange jaren niet geweest, maar ik weet de weg nog naar Caras Galadhon, de boomstad van de Elfen.
+dlg:Aragorn054	Wacht.  We gaan allemaal geblinddoekt.
+dlg:Aragorn054a	Zullen we zeggen: de pest aan de Elfen en hun stijve nekken?  Het hele Gezelschap zal hetzelfde lot delen. Blinddoek ons allemaal, Haldir.
+dlg:Aragorn055	Er is geen kwaad in dit land, of in zijn volk, tenzij iemand het zelf meebrengt.
+dlg:Aragorn058	Wat jij deed was erger dan alles wat je vriend had kunnen zeggen!
+dlg:Aragorn059	Ik wil je even spreken, ergens waar het rustig is.
+dlg:Aragorn060	Ik word Stapper genoemd.  En als je iets hebt aan wat ik zeg, wil ik dat je me meeneemt.
+dlg:Aragorn061	Uitstekend.  Je lijkt na je ongelukje weer bij zinnen te komen.
+dlg:Aragorn061a	Ik ben Aragorn, zoon van Arathorn.  En als ik je door leven of dood kan redden, zal ik dat doen.
+dlg:Aragorn062	Ik dacht al dat ik je zonder bewijs zou moeten overtuigen... maar mijn uiterlijk werkt tegen me.
+dlg:Aragorn062a	Maar ziet er gemeen uit?
+dlg:Aragorn064	Blijf hier.  Ik zal hem vinden.
+dlg:Aragorn065	Jullie moeten slapen, allemaal.  Ik houd 's nachts de wacht.  We vertrekken bij dageraad.
+dlg:Aragorn066	Richting Rivendel.  Maar niet over de hoofdweg.
+dlg:Aragorn067	Mijn binnenwegen lopen nooit verkeerd.
+dlg:Aragorn068	Dat gaat jou niets aan, paardendief.
+dlg:Aragorn069	Dat heb ik al gedaan.  En nu wegwezen!
+dlg:Aragorn071	Grote woorden voor een smerig Orkengebroed van Mordor.
+dlg:Aragorn072	Zoek een veiliger onderkomen.  Er kunnen meer van die mannen rondlopen.
+dlg:Aragorn076	Ik weet het niet zeker.  Het is te ver weg om te zien.  Maar het lijkt van Weertop te komen.
+dlg:Aragorn077	We weten meer zodra we Weertop bereiken.
+dlg:Aragorn078	Je hebt niet gekeken met de ogen van een Doler!  Zie je die steenhoop?  Er staan runen op!
+dlg:Aragorn079	Het lijkt een G en een 3.
+dlg:Aragorn080	En die 3 kan een datum zijn... 3 oktober, dat is nog niet lang geleden.
+dlg:Aragorn081	Als hij hier was, is hij haastig vertrokken.  Misschien kwam hij trollen tegen.  Of erger...
+dlg:Aragorn082	De Ringgeesten van Mordor.  We moeten snel verder.
+dlg:Aragorn083	Voorlopig.  De Ringgeesten wachten tot Frodo aan zijn wond bezwijkt voordat ze aanvallen...opnieuw.
+dlg:Aragorn084	Dat mes in het donker.  De wond overmant hem en verandert hem in een mindere geest.
+dlg:Aragorn084a	Ik kan hem niet genezen... maar ik kan de duisternis die in hem groeit vertragen.
+dlg:Aragorn085	Ik heb een geneeskrachtige plant nodig die Athelas heet en uit het oude land Númenor komt.  Jullie kennen het misschien als Koningsblad.
+dlg:Aragorn086	Ik geloof dat het hier in het wild groeit.
+dlg:Aragorn087	De Zwarte Ruiters houden zich schuil en wachten tot hun Morgulmes Frodo overmant. Maar Frodo's weerstand is sterk. We moeten naar Rivendel vliegen!
+dlg:Aragorn089	Houd moed, Frodo!  We doen dit samen!
+dlg:Aragorn090	Ik kan in de wildernis jagen en voedsel vinden.
+dlg:Aragorn091	Trek je riem wat strakker en denk aan het feestmaal aan Elronds tafel in Rivendel.
+dlg:Aragorn092	Dat zie ik.
+dlg:Aragorn093	Dit is Glorfindel, van het huis van Elrond in Rivendel.
+dlg:Aragorn094	Hier.  Frodo heeft een Morgulwond.  Hij moet naar Rivendel.
+dlg:Aragorn095	Helaas, vrouwe!  Gandalf is in de schaduw gevallen.  Hij is niet uit Moria ontsnapt.
+dlg:Aragorn096	Maak de anderen wakker en bereid je voor op vertrek.  Heimelijkheid helpt ons hier misschien niet...we zullen wellicht moeten vechten.
+dlg:Aragorn097	Goedenavond.
+dlg:Aragorn098	Is dit je eerste keer in een herberg, meneer Onderberg?
+dlg:Aragorn099	Heh...ik begrijp het.  Nou, als je van plan bent hier te blijven, moet je het even met de waard regelen.  Wacht je te lang, dan slaap je in de stallen!
+dlg:Aragorn101	Hnngh!
+dlg:Aragorn102	Aagh!
+dlg:Aragorn103	Nnaaargh!
+dlg:Aragorn104	Hnf!
+dlg:Aragorn105	Ohhh...agh!
+dlg:Aragorn106	Ugh!
+dlg:Aragorn107	Naaaah!
+dlg:Aragorn108	Hiih!
+dlg:Aragorn109	Mmph!
+dlg:Aragorn111	Meneer Onderberg?  Als ik jou was, zou ik je vriend laten ophouden met praten.
+dlg:Aragorn112	Je kunt maar beter snel iets doen!
+dlg:Aragorn135	Gandalf!  Neem dit!
+dlg:Aragorn136	Wees hier op je hoede, meneer Onderberg.  Je zult merken dat Bree niet zo vriendelijk is als de Gouw.
+dlg:Aragorn142	De orks zijn in beweging...en in grotere aantallen!  Maak je klaar om te vechten!
+dlg:Aragorn150	Wat is er aan de hand?
+dlg:Aragorn151	Roep een rattenvanger.
+dlg:Aragorn152	Inbreker...?
+dlg:Aragorn153	Hm...misschien kijk ik toch maar even.
+dlg:Aragorn154	Je kelder is vrij.  Mag ik wat van je vodden hebben als beloning?
+dlg:Aragorn155	Hartelijk dank.  Ik zou maar naar binnen gaan als ik jou was...
+dlg:Aragorn156	Natuurlijk.  Goedenacht.
+dlg:Arwen001	Hernieuwd zal worden het zwaard dat brak.  De kroonloze zal weer koning zijn.
+dlg:Arwen002	U doet ons eer aan door het te dragen tegen onze gemeenschappelijke Vijand, Aragorn, zoon van Arathorn, telg van de Koningen van Númenor.
+dlg:Arwen003	Moge het het einde van de Duistere Heer zien, en jou daarna veilig bij mij terugbrengen, mijn liefste.
+dlg:Arwen004	Mae govannen, mellon.
+dlg:Arwen006	Je pad zal zwaar zijn, Ringdrager.  Mogen de sterren op je gelaat schijnen!
+dlg:Bilbo001	Daar ben je, Frodo, mijn jongen!  Ik heb wat cadeaus voor je, voor onderweg.
+dlg:Bilbo002	Allereerst Prik!  Het zwaard van een Elfenprins. Je zult het nodig hebben, durf ik te wedden.
+dlg:Bilbo003	Dit is een Mithrilhemd, uit de drakenschat.  Heel licht, maar sterker dan welk staal ook.
+dlg:Bilbo004	Jou helpen?  Ik heb een vreselijk noodlot over je gebracht.
+dlg:Bilbo004a	Ik zou die malle oude Ring zelf wel meenemen, maar zonder hem hebben de jaren me ingehaald.  Ik ben niet meer zo "goed geconserveerd".
+dlg:Bilbo005	Ach ja.  Pas goed op jezelf, Frodo!  En breng al het nieuws mee dat je kunt!  Ik schrijf een boek over jouw avontuur.
+dlg:Bob001	Sorry, meneer.  De stallen zijn allemaal dicht.  Ik moet ze schoonmaken voordat de baas me het vel over de oren haalt!
+dlg:Bob002	Ik ken geen Balings, ik zweer het!
+dlg:Bob003	Ik heb mijn leven aan u te danken, meneer.  Die mannen uit het zuiden... ze wilden me vermoorden!
+dlg:Bob004	Zeker, meneer!  Die smerige paardenstallen kunnen wachten!
+dlg:Bombadil004	Hola!  Rustig aan, kleine kerels!  Waar gaan jullie heen, hè, puffend als een blaasbalg?  Wat is er aan de hand?
+dlg:Bombadil005	Ik ben Tom Bombadil!
+dlg:Bombadil006	Kom nou!  Vertel me wat je dwarszit!
+dlg:Bombadil007	De Oude Wilg?  Ik ken het rijmpje voor hem!  Ik zing zijn merg zo koud als ijs, als hij zich niet gedraagt.
+dlg:Bombadil008	Laat ze weer gaan, Oude Wilg!  Jij hoort niet wakker te zijn!  Eet aarde!  Drink water!  Ga slapen!  Bombadil spreekt!
+dlg:Bombadil009	Welnu, mijn kleine kerels!  Jullie gaan mee naar het huis van Tom Bombadil
+dlg:Bombadil010	Kom nu, en help Tom lelies zoeken voor de schone vrouwe Goudbes!
+dlg:Bombadil011	Tijd genoeg voor vragen aan de avondtafel!
+dlg:Bombadil015	Hier is mijn Goudbes!
+dlg:Bombadil016	Hè? Wat? Ken je mijn naam niet?  Dat is het enige antwoord.  Want wie ben jij, zonder je naam?
+dlg:Bombadil016a	Maar jij bent jong, en ik ben oud.  De Oudste, dat ben ik.
+dlg:Bombadil017	Zijn kostbare Ring heeft geen macht over Tom Bombadil...  En nu, vrolijke vrienden, is het tijd voor ons avondmaal!
+dlg:Bombadil018	Blijf op het groene gras onderweg, jongens!  Rommel niet aan oude stenen en neus niet in de huizen van oude, dode Grafgeesten!
+dlg:Bombadil019	Hier is een lied om te zingen, als je ooit in gevaar raakt.
+dlg:Bombadil030	Welnu, kleine vrienden!  Ouwe Tom heeft je roep beantwoord.
+dlg:Bombadil031	Laten we naar buiten gaan, naar het schone gras.
+dlg:Bombadil032	De betovering van deze grafheuvel is verbroken, en geen Geest zal hier ooit terugkeren.
+dlg:Bombadil033	Ik heb de schatten van de grafheuvel verspreid.  Ze zijn vrij voor ieder die ze vindt!
+dlg:Bombadil034	Ouwe Tom heeft een mooi speeltje voor zijn vrouwe genomen, en hier zijn een paar fraaie zwaarden voor jonge Hobbits die het duister en het gevaar in wandelen!
+dlg:Bombadil035	Ze werden lang geleden gesmeed door de mensen van Westernis over de zee, in het oude Númenor.
+dlg:Bombadil035a	Ze legden spreuken op hun zwaarden, tot verderf van de Duistere Heer.
+dlg:Bombadil035b	Hun Koningen van Númenor zijn nu vergeten, maar hun zonen zwerven eenzaam rond en beschermen eenvoudig volk tegen kwade dingen.
+dlg:Bombadil036	Ouwe Tom brengt jullie veilig over de grenzen van zijn land.  Vandaar moeten jullie naar Bree reizen, een mooi dorp!
+dlg:Bombadil036a	Blijf de nacht in herberg De Steigerende Pony.
+dlg:Bombadil037	Daarna gaan we aan een tafel zitten vol room, honingraat, en wit brood met boter!
+dlg:Bombadil038	Spring maar mee, kleine kerel!  Meer lelies voor de schone Goudbes.
+dlg:Bombadil039	Schone lelies voor de schone Riviervrouwe!  Kom, laten we haar tegemoet gaan!
+dlg:Bombadil040	Wat?  Haast?  Goudbes en het avondmaal zijn er wel als wij er zijn, mijn jongen!  Denk jij maar aan die lelies!
+dlg:Boromir001	Genoeg gepraat over het verleden... het is het heden dat me zorgen baart.  Rusten we, of gaan we verder?
+dlg:Boromir002	Laten we hopen dat er geen Orks op bezoek komen terwijl we in dit enorme gat slapen.
+dlg:Boromir003	Een Hobbitstreek, misschien?
+dlg:Boromir004	Ons geluk lijkt de laatste tijd zuur te worden.
+dlg:Boromir005	Ik vind nog steeds dat we naar Gondor hadden moeten gaan.
+dlg:Boromir005a	Ik vind nog steeds dat we naar Gondor hadden moeten gaan.
+dlg:Boromir006	Dat is een onheilspellende naam.  Maar in Gondor zullen we sterke bondgenoten hebben.
+dlg:Boromir007	Ik ga niet, tenzij het hele gezelschap tegen me stemt.
+dlg:Boromir008	De stem van de Ringdrager moet worden gehoord.
+dlg:Boromir009	Te wapen!  Gondor!
+dlg:Boromir010	Dit is dwaasheid.  We moeten meteen naar Gondor gaan!
+dlg:Boromir011	Ken je het woord, Gandalf?
+dlg:Boromir012	We moeten verder, en snel... voordat de Orks komen.
+dlg:Boromir013	De verhalen die ik als kind over deze plek hoorde, doen haar geen recht.
+dlg:Boromir014	Te wapen!  Gondor!
+dlg:Boromir016	Het is niet Aragorn om wie ik me zorgen maak, maar jij.  Je hebt een zware weg voor je.
+dlg:Boromir017	 En toch... lijd je niet onnodig?
+dlg:Boromir018	Wat is dat voor waarschuwing?
+dlg:Boromir019	Onze kracht heeft jullie kleine Gouw lang beschermd!
+dlg:Boromir020	Er is nog hoop dat Gondor niet zal vallen.
+dlg:Boromir021	Ja, de Ring... We kunnen zijn macht ten goede gebruiken!
+dlg:Boromir025	Wat wil je dat we doen?
+dlg:Boromir026	Denk na over mijn raad, Frodo...meer vraag ik niet van je.
+dlg:Boromir027	Genoeg!  Ik zeg dat we de Ring als wapen gebruiken!  Want niemand van jullie is sterk genoeg om de Ring naar Mordor te dragen!
+dlg:Boromir027a	Vernietigen?  Zou je ons grootste wapen recht voor de deur van onze Vijand afleveren?
+dlg:Boromir030	Ik kwam naar Rivendel op zoek naar antwoorden over een droom... een visioen dat zei dat de Halfling naar voren zal treden.
+dlg:Boromir030a	Ben jij die Halfling?  Deze taak is zo groot, en jij bent zo klein...
+dlg:Boromir031	Ik ben niet zo zeker van deze Elfenvrouwe en haar bedoelingen.
+dlg:Boromir033	In mijn vaderland wachten trouwe bondgenoten op je.  Gondor alleen houdt stand tegen de legers van Mordor!
+dlg:Butterbur001	Een ogenblikje, als u wilt!
+dlg:Butterbur002	Nob!  Waar zit je?  We hebben klanten!  Een beetje vlot!
+dlg:Butterbur003	Zo...goedenavond, jongeheer.  Gerstemout Boterbloem, tot uw dienst! Wat mag het zijn?
+dlg:Butterbur004	U komt uit de Gouw, zo te horen.  We krijgen tegenwoordig niet veel volk uit de Gouw.
+dlg:Butterbur004a	De Gouw... waar doet me dat nou aan denken?  Mag ik uw naam vragen?
+dlg:Butterbur005	Zie je wel.  Het is alweer weg.  Het komt wel terug als ik tijd heb om na te denken.
+dlg:Butterbur006	Ik loop me het vuur uit de sloffen met al die reizigers vanavond.  Het is hier zo druk als in jaren niet!
+dlg:Butterbur007	Gelukkig bent u een Hobbit.  Dat is de enige soort kamer die we nog hebben.  Hier is uw sleutel!
+dlg:Butterbur008	Nob!  Nob, jij wolvoetige slak!  Waar zit je?
+dlg:Butterbur009	Waar is Bob? Zoek hem, en vlug een beetje!  Er moeten pony's gestald worden, nu meteen!
+dlg:Butterbur010	Excuseer me, meneer...ik moet een gezelschap Dwergen bedienen, en dan al die vreemdelingen die over de Groenweg uit het zuiden komen!  Drukke tijden, zeg!
+dlg:Butterbur011	Neem me niet kwalijk, ik moet u even spreken.
+dlg:Butterbur012	Ik weet weer wat ik vergeten was.
+dlg:Butterbur013	Over een Hobbit uit de Gouw die Balings heet, maar zich Onderberg noemt.
+dlg:Butterbur014	Gandalf, de tovenaar.  Hij vroeg me deze Brief naar u in de Gouw te sturen, maar ik ben het vergeten.  Hij verandert me vast in een blok hout.
+dlg:CaveTroll001	Hah!
+dlg:CaveTroll002	Uhh?!
+dlg:CaveTroll003	Hmmnn...
+dlg:CaveTroll004	Urr!
+dlg:CaveTroll005	Hrrrrgh!
+dlg:CaveTroll006	Eiiieaaar!
+dlg:CaveTroll007	Eeeeeaagh!
+dlg:CaveTroll008	Grrraaaar!
+dlg:CaveTroll009	Roooar!
+dlg:CaveTroll010	(zwaar ademen)
+dlg:CaveTroll011	Raaarr!
+dlg:Celeborn001	Hier zijn er acht, maar negen vertrokken uit Rivendel, zo luidde de boodschap.
+dlg:Celeborn002	In al die lange jaren vol droevige tijdingen is dit het kwaadste nieuws.
+dlg:Celeborn003	Het verhaal horen we een andere dag, want jullie zijn moe en bedroefd.
+dlg:Celeborn004	We zullen doen wat we kunnen om jullie te helpen, vooral degene die de last draagt.
+dlg:Celeborn005	Rust nu, en we zullen een tijdlang niet spreken over de weg die voor jullie ligt.
+dlg:Dwarf001	Nali, tot uw dienst.
+dlg:Dwarf002	En wat vind je van Bree, Onderberg?  Bevalt het je?
+dlg:Dwarf003	Ken je Erebor?  Wat mis ik mijn verre thuis!
+dlg:Dwarf004	Binnenkort keer ik ernaar terug, zodra mijn zaken in het Westen zijn afgerond.  Ik zal blij zijn weer onder mijn volk te zijn!
+dlg:Dwarf005	En jij ook, beste Onderberg!  Moge je Gouw altijd groen en schoon blijven!
+dlg:Dwarf006	De Eenzame Berg roept me...Erebor, Erebor!  Binnenkort loop ik weer door je gewijde zalen.
+dlg:Dwarf007	Waar is hij gebleven? Tovenarij!
+dlg:Dwarf008	Laten we een lied zingen!
+dlg:Elrond001	Mijn vrienden, dit is de Hobbit Frodo, zoon van Drogo.  Hij heeft veel opgeofferd om de Ene Ring naar Rivendel te brengen.
+dlg:Elrond002	Frodo, dit zijn leiders van de Vrije Volken van Midden-aarde.
+dlg:Elrond003	Gimli, zoon van Glóin, uit het Dwergenrijk Erebor, dat door de Duistere Heer Sauron met een inval wordt bedreigd.
+dlg:Elrond004	Legolas, zoon van Thranduil, Koning van de Boselfen. Zij bevechten Saurons troepen in het Demsterwold.
+dlg:Elrond005	Boromir, zoon van de Stadhouder van Gondor.  De Mensen van Gondor lijden grote verliezen om ons allen te beschermen tegen Saurons legers.
+dlg:Elrond006	Een kleine groep die heimelijk te werk gaat, kan slagen waar een groot leger zou falen.
+dlg:Elrond011	Ik denk dat deze taak voor jou is bestemd, Frodo.  Als jij de weg niet vindt, vindt niemand hem.
+dlg:Elrond012	Nee, inderdaad, want het is onmogelijk jou van hem te scheiden, Sam Gewissies!
+dlg:Elrond014	Gandalf zal een Reisgenootschap van Vrije Volken leiden tegen Sauron. Negen gaanders tegen Sauron en zijn negen ruiters.
+dlg:Elrond016	Legolas zal er zijn voor de Elfen, en Gimli voor de Dwergen.  Voor de Mensen zullen Aragorn en Boromir van Gondor gaan.  Voor de twee overigen zal ik grote helden oproepen, zoals--
+dlg:Elrond017	Je kunt je niet voorstellen welk gevaar je te wachten staat...
+dlg:Elrond018	Goed dan.  Het Reisgenootschap van de Ring zal naar Mordor vertrekken.
+dlg:Elrond020	De tijd is nog niet gekomen dat je Rivendel verlaat.
+dlg:Elrond021	Je reis begint spoedig, Ringdrager.  Rust nu!
+dlg:Elrond022	Elfenverkenners hebben de dienaren van de Vijand hier in de buurt verdreven.  De Ring gaat veilig zuidwaarts tot aan onze grenzen.
+dlg:Elrond025	De Ringdrager mag de Ring niet weggooien, en hem ook niet in handen van de vijand laten vallen.
+dlg:Elrond026	De anderen gaan met hem mee als vrije metgezellen.  Geen eed of verbintenis verplicht jullie verder te gaan dan je wilt.
+dlg:Elrond028	Gandalf zal jullie nu leiden. Moge de zegen van alle Vrije Volken met jullie meegaan.
+dlg:FalseStrider001	Hallo!  Ik wil je graag een goede raad geven, jonge Hobbit.
+dlg:FalseStrider002	Er loopt vanavond gevaarlijk volk rond.  Ik hoop dat je veilig blijft!
+dlg:FalseStrider003	Ik ook.  Geniet van je verblijf!
+dlg:FalseStrider004	Ik ben blij te zien dat je veilig bent.
+dlg:FalseStrider005	Pardon, meneer...eh, Onderberg, toch?
+dlg:FalseStrider006	Mag ik je even spreken?
+dlg:FalseStrider007	Neem me niet kwalijk, maar ik hoorde dat je naar het oosten reist. Wist je dat de weg niet veilig is voor onschuldig volk?
+dlg:FalseStrider008	Ik ga zelf ook naar het oosten.  Ik wil best kosteloos met jullie gezelschap meereizen.
+dlg:FalseStrider009	Ik ben een zeer ervaren gids en een uitstekend jager.  Onderweg kan ik heerlijke maaltijden maken.
+dlg:FalseStrider010	Nou, dan is het afgesproken, mijn vriend! We reizen samen!
+dlg:FalseStrider011	Uitstekend!  Kom mee.  Dan bespreken we onze reisplannen.
+dlg:FalseStrider012	Nee?  Een onverstandige keuze, meneer Onderberg.  Zeer onverstandig!
+dlg:FalseStrider013	Wat een mooi wapen heb je, meneer Onderberg. Jammer dat je het niet meer nodig zult hebben!
+dlg:FalseStrider014	Jij levert een aardige premie op, jongen...een heel aardige premie!
+dlg:Fatty001	Hallo, Frodo!
+dlg:Fatty002	Jazeker.  Ik heb een weddenschapje met Robin Kleinhol.  Hij denkt dat ik geen taart kan bakken in één middag!  Ha!
+dlg:Fatty003	Nou, ik wilde een appeltaart maken, maar al mijn appels zijn bedorven!  Ze krioelen gewoon van de wormen!  Afschuwelijk!
+dlg:Fatty004	Hè, niet?  Dus een appeltaart was uitgesloten.  Maar gelukkig had ik genoeg pompoenen bij de hand, hè?
+dlg:Fatty005	Houd het voor je, Frodo, maar ik heb ouwe Kleinhol een poets gebakken.  Ik heb zijn kostbare klepel gebruikt om mijn meel te malen!  Ik kan niet wachten om zijn gezicht te zien als hij erachter komt!
+dlg:Fatty006	Een noodgeval? In de Gouw? Je hebt naar één drakenverhaal van je Oom Bilbo te veel geluisterd.
+dlg:Fatty007	Maar je hebt waarschijnlijk gelijk. Wil jij de klepel terugbrengen? Ik heb het vreselijk druk met deze taart.
+dlg:Fatty008	De allerbeste! Zodra ik wat honingraat en eieren heb gevonden. Dan zal ik die Robin Kleinhol eens laten zien wie er kan bakken!
+dlg:Fatty009	Zeg... jij hebt toevallig geen honingraat bij je?  Of een paar eieren?
+dlg:Fatty010	Je hebt zeker geen honingraat, hè?  Ik zou het goed kunnen gebruiken voor de taart!
+dlg:Fatty011	Ik heb eieren nodig als ik deze taart wil bakken.
+dlg:Fatty012	Bedankt, Frodo!  Deze honingraat ziet er echt zoet uit!
+dlg:Fatty013	Dit zijn prima eieren, Frodo.  Mijn complimenten aan de kip!
+dlg:Fatty014	Zo!  Alles is in orde. Nu die taart nog maken!
+dlg:Fatty015	Heel erg bedankt, Frodo!  Je bent een goede vriend.  Alsjeblieft.
+dlg:Fatty016	En nu, als je me wilt excuseren...ik moet een weddenschap winnen!
+dlg:Fatty017	Ik kom je in Krikkenhol opzoeken zodra ik kan, Frodo.  Vraag me alleen niet om in een bootje te stappen!
+dlg:Ferny001	Hé!  Wat moet je, dikkerd?
+dlg:Ferny002	Waarom ga je niet bij het vuur staan met de rest van de kinderen?  Bill Ferny probeert zich te ontspannen!
+dlg:Ferny003	Jij weer?  Maak dat je wegkomt, voordat ik je aan mijn honden voer, lastig knaagdier!
+dlg:Ferny004	Bah!  Goochelaarstrucje, meer niet.
+dlg:Ferny005	Wat moet je, Langbeen?
+dlg:Ferny006	Wat?  Ga je me een paardendief noemen?
+dlg:Ferny007	Je hebt je neus in de verkeerde zaken gestoken!  Ik heb je met die Gouwratten zien praten!
+dlg:Ferny007a	Je wilt de beloning voor Balings helemaal voor jezelf!  Maar die krijg je niet!
+dlg:Ferny008	Hah!  Hebbes!
+dlg:Ferny009	Huh?!
+dlg:Ferny010	Uhhh...
+dlg:Ferny011	Auw!
+dlg:Ferny012	Agh!
+dlg:Ferny013	Jaaaah!
+dlg:Ferny014	Oooooh...ugh
+dlg:Ferny015	Pak aan!
+dlg:Ferny016	Hé!  Hier!
+dlg:Ferny017	(verveeld geneurie)
+dlg:Ferny018	Hé!  Help!
+dlg:FMV2001	In de schaduwen van Mordor smeedde de Duistere Heer Sauron de Ene Ring om alle Elfen, Dwergen en Mensen van Midden-aarde te knechten.
+dlg:FMV2002	De Vrije Volken van Midden-aarde wierpen Sauron omver, maar raakten de Ring kwijt.
+dlg:FMV2003	Nu is de Vijand teruggekeerd, en vanuit zijn duistere toren in Mordor zoekt hij zijn Ring.
+dlg:FMV2004	Wij moeten de Ring eerst vinden en hem vernietigen.
+dlg:FMV2005	Maar wie kan het dragen van de Ring verdragen?
+dlg:FMV2006	De zwakken zouden worden bedorven.
+dlg:FMV2007	De machtigen zouden een even grote bedreiging worden als Sauron.
+dlg:FMV2008	Wie kan de Ring overleven?
+dlg:FMV2009	Maar wie kan de Ring dragen?
+dlg:FMV3001	O Elbereth! Gilthoniel!
+dlg:FMV3002	(pijnkreet als hij wordt gestoken)
+dlg:FMV3003	(een schrille kreet)
+dlg:FMV4001	Bij Elbereth en Lúthien, jullie krijgen noch de Ring, noch mij!
+dlg:FMV4002	Unh! (valt van het paard)
+dlg:FMV5001	Gij kunt niet passeren!
+dlg:FMV5002	Vlucht, dwazen!
+dlg:FMV5003	Gandalf! Nee!
+dlg:FMV5004	Gandalf!
+dlg:FMV5005	Nee!
+dlg:FMV6001	(doodskreet)
+dlg:FMV7001	Het Reisgenootschap van de Ring heeft gezegevierd.
+dlg:FMV7002	Ze hebben de vliegende Ringgeest geveld.
+dlg:FMV7003	Ze hebben Frodo veilig tot aan de rand van Mordor gebracht.
+dlg:FMV7004	Zo is het Reisgenootschap geslaagd.
+dlg:FMV7005	Toch zie ik de Ringdrager alleen, terwijl hij het Duistere Land binnengaat.
+dlg:FMV7006	Maar niet helemaal alleen.
+dlg:FMV7007	Toch zie ik de Ringdrager alleen het Duistere Land binnengaan.
+dlg:FMV7008	Maar niet helemaal alleen.
+dlg:FMV7009	Maar niet alleen.
+dlg:FMV7010	Maar niet alleen.
+dlg:FMV7011	Schat!
+dlg:FMV7012	Mijn Schat!
+dlg:FOTR001	De Reisgenoten
+dlg:Frodo005	Ja, maar zeg tegen de andere gouwwachters dat ze uitkijken voor meer gevaren in de Gouw.
+dlg:Frodo007	Ik hoop dat je gelijk hebt.
+dlg:Frodo008	Ik kan het gevoel niet van me afzetten dat we worden gevolgd.
+dlg:Frodo009	We zitten blijkbaar in de val.  Een deur... is in de nacht dichtgegaan.
+dlg:Frodo010	Voor de Gouw!
+dlg:Frodo011	Laten we rusten, nu het nog kan.
+dlg:Frodo012	Zou Bilbo zich zo hebben gevoeld toen hij verdwaald was onder de Nevelbergen?
+dlg:Frodo013	De Ori die met Bilbo reisde?
+dlg:Frodo014	Ori!  Hij reisde lang geleden met Bilbo.
+dlg:Frodo015	Moeten we teruggaan?
+dlg:Frodo016	Waar gaan we heen?
+dlg:Frodo017	Ik wil er niet heen... maar ik wil ook de raad van Gandalf niet in de wind slaan.
+dlg:Frodo018	De arm van Sauron reikt werkelijk ver.
+dlg:Frodo019	Is hier een poort?
+dlg:Frodo020	Het klinkt als een hamer... iemand daarbeneden geeft signalen.
+dlg:Frodo021	Ik houd Prik in de gaten...als hij gloeit, zijn de Orks dichtbij!
+dlg:Frodo022	Sam!
+dlg:Frodo023	Dit is mijn schuld!  Die Ringgeest zag Sam voor mij aan. Ik moet het goedmaken!
+dlg:Frodo024	Sam!  Gaat het?
+dlg:Frodo025	Ik laat je niet aan de Nazgûl over.
+dlg:Frodo046b	Op een dag kwam Gandalf de Tovenaar voor dringende zaken naar de Gouw.
+dlg:Frodo047	Welkom terug, Gandalf.  Krijgen we vuurwerk?  Elfenlessen?  Verhalen over het oude Númenor?
+dlg:Frodo048	Oom Bilbo's toverring?
+dlg:Frodo049	Nee!
+dlg:Frodo050	Ik zie... fijne lijnen... lijnen van vuur!  In een sierlijk schrift!  Wat staat er?
+dlg:Frodo051	Laten we hem vernietigen!
+dlg:Frodo052	Breng hem daarheen! Neem hem mee!
+dlg:Frodo053	Dan... dan moet ik de Ring bewaken.
+dlg:Frodo053a	Ik ben een gevaar voor de Gouw.  Ik moet weg.
+dlg:Frodo053b	Ik zou net als Bilbo de weg op kunnen gaan!
+dlg:Frodo054	Hij doet je niets...beantwoord gewoon zijn vraag!
+dlg:Frodo055	Houd het geheim, Sam... anders hoop ik dat Gandalf je in een gevlekte pad verandert!
+dlg:Frodo055a	Maar waar moeten we heen?
+dlg:Frodo055b	Ik kan in de herfst vertrekken, op mijn verjaardag.
+dlg:Frodo056	Naar het oosten... Ik vertel iedereen dat ik een huis koop in Krikkenhol, bij mijn familie in Bokland.
+dlg:Frodo057	Ik zal Zakeinde moeten verkopen.  De Zakkin-Balingsen proberen dit huis al jaren in te pikken; zonde om het hun te gunnen.
+dlg:Frodo058	Vaarwel, Gandalf!
+dlg:Frodo059	Je kunt Sam vertrouwen.
+dlg:Frodo060	Ik begrijp het. Vaarwel, Gandalf.
+dlg:Frodo061	Goedenavond, Baas Gewissies.
+dlg:Frodo062	Ik wil niet met hem kennismaken.
+dlg:Frodo063	Waar is Sam?
+dlg:Frodo064	Wat voeren ze uit?
+dlg:Frodo065	Nou, hier is de sleutel van Zakeinde voor Lobelia. Dan zie ik Sam wel op de boerderij van Made.  Goedenavond, Baas Gewissies.
+dlg:Frodo066	Een ruiter!  Helemaal in het zwart.
+dlg:Frodo073	Goedemorgen, Sam.  Klaar om naar Bokland te vertrekken?
+dlg:Frodo074	Lobelia Zakkin-Balings koopt het huis. Je hoeft in Zakeinde nooit meer te wieden.
+dlg:Frodo075	Dankzij jouw werk heeft Zakeinde de mooiste tuin van de Gouw.
+dlg:Frodo076	Ze hebben dat hele eind gelopen alleen voor een drankje... wat voor kattenkwaad zouden ze uithalen?
+dlg:Frodo077	We zullen zien...
+dlg:Frodo077a	Gauw, Sam.  Ik moet eerst nog een paar dingen regelen.
+dlg:Frodo078	Hallo, Angelica.
+dlg:Frodo079	Inderdaad.
+dlg:Frodo079a	Inderdaad.
+dlg:Frodo080	Alleen maar naar het andere eind van de Gouw.
+dlg:Frodo081	Ik ook.
+dlg:Frodo082	Dag, Angelica.
+dlg:Frodo083	Zo!  Ik heb de Alarmklok geluid.
+dlg:Frodo084	Ik heb de klok geluid. Lobelia wil dat je weet dat er wolven in de Gouw zijn!
+dlg:Frodo085	O.
+dlg:Frodo086	Ik ben blij dat de Gouw goed beschermd wordt.
+dlg:Frodo087	Hallo, Lobelia.
+dlg:Frodo088	Dat zou ik niet weten. Maar nu over Zakeinde...
+dlg:Frodo089	Ik weet zeker dat de gouwwachter iedereen veilig houdt.
+dlg:Frodo090	Luid gewoon de alarmklok. Als hij ergens in Bijwater is, komt hij aangerend.
+dlg:Frodo092	Hallo daar, Baas Gewissies.
+dlg:Frodo093	Hij werkt heel hard, Baas Gewissies.
+dlg:Frodo094	Wolven?  In de Gouw?
+dlg:Frodo095	Ik hoop dat de wolven net zo snel vertrekken als ze gekomen zijn. Dag, Baas Gewissies.
+dlg:Frodo096	Zeker weten.  Ze ruiken heerlijk, hè?
+dlg:Frodo097	Ik begrijp het.
+dlg:Frodo098	Dank u, meneer.
+dlg:Frodo099	Hallo, Noakes!  Fijn je weer op de been te zien.
+dlg:Frodo100	Fijn om te horen.
+dlg:Frodo101	Mooi. Nou, ik ga naar--
+dlg:Frodo102	Dat moet een heel bijzondere thee zijn. En nu moet ik--
+dlg:Frodo103	Misschien kan ik helpen.
+dlg:Frodo104	Nee. Ik moet hem nog ophalen.
+dlg:Frodo105	Hier is de Akte van Zakeinde.
+dlg:Frodo106	Ik moet nog wat spullen weghalen.  Ik laat de sleutel van Zakeinde achter bij Baas Gewissies op Zakkerspad nummer 3, als je het niet erg vindt.
+dlg:Frodo107	Goedendag, Lobelia.
+dlg:Frodo108	Dat hoop ik maar.
+dlg:Frodo109	Het gaat over Zakeinde. Je zei dat je het wilde kopen.
+dlg:Frodo110	Ah... ik heb hem zeker in Zakeinde laten liggen!
+dlg:Frodo111	Laat Sam maar. Wat brengt jullie twee schurken helemaal naar Bijwater?
+dlg:Frodo112	Zijn jullie dat hele eind gekomen alleen voor het ontbijt?
+dlg:Frodo113	Ik weet zijn woeste honden nog!
+dlg:Frodo114	Ouwe Made dreigde me te laten voelen hoe hard ze bijten.
+dlg:Frodo115	Ik ben dol op paddenstoelen...
+dlg:Frodo117	Hallo, gouwwachter.  Ik kom alleen afscheid nemen.
+dlg:Frodo118	Wat?  Avonturen?  Ik beleef geen avonturen.
+dlg:Frodo119	Natuurlijk.  Nou, dag Robin.
+dlg:Frodo120	Hallo daar, Roosje.
+dlg:Frodo121	Ik zoek hem nog op voordat ik vertrek.
+dlg:Frodo122	Dat hoop ik toch zeker.
+dlg:Frodo123	Wat heeft hij gedaan?
+dlg:Frodo123a	Ik weet zeker dat Sam zoiets nooit zou doen.
+dlg:Frodo124	Hartelijk dank, Vadertje Tweevoet.
+dlg:Frodo125	Ik ook.
+dlg:Frodo126	Het leven is nu rustiger.
+dlg:Frodo127	Ik ben blij dat het goed met je gaat, Robin.
+dlg:Frodo128	Dat hoor ik.
+dlg:Frodo129	Dat ik maar eens moet gaan.
+dlg:Frodo137	Hallo daar.
+dlg:Frodo138	Frodo.
+dlg:Frodo139	Frodo.
+dlg:Frodo140	Goede reis!
+dlg:Frodo144	Graag gedaan, Hal.
+dlg:Frodo149	Hallo daar, Hal.
+dlg:Frodo150	Ja, zeker.
+dlg:Frodo150a	Ja, zeker.
+dlg:Frodo151	Wat is ermee?
+dlg:Frodo152	Wat vervelend.
+dlg:Frodo153	Ik kijk er even naar voordat ik vertrek.
+dlg:Frodo154	Ik ben blij dat hij weer werkt.
+dlg:Frodo155	Nou, dank je, Ted.  Goedendag.
+dlg:Frodo156	Hallo, Ted.  Ik wilde afscheid nemen voordat ik...
+dlg:Frodo157	Eigenlijk niet.  Je lijkt maar wat rond te hangen.
+dlg:Frodo158	Werkt de molen daarom niet?
+dlg:Frodo159	Ik laat het je weten als ik hem zie. Hoe ziet hij eruit?
+dlg:Frodo161	Pardon?
+dlg:Frodo162	Maar ik ben een arme Hobbit van het platteland, zonder goud om te missen!
+dlg:Frodo163	Wat voor stok?
+dlg:Frodo163a	De dappere gouwwachter heeft eindelijk de gevreesde struikrover te pakken!
+dlg:Frodo163b	Geef me de stok van de molen.
+dlg:Frodo163c	Je kunt maar beter de waarheid spreken.
+dlg:Frodo164	Laat maar waarom... maar ik kan niet blijven.  Ik moet nu meteen weg... naar Krikkenhol.
+dlg:Frodo165	Maar... hoe wist je dat?
+dlg:Frodo165a	Hoe?
+dlg:Frodo165b	Ik kan blijkbaar niemand vertrouwen!
+dlg:Frodo166	Eh... fijn u weer te zien, meneer.
+dlg:Frodo167	Naar mijn nieuwe huis in Krikkenhol.
+dlg:Frodo168	Nou... ik denk dat het tijd wordt dat we gaan.
+dlg:Frodo169	Dank u, meneer.
+dlg:Frodo170	Jammer dat ik zo bang ben geweest voor uw honden.  Ik heb een goede vriend gemist.
+dlg:Frodo171	Die vervloekte honden!
+dlg:Frodo172	Dat ben ik, meneer.
+dlg:Frodo173	Inbreker...?
+dlg:Frodo174	Nee! Ik bedoel, u hebt gelijk, meneer.
+dlg:Frodo178	Ik moet gaan, Robin!
+dlg:Frodo179	Hou vol, Robin!
+dlg:Frodo180	Vrouwe Galadriel?  U draagt een van de Ringen van Macht.  Waarom kan ik, als ik de Ene Ring draag, niet in uw gedachten kijken, of in die van de anderen?
+dlg:Frodo181	Aragorn is al een tijdje weg.  Ik hoop dat zijn verkenning goed gaat!
+dlg:Frodo183	Ja... ik weet wat ik moet doen...maar ik ben bang om het te doen.
+dlg:Frodo184	Ik weet dat je wilt dat ik de Ring naar Gondor breng.  En het lijkt verstandig... maar mijn hart waarschuwt me.
+dlg:Frodo185	Een waarschuwing tegen de makkelijke weg.  Tegen het weigeren van mijn last.  En, als het gezegd moet worden, tegen vertrouwen op de kracht en oprechtheid van de Grote Mensen van de wereld.
+dlg:Frodo186	Ik twijfel niet aan de moed van Gondor.  Maar wat als die niet genoeg is?
+dlg:Frodo187	Er is geen hoop zolang de Ring bestaat.
+dlg:Frodo188	Alles wat met de Ring wordt gedaan, verkeert in kwaad!
+dlg:Frodo190	Iedereen kan worden bedorven.  Sommigen sneller dan anderen.
+dlg:Frodo192	Ik heb het gevoel dat we worden gevolgd... maar waardoor?
+dlg:Frodo193	Hallo!  Merijn!  Pepijn!  Sam!  Waar zijn jullie?
+dlg:Frodo194	Blijf waar je bent!  Ik vind jullie wel!
+dlg:Frodo195	Wie is dat...Ted?  Ted Zandman?
+dlg:Frodo196a	Graag gedaan, Ted.  Gaat het?
+dlg:Frodo197	Wat doe jij hier?
+dlg:Frodo199	Dag, Ted.
+dlg:Frodo201a	Een goede maaltijd zal me over deze plek vast geruststellen.
+dlg:Frodo202	Kun je ons om de vallei heen leiden, Merijn?
+dlg:Frodo203	Laten we hier rusten en ons morgen zorgen maken.
+dlg:Frodo204	We kunnen nog niet slapen. We moeten hier weg!
+dlg:Frodo205	Vreemd...ik hoor het ook...ik word slaperig.
+dlg:Frodo206	W-wat?!  Die boom...! Hij heeft Merijn en Pepijn!  Sam!  Word wakker!
+dlg:Frodo207	Wie?  Wie gaat je fijnknijpen?!
+dlg:Frodo208	Wat nu weer?!
+dlg:Frodo209	Help!
+dlg:Frodo210	Wie... wie bent u?
+dlg:Frodo211	Mijn vrienden zitten vast in die wilg!
+dlg:Frodo212	Dank u!
+dlg:Frodo212a	Wie bent u?
+dlg:Frodo212b	Dank u!
+dlg:Frodo212c	Dank u!
+dlg:Frodo214	Dank u, Tom Bombadil.
+dlg:Frodo215	Prachtig!  Als we dit tempo aanhouden, zijn we morgen bij zonsondergang de Grafheuvels uit!
+dlg:Frodo216	Tom is de enige op wie de Ring geen vat heeft.  Waarom zou dat zijn?
+dlg:Frodo217	Sam!  Merijn!  Pepijn!  Waar zijn jullie?!
+dlg:Frodo218	Waar kunnen ze zijn?  Sam!  Merijn!  Iemand!
+dlg:Frodo219	Waar zijn jullie?!
+dlg:Frodo220	Wat is dat?
+dlg:Frodo221	Sam!  Merijn!  Word wakker, allemaal!
+dlg:Frodo222	Ik moet ze bevrijden...ze hier weg krijgen!
+dlg:Frodo228	We kunnen u niet genoeg bedanken!
+dlg:Frodo229	Dank u, Tom.
+dlg:Frodo230	Zou dit zwaard een van de Zwarte Ruiters kunnen verwonden...
+dlg:Frodo231	Goede raad. Ga maar voor.
+dlg:Frodo234	Waarom niet?  Tom raadde het aan.
+dlg:Frodo235	Maak je geen zorgen, Sam.  Het komt wel goed.
+dlg:Frodo236	Ik regel het met de waard, dan zoeken jullie drieën iets te eten. En onthoud: vanaf nu heet ik meneer Onderberg.
+dlg:Frodo238	Aangenaam kennis te maken.  Mijn naam is Onderberg.
+dlg:Frodo239	Nee, ik bedoel, het is mijn eerste keer in déze herberg.
+dlg:Frodo240	Juist!  Bedankt voor de raad.
+dlg:Frodo241	We zijn hier gauw genoeg weg, Sam.  Maak je geen zorgen.
+dlg:Frodo242	O?
+dlg:Frodo243	Vast wel.
+dlg:Frodo244	Tijd voor dat eten komt later.  Ik moet nog onderdak regelen.
+dlg:Frodo245	Hallo daar.
+dlg:Frodo246	Nee!  Onderberg... mijn naam is Onderberg.
+dlg:Frodo247	Wat brengt u naar Bree?
+dlg:Frodo248	O...?
+dlg:Frodo249	Ik begrijp het.
+dlg:Frodo250	Het is...een familiestuk, eigenlijk.  Mijn grootvader kreeg het van de Oude Toek zelf!
+dlg:Frodo251	Goede raad.  Hartelijk dank.
+dlg:Frodo252	Maak het je niet te gemakkelijk...dingen kunnen veranderen.
+dlg:Frodo253	Pardon?
+dlg:Frodo254	Hallo daar.
+dlg:Frodo255	Aangenaam kennis te maken.  Mijn naam is Onderberg.
+dlg:Frodo256	Het is aangenaam genoeg, al is het de Gouw niet...of het Koninkrijk onder de Berg, durf ik te wedden!
+dlg:Frodo257	Veel geluk, Nali.
+dlg:Frodo259	Hallo.  Ik zou graag--
+dlg:Frodo260	Een kamer voor vier, alstublieft.
+dlg:Frodo261	Meneer Onderberg.
+dlg:Frodo262	Ja.
+dlg:Frodo263	Wat wilt u?
+dlg:Frodo264	Dat heb ik gehoord.
+dlg:Frodo265	Dat is een gul aanbod.
+dlg:Frodo266	Wat...?  Waar ben ik?
+dlg:Frodo267	Wie die man ook was, hij voert niets goeds in zijn schild.  Ik moet hier meteen weg zien te komen!
+dlg:Frodo270	Premiejagers! Deze plek is echt gevaarlijk!
+dlg:Frodo272	Ik moet de anderen vinden voordat die schurken ze te pakken krijgen!
+dlg:Frodo278	Volk van Bree! Dank u voor uw hartelijke ontvangst!
+dlg:Frodo279	Goed dan... een lied.
+dlg:Frodo280	Er is een herberg, een vrolijke herberg
+dlg:Frodo281	Onder een oude grijze heuvel,
+dlg:Frodo282	En daar maken ze een stoofpot zo bruin
+dlg:Frodo283	Dat de Man in de Maan zelf kwam aangevlogen
+dlg:Frodo284	Om 's nachts zijn buik vol te eten.
+dlg:Frodo285	Het was een ongeluk!
+dlg:Frodo286	Ik zou met niets van dien aard instemmen voordat ik veel meer over u wist.
+dlg:Frodo287	Wat?
+dlg:Frodo288	Wie heeft u dat verteld?
+dlg:Frodo291	Zijn ware naam is Aragorn...
+dlg:Frodo292	Ik geloofde u... of ik wilde het.  De spionnen van de Vijand zien er mooi uit, maar voelen gemeen aan. Terwijl u mooi aanvoelt...
+dlg:Frodo293	Zwarte Ruiters!  Ik hoop dat dit plan werkt!
+dlg:Frodo297	Stapper!  Wat is dat voor licht?
+dlg:Frodo298	Het lijkt wel bliksem!
+dlg:Frodo299	G van Gandalf!
+dlg:Frodo300	Gandalf is hier geweest!
+dlg:Frodo301	Zwarte Ruiters!  Ze trekken over de weg daarbeneden!
+dlg:Frodo302	Wat is er gebeurd?  Waar is de bleke koning?
+dlg:Frodo303	Ik ga zo goed als ik kan...
+dlg:Frodo305	Ons eten raakt op.  Onze voorraad houdt het niet tot Rivendel.
+dlg:Frodo306	De ruïnes in dit land zijn zo vreemd... alsof een groot en prachtig koninkrijk tot puin is vervallen.
+dlg:Frodo307	Er nadert een ruiter!
+dlg:Frodo308	Door Gandalf?
+dlg:Frodo310	Gandalf!
+dlg:Frodo311	Dan hebben we het gehaald.  Maar...we hadden je nodig, Gandalf
+dlg:Frodo311a	Bedankt dat je Aragorn hebt gestuurd.  Ik wist niet dat hij tegen Ringgeesten kon vechten!  Ik dacht dat hij maar een Doler was.
+dlg:Frodo312	Ik zal de Ring nemen, al weet ik de weg niet.
+dlg:Frodo313	Dank je voor alles wat je hebt gedaan om me te helpen.
+dlg:Frodo313a	Zoals je zelf ooit zei: 'het oude dat sterk is, verwelkt niet'.  Neem je eigen woorden ter harte!
+dlg:Frodo314	Nou, hier zijn we dan!  Een reisgenootschap van...acht?
+dlg:Frodo315	Wat zullen we zien?
+dlg:Frodo316	Ik zal kijken.
+dlg:Frodo317	Ik zie een land in schaduwen...en een oude man die naar me toe loopt.  Gandalf?  Nee...witte gewaden...Saruman?
+dlg:Frodo318	Daar is de zee... een hoog schip uit het Westen...en een witte vesting, met zeven torens.
+dlg:Frodo319	Nog een schip, met zwarte zeilen en het embleem van een witte boom!
+dlg:Frodo320	Ik zie een grote veldslag... en een oog...omringd door vuur!
+dlg:Frodo322	Wat kiest u, Vrouwe?
+dlg:Frodo323	Ik zou u de Ring geven, als u erom vroeg.
+dlg:Frodo326	Heb je het niet gehoord? De molen draait weer!
+dlg:Frodo327	Ik heb de pen gevonden.
+dlg:Frodo328	Graag gedaan!
+dlg:Frodo331	Toen ontsnappen onmogelijk leek, redde hij ons. En hij viel.
+dlg:Frodo335a	Maar Elrond heeft hem gekozen.  Hij is dapper en trouw.
+dlg:Frodo337	Wat een pech!  Ik zou mijn dolk nu goed kunnen gebruiken!
+dlg:Frodo339	Die ruiter mag me niet zien.
+dlg:Frodo340	Als ik de anderen niet snel vind...
+dlg:Frodo341	Er is een bijzonder wapen nodig om dit ding te stoppen... als er al iets is dat dat kan!
+dlg:Frodo342	Waarom hebben we niet naar Tom geluisterd...wacht!  Misschien is Tom in de buurt!
+dlg:Frodo344	Ungh!
+dlg:Frodo345	Aagh!
+dlg:Frodo346	Aiiieeah!
+dlg:Frodo347	Ohh...
+dlg:Frodo348	Nee! Aaagh...
+dlg:Frodo349	Ugh!
+dlg:Frodo350	Woooooah!
+dlg:Frodo351	Oef!
+dlg:Frodo352	Umph!
+dlg:Frodo419	En daar is Bilbo...hij lijkt bezorgd...maar waarover?
+dlg:Frodo420	"Goed je te ontmoeten, vriend"...of dat denk ik tenminste.
+dlg:Frodo432	De oude boomhut!  Hij staat er nog. Als jongen speelde ik erin!
+dlg:Frodo466	En jij ook hallo, Lotho.  Is je moeder in Bijwater?  Ik moet haar spreken.
+dlg:Frodo467	Dan sta je misschien nog te kijken. Goedendag, Lotho.
+dlg:Frodo468	Vandaag niet, Milo. Bijten de vissen een beetje?
+dlg:Frodo469	Wat voor aas gebruik je?
+dlg:Frodo470	Echt, Milo...je moet over je angst voor wormen heen als je hengelaar wilt worden.
+dlg:Frodo471	Nou, als ik wormen tegenkom, breng ik ze mee.
+dlg:Frodo472	Alsjeblieft, Milo.  Met deze worm moet het lukken!
+dlg:Frodo473	Wat zou een worm anders moeten zijn?
+dlg:Frodo474	Dank je, Milo.  Veel succes met de vissen!
+dlg:Frodo475	Ik weet het niet... Ouwe Made is de schrik van alle indringers.
+dlg:Frodo476	Hij heeft een hele roedel honden!
+dlg:Frodo478	We kunnen maar beter doorlopen, voordat Ouwe Made ons betrapt.
+dlg:Frodo480	Ik denk dat we het beste zo snel mogelijk kunnen vertrekken.
+dlg:Frodo481	Ik moet nog een paar dingen regelen.  Het duurt niet lang.
+dlg:Frodo485	Hallo, Milo.
+dlg:Frodo486	O?  Wat is er gebeurd?
+dlg:Frodo487	Waarom zou iemand zoiets doen, vraag ik me af?
+dlg:Frodo488	Ik begrijp het. Nou, veel succes.
+dlg:Frodo489	Pardon?
+dlg:Frodo490	Misschien kan ik iets doen.
+dlg:Frodo491	Zo. Dat was de laatste van die deugnieten.
+dlg:Frodo492	Graag gedaan. Veel succes met vissen.
+dlg:Frodo494	Je hebt gelijk. Ik blijf uit zijn buurt.
+dlg:Frodo500	We zouden het gezelschap op prijs stellen.
+dlg:Frodo501	Dank u, maar we reizen liever alleen.
+dlg:Frodo502	Ik wacht niet graag, maar ik vertrouw hierin op het oordeel van Aragorn.
+dlg:Frodo503	Hallo, Bilbo.  Het ziet ernaar uit dat we gauw vertrekken. Ik wilde even langskomen om afscheid te nemen.
+dlg:Frodo504	Pas goed op jezelf, Oom Bilbo. Ik breng al het nieuws mee dat ik kan! En oude liederen en verhalen ook.
+dlg:Frodo505	Ook goed jou te ontmoeten, vriend.
+dlg:Frodo526	Zo, hoe krijg ik dat vervloekte ding aan de gang?
+dlg:Frodo539	Hallo daar, Minto. Wat is er aan de hand?
+dlg:Frodo540	Lobelia? Waarom?
+dlg:Frodo541	Wat heb je gedaan?
+dlg:Frodo542	Probeer zulke goede appels niet zo te verspillen.
+dlg:Frodo543	Dat meen je vast niet, Minto.
+dlg:Frodo544	Hallo, Dikkie.  Ben je vandaag aan het bakken?
+dlg:Frodo545	Aha!  Wat voor taarten maak je?
+dlg:Frodo546	Wat afschuwelijk!
+dlg:Frodo547	Dat was het zeker.
+dlg:Frodo548	Maar hoe moet hij de Gouw dan waarschuwen bij een noodgeval?
+dlg:Frodo549	Nou, goed dan, Dikkie.  Maar het moet wel een geweldige taart worden!
+dlg:Frodo550	Veel succes, Dikkie.
+dlg:Frodo551	Dank je, Dikkie!
+dlg:Frodo552	Het was maar een flauwe grap.
+dlg:Frodo553	Natuurlijk, Roosje.
+dlg:Frodo554	Ik zal zien wat ik kan doen.
+dlg:Frodo555	Ja, nou, ik heb dringende zaken, gouwwachter. Wil je het hek voor me openen?
+dlg:Frodo556	Die ruiter...was hij in het zwart gekleed?
+dlg:Frodo557	Ik help je wel om dit hek te repareren. Ik wil heel graag vanavond nog vertrekken.
+dlg:Frodo558	Zo moet het lukken, gouwwachter!
+dlg:Gaffer001	Goedenavond, Frodo.  Er kwam een vreemde ruiter naar je vragen.
+dlg:Gaffer002	Ik ook niet. De rillingen liepen over mijn rug toen ik zijn holle stem hoorde.
+dlg:Gaffer003	Hij wachtte op je, maar die vervloekte Pepijn Toek kwam hem halen!  Zei dat ze je op de boerderij van Made zouden treffen.  Iets over een binnenweg.
+dlg:Gaffer004	Dat zeiden ze niet.  Maar Pepijn leek heel tevreden met zichzelf, en Sam was er helemaal niet blij mee.  Hij moest maar geen kattenkwaad uithalen!
+dlg:Gaffer005	Nee, meneer Balings is vertrokken.  Vanochtend weggegaan.
+dlg:Gaffer006	Waarom gaat mij niks aan, en jou ook niet!
+dlg:Gaffer007	Dat is geen geheim.  Hij loopt naar Bokkenburg, of zo'n plek.
+dlg:Gaffer008	Ja, een heel eind over de Oostweg.  Zo ver ben ik zelf nooit geweest.  Het is een raar volkje in Bokland.
+dlg:Gaffer009	Nee, ik kan geen boodschap doorgeven. En nu goedenacht!
+dlg:Gaffer010	Wel, hallo, jonge Frodo.  Ik hoop dat mijn jongen Sam je tuin daar in Krikkenhol goed bijhoudt.  Als hij verslapt, laat het me dan vooral weten.
+dlg:Gaffer011	Hij is maar een uilskuiken. Maar aardig van je dat je de jongen meeneemt!
+dlg:Gaffer011a	Wees wel voorzichtig daarbuiten op de weg. Ik heb over vreemde dingen horen vertellen.  Er zijn hongerige wolven gezien in de Zuidkwart!
+dlg:Gaffer011b	Of...dat hoorde ik van Hugo Bracegirdle in De Klimopstruik.
+dlg:Gaffer012	Dat zeg ik ook tegen hem. Wolven in de Gouw?!
+dlg:Gaffer012a	Er zijn geen wolven meer geweest sinds de Barre Winter, toen de Brandewijn dichtvroor en de Witte Wolven uit het noorden kwamen.
+dlg:Gaffer013	Mijn ouwe vader vertelde me die verhalen toen ik nog maar een jochie was!  Ik had nooit gedacht dat ik zulke tijden zou meemaken.
+dlg:Gaffer014	Laat de wolven maar janken zoveel ze willen, zolang ze mijn piepers met rust laten!
+dlg:Gaffer015a	Goedenavond, jonge Frodo.
+dlg:Gaffer016	Ik zou uit de buurt van die ruiter blijven als ik jou was.  Ik heb niks tegen de Grote Mensen, maar die daar betekent narigheid!
+dlg:Galadriel001	Dit is de Spiegel van Galadriel.  Ik heb je hierheen gebracht om erin te kijken... als je wilt.
+dlg:Galadriel002	Dingen die je wenst te zien, en dingen die ongevraagd komen.  Dingen die waren, die zijn, en die nog kunnen komen.
+dlg:Galadriel003	Zou je je afkeren van Frodo's queeste?
+dlg:Galadriel004	Wil je nu kijken, Frodo?
+dlg:Galadriel005	Ik weet wat je zag, want het is ook in mijn gedachten.  Maar de vijand kan je hier geen kwaad doen.
+dlg:Galadriel006	Dit land wordt niet alleen door zang of pijlen bewaard.  Zie Nenya, de Ring van Adamant!  Een ring waarover Sauron niet kan heersen.
+dlg:Galadriel007	Tenzij je faalt en hij De Ring in handen krijgt.  Dan zouden we weerloos voor hem liggen.
+dlg:Galadriel008	Maar als je slaagt, zal mijn macht afnemen en zal Lothlórien vervagen.
+dlg:Galadriel009	Mijn liefde voor mijn volk is dieper dan de zee.  Toch zou ik alles opgeven in plaats van me aan Sauron te onderwerpen!  Ik wens dat je de Ring vernietigt.
+dlg:Galadriel011	Zou je mij de Ring vrijwillig geven?  In plaats van de Duistere Heer zou je een Koningin aanstellen!
+dlg:Galadriel012	En ik zal niet duister zijn, maar schoon en verschrikkelijk als de Morgen en de Nacht!
+dlg:Galadriel013	Allen zullen mij liefhebben en wanhopen!
+dlg:Galadriel014	Nee...ik doorsta de beproeving. Ik zal afnemen, naar het Westen gaan, en Galadriel blijven.
+dlg:Galadriel015	Omdat je het niet hebt geprobeerd.  Maar ik waarschuw je: doe het niet.
+dlg:Galadriel016	Je zou veel sterker moeten worden en je wil moeten oefenen in het overheersen van anderen.
+dlg:Galadriel016a	En dan zou je de ene deugd verliezen die je beter in staat stelt de Ring te weerstaan dan wie van de wijzen en machtigen ook.
+dlg:Galadriel017	We zullen er niet meer over spreken. Laten we gaan.
+dlg:Galadriel018	Gandalf de Grijze vertrok met jullie gezelschap.  Waar is hij nu?
+dlg:Galadriel019	Je queeste balanceert op de rand van een mes.  Wijk ook maar een beetje af, en ze zal mislukken...tot ondergang van allen.
+dlg:Galadriel020	Toch blijft er hoop zolang het hele Reisgenootschap trouw blijft!
+dlg:Gandalf001	De uitgang komt dichterbij.  Weldra liggen de Mijnen van Moria veilig achter ons!
+dlg:Gandalf002	Ik geloof dat we in de bovenste zalen zijn... misschien de 20e of 21e.  Ze zijn grondig geplunderd en voor de Orks van weinig belang.
+dlg:Gandalf003	Durins Vloek... een duister wezen dat lang geleden werd losgelaten door Dwergen die naar mithril zochten.  Ze groeven te gretig en te diep.
+dlg:Gandalf004	We zullen rusten...het is hier even veilig als waar ook.  Morgen trekken we verder.
+dlg:Gandalf005	De noordelijke uitgang zal ons verder leiden; die moet opengaan zodra dit Dwergenraadsel is opgelost!
+dlg:Gandalf006	En zo schijnt het licht op het aangezicht van Durin, vader van alle Dwergen!  Er ligt een nieuw pad voor ons...laten we het verkennen.
+dlg:Gandalf008	De Bijl van Durin... die prijs zullen de Orks nooit krijgen!
+dlg:Gandalf010	Op het graf staat... Balin, zoon van Fundin, Heer van Moria.
+dlg:Gandalf011	Hier rust het lichaam van de laatste Dwergkoning van Moria.
+dlg:Gandalf012	We moeten zo verder.
+dlg:Gandalf013	Het boek is een kroniek van Balins tijd in Moria.
+dlg:Gandalf014	Ik vrees dat het nieuws werkelijk grimmig is.  Aanvankelijk hadden ze geluk en verdreven ze een horde aardmannen.  Toen ontdekten ze Mithril...de rijkdom van Moria.
+dlg:Gandalf015	Daarna vertelt het over de dood van Balin... een aanval van Orks... langzaam maar zeker werden de Dwergen teruggedreven en ingesloten.
+dlg:Gandalf016	De laatste regels luiden: 'We kunnen er niet uit.  Het einde komt. Trommels... Trommels in de diepte.. Ze komen.'
+dlg:Gandalf017	Hier hebben ze hun laatste stand gehouden.  De poging om Moria te heroveren was dapper, maar dwaas. We moeten verder.
+dlg:Gandalf018	Houd stand!
+dlg:Gandalf019	Kijk daar!  Een Runensleutel!
+dlg:Gandalf020	Een van de Orks had hem bij zich.
+dlg:Gandalf021	Zonder de bijpassende sleutel gaat de deur niet open.
+dlg:Gandalf024	Dat kan ik niet met zekerheid zeggen.  Drie of vier dagen lopen, als we niet verdwalen of in moeilijkheden raken.
+dlg:Gandalf025	Dezelfde.
+dlg:Gandalf026	Rust, Ori...je wonden zijn zeer ernstig.
+dlg:Gandalf027	Wat bedoel je?
+dlg:Gandalf028	Hij...is heengegaan...
+dlg:Gandalf029	Ik ken deze Dwerg!
+dlg:Gandalf030	Inderdaad...en hij is zich bij Balin en de anderen gaan voegen.  Rust zacht, oude vriend.
+dlg:Gandalf031	Caradhras heeft ons verslagen.
+dlg:Gandalf032	In Rivendel is de Ring niet veilig.
+dlg:Gandalf033	Er is nog een weg... de Mijnen van Moria.
+dlg:Gandalf034	Dat verwacht de Vijand, dus de Ring mag niet in de buurt van Gondor komen.
+dlg:Gandalf035	De honden van Sauron zitten ons op de hielen!  Maak je klaar!
+dlg:Gandalf036	We moeten Moria bereiken, en snel!
+dlg:Gandalf038	We zijn bij de Westpoort van Moria.  Hier eindigde het elfenland Hulsthaar.
+dlg:Gandalf039	Dwergendeuren zijn niet gemaakt om gezien te worden als ze dicht zijn...Zie!
+dlg:Gandalf040	Er staat: 'De Deuren van Durin, Heer van Moria.  Spreek, vriend, en treed binnen.'
+dlg:Gandalf042	Als je een vriend bent, spreek dan het wachtwoord uit om de deuren te openen.
+dlg:Gandalf043	Als ik een beetje rust krijg, zal ik het woord zoeken!
+dlg:Gandalf046	Het wachtwoord is het Elfenwoord voor vriend.  Mellon!
+dlg:Gandalf047	Niet genoeg tijd!    Het beest valt weer aan!
+dlg:Gandalf048	Ik heb slecht gekozen...de deur blijft dicht!
+dlg:Gandalf050	Dwaze Toek!  Gooi de volgende keer jezelf erin, dan zijn we van je af!
+dlg:Gandalf055	Ga!  Dit is een vijand die jullie geen van allen aankunnen!  Ik moet de Balrog alleen het hoofd bieden!
+dlg:Gandalf058	Goed dan, Gimli.  We kamperen hier...maar niet lang!  Er zwerven Orks rond!
+dlg:Gandalf059	Vandaag moeten we praten over een schaduw uit het verleden. De ring die je hebt geërfd, kan zeer gevaarlijk zijn.
+dlg:Gandalf060	Toverringen, zoals jij ze noemt, werden gemaakt door Elfen. Maar deze ring, denk ik, werd door een ander gemaakt...  Geef me de ring.
+dlg:Gandalf061	Kijk goed.
+dlg:Gandalf062	Eén Ring om hen te regeren, Eén Ring om hen te vinden, Eén Ring om hen allen te brengen en in de duisternis te binden.
+dlg:Gandalf063	Dit is de Ene Ring om hen allen te regeren.
+dlg:Gandalf064	De oude koningen van Elfen, Dwergen en Mensen gebruikten de Ringen van Macht om over hun landen te heersen.
+dlg:Gandalf064a	De Duistere Heer Sauron maakte deze Ring om over alle andere te heersen. Toen hij in de strijd viel, verloor hij hem.
+dlg:Gandalf064b	Het vreemde wezen dat Gollem heet, vond de Ring en werd erdoor bedorven.  Bilbo won hem van Gollem, en nu is hij van jou.
+dlg:Gandalf064c	Maar de Heer van de Ringen is teruggekeerd en al zijn denken is erop gericht de Ring te vinden.
+dlg:Gandalf065	Hij kan alleen worden vernietigd waar hij werd gesmeed... In de Doemberg, de Vuurberg in Mordor.
+dlg:Gandalf066	Nee! Breng me niet in verleiding! Als ik de Ring droeg, zou ik worden als de Duistere Heer zelf!
+dlg:Gandalf066a	En ik zal je helpen deze last te dragen, zolang het de jouwe is.
+dlg:Gandalf067	Mijn beste Frodo! Hobbits zijn werkelijk verbazingwekkende wezens!\n
+dlg:Gandalf068	Maar je hoeft niet alleen te gaan, als er mensen zijn die je kunt vertrouwen. Maar wees voorzichtig. De Vijand heeft veel spionnen!
+dlg:Gandalf069	Wat doe jij bij Zakeinde?
+dlg:Gandalf070	O? Het geluid van de heggenschaar is al een tijdje geleden opgehouden.  Hoe lang sta je al af te luisteren?
+dlg:Gandalf071	Doe niet zo dwaas!  Wat heb je gehoord?
+dlg:Gandalf072	Ik heb iets beters bedacht... Hij gaat met je mee, Frodo!
+dlg:Gandalf073	Naar het gevaar toe, maar niet te overhaast, en niet te rechtstreeks. En je mag niet zomaar verdwijnen. Neem de tijd om je zaken te regelen voordat je vertrekt.
+dlg:Gandalf074	Inderdaad.  En nu moet ik gaan. Ik heb veel te doen.
+dlg:Gandalf075	Zorg dat Samwijs Gewissies zijn mond houdt!  Anders verander ik hem in een gevlekte pad!
+dlg:Gandalf076	Reis na je vertrek als meneer Onderberg. De naam Balings is buiten de Gouw niet veilig!
+dlg:Gandalf076a	En...gebruik de Ring niet, want hij kan het onschuldigste hart bederven.
+dlg:Gandalf076b	Vaarwel, Frodo... Ik ben terug voor je verjaardag.
+dlg:Gandalf077	Beste Frodo,
+dlg:Gandalf078	Slecht nieuws.  Je moet voor eind juli naar Rivendel vertrekken.  Wacht niet tot je Verjaardag.  Ik kom je tegemoet als ik kan, of volg je als ik dat niet kan.
+dlg:Gandalf079	Je kunt de Doler die Stapper heet vertrouwen, maar zorg dat het de echte Stapper is. Zijn ware naam is...
+dlg:Gandalf082	Ja, ik ben hier.  En jij mag van geluk spreken dat je nog ergens bent, na alle dwaze dingen die je hebt gedaan!
+dlg:Gandalf083	Ik werd gevangengehouden door het verraad van Saruman de Witte, het hoofd der tovenaars.
+dlg:Gandalf084	Maar nu ben ik vrij, en verbaasd dat je de Ring helemaal hierheen hebt gebracht!  Hobbits lijken bijzonder bestand tegen het kwaad van de Ring.
+dlg:Gandalf085	Maar een Doler?  Mijn beste Frodo, de Dolers zijn het laatste overblijfsel van de Koningen van het oude Númenor.
+dlg:Gandalf086	Maar nu is jouw rol in de Queeste van de Doemberg voorbij.  Je zult er alles over horen in vele bijeenkomsten.  Je bent te gast op de Raad van Elrond.
+dlg:Gandalf086a	We kunnen hem niet gebruiken.  Hij bederft iedereen die hem draagt.  Hoe machtiger de drager, hoe gevaarlijker die wordt!
+dlg:Gandalf086b	Ik durf de Ring niet eens te nemen om hem te verbergen. Ik zal de Ring niet nemen om hem te gebruiken.
+dlg:Gandalf086c	Frodo ook niet.  En ik ook niet.  Zelfs de grootste Heren van de Elfen konden geen doorgang door Mordor forceren.  Ik vertrouw liever op Hobbitvriendschap dan op oude macht.
+dlg:Gandalf088	Het vuur en de bliksem die je op Weertop zag, waren de gevolgen van mijn strijd met de Ringgeesten.  Was ik drie dagen later geweest, dan had ik je getroffen.
+dlg:Gandalf089	Het Reisgenootschap is klaar, Elrond.
+dlg:Gandalf094	Edro, Annon!
+dlg:Gandalf095	Mellon!
+dlg:Gandalf095a	Open, open!
+dlg:Gandalf095b	Edro, open!
+dlg:Gandalf096	Goed dan, maar niet later. Ga naar Rivendel in het oosten en vraag raad aan Elrond Halfelf.
+dlg:Gandalf098	Zo zo!    Samwijs Gewissies, nietwaar?
+dlg:Gandalf099	Oef!
+dlg:Gandalf100	Hurrgh!
+dlg:Gandalf101	Gaaaah!
+dlg:Gandalf102	Mmf!
+dlg:Gandalf103	Agh!  Ahhhh...
+dlg:Gandalf104	Ugh!
+dlg:Gandalf105	Ooooh!
+dlg:Gandalf131	Jammer dat ik de Nazgûl niet kon vernietigen toen we op Weertop slaags raakten!
+dlg:Gandalf134	Ik ben te moe om zo'n spreuk uit te spreken.
+dlg:GandalfHelp	Ik laat het Reisgenootschap niet in de steek!
+dlg:Gimli001	Laat de Bijl van Durin weer Orkenschedels klieven!  Baruk Khazâd!
+dlg:Gimli002	De glorie van Khazad-dûm!  Aanschouw zijn majesteit!
+dlg:Gimli003	Mijn volk bouwde zulke beveiligingen om zich tegen indringers te beschermen.  We hebben vannacht waarschijnlijk per ongeluk het mechanisme in werking gezet.
+dlg:Gimli004	Ik durf te wedden dat het iets met deze kristallen te maken heeft...kristallen en licht.   We moeten op de een of andere manier licht op ze laten schijnen!
+dlg:Gimli005	Was je misschien liever achtergebleven, bij dat ding in het meer?
+dlg:Gimli006	Khazad-dûm is meer dan alleen mijnbouw, mijn vriend.
+dlg:Gimli007	Het is Ori, vriend van mijn vader en held van Erebor!
+dlg:Gimli008	Helaas, nee...alleen wij negenen.
+dlg:Gimli009	Durins Bijl...?  Die waanden we al lang verloren!
+dlg:Gimli010	Ori...wees sterk!  Blijf bij ons!
+dlg:Gimli011	Hij zal gewroken worden!  Dat zweert Gimli, zoon van Glóin!
+dlg:Gimli012	Het is Ori, vriend van mijn vader en held van Erebor!
+dlg:Gimli013	Hij heeft het ergste van de Orks doorstaan, en leeft nog!  Hij is een teken van hoop dat de Orks Moria niet eeuwig kunnen houden!
+dlg:Gimli013a	Je zult gewroken worden, oudere.  Baruk Khazâd!
+dlg:Gimli014	Ik volg je naar Moria, om de grote ondergrondse stad Khazad-dûm te aanschouwen.
+dlg:Gimli015	Orks overvielen Moria en stalen onze schatten om de legers van Mordor op te bouwen.  Maar onze oude vriend Balin trok met een expeditie op om Khazad-dûm te heroveren.
+dlg:Gimli015a	Als we naar Moria gaan, kan Balin onze queeste helpen!
+dlg:Gimli016	Mmm...dit lijkt een goede plek om te rusten.  Blijf wel uit de buurt van die put!
+dlg:Gimli017	De Orks zullen de dag berouwen dat ze deze plek hebben bezoedeld!
+dlg:Gimli017a	De Orks zullen de dag berouwen dat ze deze plek hebben bezoedeld!
+dlg:Gimli018	Durins Vloek is gekomen!
+dlg:Gimli019	Zeker, Gandalf!  Ik zal hem met eer dragen en terugbrengen naar de Eenzame Berg, waar hij thuishoort!
+dlg:Gimli020	Ik ben het ermee eens.  Dit is net zo'n goede plek als andere in de buurt.
+dlg:Gimli021	We moeten het wezen afleiden terwijl zij onze kameraad redden!  Baruk Khazâd!  Ten strijde!
+dlg:Gimli022	Hoe eerder we het eind van de Anduin bereiken, hoe beter.  Al die aardmannen die ik heb gezien, bevallen me niets!
+dlg:Gimli023	Machtig genoeg om Mordor binnen te gaan? Alle legers van Midden-aarde samen zouden Mordor niet kunnen binnengaan!
+dlg:Gimli024	Mijn vader Glóin reisde jaren geleden met je Oom Bilbo.  De Dwergen van de Eenzame Berg vereren Bilbo nog altijd samen met onze grootste helden!
+dlg:Gimli024a	Dwergen ontvluchten Midden-aarde tenminste niet!  Maar de Elfen zeilen weg naar de veiligheid van het Westen, in ons duisterste uur!
+dlg:Gimli024b	Zijn moed hielp ons ons bergland terug te winnen van de draak Smaug.  Een zeer eervolle Hobbit is Bilbo Balings!
+dlg:Gimli025	Trouweloos is hij die afscheid neemt wanneer de weg duister wordt!
+dlg:Gimli026	Ik ben geen spion!  Ik loop niet blind rond als een gevangene!  Mijn volk dient de Vijand niet!
+dlg:Gimli027	Ik ga vrij verder!
+dlg:Gimli028	Ha ha ha!  Wat een vrolijke troep dwazen zullen we lijken.  Ik ben tevreden als Legolas mijn blindheid deelt.
+dlg:Gimli029	Vrouwe Galadriel!  Het verbaast me dit te zeggen, maar ze is ongelooflijk schoon!  Er is werkelijk niemand schoner, in welk land ook.
+dlg:Gimli031	Als we de Nevelbergen oversteken, reizen we misschien door Moria, de grote ondergrondse stad die de Dwergen Khazad-dûm noemen!
+dlg:Gloin001	Glóin, tot uw dienst.  De Duistere Heer Sauron stuurde boodschappers naar de Dwergkoning, op zoek naar je Oom Bilbo.
+dlg:Gloin002	De handlangers van Mordor wisten dat Bilbo bij Dwergen was toen hij de Ring vond. Ze bedreigden ons en boden ons veel goud als we hen hielpen Bilbo en de Ring te vinden.
+dlg:Gloin003	Maar we hebben ze weggestuurd!  We gaan eerder met Mordor in oorlog dan dat we de Hobbits verraden!
+dlg:Gloin004	Ik zie zorgen op je gezicht, jongen!  Wees gerust! Je zult je familie eer aandoen!
+dlg:Glorfindel001	Ai na vedui Dúnadan!
+dlg:Glorfindel001a	Mae govannen, mellon!
+dlg:Glorfindel002	Heil, en eindelijk goed jullie te treffen!  We kregen opdracht naar jullie uit te kijken.
+dlg:Glorfindel003	Nee.  Elrond kreeg bericht over jullie van Elfen die bij de Gouw reisden.  Zodra hij hoorde dat er iets mis was, stuurde hij ruiters in alle richtingen uit.
+dlg:Glorfindel004	Dan zal hij mijn paard Asfaloth berijden.
+dlg:Glorfindel005	Zijn gang is soepel, en hij laat geen ruiter van zijn rug vallen.
+dlg:Glorfindel006	Vlucht!  De vijand is ons op de hielen!  Vlucht naar de voorde!
+dlg:Glorfindel007	Rijd door!  Noro lim!  Noro lim, Asfaloth!
+dlg:Goatleaf001	Halt!  Wat doe jij hier buiten?
+dlg:Goatleaf002	Nu zijn het wel mijn zaken.  Je zult smeken om het me te vertellen, als mijn vrienden je onder handen hebben genomen!
+dlg:Goatleaf003	Wie is daar?!
+dlg:Goatleaf004	Aah!
+dlg:Goatleaf005	Hmmm...
+dlg:Goatleaf006	Ai!
+dlg:Goatleaf007	Agh!
+dlg:Goatleaf008	Aaaaah!
+dlg:Goatleaf009	Ohhhh...
+dlg:Goatleaf010	Jaah!
+dlg:Goatleaf011	Hier! Hier!
+dlg:Goatleaf012	(onverstaanbaar gemompel binnensmonds)
+dlg:Goatleaf013	Help!  Heeelp!
+dlg:GoblinSA001	Ahá!
+dlg:GoblinSA002	Aah!
+dlg:GoblinSA003	Hè?
+dlg:GoblinSA004	Jii!
+dlg:GoblinSA005	Eiii!
+dlg:GoblinSA006	Jaah!
+dlg:GoblinSA007	Ullk...uggh...
+dlg:GoblinSA008	Vuur!
+dlg:GoblinSA009	Hé!  Hé!
+dlg:GoblinSA010	(onverstaanbaar gemompel binnensmonds)
+dlg:GoblinSA011	Haaaah!
+dlg:Goldberry007	Kom, beste mensen!  Lach en wees vrolijk!  Ik ben Goudbes, dochter van de Rivier.
+dlg:Goldberry008	Jullie zijn misschien nog bang voor mist en boomschaduwen.  Vrees niets! Want vannacht zijn jullie onder het dak van Tom Bombadil.
+dlg:Goldberry008a	Tom was er al vóór de rivier en de bomen.  Tom herinnert zich de eerste regendruppel, de eerste Grote Mensen en de eerste Kleine Mensen.
+dlg:Goldberry008b	Hij was er al vóór de Koningen en de Grafgeesten, vóór de Elfen westwaarts trokken en vóór de zeeën werden gebogen.  Vóór de Duistere Heer van Buiten kwam.
+dlg:Goldberry009	Haast je nu, lieve gasten! Naar het noorden, met de wind in je linkeroog, en een zegen op je voetstappen!  Haast je zolang de zon schijnt!
+dlg:Goldberry010	Vaarwel, vrienden... het was een vrolijke ontmoeting!
+dlg:Gollum001	Sss!  Waar is het?  De schatssss!
+dlg:Gollum002	Hssss!  Doler!  Hij zal ons pijn doen, jazeker!
+dlg:Gollum003	Ieee!  Doe ons geen pijn, alsjeblieft, niet kleine Sméagol, gollem!
+dlg:Gollum004	Hier om cadeautjessss te geven, ja, gollem.  Cadeautjesss!
+dlg:Gollum005	Cadeautjesss voor Dolersss, jaa.  Cadeautjes!
+dlg:Gollum006	Doler wil ons pijn doen, mijn schat, ja!  Nu gaan Orks de Doler pijn doen!
+dlg:Gollum007	Orks!  Komen ze pijn doen, mijn schat!  Komen ze nu pijn doen!
+dlg:Gollum008	Daar isss het...jaaa...
+dlg:Gollum009	Aiie! Doe ons geen pijn, mijn schat!
+dlg:Gollum010	Hmmm...
+dlg:Gollum011	Ieeee!
+dlg:Gollum012	Waah!
+dlg:Gollum013	Jiiieeee!
+dlg:Gollum014	Ieee! Alsjeblieft, doe ons geen pijn, mijn schat, we zullen braaf zijn, ja!
+dlg:Gollum015	Rrraagh!
+dlg:Gollum016	Orksss!  Orksss! Akelige Orksss, ja!
+dlg:Gollum017	Mmm...gollem, gollem...
+dlg:Gollum018	Help!  Help ons, mijn schat!
+dlg:Gollum020	Ohh...gollem... <sniff> ahh, mijn schat...
+dlg:Hal001	Ik vrees dat mijn windwijzer nog steeds niet draait.
+dlg:Hal002	De windwijzer draait als nieuw.  Hartelijk bedankt daarvoor!
+dlg:Hal003	Je hebt een oude man geholpen waar anderen dat misschien niet hadden gedaan, en daar dank ik je voor.  Ik moet hier toch iets hebben als beloning.
+dlg:Hal007	O, hallo Frodo. Je hebt een prachtige dag om aan je tocht naar Krikkenhol te beginnen.
+dlg:Hal008	Ik ben te oud voor zulke lange wandelingen.  Ik kan niet eens hoog genoeg klimmen om mijn windwijzer te repareren.
+dlg:Hal009	Het ding zit vast.
+dlg:Hal010	Die deugniet Sancho Trotsvoet gooide er stokken naar.  Nu draait hij helemaal niet meer.
+dlg:Hal011	Nou, dat vind ik prima!  De ladder staat daar.
+dlg:Hal012	De mensen in Krikkenhol boffen maar met zo'n behulpzame kerel als buurman.
+dlg:Hal013	Hallo, Frodo.
+dlg:Hal014	Je hebt een oude man geholpen waar anderen dat misschien niet hadden gedaan, en daar dank ik je voor.
+dlg:Hal016	Alsjeblieft. Neem wat eieren!  Vers van vandaag!
+dlg:Haldir001	Wees gerust.  Ik ben Haldir van Lórien.
+dlg:Haldir002	Ik volg jullie al een tijdje.  Jullie ademen zo luid dat ik jullie in het donker kon neerschieten!
+dlg:Haldir003	Wees niet bang.  Vrouwe Galadriel verwacht jullie.  Maar de Dwerg mag ons land niet betreden.
+dlg:Haldir004	Goed dan.  Maar hij moet geblinddoekt reizen.
+dlg:Haldir005	Dat is onze wet.
+dlg:Haldir006	Het zij zo.  Ik zal jullie veilig naar Caras Galadhon leiden, waar Heer Celeborn en Vrouwe Galadriel jullie verwachten.
+dlg:Heathertoes001	Ga een hol graven, onderdeurtje!
+dlg:Heathertoes002	Praat, muisje!  Praat, of ik laat je piepen!
+dlg:Heathertoes003	Arrr... Jou laat ik ook piepen, zwerver!
+dlg:Heathertoes004	Blijf staan waar je bent!
+dlg:Heathertoes005	Wa...?!
+dlg:Heathertoes006	Umm...
+dlg:Heathertoes007	Umph!
+dlg:Heathertoes008	Jerrg!
+dlg:Heathertoes009	Aaaagh!
+dlg:Heathertoes010	(pijnlijk gekreun)
+dlg:Heathertoes011	Sterf!  Aaar!
+dlg:Heathertoes012	Hé!  Hier!
+dlg:Heathertoes013	(boert, gevolgd door tevreden gegrom)
+dlg:Heathertoes014	Help me, honden!
+dlg:Legolas001	Ik ook. Ik word deze plek moe... het is hier zo koud en donker.
+dlg:Legolas002	Ik verlang ernaar tussen de bomen te zijn, frisse lucht te ademen, de hemel te zien.
+dlg:Legolas003	Hoe lang duurt het om door deze plek te komen?
+dlg:Legolas004	De stank van orks hangt hier overal!
+dlg:Legolas005	Moria... de zwarte put...waar de zon voor altijd is uitgedoofd!
+dlg:Legolas006	Luister...wat is dat voor geluid?
+dlg:Legolas007	Ik weet het niet zeker, maar ik denk dat iets ons volgt... stilletjes... in het donker.
+dlg:Legolas008	Ai! Ai!  Een Balrog!
+dlg:Legolas009	Ik ben de snelste!  Ik zal de Nazgûl achtervolgen!
+dlg:Legolas010	We moeten snel zijn, vrienden.  Die gevleugelde Nazgûl is zo bij ons!
+dlg:Legolas011	Elbereth Gilthoniel!
+dlg:Legolas012	Het gevleugelde rijdier verzwakt!
+dlg:Legolas013	Ai!  Op je hoede!  Het komt terug!
+dlg:Legolas014	Sla nu toe, nu het beest verdoofd is! Raak de zwakke plek!
+dlg:Legolas015	Het beest is weer sterk!  We moeten het uitputten als we willen zegevieren!
+dlg:Legolas016	Deze kwade wezens proberen misschien verder naar het noorden te trekken, maar de Elfen van Lórien zullen ze tegenhouden.
+dlg:Legolas018a	We hebben vernomen dat het vreemde wezen dat Gollem heet, de Duistere Heer heeft verteld dat Balings uit de Gouw de Ring heeft.
+dlg:Legolas018b	Gollem werd gevangengehouden door de Boselfen, maar hij is ontsnapt. Hij zoekt nog altijd de Ring.
+dlg:Legolas021	De Elfen zingen een klaaglied voor Gandalf.  Ik deel hun verdriet.
+dlg:Legolas021a	De Elfen rouwen om Gandalf.  Ik deel hun verdriet.
+dlg:Legolas022	De pest aan Dwergen en hun stijve nekken!
+dlg:Legolas023	Maar ik ben een Elf!  Ik ben hier verwant.
+dlg:Legolas024	Een duister raadsel.  Wie machtig genoeg is om Mordor binnen te gaan, durft de Ring niet aan te raken.
+dlg:Legolas025	Elfen hebben geprobeerd zich met Dwergen tegen Sauron te verbinden.  Maar de Dwergen verscholen zich liever in hun donkere grotten om hun schatten te tellen.
+dlg:Legolas026	In het Demsterwold spreken we nog altijd met genegenheid over je Oom Bilbo. Je moet dapper zijn om raadsels op te geven aan een draak.
+dlg:Lobelia008	Geen tijd om te kletsen, jongen!  Luid die klok!
+dlg:Lobelia009	Waar is de gouwwachter? Waar is die luie Robin Kleinhol?
+dlg:Lobelia010	Daar hoef jij je niet druk om te maken. Er zijn wolven in de Gouw!
+dlg:Lobelia011	Hoe kan dat nou? Ik heb hem nog niets over de wolven verteld!  Ga weg, Frodo.  Ik heb de gouwwachter nodig!
+dlg:Lobelia012	Sta daar dan niet zo te treuzelen!  Luid de Alarmklok!
+dlg:Lobelia013	Jij weer?  Ik hoop maar dat je de Akte van Zakeinde hebt meegebracht!
+dlg:Lobelia014	Wat jij moet doen, is je botte verstand eens slijpen en mij die Akte brengen!  En nu wegwezen!
+dlg:Lobelia015	O! Ik kan het haast niet geloven!  De Akte van Zakeinde!
+dlg:Lobelia016	Wat? Gewissies?  Die vieze aardappelwroeter en zijn zoon zouden heel Zakeinde in het holst van de nacht kunnen leegroven!
+dlg:Lobelia016a	O!  Waarom je met zulk volk omgaat, zal ik nooit begrijpen, Frodo!
+dlg:Lobelia016b	Boeren en Dwergen en tovenaars over de vloer, en nooit je eigen vlees en bloed op de thee vragen!   Echt waar!
+dlg:Lobelia017	Ja, ja, een heel goede dag inderdaad!  Mijn lieve kleine Lotho zal zo blij zijn! Eindelijk Zakeinde!
+dlg:Lobelia018	Zo!  Eindelijk is er iemand bij zinnen gekomen en heeft die klok geluid!  Nu krijgen we veiligheid en orde in de Gouw.
+dlg:Lobelia019	Nou...waar wilde je me over spreken?  Schiet een beetje op, ik heb nog veel te doen!
+dlg:Lobelia020	Wat? Maar ik dacht dat je loog, jij bedrieglijke jongen.  Ik geloof het pas als ik de Akte in handen heb.  Heb je hem bij je?
+dlg:Lobelia021	Verfoeilijke jongen!  Breng me de Akte, dan praten we erover.  Tot die tijd...goedendag!
+dlg:Lotho001	Kijk eens aan, de heer Frodo Half-Balings in hoogsteigen persoon, op wandel tussen het gewone volk!
+dlg:Lotho004	Laat me je een raad geven, Frodo.  Kom de Zakkin-Balingsen niet in de weg. Ik word ooit meester van Zakeinde, en van nog veel meer.
+dlg:Lotho004a	Dan zullen we zien, beste Frodo.  We zullen zien wie de baas is, en wie het onderspit delft!
+dlg:Lotho007	Zo, zo!  Moeder zegt dat je eindelijk bij zinnen bent gekomen en Zakeinde aan ons hebt verkocht. Werd tijd dat je erkende dat wij beter zijn dan jij!
+dlg:Lotho007a	Nu komen er eersteklas Hobbits in Zakeinde wonen, en niet het soort Dwergen en tovenaars waar jij en Bilbo zo dol op lijken.
+dlg:Lotho008	Zorg dat je op de afgesproken datum uit Zakeinde bent!
+dlg:Lotho008a	Het zou zonde zijn als de gouwwachter je in ketenen uit je geliefde huis moest slepen...ik bedoel, míjn geliefde huis.
+dlg:Lotho009	Moeder?  Ja, ze is hier...ik geloof dat ze in De Klimopstruik zit, al betwijfel ik of ze met types zoals jij wil praten.
+dlg:Maggot001	Grijp!  Slagtand!  Wolf!  Kom op, jongens!
+dlg:Maggot002	Wat is dat voor gekwebbel op dit uur van de nacht? Spreek op!
+dlg:Maggot003	Kijk eens aan, Peregrijn Toek.  Je boft dat ik je ken.  Ik wilde net mijn honden loslaten!
+dlg:Maggot004	De vreemdste kerel kwam hier langsrijden en stelde rare vragen.   Hé!  Wie is dat bij je, Pepijn?
+dlg:Maggot005	Frodo Balings!
+dlg:Maggot006	Balings!  Nou, dat is nog het vreemdste van alles!  Waar denk je dat die vreemdeling naar vroeg?
+dlg:Maggot007	Hij kwam aanrijden op een zwart paard, in zwarte mantel en kap. En hij vroeg naar Balings!
+dlg:Maggot007a	Ik zei dat alle Balingsen in Hobbitstee wonen.  Hij zegt dat Balings te voet naar het oosten gaat.  En nu duikt Frodo Balings op mijn boerderij op!
+dlg:Maggot007b	Dezelfde Frodo Balings die een van de ergste jonge deugnieten van de streek was, mag ik wel zeggen.
+dlg:Maggot007c	Waar ga je heen?
+dlg:Maggot008	Ik zie dat je in de problemen zit, Frodo. Je had je nooit moeten inlaten met dat rare volk uit Hobbitstee!
+dlg:Maggot008a	Ik wed dat die buitenlander komt voor het goud dat Bilbo uit den vreemde heeft meegebracht.
+dlg:Maggot009	Nee, hij zal op je wachten!  Je rijdt mee in mijn wagen, uit het zicht.
+dlg:Maggot010	En we sturen je weg met een flinke schotel paddenstoelen van Vrouw Made!
+dlg:Maggot011	Inderdaad.  Zullen we nu gaan?
+dlg:Maggot012	Laat het me maar weten als je klaar bent.
+dlg:Maggot013	Ik maak de wagen klaar.
+dlg:Maggot014	Klaar om te gaan?
+dlg:Maggot015	Doe er niet de hele nacht over!
+dlg:Maggot016	Ik haal de wagen.
+dlg:Maggot017	Grijp!  Slagtand!  Wolf!   Wat is dat voor herrie?
+dlg:Maggot018	Zo, zo. Er zit een inbreker op het land.
+dlg:Maggot019	Klaar met je paddenstoelen jatten? Of wil je het liever met de jongens uitpraten?
+dlg:Maggot020	En nu wegwezen, of ik laat de jongens korte metten met je maken!
+dlg:Maggot021	Maak nu dat je wegkomt, voordat ik me bedenk!
+dlg:Maggot022	Jij weer?!  Eruit!  Eruit, of je wordt voer voor mijn honden!
+dlg:MAGoblin001	Wazzat?
+dlg:MAGoblin002	Jah!
+dlg:MAGoblin003	Errr...
+dlg:MAGoblin004	Akk!
+dlg:MAGoblin005	Jiee!
+dlg:MAGoblin006	Jaaagh!
+dlg:MAGoblin007	Ulllggh!
+dlg:MAGoblin008	Jaaa!
+dlg:MAGoblin009	(schel gefluit)
+dlg:MAGoblin010	(schel gefluit)
+dlg:MAOrc001	Stiekem, hè?
+dlg:MAOrc002	Ahh!
+dlg:MAOrc003	Errm...
+dlg:MAOrc004	Ugh!
+dlg:MAOrc005	Aagh!
+dlg:MAOrc006	Jaawgh!
+dlg:MAOrc007	Gaaargh!
+dlg:MAOrc008	Vuur!
+dlg:MAOrc009	Indringers!
+dlg:MAOrc010	(spuugt)
+dlg:MAOrc011	Help!
+dlg:Merry001	Ik had nooit gedacht dat Dwergen zo'n enorme plek zouden bouwen!
+dlg:Merry002	Orkengedoe.
+dlg:Merry003	Hoe lang zou het hebben geduurd om dit allemaal uit te hakken?
+dlg:Merry004	Die Wargs waren groot genoeg om op te rijden!
+dlg:Merry005	Wat betekent het...'spreek, vriend, en treed binnen'...?
+dlg:Merry006	Pepijn, dat is geen... goed idee.
+dlg:Merry007	Misschien waren lawines toch beter.
+dlg:Merry013	Is die luilak van een Sam Gewissies vergeten te zeggen dat we hier zouden zijn?
+dlg:Merry014	Pak een stoel.
+dlg:Merry015	Zeg het hem niet...o, te laat.  Onze samenzwering is ontmaskerd.  Dan kunnen we hem nu net zo goed alles vertellen!
+dlg:Merry016	Met z'n drieën is het gezellig!  Net als vroeger!  Weet je nog, die paddenstoelen?
+dlg:Merry017	Ik geloof dat Frodo bang is!  Ben jij bang, Pepijn?
+dlg:Merry018	Alleen omdat hij jou betrapte!
+dlg:Merry019	Weet je nog hoe die paddenstoelen roken als ze werden gebakken?
+dlg:Merry020	Dan is het besloten!
+dlg:Merry022	Waar bleef je, neef?  Even langs De Groene Draak gegaan op weg hierheen?
+dlg:Merry023	Je bedoelt Rivendel.  En we gaan met je mee.
+dlg:Merry023a	Eigenlijk heb je het aan de Zakkin-Balingsen te danken. Ik oefende op een dag in het besluipen van Bilbo toen hij Lotho naar hem hoorde roepen.
+dlg:Merry023b	Bilbo deed de Ring om en verdween!  Daarna hielden we onze ogen open.  We bespioneerden jou en Gandalf.
+dlg:Merry023c	Je kunt erop vertrouwen dat we je tot het bittere eind bijstaan!
+dlg:Merry023d	Maar je kunt er niet op vertrouwen dat we je alleen het gevaar in laten gaan!
+dlg:Merry024	Daar gaat ons plan om nog wat paddenstoelen te jatten voordat we vertrekken.
+dlg:Merry025	O. Dat is dan een andere Balings.
+dlg:Merry026	Deze Elfenboten zijn een wonder!  Zoiets heb ik nog nooit gezien!
+dlg:Merry027	We zijn hier!
+dlg:Merry029	Heel dicht bij het dal van de Wilgewinde.  Maar we moeten niet dichterbij komen.
+dlg:Merry030	Het dal van de Wilgewinde is het vreemdste deel van het hele woud!  Het middelpunt waar al die vreemdheid vandaan komt, als het ware!
+dlg:Merry031	Ik dacht dat ik het kon, maar zoals deze bomen verschuiven, ik weet het niet!  Het is...het is alsof ze ons erheen leiden...
+dlg:Merry032	Het spijt me dat ik ons naar zo'n gevaarlijke plek heb geleid. Maar we zijn die Zwarte Ruiter tenminste kwijt!
+dlg:Merry032a	Hij galoppeert heen en weer over de Oostweg en roept: Balings?  Balings?  We hebben hem mooi beetgenomen!
+dlg:Merry033	Kan niet verder... moet dutje doen!
+dlg:Merry034	Hou op! Hou op!  Hij knijpt me doormidden als je niet ophoudt!
+dlg:Merry035	Ja, dank u!
+dlg:Merry036	We zijn niet ver van de hoofdweg, als ik het goed heb.
+dlg:Merry037	En wat bedoelde hij in vredesnaam met 'de Oudste'?
+dlg:Merry038	Als de helft van de verhalen over de Grafheuvels klopt, moeten we goed de wacht houden.
+dlg:Merry039	Het is volkomen schoon.  Onaangetast door de tijd.
+dlg:Merry040	O, Sam!  Dit is net zo goed als een herberg thuis... alleen veel groter!
+dlg:Merry041	Goed.  Kom mee, Sam, Pepijn.  Dag, meneer Onderberg.
+dlg:Merry042	We hadden hier al lang geleden heen moeten gaan! Lekker eten en uitstekende drank!
+dlg:Merry043	Daar maak ik me wel zorgen over als het zover is.  Tot die tijd laat ik mijn vermoeide voeten rusten en geniet ik van de plaatselijke gastvrijheid.
+dlg:Merry044	Stel je voor...Hobbits en Grote Mensen die samen in één dorp leven.
+dlg:Merry045	Waar gaan we heen?
+dlg:Merry046	Wie bent u?
+dlg:Merry047	Goed dan, vriend.  Wat moeten we nu doen?
+dlg:Merry048	En u dan?
+dlg:Merry049	Pardon?
+dlg:Merry058	En ook geen spoor van Gandalf.
+dlg:Merry059	Je bent veilig.
+dlg:Merry060	De Ruiters kunnen overal zijn... vlak bij ons!  Het is zo donker buiten.  We moeten verder, niet stil zitten wachten!
+dlg:Merry061	Merijn en Pepijn!
+dlg:Merry062	Ik ben van plan de kaarten en boeken van Meester Elrond te bestuderen nu we hier zijn.  Er valt genoeg te leren!
+dlg:Merry063	Stel je voor, Frodo...dit allemaal gebouwd in en op enorme bomen!  Het is prachtig, werkelijk prachtig!
+dlg:Merry064	Ik wacht liever niet tot die zwarte ruiter terugkomt.
+dlg:Merry065	We kunnen maar beter gaan, voordat er meer van die dingen op ons afkomen!
+dlg:Merry068	Daar ben je, neef.
+dlg:Merry069	Het is maar een oude, sjofele hond.
+dlg:Merry070	Maar drie.
+dlg:Merry072	Echt, Frodo, je bent trager dan de honden van Made!
+dlg:Merry073	Goed gedaan, Frodo.
+dlg:Merry074	Die afschuwelijke boom! Hij wilde Pepijn en mij opeten!
+dlg:Merry075	Je hebt ons een tijdje ongerust gemaakt, neef.  Gelukkig kon Meester Elrond die akelige wond van je genezen!
+dlg:Milo009	Kom je vissen, Frodo?  Dikkie heeft me in de steek gelaten om nota bene een taart te bakken!
+dlg:Milo010	Ach, helemaal niet!  Ik denk dat ik vervloekt ben!
+dlg:Milo011	Eh...aas?  He he...nou...
+dlg:Milo012	Je hebt waarschijnlijk gelijk, Frodo...maar ik zou niet weten waar ik er een moet vinden.
+dlg:Milo013	Ah...nou, als het geen moeite is...
+dlg:Milo014	Nog steeds geen beet!  Eh...al wormen gevonden?
+dlg:Milo015	Bah!  Waarom moeten ze nou zo...zo...wormerig zijn?!
+dlg:Milo016	Goed, goed...nou, de ene dienst is de andere waard.  Neem deze maar!
+dlg:Milo017	Ik heb geprobeerd ze als zinklood te gebruiken, maar...
+dlg:Milo018	Het lijkt erop dat de vissen net zo'n hekel aan wormen hebben als ik!
+dlg:Milo019	Geen tijd om te praten, Frodo!  Mijn varkens zijn losgebroken!
+dlg:Milo020	Ik weet het niet!  Ik kwam ze voeren en ze liepen overal in de wei!  Iemand moet ze uit het hok hebben gelaten!
+dlg:Milo021	Ik weet het niet, maar als ze niet terug in het hok zijn voordat mijn vrouw thuiskomt, zit ik flink in de nesten!
+dlg:Milo022	Wacht!  Wacht! Wil je me helpen?
+dlg:Milo023	Nou, ik hoopte te gaan vissen met Dikkie Bolger. Ik kan moeilijk vissen terwijl mijn varkens loslopen!
+dlg:Milo024	Dat hoop ik!
+dlg:Milo025	De varkens lopen nog los in de wei!  O, zo kom ik nooit aan vissen toe!
+dlg:Milo026	Je bent een beste kerel, Frodo!
+dlg:Milo027	Dank je. Dat zal ik nodig hebben!  Tot ziens, Frodo.
+dlg:Minto001	Hallo, meneer Balings.
+dlg:Minto002	Mevrouw Zakkin-Balings probeerde me met haar paraplu te slaan.
+dlg:Minto003	Ik zat Sancho Trotsvoet achterna langs Zakeinde. Ze zei dat dat geen plek was voor kleine boefjes.
+dlg:Minto004	Toen ze zich omdraaide, gooide ik een appel! Ik had haar bijna geraakt ook!
+dlg:Minto005	Ze keek me aan met een blik waar de melk van zou schiften, en ging toen naar Bijwater.  Opgeruimd staat netjes, zeg ik!
+dlg:Minto006	Je hebt gelijk!  Een steen was beter geweest!
+dlg:Minto007	Sorry, meneer Balings.  Nou, dag.
+dlg:Minto008	Heb je Sancho Trotsvoet gezien?  Hij heeft een paar van mijn voetzoekers gepikt!
+dlg:MMGoblin001	Wiezat?
+dlg:MMGoblin002	Iee!
+dlg:MMGoblin003	Uhhh...
+dlg:MMGoblin004	Ehh!
+dlg:MMGoblin005	Hiih!
+dlg:MMGoblin006	Haaargh!
+dlg:MMGoblin007	Ohhh...
+dlg:MMGoblin008	Aaaah!
+dlg:MMGoblin009	(schel gefluit)
+dlg:MMGoblin010	N.v.t.
+dlg:MMGoblin011	(schel gefluit)
+dlg:MMOrc001	Halt, jij!
+dlg:MMOrc002	Huh?!
+dlg:MMOrc003	Umm...
+dlg:MMOrc004	Gah!
+dlg:MMOrc005	Oemf!
+dlg:MMOrc006	Gaagh!
+dlg:MMOrc007	Ulk!  Uhhh....
+dlg:MMOrc008	Jaaaaah!
+dlg:MMOrc009	Indringers!
+dlg:MMOrc010	(laag gegrom)
+dlg:MMOrc011	Help!
+dlg:Mugwort001	Goedendag, jongen. Jij bent een Balings, niet...Bilbo?
+dlg:Mugwort002	Frodo Balings!  Woont in dat grote huis boven op de Heuvel!  Bilbo's huis.  Hoe gaat het met je, Bilbo?
+dlg:Mugwort003	Frodo!  Juist...nou, geen tijd om te kletsen. Ik ga naar Bree...een boodschap voor Ted Zandman, onderdelen halen voor de molen.
+dlg:Mugwort004	Bedankt, Bilbo.  Ik ga liever niet, maar we hebben die molen nodig en Ted zegt dat hij te belangrijk is om zelf te gaan.
+dlg:Mugwort005	Goedendag Bilbo.  Geen tijd om te praten.  Ik ga naar Bree om de molen te repareren.
+dlg:Mugwort006	Hallo.  Jij komt me bekend voor!   Balings, toch?  Uit de Gouw!
+dlg:Mugwort007	Onderberg... Je lijkt sprekend op een Balings die ik ken.
+dlg:Mugwort008	Ted Zandman heeft me naar Bree gestuurd om onderdelen voor het molenrad te halen.
+dlg:Mugwort009	Ja.  Dat vervloekte ding is laatst een pen kwijtgeraakt.  Zonder kan hij niet draaien!
+dlg:Mugwort010	Zeg, Onderberg...dat is een mooi zwaard dat je daar hebt.  Zoiets heb ik nog nooit gezien!  Hoe kom je eraan?
+dlg:Mugwort011	Een koninklijk geschenk was dat!  Ik zou het maar verborgen houden als ik jou was.
+dlg:Mugwort012	Hallo weer.  Bree is een levendige plek, hè, meneer Onderberg?
+dlg:Mugwort013	Wat een geluk!  Heeft Zandman hem gerepareerd?
+dlg:Mugwort014	Dus het is aan jou te danken!  En ik dank je ook!
+dlg:Mugwort015	Nou, ik moet maar eens terug naar de Molen, Bilbo.  Zandman wil dat ik werk, niet dat ik door het land loop te slenteren!
+dlg:Narrator001	Kies een wachtwoord.
+dlg:Narrator030	Queestelogboek bijgewerkt.
+dlg:Narrator031	<X> Ja
+dlg:Narrator032	<B> Nee
+dlg:Narrator033	<X> Ja
+dlg:Narrator034	<B> Nee
+dlg:Narrator040	Ben je klaar om de Ring mee te nemen en aan je reis te beginnen?
+dlg:Narrator041	<X> Ja
+dlg:Narrator042	<B> Nee
+dlg:Narrator049	Frodo is bezweken aan zijn Morgulwond.
+dlg:Narrator053	<A> Edro, Annon, <B> Mellon,
+dlg:Narrator054	<X> Open, open, <Y> Edro, open
+dlg:Narrator899	Welk voorwerp wil je hebben?
+dlg:Narrator899a	<X> Dikkies Wandelstok
+dlg:Narrator899b	<B> Dikkies Zalf
+dlg:Narrator899c	<X> Dwergentonicum
+dlg:Narrator899d	<X> Vuurpijlen
+dlg:Narrator899e	<B> Stalen Pijlen
+dlg:NarratorChoice	Kies een personage.
+dlg:NarratorOptions1	<X> Frodo, <B> Aragorn,
+dlg:NarratorOptions2	<Y> Gandalf
+dlg:Naz001	Balings...de Ring...
+dlg:Naz002	(gesis)
+dlg:Naz003	(gesis)
+dlg:Naz004	(gesis, rasperig gegrom)
+dlg:Naz005	(gesis, rasperig gekreun)
+dlg:Naz006	(luid gesnuffel)
+dlg:NazM001	Je kunt niet winnen!
+dlg:NazM002	Dat kan niet!
+dlg:NazM003	Onderwerp je, dwaas!
+dlg:NazM004	Maak een eind aan deze dwaasheid...geef de Ring op!
+dlg:Noakes001	Al wat van die kruiden gevonden?
+dlg:Noakes002	Hallo, jonge Balings.
+dlg:Noakes003	O, ja...maar het is de thee die wonderen doet. Niet de geur!
+dlg:Noakes004	Ik heb niet al die kruiden nodig...hou er zelf maar een paar.
+dlg:Noakes005	Op je gezondheid, jonge Balings! En een vrolijke wandeling naar Krikkenhol.
+dlg:Noakes006	Wel, dank je. Ik ben weer zo fit als een paard. De mensen zullen me nog goed geconserveerd noemen, net als je Oom Bilbo, God zegene hem.
+dlg:Noakes007	Wel, het komt door die nieuwe kruidenthee die ik drink!
+dlg:Noakes008	Mijn ouwe botten zijn niet meer stijf en pijnlijk, echt waar! Het is een wonder.
+dlg:Noakes009	Helemaal niet bijzonder. De kruiden groeien in het wild in de noordelijke landen. Peterselie, dennennaalden en koningsblad.
+dlg:Noakes010	Ik ruik nu een paar van die kruiden. Ik denk dat jij er wat hebt.
+dlg:Noakes011	Goedendag, jonge Balings!  Ik weet dat je familie in Bokland graag met boten rommelt, maar blijf jij er maar af!
+dlg:Noakes012	Ik had vier bundeltjes kruiden...tot die Sancho Trotsvoet ze pikte!  Hij heeft ze overal rondgestrooid!
+dlg:Noakes013	Ik heb nog wat meer kruiden nodig, maar ik dank je hartelijk voor je hulp!
+dlg:Nob001	Ik kom zo bij u, meneer.
+dlg:Nob002	Goedenavond, meneer.
+dlg:Nob003	Hier, meneer!  Hier ben ik!
+dlg:Nob003a	Hier, meneer!
+dlg:Nob004	Ik ga er meteen mee aan de slag, meneer.
+dlg:OldTimer001	Hé!  Jij!  Help!
+dlg:OldTimer002	Ratten, dat is er aan de hand, en heel wat ook!  Ze zitten allemaal in mijn kelder!  Ze knagen al mijn spullen aan!
+dlg:OldTimer003	En dat is niet alles!  Er zit daar ook een inbreker!
+dlg:OldTimer004a	Een stiekem kereltje, zo te zien!  Ik zag 'm naar binnen gaan! Maar toen ik hem achterna ging, werd ik door een rat gebeten!
+dlg:OldTimer005	Kijk dan wel uit waar je loopt!  Het krioelt daar van de vervloekte ratten!  Nog nooit zoiets gezien!
+dlg:OldTimer006	Hé, jij!  Al van die ratten af?  Of van die inbreker?
+dlg:OldTimer007	En?  Is mijn kelder vrij van ratten?  Ik zag dat kleine boefje naar buiten rennen!  Hij was weg voordat ik hem een tik op zijn kop kon geven!
+dlg:OldTimer008	Ga je gang!  Ik heb er toch niks meer aan, nu de ratten ze aan flarden hebben gescheurd!
+dlg:OldTimer009	Dat hoef je me geen twee keer te zeggen!  Er lopen vannacht allerlei rare, rondzwervende boeven rond...aanwezigen uitgezonderd, natuurlijk.
+dlg:OlogH001	O ho!
+dlg:OlogH002	Hoem?
+dlg:OlogH003	Hurrm...
+dlg:OlogH004	Urrr!
+dlg:OlogH005	Rurrr!
+dlg:OlogH006	Raarrgh!
+dlg:OlogH007	Ooog...uuugh...
+dlg:OlogH008	Roooaar!
+dlg:OlogH009	(rommelende maag)
+dlg:Ori001	Je eert me, zoon van Glóin. En Gandalf!  Mijn oude vriend.
+dlg:Ori002	Zijn de Zonen van Durin gekomen om wraak te nemen? Zijn jullie hier met een leger Dwergen?
+dlg:Ori003	Dan moet ik jullie helpen.
+dlg:Ori004	Zoek...de Kamer van Mazarbul. Daar zullen jullie...de grote Bijl...van Durin vinden.
+dlg:Ori005	Jullie moeten...hem afleveren...bij ons volk.
+dlg:Ori006b	Licht...het aangezicht...van...Durin...wijst de weg...nnn...
+dlg:Pippin001	Bang waarvoor?
+dlg:Pippin002	Ik geloof dat ik dit stuk leuker vind dan die mijngangen.
+dlg:Pippin003	Ik was het niet, ik zweer het!
+dlg:Pippin004	Problemen?  Wat voor problemen?!
+dlg:Pippin005	Kunnen Orks niet in het donker zien?
+dlg:Pippin006	Had ik maar naar Elrond geluisterd!  Ik deug niet voor dit...voor vechten!
+dlg:Pippin007	Wat staat er geschreven?
+dlg:Pippin008	Ach, jij bent maar een kleine vangst, Sam.  Hij zou je waarschijnlijk teruggooien!
+dlg:Pippin009	Als hier nog Dwergen zijn, hoop ik dat hun provisiekast goed gevuld is.  Ik verga van de honger!
+dlg:Pippin015	Hallo, Frodo!  Waar bleef je zo lang?
+dlg:Pippin016	Ontbijt, al zijn we inmiddels aan de lunch toe!
+dlg:Pippin017	Kan ik niet zeggen. Het is een samenzwering.
+dlg:Pippin018	Omdat je toch langs de boerderij van Ouwe Made komt, dachten we zijn tuin nog eens onder handen te nemen.
+dlg:Pippin019	Ik ben nooit bang, Merijn. Blaffende honden bijten niet!
+dlg:Pippin020	Wees deze keer gewoon voorzichtig.
+dlg:Pippin021	We zien je op de boerderij van Made.
+dlg:Pippin023	Daar is hij, de ouwe treuzelaar!
+dlg:Pippin024	Je dacht dat je zo slim was.  Maar onze samenzwering was je te slim af!  We weten alles van de Ring en de Duistere Heer!
+dlg:Pippin024a	Dus we gaan mee.  Om je te beschermen.
+dlg:Pippin024b	Hoe konden we het niet weten? Jij liep maar te mompelen: 'Zal ik dat dal ooit nog terugzien?"
+dlg:Pippin024c	Via onze hoofdsamenzweerder.  Tot hij betrapt werd!
+dlg:Pippin024d	We hebben je geheim beter bewaard dan jij!
+dlg:Pippin024e	Ook al zijn we vreselijk bang.  We gaan met je mee, of we volgen je als honden!
+dlg:Pippin024f	Nee, Sam.  Honden.
+dlg:Pippin025	En Ouwe Made ook, zo te horen.
+dlg:Pippin026	Goedenavond, meneer Made.
+dlg:Pippin027	U kent Meriadoc Brandebok nog.  Mag ik u voorstellen aan Samwijs Gewissies en--
+dlg:Pippin028	Frodo gedraagt zich tegenwoordig veel beter.
+dlg:Pippin029	Hé!  Frodo!
+dlg:Pippin030a	Ik had nooit gedacht dat aardappels zo lekker konden ruiken!
+dlg:Pippin031	Weet je dat een van die bomen een tak naar me uitstak?  Ik struikelde er bijna over!
+dlg:Pippin032	Het is koel onder de wilgen... minder vliegen!
+dlg:Pippin033	D-de boom!  Dat zegt hij!
+dlg:Pippin034	Heel erg!
+dlg:Pippin035	Geloof jij niet in verhalen over oude, dode Grafgeesten?
+dlg:Pippin035a	En waarom gaf hij geen spek? Of karbonades? Of worstjes?
+dlg:Pippin036	Ik mis het avondmaal van Vrouwe Goudbes!  Ah, wat een feestmaal!  Kunnen we nu terug?
+dlg:Pippin037	Ja, nogmaals bedankt!
+dlg:Pippin038	Hoe groter de herberg, hoe groter de maaltijden!
+dlg:Pippin039	Misschien kan Sam een pieperveldje vinden om in te slapen.
+dlg:Pippin040	Ik snap niet waar Sam over zeurt!  Dit is een prima herberg!  Met een prima kok in de keuken, mag ik wel zeggen!  Probeer de stoofpot!
+dlg:Pippin041	O, ja.  We willen niet in de stallen slapen!
+dlg:Pippin042	Heb je de stoofpot al geprobeerd? Ik neem nog een tweede bord, denk ik...misschien wel een derde!
+dlg:Pippin043	Wacht, wacht, wacht...nu komt het mooiste stuk!
+dlg:Pippin044	En een mooie truc was het!
+dlg:Pippin045	Hallo!  Wie bent u, en wat wilt u?
+dlg:Pippin046	Iedereen hier wil even met je praten.
+dlg:Pippin047	Ha ha...o.
+dlg:Pippin049	Ah, ik had het kunnen weten...nog meer binnenwegen en lange vertragingen!  De vorige keer dat we dat probeerden, werden we bijna door een boom opgegeten!
+dlg:Pippin052	Nou, hier zijn we dan!  Koud, winderig, en belegerd door trollen!
+dlg:Pippin053	De Ruiters zijn weg!
+dlg:Pippin054	Wortels en bessen...hmf!  Wat een spannende maaltijd...bah!
+dlg:Pippin055	Ik heb zo'n honger dat die wortels en bessen me lekker beginnen te smaken.
+dlg:Pippin056	Hobbits zijn ook Vrije Volken!
+dlg:Pippin057	Elrond mag blij zijn dat hij Merijn en mij heeft laten meegaan!  We zaten al een nieuwe samenzwering te beramen voor het geval ze ons niet zouden laten gaan!
+dlg:Pippin058	Heb je deze Elfenlekkernijen al geproefd?  Ik heb nog nooit zoiets geproefd.  Stel je voor dat je duizenden jaren de tijd hebt om je recepten te perfectioneren!
+dlg:Pippin059	De Gouw lijkt zo ver weg!  Ik wist dat de wereld groot was, maar niet zó groot!
+dlg:Pippin060	Van al dat wachten krijg ik honger.  Ik zal Frodo's paddenstoelen moeten opeten!
+dlg:Pippin061	Het was het beste feest ooit!  Vuurwerk dat alleen een tovenaar kon maken!
+dlg:Pippin062	Ouwe Bilbo begint aan een lange, saaie toespraak.  Maar hij heeft nog iets achter de hand... of in zijn zak!
+dlg:Pippin062a	Dus Bilbo zegt tegen de honderdvierenveertig Hobbits op het feest: jullie zijn één gros Hobbits!  Iedereen is zo beledigd dat niemand ziet dat zijn hand in zijn zak gaat...
+dlg:Pippin065	Waar wachten we op?  Hoe eerder we lelies vinden, hoe eerder we kunnen eten!
+dlg:Pippin066	Die ouwe wijven wisten blijkbaar waar ze het over hadden!  Deze plek is verschrikkelijk!
+dlg:Pippin067	Wat zei hij nou?
+dlg:Pippin068	Klaar om de paddenstoelen van Boer Made aan te pakken?
+dlg:Pippin069	Echt, Frodo. Je maakt je veel te veel zorgen.
+dlg:Pippin071	Je verspilt tijd, Frodo.  Hoe eerder jij de paddenstoelen hebt, hoe eerder we kunnen eten!
+dlg:Pippin072	Eindelijk paddenstoelen!
+dlg:Pippin073	Die Goudbes...zou ze een goede kok zijn?
+dlg:Pippin074	Ik snap waarom Bilbo hier blijft...Rivendel is schitterend!  Ik denk niet dat ik ooit nog betere maaltijden krijg...nooit!
+dlg:Robin001	Wat is er nu weer aan de hand?  Ik moet niks hebben van roekeloos klokgelui!
+dlg:Robin002	O. Is dat alles?  Dat gerucht heb ik gehoord, maar volgens mij heeft niemand die wolven gezien. Zelfs Lobelia niet.
+dlg:Robin003	Als er wolven in de buurt van de Gouw komen, jagen de grenswachters ze weg, net zoals ze vossen en dergelijke verjagen.
+dlg:Robin004	En als dat alles is: er wacht nog een kroes op me in De Groene Draak.
+dlg:Robin005	Niets gaat er boven een kroesje of twee tijdens mijn ronde als gouwwachter, terwijl ik de laatste roddels hoor.
+dlg:Robin006	Die Lobelia...  Ze heeft altijd wel een klacht of twee.
+dlg:Robin006a	Maar in Krikkenhol hoef je niet meer naar haar te luisteren, denk ik!
+dlg:Robin006b	Op een flinke afstand van lastige familie!
+dlg:Robin007	Hallo, Frodo.  Tijd voor een kroes met mij?
+dlg:Robin008	Op avontuur?
+dlg:Robin009	Waarom niet? Al die grote draken die zich verstoppen voor de geduchte Balingsen?  Ha!  Maak je geen zorgen, Frodo.  Het is maar een grapje van me!
+dlg:Robin009a	Iedereen weet dat jij een fatsoenlijke Hobbit bent, anders dan je Oom Bilbo, God zegene hem.
+dlg:Robin010	Avond, Frodo.  Houd je ogen open...de wolf jaagt vaak 's nachts!
+dlg:Robin011	Ah, Frodo!  Ik sta bij je in het krijt!
+dlg:Robin012	Als jij niet was gekomen, was ik een middernachtelijk hapje geweest voor dat beest.
+dlg:Robin013	We hebben in honderd jaar geen wolven gezien.
+dlg:Robin014	Het is een slecht voorteken.  Wat zou het betekenen?
+dlg:Robin015	Wat? O, je hebt gelijk, Frodo.  En ik moet terug op patrouille!
+dlg:Robin016	Ja, natuurlijk!  Ik sta nog te trillen van dat beest, weet je!
+dlg:Robin016a	Ik ben alleen gouwwachter geworden om door het land te kunnen lopen en met de mensen te praten. Als ik had geweten dat het zo gevaarlijk zou zijn...
+dlg:Robin017	Het ga je goed, Frodo.
+dlg:Robin018	Een wolf!  Ik ben er geweest!
+dlg:Robin019	Frodo!  Kijk uit!
+dlg:Robin022	O, trouwens, Frodo...zeg tegen je vriend Dikkie Bolger dat ik hem met de klepel heb zien wegsluipen.
+dlg:Rose001	Hallo weer, Frodo.  Mag ik je om een gunst vragen?
+dlg:Rose002	En jij ook hallo, Frodo Balings!  Ik wens je mooi weer voor je reis.  Eh... waar is Samwijs?
+dlg:Rose003	Je komt toch af en toe terug, hè Frodo?
+dlg:Rose004	Nou, misschien kun je die Samwijs wat manieren bijbrengen!
+dlg:Rose005	Ik heb hem nergens op betrapt, maar... hij is vast een van die grapjassen die de alarmklok van Bijwater met stenen laten luiden!
+dlg:Rose005a	Als we de klok ooit echt moeten luiden, negeert gouwwachter Robin het misschien, omdat hij denkt dat het een kinderstreek is.
+dlg:Rose005b	Misschien...nou, veel succes in Bijwater.  Kom zo vaak terug als je kunt!
+dlg:Rose006	Ik had nooit gedacht dat jij de alarmklok zou luiden, Frodo.  Ik hoop maar dat Lobelia zich vergist over de wolven.
+dlg:Rose007	Wil je dat vat cider hierheen brengen?  Het is vreselijk zwaar.
+dlg:Rose008	Heel erg bedankt, Frodo.  Was die Samwijs maar zo aardig als jij!
+dlg:Rose009	Hartelijk dank, Frodo.  Alsjeblieft. Ik heb iets voor je. Een cadeautje voor je nieuwe huis.
+dlg:Rose011	Graag gedaan.  Ik hoop dat je je oude vrienden niet vergeet als je eenmaal in Krikkenhol woont.
+dlg:Sam001	Waar zijn we precies, meneer Gandalf?
+dlg:Sam002	Je zou heel Zakeinde in één zaal hier kwijt kunnen, en dan nog ruimte overhouden!
+dlg:Sam003	Ik niet, meneer Gimli!  Ik waag het hier binnen wel!
+dlg:Sam004	Als hier beneden Dwergen zijn, hoop ik dat ze gauw komen!  We kunnen wel wat hulp gebruiken!
+dlg:Sam005	Mijn hart zit in mijn schoenen, maar we zijn nog niet opgegeten!
+dlg:Sam006	Wie weet wat daar beneden rondzwemt, op zoek naar een maaltijd?
+dlg:Sam007	Hier groeit niets dan smerig slijm.  Wat is een huis zonder tuin?
+dlg:Sam008	Goed genoeg om hier weg te komen, dat staat vast!  Ik dacht dat ik het avondeten van dat ding was!
+dlg:Sam009	Ahh!  Doe me geen pijn!
+dlg:Sam010	Niks, meneer!  Ik knipte het gras onder het raam!
+dlg:Sam011	Luistervink? Ik ben geen vink, meneer, ik ben tuinman.
+dlg:Sam012	O, meneer Frodo!  Laat hem me niet in iets onnatuurlijks veranderen!
+dlg:Sam013	Nou...ik hoorde een hoop wat ik niet begreep...over heren en ringen en een vuurberg... en Elfen, meneer! Ik moest wel luisteren! Ik zou zo dolgraag Elfen zien!
+dlg:Sam014	Ik, meneer...? Elfen gaan zien en zo?
+dlg:Sam015	O, ja! Geen woord van Sam Gewissies!
+dlg:Sam016	Elfen!  Ik ga Elfen zien!
+dlg:Sam023	Goedemorgen, meneer Frodo.
+dlg:Sam024	Helemaal klaar.  Of dat ben ik, zodra ik Zakeinde heb verzorgd.
+dlg:Sam025	Ik zou die Zakkin-Balingsen wel uit Zakeinde willen wieden, als u begrijpt wat ik bedoel.
+dlg:Sam025a	Nee, ik moet die tuin nog één laatste keer wieden, meneer Frodo. Afscheid van hem nemen. Hem op orde brengen voordat Lotho en Lobelia hem verpesten.
+dlg:Sam026	O, nee, eh, er zijn vast veel mooiere...  O!  Merijn en Pepijn vroegen of u ze in De Groene Draak wilde treffen.
+dlg:Sam027	Neem me niet kwalijk, meneer, maar in De Groene Draak valt weinig kattenkwaad uit te halen.  De waard pikt het niet.
+dlg:Sam028	Gaan we gauw de Elfen opzoeken, meneer Frodo?
+dlg:Sam029	Meneer Frodo!
+dlg:Sam030	En Gandalf zei toch: neem degenen mee die je kunt vertrouwen!
+dlg:Sam031	Honden!
+dlg:Sam031a	De honden van Made!  Ze komen eraan!
+dlg:Sam032	Ik moet zeggen dat reizen per boot niks voor mij is!
+dlg:Sam033	En verdwaald, zo te zien!  Deze bomen hebben een eigen wil!
+dlg:Sam034a	Het avondeten is zo klaar.
+dlg:Sam035a	Waar zijn we, behalve in het Oude Woud?
+dlg:Sam036	Waarom niet?
+dlg:Sam037	Merijn dacht dat hij de weg wist in dit woud.  Maar hoe kan iemand de weg vinden als het woud niet stil blijft staan?
+dlg:Sam038	Ik moet niks van deze boom hebben... ik vertrouw hem niet... hoor je hem zingen over slapen?  Dat klopt niet... Helemaal niet!
+dlg:Sam039	Ik...ik weet het niet!
+dlg:Sam041	Ze worden fijngeknepen!
+dlg:Sam042	Waar...?
+dlg:Sam043	Niet snel genoeg naar mijn zin.  Ik vertrouw niet wat er zich in de mist op de Grafheuvels verschuilt.
+dlg:Sam044	Tot vandaag niet.  Maar Tom zei iets anders.
+dlg:Sam045	Hij was er al voordat de Duistere Heer van Buiten kwam.  Buiten wát, vraag ik me af?
+dlg:Sam046	Ik breng de nacht niet graag door tussen deze grafstenen.  Het lijken wel reuzentanden die uit de grond omhoogkomen.
+dlg:Sam047	We blijven toch zeker niet in deze herberg, hè?
+dlg:Sam048	Ik dacht dat we misschien bij een paar Hobbits uit Bree konden logeren.  Dat zou wat... huiselijker zijn.
+dlg:Sam049	Ik vertrouw deze plek nog steeds niet.
+dlg:Sam050	Dat is nou net mijn zorg, als u me kunt volgen, meneer...dan zijn we weg...voorgoed weg!
+dlg:Sam051	Wat is dat voor kok die geen piepers in de stoofpot doet?  Zonder piepers is het geen stoofpot, zei mijn ouwe vader altijd.
+dlg:Sam056	Denkt u dat we gauw moeten vertrekken, meneer Frodo?
+dlg:Sam058	Wacht even!  Waar is Merijn?  Hij is nog steeds niet terug van zijn wandeling!
+dlg:Sam059	Wat een dag was dit!  Ik kan mijn ogen haast niet openhouden.
+dlg:Sam061	Wat staat erop?
+dlg:Sam062	Bleke koning? Er zijn alleen wij, meneer Frodo!
+dlg:Sam063	Wat bedoelt u?
+dlg:Sam064	Hoe?
+dlg:Sam066	Rivendel!  Eindelijk ga ik Elfen zien!
+dlg:Sam067	Hopelijk lopen hier niet nog meer Trollen rond!
+dlg:Sam068	U stuurt hem toch niet alleen?
+dlg:Sam069	Het zal fijn zijn om zulk gezelschap te hebben op onze reis, meneer Frodo.
+dlg:Sam070	Waar is Stapper?
+dlg:Sam071	Elfen!
+dlg:Sam072	Ah!
+dlg:Sam073	Zou ik hier wat Elfenmagie te zien krijgen?
+dlg:Sam074	Ik zal even kijken.
+dlg:Sam075	Er zijn alleen sterren...wacht!  Wa...het is Ted Zandman, die al onze bomen omhakt!  Ik zal hém eens omhakken!
+dlg:Sam076	O, duivelswerk!  Ze hebben Zakkerspad opgegraven!  Ze hebben mijn ouwe vader weggejaagd!   Ik moet naar de Gouw!
+dlg:Sam076a	Eh...nee.
+dlg:Sam078	Ah, ik heb echt geprobeerd niet te verdwalen, meneer Frodo, eerlijk waar, maar de bomen dachten er anders over!
+dlg:Sam079	Nee!
+dlg:Sam080	Een elf!
+dlg:Sam081	Ik ben blij dat die Tom Bombadil net op tijd kwam!
+dlg:Sam082	Ik kan haast niet geloven dat ik hier ben...in Rivendel...met Elfen en Dwergen en al!  Kon mijn ouwe vader me nu maar zien!
+dlg:Sancho004	Halt, geld of je leven!
+dlg:Sancho005	Ik ben de gevreesde struikrover Sancho, en ik eis tol, meneer!
+dlg:Sancho006	Dat zei Ted Zandman ook.  Dus moest de gevreesde struikrover een stok uit de molen halen!  Ik heb hem helemaal stilgezet!
+dlg:Sancho007	De gevreesde struikrover krijg je niet te pakken.
+dlg:Sancho007a	De gevreesde struikrover laat zich niet bang maken!
+dlg:Sancho007b	Ik heb hem niet!  Ik heb hem naar een windwijzer gegooid, en nu zit hij daarboven vast!
+dlg:Sancho008	Je krijgt me niet zonder gevecht, schurk! Ik ben de machtige Trotsvoet!
+dlg:Shirriff001	Meneer Balings!  Dit is niet de beste avond voor een wandelingetje, als u begrijpt wat ik bedoel.
+dlg:Shirriff002	Ik zou wel willen, maar een van de Grote Mensen kwam te paard langs en heeft het scharnier vernield!  Hij had mij ook vernield als ik niet was weggerend.
+dlg:Shirriff003	Ja, van top tot teen. En een groot zwart paard ook!
+dlg:Shirriff004	In de molen van Zandman liggen reserveonderdelen!  Ik zou gaan, maar ik moet mijn werk doen.  Maar als die ruiter terugkomt, weet ik niet wat ik moet doen.
+dlg:Shirriff005	Al iets gevonden, meneer Balings?  Niemand komt door dit hek tot we dat scharnier hebben gerepareerd!
+dlg:Shirriff006	Ja, zeker weten! Goed gedaan, meneer Balings!  Veel succes!
+dlg:Shirriff007	Ik hoop dat die ruiter blijft waar hij heen is gegaan, en nooit meer terugkomt!
+dlg:Ted005	En, Balings?  Die metalen pen al gevonden...?  Of werd je afgeleid door de lunch?
+dlg:Ted006	Zo, zo!  Het molenrad draait weer... dankzij Frodo Balings, nota bene!
+dlg:Ted007	Je hebt me vandaag een waardevolle dienst bewezen, Balings.
+dlg:Ted008	Zie je niet dat ik het druk heb?
+dlg:Ted009	Nou, als je verstand had van molens, zou je weten dat ik een heel belangrijke metalen pen zoek die uit mijn molenrad moet zijn gevallen.
+dlg:Ted010	O, bemoei jij je maar niet met werken of niet werken!  Ik heb Mugwort naar Bree gestuurd voor een vervanger.
+dlg:Ted011	Als ik hem nog niet heb gevonden, vind jij hem zeker niet.  Maar, eh... hij ziet eruit als een gewone metalen pen.  En nu goedendag!
+dlg:Ted013	Ik heb mijn knecht voor dat onderdeel naar Bree gestuurd...allemaal voor niets.  Wat een pech!
+dlg:Ted014	Hé!  Is daar iemand?  Help!
+dlg:Ted015	Frodo?  Frodo Balings?!  Sta daar niet zo!  Help me!
+dlg:Ted016	Ik had nooit gedacht dat ik dit zou zeggen, maar... dank je. Als jij niet was gekomen...
+dlg:Ted017a	Zo goed als je kunt verwachten, als je bijna het avondeten van die dingen was geworden!
+dlg:Ted018	Ik was op weg naar het dorp Bree, toen ik besloot door het Oude Woud af te snijden... dan kon ik lachen om die dwazen die geloven in legenden over Boommannen en zo.
+dlg:Ted021	Maar nu ga ik terug naar de Gouw, zo snel als ik kan!
+dlg:Ted022	Ga jij het Oude Woud niet uit?  Dan ben je een dwaas!
+dlg:Ted025	Echt, Balings, als je je zo druk maakt om de Molen, waarom repareer je hem dan niet zelf?
+dlg:Ted026	Als je per se verder wilt, heb je dit nodig.  Het opent een hek aan de rand van het woud.  Zorg dat je het niet kwijtraakt!
+dlg:Ted027	Het heeft me een aardige duit gekost, dat je het weet.  Raak je het kwijt, dan verwacht ik een vergoeding!
+dlg:Ted028	En nu, als je me wilt excuseren, ik neem afscheid van deze ellendige plek.  Vaarwel... Balings.
+dlg:Ted029	Ik heb overal rond de tandwielkast achter de molen gezocht, maar hij was nergens te vinden.
+dlg:Trans_Bree_Weathertop	De volgende ochtend vroeg leidde ik de vier Hobbits veilig Bree uit, de door trollen geteisterde wildernis daarachter in. We naderden de heuvel die de Elfen Amon Sûl noemen, en de Mensen Weertop.
+dlg:Trans_Lothlorien_Anduin	De volgende dag namen we afscheid van Lórien. Celeborn en Galadriel gaven ons boten van Elfenmakelij, en we voeren uit over de Grote Rivier, de Anduin, richting Mordor.
+dlg:Trans_Moria_Lothlorien	We trokken verder, de duistere diepten van Moria uit. En weldra bereikten we het Gouden Woud... Lothlórien.
+dlg:Trans_OldForest_Bree	We verlieten de koude stenen velden van de Grafheuvels en kwamen aan in Bree, het dorp tegen de heuvel waar zowel Hobbits als Grote Mensen wonen.  We namen afscheid van Tom en gingen Bree binnen, op zoek naar een warm vuur en een deur tussen ons en de nacht. Eindelijk vonden we een vrolijke herberg, met het uithangbord van De Steigerende Pony.
+dlg:Trans_Rivendell_Moria	Het was december toen we aan de weg naar Mordor begonnen, door het oude land Hulsthaar. Van alle kanten werden we belaagd door Saurons macht, want vogels en dieren en zelfs het weer konden naar Saurons wil worden gebogen. De Duistere Heer joeg een razende sneeuwstorm op ons af toen we probeerden de grote berg Caradhras over te steken.  We zetten door, tot een lawine ons dwong de berg op te geven en een andere weg te zoeken...
+dlg:Trans_Shire_OldForest	De wagen van Boer Made bracht ons veilig weg van zijn boerderij, tot aan de grenzen van Bokland.  Maar de Zwarte Ruiter denderde nog altijd over de Oostweg.  We besloten naar het zuiden te gaan en door het Oude Woud af te snijden.  Merijn was al eens in het Oude Woud geweest en kende er een beetje de weg. Het is een donkere, geheimzinnige plek, maar niet zo gevaarlijk als een Zwarte Ruiter.
+dlg:Trans_Weathertop_Rivendell	Op bevel van Elrond sleurden de wateren van de rivier de Bruinen de Ringgeesten mee.  We betraden het verborgen Elfendal van Rivendel. Elrond, de Heer van Rivendel, genas de wond die het Morgulzwaard had gemaakt.  Frodo ontwaakte bij een vertrouwd gezicht.
+dlg:Troll001	Hé! Jij!
+dlg:Troll002	Wuh?!
+dlg:Troll003	Umm...
+dlg:Troll004	Guuh!
+dlg:Troll005	Rruuh!
+dlg:Troll006	Eeaaggh!
+dlg:Troll007	Uh!  Uhhhh...
+dlg:Troll008	Waaaagh!
+dlg:Troll009	Hé!  Hierzo!
+dlg:Troll010	(boert)
+dlg:Troll011	Hé!  Help!
+dlg:Twofoot001	Hallo, jonge Balings.  Proost op je verjaardag!
+dlg:Twofoot002	Ik heb je tovenaarsvriend de laatste tijd niet gezien!  Ik mis dat vuurwerk wel!
+dlg:Twofoot003	Ik weet nog de dag dat al die Dwergen bij meneer Bilbo op bezoek kwamen.  Dwergen en een tovenaar!
+dlg:Twofoot004	Of het rustiger is, weet ik niet.  Je hoort tegenwoordig zulke vreemde verhalen!
+dlg:Twofoot004a	Lang gestorven Grafgeesten die ontwaken bij het Oude Woud.  Grote legers in het oosten en zuiden!
+dlg:Twofoot004b	Dwergen en Grote Mensen op de vlucht.  Elfen die naar het westen trekken en nooit terugkomen... Ach, maar ik sta maar te kletsen... goede reis!
+dlg:Twofoot005	Wees voorzichtig op die weg, jij en Sam, Frodo.  Bokland ligt me te dicht bij het Oude Woud!
+dlg:Twofoot005a	Blijf uit de buurt van die Boommannen waar ik over heb horen vertellen.  En dwaal niet af naar die Grafheuvels!
+dlg:Undead001	(scherp gesis)
+dlg:Undead002	(rasperig gekreun)
+dlg:Undead003	(rasperig gekreun, gesis)
+dlg:Undead004	(langgerekt gekreun)
+dlg:Undead005	(gekreun dat wegsterft in stilte)
+dlg:Undead006	(scherp gesis)
+dlg:Uruk001	Halt!
+dlg:Uruk002	Garn!
+dlg:Uruk003	Hmm...
+dlg:Uruk004	Umph!
+dlg:Uruk005	Agh!
+dlg:Uruk006	Jaagh!
+dlg:Uruk007	Glllk...ugh...aaah...
+dlg:Uruk008	Rraaaaggh!
+dlg:Uruk009	(schel gefluit)
+dlg:Uruk010	(keelachtig gegrom)
+dlg:Urukhai666	Bwuh huh huh huhhh!
+dlg:Wight001	Koud zij hand en hart en been,
+dlg:Wight002	En koud de slaap onder de steen;
+dlg:Wight003	Nooit meer te ontwaken op stenen bed,
+dlg:Wight004	Nooit, tot de Zon dooft en de Maan is gedood.
+dlg:Wight005	In de zwarte wind zullen de sterren sterven,
+dlg:Wight006	En laat hen hier nog op goud liggen,
+dlg:Wight007	Tot de duistere heer zijn hand heft
+dlg:Wight008	Over dode zee en verdord land.
+dlg:Wight009	Daar ben je!
+dlg:Wight010	Hnnh?!
+dlg:Wight011	Hissss...
+dlg:Wight012	Rrrrrr!
+dlg:Wight013	Raaargh!
+dlg:Wight014	Sssss!
+dlg:Willow001	Sterf...de dood voor jullie allen...
+dlg:Wraith001	Waarom... is Balingsss weggegaan?
+dlg:Wraith002	Waarrrr...is Balingsss...heen?
+dlg:Wraith003	Isss...die plek...ver hiervandaan?
+dlg:Wraith004	Kun je... een boodschap sssturen?

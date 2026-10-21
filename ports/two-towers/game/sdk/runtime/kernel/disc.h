@@ -19,7 +19,7 @@ public:
         bool dir = false;
         std::vector<Entry> children;  // folders, sorted by name
     };
-    Disc() = default;
+    Disc();
     Disc(const Disc&) = delete;
     Disc& operator=(const Disc&) = delete;
     ~Disc();
@@ -35,8 +35,12 @@ public:
     const std::filesystem::path& Path() const { return path_; }
 
 private:
+    struct Cache;
     uint32_t ReadAt(uint64_t at, void* out, uint32_t len) const;
+    uint32_t ReadCached(uint64_t at, void* out, uint32_t len) const;
     bool ReadDir(Entry& dir, int depth);
+
+    std::unique_ptr<Cache> cache_;  // small reads come from 1 MB blocks read ahead
 
     intptr_t file_ = -1;  // HANDLE or fd
     std::filesystem::path path_;

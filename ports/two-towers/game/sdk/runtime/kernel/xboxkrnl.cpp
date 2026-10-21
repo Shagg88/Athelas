@@ -3,6 +3,8 @@
 #include <cctype>
 #include <chrono>
 #include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <ctime>
 
 #include "app/app.h"
@@ -291,11 +293,16 @@ KERNEL_EXPORT(99, KeDelayExecutionThread, 3) {
         std::this_thread::yield();
         return kSuccess;
     }
+    int64_t start = now();
     while (now() < deadline) {
         int64_t left = deadline - now();
         std::this_thread::sleep_for(std::chrono::nanoseconds(std::min<int64_t>(left, 2000000)));
-        if (alertable && t && RunApcs(*t)) return kUserApc;
+        if (alertable && t && RunApcs(*t)) {
+            CountSleep(now() - start);
+            return kUserApc;
+        }
     }
+    CountSleep(now() - start);
     return kSuccess;
 }
 
@@ -1250,6 +1257,21 @@ static uint32_t VideoFlags() { return (app::Widescreen() ? 0x00010000 : 0) | 0x0
 KERNEL_EXPORT(24, ExQueryNonVolatileSetting, 5) {
     uint32_t index = a[0], type_out = a[1], value = a[2], len = a[3], result_len = a[4];
     uint32_t v = 0;
+    if (index == 0xFF) {
+        // XC_MAX_OS: the user settings (EEPROM 0x60..0x15F), read by XAPI's GetTimeZoneInformation for local times
+        uint8_t user[0x100] = {};
+        HostTimeZone(user);
+        uint32_t settings[3] = {1, VideoFlags(), 0x00010001};  // language, video, audio flags at +0x30
+        std::memcpy(user + 0x30, settings, sizeof(settings));
+        if (type_out) W32(type_out, 3);  // REG_BINARY
+        if (value && len) std::memcpy(HostPtr(value), user, std::min<uint32_t>(len, sizeof(user)));
+        if (result_len) W32(result_len, sizeof(user));
+        int32_t bias;
+        std::memcpy(&bias, user + 4, 4);
+        LOG_FIRST(1, "kernel: time zone UTC%+d:%02d%s for local times", -bias / 60, std::abs(bias) % 60,
+                  user[0x58] & 2 ? "" : " (with daylight saving)");
+        return len >= sizeof(user) ? kSuccess : 0xC0000023;  // STATUS_BUFFER_TOO_SMALL
+    }
     switch (index) {
         case 7: v = 1; break;                      // XC_LANGUAGE english
         case 8: v = VideoFlags(); break;          // XC_VIDEO_FLAGS

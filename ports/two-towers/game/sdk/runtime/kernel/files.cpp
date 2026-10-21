@@ -535,10 +535,19 @@ static uint32_t Transfer(const Args& a, bool write, uint32_t pages) {
     return Finish(*f, kSuccess, n, event, apc, apc_ctx, iosb);
 }
 
-KERNEL_EXPORT(219, NtReadFile, 8) { return Transfer(a, false, 0); }
+// reads are counted for the hitch lines (frame_work.cpp)
+static uint32_t TimedRead(const Args& a, uint32_t pages) {
+    int64_t t = WorkNow();
+    uint32_t r = Transfer(a, false, pages);
+    auto f = FileFromHandle(a[0]);
+    CountRead(WorkNow() - t, a[6], f ? f->xbox : std::string());
+    return r;
+}
+
+KERNEL_EXPORT(219, NtReadFile, 8) { return TimedRead(a, 0); }
 KERNEL_EXPORT(236, NtWriteFile, 8) { return Transfer(a, true, 0); }
 // the buffer argument is an array of one page per element
-KERNEL_EXPORT(220, NtReadFileScatter, 8) { return Transfer(a, false, a[5]); }
+KERNEL_EXPORT(220, NtReadFileScatter, 8) { return TimedRead(a, a[5]); }
 KERNEL_EXPORT(237, NtWriteFileGather, 8) { return Transfer(a, true, a[5]); }
 
 KERNEL_EXPORT(211, NtQueryInformationFile, 5) {

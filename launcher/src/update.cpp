@@ -196,6 +196,15 @@ static bool is_hex64(const std::string &t)
     return true;
 }
 
+// Windows on ARM (IsWow64Process2 says the machine is ARM64, whatever this 32-bit launcher runs as)
+static bool on_arm64()
+{
+    typedef BOOL(WINAPI * Wow64Process2)(HANDLE, USHORT *, USHORT *);
+    Wow64Process2 f = (Wow64Process2)(void *)GetProcAddress(GetModuleHandleA("kernel32.dll"), "IsWow64Process2");
+    USHORT process = 0, machine = 0;
+    return f && f(GetCurrentProcess(), &process, &machine) && machine == 0xAA64;
+}
+
 static bool install(const std::string &version)
 {
     // somewhere to write first (a protected folder such as Program Files needs the download page instead)
@@ -204,7 +213,9 @@ static bool install(const std::string &version)
     if (ph == INVALID_HANDLE_VALUE) return fail("Windows doesn't let Athelas change its own folder. Download the update from its page instead.");
     CloseHandle(ph);
 
-    std::wstring base = L"/Shagg88/Athelas/releases/download/" + widen(version) + L"/Athelas-" + widen(version) + L".zip";
+    // a Windows on ARM PC takes the release's ARM zip (the same files, plus the ports' ARM64 builds)
+    std::wstring base = L"/Shagg88/Athelas/releases/download/" + widen(version) + L"/Athelas-" + widen(version) +
+                        (on_arm64() ? L"-arm64.zip" : L".zip");
     std::string sum, zip;
     // its checksum: the .sha256 beside the zip, else the one the release notes give ("SHA-256: `...`")
     if (!http_get(base + L".sha256", sum, false) || sum.size() < 64 || !is_hex64(sum.substr(0, 64))) {

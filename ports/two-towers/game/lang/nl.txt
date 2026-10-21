@@ -1,0 +1,458 @@
+# The Two Towers - Dutch subtitles (our own translation; line numbers are the game's text IDs)
+2	Help
+4	Druk op START
+6	Doorgaan
+7	Opnieuw spelen
+8	Aan
+9	Uit
+10	Navigeren
+11	Selecteren
+12	Terug
+13	@ 2002 New Line Productions, Inc.  The Lord of The Rings en de personages, namen en plaatsen daarin, * The Saul Zaentz Company d/b/a Tolkien Enterprises onder licentie aan New Line Productions, Inc.  Alle rechten voorbehouden.
+14	EA GAMES* is een merk van Electronic Arts*.
+15	Gamecode en bepaalde audiovisuele elementen @ 2002 Electronic Arts Inc. Alle rechten voorbehouden.
+16	Nieuw spel
+17	Spel laden
+18	Opties
+19	Debugmodus
+20	Extra's
+21	Spel opslaan
+24	Druk op START om verder te gaan
+25	Opties
+26	Controllerinstellingen
+27	Spelinstellingen
+38	Moeilijkheid:
+39	Makkelijk
+40	Normaal
+41	Expert
+42	Mono
+43	Stereo
+44	Surround
+45	Spelinstellingen
+46	Stemvolume:
+47	Muziekvolume:
+48	Ondertiteling:
+49	Trillen:
+50	Spelvolume:
+51	Geluid:
+53	Kies een spel om te laden:
+54	Kies een opslaglocatie:
+55	Kies een MEMORY CARD-sleuf:
+56	Xbox-harde schijf
+57	MEMORY CARD-sleuf 2
+58	Kies een MEMORY CARD-sleuf:
+59	Annuleren
+60	Ja
+61	Nee
+62	Weet je het zeker?
+63	Weet je zeker dat je deze upgrade wilt kopen?
+64	Weet je het zeker? De resultaten van je laatste poging in deze missie gaan verloren.
+65	Weet je het zeker? Alle niet-opgeslagen voortgang in dit spel gaat verloren.
+66	Weet je het zeker? De voortgang in deze missie gaat verloren.
+67	Weet je zeker dat je dit spel wilt overschrijven?
+68	Ben je klaar met het kopen van upgrades?
+69	Spel opslaan op harde schijf
+70	Spel laden van harde schijf
+75	Kies moeilijkheid
+76	Makkelijk
+77	Normaal
+78	Expert
+80	Vergrendeld
+81	Voltooid
+83	Niet gespeeld
+85	Proloog
+86	Weertop
+87	Poorten van Moria
+88	Graf van Balin
+89	Amon Hen
+90	Fangornwoud
+91	Vlakten van Rohan
+92	De Westfold
+93	Kloof van Rohan
+94	De Diepingmuur
+95	Doorbroken muur
+96	Binnenplein van de Hoornburg
+97	Toren van Orthanc
+98	Helmsdiepte:
+99	New Line Zoo
+100	Kies een filmpje:
+101	Opening
+102	Einde
+116	Aragorn
+117	Legolas
+118	Gimli
+119	Isildur
+120	Vloer
+128	Upgradepunten:
+129	4) Voer de opgegeven codereeks in.
+130	Geheime codes
+131	Altijd verwoestend:
+132	2 spelers:
+133	Kleine vijanden:
+134	Alle upgrades:
+135	Onkwetsbaar:
+136	Slow motion:
+137	Zo voer je een code in:
+138	1) Start een missie.
+139	2) Druk op START om te pauzeren.
+140	3) Houd ingedrukt
+141	Oneindige gezondheid:
+142	Oneindig veel projectielen:
+143	Missie beëindigen:
+144	Pauzemodus:
+145	Ervaring toevoegen:
+146	Level omhoog:
+147	Gezondheid herstellen:
+148	Projectielen aanvullen:
+149	Projectiel-upgrade:
+150	Upgrades tonen
+151	Naar menu
+152	Naar volgende missie
+153	Je hebt de missie niet gehaald.
+154	Missie opnieuw spelen
+155	Naar menu
+156	Opnieuw proberen
+161	Aftiteling
+176	Missie opnieuw spelen
+180	Kies een taal.
+181	English
+196	Snel
+197	Fel
+198	Genadeslag
+199	Speciaal
+200	Combo
+207	Gekocht
+208	Nog niet vrijgespeeld. Druk op A om door te gaan.
+209	Je hebt niet genoeg upgradepunten verzameld om deze upgrade te kopen. Druk op A om door te gaan.
+210	of
+211	na pareren
+212	op de grond
+230	Lege plek
+231	Spel 2
+232	Spel 3
+233	Spel 4
+234	Spel 5
+235	Spel 6
+236	Spel 7
+237	Spel 8
+238	Spel 9
+239	Spel 10
+240	Spel 11
+270	Er is geen Memory Card (PS2) geplaatst. Er is minstens 80 KB nodig om deze speldata op te slaan. Wil je doorgaan?
+271	Onvoldoende ruimte op de Memory Card (PS2) in MEMORY CARD-sleuf 1.  Er is minstens 80 KB nodig om deze data op te slaan. Wil je doorgaan?
+272	Onvoldoende ruimte op de Memory Card (PS2) in MEMORY CARD-sleuf 2.  Er is minstens 80 KB nodig om deze data op te slaan. Wil je doorgaan?
+273	Onvoldoende ruimte op de Memory Cards (PS2) in de MEMORY CARD-sleuven. Er is minstens 80 KB nodig om deze data op te slaan. Wil je doorgaan?
+274	Geen Memory Card (PS2) in MEMORY CARD-sleuf 1. Druk op X om door te gaan.
+275	Geen Memory Card (PS2) in MEMORY CARD-sleuf 2. Druk op X om door te gaan.
+276	Sluit de controller opnieuw aan en druk op START om door te gaan.
+277	De Memory Card (PS2) in MEMORY CARD-sleuf 2 is niet geformatteerd. Memory Card (PS2) formatteren?
+278	Je Xbox heeft niet genoeg vrije blokken om spellen op te slaan.  Druk op A om door te gaan zonder op te slaan of op B om minstens
+279	Sluit de controller opnieuw aan en druk op START om door te gaan
+280	De harde schijf heeft niet genoeg vrije blokken voor dit opgeslagen spel.
+281	blokken moeten worden vrijgemaakt.
+282	Formatteren mislukt! Fout met de Memory Card (PS2) in MEMORY CARD-sleuf 2! Druk op X om door te gaan.
+283	Kan spel niet opslaan. Druk op A om door te gaan.
+284	Kan spel niet opslaan. Druk op A om door te gaan.
+285	Spel opgeslagen.  Druk op A om door te gaan.
+286	Opslaan op de Memory Card (PS2) in MEMORY CARD-sleuf 2 gelukt! Druk op X om door te gaan.
+287	Data wordt opgeslagen op de Memory Card (PS2) in MEMORY CARD-sleuf 1. Verwijder de Memory Card (PS2) niet en reset of schakel de console niet uit.
+288	Data wordt opgeslagen op de Memory Card (PS2) in MEMORY CARD-sleuf 2. Verwijder de Memory Card (PS2) niet en reset of schakel de console niet uit.
+289	Data wordt geladen van de Memory Card (PS2) in MEMORY CARD-sleuf 1. Verwijder de Memory Card (PS2) niet en reset of schakel de console niet uit.
+290	Data wordt geladen van de Memory Card (PS2) in MEMORY CARD-sleuf 2. Verwijder de Memory Card (PS2) niet en reset of schakel de console niet uit.
+291	Kan spel niet laden. Druk op A om door te gaan.
+292	Kan spel niet laden. Druk op A om door te gaan.
+293	Wil je je spel opslaan?
+294	Geen opgeslagen spellen. Druk op A om door te gaan.
+295	Geen opgeslagen spellen. Druk op A om door te gaan.
+296	blokken vrij te maken.
+297	De Memory Card (PS2) in MEMORY CARD-sleuf 1 is niet geformatteerd. Druk op X om door te gaan.
+298	De Memory Card (PS2) in MEMORY CARD-sleuf 2 is niet geformatteerd. Druk op X om door te gaan.
+299	Data wordt gelezen van de Memory Card (PS2) in MEMORY CARD-sleuf 1. Verwijder de Memory Card (PS2) niet en reset of schakel de console niet uit.
+300	Data wordt gelezen van de Memory Card (PS2) in MEMORY CARD-sleuf 2. Verwijder de Memory Card (PS2) niet en reset of schakel de console niet uit.
+301	Er is een probleem met de disc die je gebruikt. Mogelijk is hij vuil of beschadigd.
+320	Missie 1
+321	Missie 2
+322	Missie 3
+323	Missie 4
+324	Missie 5
+325	Missie 6
+326	Missie 7
+327	Missie 8
+328	Missie 9
+329	Missie 10
+330	Missie 11
+331	Missie 12
+332	Missie 13
+333	Missie A
+334	Missie B
+335	Missie C
+336	Missie D
+401	Missie-ervaring:
+403	Missiebeoordeling:
+405	Totaal upgradepunten:
+450	Perfect
+451	Uitstekend
+452	Goed
+453	Redelijk
+454	Zwak
+455	Vaardigheid
+460	Snel
+461	Sterk
+462	Verdediging
+463	Aanval
+464	Felle
+465	aanval
+500	Een snelle combinatie.  Effectief tegen kleinere vijanden zonder schild.
+501	Een krachtige combinatie om obstakels te verbrijzelen of vijandelijke schilden te breken.
+502	Houd de linkertrekker ingedrukt om te gebruiken.  Schiet met A (ingedrukt houden voor meer schade).
+503	Deze steek maakt elke neergeslagen vijand af.
+504	Sla vijanden van je af, buiten hun bereik.
+505	Blokkeert vijandelijke aanvallen en projectielen.
+506	Een verwoestende aanval.  Houd Y ingedrukt om te gebruiken.
+507	Verhoogt je gezondheid permanent.
+508	Storm vooruit en werp vijanden zonder schild tegen de grond.
+509	Val aan terwijl je opstaat en verras je vijanden.
+510	Een zeer effectieve combo om vijanden zonder schild uit te schakelen.
+511	Zeer effectief om vijanden met schild zo snel mogelijk af te maken.
+512	GEKOPPELDE ACTIE: dood een aanvallende goblin direct.
+513	De weerhaakpijlen van de Rohirrim worden afgeschoten als met de Boog van de Dúnedain en richten zware schade aan.
+514	Verhoogt je gezondheid permanent.  (Vereist Kracht van de Stadhouders)
+515	Storm van ver vooruit en werp vijanden zonder schild tegen de grond. (Vereist Uitval)
+516	Verwond je vijand, sla hem neer en raak hem met deze combinatieaanval.
+517	Gebruik deze combo om een vijand zonder schild te raken, af te maken en snel een volgende te raken.
+518	GEKOPPELDE ACTIE: dood een aanvallende ork direct.
+519	Verhoogt je gezondheid permanent.  (Vereist Kracht van Isildur)
+520	Een nog verwoestender aanval.  (Vereist Woede van de Doler)
+521	Verhoogt de schade van je snelle aanval.
+522	Verwond sterke vijanden, sla ze neer en maak ze af met deze combo.
+523	Verhoogt je gezondheid permanent.  (Vereist Kracht van Elendil)
+524	Deze verwoestende aanval steekt meerdere vijanden in brand.  (Vereist Woede van de wildernis)
+525	De ijzeren pijlen van Gondor richten vreselijke schade aan.  (Vereist Boog van Rohan)
+526	GEKOPPELDE ACTIE: dood een aanvallende Uruk-hai direct.
+527	Gebruik dit tegen een sterke vijand om zijn schild te breken, hem neer te slaan en hem te raken.
+528	Niets
+529	Niets
+530	Een snelle combinatie.  Effectief tegen kleinere vijanden zonder schild.
+531	Een krachtige combinatie om obstakels te verbrijzelen of vijandelijke schilden te breken.
+532	Houd de linkertrekker ingedrukt om te gebruiken.  Werp met A (ingedrukt houden voor meer schade).
+533	Deze bijlslag maakt elke neergeslagen vijand af.
+534	Sla vijanden van je af, buiten hun bereik.
+535	Blokkeert vijandelijke aanvallen en projectielen.
+536	Een verwoestende aanval.  Houd Y ingedrukt om te gebruiken.
+537	Verhoogt je gezondheid permanent.
+538	Verhoogt je gezondheid permanent.  (Vereist Macht van de rots)
+539	Storm vooruit en werp vijanden zonder schild tegen de grond.
+540	Een zeer effectieve combo om vijanden zonder schild uit te schakelen.
+541	Zeer effectief om vijanden met schild zo snel mogelijk af te maken.
+542	GEKOPPELDE ACTIE: dood een aanvallende goblin direct.
+543	Verhoogt je gezondheid permanent.  (Vereist Macht van ijzer)
+544	Storm van ver vooruit en werp vijanden zonder schild tegen de grond.  (Vereist Uitval)
+545	Val aan terwijl je opstaat en verras je vijanden.
+546	Verwond je vijand, sla hem neer en raak hem met deze combinatieaanval.
+547	Gebruik deze combo om een vijand zonder schild te raken, af te maken en snel een volgende te raken.
+548	GEKOPPELDE ACTIE: dood een aanvallende ork direct.
+549	Verhoogt je gezondheid permanent.  (Vereist Rune van bescherming)
+550	Verhoogt je gezondheid permanent.  (Vereist Macht van Balin)
+551	De vlijmscherpe Bijlen van Moria worden geworpen als de Bijlen van Erebor en richten nog meer schade aan.
+552	Een nog verwoestender aanval.  (Vereist Dwergenwoede)
+553	Verwond sterke vijanden, sla ze neer en maak ze af met deze combo.
+554	Verhoogt je gezondheid permanent.  (Vereist Macht van Glóin)
+555	Deze verwoestende aanval steekt meerdere vijanden in brand.  (Vereist Woede van de bergen)
+556	Deze bijlen met mithrilsnede richten vreselijke schade aan.  (Vereist Bijlen van Moria)
+557	Verhoogt de schade van je felle aanval.
+558	GEKOPPELDE ACTIE: dood een aanvallende Uruk-hai direct.
+559	Gebruik dit tegen een sterke vijand om zijn schild te breken, hem neer te slaan en hem te raken.
+560	Een snelle combinatie.  Effectief tegen kleinere vijanden zonder schild.
+561	Een krachtige combinatie om obstakels te verbrijzelen of vijandelijke schilden te breken.
+562	Houd de linkertrekker ingedrukt om te gebruiken.  Schiet met A (ingedrukt houden voor meer schade).
+563	Deze steek maakt elke neergeslagen vijand af.
+564	Sla vijanden van je af, buiten hun bereik.
+565	Blokkeert vijandelijke aanvallen en projectielen.
+566	Een verwoestende aanval.  Houd Y ingedrukt om te gebruiken.
+567	Verhoogt je gezondheid permanent.
+568	Storm vooruit en werp vijanden zonder schild tegen de grond.
+569	De essenhouten pijlen van Rivendel worden afgeschoten als met de Handboog van Demsterwold en richten nog meer schade aan.
+570	Een zeer effectieve combo om vijanden zonder schild uit te schakelen.
+571	Zeer effectief om vijanden met schild zo snel mogelijk af te maken.
+572	GEKOPPELDE ACTIE: dood een aanvallende goblin direct.
+573	Storm van ver vooruit en werp vijanden zonder schild tegen de grond.  (Vereist Uitval)
+574	De betoverde pijlen van Lothlórien richten gruwelijke schade aan.  (Vereist Handboog van Rivendel)
+575	Verwond je vijand, sla hem neer en raak hem met deze combinatieaanval.
+576	Gebruik deze combo om een vijand zonder schild te raken, af te maken en snel een volgende te raken.
+577	Deze magische pijlen steken je vijanden in brand.  (Vereist Handboog van Lothlórien)
+578	Verhoogt je gezondheid permanent.  (Vereist Kracht van Celeborn)
+579	Een nog verwoestender aanval.  (Vereist Elfenwoede)
+580	GEKOPPELDE ACTIE: dood een aanvallende ork direct.
+581	Verwond sterke vijanden, sla ze neer en maak ze af met deze combo.
+582	Deze pijlen doorboren en verwonden alle vijanden op hun pad.  (Vereist Drakenvuurpijlen)
+583	Val aan terwijl je opstaat en verras je vijanden.
+584	Verhoogt de schade van elke pijl die je afschiet.
+585	GEKOPPELDE ACTIE: dood een aanvallende Uruk-hai direct.
+586	Gebruik dit tegen een sterke vijand om zijn schild te breken, hem neer te slaan en hem te raken.
+600	Drievoudige slag
+601	Dubbele houw
+602	Boog van de Dúnedain
+603	Schaduwslag
+604	Gevechtstrap
+605	Zwaardparade
+606	Woede van de Doler
+607	Kracht van de Stadhouders
+608	Uitval
+609	Aanval bij opstaan
+610	Isildurs snelle terreur
+611	Isildurs verlossing
+612	Goblinverderf
+613	Boog van Rohan
+614	Kracht van Isildur
+615	Stormloop
+616	Isildurs dodelijke stormloop
+617	Isildurs gambiet
+618	Orkverderf
+619	Kracht van Elendil
+620	Woede van de wildernis
+621	Meester-zwaardvechter
+622	Isildurs strijduitval
+623	Kracht van de Argonath
+624	Toorn van Númenor
+625	Boog van Gondor
+626	Verderf van Saruman
+627	Isildurs oordeel
+628	Niets
+629	Niets
+630	Drievoudige slag
+631	Dubbele houw
+632	Bijlen van Erebor
+633	Schaduwslag
+634	Bijlstoot
+635	Bijlparade
+636	Dwergenwoede
+637	Macht van de rots
+638	Macht van ijzer
+639	Uitval
+640	Balins snelle terreur
+641	Balins verlossing
+642	Goblinverderf
+643	Rune van bescherming
+644	Stormloop
+645	Aanval bij opstaan
+646	Balins dodelijke stormloop
+647	Balins gambiet
+648	Orkverderf
+649	Macht van Balin
+650	Macht van Glóin
+651	Bijlen van Moria
+652	Woede van de bergen
+653	Balins strijduitval
+654	Macht van Khazad-dûm
+655	Toorn van Moria
+656	Bijlen van de Nevelbergte
+657	Bijlmeesterschap der koningen
+658	Verderf van Saruman
+659	Balins oordeel
+660	Drievoudige slag
+661	Dubbele houw
+662	Handboog van Demsterwold
+663	Schaduwslag
+664	Gevechtstrap
+665	Mesparade
+666	Elfenwoede
+667	Kracht van Celeborn
+668	Uitval
+669	Handboog van Rivendel
+670	Elronds snelle terreur
+671	Elronds verlossing
+672	Goblinverderf
+673	Stormloop
+674	Handboog van Lothlórien
+675	Elronds dodelijke stormloop
+676	Elronds gambiet
+677	Drakenvuurpijlen
+678	Kracht van Galadriel
+679	Woede van Gil-galad
+680	Orkverderf
+681	Elronds strijduitval
+682	Mithrilpijlen
+683	Aanval bij opstaan
+684	Elfen-boogmeesterschap
+685	Verderf van Saruman
+686	Elronds oordeel
+700	Level
+800	Pareer om vijandelijke aanvallen te blokkeren en pijlen af te weren.
+801	Pareren
+802	Houd de linkertrekker ingedrukt om over te schakelen op je afstandswapen.  Druk op A om te schieten.  Richt met de linkerthumbstick.
+804	Afstandswapen
+805	Schieten
+806	Gebruik een snelle aanval om vijanden zonder schild te raken.
+807	Gebruik de felle aanval om vijandelijke schilden te breken.
+808	Felle aanval
+809	Snelle aanval
+810	Verdien ervaringspunten om het level van je personage te verhogen en waardevolle upgrades te kopen.
+811	Verdiende ervaringspunten
+812	Gebruik geavanceerde combinaties en ontwijk vijandelijke treffers om de vaardigheidsmeter te vullen en maximale ervaringspunten te verdienen.
+813	Vaardigheidsmeter
+814	Richten
+815	Terugspringen
+816	Genadeslag
+817	Terugslaan
+818	Schieten/snelle aanval
+819	Bewegen/richten
+820	Pauze
+840	Interview
+841	Peter Jackson en Barrie Osborne
+842	Elijah Wood
+843	Ian McKellen
+844	In de ban van de Ring
+845	Het maken van de game
+846	In de ban van de Ring
+847	Exclusieve filmfragmenten
+848	'De Reisgenoten'
+849	Productiefoto's
+850	Fangorn en Orthanc
+851	Rohan en Helmsdiepte
+852	Viggo Mortensen
+853	Orlando Bloom
+854	John Rhys-Davies
+855	Geheime codes
+856	Speel als Aragorn
+857	Speel als Legolas
+858	Speel als Gimli
+859	Speel als Isildur
+860	Geheime missie
+861	Speel als geheim personage
+862	Conceptkunst
+900	Voltooi Poorten van Moria om vrij te spelen
+901	Voltooi Graf van Balin om vrij te spelen
+902	Voltooi Amon Hen om vrij te spelen
+903	Voltooi Fangornwoud om vrij te spelen
+904	Voltooi Vlakten van Rohan om vrij te spelen
+905	Voltooi De Westfold om vrij te spelen
+906	Voltooi Kloof van Rohan om vrij te spelen
+907	Voltooi Helmsdiepte: De Diepingmuur om vrij te spelen
+908	Voltooi Helmsdiepte: Doorbroken muur om vrij te spelen
+909	Bereik level 5 met Aragorn
+910	Bereik level 5 met Legolas
+911	Bereik level 5 met Gimli
+912	Voltooi Helmsdiepte: Binnenplein van de Hoornburg en bereik level 10 met Aragorn
+913	Voltooi Helmsdiepte: Binnenplein van de Hoornburg en bereik level 10 met Legolas
+914	Voltooi Helmsdiepte: Binnenplein van de Hoornburg en bereik level 10 met Gimli
+915	Voltooi de geheime missie met een willekeurig personage
+916	Voltooi de geheime missie met het geheime personage
+917	Peter Jackson en Barrie Osborne over de film en de game
+918	Elijah Wood over het spelen van Frodo in de game 'In de ban van de Ring'
+919	Ian McKellen over het spelen van Gandalf in de game 'In de ban van de Ring'
+920	Een kijkje achter de schermen bij het maken van de game 'In de ban van de Ring'
+921	Foto's van personages en decors uit 'De Reisgenoten'
+922	Foto's van personages en decors uit Fangorn en Orthanc
+923	Kunst van John Howe en Alan Lee, geïnspireerd door 'In de ban van de Ring'
+924	Foto's van personages en decors uit Rohan en Helmsdiepte
+925	Viggo Mortensen over het spelen van Aragorn in de game 'In de ban van de Ring'
+926	Orlando Bloom over het spelen van Legolas in de game 'In de ban van de Ring'
+927	John Rhys-Davies over het spelen van Gimli in de game 'In de ban van de Ring'
+928	Geheime codes om de verborgen extra's van de game 'In de ban van de Ring' vrij te spelen
+950	Selectie wijzigen
+951	Selecteren
+952	Terug
+953	Selectie wijzigen of aanpassen
+954	Naar hoofdmenu
+955	Afbeelding wijzigen
+956	Gebruik je upgradepunten om verbeteringen voor je personage te kopen.

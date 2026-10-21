@@ -20,6 +20,8 @@ mkdir "release\%GAME_EXE%" || exit /b 1
 copy /y "%OUT%\%GAME_EXE%.exe" "release\%GAME_EXE%\" >nul || exit /b 1
 copy /y "%SDK%\THIRD_PARTY.txt" "release\%GAME_EXE%\" >nul || exit /b 1
 copy /y "%SDK%\LICENSE" "release\%GAME_EXE%\LICENSE.txt" >nul || exit /b 1
+rem the subtitles' translations (our own text, lang\<code>.txt)
+if exist lang xcopy /e /i /q /y lang "release\%GAME_EXE%\lang" >nul || exit /b 1
 rem the exe's SHA-256 as sha256sum writes it: "<hash>  ROTKXbox.exe"
 powershell -NoProfile -Command "$h = (Get-FileHash -Algorithm SHA256 'release\%GAME_EXE%\%GAME_EXE%.exe').Hash.ToLower(); [IO.File]::WriteAllText('release\%GAME_EXE%\%GAME_EXE%.exe.sha256', $h + '  %GAME_EXE%.exe' + [char]10)" || exit /b 1
 echo.

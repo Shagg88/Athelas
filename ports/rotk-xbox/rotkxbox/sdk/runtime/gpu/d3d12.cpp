@@ -2662,6 +2662,7 @@ ID3D12Resource* D3D12Backend::BindTexture(const State& s, int stage, DrawTexture
     return BindGuestTexture(s, stage, d, fi, stages);
 }
 
+uint32_t SimpleState(const State& s, uint32_t method);  // below
 // D3DTEXF: 1 point, 2 linear, 3 anisotropic
 constexpr uint32_t kTexfLinear = 2;
 constexpr uint32_t kTexfAnisotropic = 3;
@@ -2721,6 +2722,37 @@ uint32_t D3D12Backend::EnsureStageSamplers(const State& s, const DrawTextures& s
     if (app::Get().console_textures && lines > 480.0f && !(g_screen_space_test && g_screen_space_test(s)))
         extra = std::log2(lines / 480.0f);
     for (int i = 0; i < 4; i++) sd[i] = StageSampler(s, i, stages, clamp, aniso, stages.rt[i] ? 0.0f : extra);
+    // Above the console's 480 lines, textures the game reads unfiltered in a 3D draw would be enlarged texel by
+    // texel into blocks the console never showed: there they were shrunk or drawn at about their own size.
+    //   - "linear when shrunk, point when enlarged": enlarged linearly too, as the texture was read on the console;
+    //   - cut-out pictures with one-bit alpha read point both ways in an alpha-tested draw (Gates of Moria's hanging
+    //     moss and reeds, 128x128 A1R5G5B5): read linearly, so the alpha test cuts a smooth edge instead of steps.
+    // Other point-read textures (lookup tables, ramps) are left as the game reads them.
+    static const bool keep_point = std::getenv("XBE_KEEP_POINT") != nullptr;  // A/B test: as before
+    if (!keep_point && lines > 1.2f * 480.0f && !(g_screen_space_test && g_screen_space_test(s))) {
+        bool alpha_test = SimpleState(s, kMAlphaTestEnable) != 0;
+        for (int i = 0; i < 4; i++) {
+            if (stages.rt[i] || stages.info[i].shadow) continue;
+            UINT f = UINT(sd[i].Filter);
+            if (f >= 0x40) continue;  // anisotropic, comparison or min/max: not a point read
+            bool min_linear = (f >> 4) & 1, mag_linear = (f >> 2) & 1;
+            if (mag_linear) continue;
+            UINT add = 0;
+            if (min_linear) {
+                add = 1u << 2;
+            } else if (alpha_test) {
+                TextureDesc td;
+                // A1R5G5B5 (swizzled 0x02, linear 0x10) and DXT1 (0x0C): one-bit alpha
+                if (s.textures[size_t(i)] && Describe(s.textures[size_t(i)], td) &&
+                    (td.format == 0x02 || td.format == 0x10 || td.format == 0x0C))
+                    add = (1u << 2) | (1u << 4);
+            }
+            if (add) {
+                sd[i].Filter = D3D12_FILTER(f | add);
+                LOG_FIRST(1, "d3d12: textures the game enlarges unfiltered are enlarged smoothly (%.0f lines)", lines);
+            }
+        }
+    }
     uint64_t key = Hash(sd, sizeof(sd));
     auto it = samplers_.find(key);
     if (it != samplers_.end()) return it->second;
@@ -2982,7 +3014,7 @@ void D3D12Backend::FillTexelConstants(int i, const TextureDesc& d, const DrawTex
         c.spread[i][2] = stages.sharp[i];
     }
     // the console samples pixels at integer positions, D3D12 half a pixel on: targets are read half a texel back
-    if (!stages.rt[i]) return;
+    if (!stages.rt[i] || (stages.info[i].flags & kTexExact)) return;
     float k = stages.k[i];
     c.texsize[i][2] = -0.5f / (float(d.width) * k);
     c.texsize[i][3] = -0.5f / (float(d.height) * k);
@@ -4017,6 +4049,11 @@ void LogHitch() {
     double frame_ms = PerfMs(last_frame);
     last_frame = PerfClock::now();
     const Perf& p = g_perf;
+    // the game's own side of the frame: reads, waits and sleeps on this thread and on the others (frame_work.cpp)
+    kernel::FrameWork mine, others;
+    std::string slow_file;
+    double slow_ms = 0;
+    kernel::TakeFrameWork(mine, others, slow_file, slow_ms);
     if (frame_ms >= 50.0 && frames > 60 && lines < 300) {
         if (lines && PerfMs(last_line) < 1000.0) {
             skipped++;
@@ -4030,6 +4067,17 @@ void LogHitch() {
                  (unsigned long long)(p.psos - before.psos), p.pso - before.pso,
                  (unsigned long long)(p.newtex - before.newtex), p.texup - before.texup, p.create - before.create,
                  p.swap - before.swap, std::max(frame_ms - host, 0.0), skipped ? " (and earlier ones not listed)" : "");
+            // what the game did meanwhile: this thread reading files, waiting on its other threads, sleeping, and
+            // the other threads' reads (a level streaming in)
+            auto ms = [](int64_t ns) { return double(ns) / 1e6; };
+            std::string slow = slow_ms >= 5 && !slow_file.empty()
+                                   ? ", slowest " + slow_file + " " + std::to_string(int(slow_ms + 0.5)) + " ms"
+                                   : std::string();
+            LOGR("hitch:   game thread: reading %.0f ms (%llu reads, %llu KB), waiting %.0f ms, sleeping %.0f ms | other "
+                 "threads: reading %.0f ms (%llu reads, %llu KB)%s",
+                 ms(mine.read_ns), (unsigned long long)mine.reads, (unsigned long long)(mine.read_bytes / 1024),
+                 ms(mine.wait_ns), ms(mine.sleep_ns), ms(others.read_ns), (unsigned long long)others.reads,
+                 (unsigned long long)(others.read_bytes / 1024), slow.c_str());
             last_line = PerfClock::now();
             skipped = 0;
             if (++lines == 300) LOGR("hitch: 300 listed, no more this run");

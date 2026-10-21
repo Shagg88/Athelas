@@ -200,7 +200,7 @@ void Merge(int port, input::Pad& p) {
             held[kStart] = held[kA];
             held[kA] = false;
         } else {
-            held[kStart] = false;
+            held[kStart] = app::kGame.menu_start_with_a && held[kA];
         }
         held[kB] = held[kB] || start;
     }

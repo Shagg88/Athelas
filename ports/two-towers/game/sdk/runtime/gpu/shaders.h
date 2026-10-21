@@ -22,6 +22,7 @@ enum : uint8_t {
     kTexSmooth = 16, // a HUD or menu picture the game reads unfiltered, drawn larger: a bicubic (Catmull-Rom) upscale
                      // through a linear sampler (spread: texel step)
     kTexCrisp = 32,  // with kTexSmooth, an alpha-only picture (a font): the upscaled edge kept a pixel wide
+    kTexExact = 64,  // a target read where the game's coordinates say, without the half texel back (Extension::Sampled)
 };
 
 struct PixelKey {

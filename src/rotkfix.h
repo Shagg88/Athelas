@@ -18,7 +18,7 @@ int  safe_folder_path(int csidl, char *out, size_t n);   /* a special folder's p
 
 void limiter_present_backstop(void);
 /* slow-frame diagnostics: what happened during each slow frame */
-enum { HITCH_FILES, HITCH_READKB, HITCH_DRAWS, HITCH_DRAWS3D, HITCH_TEXNEW, HITCH_VBNEW, HITCH_VBKB, HITCH_N };
+enum { HITCH_FILES, HITCH_READKB, HITCH_DRAWS, HITCH_DRAWS3D, HITCH_TEXNEW, HITCH_VBNEW, HITCH_VBKB, HITCH_READUS, HITCH_N };
 extern volatile LONG g_hitch[HITCH_N];
 void hitch_present(LONGLONG t0, LONGLONG t1);   /* QPC ticks around the real Present */
 void limiter_cap_to_refresh(unsigned hz);

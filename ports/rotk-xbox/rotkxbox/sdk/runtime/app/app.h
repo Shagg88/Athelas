@@ -212,13 +212,15 @@ struct GameInfo {
     void (*setting_changed)(const cfg::Desc&) = nullptr;  // the menu changed one, at once
     // the keyboard in the game's own menus: in_menus says when they are up (the front end, not a pause in a level);
     // there the keys bound to Start press B, so Esc goes back, and with menu_accept_start the keys bound to A press
-    // Start (a game whose menus take Start to go on, "press start" among them)
+    // Start (a game whose menus take Start to go on, "press start" among them); with menu_start_with_a they press
+    // both (a game whose menus go on with A but whose title screen takes only Start)
     void (*file_opened)(const char* name) = nullptr;  // each file the game opens (any thread), to follow its state
     // a file the game cannot play without (true): when it is missing the run ends with kExitNoGame, naming it, instead
     // of the game crashing on it (an incomplete copy of the game)
     bool (*required_file)(const char* name) = nullptr;
     bool (*in_menus)() = nullptr;
     bool menu_accept_start = false;
+    bool menu_start_with_a = false;
     // achievements: every one the game has, in the order the lists show them (empty: none)
     std::vector<ach::Def> achievements;
     // Discord status: the game's Discord application id (its name is what Discord shows as the game), and what the
@@ -240,6 +242,10 @@ bool OverlayMessage(void* hwnd, uint32_t msg, uintptr_t wp, intptr_t lp, intptr_
 void SetFocus(bool focus);                   // window thread: WM_ACTIVATE
 void OverlayInit();                          // after ImGui's context is made: the menu's font
 float UiScale();                             // ImGui font scale for text about 18 pixels high at 720 lines
+// subtitles (app/subtitles.cpp): a line at the bottom of the screen, over the game (a game's translations)
+void Subtitle(const std::string& utf8, double seconds);  // any thread; the same line again keeps it showing
+void ClearSubtitle();
+void DrawSubtitles(float scale);                          // the renderer's ImGui frame (DrawOverlay)
 // the game stands still (the menu, or [window] pause_unfocused): the title's thread waits at its next Swap, the
 // guest's clocks stop and the sound pauses
 bool Paused();

@@ -1,0 +1,458 @@
+# The Two Towers - Polish subtitles (our own translation; line numbers are the game's text IDs)
+2	Pomoc
+4	Naciśnij START
+6	Kontynuuj
+7	Powtórz
+8	Włączone
+9	Wyłączone
+10	Nawigacja
+11	Wybierz
+12	Wstecz
+13	@ 2002 New Line Productions, Inc.  Władca Pierścieni oraz występujące w nim postacie, imiona i miejsca, * The Saul Zaentz Company d/b/a Tolkien Enterprises na licencji udzielonej New Line Productions, Inc.  Wszelkie prawa zastrzeżone.
+14	EA GAMES* jest marką firmy Electronic Arts*.
+15	Kod gry i niektóre elementy audiowizualne @ 2002 Electronic Arts Inc. Wszelkie prawa zastrzeżone.
+16	Nowa gra
+17	Wczytaj grę
+18	Opcje
+19	Tryb debugowania
+20	Dodatki
+21	Zapisz grę
+24	Naciśnij START, aby wznowić
+25	Opcje
+26	Konfiguracja kontrolera
+27	Ustawienia gry
+38	Poziom trudności:
+39	Łatwy
+40	Normalny
+41	Ekspert
+42	Mono
+43	Stereo
+44	Surround
+45	Ustawienia gry
+46	Głośność głosów:
+47	Głośność muzyki:
+48	Napisy:
+49	Wibracje:
+50	Głośność gry:
+51	Dźwięk:
+53	Wybierz grę do wczytania:
+54	Wybierz miejsce zapisu:
+55	Wybierz gniazdo MEMORY CARD:
+56	Dysk twardy Xbox
+57	Gniazdo MEMORY CARD 2
+58	Wybierz gniazdo MEMORY CARD:
+59	Anuluj
+60	Tak
+61	Nie
+62	Na pewno?
+63	Na pewno chcesz kupić to ulepszenie?
+64	Na pewno? Wyniki ostatniego przejścia tej misji zostaną utracone.
+65	Na pewno? Cały niezapisany postęp w tej grze zostanie utracony.
+66	Na pewno? Postęp w tej misji zostanie utracony.
+67	Na pewno chcesz nadpisać ten zapis gry?
+68	Zakończyć kupowanie ulepszeń?
+69	Zapisz grę na dysku twardym
+70	Wczytaj grę z dysku twardego
+75	Wybierz poziom trudności
+76	Łatwy
+77	Normalny
+78	Ekspert
+80	Zablokowane
+81	Ukończone
+83	Nierozegrane
+85	Prolog
+86	Wichrowy Czub
+87	Wrota Morii
+88	Grobowiec Balina
+89	Amon Hen
+90	Las Fangorn
+91	Równiny Rohanu
+92	Zachodnia Bruzda
+93	Wrota Rohanu
+94	Wielki Mur
+95	Wyłom w murze
+96	Dziedziniec Rogatego Grodu
+97	Wieża Orthanku
+98	Helmowy Jar:
+99	New Line Zoo
+100	Wybierz film do odtworzenia:
+101	Początek
+102	Zakończenie
+116	Aragorn
+117	Legolas
+118	Gimli
+119	Isildur
+120	Podłoga
+128	Punkty ulepszeń:
+129	4) Wprowadź podaną sekwencję kodu.
+130	Tajne kody
+131	Zawsze niszczycielski:
+132	2 graczy:
+133	Mali wrogowie:
+134	Wszystkie ulepszenia:
+135	Nieśmiertelność:
+136	Zwolnione tempo:
+137	Jak wprowadzić kod:
+138	1) Rozpocznij misję.
+139	2) Naciśnij START, aby zatrzymać grę.
+140	3) Wciśnij i przytrzymaj
+141	Nieskończone zdrowie:
+142	Nieskończone pociski:
+143	Zakończ misję:
+144	Tryb pauzy:
+145	Dodaj doświadczenie:
+146	Awans na wyższy poziom:
+147	Przywróć zdrowie:
+148	Uzupełnij pociski:
+149	Ulepszenie pocisków:
+150	Pokaż ulepszenia
+151	Wyjdź do menu
+152	Przejdź do następnej misji
+153	Misja nie powiodła się.
+154	Powtórz misję
+155	Wyjdź do menu
+156	Spróbuj ponownie
+161	Twórcy
+176	Powtórz misję
+180	Wybierz język.
+181	Angielski
+196	Szybki atak
+197	Potężny atak
+198	Dobicie
+199	Specjalne
+200	Kombo
+207	Kupione
+208	Jeszcze nie odblokowane. Naciśnij przycisk A, aby kontynuować.
+209	Nie masz dość punktów ulepszeń, aby kupić to ulepszenie. Naciśnij przycisk A, aby kontynuować.
+210	lub
+211	po parowaniu
+212	na ziemi
+230	Wolne miejsce
+231	Gra 2
+232	Gra 3
+233	Gra 4
+234	Gra 5
+235	Gra 6
+236	Gra 7
+237	Gra 8
+238	Gra 9
+239	Gra 10
+240	Gra 11
+270	Nie włożono karty Memory Card (PS2). Do zapisania danych tej gry potrzeba co najmniej 80 KB. Czy chcesz kontynuować?
+271	Za mało miejsca na karcie Memory Card (PS2) w gnieździe MEMORY CARD 1.  Do zapisania danych tej aplikacji potrzeba co najmniej 80 KB. Czy chcesz kontynuować?
+272	Za mało miejsca na karcie Memory Card (PS2) w gnieździe MEMORY CARD 2.  Do zapisania danych tej aplikacji potrzeba co najmniej 80 KB. Czy chcesz kontynuować?
+273	Za mało miejsca na kartach Memory Card (PS2) w gniazdach MEMORY CARD. Do zapisania danych tej aplikacji potrzeba co najmniej 80 KB. Czy chcesz kontynuować?
+274	Brak karty Memory Card (PS2) w gnieździe MEMORY CARD 1. Naciśnij przycisk X, aby kontynuować.
+275	Brak karty Memory Card (PS2) w gnieździe MEMORY CARD 2. Naciśnij przycisk X, aby kontynuować.
+276	Podłącz ponownie kontroler i naciśnij START, aby kontynuować.
+277	Karta Memory Card (PS2) w gnieździe MEMORY CARD 2 nie jest sformatowana. Sformatować kartę Memory Card (PS2)?
+278	Twoja konsola Xbox nie ma dość wolnych bloków, aby zapisać grę.  Naciśnij A, aby kontynuować bez zapisu, lub B, aby zwolnić co najmniej
+279	Podłącz ponownie kontroler i naciśnij START, aby kontynuować
+280	Na dysku twardym brakuje wolnych bloków na ten zapis gry.
+281	bloków trzeba zwolnić.
+282	Formatowanie nie powiodło się! Błąd karty Memory Card (PS2) w gnieździe MEMORY CARD 2! Naciśnij przycisk X, aby kontynuować.
+283	Nie można zapisać gry. Naciśnij przycisk A, aby kontynuować.
+284	Nie można zapisać gry. Naciśnij przycisk A, aby kontynuować.
+285	Gra zapisana.  Naciśnij przycisk A, aby kontynuować.
+286	Zapis na karcie Memory Card (PS2) w gnieździe MEMORY CARD 2 zakończony pomyślnie! Naciśnij przycisk X, aby kontynuować.
+287	Zapisywanie danych na karcie Memory Card (PS2) w gnieździe MEMORY CARD 1. Nie wyjmuj karty Memory Card (PS2), nie resetuj ani nie wyłączaj konsoli.
+288	Zapisywanie danych na karcie Memory Card (PS2) w gnieździe MEMORY CARD 2. Nie wyjmuj karty Memory Card (PS2), nie resetuj ani nie wyłączaj konsoli.
+289	Wczytywanie danych z karty Memory Card (PS2) w gnieździe MEMORY CARD 1. Nie wyjmuj karty Memory Card (PS2), nie resetuj ani nie wyłączaj konsoli.
+290	Wczytywanie danych z karty Memory Card (PS2) w gnieździe MEMORY CARD 2. Nie wyjmuj karty Memory Card (PS2), nie resetuj ani nie wyłączaj konsoli.
+291	Nie można wczytać gry. Naciśnij przycisk A, aby kontynuować.
+292	Nie można wczytać gry. Naciśnij przycisk A, aby kontynuować.
+293	Czy chcesz zapisać grę?
+294	Brak zapisanych gier. Naciśnij przycisk A, aby kontynuować.
+295	Brak zapisanych gier. Naciśnij przycisk A, aby kontynuować.
+296	bloków.
+297	Karta Memory Card (PS2) w gnieździe MEMORY CARD 1 nie jest sformatowana. Naciśnij przycisk X, aby kontynuować.
+298	Karta Memory Card (PS2) w gnieździe MEMORY CARD 2 nie jest sformatowana. Naciśnij przycisk X, aby kontynuować.
+299	Odczytywanie danych z karty Memory Card (PS2) w gnieździe MEMORY CARD 1. Nie wyjmuj karty Memory Card (PS2), nie resetuj ani nie wyłączaj konsoli.
+300	Odczytywanie danych z karty Memory Card (PS2) w gnieździe MEMORY CARD 2. Nie wyjmuj karty Memory Card (PS2), nie resetuj ani nie wyłączaj konsoli.
+301	Wystąpił problem z używaną płytą. Może być brudna lub uszkodzona.
+320	Misja 1
+321	Misja 2
+322	Misja 3
+323	Misja 4
+324	Misja 5
+325	Misja 6
+326	Misja 7
+327	Misja 8
+328	Misja 9
+329	Misja 10
+330	Misja 11
+331	Misja 12
+332	Misja 13
+333	Misja A
+334	Misja B
+335	Misja C
+336	Misja D
+401	Doświadczenie z misji:
+403	Ocena misji:
+405	Suma punktów ulepszeń:
+450	Perfekcyjnie
+451	Doskonale
+452	Dobrze
+453	Przeciętnie
+454	Słabo
+455	Umiejętności
+460	Szybkość
+461	Siła
+462	Obrona
+463	Atak
+464	Potężny
+465	atak
+500	Szybka kombinacja.  Skuteczna przeciw mniejszym wrogom bez tarcz.
+501	Niszczycielska kombinacja, która przebija się przez przeszkody i roztrzaskuje tarcze wrogów.
+502	Wciśnij i przytrzymaj lewy spust, aby użyć.  Strzelaj przyciskiem A (przytrzymaj, aby zwiększyć obrażenia).
+503	To pchnięcie dobija każdego powalonego wroga.
+504	Odrzuć wrogów od siebie, poza zasięg ich ciosów.
+505	Blokuje ataki i pociski wrogów.
+506	Niszczycielski atak.  Naciśnij i przytrzymaj przycisk Y, aby użyć.
+507	Trwale zwiększa twoje zdrowie.
+508	Rzuć się naprzód i powal na ziemię wrogów bez tarcz.
+509	Zaatakuj, podnosząc się z ziemi, i zaskocz wrogów.
+510	Bardzo skuteczne kombo do eliminowania wrogów bez tarcz.
+511	Bardzo skuteczne, by jak najszybciej rozprawić się z wrogami z tarczami.
+512	RUCH ŁĄCZONY: Natychmiast zabij atakującego goblina.
+513	Strzelasz z niego jak z Łuku Dúnedainów, a strzały Rohirrimów z zadziorami zadają poważne obrażenia.
+514	Trwale zwiększa twoje zdrowie.  (Wymaga: Siła Namiestników)
+515	Rzuć się naprzód z dużej odległości i powal na ziemię wrogów bez tarcz. (Wymaga: Atak z rozpędu)
+516	Ta kombinacja pozwala zranić wroga, powalić go i zadać mu cios.
+517	Użyj tego kombo, by trafić wroga bez tarczy, dobić go i szybko uderzyć następnego.
+518	RUCH ŁĄCZONY: Natychmiast zabij atakującego orka.
+519	Trwale zwiększa twoje zdrowie.  (Wymaga: Siła Isildura)
+520	Jeszcze bardziej niszczycielski atak.  (Wymaga: Furia Strażnika)
+521	Zwiększa obrażenia twojego Szybkiego ataku.
+522	To kombo pozwala zranić, powalić, a potem dobić potężnych wrogów.
+523	Trwale zwiększa twoje zdrowie.  (Wymaga: Siła Elendila)
+524	Ten niszczycielski atak podpala wielu wrogów naraz.  (Wymaga: Wściekłość dziczy)
+525	Żelazne strzały Gondoru zadają straszliwe obrażenia.  (Wymaga: Łuk Rohanu)
+526	RUCH ŁĄCZONY: Natychmiast zabij atakującego Uruk-hai.
+527	Użyj przeciw potężnemu wrogowi, by roztrzaskać jego tarczę, powalić go na ziemię i zadać mu cios.
+528	Nic
+529	Nic
+530	Szybka kombinacja.  Skuteczna przeciw mniejszym wrogom bez tarcz.
+531	Niszczycielska kombinacja, która przebija się przez przeszkody i roztrzaskuje tarcze wrogów.
+532	Wciśnij i przytrzymaj lewy spust, aby użyć.  Rzucaj przyciskiem A (przytrzymaj, aby zwiększyć obrażenia).
+533	Ten cios toporem dobija każdego powalonego wroga.
+534	Odrzuć wrogów od siebie, poza zasięg ich ciosów.
+535	Blokuje ataki i pociski wrogów.
+536	Niszczycielski atak.  Naciśnij i przytrzymaj przycisk Y, aby użyć.
+537	Trwale zwiększa twoje zdrowie.
+538	Trwale zwiększa twoje zdrowie.  (Wymaga: Moc skały)
+539	Rzuć się naprzód i powal na ziemię wrogów bez tarcz.
+540	Bardzo skuteczne kombo do eliminowania wrogów bez tarcz.
+541	Bardzo skuteczne, by jak najszybciej rozprawić się z wrogami z tarczami.
+542	RUCH ŁĄCZONY: Natychmiast zabij atakującego goblina.
+543	Trwale zwiększa twoje zdrowie.  (Wymaga: Moc żelaza)
+544	Rzuć się naprzód z dużej odległości i powal na ziemię wrogów bez tarcz.  (Wymaga: Atak z rozpędu)
+545	Zaatakuj, podnosząc się z ziemi, i zaskocz wrogów.
+546	Ta kombinacja pozwala zranić wroga, powalić go i zadać mu cios.
+547	Użyj tego kombo, by trafić wroga bez tarczy, dobić go i szybko uderzyć następnego.
+548	RUCH ŁĄCZONY: Natychmiast zabij atakującego orka.
+549	Trwale zwiększa twoje zdrowie.  (Wymaga: Runa ochrony)
+550	Trwale zwiększa twoje zdrowie.  (Wymaga: Moc Balina)
+551	Rzucasz nimi jak Toporami z Ereboru, a ostre jak brzytwa topory z Morii zadają jeszcze większe obrażenia.
+552	Jeszcze bardziej niszczycielski atak.  (Wymaga: Krasnoludzka furia)
+553	To kombo pozwala zranić, powalić, a potem dobić potężnych wrogów.
+554	Trwale zwiększa twoje zdrowie.  (Wymaga: Moc Glóina)
+555	Ten niszczycielski atak podpala wielu wrogów naraz.  (Wymaga: Wściekłość gór)
+556	Te ostrza o mithrilowych krawędziach zadają straszliwe obrażenia.  (Wymaga: Topory z Morii)
+557	Zwiększa obrażenia twojego Potężnego ataku.
+558	RUCH ŁĄCZONY: Natychmiast zabij atakującego Uruk-hai.
+559	Użyj przeciw potężnemu wrogowi, by roztrzaskać jego tarczę, powalić go na ziemię i zadać mu cios.
+560	Szybka kombinacja.  Skuteczna przeciw mniejszym wrogom bez tarcz.
+561	Niszczycielska kombinacja, która przebija się przez przeszkody i roztrzaskuje tarcze wrogów.
+562	Wciśnij i przytrzymaj lewy spust, aby użyć.  Strzelaj przyciskiem A (przytrzymaj, aby zwiększyć obrażenia).
+563	To pchnięcie dobija każdego powalonego wroga.
+564	Odrzuć wrogów od siebie, poza zasięg ich ciosów.
+565	Blokuje ataki i pociski wrogów.
+566	Niszczycielski atak.  Naciśnij i przytrzymaj przycisk Y, aby użyć.
+567	Trwale zwiększa twoje zdrowie.
+568	Rzuć się naprzód i powal na ziemię wrogów bez tarcz.
+569	Strzelasz z niego jak z Długiego łuku z Mrocznej Puszczy, a jesionowe strzały z Rivendell zadają jeszcze większe obrażenia.
+570	Bardzo skuteczne kombo do eliminowania wrogów bez tarcz.
+571	Bardzo skuteczne, by jak najszybciej rozprawić się z wrogami z tarczami.
+572	RUCH ŁĄCZONY: Natychmiast zabij atakującego goblina.
+573	Rzuć się naprzód z dużej odległości i powal na ziemię wrogów bez tarcz.  (Wymaga: Atak z rozpędu)
+574	Zaczarowane strzały z Lothlórien zadają okropne obrażenia.  (Wymaga: Długi łuk z Rivendell)
+575	Ta kombinacja pozwala zranić wroga, powalić go i zadać mu cios.
+576	Użyj tego kombo, by trafić wroga bez tarczy, dobić go i szybko uderzyć następnego.
+577	Te magiczne strzały podpalają twoich wrogów.  (Wymaga: Długi łuk z Lothlórien)
+578	Trwale zwiększa twoje zdrowie.  (Wymaga: Potęga Celeborna)
+579	Jeszcze bardziej niszczycielski atak.  (Wymaga: Elfia furia)
+580	RUCH ŁĄCZONY: Natychmiast zabij atakującego orka.
+581	To kombo pozwala zranić, powalić, a potem dobić potężnych wrogów.
+582	Te strzały przebijają i ranią wszystkich wrogów na swojej drodze.  (Wymaga: Strzały smoczego ognia)
+583	Zaatakuj, podnosząc się z ziemi, i zaskocz wrogów.
+584	Zwiększa obrażenia każdej wystrzelonej przez ciebie strzały.
+585	RUCH ŁĄCZONY: Natychmiast zabij atakującego Uruk-hai.
+586	Użyj przeciw potężnemu wrogowi, by roztrzaskać jego tarczę, powalić go na ziemię i zadać mu cios.
+600	Potrójne uderzenie
+601	Podwójne cięcie
+602	Łuk Dúnedainów
+603	Cios z cienia
+604	Kopnięcie bojowe
+605	Parowanie mieczem
+606	Furia Strażnika
+607	Siła Namiestników
+608	Atak z rozpędu
+609	Atak z ziemi
+610	Błyskawiczna groza Isildura
+611	Wybawienie Isildura
+612	Zguba goblinów
+613	Łuk Rohanu
+614	Siła Isildura
+615	Szarża
+616	Śmiertelna szarża Isildura
+617	Gambit Isildura
+618	Zguba orków
+619	Siła Elendila
+620	Wściekłość dziczy
+621	Mistrz miecza
+622	Bojowy impet Isildura
+623	Siła Argonath
+624	Gniew Númenoru
+625	Łuk Gondoru
+626	Zguba Sarumana
+627	Sąd Isildura
+628	Nic
+629	Nic
+630	Potrójne uderzenie
+631	Podwójne cięcie
+632	Topory z Ereboru
+633	Cios z cienia
+634	Pchnięcie toporem
+635	Parowanie toporem
+636	Krasnoludzka furia
+637	Moc skały
+638	Moc żelaza
+639	Atak z rozpędu
+640	Błyskawiczna groza Balina
+641	Wybawienie Balina
+642	Zguba goblinów
+643	Runa ochrony
+644	Szarża
+645	Atak z ziemi
+646	Śmiertelna szarża Balina
+647	Gambit Balina
+648	Zguba orków
+649	Moc Balina
+650	Moc Glóina
+651	Topory z Morii
+652	Wściekłość gór
+653	Bojowy impet Balina
+654	Moc Khazad-dûm
+655	Gniew Morii
+656	Topory z Gór Mglistych
+657	Królewskie mistrzostwo topora
+658	Zguba Sarumana
+659	Sąd Balina
+660	Potrójne uderzenie
+661	Podwójne cięcie
+662	Długi łuk z Mrocznej Puszczy
+663	Cios z cienia
+664	Kopnięcie bojowe
+665	Parowanie nożem
+666	Elfia furia
+667	Potęga Celeborna
+668	Atak z rozpędu
+669	Długi łuk z Rivendell
+670	Błyskawiczna groza Elronda
+671	Wybawienie Elronda
+672	Zguba goblinów
+673	Szarża
+674	Długi łuk z Lothlórien
+675	Śmiertelna szarża Elronda
+676	Gambit Elronda
+677	Strzały smoczego ognia
+678	Potęga Galadrieli
+679	Wściekłość Gil-galada
+680	Zguba orków
+681	Bojowy impet Elronda
+682	Strzały z mithrilu
+683	Atak z ziemi
+684	Elfie mistrzostwo łuku
+685	Zguba Sarumana
+686	Sąd Elronda
+700	Poziom
+800	Paruj, aby blokować ataki wrogów i odbijać strzały.
+801	Parowanie
+802	Wciśnij i przytrzymaj lewy spust, aby przełączyć się na broń dystansową.  Naciśnij przycisk A, aby strzelić.  Celuj lewą gałką.
+804	Broń dystansowa
+805	Strzał
+806	Używaj Szybkiego ataku przeciw wrogom bez tarcz.
+807	Używaj Potężnego ataku, aby rozbijać tarcze wrogów.
+808	Potężny atak
+809	Szybki atak
+810	Zdobywaj punkty doświadczenia, aby podnosić poziom postaci i kupować cenne ulepszenia.
+811	Zdobyte punkty doświadczenia
+812	Używaj zaawansowanych kombinacji i unikaj ciosów wrogów, aby napełnić Wskaźnik umiejętności i zdobyć maksimum punktów doświadczenia.
+813	Wskaźnik umiejętności
+814	Celowanie
+815	Odskok
+816	Cios śmiertelny
+817	Odrzucenie
+818	Strzał/Szybki atak
+819	Ruch/Celowanie
+820	Pauza
+840	Wywiad
+841	Peter Jackson i Barrie Osborne
+842	Elijah Wood
+843	Ian McKellen
+844	Władca Pierścieni
+845	Jak powstawała gra
+846	Władca Pierścieni
+847	Ekskluzywne fragmenty filmu
+848	'Drużyna Pierścienia'
+849	Zdjęcia z planu
+850	Fangorn i Orthank
+851	Rohan i Helmowy Jar
+852	Viggo Mortensen
+853	Orlando Bloom
+854	John Rhys-Davies
+855	Tajne kody
+856	Graj Aragornem
+857	Graj Legolasem
+858	Graj Gimlim
+859	Graj Isildurem
+860	Tajna misja
+861	Graj tajną postacią
+862	Szkice koncepcyjne
+900	Ukończ misję Wrota Morii, aby odblokować
+901	Ukończ misję Grobowiec Balina, aby odblokować
+902	Ukończ misję Amon Hen, aby odblokować
+903	Ukończ misję Las Fangorn, aby odblokować
+904	Ukończ misję Równiny Rohanu, aby odblokować
+905	Ukończ misję Zachodnia Bruzda, aby odblokować
+906	Ukończ misję Wrota Rohanu, aby odblokować
+907	Ukończ misję Helmowy Jar: Wielki Mur, aby odblokować
+908	Ukończ misję Helmowy Jar: Wyłom w murze, aby odblokować
+909	Osiągnij 5. poziom Aragornem
+910	Osiągnij 5. poziom Legolasem
+911	Osiągnij 5. poziom Gimlim
+912	Ukończ misję Helmowy Jar: Dziedziniec Rogatego Grodu i osiągnij 10. poziom Aragornem
+913	Ukończ misję Helmowy Jar: Dziedziniec Rogatego Grodu i osiągnij 10. poziom Legolasem
+914	Ukończ misję Helmowy Jar: Dziedziniec Rogatego Grodu i osiągnij 10. poziom Gimlim
+915	Ukończ Tajną misję dowolną postacią
+916	Ukończ Tajną misję tajną postacią
+917	Peter Jackson i Barrie Osborne opowiadają o filmie i grze
+918	Elijah Wood opowiada o roli Froda w grze 'Władca Pierścieni'
+919	Ian McKellen opowiada o roli Gandalfa w grze 'Władca Pierścieni'
+920	Za kulisami powstawania gry 'Władca Pierścieni'
+921	Zdjęcia postaci i plenerów z filmu 'Drużyna Pierścienia'
+922	Zdjęcia postaci i plenerów z Fangornu i Orthanku
+923	Grafiki Johna Howe'a i Alana Lee inspirowane 'Władcą Pierścieni'
+924	Zdjęcia postaci i plenerów z Rohanu i Helmowego Jaru
+925	Viggo Mortensen opowiada o roli Aragorna w grze 'Władca Pierścieni'
+926	Orlando Bloom opowiada o roli Legolasa w grze 'Władca Pierścieni'
+927	John Rhys-Davies opowiada o roli Gimlego w grze 'Władca Pierścieni'
+928	Tajne kody odblokowujące ukryte funkcje gry 'Władca Pierścieni'
+950	Zmień wybór
+951	Zatwierdź wybór
+952	Wróć
+953	Zmień lub dostosuj wybór
+954	Wyjdź do menu głównego
+955	Zmień obraz
+956	Wydaj punkty ulepszeń na usprawnienia dla swojej postaci.

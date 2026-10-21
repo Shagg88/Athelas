@@ -1,0 +1,1660 @@
+# The Return of the King - Polish subtitles (our own translation). Interface lines by their name; spoken lines as <level>:<sound number>.
+DEU	Deutsch
+ENG	English
+FRA	Français
+ITA	Italiano
+NLD	Nederlands
+POL	Polski
+POR	Português
+SPA	Español
+SWE	Svenska
+abilitiesUnlocked	Odblokowano nowe umiejętności
+aragorn	Aragorn
+areyousure	Na pewno?
+back	BACK
+badDisk	Wystąpił problem z używaną płytą. Może być brudna lub uszkodzona.
+badgames	Zapisane gry (%1s) są uszkodzone.
+badmedia	Nie można użyć Memory Unit (%1s).
+bla01	Czarna Brama
+bla01LockDescCoop	Ukończ Pola Pelennoru i Minas Tirith - podwórzec
+bla01LockDescSingle	Ukończ Pola Pelennoru i Minas Tirith - podwórzec
+blocks	bloków
+cancel	Anuluj
+charSelPlayer1Sel	Gracz 1 - wybierz postać
+charSelPlayer2Sel	Gracz 2 - wybierz postać
+charselCompleted	ukończony
+charselCompletedHelp	Ta postać ukończyła już ten poziom.  Ukończ Szczeliny Zagłady, aby zagrać ponownie.
+charselHiddenHelp	Ukończ Szczeliny Zagłady, aby odblokować tę ukrytą postać.
+charselLocked	zablokowany
+charselLockedHelp	Tej postaci nie można teraz wybrać.
+charselLockedHobbitHelp	Ta postać podąża Ścieżką hobbitów.   Aby odblokować ją na tym poziomie, ukończ Ścieżkę czarodzieja, Ścieżkę króla i Ścieżkę hobbitów.
+charselLockedKingHelp	Ta postać podąża Ścieżką króla.   Aby odblokować ją na tym poziomie, ukończ Ścieżkę czarodzieja, Ścieżkę króla i Ścieżkę hobbitów.
+charselLockedMerryHelp	Ukończ Czarną Bramę, aby odblokować tę postać na Ścieżce hobbitów.
+charselLockedWizardHelp	Ta postać podąża Ścieżką czarodzieja.   Aby odblokować ją na tym poziomie, ukończ Ścieżkę czarodzieja, Ścieżkę króla i Ścieżkę hobbitów.
+charselSpecialHelp	Zagraj w Szczeliny Zagłady, aby odblokować tę specjalną postać.
+charselTakenHelp	Ta postać została już wybrana.
+charselUnplayableHelp	Na tym poziomie nie możesz grać tą postacią.
+checkingcard	Sprawdzanie: %1s.\nNie wyjmuj Memory Unit i nie odłączaj kontrolerów.
+checkingdisk	Sprawdzanie: %1s.\nNie wyłączaj konsoli Xbox.
+checkpoint	punkt kontrolny
+chooseLang	Wybierz język.
+cir00	Kirith Ungol
+cir00LockDescCoop	Ukończ Leże Szeloby
+cir00LockDescSingle	Ukończ Leże Szeloby
+climb	Wspinaj się
+code1	Przywrócenie zdrowia
+code2	Tryb perfekcyjny
+code3	Zawsze niszczycielski atak
+code4	Wszystkie ulepszenia
+code5	Nieskończone pociski
+code6	Pociski kinetyczne
+code7	Nietykalność
+code8	Tryb wskaźnika celu
+codeInstr1	1) Rozpocznij misję
+codeInstr2	2) Naciśnij START, aby zatrzymać grę
+codeInstr3	3) Wciśnij i przytrzymaj
+codeInstr4	4) Wprowadź podaną sekwencję kodu
+codeTitle	Tajne kody
+colon	:
+completed	Ukończona
+continue	Kontynuuj
+continuewosave	Kontynuuj bez zapisu
+controller	Kontroler
+controllerConfiguration	Konfiguracja kontrolera
+controllerRemoved1	Podłącz ponownie kontroler i naciśnij START, aby kontynuować.
+controllerRemoved2	Podłącz ponownie kontroler do portu %d i naciśnij START, aby kontynuować.
+controllerRequired	podłącz kontroler
+coopMissionExp	Doświadczenie z misji
+coopMissionRating	Ocena misji
+coopNewGameWarning	W trybie współpracy możesz użyć swojej postaci z dowolnej wcześniej zapisanej gry. Wybierz 'tak', jeśli chcesz zacząć od nowa.
+coopStatsLabel	Statystyki trybu współpracy
+cra01	Szczeliny Zagłady
+cra01LockDescCoop	Ukończ Czarną Bramę i Kirith Ungol
+cra01LockDescSingle	Ukończ Czarną Bramę i Kirith Ungol
+creditsLabel	Twórcy
+deletegames	Usunąć wszystkie zapisy gry Powrót Króla (%1s)?
+deletingfromcard	Usuwanie: %1s.\nNie wyjmuj Memory Unit i nie odłączaj kontrolerów.
+deletingfromdisk	Usuwanie: %1s.\nNie wyłączaj konsoli Xbox.
+diskfull	Na konsoli Xbox brakuje wolnych bloków, aby zapisać grę. Liczba bloków do zwolnienia: %2d.  UWAGA: zwolnienie bloków spowoduje utratę bieżących postępów w grze.
+dunno	Działanie
+emptygame	Pusta gra
+enterCode	Jak wprowadzić kod:
+exitToMenu	Wyjdź do menu
+faramir	Faramir
+fierce	Ognisty
+filemgr	Zwolnij więcej bloków
+formatdeclined	Memory Unit (%1s) nie jest sformatowany.
+freespace	Razem bloków: %d%s;  wolnych: %d%s
+frodo	Frodo
+gameSetup	Ustawienia gry
+gandalf	Gandalf
+gimli	Gimli
+gradeExcellent	Znakomicie
+gradeFair	Nieźle
+gradeGood	Dobrze
+gradePerfect	Idealnie
+harddisk	Dysk twardy
+hel01	Helmowy Jar
+hel01LockDescCoop	Niedostępne w trybie współpracy
+hel01LockDescSingle	Ten tekst nie powinien się pojawić
+help	Pomoc
+helpChangeModSel	Zmień lub dostosuj wybór
+helpChangeSel	Zmień wybór
+helpGoBack	Wróć
+helpLabel	Okno pomocy
+helpLevelInfo	Informacje o poziomie
+helpMakeSel	Zatwierdź wybór
+helpOptions	Opcje
+hobbitPath	Ścieżka hobbitów
+inGameBadConn	Wykryto problemy z połączeniem
+inGameExit	Wyjdź do menu
+inGameNo	nie
+inGameObjective	Wskazówki do misji
+inGameOptions	Opcje
+inGameOptionsPage	Ekran opcji
+inGamePressStart	Naciśnij START
+inGameRestart	Spróbuj ponownie
+inGameReturn	Wznów
+inGameSOD	Misja nie powiodła się
+inGameSelect	Wybierz
+inGameSure	Na pewno?
+inGameUpgrades	Pokaż ulepszenia
+inGameWin	Wygrana (debug)
+inGameYes	tak
+ise01	Droga do Isengardu
+ise01LockDescCoop	Ukończ Pola Pelennoru
+ise01LockDescSingle	Ukończ Helmowy Jar
+kick	Kopnięcie
+killingmove	Zabójczy cios
+kills	Zabici
+kingPath	Ścieżka króla
+leftTriggerBtnName	L
+legal	© MMIII New Line Productions, Inc.  Wszelkie prawa zastrzeżone.  The Lord of the Rings§; The Return of the King§ oraz imiona postaci i nazwy przedmiotów, wydarzeń i miejsc w nich występujących są znakami towarowymi  The Saul Zaentz Company d/b/a Tolkien Enterprises, używanymi na licencji przez New Line Productions, Inc.  Kod gry i niektóre elementy audiowizualne © 2003 Electronic Arts Inc. Wszelkie prawa zastrzeżone.
+legal2	EA GAMES§ jest marką firmy Electronic Arts§.
+legolas	Legolas
+level	Poziom
+levelUp	Awans!
+load2ndplayer	Czy chcesz wczytać postać z innej gry?
+loadGame1	Gra 1
+loadGame10	Gra 10
+loadGame2	Gra 2
+loadGame3	Gra 3
+loadGame4	Gra 4
+loadGame5	Gra 5
+loadGame6	Gra 6
+loadGame7	Gra 7
+loadGame8	Gra 8
+loadGame9	Gra 9
+loadLabel	Wybierz grę do wczytania
+loaderror	Nie można wczytać: %3s.\nNaciśnij A, aby kontynuować.
+loadgame	Wybierz grę do wczytania
+loading	Wczytywanie
+loadingat	Działanie
+loadingatdesc	Używaj przycisku działania, aby korzystać z przedmiotów w odpowiednich miejscach.
+loadingex	Miernik doświadczenia
+loadingexskdesc	Zdobywaj punkty doświadczenia, aby podnosić poziom postaci i kupować ulepszenia.  Napełniaj Miernik umiejętności zaawansowanymi kombinacjami, aby zdobyć jak najwięcej doświadczenia.
+loadingfromcard	Wczytywanie: %3s.\nNie wyjmuj Memory Unit i nie odłączaj kontrolerów.
+loadingfromdisk	Wczytywanie: %3s.\nNie wyłączaj konsoli Xbox.
+loadingkm	Zabójczy cios
+loadingkmdesc	Użyj tego przycisku, aby dobić powalonego wroga.
+loadingsk	Miernik umiejętności
+loadingsp	Umiejętność specjalna
+loadingspdesc	Użyj tej kombinacji przycisków, aby skorzystać z umiejętności specjalnej postaci.
+loadnocard	Odłączono %5s w trakcie użycia.\nWczytywanie nie powiodło się.\nNaciśnij A, aby kontynuować.
+mainMenuCoop	Tryb współpracy
+mainMenuCredits	Twórcy
+mainMenuOnline	Online
+mainMenuOptions	Opcje
+mainMenuPressStart	Naciśnij przycisk START
+mainMenuPressStart_XBOX	Naciśnij START
+mainMenuSingle	Jeden gracz
+mediaalmostfull	Nie znaleziono zapisanych gier.\nWymagana liczba bloków do zapisu: %6d.
+mediafull	Brak wolnego miejsca: %1s.
+memcardSlotA	Gniazdo rozszerzeń_A
+memcardSlotB	Gniazdo rozszerzeń_B
+memoryunitA	Memory Unit_%dA
+memoryunitB	Memory Unit_%dB
+merry	Merry
+min00	Minas Tirith - szczyt muru
+min00LockDescCoop	Ukończ Drogę do Isengardu
+min00LockDescSingle	Ukończ Drogę do Isengardu
+min02	Południowa Brama
+min02LockDescCoop	Ukończ Króla Umarłych
+min02LockDescSingle	Ukończ Króla Umarłych
+min04	Minas Tirith - podwórzec
+min04LockDescCoop	Ukończ Minas Tirith - szczyt muru
+min04LockDescSingle	Ukończ Minas Tirith - szczyt muru
+muA	MU_%dA
+muB	MU_%dB
+newdiskfull	Na konsoli Xbox brakuje wolnych bloków, aby zapisać grę. Liczba bloków do zwolnienia: %2d.  UWAGA: zwolnienie bloków spowoduje utratę niezapisanych zmian.
+newgame	Nowa gra
+newloadDebug	Gra (debug)
+newloadLoad	Wczytaj grę
+newloadNew	Nowa gra
+newplay	Kontynuuj grę
+newstarting	Rozpoczynanie gry...
+no	Nie
+nogames	Nie znaleziono zapisanych gier.
+nomedia	Brak Memory Unit (%1s)
+notsaved	%0sGra nie została zapisana.\nKontynuować bez zapisu?
+objective0	Naciśnij czarny przycisk, aby używać przedmiotów.
+objective1	Używaj ognistych ataków, aby rozbijać tarcze wrogów.
+objective10	Używaj pochodni, aby palić pajęczyny i kokony.
+objective11	Zamaskowany hobbit może użyć spustu R, aby zaatakować wroga od tyłu.
+objective12	Używaj ognistych lub fizycznych ataków, aby zepchnąć Golluma z krawędzi.
+objective14	Ogłusz Gorbaga, aby móc go zranić.
+objective15	Zabijaj umarłych żołnierzy, aby Król stał się podatny na ciosy.
+objective16	Ukończ 20 fal, aby uciec z palantiru i zwiększyć swoje doświadczenie.
+objective17	Ukończ 20 fal, aby uciec z palantiru i zwiększyć swoje doświadczenie.
+objective2	Używaj kombinacji, aby szybciej zabijać wrogów.
+objective3	Dostań się na szczyt muru, aby otworzyć bramę.
+objective4	Balisty i piki wojenne mogą przebić pancerz mumakila jednym uderzeniem.
+objective5	Trzymaj się blisko Drużyny, aby utrzymać jej członków przy życiu.
+objective6	Używaj parowania, aby blokować ataki wrogów i odbijać strzały.
+objective7	Używaj ataku fizycznego, aby przewracać drabiny i obniżać wskaźnik przejęcia.
+objective8	Naciśnij oba spusty, aby aktywować umiejętność specjalną postaci.
+objective9	Naciśnij oba spusty, aby aktywować umiejętność specjalną postaci.
+ok	OK
+optionsDifficulty	Poziom trudności
+optionsEasy	Łatwy
+optionsGameVol	Głośność gry
+optionsHard	Trudny
+optionsLabel	Opcje
+optionsMono	Mono
+optionsMusicVol	Głośność muzyki
+optionsNormal	Normalny
+optionsOff	Wył.
+optionsOn	Wł.
+optionsRespawn	Odradzanie (debug)
+optionsSound	Dźwięk
+optionsStereo	Stereo
+optionsSubtitles	Napisy
+optionsSurround	Surround
+optionsVOVol	Głośność dialogów
+optionsVibration	Wibracje
+osg01	Ucieczka z Osgiliath
+osg01LockDescCoop	Ukończ Czarną Bramę
+osg01LockDescSingle	Ukończ Helmowy Jar
+overwrite	Na pewno chcesz nadpisać: %3s?
+parry	Parowanie
+pat01	Ścieżka Umarłych
+pat01LockDescCoop	Ukończ Helmowy Jar
+pat01LockDescSingle	Ukończ Helmowy Jar
+pat02	Król Umarłych
+pat02LockDescCoop	Ukończ Ścieżkę Umarłych
+pat02LockDescSingle	Ukończ Ścieżkę Umarłych
+pel01	Pola Pelennoru
+pel01LockDescCoop	Ukończ Południową Bramę
+pel01LockDescSingle	Ukończ Południową Bramę
+perfectMode	Tryb perfekcyjny!
+pippin	Pippin
+playanyway	Rozpocznij grę
+player	Gracz
+plus	+
+purchased	Kupione
+purgegames	Usuń zapisy gry
+ranged	Z dystansu
+replay	Powtórz
+replayAreYouSure	Na pewno? Wyniki ostatniego przejścia tej misji zostaną utracone.
+respawnInLabel	Odrodzenie za
+retry	Ponów
+rightTriggerBtnName	R
+sam	Sam
+save2ndplayer	Czy chcesz zapisać grę?
+saveLabel	Wybierz miejsce zapisu
+saved	%0sZapisano grę.
+saveerror	Nie można zapisać: %4s.\nNaciśnij A, aby kontynuować.
+savegame	Wybierz miejsce zapisu
+savegameformat	%s - 1P:_%d%% Koop.:_%d%% - %02d/%02d_@_%02d:%02d
+savenocard	Odłączono %5s w trakcie użycia.\nZapis nie powiódł się.\nNaciśnij A, aby kontynuować.
+savingtocard	Zapisywanie %4s na: %1s.\nNie wyjmuj Memory Unit i nie odłączaj kontrolerów.
+savingtodisk	Zapisywanie %4s na: %1s.\nNie wyłączaj konsoli Xbox.
+sceneSelAreYouSure	Na pewno? Cały niezapisany postęp w tej grze zostanie utracony.
+sceneSelAvailable	Dostępna
+sceneSelHel01Complete	Helmowy Jar został już ukończony. Ukończ Szczeliny Zagłady, aby zagrać w niego ponownie.
+sceneSelLabel	Wybór misji
+sceneSelLocked	Zablokowana
+sceneSelUnplayed	Nierozegrana
+scoringMissionExp	Doświadczenie z misji:
+scoringMissionRating	Ocena misji:
+scoringPopupFair	Ocenę Nieźle najłatwiej zdobyć, ale daje ona najmniej punktów doświadczenia.
+scoringPopupGood	Oceny Dobrze i Znakomicie są warte więcej, ale wymagają zadania kilku ciosów z rzędu bez otrzymania obrażeń.
+scoringPopupLevelUp	Zdobywaj punkty doświadczenia, aby podnosić poziom postaci i uzyskać dostęp do potężniejszych umiejętności i ulepszeń.
+scoringPopupMomentum	Miernik umiejętności określa ocenę zabójstw. Zdobywaj wyższe oceny, łącząc skuteczne ciosy w serie.
+scoringPopupPerfect	Napełnienie Miernika umiejętności do poziomu Idealnie zwiększa obrażenia twoich ataków i daje maksimum punktów doświadczenia.
+secretCharacter	Tajna postać
+secretLevel	Tajne poziomy i nagrody
+she01	Leże Szeloby
+she01LockDescCoop	Ukończ Ucieczkę z Osgiliath
+she01LockDescSingle	Ukończ Ucieczkę z Osgiliath
+skill	Umiejętność
+specialFeature	Dodatek do odblokowania
+specialhelm1	Szkice koncepcyjne do filmu
+specialhelm1LockDesc	Ukończ Helmowy Jar
+specialhelm1UnlockDesc	Szkice koncepcyjne do filmu autorstwa Jeremy'ego Bennetta, Johna Howe'a, Paula Lasaine'a i Alana Lee
+specialhelm2	Hobbici o grach
+specialhelm2LockDesc	Ukończ Helmowy Jar
+specialhelm2UnlockDesc	Hobbici rozmawiają o grze 'Władca Pierścieni'
+specialhelm3	Jak powstawała gra
+specialhelm3LockDesc	Ukończ Helmowy Jar
+specialhelm3UnlockDesc	Za kulisami powstawania gry 'Władca Pierścieni'
+specialise01	Wywiad z Christopherem Lee
+specialise01LockDesc	Ukończ Drogę do Isengardu
+specialise01UnlockDesc	Christopher Lee opowiada o roli Sarumana w grze 'Władca Pierścieni'
+specialmin00	Wywiad z Ianem McKellenem
+specialmin00LockDesc	Ukończ Minas Tirith - szczyt muru
+specialmin00UnlockDesc	Ian McKellen opowiada o roli Gandalfa w grze 'Władca Pierścieni'
+specialmin02	Zdjęcia z planu filmowego
+specialmin02LockDesc	Ukończ Południową Bramę
+specialmin02UnlockDesc	Zdjęcia z planu filmów 'Władca Pierścieni'
+specialosg01	Wywiad z Seanem Astinem
+specialosg01LockDesc	Ukończ Ucieczkę z Osgiliath
+specialosg01UnlockDesc	Sean Astin opowiada o roli Sama w grze 'Władca Pierścieni'
+specialpat01	Szkice koncepcyjne do gry
+specialpat01LockDesc	Ukończ Ścieżkę Umarłych
+specialpat01UnlockDesc	Szkice koncepcyjne do gry 'Władca Pierścieni'
+specialshe01	Wywiad z Elijahem Woodem
+specialshe01LockDesc	Ukończ Leże Szeloby
+specialshe01UnlockDesc	Elijah Wood opowiada o roli Froda w grze 'Władca Pierścieni'
+specialtree1	Palantir Sarumana
+specialtree1LockDesc	Ukończ Szczeliny Zagłady
+specialtree1UnlockDesc	Tajne poziomy palantiru
+specialtree2	Wywiad z Billym Boydem
+specialtree2LockDesc	Ukończ Szczeliny Zagłady
+specialtree2UnlockDesc	Billy Boyd opowiada o roli Pippina w grze 'Władca Pierścieni'
+specialtree3	Wywiad z Domem Monaghanem
+specialtree3LockDesc	Ukończ Szczeliny Zagłady
+specialtree3UnlockDesc	Dom Monaghan opowiada o roli Merry'ego w grze 'Władca Pierścieni'
+specialtree4	Wywiad z Andym Serkisem
+specialtree4LockDesc	Ukończ Szczeliny Zagłady
+specialtree4UnlockDesc	Andy Serkis opowiada o roli Golluma w grze 'Władca Pierścieni'
+specialtree5	Wywiad z Davidem Wenhamem
+specialtree5LockDesc	Ukończ Szczeliny Zagłady
+specialtree5UnlockDesc	David Wenham opowiada o roli Faramira w grze 'Władca Pierścieni'
+specialtree6	Tajne kody
+specialtree6LockDesc	Ukończ Szczeliny Zagłady
+specialtree6UnlockDesc	Tajne kody odblokowujące ukryte funkcje gry 'Władca Pierścieni'
+specialtree7	Palantir Saurona
+specialtree7LockDesc	Ukończ Szczeliny Zagłady i osiągnij 10. poziom 3 postaciami: Gandalfem, Samem oraz Aragornem, Legolasem lub Gimlim
+specialtree7UnlockDesc	Tajne poziomy palantiru
+speed	Szybki
+test	To jest test.
+total	Łącznie
+totalExperience	Łączne doświadczenie
+totalUpgradePoints	Łączne doświadczenie:
+up	PD
+upgradeAll	Wszyscy
+upgradeAraAbility1	Gondorski mistrz miecza
+upgradeAraAbility1Desc	Ta umiejętność specjalna zwiększa obrażenia i pozwala szybciej wejść w tryb perfekcyjny.
+upgradeAraAbility2	Twórca królów
+upgradeAraAbility2Desc	Jeszcze większe obrażenia i jeszcze szybsze wejście w tryb perfekcyjny. (Wymaga: Gondorski mistrz miecza)
+upgradeAraDamage1	Królewskie opanowanie miecza
+upgradeAraDamage1Desc	Zwiększa obrażenia twojego szybkiego ataku.
+upgradeAraDev1	Niszczycielski atak
+upgradeAraDev1Desc	Niszczycielski atak
+upgradeAraDev2	Furia Strażnika
+upgradeAraDev2Desc	Niszczycielski atak, który zadaje obrażenia błyskawicami.
+upgradeAraDev3	Dziki szał
+upgradeAraDev3Desc	Potężniejszy niszczycielski atak, który podpala wrogów. (Wymaga: Furia Strażnika)
+upgradeAraDev4	Gniew Numenoru
+upgradeAraDev4Desc	Najpotężniejszy niszczycielski atak, który wysyła pierścień ognistych kul. (Wymaga: Dziki szał)
+upgradeAraHealth1	Siła kamienia
+upgradeAraHealth1Desc	Trwale zwiększa twoje zdrowie.
+upgradeAraHealth2	Siła żelaza
+upgradeAraHealth2Desc	Trwale zwiększa twoje zdrowie.  (Wymaga: Siła kamienia)
+upgradeAraHealth3	Siła Drużyny
+upgradeAraHealth3Desc	Trwale zwiększa twoje zdrowie.  (Wymaga: Siła żelaza)
+upgradeAraHealth4	Siła Gwiazdy Wieczornej
+upgradeAraHealth4Desc	Trwale zwiększa twoje zdrowie.  (Wymaga: Siła Drużyny)
+upgradeAraRange1	Strzały jesionowe
+upgradeAraRange1Desc	Strzały jesionowe
+upgradeAraRange2	Strzały Dunedainów
+upgradeAraRange2Desc	Te pobłogosławione przez elfy strzały zadają dodatkowe obrażenia.
+upgradeAraRange3	Strzały z Rivendell
+upgradeAraRange3Desc	Te strzały przy trafieniu wyzwalają łuk błyskawicy. (Wymaga: Strzały Dunedainów)
+upgradeAraRange4	Strzały z mithrilu
+upgradeAraRange4Desc	Te magiczne strzały podpalają twoich wrogów. (Wymaga: Strzały z Rivendell)
+upgradeCharacter	Postać
+upgradeCombo1	Rębacz orków
+upgradeCombo1Desc	KOMBINACJA: Skuteczna kombinacja do eliminowania wrogów bez tarcz.
+upgradeCombo2	Sąd ostateczny
+upgradeCombo2Desc	KOMBINACJA: Zrań, powal, a potem dobij potężnych wrogów tą kombinacją.
+upgradeCombo3	Zagrywka Balroga
+upgradeCombo3Desc	KOMBINACJA: Zrań, powal i uderz wroga tym atakiem kombinowanym.
+upgradeCombo4	Mroczne wyzwolenie
+upgradeCombo4Desc	KOMBINACJA: Skuteczna, gdy trzeba szybko rozprawić się z wrogami z tarczami.
+upgradeCombo5	Niszczyciel tarcz
+upgradeCombo5Desc	KOMBINACJA: Użyj przeciw potężnym wrogom, aby roztrzaskać tarczę, powalić wroga na ziemię i zadać cios.
+upgradeCombo6	Uderzenie pioruna
+upgradeCombo6Desc	KOMBINACJA: Seria szybkich i potężnych ciosów, która powala jednego lub więcej wrogów bez tarcz.
+upgradeCombo7	Młot Helma
+upgradeCombo7Desc	KOMBINACJA: Zabójcza kombinacja, która roztrzaskuje tarcze wrogów i pozwala uderzyć ponownie.
+upgradeCombo8	Szybka sprawiedliwość
+upgradeCombo8Desc	KOMBINACJA: Szybka kombinacja, zabójcza dla wrogów bez tarcz.
+upgradeDamage1	Moc Drużyny
+upgradeDamage1Desc	Zwiększa obrażenia, jakie członek Drużyny zadaje określonym atakiem.
+upgradeDividerLeft	£
+upgradeDividerRight	¥
+upgradeDoneBuyingAreYouSure	Zakończyć kupowanie ulepszeń?
+upgradeEarned	Zdobyte
+upgradeEntryPopup1	Za punkty doświadczenia możesz kupować ulepszenia dla bieżącej postaci lub dla całej Drużyny.
+upgradeEntryPopup2	Z ulepszenia Drużyny mogą korzystać tylko postacie, które osiągnęły wymagany dla niego poziom.
+upgradeEntryPopup3	Gratulacje!  Doświadczenie zdobyte w ostatniej misji wystarczy, aby podnieść poziom twojej postaci.
+upgradeFF	Podwójny cios
+upgradeFFDesc	Niszczycielska kombinacja, która roztrzaskuje tarcze wrogów.
+upgradeFellowship	Drużyna
+upgradeGanAbility1	Moc czarodzieja
+upgradeGanAbility1Desc	Magiczna tarcza zadaje większe obrażenia i działa dłużej.
+upgradeGanAbility2	Potęga palantiru
+upgradeGanAbility2Desc	Magiczna tarcza odrzuca wrogów dalej i działa dłużej. (Wymaga: Moc czarodzieja)
+upgradeGanAbility3	Czar Przystani
+upgradeGanAbility3Desc	Magiczna tarcza powala wrogów na ziemię i działa dłużej. (Wymaga: Potęga palantiru)
+upgradeGanDamage1	Moc Istari
+upgradeGanDamage1Desc	Zwiększa obrażenia twoich ataków z dystansu i niszczycielskich ataków
+upgradeGanDev1	Niszczycielski atak
+upgradeGanDev1Desc	Niszczycielski atak
+upgradeGanDev2	Mgła wojny
+upgradeGanDev2Desc	Ten atak przywołuje rozszerzającą się chmurę mgły, która zwala wrogów z nóg.
+upgradeGanDev3	Gniew Anoru
+upgradeGanDev3Desc	Potężniejszy niszczycielski atak, który tworzy pierścień błyskawic. (Wymaga: Mgła wojny)
+upgradeGanDev4	Płomień Udunu
+upgradeGanDev4Desc	Najpotężniejszy niszczycielski atak, który tworzy pierścień płomieni podpalający wrogów. (Wymaga: Gniew Anoru)
+upgradeGanHealth1	Siła kamienia
+upgradeGanHealth1Desc	Trwale zwiększa twoje zdrowie.
+upgradeGanHealth2	Siła żelaza
+upgradeGanHealth2Desc	Trwale zwiększa twoje zdrowie.  (Wymaga: Siła kamienia)
+upgradeGanHealth3	Siła Drużyny
+upgradeGanHealth3Desc	Trwale zwiększa twoje zdrowie.  (Wymaga: Siła żelaza)
+upgradeGanRange1	Atak z dystansu
+upgradeGanRange1Desc	Atak z dystansu
+upgradeGanRange2	Światło pielgrzyma
+upgradeGanRange2Desc	Ten pocisk-błyskawica zadaje większe obrażenia.
+upgradeGanRange3	Światło kuźni
+upgradeGanRange3Desc	Ten magiczny pocisk podpala wrogów. (Wymaga: Światło pielgrzyma)
+upgradeGanRange4	Światło Valarów
+upgradeGanRange4Desc	Ten pocisk z czystego światła przebija wielu wrogów i podpala ich. (Wymaga: Światło kuźni)
+upgradeGimAbility1	Wiedza z Samotnej Góry
+upgradeGimAbility1Desc	Ta umiejętność specjalna zwiększa obrażenia i pozwala szybciej wejść w tryb perfekcyjny.
+upgradeGimAbility2	Topornik królewski
+upgradeGimAbility2Desc	Jeszcze większe obrażenia i jeszcze szybsze wejście w tryb perfekcyjny. (Wymaga: Wiedza z Samotnej Góry)
+upgradeGimDamage1	Krasnoludzkie opanowanie topora
+upgradeGimDamage1Desc	Zwiększa obrażenia twojego ognistego ataku.
+upgradeGimDev1	Niszczycielski atak
+upgradeGimDev1Desc	Niszczycielski atak
+upgradeGimDev2	Krasnoludzka furia
+upgradeGimDev2Desc	Niszczycielski atak, który zadaje obrażenia błyskawicami.
+upgradeGimDev3	Górski szał
+upgradeGimDev3Desc	Potężniejszy niszczycielski atak, który podpala wrogów. (Wymaga: Krasnoludzka furia)
+upgradeGimDev4	Gniew Morii
+upgradeGimDev4Desc	Najpotężniejszy niszczycielski atak, który wysyła pierścień ognistych kul. (Wymaga: Górski szał)
+upgradeGimHealth1	Siła kamienia
+upgradeGimHealth1Desc	Trwale zwiększa twoje zdrowie.
+upgradeGimHealth2	Siła żelaza
+upgradeGimHealth2Desc	Trwale zwiększa twoje zdrowie.  (Wymaga: Siła kamienia)
+upgradeGimHealth3	Siła Drużyny
+upgradeGimHealth3Desc	Trwale zwiększa twoje zdrowie.  (Wymaga: Siła żelaza)
+upgradeGimHealth4	Siła Gloina
+upgradeGimHealth4Desc	Trwale zwiększa twoje zdrowie.  (Wymaga: Siła Drużyny)
+upgradeGimHealth5	Siła Khazad-dumu
+upgradeGimHealth5Desc	Trwale zwiększa twoje zdrowie.  (Wymaga: Siła Gloina)
+upgradeGimRange1	Toporki do rzucania
+upgradeGimRange1Desc	Toporki do rzucania
+upgradeGimRange2	Topory Ereboru
+upgradeGimRange2Desc	Te zaczarowane toporki do rzucania zadają dodatkowe obrażenia.
+upgradeGimRange3	Topory Morii
+upgradeGimRange3Desc	Te zaczarowane topory przy trafieniu wyzwalają łuk błyskawicy. (Wymaga: Topory Ereboru)
+upgradeHobAbility1	Płaszcz Haldira
+upgradeHobAbility1Desc	Wydłuża czas, przez jaki hobbit pozostaje ukryty pod elfim płaszczem.
+upgradeHobAbility2	Płaszcz Keleborna
+upgradeHobAbility2Desc	Wydłuża czas, przez jaki hobbit pozostaje ukryty pod elfim płaszczem. (Wymaga: Płaszcz Haldira)
+upgradeHobAbility3	Płaszcz Galadrieli
+upgradeHobAbility3Desc	Wydłuża czas, przez jaki hobbit pozostaje ukryty pod elfim płaszczem. (Wymaga: Płaszcz Keleborna)
+upgradeHobDamage1	Siła Gaffera
+upgradeHobDamage1Desc	Zwiększa obrażenia wszystkich ataków mieczem zadawanych wrogowi od tyłu.
+upgradeHobDev1	Niszczycielski atak
+upgradeHobDev1Desc	Niszczycielski atak
+upgradeHobDev2	Zatrute ostrze
+upgradeHobDev2Desc	Niszczycielski atak, który zadaje obrażenia przez dłuższy czas.
+upgradeHobDev3	Chmura Cienia
+upgradeHobDev3Desc	Tworzy trującą chmurę, która zadaje obrażenia przez dłuższy czas. (Wymaga: Zatrute ostrze)
+upgradeHobDev4	Chmura gniewu
+upgradeHobDev4Desc	Najgroźniejsza trująca chmura, która zadaje obrażenia przez dłuższy czas. (Wymaga: Chmura Cienia)
+upgradeHobHealth1	Siła kamienia
+upgradeHobHealth1Desc	Trwale zwiększa twoje zdrowie.
+upgradeHobHealth2	Siła żelaza
+upgradeHobHealth2Desc	Trwale zwiększa twoje zdrowie.  (Wymaga: Siła kamienia)
+upgradeHobHealth3	Siła Drużyny
+upgradeHobHealth3Desc	Trwale zwiększa twoje zdrowie.  (Wymaga: Siła żelaza)
+upgradeHobHealth4	Siła niziołka
+upgradeHobHealth4Desc	Trwale zwiększa twoje zdrowie.  (Wymaga: Siła Drużyny)
+upgradeHobHealth5	Siła Bagginsów
+upgradeHobHealth5Desc	Trwale zwiększa twoje zdrowie.  (Wymaga: Siła niziołka)
+upgradeHobRange1	Noże do rzucania
+upgradeHobRange1Desc	Noże do rzucania
+upgradeHobRange2	Hobbicki zmysł
+upgradeHobRange2Desc	Zwiększa odległość, z jakiej hobbit może namierzać wrogów.
+upgradeHobRange3	Zatrute sztylety
+upgradeHobRange3Desc	Każdy sztylet, który trafi wroga, zadaje obrażenia przez dłuższy czas.
+upgradeHobRange4	Sztylety Morgulu
+upgradeHobRange4Desc	Najskuteczniejszy atak z dystansu hobbitów. (Wymaga: Zatrute sztylety)
+upgradeKill1	Morderczy cios
+upgradeKill1Desc	Morderczy cios
+upgradeLabel	Ekran ulepszeń
+upgradeLegAbility1	Światło Lothlorien
+upgradeLegAbility1Desc	Ta umiejętność specjalna zwiększa obrażenia i pozwala szybciej wejść w tryb perfekcyjny.
+upgradeLegAbility2	Dar Galadrieli
+upgradeLegAbility2Desc	Jeszcze większe obrażenia i jeszcze szybsze wejście w tryb perfekcyjny. (Wymaga: Światło Lothlorien)
+upgradeLegDamage1	Elfia zręczność w łucznictwie
+upgradeLegDamage1Desc	Wypuść jednym strzałem dwie strzały w dwa cele.
+upgradeLegDev1	Niszczycielski atak
+upgradeLegDev1Desc	Niszczycielski atak
+upgradeLegDev2	Elfia furia
+upgradeLegDev2Desc	Niszczycielski atak, który zadaje obrażenia błyskawicami.
+upgradeLegDev3	Gniew Elronda
+upgradeLegDev3Desc	Potężniejszy niszczycielski atak, który podpala wrogów. (Wymaga: Elfia furia)
+upgradeLegHealth1	Siła kamienia
+upgradeLegHealth1Desc	Trwale zwiększa twoje zdrowie.
+upgradeLegHealth2	Siła żelaza
+upgradeLegHealth2Desc	Trwale zwiększa twoje zdrowie.  (Wymaga: Siła kamienia)
+upgradeLegHealth3	Siła Drużyny
+upgradeLegHealth3Desc	Trwale zwiększa twoje zdrowie.  (Wymaga: Siła żelaza)
+upgradeLegRange1	Strzały jesionowe
+upgradeLegRange1Desc	Strzały jesionowe
+upgradeLegRange2	Strzały z Mrocznej Puszczy
+upgradeLegRange2Desc	Te pobłogosławione przez elfy strzały zadają dodatkowe obrażenia.
+upgradeLegRange3	Strzały z Lothlorien
+upgradeLegRange3Desc	Te strzały przy trafieniu wyzwalają łuk błyskawicy. (Wymaga: Strzały z Mrocznej Puszczy)
+upgradeLegRange4	Strzały Valarów
+upgradeLegRange4Desc	Te magiczne strzały podpalają twoich wrogów. (Wymaga: Strzały z Lothlorien)
+upgradeLegRange5	Strzały z mithrilu
+upgradeLegRange5Desc	Te strzały przebijają i podpalają wszystkich wrogów na swojej drodze. (Wymaga: Strzały Valarów)
+upgradeLink1	Zguba orków
+upgradeLink1Desc	RUCH ŁĄCZONY: Paruj, a potem natychmiast zabij atakującego orka.
+upgradeLink2	Zguba wojowników
+upgradeLink2Desc	RUCH ŁĄCZONY: Paruj, a potem natychmiast zabij wroga wielkości człowieka.
+upgradeLink3	Zguba Saurona
+upgradeLink3Desc	RUCH ŁĄCZONY: Paruj, a potem natychmiast zabij atakującego uruka.
+upgradeLocked	Jeszcze nie odblokowane.
+upgradeNA	N/D
+upgradeNoMoney	Masz za mało punktów doświadczenia, aby kupić to ulepszenie.
+upgradePerfect1	Strefa śmierci
+upgradePerfect1Desc	Wydłuża czas, przez jaki pozostajesz w trybie perfekcyjnym podczas walki.
+upgradePoints	Punkty doświadczenia
+upgradePointsColon	Punkty doświadczenia:
+upgradePurchased	Kupione
+upgradeRising1	Siła zemsty
+upgradeRising1Desc	Zaatakuj, podnosząc się z ziemi, i zaskocz wrogów.
+upgradeSSS	Potrójny sztych
+upgradeSSSDesc	Szybka kombinacja, skuteczna przeciw mniejszym wrogom bez tarcz.
+upgradeWantToBuy	Na pewno chcesz kupić to ulepszenie?
+useAbilities	Korzystaj z ulepszeń Drużyny
+wantToSave	Czy chcesz zapisać grę?
+wizardPath	Ścieżka czarodzieja
+yes	Tak
+bla01:0x02010100	Ściągnęliśmy jego armię pod Czarną Bramę ...
+bla01:0x02010200	Dla nas samych nie ma już nadziei ... to nasz ostatni czyn, by dać Frodowi czas ...  czas, by zniszczył zło, które gromadzi się przed nami.
+bla01:0x02010300	Pomocy!
+bla01:0x02010301	Pomocy!
+bla01:0x02010400	Tutaj!
+bla01:0x02010500	Pokonajcie ich wszystkich albo zginiemy!
+bla01:0x02010600	Płomień Arnoru rozkazuje!
+bla01:0x02010700	Znasz ich słabość! Wykorzystaj ją!
+bla01:0x020C0000	Już nigdy nie przemówisz w imieniu Saurona!
+bla01:0x020C0100	To ty ... będziesz cierpiał!
+bla01:0x020C0200	To za Froda!
+bla01:0x020C0300	Na stanowiska!
+bla01:0x020C0400	Nie ustępujcie - synowie Gondoru - Rohanu ... bracia moi!
+bla01:0x020C0500	Spalić ich!
+bla01:0x020C0600	Bardzo potrzebne.
+bla01:0x020C0601	Szczęśliwy los.
+bla01:0x020C0602	Los mi sprzyja.
+bla01:0x020D0000	Mój Pan, Sauron Wielki, wita cię ...
+bla01:0x020D0100	Złamane elfickie ostrze nie wystarczy, by zostać Królem.
+bla01:0x020D0101	Dobrze ... Dobrze. Widzę, że ten niziołek był ci drogi.
+bla01:0x020D0200	Wiedz, że niziołek wiele wycierpiał z rąk swego gospodarza.
+bla01:0x020D0300	Nie powstrzymasz Nazgula!
+bla01:0x020D0400	Precz, słabeuszu!
+bla01:0x020D0401	Czeka cię zguba!
+bla01:0x020D0402	Wydrzemy ci duszę!
+bla01:0x020D0403	To nie twoja sprawa.
+bla01:0x02110000	Wybiją nas wszystkich!
+bla01:0x02110001	Zatrzymać ich!
+bla01:0x02110002	Trzymać się, ludzie!
+bla01:0x02110003	Utrzymać pozycje, ludzie Rohanu!
+bla01:0x02120000	Pomocy!
+bla01:0x02120100	Tutaj!
+bla01:0x02120200	Słabość mnie opuszcza.
+bla01:0x02120201	To hojny dar.
+bla01:0x02130000	Pomocy!
+bla01:0x02130100	Tutaj!
+bla01:0x02130200	Mamy za mało ludzi!
+bla01:0x02130201	Nadciągają jak niekończąca się fala!
+bla01:0x02130300	Dziękuję, przyjacielu!
+bla01:0x02130301	Już mniej boli.
+bla01:0x02130302	Niebezpieczeństwo minęło.
+bla01:0x02130303	To tylko draśnięcie!
+bla01:0x30000000	Ale mam znak, który kazano mi ci pokazać ...
+bla01:0x30000001	Kolczuga Froda z mithrilu! Biedny hobbit musi być martwy!
+bla01:0x30000002	Przekażę ci wiadomość dla twego pana!
+bla01:0x30000003	Nadchodzą Upiory Pierścienia!
+bla01:0x30000004	Czarni Jeźdźcy!
+bla01:0x30000005	Cofnijcie się!
+bla01:0x30000006	Pan Sauron stracił cierpliwość.
+bla01:0x30000007	Dla nas samych nie ma już nadziei.
+bla01:0x30000008	To nasz ostatni czyn, by dać Frodowi czas...
+bla01:0x30000009	...czas, by zniszczył zło, które gromadzi się przed nami.
+bla01:0x3000000A	Jest ich za dużo!
+bla01:0x3000000B	Walcz dalej, Gimli!
+bla01:0x3000000C	Zdaje się, że to koniec negocjacji.
+bla01:0x3000000D	Zająć pozycje obronne!
+bla01:0x3000000E	Rozdzielić się ... trzymajcie ich ze wszystkich stron wzgórza!
+bla01:0x3000000F	Ale mam znak, który kazano mi ci pokazać ...
+bla01:0x30000010	Kolczuga Froda z mithrilu! Biedny hobbit musi być martwy!
+bla01:0x30000011	Przekażę ci wiadomość dla twego pana!
+bla01:0x30000012	Nadchodzą Upiory Pierścienia!
+bla01:0x30000013	Czarni Jeźdźcy!
+bla01:0x30000014	Cofnijcie się!
+bla01:0x30000015	Pan Sauron stracił cierpliwość.
+bla01:0x30000016	Dla nas samych nie ma już nadziei.
+bla01:0x30000017	To nasz ostatni czyn, by dać Frodowi czas...
+bla01:0x30000018	...czas, by zniszczył zło, które gromadzi się przed nami.
+bla01:0x30000019	Jest ich za dużo!
+bla01:0x3000001A	Walcz dalej, Gimli!
+bla01:0x3000001B	Zdaje się, że to koniec negocjacji.
+bla01:0x3000001C	Zająć pozycje obronne!
+bla01:0x3000001D	Rozdzielić się ... trzymajcie ich ze wszystkich stron wzgórza!
+cir00:0x02080000	Stwory Saurona ++++++walczą między sobą! Wytnij wielu, a uciekną do wieży! Tam więżą Froda!
+cir00:0x020E0000	Intruz!!
+cir00:0x020E0001	Intruz!!
+cir00:0x020E0002	Intruz!!
+cir00:0x020E0003	Intruz!!
+cir00:0x020E0100	Łapać tego kurdupla!
+cir00:0x020E0200	Zaraz cię skrócę!
+cir00:0x02110000	Pan Frodo jest w tej wieży, a żeby się tam dostać, muszę jakoś pokonać tych wszystkich orków!
+cir00:0x02110100	Tam w górze są drzwi ... jeśli znajdę drogę na górę.
+cir00:0x02110200	Jak ja się przez to przedostanę?
+cir00:0x02110201	Jak ja się przez to przedostanę?
+cir00:0x02110202	Jak ja się przez to przedostanę?
+cir00:0x02110300	Tędy może da się wejść do środka!
+cir00:0x02110301	Tędy może da się wejść do środka!
+cir00:0x02110400	Oby tu na górze było bezpiecznie!
+cir00:0x02110500	Muszę jakoś obrócić to przeciwko nim!
+cir00:0x02110600	To może ich odciągnąć!
+cir00:0x02110700	Spokojnie, panie Frodo! Nie zapomniałem o panu!
+cir00:0x02110701	Spokojnie, panie Frodo! Nie zapomniałem o panu!
+cir00:0x02110800	Może tędy da się wejść do Wieży!
+cir00:0x02110801	Może tędy da się wejść do Wieży!
+cir00:0x02110802	Może tędy da się wejść do Wieży!
+cir00:0x02110803	Może tędy da się wejść do Wieży!
+cir00:0x02110900	Tędy chyba da się wejść na górę!
+cir00:0x02110901	Tędy chyba da się wejść na górę!
+cir00:0x02110A00	Dalej, Samwise. Musisz znaleźć drogę do tej wieży.
+cir00:0x02110B00	Nie dam rady wyciąć ich wszystkich!
+cir00:0x02110B01	Nie dam rady wyciąć ich wszystkich!
+cir00:0x02110B02	Nie dam rady wyciąć ich wszystkich!
+cir00:0x02110C00	Może tym zdołam ich odciągnąć!
+cir00:0x02110C01	Może tym zdołam ich odciągnąć!
+cir00:0x02110D00	Chyba zaczynam łapać, o co w tym chodzi!
+cir00:0x02110D01	Chyba zaczynam łapać, o co w tym chodzi!
+cir00:0x02110D02	Chyba zaczynam łapać, o co w tym chodzi!
+cir00:0x30000000	Sam!
+cir00:0x30000001	Pomocy!
+cir00:0x30000002	Ten robal chciał mnie dźgnąć nożem.
+cir00:0x30000003	...Nie damy, żeby te śmierdzące szczury z Mordoru przejęły to miejsce!
+cir00:0x30000004	Mamy tu paru chłopaków, co aż się rwą do bitki.
+cir00:0x30000005	Rozdzielić ich! Zająć najlepsze miejsca! Skończyć z tym ... już!
+cir00:0x30000006	Opuścić zwodzony most!
+cir00:0x30000007	Dostajemy łomot! Wycofać się!
+cir00:0x30000008	Do Wieży, chłopaki! Szybko!
+cir00:0x30000009	Sam!
+cir00:0x3000000A	Pomocy!
+cir00:0x3000000B	Ten robal chciał mnie dźgnąć nożem.
+cir00:0x3000000C	...Nie damy, żeby te śmierdzące szczury z Mordoru przejęły to miejsce!
+cir00:0x3000000D	Mamy tu paru chłopaków, co aż się rwą do bitki.
+cir00:0x3000000E	Rozdzielić ich! Zająć najlepsze miejsca! Skończyć z tym ... już!
+cir00:0x3000000F	Opuścić zwodzony most!
+cir00:0x30000010	Dostajemy łomot! Wycofać się!
+cir00:0x30000011	Do Wieży, chłopaki! Szybko!
+cir01:0x30000000	Hej, ty gnido! Łapy precz od błyszczącej koszulki, jest moja.
+cir01:0x30000002	Puść go, bo cię dopadnę, orkowe ścierwo!
+cir01:0x30000003	Sam!!!!!!
+cir01:0x30000004	Chodźmy, panie Frodo! Wiem, jak się stąd wydostać!
+cir01:0x30000005	Dziękuję ci, Sam.
+cir01:0x30000006	Jesteśmy już blisko Góry Przeznaczenia! Jeszcze kawałek i uwolni się pan od tego Pierścienia!
+cir01:0x30000007	Hej, ty gnido! Łapy precz od błyszczącej koszulki, jest moja.
+cir01:0x30000009	Puść go, bo cię dopadnę, orkowe ścierwo!
+cir01:0x3000000A	Sam!!!!!!
+cir01:0x3000000B	Chodźmy, panie Frodo! Wiem, jak się stąd wydostać!
+cir01:0x3000000C	Dziękuję ci, Sam.
+cir01:0x3000000D	Jesteśmy już blisko Góry Przeznaczenia! Jeszcze kawałek i uwolni się pan od tego Pierścienia!
+cra01:0x020C0000	Musimy go pokonać, panie Frodo! Wepchnijmy go razem z tym przeklętym Pierścieniem do ognia!
+cra01:0x020C0100	Nie po to uciekliśmy z tej twierdzy i przeszliśmy mile parującego pustkowia, żeby teraz dać się zatrzymać!
+cra01:0x020D0000	Precz od nas! Już nie jesteś naszym Panem! To my jesteśmy Panem! Gollum jest wolny! Gollum! Gollum!
+cra01:0x020D0100	Zostaw nas! Nienawidzimy cię!
+cra01:0x020D0200	Przysięgamy zabić Pana ... Przysięgamy na ... Na ssskarb ...
+cra01:0x020D0300	On nas krzywdzi! Krzywdzi biednego Smeagola!
+cra01:0x020D0400	Teraz cię ugotujemy!
+cra01:0x020D0500	Głupi hobbit! Oby cię spaliło!!!
+cra01:0x020D0600	Głupi pan, skarb jest mój!
+cra01:0x020D0700	Niegodziwy! Nie wolno brać Skarbu!
+cra01:0x020D0800	Głupi hobbit nie zniszczy Skarbu! My nie pozwolimy!!!
+cra01:0x020D0900	Nigdy! My jesteśmy Panem! My wygrywać! My wygrywać!
+cra01:0x020D0901	Nigdy! My jesteśmy Panem! My wygrywać! My wygrywać!
+cra01:0x020D0A00	My zawsze wygrywać!!!
+cra01:0x020D0B00	My ... zawsze ... wygrywać!!!
+cra01:0x020E0000	Oddawaj to!  Odgryzienie mi palca mnie nie powstrzyma!
+cra01:0x020E0100	Nie odejdziesz z Pierścieniem, to ci obiecuję!!
+cra01:0x020E0200	Na ziemię, ty pełzająca kreaturo!
+cra01:0x020E0300	Jesteśmy w pułapce!
+cra01:0x020E0400	Nie wiem, co trzeba zrobić, żeby się ciebie pozbyć!
+cra01:0x020E0500	Jesteś opętany, Smeagolu! Nigdy nie widziałem, żebyś był tak szybki!
+cra01:0x020E0600	Nigdy go nie odzyskasz! Nigdy!
+cra01:0x020E0700	Twój czas dobiegł końca!
+cra01:0x020E0800	Wszyscy zginiemy, Gollumie! To miejsce zaraz się zawali!
+cra01:0x020E0900	Słabniesz, prawda?!
+cra01:0x020E0A00	Nie tym razem, Gollumie!
+cra01:0x020E0B00	Tym razem nikt nie wygra!
+cra01:0x020E0C00	Tym razem to koniec.
+cra01:0x30000000	Skarbie! Mój skarbie!
+cra01:0x30000001	Nasz skarb! Nasz!
+cra01:0x30000002	Mój! ++++++
+cra01:0x30000003	Nienawidzimy cię! Zawsze cię nienawidzimy!
+cra01:0x30000004	Ukręcimy mu ten brudny kark!
+cra01:0x30000005	Odsuń się, Sam!
+cra01:0x30000006	Głupi hobbit! Oby cię spaliło!!!
+cra01:0x30000007	Skarb jest +++++mój!
+cra01:0x30000008	Skarbie! Mój skarbie!
+cra01:0x30000009	Nasz skarb! Nasz!
+cra01:0x3000000A	Mój! ++++++
+cra01:0x3000000B	Nienawidzimy cię! Zawsze cię nienawidzimy!
+cra01:0x3000000C	Ukręcimy mu ten brudny kark!
+cra01:0x3000000D	Odsuń się, Sam!
+cra01:0x3000000E	Głupi hobbit! Oby cię spaliło!!!
+cra01:0x3000000F	Skarb jest +++++mój!
+hel01:0x02010100	Za wszystkie wolne ludy!
+hel01:0x02010101	Precz!!
+hel01:0x02010102	Cofnąć się!!
+hel01:0x02010200	Jestem tu, Legolasie!
+hel01:0x02010300	Idę, Aragornie!
+hel01:0x020E0000	Pośpiesz się, Gandalfie!
+hel01:0x020E0001	Pośpiesz się, Gandalfie!
+hel01:0x020E0002	Pośpiesz się, Gandalfie!
+hel01:0x020E0100	Ta balista jest naładowana!
+hel01:0x020E0101	Ta balista jest naładowana!
+hel01:0x020E0102	Obróć ich machiny przeciwko nim!
+hel01:0x020E0103	Obróć ich machiny przeciwko nim!
+hel01:0x020E0104	Strzel z tego! Powal ich!
+hel01:0x020E0105	Strzel z tego! Powal ich!
+hel01:0x020E0106	Spróbuj z tego strzelić!
+hel01:0x020E0107	Spróbuj z tego strzelić!
+hel01:0x020E0108	Strzelaj z tych machin!
+hel01:0x020E0109	Strzelaj z tych machin!
+hel01:0x020E010A	Obróć ich zło przeciwko nim!
+hel01:0x020E010B	Obróć ich zło przeciwko nim!
+hel01:0x020E0200	Obróć ich broń przeciwko nim!
+hel01:0x020E0201	Obróć ich broń przeciwko nim!
+hel01:0x020E0202	Użyj ich włóczni!
+hel01:0x020E0203	Użyj ich włóczni!
+hel01:0x020E0204	Chwytaj każdą broń!
+hel01:0x020E0205	Chwytaj każdą broń!
+hel01:0x020E0206	Ciskaj w nich ich własną bronią!
+hel01:0x020E0207	Ciskaj w nich ich własną bronią!
+hel01:0x020F0000	Nie mogą mu się oprzeć!
+hel01:0x020F0001	Mithrandir ich kosi!
+hel01:0x020F0002	Mithrandir ich kosi!
+hel01:0x020F0003	Ich ciosy nie robią na nim wrażenia!
+hel01:0x020F0004	To demon!
+hel01:0x020F0005	To demon!
+hel01:0x020F0100	Zmieść ich z pola!
+hel01:0x020F0101	Wyciąć ich wszystkich!
+hel01:0x020F0102	Cofnąć się! Cofnąć!
+hel01:0x020F0103	Mam go!
+hel01:0x020F0104	Pole jest nasze!
+hel01:0x020F0105	Do warowni!
+hel01:0x020F0106	Rohan zwycięży!
+hel01:0x020F0200	Uciekać!
+hel01:0x020F0201	Uciekać!
+hel01:0x020F0202	Uciekać!
+hel01:0x020F0203	Gdzie jest Saruman!?!
+hel01:0x020F0204	Gdzie jest Saruman!?!
+hel01:0x020F0205	Musimy uciekać!
+hel01:0x020F0206	Musimy uciekać!
+hel01:0x020F0207	Musimy uciekać!
+hel01:0x02100000	Gandalfie! Witaj z powrotem!
+hel01:0x02100100	Zajmij się kilkoma, jeśli łaska!
+hel01:0x02100200	Szybko zaatakuj tych Uruk-hai!
+hel01:0x02100201	Szybko zaatakuj tych Uruk-hai!
+hel01:0x02100202	Szybko zaatakuj tych Uruk-hai!
+hel01:0x02100203	Proponuję szybki atak!
+hel01:0x02100204	Proponuję szybki atak!
+hel01:0x02100205	Proponuję szybki atak!
+hel01:0x02100206	Atakuj szybko, Gandalfie!
+hel01:0x02100207	Atakuj szybko, Gandalfie!
+hel01:0x02100208	Atakuj szybko, Gandalfie!
+hel01:0x02100300	Rozbij ich tarcze ognistymi ciosami!
+hel01:0x02100301	Na tarcze używaj ognistych ataków!
+hel01:0x02100302	Na tarcze używaj ognistych ataków!
+hel01:0x02100303	Na tarcze używaj ognistych ataków!
+hel01:0x02100304	Na tarcze używaj ognistych ataków!
+hel01:0x02100305	Na tarcze używaj ognistych ataków!
+hel01:0x02100306	Atakuj ogniście! Tarcze pękną!
+hel01:0x02100307	Atakuj ogniście! Tarcze pękną!
+hel01:0x02100400	Ten nowy Gandalf ma niezły temperament!
+hel01:0x02100401	Ten nowy Gandalf ma niezły temperament!
+hel01:0x02110000	Zniszcz ich swoją magią!
+hel01:0x02110001	Zbierz swoją moc i uwolnij ją!
+hel01:0x02110002	Zbierz swoją moc i uwolnij ją!
+hel01:0x02110003	Skup swoją moc!
+hel01:0x02110004	Rzuć na nich swoją moc!
+hel01:0x02110005	Powal ich swoją magią!
+hel01:0x02110006	Atakuj tych Uruk-hai z dystansu!
+hel01:0x02110100	Odbijaj ich strzały!
+hel01:0x02110101	Odbijaj ich strzały!
+hel01:0x02110102	Strącaj ich strzały!
+hel01:0x02110103	Paruj ich strzały!
+hel01:0x02110104	Paruj ich strzały!
+hel01:0x02110200	Przerzedź ich szeregi!
+hel01:0x30000000	Legolasie!
+hel01:0x30000001	Gandalfie!
+hel01:0x30000002	Tutaj, na górę! Trzeba bronić muru!
+hel01:0x30000003	Szybko! Nadchodzą kolejni!
+hel01:0x30000004	Po tej drabinie!
+hel01:0x30000005	Gandalfie! Pomóż mi oczyścić groblę!
+hel01:0x30000006	Dawać proch!
+hel01:0x30000007	Zabić ich wszystkich!
+hel01:0x30000008	Nie możemy czekać! Do Aragorna!
+hel01:0x30000009	Wracajcie do swego pana, stwory cienia!
+hel01:0x3000000A	Legolasie!
+hel01:0x3000000B	Gandalfie!
+hel01:0x3000000C	Tutaj, na górę! Trzeba bronić muru!
+hel01:0x3000000D	Szybko! Nadchodzą kolejni!
+hel01:0x3000000E	Po tej drabinie!
+hel01:0x3000000F	Gandalfie! Pomóż mi oczyścić groblę!
+hel01:0x30000010	Dawać proch!
+hel01:0x30000011	Zabić ich wszystkich!
+hel01:0x30000012	Nie możemy czekać! Do Aragorna!
+hel01:0x30000013	Wracajcie do swego pana, stwory cienia!
+ise01:0x02010100	Odesłano mnie, bym przejął twój płaszcz i naprawił twoje krzywdy!
+ise01:0x02010101	Sarumanie, okrywasz hańbą nasz Zakon! Twój przebiegły umysł pochłonęła wojna!
+ise01:0x02010200	Sarumanie, drzewa Fangornu się przebudziły!
+ise01:0x02010300	Pnącza szukają, gałęzie miażdżą, korzenie grzebią wszystko, co zostało z twej pychy!
+ise01:0x02010301	Pnącza szukają, gałęzie miażdżą, korzenie grzebią wszystko, co zostało z twej pychy!
+ise01:0x02010400	Sarumanie, nadeszła godzina zniweczenia!
+ise01:0x02010401	Sarumanie, nadeszła godzina zniweczenia!
+ise01:0x02010500	Niech Valarowie cię chronią!
+ise01:0x02010501	Niech Valarowie cię chronią!
+ise01:0x02010600	Sarumanie! GANDALF przybywa do Isengardu ...
+ise01:0x02010700	... i nie szuka już twej rady!
+ise01:0x02010800	Teraz pomogę entom zburzyć ostatnią podporę!
+ise01:0x02010801	Teraz pomogę entom zburzyć ostatnią podporę!
+ise01:0x020E0000	Nie ustępować!
+ise01:0x020E0001	To żadne zagrożenie!
+ise01:0x020E0100	Kto śmie!?!
+ise01:0x020E0200	Zabić go!!!
+ise01:0x020E0201	Zabić go!!!
+ise01:0x020E0300	Ognia!!
+ise01:0x020E0400	Tam z tyłu łatwy łup! Brać go!
+ise01:0x020E0401	Tam z tyłu łatwy łup! Brać go!
+ise01:0x020E0402	Tam z tyłu łatwy łup! Brać go!
+ise01:0x020E0500	Posiekać go, chłopaki!
+ise01:0x020E0600	Nie możecie go zatrzymać?!
+ise01:0x020E0700	Bronić wież!!
+ise01:0x020E0800	Czym ty jesteś??!
+ise01:0x020E0801	Złamię cię!
+ise01:0x020E0802	Co trzeba zrobić, żeby cię zabić?!
+ise01:0x020E0900	Zabili naszego dowódcę!!
+ise01:0x020E0901	Zabili naszego dowódcę!!
+ise01:0x020E0902	Nie da się ich powstrzymać!
+ise01:0x020E0903	Nie da się ich powstrzymać!
+ise01:0x020E0904	Przebić się przez nich!
+ise01:0x020E0905	Przebić się przez nich!
+ise01:0x020E0A00	Do ataku! Przepędzić go!
+ise01:0x02120000	Nad Isengardem unosi się dym++++++, godzina jest późna, a ty kroczysz do Isengardu po moją radę.
+ise01:0x02120100	Bo przecież po to przybyłeś, prawda... mój przyjacielu?
+ise01:0x02120200	To ty siejesz strach wśród niewinnych.
+ise01:0x02120300	Spalić je wszystkie, powiadam, i niech przepadną.
+ise01:0x02120400	Cóż za gniew! Żal mi cię!
+ise01:0x02120500	Te drzewa to pradawne ++++++++szaleństwo. Trzeba je spalić, nim zniszczą wszystkich, którzy +++żyją w ich pobliżu.
+ise01:0x02120600	Nie powstrzymasz entów!
+ise01:0x02120601	Rozbić ich!  Zmiażdżyć ich!
+ise01:0x02120602	Zmiażdżymy ich wszystkich!
+ise01:0x02120603	Wielce nas to gniewa!
+ise01:0x02120604	Nadszedł twój koniec!
+ise01:0x02120605	Piękny cios!
+ise01:0x02120700	Śpiesz do Isengardu!
+ise01:0x02120701	Obal Sarumana
+ise01:0x02120702	Nie ścierpimy waszych ogni!
+ise01:0x02120703	Przypłacicie to życiem!
+ise01:0x02120704	Nie oprzecie się naszemu gniewowi!
+ise01:0x02120705	Wasze zło skończy się dziś!
+ise01:0x02120800	Stwory Sarumana są słabe!
+ise01:0x02120801	Sami wydaliście na siebie wyrok!
+ise01:0x02120802	Sami wydaliście na siebie wyrok!
+ise01:0x02120803	Niech nikt nie ucieknie!
+ise01:0x02120804	Maszerujmy na Isengard
+ise01:0x02120805	Tam są! Tam w górze!
+ise01:0x02120806	Nie uciekną!
+ise01:0x02120807	Nie uciekną!
+ise01:0x02120900	Taka moc ... I tak zmarnowana!
+ise01:0x30000000	Śpiesz do Isengardu! Ja zajmę się tymi!
+ise01:0x30000001	Śpiesz do Isengardu! Ja zajmę się tymi!
+min00:0x02010100	Nasze katapulty są kluczowe! Dzięki nim zniszczymy te wieże!
+min00:0x02010101	Nasze katapulty są kluczowe! Dzięki nim zniszczymy te wieże!
+min00:0x02010200	Śpieszcie ze mną! Użyczcie mi swych mieczy!
+min00:0x02010300	Strącajcie ich drabiny!  Inaczej nas zaleją!
+min00:0x02010400	Ludzie Gondoru!+++ Musimy trzymać te stwory z dala od waszych murów! Od tego zależą losy Białego Miasta!
+min00:0x02010500	Wieże oblężnicze! Przewróćcie je!
+min00:0x02010600	Zatrzymajcie je katapultami!
+min00:0x02010700	Obawiam się, że Czarny Władca wypuści straszliwe stwory, by pokrzyżować mój plan ...
+min00:0x02010800	Ciemność gęstnieje.
+min00:0x02010900	Trzymajcie się! Mury Gondoru muszą przetrwać!
+min00:0x02010901	Utrzymajcie mury jak najdłużej!
+min00:0x02010A00	Grond, wykuty z nienawiści Czarnego Władcy!
+min00:0x02010B00	Nasze bramy tego nie wytrzymają!
+min00:0x02040000	Szybko na dół!
+min00:0x02040001	Bronić bram!
+min00:0x02040002	Na dół, do wewnętrznego muru!
+min00:0x02040003	Na dół, do bramy!
+min00:0x02040004	Wzmocnić dziedziniec!
+min00:0x02040005	Wszyscy do bramy!
+min00:0x02040100	Oczyścić teren!
+min00:0x02040101	Uciekać!
+min00:0x02040102	Uciekać!
+min00:0x02040103	Uwaga!
+min00:0x02040300	Zatrzymać ich! Już!!!
+min00:0x02040301	Tu nie jesteśmy bezpieczni!
+min00:0x02040302	Tutaj! Jestem ... Aaach!
+min00:0x02040303	Pomóż nam, Gandalfie!
+min00:0x02040304	Pomóż tym ludziom!
+min00:0x02040305	Orkowie na murach!
+min00:0x02040306	Wdzierają się przez mury!
+min00:0x02040307	Nie ustępować!
+min00:0x02040308	Trzymać się, ludzie!
+min00:0x02040309	Obsadzić mury!
+min00:0x0204030A	Obsadzić mury!
+min00:0x0204030B	Tu nie jesteśmy bezpieczni!
+min00:0x0204030C	Nie da się ich powstrzymać!
+min00:0x0204030D	Pomóż ludziom!
+min00:0x0204030E	Nadchodzą!
+min00:0x0204030F	Zatrzymać ich!
+min00:0x02040400	Złamię cię!
+min00:0x02040401	Nie powstrzymacie nas!
+min00:0x02040402	Zrównać wszystko z ziemią!
+min00:0x02040403	Brać ich wszystkich!
+min00:0x02040404	Na górę! Wyczyścić ich!
+min00:0x02040405	Urządzimy sobie ucztę w tym mieście!
+min00:0x02040406	Zabić go!!!
+min00:0x02040407	Zmiażdżyć ich wszystkich!
+min00:0x02040408	Ich miasto się sypie!
+min00:0x02040409	Powalić ich!
+min00:0x0204040A	Są słabi!!
+min00:0x0204040B	Brać ich!!
+min00:0x0204040C	Wyrżnąć wszystkich!
+min00:0x0204040D	Wyciąć ich!!
+min00:0x0204040E	Ty następny!
+min00:0x0204040F	Zniszczyć go!
+min00:0x02040410	Jesteś niczym!
+min00:0x02040411	Giń, słabeuszu!
+min00:0x02040412	Zgaszę cię jak świecę!
+min00:0x02040413	Jesteś mój!
+min00:0x02040414	Wykosić ich!
+min00:0x02040415	Za Czarnego Władcę!
+min00:0x02040416	Są pokonani!
+min00:0x02040417	Zabić ich wszystkich!
+min00:0x02040418	Ich mury są nasze!!
+min00:0x02040419	Spalić miasto!!
+min00:0x0204041A	Mur jest nasz!
+min00:0x30000000	Nie wpuśćcie ich!
+min00:0x30000001	Nie wpuśćcie ich!
+min02:0x02100000	Musimy przedostać się za tę zewnętrzną bramę!
+min02:0x02100100	Bądźcie czujni! Ostrożnie!
+min02:0x02100200	Katapulty!
+min02:0x02100201	Wymierz je przeciwko nim!
+min02:0x02100202	Ostrzelaj ich z ich własnych katapult!
+min02:0x02100300	Tutaj, na górę! Szybko!
+min02:0x02100400	Zasadzka!
+min02:0x02100500	Nie powstrzymasz mnie.
+min02:0x02100600	Wspinaj się po gruzach! Szybko!
+min02:0x02100700	Nie tędy!
+min02:0x02100701	Nie tędy!
+min02:0x02100800	Szybko się z nimi rozpraw!
+min02:0x02100900	Tam na górze! Musimy użyć kołowrotu bramy!
+min02:0x02100A00	Uderzaj go raz po raz!
+min02:0x02100A01	Uderzaj go raz po raz!
+min02:0x02100B00	Mumak!
+min02:0x02110000	Ponury widok ...
+min02:0x02110100	Czuję orków nawet z tej odległości ...
+min02:0x02110200	Wejdźmy na górę i otwórzmy bramę!
+min02:0x02110300	To pułapka!
+min02:0x02110301	To pułapka!
+min02:0x02110302	To pułapka!
+min02:0x02110303	To pułapka!
+min02:0x02110400	Nie baw się z nim. Zabij go!
+min02:0x02110500	Wspaniałe katapulty!
+min02:0x02110600	Orkowie! Ze wszystkich stron!
+min02:0x02110700	Takie szanse mi odpowiadają!
+min02:0x02110800	Ba! Niech przyjdą!
+min02:0x02110900	To załatwi sprawę!
+min02:0x02110A00	Dzięki temu robota toporem jest zabawniejsza!
+min02:0x02120000	Musimy się przedostać obok niego!
+min02:0x02120100	Odeprzyjcie ich - użyjmy kołowrotu!
+min02:0x02120101	Odeprzyjcie ich - użyjmy kołowrotu!
+min02:0x02120200	Nie tędy!
+min02:0x02120201	Nie idź tamtędy!
+min02:0x02120300	Dopadli nas!
+min02:0x02120400	Wykończ tych łuczników!
+min02:0x30000000	Z przysięgą ++++++++wierności od armii dawno zmarłych,|Aragorn wróci wreszcie drogą do Białego Miasta.
+min02:0x30000001	Uda się na północ, a potem przez Południową Bramę Gondoru...
+min02:0x30000002	...by wziąć udział w wielkiej bitwie naszych czasów.
+min02:0x30000003	Wieża jest nasza!
+min02:0x30000004	Ktoś nadchodzi!
+min02:0x30000005	Chcą nam odciąć drogę!
+min02:0x30000006	Rogi Rohanu! Wreszcie nadchodzi pomoc!
+min02:0x30000007	Śpiesz do nich, nim bitwa się rozstrzygnie!
+min02:0x30000008	Plugawy stwór z południa!
+min02:0x30000009	Ten krasnolud nie zasłużył na tak miłą niespodziankę!
+min02:0x3000000A	Z przysięgą ++++++++wierności od armii dawno zmarłych,|Aragorn wróci wreszcie drogą do Białego Miasta.
+min02:0x3000000B	Uda się na północ, a potem przez Południową Bramę Gondoru...
+min02:0x3000000C	...by wziąć udział w wielkiej bitwie naszych czasów.
+min02:0x3000000D	Wieża jest nasza!
+min02:0x3000000E	Ktoś nadchodzi!
+min02:0x3000000F	Chcą nam odciąć drogę!
+min02:0x30000010	Rogi Rohanu! Wreszcie nadchodzi pomoc!
+min02:0x30000011	Śpiesz do nich, nim bitwa się rozstrzygnie!
+min02:0x30000012	Plugawy stwór z południa!
+min02:0x30000013	Ten krasnolud nie zasłużył na tak miłą niespodziankę!
+min04:0x02010100	Odwaga będzie twą najlepszą obroną przed nadciągającą burzą!
+min04:0x02010200	Cofnijcie się! Ich pociski spadają w te same miejsca!
+min04:0x02010300	To żywe stworzenia! Można je powalić!
+min04:0x02010301	Bezmyślna siła nic ci nie da!
+min04:0x02010302	Oczyszczę miasto z waszego pomiotu!
+min04:0x02010400	Nawet opętani muszą upaść!
+min04:0x02010500	Wracaj w nicość, która na ciebie czeka!
+min04:0x02010501	Nie masz ze mną szans, pomiocie Saurona!
+min04:0x020F0000	Broń naszego miasta!
+min04:0x020F0001	Broń naszego miasta!
+min04:0x020F0002	Broń naszego miasta!
+min04:0x020F0003	Broń naszego miasta!
+min04:0x020F0004	Broń naszego miasta!
+min04:0x020F0100	Uciekajcie!
+min04:0x020F0101	Uciekajcie!
+min04:0x020F0102	Uciekajcie!
+min04:0x020F0103	Uciekajcie!
+min04:0x020F0200	Kryjcie się!
+min04:0x020F0201	Kryjcie się!
+min04:0x020F0202	Kryjcie się!
+min04:0x020F0203	Kryjcie się!
+min04:0x020F0300	Nasze domy płoną!
+min04:0x020F0301	Nasze domy płoną!
+min04:0x020F0302	Nasze domy płoną!
+min04:0x020F0303	Nasze domy płoną!
+min04:0x020F0400	Obroń nas!
+min04:0x020F0401	Obroń nas!
+min04:0x020F0402	Obroń nas!
+min04:0x020F0403	Obroń nas!
+min04:0x020F0500	Proszę, ratuj nas!
+min04:0x020F0501	Proszę, ratuj nas!
+min04:0x020F0502	Proszę, ratuj nas!
+min04:0x020F0503	Proszę, ratuj nas!
+min04:0x020F0600	Wszystko stracone!
+min04:0x020F0601	Wszystko stracone!
+min04:0x020F0700	Zabierz mnie stąd!
+min04:0x020F0701	Zabierz mnie stąd!
+min04:0x020F0702	Zabierz mnie stąd!
+min04:0x020F0703	Zabierz mnie stąd!
+min04:0x020F0800	Wybiją nas wszystkich!
+min04:0x020F0900	Pomocy!!
+min04:0x020F0A00	Obronisz nas?!
+min04:0x020F0B00	Chroń to miasto!
+min04:0x020F0C00	Trzymać szyk!
+min04:0x020F0C01	Trzymać szyk!
+min04:0x020F0C02	Trzymać szyk!
+min04:0x020F0D00	Formować szyk! Formować!
+min04:0x020F0E00	Trzymać się! Nie wahać się!
+min04:0x020F0F00	Uwaga!
+min04:0x020F1000	Katapulta! Ogień!
+min04:0x020F1001	Kule ognia!!
+min04:0x020F1002	Uwaga! Ogień nad nami!
+min04:0x020F1003	Ogniste pociski!!
+min04:0x020F1100	Miasto płonie!
+min04:0x020F1200	Nie możemy go zatrzymać!
+min04:0x020F1201	Trolle! Ogromne trolle!
+min04:0x020F1300	Nie pozwól mu się zbliżyć!
+min04:0x020F1301	Trzymajcie te bestie z dala!!
+min04:0x020F1302	Rozdzierają miasto na strzępy!!
+min04:0x020F1303	Uważaj na jego młot!
+min04:0x020F1400	Nikt go nie zatrzyma!
+min04:0x020F1401	Przebija się!
+min04:0x020F1500	Spalić wszystko!
+min04:0x020F1501	Wszystko spłonie!
+min04:0x020F1502	Upiec ich!
+min04:0x020F1503	Patrzcie, jak płoną!
+min04:0x020F1600	Łatwy łup, chłopaki!
+min04:0x020F1601	Obrócić to w gruzy!
+min04:0x020F1602	Zrównać wszystko z ziemią!
+min04:0x020F1603	Zmiażdżyć ich!
+min04:0x020F1700	Rozpruć ich!
+min04:0x020F1701	Zniszczyć ich miasto!
+min04:0x020F1702	Jesteśmy w środku! Teraz ich zabić!
+min04:0x020F1703	Zabić ich tutaj!
+min04:0x020F1704	Śmierć wam wszystkim!
+min04:0x020F1800	Minas Tirith płonie!
+min04:0x30000000	Tutaj stawimy opór!
+min04:0x30000001	Wróg morduje twój lud! Musimy ocalić każdego, kogo się da!
+min04:0x30000002	Zabić ich tutaj!
+min04:0x30000003	Odwrót!
+min04:0x30000004	Ta walka skończona.
+min04:0x30000005	Uciekajcie za wewnętrzne mury!
+min04:0x30000006	Śmierć wam wszystkim!
+min04:0x30000007	Tutaj stawimy opór!
+min04:0x30000008	Wróg morduje twój lud! Musimy ocalić każdego, kogo się da!
+min04:0x30000009	Zabić ich tutaj!
+min04:0x3000000A	Odwrót!
+min04:0x3000000B	Ta walka skończona.
+min04:0x3000000C	Uciekajcie za wewnętrzne mury!
+min04:0x3000000D	Śmierć wam wszystkim!
+osg01:0x02120000	Brać tego!
+osg01:0x02120001	Dopaść ich!
+osg01:0x02120002	Mam go!
+osg01:0x02120003	On padnie!
+osg01:0x02120100	Brać tych cherlaków!
+osg01:0x02120101	Nadchodzą!
+osg01:0x02120102	Nadchodzą!
+osg01:0x02120103	Giń!!
+osg01:0x02120200	Szpiedzy z Gondoru! Brać ich!
+osg01:0x02120300	Łatwe mięsko, chłopaki!
+osg01:0x02150000	Widzi pan! Widzi pan, w co on nas wpakował!
+osg01:0x02150001	Widzi pan! Widzi pan, w co on nas wpakował!
+osg01:0x02150100	Ostrożnie! Prowadzi nas w sam środek bitwy!
+osg01:0x02150101	Ostrożnie! Prowadzi nas w sam środek bitwy!
+osg01:0x02150200	Musimy zejść z tych dachów!
+osg01:0x02150201	Musimy zejść z tych dachów!
+osg01:0x02150300	Ślepy zaułek! Ale z ciebie przewodnik!
+osg01:0x02150301	Ślepy zaułek! Ale z ciebie przewodnik!
+osg01:0x02150400	Tu wszystko jest zalane!
+osg01:0x02150401	Tu wszystko jest zalane!
+osg01:0x02150500	Nie zatrzymuj się!
+osg01:0x02150501	Nie zatrzymuj się!
+osg01:0x02150502	Niech pan idzie dalej, panie Frodo!
+osg01:0x02150503	Niech pan idzie dalej, panie Frodo!
+osg01:0x02150600	Udało się!
+osg01:0x02150601	Udało się!
+osg01:0x02160000	Zobaczyli grubasa! Głupi hobbit!
+osg01:0x02160001	Zobaczyli grubasa! Głupi hobbit!
+osg01:0x02160002	Zobaczyli grubasa! Głupi hobbit!
+osg01:0x02160100	Panie! Złe orki tu na górze!!
+osg01:0x02160101	Panie! Złe orki tu na górze!!
+osg01:0x02160200	Tutaj, na górę! My wywęszyć drogę!
+osg01:0x02160300	Nazgul wraca!
+osg01:0x02160400	Paskudne Upiory, zawsze gonią Pana!
+osg01:0x02160500	My to znaleźć, tak, znaleźć. Teraz w dół!
+osg01:0x02160501	My to znaleźć, tak, znaleźć. Teraz w dół!
+osg01:0x02160502	My to znaleźć, tak, znaleźć. Teraz w dół!
+osg01:0x02160600	Smeagol wam pokaże! Dobry Smeagol!
+osg01:0x02160601	Smeagol wam pokaże! Dobry Smeagol!
+osg01:0x02160602	Smeagol wam pokaże! Dobry Smeagol!
+osg01:0x02160603	Smeagol wam pokaże! Dobry Smeagol!
+osg01:0x02160700	Szybko! Musimy przez to przejść jak najprędzej!
+osg01:0x02160701	Szybko! Musimy przez to przejść jak najprędzej!
+osg01:0x02160800	Tutaj! My znaleźć wejście!!
+osg01:0x02160801	Tutaj! My znaleźć wejście!!
+osg01:0x02160802	Tutaj! My znaleźć wejście!!
+osg01:0x02160803	Tutaj! My znaleźć wejście!!
+osg01:0x02160900	Cicho i szybko jak cienie musimy być.
+osg01:0x02160901	Cicho i szybko jak cienie musimy być.
+osg01:0x02160A00	Nie wolno zostawać! Oni nas zobaczyć! W górę! W górę!
+osg01:0x02160B00	Orkowie łucznicy!
+osg01:0x02160B01	Orkowie łucznicy!
+osg01:0x02160C00	Teraz ostrożnie, bo dołączysz do umarłych w tym złym mieście.
+osg01:0x02160C01	Teraz ostrożnie, bo dołączysz do umarłych w tym złym mieście.
+osg01:0x02160D00	Nie wrócimy! Idziemy przez to!
+osg01:0x02160D01	Nie wrócimy! Idziemy przez to!
+osg01:0x02160E00	Tak, o tak. My czuć wyjście.
+osg01:0x02160E01	Tak, o tak. My czuć wyjście.
+osg01:0x02160E02	Tak, o tak. My czuć wyjście.
+osg01:0x02160F00	Oni szukają Pierścienia!!
+osg01:0x02161000	Straszne! Straszne! Nie daj się im zobaczyć!
+osg01:0x02161001	Straszne! Straszne! Nie daj się im zobaczyć!
+osg01:0x02161002	Straszne! Straszne! Nie daj się im zobaczyć!
+osg01:0x02161100	Tutaj! Koniec zabawy! Musimy teraz uciekać!
+osg01:0x02161101	Tutaj! Koniec zabawy! Musimy teraz uciekać!
+osg01:0x02161102	Tutaj! Koniec zabawy! Musimy teraz uciekać!
+osg01:0x02161103	Teraz do środka! Hobbity uciekają. Skarb ucieka!
+osg01:0x02161104	Teraz do środka! Hobbity uciekają. Skarb ucieka!
+osg01:0x02161105	Teraz do środka! Hobbity uciekają. Skarb ucieka!
+osg01:0x02161200	Głupie hobbity!
+osg01:0x02161201	Głupie hobbity!
+osg01:0x02161300	Chodź, Panie! Teraz tylko tędy!
+osg01:0x02161301	Chodź, Panie! Teraz tylko tędy!
+osg01:0x02161302	Chodź, Panie! Teraz tylko tędy!
+osg01:0x02161303	Szybko!
+osg01:0x02161304	Szybko!
+osg01:0x02161305	Szybko!
+osg01:0x02161306	Już niedaleko!
+osg01:0x02161307	Już niedaleko!
+osg01:0x02161308	Już niedaleko!
+osg01:0x02161309	Już niedaleko!
+osg01:0x02161400	Byle naprzód!!!
+osg01:0x02161500	On nas skrzywdzi! Skrzywdzi biednego Smeagola!
+osg01:0x02161600	Pierścień go wzywa, Sam ... Oko już prawie mnie widzi...
+osg01:0x02161601	Pierścień go wzywa, Sam ... Oko już prawie mnie widzi...
+osg01:0x30000000	Panie Frodo!  Na ziemię!
+osg01:0x30000001	Chodźcie, hobbity! Jeszcze długa droga! Smeagol pokaże wam drogę ... za mną!
+osg01:0x30000002	Frodo!
+osg01:0x30000003	Nieeeee!
+osg01:0x30000004	Uciekać, szybko teraz!  Miły Smeagol nas wyprowadzi!
+osg01:0x30000005	Szybko, hobbitsy, szybko!  Widzicie?  Widzicie?  Wyprowadziliśmy was!
+osg01:0x30000006	Smeagol opiekuje się panem!
+osg01:0x30000007	Panie Frodo!  Na ziemię!
+osg01:0x30000008	Chodźcie, hobbity! Jeszcze długa droga! Smeagol pokaże wam drogę ... za mną!
+osg01:0x30000009	Frodo!
+osg01:0x3000000A	Nieeeee!
+osg01:0x3000000B	Uciekać, szybko teraz!  Miły Smeagol nas wyprowadzi!
+osg01:0x3000000C	Szybko, hobbitsy, szybko!  Widzicie?  Widzicie?  Wyprowadziliśmy was!
+osg01:0x3000000D	Smeagol opiekuje się panem!
+pal01:0x02010100	Uwolnię umysły twych sług i nauczę je strachu! Staną się dla ciebie bezużyteczne!
+pal01:0x02010200	Bezmyślna siła nic ci nie da!
+pal01:0x02010300	Powalę was, stwory!
+pal01:0x02010400	Wracaj w nicość, która na ciebie czeka!
+pal01:0x02010500	Nawet opętani muszą upaść!
+pal01:0x02010600	Nie masz ze mną szans, pomiocie Saurona!
+pal01:0x02010700	Wracajcie do swych nor!
+pal01:0x02010800	Tylko odwlekasz swój koniec!
+pal01:0x02100000	Rozumiem, czemu ludzie boją się tego miejsca!
+pal01:0x02100100	Precz, bezmyślna bestio!
+pal01:0x02100200	Gromadzą się tu licznie!
+pal01:0x02100300	Nie powstrzymasz mnie.
+pal01:0x02100400	Precz, plugawy stworze!
+pal01:0x02100500	Precz, bezmyślna bestio!
+pal01:0x02100600	Twój czas się skończył.
+pal01:0x02100700	Nie pokonasz mnie w walce!
+pal01:0x02120000	Pewnie przebiję wynik elfa, zanim to się skończy!
+pal01:0x02120001	Pewnie przebiję wynik elfa, zanim to się skończy!
+pal01:0x02120100	Tych najpierw trzeba trochę skrócić.
+pal01:0x02120200	W przeciwieństwie do ciebie, ja mam wyszkolenie!
+pal01:0x02120300	Lepiej się poddaj!
+pal01:0x02120400	Pokażę ci, jak to się robi!
+pal01:0x02120500	Pewnie masz paskudny humor!
+pal01:0x02120600	Ależ z ciebie paskuda!
+pal01:0x02120700	Tu mi się pokłonisz!
+pal01:0x02130000	Cóż to za złe czary?!
+pal01:0x02130100	Precz, sługi ciemności!
+pal01:0x02130200	Tu i teraz położę kres twemu złu!
+pal01:0x02130300	Precz, sługi ciemności!
+pal01:0x02130400	Nadciągają jak niekończąca się fala!
+pal01:0x02130500	Jeśli muszę cię zniszczyć, zniszczę!
+pal01:0x02130600	Pomiocie złości!
+pal01:0x02130700	Nie możesz się ze mną równać!
+pal01:0x02140000	Nie wiem, czy z takiego miejsca w ogóle się wraca!
+pal01:0x02140001	Nie wiem, czy z takiego miejsca w ogóle się wraca!
+pal01:0x02140100	Mój stary Gaffer miałby coś do powiedzenia na ten temat!
+pal01:0x02140200	Tylko jeden z nas tu wygra!
+pal01:0x02140300	Co trzeba zrobić, żeby się ich pozbyć!!
+pal01:0x02140400	Ciągle nas gonią!
+pal01:0x02140500	Nie pokonasz Sama Dzielnego!
+pal01:0x02140600	Będę potrzebował do tego całej mojej siły!
+pal01:0x02140700	No, Samwise! Czas zostać bohaterem!
+pal01:0x02160000	To pradawne, złe miejsce.
+pal01:0x02160100	Pokażę ci, kto umie walczyć!
+pal01:0x02160200	Gińcie, potwory!
+pal01:0x02160300	Teraz cię dopadnę!
+pal01:0x02160400	To jakieś nowe zło!
+pal01:0x02160500	Wracaj w cień!
+pal01:0x02160600	Stań do walki, jeśli się odważysz!
+pal01:0x02160700	Przestaniesz istnieć!
+pal01:0x02170000	Sauronie, w imię Gondoru stanę przeciw tobie!
+pal01:0x02170100	To plugawe, plugawe miejsce!
+pal01:0x02170200	Giń, stworze z otchłani!
+pal01:0x02170300	Nadchodzi jakieś nowe zło!
+pal01:0x02170400	Czyżbyś szukał śmierci?
+pal01:0x02170500	Ukorz się przed lepszym!
+pal01:0x02170600	Pokażę ci, jak się walczy!
+pal01:0x02170700	Nie wygrasz tego, wiesz?
+pal01:0x02180000	Nie wiem, czy przyjście tutaj było dobrym pomysłem!
+pal01:0x02180100	Mogę cię zaskoczyć!
+pal01:0x02180200	Może jestem mały, ale twardy!
+pal01:0x02180300	Dobra ... miejmy to z głowy!
+pal01:0x02180400	Mali mieszkańcy Shire idą po ciebie!
+pal01:0x02180500	Teraz mnie rozzłościłeś!
+pal01:0x02180600	Chyba mam do tego smykałkę.
+pal01:0x02180700	Hobbici to nie przekąska!
+pal01:0x02190000	O, jak miło - prywatny kominek Czarnego Władcy!
+pal01:0x02190100	Niewielu hobbitów dorówna mi we władaniu mieczem!
+pal01:0x02190200	Chyba trafiłeś na niewłaściwego hobbita!
+pal01:0x02190300	Chyba jestem lepszym wojownikiem!
+pal01:0x02190400	Pochodzę z długiego rodu wojowników!
+pal01:0x02190500	To musi cię zaskakiwać!
+pal01:0x02190600	Całkiem nieźle mi idzie, dziękuję!
+pal01:0x02190700	Widać, kto tu jest zawodowcem!
+pat01:0x02010100	Na wojnie trzeba wiele zaryzykować.
+pat01:0x020F0000	Chodźcie, umarli krążą po tej ścieżce ... ale musimy przejść ją do końca.
+pat01:0x020F0100	Bądźcie gotowi! Te duchy ożywiają pradawne kości!
+pat01:0x020F0101	Bądźcie gotowi! Te duchy ożywiają pradawne kości!
+pat01:0x020F0102	Bądźcie gotowi! Te duchy ożywiają pradawne kości!
+pat01:0x020F0200	Przebij się!!
+pat01:0x020F0201	Przebij się!!
+pat01:0x020F0300	Gromadzą się tu licznie!
+pat01:0x020F0301	Gromadzą się tu licznie!
+pat01:0x020F0400	Tędy! Szybko!
+pat01:0x020F0401	Tędy! Szybko!
+pat01:0x020F0500	Uwaga! Nie zatrzymujcie się!
+pat01:0x020F0501	Uwaga! Nie zatrzymujcie się!
+pat01:0x020F0600	Bez względu na niebezpieczeństwo musimy to przejść!
+pat01:0x020F0601	Bez względu na niebezpieczeństwo musimy to przejść!
+pat01:0x020F0700	Stań i walcz!
+pat01:0x020F0701	Stań i walcz!
+pat01:0x020F0800	Jesteśmy już blisko!
+pat01:0x020F0900	Tym można to otworzyć!
+pat01:0x020F0A00	Dobrze walczyliście, przyjaciele!
+pat01:0x020F0A01	Musimy iść dalej!
+pat01:0x020F0A02	Rozumiem, czemu ludzie boją się tego miejsca!
+pat01:0x020F0B00	Chodźcie! Złamaliśmy ich czar!
+pat01:0x020F0B01	Chodźcie! Złamaliśmy ich czar!
+pat01:0x02110000	Cóż to za armia przebywałaby w takim miejscu?
+pat01:0x02110100	Nie mogę zranić ducha!
+pat01:0x02110200	Nie uczono mnie zabijać umarłych!
+pat01:0x02110300	Wygląda to na pułapkę!
+pat01:0x02110400	Nie przejdziemy!
+pat01:0x02110500	Krasnoludy nigdy nie zbudowałyby czegoś tak lichego!
+pat01:0x02110600	Mam bardzo złe przeczucia co do tego miejsca ...
+pat01:0x02110700	Jesteśmy tu uwięzieni jak szczury!
+pat01:0x02110800	Te ostrza tną, nawet zardzewiałe!
+pat01:0x02110801	Te ostrza tną, nawet zardzewiałe!
+pat01:0x02110900	Ja tylko chciałem przestraszyć ICH!
+pat01:0x02110A00	Na twoim miejscu teraz bym parował!
+pat01:0x02110A01	Na twoim miejscu teraz bym parował!
+pat01:0x02110A02	Na twoim miejscu teraz bym parował!
+pat01:0x02110A03	Paruj ich ataki!
+pat01:0x02110A04	Paruj ich ataki!
+pat01:0x02110B00	Ta Nawiedzona Góra kryje wiele niespodzianek!
+pat01:0x02110B01	Ta Nawiedzona Góra kryje wiele niespodzianek!
+pat01:0x02110C00	Niczego cię nie nauczył upór krasnoludów?
+pat01:0x02110C01	Niczego cię nie nauczył upór krasnoludów?
+pat01:0x02110C02	Niczego cię nie nauczył upór krasnoludów?
+pat01:0x02110C03	Nawet one boją się teraz krasnoluda!
+pat01:0x02110D00	Najwyraźniej nie chcą nas wpuścić!
+pat01:0x02110D01	Najwyraźniej nie chcą nas wpuścić!
+pat01:0x02110D02	Stare, ale działa!
+pat01:0x02110D03	Stare, ale działa!
+pat01:0x02110E00	Nic dziwnego, że nikt nie wychodzi z tych ścieżek żywy!
+pat01:0x02110E01	Nic dziwnego, że nikt nie wychodzi z tych ścieżek żywy!
+pat01:0x02110E02	Los się do nas uśmiecha!!
+pat01:0x02110E03	Los się do nas uśmiecha!!
+pat01:0x02110E04	Wreszcie wyjście!
+pat01:0x02120000	Nie boję się umarłych.
+pat01:0x02120100	Duchy umarłych!
+pat01:0x02120200	Więcej widm!
+pat01:0x02120300	Jakiś nowy czar!
+pat01:0x02120400	Jesteśmy w pułapce! Musimy szybko znaleźć przejście...
+pat01:0x02120500	Widma wróciły!
+pat01:0x02120600	Jak przez to przejdziemy?
+pat01:0x02120700	To główna brama!
+pat01:0x02120800	Tutaj gromadzą się umarli. To miejsce wielkiego zła.
+pat01:0x02120900	Nadciągają jak niekończąca się fala!!
+pat01:0x02120A00	Nie lękaj się, Gimli. To ci nie przystoi.
+pat01:0x02120B00	Ich mgły kłębią się i tutaj!
+pat01:0x02120C00	Nadchodzą!
+pat01:0x30000000	Droga jest zamknięta. Stworzyli ją ci, którzy są martwi, i umarli jej strzegą. Droga jest zamknięta.
+pat01:0x30000001	Powietrze jest ciężkie od nienawiści.
+pat01:0x30000002	Tędy!
+pat01:0x30000003	Każda droga byłaby teraz dobra!
+pat01:0x30000004	Droga jest zamknięta. Stworzyli ją ci, którzy są martwi, i umarli jej strzegą. Droga jest zamknięta.
+pat01:0x30000005	Powietrze jest ciężkie od nienawiści.
+pat01:0x30000006	Tędy!
+pat01:0x30000007	Każda droga byłaby teraz dobra!
+pat02:0x020C0000	Zapomniany ludu! Do mnie!
+pat02:0x020C0100	Nikt nie wraca z mojej góry!
+pat02:0x020C0101	Nie przeżyjesz tej drogi!!
+pat02:0x020C0102	Do mnie, towarzysze broni!
+pat02:0x020C0103	Droga jest zamknięta! My, umarli, jej strzeżemy!
+pat02:0x020C0104	Przyzywam was z szarego zmierzchu!
+pat02:0x020C0105	Z ciemności góry ... Przybywajcie!
+pat02:0x020D0000	Nawet w żywej śmierci są posłuszni!
+pat02:0x020D0100	... Odzyskajcie honor! Gdy ta ziemia zostanie oczyszczona z Saurona, zaznacie spokoju i odejdziecie. Co powiecie!
+pat02:0x020D0200	Pokonam cię!
+pat02:0x30000000	...gdzie Król dawno zmarłych rozstrzyga o losie tych, którzy się jeszcze nie narodzili.
+pat02:0x30000001	Trzeba go zmusić do uległości.
+pat02:0x30000002	Kto wkracza do mego królestwa???
+pat02:0x30000003	Ten, który każe ci dotrzymać przysięgi!
+pat02:0x30000004	Umarli nie przepuszczają żywych!
+pat02:0x30000005	Wichrze góry ... rozkazuję ci!
+pat02:0x30000006	Walcz dla mnie, a uwolnię cię od tej żywej śmierci! Co powiesz!
+pat02:0x30000007	Poddaaaajęęę się!!++++++
+pat02:0x30000008	Musimy się stąd wydostać!!!
+pat02:0x30000009	Wichrze góry ... rozkazuję ci!
+pat02:0x3000000A	Wichrze góry ... rozkazuję ci!
+pat02:0x3000000B	...gdzie Król dawno zmarłych rozstrzyga o losie tych, którzy się jeszcze nie narodzili.
+pat02:0x3000000C	Trzeba go zmusić do uległości.
+pat02:0x3000000D	Kto wkracza do mego królestwa???
+pat02:0x3000000E	Ten, który każe ci dotrzymać przysięgi!
+pat02:0x3000000F	Umarli nie przepuszczają żywych!
+pat02:0x30000010	Wichrze góry ... rozkazuję ci!
+pat02:0x30000011	Walcz dla mnie, a uwolnię cię od tej żywej śmierci! Co powiesz!
+pat02:0x30000012	Poddaaaajęęę się!!++++++
+pat02:0x30000013	Musimy się stąd wydostać!!!
+pat02:0x30000014	Wichrze góry ... rozkazuję ci!
+pat02:0x30000015	Wichrze góry ... rozkazuję ci!
+pat03:0x020C0000	Szybko! Wszystko się wali!
+pat03:0x020C0100	Wszystko się zawala! Szybko!!!
+pat03:0x020C0200	Umarli wciąż tu są!
+pat03:0x020C0201	Umarli wciąż tu są!
+pat03:0x020E0000	Utknęliśmy tutaj!
+pat03:0x020E0100	Sprytne małe duszki!
+pat03:0x020E0101	Teraz nic mnie nie zatrzyma!
+pat03:0x020F0000	Zablokowane!!!
+pat03:0x020F0100	Musimy się wydostać!
+pat03:0x30000000	Czyżbyśmy zawiedli?
+pat03:0x30000001	Umarli będą walczyć, gdy twój lud będzie najbliżej nas!
+pat03:0x30000002	Czyżbyśmy zawiedli?
+pat03:0x30000003	Umarli będą walczyć, gdy twój lud będzie najbliżej nas!
+pel02:0x02100000	Odeprzeć ich!
+pel02:0x02100100	Nie możemy pozwolić, by Rohirrimowie zginęli!
+pel02:0x02100200	Mumakile, przygotować się do szarży!
+pel02:0x02100300	Strzel z tego! Powal ich!
+pel02:0x02100400	Obróć ich machiny przeciwko nim!
+pel02:0x02100500	Przepędzić ich! Szybko!
+pel02:0x02100600	Przygotuj się! Przysyłają posiłki!
+pel02:0x02110000	Ludzie ze Wschodu! Naprzód!
+pel02:0x02110001	Do szarży, ludzie ze Wschodu!
+pel02:0x02110002	Wypuścić armię!
+pel02:0x02110003	Naprzód, Easterlingowie!
+pel02:0x02110100	Bez litości!
+pel02:0x02110101	Wyrżnąć wszystkich!
+pel02:0x02110102	Przegrupować się!
+pel02:0x02110103	Przegrupować piechotę!
+pel02:0x02110200	Tak! Śmierć to nasze imię!
+pel02:0x02110201	Są słabi!
+pel02:0x02110202	Tak! Zniszczyć ich!
+pel02:0x02110300	Nie dajcie się zatrzymać!
+pel02:0x02110301	Wyrąbać ich!
+pel02:0x02110302	Brać ich wszystkich!
+pel02:0x02110303	Nie zostawiać nikogo przy życiu!
+pel02:0x02110400	Mumakile! Naprzód!
+pel02:0x02110401	Rozbić ich wszystkich!
+pel02:0x02110402	Naprzód, ludzie Haradu!
+pel02:0x02110403	Zniszczyć ich wszystkich!
+pel02:0x02110404	Nie zostawiać nikogo przy życiu!
+pel02:0x02110405	Zmieść ich z pola!
+pel02:0x02110500	Mumakile znów nadchodzą!
+pel02:0x02120000	Chyba nas otaczają!
+pel02:0x02120100	To tylko dwie armie. Czym się martwisz?
+pel02:0x02120200	W takim razie lepiej zajmijmy się tymi gośćmi!
+pel02:0x02120300	Chyba zgonili jeszcze kilku!
+pel02:0x02120400	Chyba go rozzłościłeś!
+pel02:0x02120500	Wszyscy zostaną stratowani!
+pel02:0x02120600	Ja bym się martwił o jego stopy!
+pel02:0x02120700	Będziemy musieli przebić się tam na górę!
+pel02:0x02130000	Mamy za mało ludzi!
+pel02:0x02130100	Rohirrimowie ponoszą ciężkie straty!
+pel02:0x02130200	Rohirrimowie ponoszą ciężkie straty!
+pel02:0x02130201	Rohirrimowie są niemal wyrżnięci!
+pel02:0x02160000	Pomocy!
+pel02:0x02160100	Tutaj!
+pel02:0x02160200	Nie!! Precz ode mnie!
+pel02:0x30000000	Nadchodzą!
+pel02:0x30000001	Easterlingowie!
+pel02:0x30000002	Orkowie!
+pel02:0x30000003	Brać ich wszystkich!
+pel02:0x30000004	Mumakile niszczą wszystko na swej drodze! Zatrzymaj je, zanim dotrą do Eowyn i Merry'ego!
+pel02:0x30000005	Pani, nie opuszczę cię!
+pel02:0x30000006	Trzeba ich ocalić!
+pel02:0x30000007	Merry!
+pel02:0x30000008	Żałosny wojowniku!
+pel02:0x30000009	Zabiję cię, jeśli go tkniesz!
+pel02:0x3000000A	Zabić mnie? Głupcze. Żaden żywy mężczyzna nie może mnie zabić!
+pel02:0x3000000B	Nie jestem mężczyzną! Patrzysz na kobietę!
+pel02:0x3000000C	Nie mam dość dużego topora na tego!
+pel02:0x3000000D	Patrzcie! Umarli przybyli ... by ocalić żywych!
+pel02:0x3000000E	Za późno!
+pel02:0x3000000F	Zawiedliśmy!
+pel02:0x30000010	Pomóż im!
+pel02:0x30000011	Zatrzymaj tę bestię!
+pel02:0x30000012	Król Czarnoksiężnik krąży nad nami!
+pel02:0x30000013	Zaatakuj go! Szybko!
+pel02:0x30000014	Mumakile znów nadchodzą!
+pel02:0x30000015	Nadchodzą!
+pel02:0x30000016	Easterlingowie!
+pel02:0x30000017	Orkowie!
+pel02:0x30000018	Brać ich wszystkich!
+pel02:0x30000019	Mumakile niszczą wszystko na swej drodze! Zatrzymaj je, zanim dotrą do Eowyn i Merry'ego!
+pel02:0x3000001A	Pani, nie opuszczę cię!
+pel02:0x3000001B	Trzeba ich ocalić!
+pel02:0x3000001C	Merry!
+pel02:0x3000001D	Żałosny wojowniku!
+pel02:0x3000001E	Zabiję cię, jeśli go tkniesz!
+pel02:0x3000001F	Zabić mnie? Głupcze. Żaden żywy mężczyzna nie może mnie zabić!
+pel02:0x30000020	Nie jestem mężczyzną! Patrzysz na kobietę!
+pel02:0x30000021	Nie mam dość dużego topora na tego!
+pel02:0x30000022	Patrzcie! Umarli przybyli ... by ocalić żywych!
+pel02:0x30000023	Za późno!
+pel02:0x30000024	Zawiedliśmy!
+pel02:0x30000025	Pomóż im!
+pel02:0x30000026	Zatrzymaj tę bestię!
+pel02:0x30000027	Król Czarnoksiężnik krąży nad nami!
+pel02:0x30000028	Zaatakuj go! Szybko!
+pel02:0x30000029	Mumakile znów nadchodzą!
+she01:0x020C0000	Pomocy!
+she01:0x020C0001	Cofnij się! !
+she01:0x020C0002	Cofnij się! !
+she01:0x020C0200	Hej! Co to?!
+she01:0x020C0201	Hej! Co to?!
+she01:0x020C0300	Mamy intruza! Brać go, chłopaki!
+she01:0x020C0400	To tylko mały kurdupel!
+she01:0x020C0500	Dźgnąć go!
+she01:0x020C0501	Dźgnąć go!
+she01:0x020C0700	Co my tu mamy?!!
+she01:0x020C0800	Podkradasz się, co? Brać go!
+she01:0x020C0900	Mam cię! Mała gnido!
+she01:0x020C0A00	Tam jest!
+she01:0x020C0B00	Bierzmy go!
+she01:0x020F0000	Dobra, Samwise. Pan Frodo liczy, że go uratujesz. Bez względu na wszystko.
+she01:0x020F0001	Dobra, Samwise. Pan Frodo liczy, że go uratujesz. Bez względu na wszystko.
+she01:0x020F0100	Pająk!
+she01:0x020F0200	Skoro tak chcesz!!!
+she01:0x020F0201	Skoro tak chcesz!!!
+she01:0x020F0300	Samwise Gamgee... w co ty się tym razem wpakowałeś?!
+she01:0x020F0301	Samwise Gamgee... w co ty się tym razem wpakowałeś?!
+she01:0x020F0302	Samwise Gamgee... w co ty się tym razem wpakowałeś?!
+she01:0x020F0400	Frodo!
+she01:0x020F0401	Trzeba go ocalić!
+she01:0x020F0402	Trzeba go ocalić!
+she01:0x020F0403	Niech pan się trzyma, panie Frodo!
+she01:0x020F0404	Niech pan się trzyma, panie Frodo!
+she01:0x020F0405	Szybciej, Samwise! Szybciej!
+she01:0x020F0406	Szybciej, Samwise! Szybciej!
+she01:0x020F0407	Dalej, dasz radę, Sam! Na pewno dasz!
+she01:0x020F0408	Dalej, dasz radę, Sam! Na pewno dasz!
+she01:0x020F0409	Niech pan się trzyma! Już idę!
+she01:0x020F040A	Niech pan się trzyma! Już idę!
+she01:0x020F040B	Niech pan się trzyma, panie Frodo! Już idę!
+she01:0x020F040C	Niech pan się trzyma, panie Frodo! Już idę!
+she01:0x020F040D	Jestem tu, panie Frodo!!
+she01:0x020F040E	Jestem tu, panie Frodo!!
+she01:0x020F040F	Panie Frodo! Gdzie pan jest?!
+she01:0x020F0410	Panie Frodo! Gdzie pan jest?!
+she01:0x020F0411	Nie ma czasu do stracenia!
+she01:0x020F0412	Nie ma czasu do stracenia!
+she01:0x020F0413	Jestem tu, panie Frodo! Jestem!
+she01:0x020F0414	Jestem tu, panie Frodo! Jestem!
+she01:0x020F0415	Zwariowałeś, Samwise Gamgee ... Wiesz o tym!
+she01:0x020F0416	Zwariowałeś, Samwise Gamgee ... Wiesz o tym!
+she01:0x020F0417	Frodo!
+she01:0x020F0500	Nie zatrzymasz mnie!
+she01:0x020F0501	Wcale mnie nie zatrzymasz!
+she01:0x020F0502	Dalej, Samwise! Nie zawiedź pana Froda!
+she01:0x020F0600	Nie zamierzam teraz dać się zatrzymać!!
+she01:0x020F0700	Nie tak łatwo, jak myślisz!
+she01:0x020F0701	Nie tak łatwo, jak myślisz!
+she01:0x020F0702	W dół z tobą!!
+she01:0x020F0703	W dół z tobą!!
+she01:0x020F0704	Nie!!!
+she01:0x020F0705	Precz! Odejdź stąd!!!
+she01:0x020F0706	Nie przestawaj, Samwise! Oni po prostu nie odpuszczają!
+she01:0x020F0707	Nie przestawaj, Samwise! Oni po prostu nie odpuszczają!
+she01:0x020F0800	Z drogi!
+she01:0x020F0801	Z drogi!
+she01:0x020F0900	Zejdź mi z drogi!!
+she01:0x020F0901	Zejdź mi z drogi!!
+she01:0x020F0902	Cofnij się! Cofnij!!
+she01:0x020F0903	Cofnij się! Cofnij!!
+she01:0x020F0904	O nie, nie ma mowy!
+she01:0x020F0A00	Co trzeba zrobić, żeby się ich pozbyć!!
+she01:0x020F0B00	Muszę to jakoś obejść!
+she01:0x020F0C00	Jestem tu, panie Frodo! Jestem!
+she01:0x020F0D00	Tędy się nie przekradnę!!
+she01:0x020F0D01	Tędy się nie przekradnę!!
+she01:0x020F0E00	Ale to może zadziałać ...
+she01:0x020F0F00	Rozpierzchnijcie się, małe potworki!
+she01:0x020F0F01	Rozpierzchnijcie się, małe potworki!
+she01:0x020F1000	Precz, wy nędzne stwory!
+she01:0x020F1001	Precz, wy nędzne stwory!
+she01:0x020F1002	Precz, wy nędzne stwory!
+she01:0x020F1100	Tam muszę iść...
+she01:0x020F1200	Chodź tu, ty plugastwo!
+she01:0x020F1300	Już nigdy go nie tkniesz!
+she01:0x020F1400	Właśnie tak!
+she01:0x020F1500	To mnie chcesz!
+she01:0x020F1600	... a ja też chcę dopaść ciebie!
+she01:0x020F1700	Nieważne ...
+she01:0x020F1800	... jaka jesteś wielka!
+she01:0x020F1900	... będę cię rąbał ...
+she01:0x020F1A00	... i ciął ...
+she01:0x020F1B00	... dopóki ...
+she01:0x020F1C00	... go nie puścisz!!!!!
+she01:0x020F1D00	Zgniotłem twoje dzieci ...
+she01:0x020F1E00	Chodź i skończmy to!
+she01:0x020F1F00	No chodź!
+she01:0x020F2000	Ty i ja!
+she01:0x020F2100	Ostatni raz!
+she01:0x020F2200	Za pana Froda!!!!!
+she01:0x020F2300	Ratunku! Są ze wszystkich stron!
+she01:0x02100000	Pomocy! Sam, proszę, pomóż!
+she01:0x02100001	Pomocy! Sam, proszę, pomóż!
+she01:0x02100100	Och, Sam! Znajdź mnie, proszę!
+she01:0x02100101	Och, Sam! Znajdź mnie, proszę!
+she01:0x02100200	Sam!
+she01:0x02100201	Pomocy!
+she01:0x02100202	Tutaj!
+she01:0x02100203	Pomooocy! Pomooc!
+she01:0x02100204	Och, Sam! Znajdź mnie, proszę!
+she01:0x02100205	Och, Sam! Znajdź mnie, proszę!
+she01:0x02100206	Halo! Jest tu kto?!
+she01:0x02100207	Halo! Jest tu kto?!
+she01:0x02100208	Smeagolu! Gdzie jesteś?!
+she01:0x02100209	Wciągnął nas w pułapkę!
+she01:0x0210020A	Sam, pomóż mi!
+she01:0x0210020B	Sam, pomóż mi!
+she01:0x0210020C	O nieee! Precz!
+she01:0x0210020D	Smeagolu?! Sam?!
+she01:0x0210020E	Pomooocy!!
+she01:0x0210020F	O, nieeeeee!!
+she01:0x02100210	O, nieeeeee!!
+she01:0x02100211	O, nieeeeee!!
+she01:0x02100212	O, nieeeeee!!
+she01:0x02100213	Pomocy! Sam, proszę, pomóż!
+she01:0x02100214	Pomocy! Sam, proszę, pomóż!
+she01:0x02100215	Cooofnij się!!!
+she01:0x02100216	Cooofnij się!!!
+she01:0x02100217	Sam!
+she01:0x02100218	Sam!
+she01:0x02100219	Pomocy! Pomocy!
+she01:0x0210021A	Sam!
+she01:0x02100300	Pomóż mi, Sam!
+she01:0x02100301	Pomóż mi, Sam!
+she01:0x02100302	Pomocy!
+she01:0x02100303	Pomocy!
+she01:0x02100400	Aiya Earendil Elenion Ancalima!
+she01:0x02100401	Aiya Earendil Elenion Ancalima!
+she01:0x02100500	Odejdź ode mnie!
+she01:0x02100600	Och, Sam! Znajdź mnie, proszę!
+she01:0x02100700	Cofnij się!
+she01:0x02100701	Cofnij się!
+she01:0x02100702	Aiya Earendil Elenion Ancalima!
+she01:0x02100703	Aiya Earendil Elenion Ancalima!
+she01:0x02100704	O nieee! Precz!
+she01:0x02100705	O nieee! Precz!
+she01:0x02100706	Odejdź ode mnie!
+she01:0x02100707	Odejdź ode mnie!
+she01:0x02100800	Pomooocy!!
+she01:0x30000000	A jednak nadzieja zawsze trwa.
+she01:0x30000001	Sam ... Sam!
+she01:0x30000002	Nieeeee!
+she01:0x30000003	Nie zatrzymasz mnie!
+she01:0x30000004	Wracaj tu! Jeszcze nie skończyłem ... !!
+she01:0x30000005	Panie Frodo!
+she01:0x30000006	To ja, Sam! Niech pan się obudzi!
+she01:0x30000007	Nie śpi ... nie żyje.
+she01:0x30000008	Wygląda na to, że stara Szeloba się zabawiła!
+she01:0x30000009	Ten mały gnojek się obudzi ... i pożałuje, że w ogóle się urodził!
+she01:0x3000000A	Zabierzcie go z powrotem do twierdzy!
+she01:0x3000000B	A jednak nadzieja zawsze trwa.
+she01:0x3000000C	Sam ... Sam!
+she01:0x3000000D	Nieeeee!
+she01:0x3000000E	Nie zatrzymasz mnie!
+she01:0x3000000F	Wracaj tu! Jeszcze nie skończyłem ... !!
+she01:0x30000010	Panie Frodo!
+she01:0x30000011	To ja, Sam! Niech pan się obudzi!
+she01:0x30000012	Nie śpi ... nie żyje.
+she01:0x30000013	Wygląda na to, że stara Szeloba się zabawiła!
+she01:0x30000014	Ten mały gnojek się obudzi ... i pożałuje, że w ogóle się urodził!
+she01:0x30000015	Zabierzcie go z powrotem do twierdzy!

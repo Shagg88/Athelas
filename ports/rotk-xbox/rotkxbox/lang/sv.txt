@@ -1,0 +1,1660 @@
+# The Return of the King - Swedish subtitles (our own translation). Interface lines by their name; spoken lines as <level>:<sound number>.
+DEU	Deutsch
+ENG	English
+FRA	Français
+ITA	Italiano
+NLD	Nederlands
+POL	Polski
+POR	Português
+SPA	Español
+SWE	Svenska
+abilitiesUnlocked	Nya förmågor upplåsta
+aragorn	Aragorn
+areyousure	Är du säker?
+back	BACK
+badDisk	Det är något fel på skivan du använder. Den kan vara smutsig eller skadad.
+badgames	De sparade spelen på %1s verkar vara skadade.
+badmedia	Minnesenheten i %1s kan inte användas.
+bla01	Svarta porten
+bla01LockDescCoop	Klara Pelennors fält och Minas Tirith - Borggården
+bla01LockDescSingle	Klara Pelennors fält och Minas Tirith - Borggården
+blocks	block
+cancel	Avbryt
+charSelPlayer1Sel	Spelare 1: välj karaktär
+charSelPlayer2Sel	Spelare 2: välj karaktär
+charselCompleted	avklarad
+charselCompletedHelp	Den här karaktären har redan klarat den här nivån. Klara Domedagsklyftan för att spela om den.
+charselHiddenHelp	Klara Domedagsklyftan för att låsa upp den här dolda karaktären.
+charselLocked	låst
+charselLockedHelp	Den här karaktären går inte att spela just nu.
+charselLockedHobbitHelp	Den här karaktären spelar Hobernas väg.   Klara Trollkarlens väg, Kungens väg och Hobernas väg för att låsa upp karaktären för den här nivån.
+charselLockedKingHelp	Den här karaktären spelar Kungens väg.   Klara Trollkarlens väg, Kungens väg och Hobernas väg för att låsa upp karaktären för den här nivån.
+charselLockedMerryHelp	Klara Svarta porten för att låsa upp den här karaktären för Hobernas väg.
+charselLockedWizardHelp	Den här karaktären spelar Trollkarlens väg.   Klara Trollkarlens väg, Kungens väg och Hobernas väg för att låsa upp karaktären för den här nivån.
+charselSpecialHelp	Spela Domedagsklyftan för att låsa upp den här specialkaraktären.
+charselTakenHelp	Den här karaktären är redan vald.
+charselUnplayableHelp	Du kan inte spela den här karaktären på den här nivån.
+checkingcard	Kontrollerar %1s.\nTa inte ut minnesenheter och koppla inte ur några handkontroller.
+checkingdisk	Kontrollerar %1s.\nStäng inte av Xbox-konsolen.
+checkpoint	kontrollpunkt
+chooseLang	Please select your language.
+cir00	Cirith Ungol
+cir00LockDescCoop	Klara Honmonstrets håla
+cir00LockDescSingle	Klara Honmonstrets håla
+climb	Klättra
+code1	Återställ hälsa
+code2	Perfektläge
+code3	Alltid förödande
+code4	Alla uppgraderingar
+code5	Oändligt med projektiler
+code6	Kinetiska projektiler
+code7	Osårbar
+code8	Siktmarkeringsläge
+codeInstr1	1) Starta ett uppdrag
+codeInstr2	2) Tryck på START för att pausa
+codeInstr3	3) Tryck in och håll
+codeInstr4	4) Mata in den angivna kodsekvensen
+codeTitle	Hemliga koder
+colon	:
+completed	Avklarad
+continue	Fortsätt
+continuewosave	Fortsätt utan att spara
+controller	Handkontroll
+controllerConfiguration	Handkontrollsinställningar
+controllerRemoved1	Anslut handkontrollen igen och tryck på START för att fortsätta.
+controllerRemoved2	Anslut handkontrollen till handkontrollsport %d igen och tryck på START för att fortsätta.
+controllerRequired	anslut en handkontroll
+coopMissionExp	Uppdragserfarenhet
+coopMissionRating	Uppdragsbetyg
+coopNewGameWarning	I tvåspelarläge kan du använda din karaktär från vilket tidigare sparat spel som helst. Välj 'ja' om du vill börja om.
+coopStatsLabel	Statistik för två spelare
+cra01	Domedagsklyftan
+cra01LockDescCoop	Klara Svarta porten och Cirith Ungol
+cra01LockDescSingle	Klara Svarta porten och Cirith Ungol
+creditsLabel	Medverkande
+deletegames	Radera alla sparade spel av Sagan om konungens återkomst från %1s?
+deletingfromcard	Raderar från %1s.\nTa inte ut minnesenheter och koppla inte ur några handkontroller.
+deletingfromdisk	Raderar från %1s.\nStäng inte av Xbox-konsolen.
+diskfull	Din Xbox har inte tillräckligt med lediga block för att spara spel. Du måste frigöra %2d block till.  VARNING: Om du frigör block förlorar du dina nuvarande framsteg i spelet.
+dunno	Handling
+emptygame	Tomt spel
+enterCode	Så här anger du en kod:
+exitToMenu	Avsluta till menyn
+faramir	Faramir
+fierce	Vildsint
+filemgr	Frigör fler block
+formatdeclined	Minnesenheten i %1s är inte formaterad.
+freespace	Totalt: %d%s block;  Lediga: %d%s block
+frodo	Frodo
+gameSetup	Spelinställningar
+gandalf	Gandalf
+gimli	Gimli
+gradeExcellent	Utmärkt
+gradeFair	Godkänt
+gradeGood	Bra
+gradePerfect	Perfekt
+harddisk	hårddisk
+hel01	Helms Klyfta
+hel01LockDescCoop	Kan inte spelas av två spelare
+hel01LockDescSingle	Ska aldrig visas
+help	Hjälp
+helpChangeModSel	Ändra eller justera val
+helpChangeSel	Ändra val
+helpGoBack	Gå tillbaka
+helpLabel	Hjälpruta
+helpLevelInfo	Nivåinfo
+helpMakeSel	Välj
+helpOptions	Alternativ
+hobbitPath	Hobernas väg
+inGameBadConn	Anslutningsproblem upptäcktes
+inGameExit	Avsluta till menyn
+inGameNo	nej
+inGameObjective	Uppdragstips
+inGameOptions	Alternativ
+inGameOptionsPage	Alternativsida
+inGamePressStart	Tryck på START
+inGameRestart	Försök igen
+inGameReturn	Återuppta
+inGameSOD	Ditt uppdrag har misslyckats
+inGameSelect	Välj
+inGameSure	Är du säker?
+inGameUpgrades	Visa uppgraderingar
+inGameWin	Felsökning: vinn
+inGameYes	ja
+ise01	Vägen till Isengård
+ise01LockDescCoop	Klara Pelennors fält
+ise01LockDescSingle	Klara Helms Klyfta
+kick	Spark
+killingmove	Nådastöt
+kills	Dödade
+kingPath	Kungens väg
+leftTriggerBtnName	V
+legal	© MMIII New Line Productions, Inc.  Med ensamrätt.  Härskarringen§; Sagan om konungens återkomst§ samt namnen på karaktärer, föremål, händelser och platser däri är varumärken som tillhör  The Saul Zaentz Company d/b/a Tolkien Enterprises och används under licens av New Line Productions, Inc.  Spelkod och vissa audiovisuella element © 2003 Electronic Arts Inc. Med ensamrätt.
+legal2	EA GAMES§ är ett varumärke från Electronic Arts§.
+legolas	Legolas
+level	Nivå
+levelUp	Ny nivå!
+load2ndplayer	Vill du ladda en karaktär från ett annat spel?
+loadGame1	Spel 1
+loadGame10	Spel 10
+loadGame2	Spel 2
+loadGame3	Spel 3
+loadGame4	Spel 4
+loadGame5	Spel 5
+loadGame6	Spel 6
+loadGame7	Spel 7
+loadGame8	Spel 8
+loadGame9	Spel 9
+loadLabel	Välj spel att ladda
+loaderror	Det gick inte att ladda %3s.\nTryck på A för att fortsätta.
+loadgame	Välj spel att ladda
+loading	Laddar
+loadingat	Handling
+loadingatdesc	Använd handlingsknappen för att använda föremål på särskilda platser.
+loadingex	Erfarenhetsmätare
+loadingexskdesc	Samla erfarenhetspoäng för att höja karaktärens nivå och köpa uppgraderingar.  Fyll färdighetsmätaren med avancerade kombinationer för att få maximal erfarenhet.
+loadingfromcard	Laddar %3s.\nTa inte ut minnesenheter och koppla inte ur några handkontroller.
+loadingfromdisk	Laddar %3s.\nStäng inte av Xbox-konsolen.
+loadingkm	Nådastöt
+loadingkmdesc	Använd den här knappen för att göra slut på en fiende som slagits ner.
+loadingsk	Färdighetsmätare
+loadingsp	Speciell förmåga
+loadingspdesc	Använd den här knappkombinationen för att utnyttja karaktärens speciella förmåga.
+loadnocard	%5s togs bort under användning.\nLaddningen misslyckades.\nTryck på A för att fortsätta.
+mainMenuCoop	Två spelare
+mainMenuCredits	Medverkande
+mainMenuOnline	Online
+mainMenuOptions	Alternativ
+mainMenuPressStart	Tryck på START-knappen
+mainMenuPressStart_XBOX	Tryck på START
+mainMenuSingle	En spelare
+mediaalmostfull	Inga sparade spel hittades.\n%6d block krävs för att spara.
+mediafull	%1s är full.
+memcardSlotA	Expansionsplats_A
+memcardSlotB	Expansionsplats_B
+memoryunitA	minnesenhet_%dA
+memoryunitB	minnesenhet_%dB
+merry	Merry
+min00	Minas Tirith - Murkrönet
+min00LockDescCoop	Klara Vägen till Isengård
+min00LockDescSingle	Klara Vägen till Isengård
+min02	Södra porten
+min02LockDescCoop	Klara De dödas konung
+min02LockDescSingle	Klara De dödas konung
+min04	Minas Tirith - Borggården
+min04LockDescCoop	Klara Minas Tirith - Murkrönet
+min04LockDescSingle	Klara Minas Tirith - Murkrönet
+muA	MU_%dA
+muB	MU_%dB
+newdiskfull	Din Xbox har inte tillräckligt med lediga block för att spara spel. Du måste frigöra %2d block till.  VARNING: Om du frigör block förlorar du osparade ändringar.
+newgame	Nytt spel
+newloadDebug	Felsökningsspel
+newloadLoad	Ladda spel
+newloadNew	Nytt spel
+newplay	Fortsätt spela
+newstarting	Startar spel...
+no	Nej
+nogames	Inga sparade spel hittades.
+nomedia	Ingen minnesenhet i %1s
+notsaved	%0sDitt spel har inte sparats.\nFortsätta utan att spara?
+objective0	Tryck på den svarta knappen för att använda föremål.
+objective1	Använd vildsinta attacker för att krossa fiendens sköldar.
+objective10	Bränn spindelnät och kokonger med facklor.
+objective11	Kamouflerade hober kan använda höger avtryckare för att hugga fiender i ryggen.
+objective12	Använd vildsinta eller fysiska attacker för att knuffa Gollum över kanten.
+objective14	Bedöva Gorbag för att kunna skada honom.
+objective15	Döda de döda soldaterna för att göra kungen sårbar.
+objective16	Klara 20 vågor för att fly från Palantíren och öka din erfarenhet.
+objective17	Klara 20 vågor för att fly från Palantíren och öka din erfarenhet.
+objective2	Använd kombinationer för att döda fiender snabbare.
+objective3	Ta dig upp på murkrönet för att öppna porten.
+objective4	Ballistor och krigsspjut kan bryta mûmakils pansar med en enda träff.
+objective5	Håll dig nära brödraskapet för att hålla dem vid liv.
+objective6	Parera för att blockera fiendens attacker och slå undan pilar.
+objective7	Använd fysiska attacker för att välta stegar och sänka invasionsmätaren.
+objective8	Tryck in båda avtryckarna för att aktivera karaktärens speciella förmåga.
+objective9	Tryck in båda avtryckarna för att aktivera karaktärens speciella förmåga.
+ok	OK
+optionsDifficulty	Svårighetsgrad
+optionsEasy	Lätt
+optionsGameVol	Spelvolym
+optionsHard	Svår
+optionsLabel	Alternativ
+optionsMono	Mono
+optionsMusicVol	Musikvolym
+optionsNormal	Normal
+optionsOff	Av
+optionsOn	På
+optionsRespawn	Felsökning: återuppstå
+optionsSound	Ljud
+optionsStereo	Stereo
+optionsSubtitles	Textremsor
+optionsSurround	Surround
+optionsVOVol	Talvolym
+optionsVibration	Vibration
+osg01	Flykten från Osgiliath
+osg01LockDescCoop	Klara Svarta porten
+osg01LockDescSingle	Klara Helms Klyfta
+overwrite	Vill du verkligen skriva över %3s?
+parry	Parad
+pat01	De dödas vägar
+pat01LockDescCoop	Klara Helms Klyfta
+pat01LockDescSingle	Klara Helms Klyfta
+pat02	De dödas konung
+pat02LockDescCoop	Klara De dödas vägar
+pat02LockDescSingle	Klara De dödas vägar
+pel01	Pelennors fält
+pel01LockDescCoop	Klara Södra porten
+pel01LockDescSingle	Klara Södra porten
+perfectMode	Perfektläge!
+pippin	Pippin
+playanyway	Starta spel
+player	Spelare
+plus	+
+purchased	Köpt
+purgegames	Radera sparade spel
+ranged	Projektil
+replay	Spela om
+replayAreYouSure	Är du säker? Resultaten från din senaste genomspelning av det här uppdraget går förlorade.
+respawnInLabel	Återuppstår om
+retry	Försök igen
+rightTriggerBtnName	H
+sam	Sam
+save2ndplayer	Vill du spara ditt spel?
+saveLabel	Välj sparplats
+saved	%0sSparningen är klar.
+saveerror	Det gick inte att spara %4s.\nTryck på A för att fortsätta.
+savegame	Välj var du vill spara
+savegameformat	%s - 1_sp:_%d%% 2_sp:_%d%% - %02d/%02d_@_%02d:%02d
+savenocard	%5s togs bort under användning.\nSparningen misslyckades.\nTryck på A för att fortsätta.
+savingtocard	Sparar %4s på %1s.\nTa inte ut minnesenheter och koppla inte ur några handkontroller.
+savingtodisk	Sparar %4s på %1s.\nStäng inte av Xbox-konsolen.
+sceneSelAreYouSure	Är du säker? Alla osparade framsteg i det här spelet går förlorade.
+sceneSelAvailable	Tillgänglig
+sceneSelHel01Complete	Helms Klyfta är redan avklarad. Klara Domedagsklyftan för att spela den igen.
+sceneSelLabel	Välj uppdrag
+sceneSelLocked	Låst
+sceneSelUnplayed	Ej spelad
+scoringMissionExp	Uppdragserfarenhet :
+scoringMissionRating	Uppdragsbetyg :
+scoringPopupFair	Betyget Godkänt är lättast att få, men ger minst erfarenhetspoäng.
+scoringPopupGood	Betygen Bra och Utmärkt är värda mer och kräver att du radar upp flera träffar utan att själv ta skada.
+scoringPopupLevelUp	Samla erfarenhetspoäng för att höja karaktärens nivå och få tillgång till kraftfullare färdigheter och uppgraderingar.
+scoringPopupMomentum	Färdighetsmätaren avgör betyget för varje dödande. Rada upp lyckade träffar för att få högre betyg.
+scoringPopupPerfect	Om du fyller färdighetsmätaren till Perfekt gör dina attacker mer skada och du får maximalt med erfarenhetspoäng.
+secretCharacter	Hemlig karaktär
+secretLevel	Hemliga nivåer och upplåsningar
+she01	Honmonstrets håla
+she01LockDescCoop	Klara Flykten från Osgiliath
+she01LockDescSingle	Klara Flykten från Osgiliath
+skill	Färdighet
+specialFeature	Upplåsbar funktion
+specialhelm1	Filmens konceptkonst
+specialhelm1LockDesc	Klara Helms Klyfta
+specialhelm1UnlockDesc	Konceptkonst för filmen av Jeremy Bennett, John Howe, Paul Lasaine och Alan Lee
+specialhelm2	Hober om spel
+specialhelm2LockDesc	Klara Helms Klyfta
+specialhelm2UnlockDesc	Hoberna pratar om tv-spelet Härskarringen
+specialhelm3	Så gjordes tv-spelet
+specialhelm3LockDesc	Klara Helms Klyfta
+specialhelm3UnlockDesc	En titt bakom kulisserna på hur tv-spelet Härskarringen skapades
+specialise01	Intervju med Christopher Lee
+specialise01LockDesc	Klara Vägen till Isengård
+specialise01UnlockDesc	Christopher Lee berättar om att spela Saruman i tv-spelet Härskarringen
+specialmin00	Intervju med Ian McKellen
+specialmin00LockDesc	Klara Minas Tirith - Murkrönet
+specialmin00UnlockDesc	Ian McKellen pratar om att spela Gandalf i tv-spelet Härskarringen
+specialmin02	Produktionsfoton från filmen
+specialmin02LockDesc	Klara Södra porten
+specialmin02UnlockDesc	Produktionsfoton från Härskarringen-filmerna
+specialosg01	Intervju med Sean Astin
+specialosg01LockDesc	Klara Flykten från Osgiliath
+specialosg01UnlockDesc	Sean Astin berättar om att spela Sam i tv-spelet Härskarringen
+specialpat01	Spelets konceptkonst
+specialpat01LockDesc	Klara De dödas vägar
+specialpat01UnlockDesc	Konceptkonst för tv-spelet Härskarringen
+specialshe01	Intervju med Elijah Wood
+specialshe01LockDesc	Klara Honmonstrets håla
+specialshe01UnlockDesc	Elijah Wood berättar om att spela Frodo i tv-spelet Härskarringen
+specialtree1	Sarumans Palantír
+specialtree1LockDesc	Klara Domedagsklyftan
+specialtree1UnlockDesc	De hemliga Palantír-nivåerna
+specialtree2	Intervju med Billy Boyd
+specialtree2LockDesc	Klara Domedagsklyftan
+specialtree2UnlockDesc	Billy Boyd berättar om att spela Pippin i tv-spelet Härskarringen
+specialtree3	Intervju med Dom Monaghan
+specialtree3LockDesc	Klara Domedagsklyftan
+specialtree3UnlockDesc	Dom Monaghan berättar om att spela Merry i tv-spelet Härskarringen
+specialtree4	Intervju med Andy Serkis
+specialtree4LockDesc	Klara Domedagsklyftan
+specialtree4UnlockDesc	Andy Serkis berättar om att spela Gollum i tv-spelet Härskarringen
+specialtree5	Intervju med David Wenham
+specialtree5LockDesc	Klara Domedagsklyftan
+specialtree5UnlockDesc	David Wenham berättar om att spela Faramir i tv-spelet Härskarringen
+specialtree6	Hemliga koder
+specialtree6LockDesc	Klara Domedagsklyftan
+specialtree6UnlockDesc	Hemliga koder som låser upp dolda funktioner i tv-spelet Härskarringen
+specialtree7	Saurons Palantír
+specialtree7LockDesc	Klara Domedagsklyftan och nå nivå 10 med 3 karaktärer: Gandalf, Sam och antingen Aragorn, Legolas eller Gimli
+specialtree7UnlockDesc	De hemliga Palantír-nivåerna
+speed	Snabb
+test	Detta är ett test.
+total	Totalt
+totalExperience	Total erfarenhet
+totalUpgradePoints	Total erfarenhet:
+up	EP
+upgradeAll	Alla
+upgradeAraAbility1	Fäktmästare av Gondor
+upgradeAraAbility1Desc	Den här speciella förmågan ökar skadan och tar dig snabbare till Perfektläge.
+upgradeAraAbility2	Kungamakare
+upgradeAraAbility2Desc	Ökar skadan och tar dig ännu snabbare till Perfektläge. (Kräver Fäktmästare av Gondor)
+upgradeAraDamage1	Kungars svärdkonst
+upgradeAraDamage1Desc	Ökar skadan från din snabba attack.
+upgradeAraDev1	Förödande attack
+upgradeAraDev1Desc	Förödande attack
+upgradeAraDev2	Jägarraseri
+upgradeAraDev2Desc	En förödande attack som orsakar blixtskada.
+upgradeAraDev3	Vildmarksvrede
+upgradeAraDev3Desc	En mer förödande attack som sätter eld på fiender. (Kräver Jägarraseri)
+upgradeAraDev4	Númenors vrede
+upgradeAraDev4Desc	En ytterst förödande attack som sänder ut en ring av eldklot. (Kräver Vildmarksvrede)
+upgradeAraHealth1	Klippans styrka
+upgradeAraHealth1Desc	Ökar din hälsa permanent.
+upgradeAraHealth2	Järnets styrka
+upgradeAraHealth2Desc	Ökar din hälsa permanent.  (Kräver Klippans styrka)
+upgradeAraHealth3	Brödraskapets styrka
+upgradeAraHealth3Desc	Ökar din hälsa permanent.  (Kräver Järnets styrka)
+upgradeAraHealth4	Aftonstjärnans styrka
+upgradeAraHealth4Desc	Ökar din hälsa permanent.  (Kräver Brödraskapets styrka)
+upgradeAraRange1	Askpilar
+upgradeAraRange1Desc	Askpilar
+upgradeAraRange2	Dúnedainpilar
+upgradeAraRange2Desc	De här välsignade alviska pilarna gör extra skada.
+upgradeAraRange3	Vattnadalpilar
+upgradeAraRange3Desc	De här pilarna sänder ut en blixt när de träffar. (Kräver Dúnedainpilar)
+upgradeAraRange4	Mithrilpilar
+upgradeAraRange4Desc	De här magiska pilarna sätter eld på dina fiender. (Kräver Vattnadalpilar)
+upgradeCharacter	Karaktär
+upgradeCombo1	Orchhugg
+upgradeCombo1Desc	SLAGSERIE: En effektiv kombination för att slå ut fiender utan sköld.
+upgradeCombo2	Yttersta domen
+upgradeCombo2Desc	SLAGSERIE: Såra, fäll och gör sedan slut på starka fiender med den här kombinationen.
+upgradeCombo3	Balrogens chansning
+upgradeCombo3Desc	SLAGSERIE: Såra, fäll och träffa din fiende med den här kombinationsattacken.
+upgradeCombo4	Mörk räddning
+upgradeCombo4Desc	SLAGSERIE: Effektiv för att snabbt göra sig av med fiender med sköld.
+upgradeCombo5	Sköldklyvare
+upgradeCombo5Desc	SLAGSERIE: Använd mot starka fiender för att krossa skölden, slå fienden till marken och sedan slå till.
+upgradeCombo6	Blixtnedslag
+upgradeCombo6Desc	SLAGSERIE: En serie snabba och kraftfulla hugg som fäller en eller flera fiender utan sköld.
+upgradeCombo7	Helms hammare
+upgradeCombo7Desc	SLAGSERIE: En dödlig kombination som splittrar fiendens sköld och slår till igen.
+upgradeCombo8	Snabb rättvisa
+upgradeCombo8Desc	SLAGSERIE: En snabb kombination, dödlig mot fiender utan sköld.
+upgradeDamage1	Brödraskapets kraft
+upgradeDamage1Desc	Ökar skadan som en medlem av brödraskapet gör med en viss attack.
+upgradeDividerLeft	£
+upgradeDividerRight	¥
+upgradeDoneBuyingAreYouSure	Är du klar med dina uppgraderingsköp?
+upgradeEarned	Intjänat
+upgradeEntryPopup1	Med erfarenhetspoäng kan du köpa uppgraderingar till din nuvarande karaktär eller till hela brödraskapet.
+upgradeEntryPopup2	En brödraskapsuppgradering kan bara användas av karaktärer som har nått den nivå som krävs för uppgraderingen.
+upgradeEntryPopup3	Grattis!  Du samlade tillräckligt med erfarenhet under det senaste uppdraget för att höja karaktärens nivå.
+upgradeFF	Dubbelhugg
+upgradeFFDesc	En kraftfull kombination som splittrar fiendens sköldar.
+upgradeFellowship	Brödraskap
+upgradeGanAbility1	Trollkarlens kraft
+upgradeGanAbility1Desc	Den magiska skölden gör mer skada och varar längre.
+upgradeGanAbility2	Palantírens kraft
+upgradeGanAbility2Desc	Den magiska skölden slungar fiender längre bort och varar längre. (Kräver Trollkarlens kraft)
+upgradeGanAbility3	Grå hamnarnas förtrollning
+upgradeGanAbility3Desc	Den magiska skölden slår fiender till marken och varar längre. (Kräver Palantírens kraft)
+upgradeGanDamage1	Istaris kraft
+upgradeGanDamage1Desc	Ökar skadan från dina projektiler och förödande attacker
+upgradeGanDev1	Förödande attack
+upgradeGanDev1Desc	Förödande attack
+upgradeGanDev2	Stridsdimma
+upgradeGanDev2Desc	Den här attacken frammanar ett växande dimmoln som slår omkull fiender.
+upgradeGanDev3	Anors vrede
+upgradeGanDev3Desc	En mer förödande attack som skapar en ring av blixtar. (Kräver Stridsdimma)
+upgradeGanDev4	Uduns låga
+upgradeGanDev4Desc	En ytterst förödande attack som skapar en ring av eld som sätter eld på fiender. (Kräver Anors vrede)
+upgradeGanHealth1	Klippans styrka
+upgradeGanHealth1Desc	Ökar din hälsa permanent.
+upgradeGanHealth2	Järnets styrka
+upgradeGanHealth2Desc	Ökar din hälsa permanent.  (Kräver Klippans styrka)
+upgradeGanHealth3	Brödraskapets styrka
+upgradeGanHealth3Desc	Ökar din hälsa permanent.  (Kräver Järnets styrka)
+upgradeGanRange1	Avståndsattack
+upgradeGanRange1Desc	Avståndsattack
+upgradeGanRange2	Pilgrimens ljus
+upgradeGanRange2Desc	Den här blixtprojektilen gör mer skada.
+upgradeGanRange3	Smedjornas ljus
+upgradeGanRange3Desc	Den här magiska projektilen sätter eld på fiender. (Kräver Pilgrimens ljus)
+upgradeGanRange4	Valars ljus
+upgradeGanRange4Desc	Den här projektilen av rent ljus går igenom flera fiender och sätter eld på dem. (Kräver Smedjornas ljus)
+upgradeGimAbility1	Ensamma Bergets visdom
+upgradeGimAbility1Desc	Den här speciella förmågan ökar skadan och tar dig snabbare till Perfektläge.
+upgradeGimAbility2	Kungars yxkonst
+upgradeGimAbility2Desc	Ökar skadan och tar dig ännu snabbare till Perfektläge. (Kräver Ensamma Bergets visdom)
+upgradeGimDamage1	Dvärgisk yxkonst
+upgradeGimDamage1Desc	Ökar skadan från din vildsinta attack.
+upgradeGimDev1	Förödande attack
+upgradeGimDev1Desc	Förödande attack
+upgradeGimDev2	Dvärgraseri
+upgradeGimDev2Desc	En förödande attack som orsakar blixtskada.
+upgradeGimDev3	Bergsvrede
+upgradeGimDev3Desc	En mer förödande attack som sätter eld på fiender. (Kräver Dvärgraseri)
+upgradeGimDev4	Morias vrede
+upgradeGimDev4Desc	En ytterst förödande attack som sänder ut en ring av eldklot. (Kräver Bergsvrede)
+upgradeGimHealth1	Klippans styrka
+upgradeGimHealth1Desc	Ökar din hälsa permanent.
+upgradeGimHealth2	Järnets styrka
+upgradeGimHealth2Desc	Ökar din hälsa permanent.  (Kräver Klippans styrka)
+upgradeGimHealth3	Brödraskapets styrka
+upgradeGimHealth3Desc	Ökar din hälsa permanent.  (Kräver Järnets styrka)
+upgradeGimHealth4	Glóins styrka
+upgradeGimHealth4Desc	Ökar din hälsa permanent.  (Kräver Brödraskapets styrka)
+upgradeGimHealth5	Khazad-dûms styrka
+upgradeGimHealth5Desc	Ökar din hälsa permanent.  (Kräver Glóins styrka)
+upgradeGimRange1	Kastyxor
+upgradeGimRange1Desc	Kastyxor
+upgradeGimRange2	Ereboryxor
+upgradeGimRange2Desc	De här förtrollade kastyxorna gör extra skada.
+upgradeGimRange3	Moriayxor
+upgradeGimRange3Desc	De här förtrollade yxorna sänder ut en blixt när de träffar. (Kräver Ereboryxor)
+upgradeHobAbility1	Haldirs mantel
+upgradeHobAbility1Desc	Förlänger tiden som en hob kan hålla sig dold med sin alvmantel.
+upgradeHobAbility2	Celeborns mantel
+upgradeHobAbility2Desc	Förlänger tiden som en hob kan hålla sig dold med sin alvmantel. (Kräver Haldirs mantel)
+upgradeHobAbility3	Galadriels mantel
+upgradeHobAbility3Desc	Förlänger tiden som en hob kan hålla sig dold med sin alvmantel. (Kräver Celeborns mantel)
+upgradeHobDamage1	Gubbtjyvens styrka
+upgradeHobDamage1Desc	Ökar skadan från alla svärdsattacker när du anfaller en fiende bakifrån.
+upgradeHobDev1	Förödande attack
+upgradeHobDev1Desc	Förödande attack
+upgradeHobDev2	Giftklinga
+upgradeHobDev2Desc	En förödande attack som gör skada under en längre tid.
+upgradeHobDev3	Skuggmoln
+upgradeHobDev3Desc	Skapar ett giftmoln som gör skada under en längre tid. (Kräver Giftklinga)
+upgradeHobDev4	Vredesmoln
+upgradeHobDev4Desc	Ett ytterst förödande giftmoln som gör skada under en längre tid. (Kräver Skuggmoln)
+upgradeHobHealth1	Klippans styrka
+upgradeHobHealth1Desc	Ökar din hälsa permanent.
+upgradeHobHealth2	Järnets styrka
+upgradeHobHealth2Desc	Ökar din hälsa permanent.  (Kräver Klippans styrka)
+upgradeHobHealth3	Brödraskapets styrka
+upgradeHobHealth3Desc	Ökar din hälsa permanent.  (Kräver Järnets styrka)
+upgradeHobHealth4	Halvlingstyrka
+upgradeHobHealth4Desc	Ökar din hälsa permanent.  (Kräver Brödraskapets styrka)
+upgradeHobHealth5	Baggerstyrka
+upgradeHobHealth5Desc	Ökar din hälsa permanent.  (Kräver Halvlingstyrka)
+upgradeHobRange1	Kastknivar
+upgradeHobRange1Desc	Kastknivar
+upgradeHobRange2	Hobsinne
+upgradeHobRange2Desc	Ökar avståndet på vilket en hob kan sikta på fiender.
+upgradeHobRange3	Giftdolkar
+upgradeHobRange3Desc	Varje dolk som träffar en fiende gör skada under en längre tid.
+upgradeHobRange4	Morguldolkar
+upgradeHobRange4Desc	Hobernas kraftfullaste avståndsattack. (Kräver Giftdolkar)
+upgradeKill1	Nådastöt
+upgradeKill1Desc	Nådastöt
+upgradeLabel	Uppgraderingar
+upgradeLegAbility1	Lothlóriens ljus
+upgradeLegAbility1Desc	Den här speciella förmågan ökar skadan och tar dig snabbare till Perfektläge.
+upgradeLegAbility2	Galadriels gåva
+upgradeLegAbility2Desc	Ökar skadan och tar dig ännu snabbare till Perfektläge. (Kräver Lothlóriens ljus)
+upgradeLegDamage1	Alvisk bågkonst
+upgradeLegDamage1Desc	Skjut två pilar mot två mål med ett enda skott.
+upgradeLegDev1	Förödande attack
+upgradeLegDev1Desc	Förödande attack
+upgradeLegDev2	Alvraseri
+upgradeLegDev2Desc	En förödande attack som orsakar blixtskada.
+upgradeLegDev3	Elronds vrede
+upgradeLegDev3Desc	En mer förödande attack som sätter eld på fiender. (Kräver Alvraseri)
+upgradeLegHealth1	Klippans styrka
+upgradeLegHealth1Desc	Ökar din hälsa permanent.
+upgradeLegHealth2	Järnets styrka
+upgradeLegHealth2Desc	Ökar din hälsa permanent.  (Kräver Klippans styrka)
+upgradeLegHealth3	Brödraskapets styrka
+upgradeLegHealth3Desc	Ökar din hälsa permanent.  (Kräver Järnets styrka)
+upgradeLegRange1	Askpilar
+upgradeLegRange1Desc	Askpilar
+upgradeLegRange2	Mörkmårdspilar
+upgradeLegRange2Desc	De här välsignade alviska pilarna gör extra skada.
+upgradeLegRange3	Lothlórienpilar
+upgradeLegRange3Desc	De här pilarna sänder ut en blixt när de träffar. (Kräver Mörkmårdspilar)
+upgradeLegRange4	Valars pilar
+upgradeLegRange4Desc	De här magiska pilarna sätter eld på dina fiender. (Kräver Lothlórienpilar)
+upgradeLegRange5	Mithrilpilar
+upgradeLegRange5Desc	De här pilarna tränger igenom och sätter eld på alla fiender i sin väg. (Kräver Valars pilar)
+upgradeLink1	Orchbane
+upgradeLink1Desc	LÄNKAT DRAG: Parera och döda sedan genast en anfallande orch.
+upgradeLink2	Krigarbane
+upgradeLink2Desc	LÄNKAT DRAG: Parera och döda sedan genast en fiende av mannastorlek.
+upgradeLink3	Saurons bane
+upgradeLink3Desc	LÄNKAT DRAG: Parera och döda sedan genast en anfallande uruk.
+upgradeLocked	Inte upplåst än.
+upgradeNA	Ej tillg.
+upgradeNoMoney	Du har inte samlat tillräckligt med erfarenhetspoäng för att köpa den här uppgraderingen.
+upgradePerfect1	Dödszon
+upgradePerfect1Desc	Förlänger tiden du stannar i Perfektläge under strid.
+upgradePoints	Erfarenhetspoäng
+upgradePointsColon	Erfarenhetspoäng :
+upgradePurchased	Köpt
+upgradeRising1	Uppstigande hämnd
+upgradeRising1Desc	Anfall medan du kommer på fötter igen och överraska fienden.
+upgradeSSS	Trippelhugg
+upgradeSSSDesc	En snabb kombination, effektiv mot mindre fiender utan sköld.
+upgradeWantToBuy	Vill du verkligen köpa den här uppgraderingen?
+useAbilities	Använd dina brödraskapsuppgraderingar
+wantToSave	Vill du spara ditt spel?
+wizardPath	Trollkarlens väg
+yes	Ja
+bla01:0x02010100	Vi har lockat hans armé till Svarta porten ...
+bla01:0x02010200	För oss själva finns inget hopp ... detta är vår sista handling för att ge Frodo tid ...  tid att göra slut på ondskan som samlas framför oss.
+bla01:0x02010300	Hjälp mig!
+bla01:0x02010301	Hjälp mig!
+bla01:0x02010400	Hitåt!
+bla01:0x02010500	Besegra dem allihop, annars är vi förlorade!
+bla01:0x02010600	Arnors låga befaller!
+bla01:0x02010700	Du vet deras svaghet! Utnyttja den!
+bla01:0x020C0000	Du ska aldrig mer tala för Sauron!
+bla01:0x020C0100	Det är du ... som ska lida!
+bla01:0x020C0200	Det här är för Frodo!
+bla01:0x020C0300	Inta era platser!
+bla01:0x020C0400	Stå fast, Gondors söner, Rohans söner ... mina bröder!
+bla01:0x020C0500	Bränn dem!
+bla01:0x020C0600	Det behövdes verkligen.
+bla01:0x020C0601	Ödet är mig nådigt.
+bla01:0x020C0602	Ödet är mig vänligt sinnat.
+bla01:0x020D0000	Min herre, Sauron den store, hälsar dig välkommen ...
+bla01:0x020D0100	Det krävs mer än en bruten alvklinga för att göra en kung.
+bla01:0x020D0101	Bra ... bra. Halvlingen stod dig nära, ser jag.
+bla01:0x020D0200	Vet att halvlingen led svårt i sin värds händer.
+bla01:0x020D0300	Du kan inte stoppa nazgûlerna!
+bla01:0x020D0400	Försvinn, din stackare!
+bla01:0x020D0401	Möt ditt öde!
+bla01:0x020D0402	Vi ska stjäla din själ!
+bla01:0x020D0403	Det här angår inte dig.
+bla01:0x02110000	De kommer att döda oss allihop!
+bla01:0x02110001	Håll stånd mot dem!
+bla01:0x02110002	Lugnt, mannar!
+bla01:0x02110003	Håll era ställningar, Rohans män!
+bla01:0x02120000	Hjälp mig!
+bla01:0x02120100	Hitåt!
+bla01:0x02120200	Min svaghet viker.
+bla01:0x02120201	En god gåva.
+bla01:0x02130000	Hjälp mig!
+bla01:0x02130100	Hitåt!
+bla01:0x02130200	Vi har inte tillräckligt med män!
+bla01:0x02130201	De är som en ändlös flod!
+bla01:0x02130300	Tack, min vän!
+bla01:0x02130301	Nu gör det inte ont längre.
+bla01:0x02130302	Faran är över.
+bla01:0x02130303	Det är bara ett litet sår!
+bla01:0x30000000	Men jag har ett tecken som jag ålagts att visa dig ...
+bla01:0x30000001	Frodos mithrilbrynja! Den stackars hoben måste vara död!
+bla01:0x30000002	Jag ska ge dig ett budskap till din herre!
+bla01:0x30000003	Ringvålnaderna kommer!
+bla01:0x30000004	De svarta ryttarna!
+bla01:0x30000005	Backa!
+bla01:0x30000006	Herre Sauron har förlorat tålamodet.
+bla01:0x30000007	För oss själva finns inget hopp.
+bla01:0x30000008	Detta är vår sista handling för att ge Frodo tid...
+bla01:0x30000009	...tid att göra slut på ondskan som samlas framför oss.
+bla01:0x3000000A	De är för många!
+bla01:0x3000000B	Kämpa vidare, Gimli!
+bla01:0x3000000C	Då var väl förhandlingarna över.
+bla01:0x3000000D	Inta försvarsställningar!
+bla01:0x3000000E	Dela upp er ... håll dem stången på alla sidor av kullen!
+bla01:0x3000000F	Men jag har ett tecken som jag ålagts att visa dig ...
+bla01:0x30000010	Frodos mithrilbrynja! Den stackars hoben måste vara död!
+bla01:0x30000011	Jag ska ge dig ett budskap till din herre!
+bla01:0x30000012	Ringvålnaderna kommer!
+bla01:0x30000013	De svarta ryttarna!
+bla01:0x30000014	Backa!
+bla01:0x30000015	Herre Sauron har förlorat tålamodet.
+bla01:0x30000016	För oss själva finns inget hopp.
+bla01:0x30000017	Detta är vår sista handling för att ge Frodo tid...
+bla01:0x30000018	...tid att göra slut på ondskan som samlas framför oss.
+bla01:0x30000019	De är för många!
+bla01:0x3000001A	Kämpa vidare, Gimli!
+bla01:0x3000001B	Då var väl förhandlingarna över.
+bla01:0x3000001C	Inta försvarsställningar!
+bla01:0x3000001D	Dela upp er ... håll dem stången på alla sidor av kullen!
+cir00:0x02080000	Saurons kreatur ++++++strider mot varandra! Hugg ner många, så flyr de till tornet! Det är där Frodo hålls fången!
+cir00:0x020E0000	Inkräktare!!
+cir00:0x020E0001	Inkräktare!!
+cir00:0x020E0002	Inkräktare!!
+cir00:0x020E0003	Inkräktare!!
+cir00:0x020E0100	Ta den där byrackan!
+cir00:0x020E0200	Jag ska nog kapa dig till rätt storlek!
+cir00:0x02110000	Herr Frodo är uppe i det där tornet, och för att ta mig dit måste jag hitta ett sätt att klå alla de här orcherna!
+cir00:0x02110100	Där uppe är dörren ... om jag bara hittar en väg upp.
+cir00:0x02110200	Hur ska jag ta mig förbi det där?
+cir00:0x02110201	Hur ska jag ta mig förbi det där?
+cir00:0x02110202	Hur ska jag ta mig förbi det där?
+cir00:0x02110300	Det där kan vara en väg in!
+cir00:0x02110301	Det där kan vara en väg in!
+cir00:0x02110400	Hoppas det är säkert här uppe!
+cir00:0x02110500	Det där borde jag kunna använda mot dem!
+cir00:0x02110600	Det här kanske distraherar dem!
+cir00:0x02110700	Oroa dig inte, herr Frodo! Jag har inte glömt dig!
+cir00:0x02110701	Oroa dig inte, herr Frodo! Jag har inte glömt dig!
+cir00:0x02110800	Det där kanske är en väg in i tornet!
+cir00:0x02110801	Det där kanske är en väg in i tornet!
+cir00:0x02110802	Det där kanske är en väg in i tornet!
+cir00:0x02110803	Det där kanske är en väg in i tornet!
+cir00:0x02110900	Det där ser ut som en väg upp!
+cir00:0x02110901	Det där ser ut som en väg upp!
+cir00:0x02110A00	Kom igen, Samvis. Du måste hitta en väg in i det där tornet.
+cir00:0x02110B00	Jag kan inte hugga mig igenom alla!
+cir00:0x02110B01	Jag kan inte hugga mig igenom alla!
+cir00:0x02110B02	Jag kan inte hugga mig igenom alla!
+cir00:0x02110C00	Jag kanske kan distrahera dem med det här!
+cir00:0x02110C01	Jag kanske kan distrahera dem med det här!
+cir00:0x02110D00	Jag tror jag börjar få kläm på det här!
+cir00:0x02110D01	Jag tror jag börjar få kläm på det här!
+cir00:0x02110D02	Jag tror jag börjar få kläm på det här!
+cir00:0x30000000	Sam!
+cir00:0x30000001	Hjälp mig!
+cir00:0x30000002	Kräket försökte sticka kniven i mig.
+cir00:0x30000003	...Vi kan inte låta de där stinkande Mordorråttorna ta över stället!
+cir00:0x30000004	Vi har ett gäng grabbar här som törstar efter strid.
+cir00:0x30000005	Dela på dem! Ta de bästa platserna! Gör slut på det här ... nu!
+cir00:0x30000006	Fäll ner vindbryggan!
+cir00:0x30000007	Vi får stryk! Dra er tillbaka!
+cir00:0x30000008	In i tornet, grabbar! Fort!
+cir00:0x30000009	Sam!
+cir00:0x3000000A	Hjälp mig!
+cir00:0x3000000B	Kräket försökte sticka kniven i mig.
+cir00:0x3000000C	...Vi kan inte låta de där stinkande Mordorråttorna ta över stället!
+cir00:0x3000000D	Vi har ett gäng grabbar här som törstar efter strid.
+cir00:0x3000000E	Dela på dem! Ta de bästa platserna! Gör slut på det här ... nu!
+cir00:0x3000000F	Fäll ner vindbryggan!
+cir00:0x30000010	Vi får stryk! Dra er tillbaka!
+cir00:0x30000011	In i tornet, grabbar! Fort!
+cir01:0x30000000	Hörru, ditt avskum! Bort med tassarna, den glänsande skjortan är min.
+cir01:0x30000002	Släpp honom, annars tar jag dig, ditt orchavskum!
+cir01:0x30000003	Sam!!!!!!
+cir01:0x30000004	Kom nu, herr Frodo! Jag vet vägen ut härifrån!
+cir01:0x30000005	Tack, Sam.
+cir01:0x30000006	Vi är nära Domedagsberget nu! Bara en liten bit till, så blir du fri från den där ringen!
+cir01:0x30000007	Hörru, ditt avskum! Bort med tassarna, den glänsande skjortan är min.
+cir01:0x30000009	Släpp honom, annars tar jag dig, ditt orchavskum!
+cir01:0x3000000A	Sam!!!!!!
+cir01:0x3000000B	Kom nu, herr Frodo! Jag vet vägen ut härifrån!
+cir01:0x3000000C	Tack, Sam.
+cir01:0x3000000D	Vi är nära Domedagsberget nu! Bara en liten bit till, så blir du fri från den där ringen!
+cra01:0x020C0000	Vi måste besegra honom, herr Frodo! Vi knuffar honom och den förbannade ringen i elden, säger jag!
+cra01:0x020C0100	Vi har inte flytt från den där borgen och korsat mil av rykande ödemark bara för att stoppas nu!
+cra01:0x020D0000	Bort från oss! Du är inte Husbonden längre! Vi är Husbonden! Gollum är fri! Gollum! Gollum!
+cra01:0x020D0100	Lämna oss i fred! Vi hatar dig!
+cra01:0x020D0200	Vi svär att döda Husbonden ... Vi svär vid ... vid skattenssss ...
+cra01:0x020D0300	Han gör oss illa! Han gör stackars Sméagol illa!
+cra01:0x020D0400	Nu kokar vi dig!
+cra01:0x020D0500	Dumma hob! Vi hoppas att den bränner upp dig!!!
+cra01:0x020D0600	Dumma husbonde, skatten är min!
+cra01:0x020D0700	Elak! Får inte ta Skatten!
+cra01:0x020D0800	Idiotiska hob kan inte döda Skatten! Vi låter dig inte!!!
+cra01:0x020D0900	Aldrig! Vi är Husbonden! Vi vinner! Vi vinner!
+cra01:0x020D0901	Aldrig! Vi är Husbonden! Vi vinner! Vi vinner!
+cra01:0x020D0A00	Vi vinner alltid!!!
+cra01:0x020D0B00	Vi ... vinner ... alltid!!!
+cra01:0x020E0000	Ge tillbaka den!  Du kan bita av mig fingret, men du stoppar mig inte!
+cra01:0x020E0100	Du ska inte komma härifrån med ringen, det lovar jag dig!!
+cra01:0x020E0200	Ner med dig, ditt krälande kryp!
+cra01:0x020E0300	Vi är fångade!
+cra01:0x020E0400	Jag vet inte vad som krävs för att bli av med dig!
+cra01:0x020E0500	Du är besatt, Sméagol! Jag har aldrig sett dig så snabb!
+cra01:0x020E0600	Du får den aldrig tillbaka! Aldrig!
+cra01:0x020E0700	Din tid är ute!
+cra01:0x020E0800	Vi är alla dömda, Gollum! Hela stället rasar!
+cra01:0x020E0900	Du blir svagare, va?!
+cra01:0x020E0A00	Inte den här gången, Gollum!
+cra01:0x020E0B00	Den här gången vinner ingen!
+cra01:0x020E0C00	Den här gången är det slut.
+cra01:0x30000000	Skatten! Min skatt!
+cra01:0x30000001	Vår skatt! Vår!
+cra01:0x30000002	Min! ++++++
+cra01:0x30000003	Vi hatar dig! Vi har alltid hatat dig!
+cra01:0x30000004	Vi vrider om hans smutsiga lilla hals!
+cra01:0x30000005	Backa, Sam!
+cra01:0x30000006	Dumma hob! Vi hoppas att den bränner upp dig!!!
+cra01:0x30000007	Skatten är +++++min!
+cra01:0x30000008	Skatten! Min skatt!
+cra01:0x30000009	Vår skatt! Vår!
+cra01:0x3000000A	Min! ++++++
+cra01:0x3000000B	Vi hatar dig! Vi har alltid hatat dig!
+cra01:0x3000000C	Vi vrider om hans smutsiga lilla hals!
+cra01:0x3000000D	Backa, Sam!
+cra01:0x3000000E	Dumma hob! Vi hoppas att den bränner upp dig!!!
+cra01:0x3000000F	Skatten är +++++min!
+hel01:0x02010100	För alla fria folk!
+hel01:0x02010101	Försvinn!!
+hel01:0x02010102	Tillbaka!!
+hel01:0x02010200	Jag är här, Legolas!
+hel01:0x02010300	Jag kommer, Aragorn!
+hel01:0x020E0000	Skynda dig, Gandalf!
+hel01:0x020E0001	Skynda dig, Gandalf!
+hel01:0x020E0002	Skynda dig, Gandalf!
+hel01:0x020E0100	Ballistan där är laddad!
+hel01:0x020E0101	Ballistan där är laddad!
+hel01:0x020E0102	Vänd deras maskiner mot dem!
+hel01:0x020E0103	Vänd deras maskiner mot dem!
+hel01:0x020E0104	Skjut med den! Fäll dem!
+hel01:0x020E0105	Skjut med den! Fäll dem!
+hel01:0x020E0106	Försök skjuta med den där!
+hel01:0x020E0107	Försök skjuta med den där!
+hel01:0x020E0108	Skjut med de där maskinerna!
+hel01:0x020E0109	Skjut med de där maskinerna!
+hel01:0x020E010A	Använd deras ondska mot dem!
+hel01:0x020E010B	Använd deras ondska mot dem!
+hel01:0x020E0200	Vänd deras vapen mot dem!
+hel01:0x020E0201	Vänd deras vapen mot dem!
+hel01:0x020E0202	Använd deras spjut!
+hel01:0x020E0203	Använd deras spjut!
+hel01:0x020E0204	Ta varje vapen ni hittar!
+hel01:0x020E0205	Ta varje vapen ni hittar!
+hel01:0x020E0206	Kasta tillbaka deras vapen på dem!
+hel01:0x020E0207	Kasta tillbaka deras vapen på dem!
+hel01:0x020F0000	De klarar inte att stå emot honom!
+hel01:0x020F0001	Mithrandir hugger ner dem!
+hel01:0x020F0002	Mithrandir hugger ner dem!
+hel01:0x020F0003	Han skakar av sig deras hugg!
+hel01:0x020F0004	Han är en demon!
+hel01:0x020F0005	Han är en demon!
+hel01:0x020F0100	Sopa bort dem från slagfältet!
+hel01:0x020F0101	Hugg ner dem allihop!
+hel01:0x020F0102	Tillbaka! Tillbaka!
+hel01:0x020F0103	Jag har honom!
+hel01:0x020F0104	Fältet är vårt!
+hel01:0x020F0105	Till borgen!
+hel01:0x020F0106	Rohan ska segra!
+hel01:0x020F0200	Försvinn!
+hel01:0x020F0201	Försvinn!
+hel01:0x020F0202	Försvinn!
+hel01:0x020F0203	Var är Saruman!?!
+hel01:0x020F0204	Var är Saruman!?!
+hel01:0x020F0205	Vi måste fly!
+hel01:0x020F0206	Vi måste fly!
+hel01:0x020F0207	Vi måste fly!
+hel01:0x02100000	Gandalf! Välkommen tillbaka!
+hel01:0x02100100	Ta hand om några av de här, om du inte har något emot det!
+hel01:0x02100200	Anfall de här uruk-hai snabbt!
+hel01:0x02100201	Anfall de här uruk-hai snabbt!
+hel01:0x02100202	Anfall de här uruk-hai snabbt!
+hel01:0x02100203	Jag föreslår en snabb attack!
+hel01:0x02100204	Jag föreslår en snabb attack!
+hel01:0x02100205	Jag föreslår en snabb attack!
+hel01:0x02100206	Anfall snabbt, Gandalf!
+hel01:0x02100207	Anfall snabbt, Gandalf!
+hel01:0x02100208	Anfall snabbt, Gandalf!
+hel01:0x02100300	Krossa deras sköldar med vildsinta hugg!
+hel01:0x02100301	Använd vildsinta attacker mot sköldarna!
+hel01:0x02100302	Använd vildsinta attacker mot sköldarna!
+hel01:0x02100303	Använd vildsinta attacker mot sköldarna!
+hel01:0x02100304	Använd vildsinta attacker mot sköldarna!
+hel01:0x02100305	Använd vildsinta attacker mot sköldarna!
+hel01:0x02100306	Anfall vildsint! Sköldarna går sönder!
+hel01:0x02100307	Anfall vildsint! Sköldarna går sönder!
+hel01:0x02100400	Den nye Gandalf har ett rejält humör!
+hel01:0x02100401	Den nye Gandalf har ett rejält humör!
+hel01:0x02110000	Förgör dem med din magi!
+hel01:0x02110001	Samla din kraft och släpp lös den!
+hel01:0x02110002	Samla din kraft och släpp lös den!
+hel01:0x02110003	Samla din kraft!
+hel01:0x02110004	Släpp lös din kraft över dem!
+hel01:0x02110005	Hugg ner dem med din magi!
+hel01:0x02110006	Anfall de här uruk-hai på avstånd!
+hel01:0x02110100	Slå undan deras pilar!
+hel01:0x02110101	Slå undan deras pilar!
+hel01:0x02110102	Slå ner deras pilar!
+hel01:0x02110103	Parera deras pilar!
+hel01:0x02110104	Parera deras pilar!
+hel01:0x02110200	Glesa ut deras led!
+hel01:0x30000000	Legolas!
+hel01:0x30000001	Gandalf!
+hel01:0x30000002	Hit upp! Muren måste försvaras!
+hel01:0x30000003	Skynda! Det kommer fler!
+hel01:0x30000004	Upp för stegen!
+hel01:0x30000005	Gandalf! Hjälp mig att rensa vägbanken!
+hel01:0x30000006	Hit med krutet!
+hel01:0x30000007	Döda dem allihop!
+hel01:0x30000008	Vi kan inte vänta! Till Aragorn!
+hel01:0x30000009	Återvänd till er herre, skuggans kreatur!
+hel01:0x3000000A	Legolas!
+hel01:0x3000000B	Gandalf!
+hel01:0x3000000C	Hit upp! Muren måste försvaras!
+hel01:0x3000000D	Skynda! Det kommer fler!
+hel01:0x3000000E	Upp för stegen!
+hel01:0x3000000F	Gandalf! Hjälp mig att rensa vägbanken!
+hel01:0x30000010	Hit med krutet!
+hel01:0x30000011	Döda dem allihop!
+hel01:0x30000012	Vi kan inte vänta! Till Aragorn!
+hel01:0x30000013	Återvänd till er herre, skuggans kreatur!
+ise01:0x02010100	Jag sändes tillbaka för att ta över din mantel, för att rätta till dina misstag!
+ise01:0x02010101	Saruman, du drar skam över vår orden! Ditt listiga sinne har slukats av krig!
+ise01:0x02010200	Saruman, Fangorns träd har vaknat!
+ise01:0x02010300	Rankor söker, grenar krossar, rötter begraver allt som återstår av din fåfänga!
+ise01:0x02010301	Rankor söker, grenar krossar, rötter begraver allt som återstår av din fåfänga!
+ise01:0x02010400	Saruman, förintelsens stund är inne!
+ise01:0x02010401	Saruman, förintelsens stund är inne!
+ise01:0x02010500	Må Valar skydda dig!
+ise01:0x02010501	Må Valar skydda dig!
+ise01:0x02010600	Saruman! GANDALF kommer till Isengård ...
+ise01:0x02010700	... och söker inte längre ditt råd!
+ise01:0x02010800	Nu ska jag hjälpa enterna att riva det sista stödet!
+ise01:0x02010801	Nu ska jag hjälpa enterna att riva det sista stödet!
+ise01:0x020E0000	Stå fast!
+ise01:0x020E0001	Det här är inget hot!
+ise01:0x020E0100	Vem vågar!?!
+ise01:0x020E0200	Hugg ner honom!!!
+ise01:0x020E0201	Hugg ner honom!!!
+ise01:0x020E0300	Skjut!!
+ise01:0x020E0400	Lätt byte där bak! Ta honom!
+ise01:0x020E0401	Lätt byte där bak! Ta honom!
+ise01:0x020E0402	Lätt byte där bak! Ta honom!
+ise01:0x020E0500	Skär sönder honom, grabbar!
+ise01:0x020E0600	Kan ni inte stoppa honom?!
+ise01:0x020E0700	Försvara tornen!!
+ise01:0x020E0800	Vad är du för något??!
+ise01:0x020E0801	Jag ska krossa dig!
+ise01:0x020E0802	Vad krävs det för att döda dig?!
+ise01:0x020E0900	De högg ner vår ledare!!
+ise01:0x020E0901	De högg ner vår ledare!!
+ise01:0x020E0902	De går inte att stoppa!
+ise01:0x020E0903	De går inte att stoppa!
+ise01:0x020E0904	Hugg er igenom dem!
+ise01:0x020E0905	Hugg er igenom dem!
+ise01:0x020E0A00	Anfall! Driv bort honom!
+ise01:0x02120000	Rök stiger från Isengård++++++, timmen är sen, och nu skrider du till Isengård för att söka mitt råd.
+ise01:0x02120100	För det är därför du har kommit, inte sant ... min vän?
+ise01:0x02120200	Det är du som sprider fruktan bland de oskyldiga.
+ise01:0x02120300	Bränn dem allihop, säger jag, och väl bekomme.
+ise01:0x02120400	Sådan vrede! Jag tycker synd om dig!
+ise01:0x02120500	Träden där är ett uråldrigt ++++++++vansinne. De måste brännas innan de förgör alla som +++bor nära dem.
+ise01:0x02120600	Du kan inte stoppa enterna!
+ise01:0x02120601	Krossa dem!  Mosa dem!
+ise01:0x02120602	Vi ska krossa dem allihop!
+ise01:0x02120603	Vi är mäkta missnöjda!
+ise01:0x02120604	Ditt slut har kommit!
+ise01:0x02120605	En fin träff!
+ise01:0x02120700	Skynda till Isengård!
+ise01:0x02120701	Störta Saruman
+ise01:0x02120702	Vi tolererar inte era eldar!
+ise01:0x02120703	Era liv är förverkade!
+ise01:0x02120704	Ni kan inte stå emot vår vrede!
+ise01:0x02120705	Er ondska tar slut i dag!
+ise01:0x02120800	Sarumans kreatur är svaga!
+ise01:0x02120801	Ni har dömt er själva!
+ise01:0x02120802	Ni har dömt er själva!
+ise01:0x02120803	Låt ingen komma undan!
+ise01:0x02120804	Marschera mot Isengård
+ise01:0x02120805	Där är de! Där uppe!
+ise01:0x02120806	De ska inte komma undan!
+ise01:0x02120807	De ska inte komma undan!
+ise01:0x02120900	Sådan kraft ... så förspilld!
+ise01:0x30000000	Skynda till Isengård! Jag tar hand om de här!
+ise01:0x30000001	Skynda till Isengård! Jag tar hand om de här!
+min00:0x02010100	Våra katapulter är livsviktiga! Med dem ska vi förstöra de där tornen!
+min00:0x02010101	Våra katapulter är livsviktiga! Med dem ska vi förstöra de där tornen!
+min00:0x02010200	Skynda med mig! Låna mig era svärd!
+min00:0x02010300	Slå ner deras stegar!  Annars översvämmar de oss!
+min00:0x02010400	Gondors män!+++ Vi måste hålla de här kreaturen borta från era murar! Den vita stadens öde hänger på det!
+min00:0x02010500	Belägringstorn! Välta dem!
+min00:0x02010600	Stoppa dem med katapulterna!
+min00:0x02010700	Jag fruktar att Mörkrets herre skickar fram fasansfulla varelser för att motverka min plan ...
+min00:0x02010800	Mörkret tätnar.
+min00:0x02010900	Stå fast! Gondors murar måste stå emot!
+min00:0x02010901	Håll murarna så länge ni kan!
+min00:0x02010A00	Grond, smidd av Mörkrets herres illvilja!
+min00:0x02010B00	Våra portar står inte emot den!
+min00:0x02040000	Skynda ner!
+min00:0x02040001	Försvara portarna!
+min00:0x02040002	Ner till den inre muren!
+min00:0x02040003	Ner till porten!
+min00:0x02040004	Förstärk gården!
+min00:0x02040005	Alla man till porten!
+min00:0x02040100	Utrym området!
+min00:0x02040101	Försvinn!
+min00:0x02040102	Försvinn!
+min00:0x02040103	Se upp!
+min00:0x02040300	Stoppa dem! Nu!!!
+min00:0x02040301	Vi är inte säkra här!
+min00:0x02040302	Hitåt! Jag är ... Aaah!
+min00:0x02040303	Hjälp oss, Gandalf!
+min00:0x02040304	Hjälp de männen!
+min00:0x02040305	Orcher på murarna!
+min00:0x02040306	De tar sig över murarna!
+min00:0x02040307	Stå fast!
+min00:0x02040308	Lugnt, mannar!
+min00:0x02040309	Bemanna murarna!
+min00:0x0204030A	Bemanna murarna!
+min00:0x0204030B	Vi är inte säkra här!
+min00:0x0204030C	De går inte att stoppa!
+min00:0x0204030D	Hjälp männen!
+min00:0x0204030E	Här kommer de!
+min00:0x0204030F	Stoppa dem!
+min00:0x02040400	Jag ska krossa dig!
+min00:0x02040401	Ni kan inte stoppa oss!
+min00:0x02040402	Slå sönder alltihop!
+min00:0x02040403	Ta dem allihop!
+min00:0x02040404	Upp till toppen! Rensa bort dem!
+min00:0x02040405	Vi ska kalasa på den här staden!
+min00:0x02040406	Hugg ner honom!!!
+min00:0x02040407	Krossa dem allihop!
+min00:0x02040408	Deras stad faller samman!
+min00:0x02040409	Fäll dem!
+min00:0x0204040A	De är svaga!!
+min00:0x0204040B	Ta dem!!
+min00:0x0204040C	Dräp dem allihop!
+min00:0x0204040D	Hugg ner dem!!
+min00:0x0204040E	Du står på tur!
+min00:0x0204040F	Förgör honom!
+min00:0x02040410	Du är ingenting!
+min00:0x02040411	Dö, din stackare!
+min00:0x02040412	Jag ska släcka ditt liv!
+min00:0x02040413	Du är min!
+min00:0x02040414	Meja ner dem!
+min00:0x02040415	För Mörkrets herre!
+min00:0x02040416	De är besegrade!
+min00:0x02040417	Döda dem allihop!
+min00:0x02040418	Deras murar är våra!!
+min00:0x02040419	Bränn staden!!
+min00:0x0204041A	Muren är vår!
+min00:0x30000000	Släpp inte in dem!
+min00:0x30000001	Släpp inte in dem!
+min02:0x02100000	Vi måste ta oss förbi den här yttre porten!
+min02:0x02100100	Var på er vakt! Gå försiktigt fram!
+min02:0x02100200	Katapulter!
+min02:0x02100201	Skjut med dem mot fienden!
+min02:0x02100202	Skjut med deras katapulter mot dem!
+min02:0x02100300	Hit upp! Fort!
+min02:0x02100400	Bakhåll!
+min02:0x02100500	Du stoppar inte mig.
+min02:0x02100600	Klättra upp för rasmassorna! Fort!
+min02:0x02100700	Fel väg!
+min02:0x02100701	Fel väg!
+min02:0x02100800	Ta dem fort!
+min02:0x02100900	Där uppe! Vi måste använda portens vinsch!
+min02:0x02100A00	Slå honom om och om igen!
+min02:0x02100A01	Slå honom om och om igen!
+min02:0x02100B00	Mûmak!
+min02:0x02110000	Det här är en dyster syn ...
+min02:0x02110100	Jag känner lukten av orch, till och med härifrån ...
+min02:0x02110200	Vi tar oss upp och öppnar porten!
+min02:0x02110300	Det är en fälla!
+min02:0x02110301	Det är en fälla!
+min02:0x02110302	Det är en fälla!
+min02:0x02110303	Det är en fälla!
+min02:0x02110400	Lek inte med honom. Döda honom!
+min02:0x02110500	Fina katapulter!
+min02:0x02110600	Orcher! På alla sidor!
+min02:0x02110700	Oddsen faller mig i smaken!
+min02:0x02110800	Bah! Låt dem komma!
+min02:0x02110900	Det borde göra susen!
+min02:0x02110A00	Det här gör yxarbetet roligare!
+min02:0x02120000	Vi måste ta oss förbi honom!
+min02:0x02120100	Driv tillbaka dem, så vi kan använda vinschen!
+min02:0x02120101	Driv tillbaka dem, så vi kan använda vinschen!
+min02:0x02120200	Fel väg!
+min02:0x02120201	Gå inte den vägen!
+min02:0x02120300	De är över oss!
+min02:0x02120400	Gör slut på de där bågskyttarna!
+min02:0x30000000	Beväpnad med en ++++++++trohetsed från en armé som länge varit död|leder Aragorns väg honom till sist tillbaka till den vita staden.
+min02:0x30000001	Han ska bege sig norrut och sedan genom Gondors södra port ...
+min02:0x30000002	...för att ansluta sig till vår tids stora slag.
+min02:0x30000003	Tornet är vårt!
+min02:0x30000004	Någon kommer!
+min02:0x30000005	De försöker stänga vägen för oss!
+min02:0x30000006	Rohans horn! Äntligen kommer hjälp!
+min02:0x30000007	Skynda till dem innan slaget är vunnet!
+min02:0x30000008	Ett vidrigt kreatur från söder!
+min02:0x30000009	Det här är mer välkommet än den här dvärgen förtjänar!
+min02:0x3000000A	Beväpnad med en ++++++++trohetsed från en armé som länge varit död|leder Aragorns väg honom till sist tillbaka till den vita staden.
+min02:0x3000000B	Han ska bege sig norrut och sedan genom Gondors södra port ...
+min02:0x3000000C	...för att ansluta sig till vår tids stora slag.
+min02:0x3000000D	Tornet är vårt!
+min02:0x3000000E	Någon kommer!
+min02:0x3000000F	De försöker stänga vägen för oss!
+min02:0x30000010	Rohans horn! Äntligen kommer hjälp!
+min02:0x30000011	Skynda till dem innan slaget är vunnet!
+min02:0x30000012	Ett vidrigt kreatur från söder!
+min02:0x30000013	Det här är mer välkommet än den här dvärgen förtjänar!
+min04:0x02010100	Mod blir ert bästa försvar mot stormen som är i antågande!
+min04:0x02010200	Backa! Deras skott träffar samma ställen om och om igen!
+min04:0x02010300	De är levande varelser! De kan fällas!
+min04:0x02010301	Tanklös kraft hjälper dig inte!
+min04:0x02010302	Jag ska rensa staden från ditt slags!
+min04:0x02010400	Även de besatta måste falla!
+min04:0x02010500	Återvänd till intigheten som väntar!
+min04:0x02010501	Du är för svag för mig, Saurons avkomma!
+min04:0x020F0000	Försvara vår stad!
+min04:0x020F0001	Försvara vår stad!
+min04:0x020F0002	Försvara vår stad!
+min04:0x020F0003	Försvara vår stad!
+min04:0x020F0004	Försvara vår stad!
+min04:0x020F0100	Spring!
+min04:0x020F0101	Spring!
+min04:0x020F0102	Spring!
+min04:0x020F0103	Spring!
+min04:0x020F0200	Sök skydd!
+min04:0x020F0201	Sök skydd!
+min04:0x020F0202	Sök skydd!
+min04:0x020F0203	Sök skydd!
+min04:0x020F0300	Våra hem brinner!
+min04:0x020F0301	Våra hem brinner!
+min04:0x020F0302	Våra hem brinner!
+min04:0x020F0303	Våra hem brinner!
+min04:0x020F0400	Försvara oss!
+min04:0x020F0401	Försvara oss!
+min04:0x020F0402	Försvara oss!
+min04:0x020F0403	Försvara oss!
+min04:0x020F0500	Snälla, rädda oss!
+min04:0x020F0501	Snälla, rädda oss!
+min04:0x020F0502	Snälla, rädda oss!
+min04:0x020F0503	Snälla, rädda oss!
+min04:0x020F0600	Allt är förlorat!
+min04:0x020F0601	Allt är förlorat!
+min04:0x020F0700	Få ut mig härifrån!
+min04:0x020F0701	Få ut mig härifrån!
+min04:0x020F0702	Få ut mig härifrån!
+min04:0x020F0703	Få ut mig härifrån!
+min04:0x020F0800	De kommer att döda oss allihop!
+min04:0x020F0900	Hjälp oss!!
+min04:0x020F0A00	Försvarar du oss?!
+min04:0x020F0B00	Skydda den här staden!
+min04:0x020F0C00	Håll linjen!
+min04:0x020F0C01	Håll linjen!
+min04:0x020F0C02	Håll linjen!
+min04:0x020F0D00	Formera er! Formera er!
+min04:0x020F0E00	Stå fast! Vackla inte!
+min04:0x020F0F00	Se upp!
+min04:0x020F1000	Katapult! Eldanfall!
+min04:0x020F1001	Eldklot!!
+min04:0x020F1002	Se upp! Eld ovanifrån!
+min04:0x020F1003	Eldanfall!!
+min04:0x020F1100	Staden brinner!
+min04:0x020F1200	Vi kan inte stoppa honom!
+min04:0x020F1201	Troll! Jättelika troll!
+min04:0x020F1300	Låt honom inte komma nära dig!
+min04:0x020F1301	Håll de där bestarna borta!!
+min04:0x020F1302	De sliter staden i stycken!!
+min04:0x020F1303	Se upp för hans hammare!
+min04:0x020F1400	Ingen kan stoppa honom!
+min04:0x020F1401	Han krossar sig igenom!
+min04:0x020F1500	Bränn alltihop!
+min04:0x020F1501	Alltihop ska brinna!
+min04:0x020F1502	Grilla dem!
+min04:0x020F1503	Se dem brinna!
+min04:0x020F1600	Lätt byte, grabbar!
+min04:0x020F1601	Gör det till grus!
+min04:0x020F1602	Slå sönder alltihop!
+min04:0x020F1603	Krossa dem!
+min04:0x020F1700	Sprätta upp dem!
+min04:0x020F1701	Krossa deras stad!
+min04:0x020F1702	Vi är inne! Döda dem nu!
+min04:0x020F1703	Döda dem här!
+min04:0x020F1704	Död åt er allihop!
+min04:0x020F1800	Minas Tirith står i lågor!
+min04:0x30000000	Här gör vi vårt motstånd!
+min04:0x30000001	Fienden dräper ditt folk! Vi måste rädda alla vi kan!
+min04:0x30000002	Döda dem här!
+min04:0x30000003	Reträtt!
+min04:0x30000004	Den här striden är över.
+min04:0x30000005	Fly till de inre murarna!
+min04:0x30000006	Död åt er allihop!
+min04:0x30000007	Här gör vi vårt motstånd!
+min04:0x30000008	Fienden dräper ditt folk! Vi måste rädda alla vi kan!
+min04:0x30000009	Döda dem här!
+min04:0x3000000A	Reträtt!
+min04:0x3000000B	Den här striden är över.
+min04:0x3000000C	Fly till de inre murarna!
+min04:0x3000000D	Död åt er allihop!
+osg01:0x02120000	Ta den här!
+osg01:0x02120001	Fram till dem!
+osg01:0x02120002	Jag har honom!
+osg01:0x02120003	Han ska falla!
+osg01:0x02120100	Ta de där stackarna!
+osg01:0x02120101	Här kommer de!
+osg01:0x02120102	Här kommer de!
+osg01:0x02120103	Dö!!
+osg01:0x02120200	Spioner från Gondor! Ta dem!
+osg01:0x02120300	Lätt kött, grabbar!
+osg01:0x02150000	Ser du! Ser du vad han har dragit in oss i!
+osg01:0x02150001	Ser du! Ser du vad han har dragit in oss i!
+osg01:0x02150100	Försiktigt! Han leder oss rakt in i ett slag!
+osg01:0x02150101	Försiktigt! Han leder oss rakt in i ett slag!
+osg01:0x02150200	Vi måste ner från de här taken!
+osg01:0x02150201	Vi måste ner från de här taken!
+osg01:0x02150300	Återvändsgränd! Du är mig en fin vägvisare!
+osg01:0x02150301	Återvändsgränd! Du är mig en fin vägvisare!
+osg01:0x02150400	Det här stället är översvämmat!
+osg01:0x02150401	Det här stället är översvämmat!
+osg01:0x02150500	Fortsätt framåt!
+osg01:0x02150501	Fortsätt framåt!
+osg01:0x02150502	Fortsätt framåt, herr Frodo!
+osg01:0x02150503	Fortsätt framåt, herr Frodo!
+osg01:0x02150600	Vi klarade det!
+osg01:0x02150601	Vi klarade det!
+osg01:0x02160000	De såg den Tjocka! Dumma hob!
+osg01:0x02160001	De såg den Tjocka! Dumma hob!
+osg01:0x02160002	De såg den Tjocka! Dumma hob!
+osg01:0x02160100	Husbonde! Elaka orchsar här uppe!!
+osg01:0x02160101	Husbonde! Elaka orchsar här uppe!!
+osg01:0x02160200	Hit upp! Vi luktar en väg!
+osg01:0x02160300	Nazgûlen återvänder!
+osg01:0x02160400	Otäcka vålnader, jagar alltid Husbonden!
+osg01:0x02160500	Vi hittar den här, ja, det gör vi. Ner nu!
+osg01:0x02160501	Vi hittar den här, ja, det gör vi. Ner nu!
+osg01:0x02160502	Vi hittar den här, ja, det gör vi. Ner nu!
+osg01:0x02160600	Sméagol visar er! Snälla Sméagol!
+osg01:0x02160601	Sméagol visar er! Snälla Sméagol!
+osg01:0x02160602	Sméagol visar er! Snälla Sméagol!
+osg01:0x02160603	Sméagol visar er! Snälla Sméagol!
+osg01:0x02160700	Fort! Vi måste ta oss igenom det här så snabbt vi kan!
+osg01:0x02160701	Fort! Vi måste ta oss igenom det här så snabbt vi kan!
+osg01:0x02160800	Här! Vi hittar en väg in!!
+osg01:0x02160801	Här! Vi hittar en väg in!!
+osg01:0x02160802	Här! Vi hittar en väg in!!
+osg01:0x02160803	Här! Vi hittar en väg in!!
+osg01:0x02160900	Tysta och snabba som skuggor måste vi vara.
+osg01:0x02160901	Tysta och snabba som skuggor måste vi vara.
+osg01:0x02160A00	Får inte stanna! Vi låter dem se oss! Upp! Upp!
+osg01:0x02160B00	Orchbågskyttar!
+osg01:0x02160B01	Orchbågskyttar!
+osg01:0x02160C00	Försiktigt nu, annars hamnar ni bland de döda i den här elaka staden.
+osg01:0x02160C01	Försiktigt nu, annars hamnar ni bland de döda i den här elaka staden.
+osg01:0x02160D00	Vi går inte tillbaka! Vi går igenom!
+osg01:0x02160D01	Vi går inte tillbaka! Vi går igenom!
+osg01:0x02160E00	Ja, å ja. Vi luktar utsidan.
+osg01:0x02160E01	Ja, å ja. Vi luktar utsidan.
+osg01:0x02160E02	Ja, å ja. Vi luktar utsidan.
+osg01:0x02160F00	De söker ringen!!
+osg01:0x02161000	Hemskt! Hemskt! Låt dem inte se er!
+osg01:0x02161001	Hemskt! Hemskt! Låt dem inte se er!
+osg01:0x02161002	Hemskt! Hemskt! Låt dem inte se er!
+osg01:0x02161100	Här inne! Ingen mer lek! Vi måste komma undan nu!
+osg01:0x02161101	Här inne! Ingen mer lek! Vi måste komma undan nu!
+osg01:0x02161102	Här inne! Ingen mer lek! Vi måste komma undan nu!
+osg01:0x02161103	In nu! Hober kommer undan. Skatten kommer undan!
+osg01:0x02161104	In nu! Hober kommer undan. Skatten kommer undan!
+osg01:0x02161105	In nu! Hober kommer undan. Skatten kommer undan!
+osg01:0x02161200	Dumma hober!
+osg01:0x02161201	Dumma hober!
+osg01:0x02161300	Kom, Husbonde! Enda vägen nu!
+osg01:0x02161301	Kom, Husbonde! Enda vägen nu!
+osg01:0x02161302	Kom, Husbonde! Enda vägen nu!
+osg01:0x02161303	Gå fort!
+osg01:0x02161304	Gå fort!
+osg01:0x02161305	Gå fort!
+osg01:0x02161306	Inte långt kvar nu!
+osg01:0x02161307	Inte långt kvar nu!
+osg01:0x02161308	Inte långt kvar nu!
+osg01:0x02161309	Inte långt kvar nu!
+osg01:0x02161400	Fortsätt bara framåt!!!
+osg01:0x02161500	Han kommer göra oss illa! Han kommer göra stackars Sméagol illa!
+osg01:0x02161600	Ringen kallar på honom, Sam ... Ögat har nästan fått syn på mig...
+osg01:0x02161601	Ringen kallar på honom, Sam ... Ögat har nästan fått syn på mig...
+osg01:0x30000000	Herr Frodo!  Ner med dig!
+osg01:0x30000001	Kom nu, hober! Lång väg kvar! Sméagol visar er vägen ... följ mig!
+osg01:0x30000002	Frodo!
+osg01:0x30000003	Neeeej!
+osg01:0x30000004	Skynda bort, skynda nu!  Snälla Sméagol får oss härifrån!
+osg01:0x30000005	Skynda, hobsar, skynda!  Ser ni?  Ser ni?  Vi har lett er ut!
+osg01:0x30000006	Sméagol tar hand om Husbonden!
+osg01:0x30000007	Herr Frodo!  Ner med dig!
+osg01:0x30000008	Kom nu, hober! Lång väg kvar! Sméagol visar er vägen ... följ mig!
+osg01:0x30000009	Frodo!
+osg01:0x3000000A	Neeeej!
+osg01:0x3000000B	Skynda bort, skynda nu!  Snälla Sméagol får oss härifrån!
+osg01:0x3000000C	Skynda, hobsar, skynda!  Ser ni?  Ser ni?  Vi har lett er ut!
+osg01:0x3000000D	Sméagol tar hand om Husbonden!
+pal01:0x02010100	Jag ska befria dina tjänares sinnen och lära dem fruktan! Jag ska göra dem oanvändbara för dig!
+pal01:0x02010200	Tanklös kraft hjälper dig inte!
+pal01:0x02010300	Jag ska störta er, era kreatur!
+pal01:0x02010400	Återvänd till intigheten som väntar!
+pal01:0x02010500	Även de besatta måste falla!
+pal01:0x02010600	Du är för svag för mig, Saurons avkomma!
+pal01:0x02010700	Tillbaka till era hålor!
+pal01:0x02010800	Ni förlänger bara ert slut!
+pal01:0x02100000	Jag förstår varför människor fruktar den här platsen!
+pal01:0x02100100	Försvinn, ditt tanklösa odjur!
+pal01:0x02100200	De samlas här i stort antal!
+pal01:0x02100300	Du stoppar inte mig.
+pal01:0x02100400	Tillbaka, ditt vidriga kreatur!
+pal01:0x02100500	Försvinn, ditt tanklösa odjur!
+pal01:0x02100600	Din tid är förbi.
+pal01:0x02100700	Du övervinner inte mig i strid!
+pal01:0x02120000	Jag tror jag slår alvens poäng innan det här är över!
+pal01:0x02120001	Jag tror jag slår alvens poäng innan det här är över!
+pal01:0x02120100	De här behöver kapas ner till rätt storlek först.
+pal01:0x02120200	Till skillnad från dig är jag tränad!
+pal01:0x02120300	Du borde ge upp nu!
+pal01:0x02120400	Låt mig visa hur det går till!
+pal01:0x02120500	Du är nog på dåligt humör!
+pal01:0x02120600	Du är en ful en, du!
+pal01:0x02120700	Nu ska du buga för mig!
+pal01:0x02130000	Vad är detta för ond trolldom?!
+pal01:0x02130100	Tillbaka, mörkrets tjänare!
+pal01:0x02130200	Jag ska göra slut på er ondska här och nu!
+pal01:0x02130300	Tillbaka, mörkrets tjänare!
+pal01:0x02130400	De är som en ändlös flod!
+pal01:0x02130500	Måste jag förgöra er, så gör jag det!
+pal01:0x02130600	Illvilliga kreatur!
+pal01:0x02130700	Du kan inte mäta dig med mig!
+pal01:0x02140000	Jag är inte säker på att man kommer tillbaka från ett sånt här ställe!
+pal01:0x02140001	Jag är inte säker på att man kommer tillbaka från ett sånt här ställe!
+pal01:0x02140100	Gubbtjyven skulle allt ha ett och annat att säga om det här!
+pal01:0x02140200	Bara en kan vinna det här!
+pal01:0x02140300	Vad krävs det för att bli av med dem!!
+pal01:0x02140400	De bara fortsätter att jaga oss!
+pal01:0x02140500	Du kan inte besegra Sam den modige!
+pal01:0x02140600	Jag kommer att behöva all min styrka nu!
+pal01:0x02140700	Nå, Samvis! Dags att bli en hjälte!
+pal01:0x02160000	Det här är en uråldrig, ond plats.
+pal01:0x02160100	Jag ska visa dig vem som kan slåss!
+pal01:0x02160200	Dö, monster!
+pal01:0x02160300	Nu tar jag dig!
+pal01:0x02160400	Det är någon ny ondska!
+pal01:0x02160500	Tillbaka till skuggan!
+pal01:0x02160600	Möt mig om du vågar!
+pal01:0x02160700	Du ska inte finnas mer!
+pal01:0x02170000	Sauron, för Gondors skull ska jag möta dig!
+pal01:0x02170100	Det här är en vidrig, vidrig plats!
+pal01:0x02170200	Dö nu, ditt hålkreatur!
+pal01:0x02170300	En ny ondska kommer!
+pal01:0x02170400	Är det döden du söker?
+pal01:0x02170500	Böj dig för din överman!
+pal01:0x02170600	Jag ska visa dig hur man slåss!
+pal01:0x02170700	Du kan inte vinna det här, ska du veta!
+pal01:0x02180000	Jag är inte säker på att det var en bra idé att komma hit!
+pal01:0x02180100	Jag kanske överraskar dig!
+pal01:0x02180200	Jag är kanske liten, men jag är seg!
+pal01:0x02180300	Okej ... då får vi det överstökat!
+pal01:0x02180400	Nu kommer små fylkebor och tar dig!
+pal01:0x02180500	Nu blir jag arg!
+pal01:0x02180600	Jag tror jag har en talang för det här.
+pal01:0x02180700	Hober är inget mellanmål!
+pal01:0x02190000	Åh, så trevligt – Mörkrets herres egen öppna spis!
+pal01:0x02190100	Få hober kan mäta sig med mig i svärdskonst!
+pal01:0x02190200	Jag tror du har stött på fel hob!
+pal01:0x02190300	Jag tror jag är den bättre krigaren!
+pal01:0x02190400	Jag kommer från en lång släkt av krigare!
+pal01:0x02190500	Det här måste överraska dig!
+pal01:0x02190600	Det går alldeles utmärkt för mig, tack!
+pal01:0x02190700	Det är tydligt vem som är proffset!
+pat01:0x02010100	Mycket måste riskeras i krig.
+pat01:0x020F0000	Kom, de döda dröjer sig kvar på den här stigen ... men vi måste gå den till slutet.
+pat01:0x020F0100	Var beredda! De här andarna väcker uråldriga ben till liv!
+pat01:0x020F0101	Var beredda! De här andarna väcker uråldriga ben till liv!
+pat01:0x020F0102	Var beredda! De här andarna väcker uråldriga ben till liv!
+pat01:0x020F0200	Hugg er ut!!
+pat01:0x020F0201	Hugg er ut!!
+pat01:0x020F0300	De samlas här i stort antal!
+pat01:0x020F0301	De samlas här i stort antal!
+pat01:0x020F0400	Den här vägen! Skynda!
+pat01:0x020F0401	Den här vägen! Skynda!
+pat01:0x020F0500	Se upp! Fortsätt framåt!
+pat01:0x020F0501	Se upp! Fortsätt framåt!
+pat01:0x020F0600	Hur farligt det än är måste vi ta oss över!
+pat01:0x020F0601	Hur farligt det än är måste vi ta oss över!
+pat01:0x020F0700	Stå kvar och slåss!
+pat01:0x020F0701	Stå kvar och slåss!
+pat01:0x020F0800	Vi är nära nu!
+pat01:0x020F0900	Här går den att öppna!
+pat01:0x020F0A00	Bra kämpat, mina vänner!
+pat01:0x020F0A01	Vi måste gå vidare!
+pat01:0x020F0A02	Jag förstår varför människor fruktar den här platsen!
+pat01:0x020F0B00	Kom! Vi har brutit deras förtrollning!
+pat01:0x020F0B01	Kom! Vi har brutit deras förtrollning!
+pat01:0x02110000	Vad för slags armé skulle dröja sig kvar på en sådan plats?
+pat01:0x02110100	Jag kan inte skada ett spöke!
+pat01:0x02110200	Jag är inte tränad att döda de döda!
+pat01:0x02110300	Det verkar vara en fälla!
+pat01:0x02110400	Vi kommer inte förbi!
+pat01:0x02110500	Dvärgar skulle aldrig bygga något så skröpligt!
+pat01:0x02110600	Jag har en mycket dålig känsla om den här platsen ...
+pat01:0x02110700	Vi sitter fast här som råttor!
+pat01:0x02110800	De där klingorna biter, även om de är rostiga!
+pat01:0x02110801	De där klingorna biter, även om de är rostiga!
+pat01:0x02110900	Jag försökte bara skrämma DEM!
+pat01:0x02110A00	Jag skulle parera nu, om jag var du!
+pat01:0x02110A01	Jag skulle parera nu, om jag var du!
+pat01:0x02110A02	Jag skulle parera nu, om jag var du!
+pat01:0x02110A03	Parera deras attacker!
+pat01:0x02110A04	Parera deras attacker!
+pat01:0x02110B00	Det här hemsökta berget bjuder på många överraskningar!
+pat01:0x02110B01	Det här hemsökta berget bjuder på många överraskningar!
+pat01:0x02110C00	Har du inte lärt dig något om dvärgars envishet?
+pat01:0x02110C01	Har du inte lärt dig något om dvärgars envishet?
+pat01:0x02110C02	Har du inte lärt dig något om dvärgars envishet?
+pat01:0x02110C03	Till och med de fruktar en dvärg nu!
+pat01:0x02110D00	De vill tydligen inte ha in oss!
+pat01:0x02110D01	De vill tydligen inte ha in oss!
+pat01:0x02110D02	Den är gammal men går att använda!
+pat01:0x02110D03	Den är gammal men går att använda!
+pat01:0x02110E00	Inte konstigt att ingen överlever de här vägarna!
+pat01:0x02110E01	Inte konstigt att ingen överlever de här vägarna!
+pat01:0x02110E02	Ödet ler mot oss!!
+pat01:0x02110E03	Ödet ler mot oss!!
+pat01:0x02110E04	Äntligen ute!
+pat01:0x02120000	Jag fruktar inte de döda.
+pat01:0x02120100	De dödas andar!
+pat01:0x02120200	Fler gengångare!
+pat01:0x02120300	Någon ny förtrollning!
+pat01:0x02120400	Vi är fångade här! Vi måste snabbt hitta en väg över...
+pat01:0x02120500	Gengångarna är tillbaka!
+pat01:0x02120600	Hur tar vi oss igenom det här?
+pat01:0x02120700	Det här är en huvudport!
+pat01:0x02120800	Det är här de döda samlas. Det är en plats fylld av ondska.
+pat01:0x02120900	De är som en ändlös flod!!
+pat01:0x02120A00	Frukta inte, Gimli. Det klär dig inte.
+pat01:0x02120B00	Deras dimmor virvlar här också!
+pat01:0x02120C00	Här kommer de!
+pat01:0x30000000	Vägen är stängd. Den byggdes av dem som är döda, och de döda vaktar den. Vägen är stängd.
+pat01:0x30000001	Illviljan ligger tung i luften.
+pat01:0x30000002	Den här vägen!
+pat01:0x30000003	Vilken väg som helst duger just nu!
+pat01:0x30000004	Vägen är stängd. Den byggdes av dem som är döda, och de döda vaktar den. Vägen är stängd.
+pat01:0x30000005	Illviljan ligger tung i luften.
+pat01:0x30000006	Den här vägen!
+pat01:0x30000007	Vilken väg som helst duger just nu!
+pat02:0x020C0000	Bortglömda folk! Kom till mig!
+pat02:0x020C0100	Ingen återvänder från mitt berg!
+pat02:0x020C0101	Du överlever inte den här vägen!!
+pat02:0x020C0102	Till mig, krigsbröder!
+pat02:0x020C0103	Vägen är stängd! Vi döda vaktar den!
+pat02:0x020C0104	Jag kallar er från den grå skymningen!
+pat02:0x020C0105	Ur bergets mörker ... kom!
+pat02:0x020D0000	Till och med genom den levande döden lyder de!
+pat02:0x020D0100	... Återvinn er ära! När detta land är renat från Sauron ska ni få frid och gå vidare. Vad säger ni?
+pat02:0x020D0200	Jag ska besegra dig!
+pat02:0x30000000	...där en kung över de sedan länge döda styr de ofödda öde.
+pat02:0x30000001	Han måste tvingas att ge sig.
+pat02:0x30000002	Vem träder in i mitt rike???
+pat02:0x30000003	En som vill hålla er vid er ed!
+pat02:0x30000004	De döda låter inte de levande passera!
+pat02:0x30000005	Bergets vind ... jag befaller dig!
+pat02:0x30000006	Kämpa för mig så befriar jag er från denna levande död! Vad säger ni?
+pat02:0x30000007	Jag ger miiig!!++++++
+pat02:0x30000008	Vi måste ut härifrån!!!
+pat02:0x30000009	Bergets vind ... jag befaller dig!
+pat02:0x3000000A	Bergets vind ... jag befaller dig!
+pat02:0x3000000B	...där en kung över de sedan länge döda styr de ofödda öde.
+pat02:0x3000000C	Han måste tvingas att ge sig.
+pat02:0x3000000D	Vem träder in i mitt rike???
+pat02:0x3000000E	En som vill hålla er vid er ed!
+pat02:0x3000000F	De döda låter inte de levande passera!
+pat02:0x30000010	Bergets vind ... jag befaller dig!
+pat02:0x30000011	Kämpa för mig så befriar jag er från denna levande död! Vad säger ni?
+pat02:0x30000012	Jag ger miiig!!++++++
+pat02:0x30000013	Vi måste ut härifrån!!!
+pat02:0x30000014	Bergets vind ... jag befaller dig!
+pat02:0x30000015	Bergets vind ... jag befaller dig!
+pat03:0x020C0000	Skynda! Allt rasar!
+pat03:0x020C0100	Allt rasar samman! Skynda!!!
+pat03:0x020C0200	De döda är kvar här!
+pat03:0x020C0201	De döda är kvar här!
+pat03:0x020E0000	Vi är fångade här!
+pat03:0x020E0100	Listiga små spöken!
+pat03:0x020E0101	Nu tänker jag inte låta mig stoppas!
+pat03:0x020F0000	Det är blockerat!!!
+pat03:0x020F0100	Vi måste ut!
+pat03:0x30000000	Har vi misslyckats?
+pat03:0x30000001	De döda ska strida när ditt folk är som närmast oss!
+pat03:0x30000002	Har vi misslyckats?
+pat03:0x30000003	De döda ska strida när ditt folk är som närmast oss!
+pel02:0x02100000	Driv tillbaka dem!
+pel02:0x02100100	Vi får inte låta rohirrim förintas!
+pel02:0x02100200	Mûmakil gör sig redo att storma!
+pel02:0x02100300	Skjut med den! Fäll dem!
+pel02:0x02100400	Vänd deras maskiner mot dem!
+pel02:0x02100500	Driv bort dem! Skynda!
+pel02:0x02100600	Gör er redo! De skickar förstärkningar!
+pel02:0x02110000	Österns män! Framåt!
+pel02:0x02110001	Till anfall, österns män!
+pel02:0x02110002	Släpp lös armén!
+pel02:0x02110003	Framåt, österlänningar!
+pel02:0x02110100	Visa ingen nåd!
+pel02:0x02110101	Dräp dem allihop!
+pel02:0x02110102	Samla er!
+pel02:0x02110103	Samla fotfolket!
+pel02:0x02110200	Ja! Döden är vårt namn!
+pel02:0x02110201	De är svaga!
+pel02:0x02110202	Ja! Förgör dem!
+pel02:0x02110300	Låt dem inte stoppa er!
+pel02:0x02110301	Hugg ner dem!
+pel02:0x02110302	Ta dem allihop!
+pel02:0x02110303	Lämna ingen vid liv!
+pel02:0x02110400	Mûmakil! Framåt!
+pel02:0x02110401	Krossa dem allihop!
+pel02:0x02110402	Framåt, Harads män!
+pel02:0x02110403	Förgör dem allihop!
+pel02:0x02110404	Lämna ingen vid liv!
+pel02:0x02110405	Sopa bort dem från slagfältet!
+pel02:0x02110500	Mûmakil kommer igen!
+pel02:0x02120000	Det verkar som om de omringar oss!
+pel02:0x02120100	Det är bara två arméer. Vad är du orolig för?
+pel02:0x02120200	Då är det bäst att vi gör något åt de här typerna!
+pel02:0x02120300	Jag tror de har samlat ihop några till!
+pel02:0x02120400	Nu tror jag att du gjorde honom arg!
+pel02:0x02120500	De kommer att trampas ner allihop!
+pel02:0x02120600	Jag skulle akta mig för hans fötter!
+pel02:0x02120700	Vi får slåss oss upp dit!
+pel02:0x02130000	Vi har inte tillräckligt med män!
+pel02:0x02130100	Rohirrim lider svårt!
+pel02:0x02130200	Rohirrim lider svårt!
+pel02:0x02130201	Rohirrim är nästan helt nedslaktade!
+pel02:0x02160000	Hjälp mig!
+pel02:0x02160100	Hitåt!
+pel02:0x02160200	Nej!! Håll er undan!
+pel02:0x30000000	Här kommer de!
+pel02:0x30000001	Österlänningar!
+pel02:0x30000002	Orcher!
+pel02:0x30000003	Ta dem allihop!
+pel02:0x30000004	Mûmakil förstör allt i sin väg! Stoppa dem innan de når Éowyn och Merry!
+pel02:0x30000005	Min fru, jag lämnar dig inte!
+pel02:0x30000006	De måste räddas!
+pel02:0x30000007	Merry!
+pel02:0x30000008	Ynkliga krigare!
+pel02:0x30000009	Jag dödar dig om du rör honom!
+pel02:0x3000000A	Döda mig? Din dåre. Ingen levande man kan dräpa mig!
+pel02:0x3000000B	Jag är ingen man! Du ser en kvinna framför dig!
+pel02:0x3000000C	Jag har ingen yxa som är stor nog för den här!
+pel02:0x3000000D	Se! De döda har kommit ... för att rädda de levande!
+pel02:0x3000000E	För sent!
+pel02:0x3000000F	Vi misslyckades!
+pel02:0x30000010	Hjälp dem!
+pel02:0x30000011	Stoppa den där besten!
+pel02:0x30000012	Häxkungen kretsar ovanför!
+pel02:0x30000013	Anfall honom! Fort!
+pel02:0x30000014	Mûmakil kommer igen!
+pel02:0x30000015	Här kommer de!
+pel02:0x30000016	Österlänningar!
+pel02:0x30000017	Orcher!
+pel02:0x30000018	Ta dem allihop!
+pel02:0x30000019	Mûmakil förstör allt i sin väg! Stoppa dem innan de når Éowyn och Merry!
+pel02:0x3000001A	Min fru, jag lämnar dig inte!
+pel02:0x3000001B	De måste räddas!
+pel02:0x3000001C	Merry!
+pel02:0x3000001D	Ynkliga krigare!
+pel02:0x3000001E	Jag dödar dig om du rör honom!
+pel02:0x3000001F	Döda mig? Din dåre. Ingen levande man kan dräpa mig!
+pel02:0x30000020	Jag är ingen man! Du ser en kvinna framför dig!
+pel02:0x30000021	Jag har ingen yxa som är stor nog för den här!
+pel02:0x30000022	Se! De döda har kommit ... för att rädda de levande!
+pel02:0x30000023	För sent!
+pel02:0x30000024	Vi misslyckades!
+pel02:0x30000025	Hjälp dem!
+pel02:0x30000026	Stoppa den där besten!
+pel02:0x30000027	Häxkungen kretsar ovanför!
+pel02:0x30000028	Anfall honom! Fort!
+pel02:0x30000029	Mûmakil kommer igen!
+she01:0x020C0000	Hjälp mig!
+she01:0x020C0001	Tillbaka! !
+she01:0x020C0002	Tillbaka! !
+she01:0x020C0200	Hallå! Vad är det där?!
+she01:0x020C0201	Hallå! Vad är det där?!
+she01:0x020C0300	Vi har en inkräktare! Ta honom, grabbar!
+she01:0x020C0400	Det är bara en liten byracka!
+she01:0x020C0500	Spetsa honom!
+she01:0x020C0501	Spetsa honom!
+she01:0x020C0700	Vad har vi här då?!!
+she01:0x020C0800	Smyger du på oss, va? Ta honom!
+she01:0x020C0900	Där fick jag dig! Lilla avskum!
+she01:0x020C0A00	Där är han!
+she01:0x020C0B00	Nu tar vi honom!
+she01:0x020F0000	Nå, Samvis. Herr Frodo räknar med att du räddar honom. Vad som än händer.
+she01:0x020F0001	Nå, Samvis. Herr Frodo räknar med att du räddar honom. Vad som än händer.
+she01:0x020F0100	Spindel!
+she01:0x020F0200	Om det är så du vill ha det!!!
+she01:0x020F0201	Om det är så du vill ha det!!!
+she01:0x020F0300	Samvis Gamgi ... vad har du gett dig in på nu?!
+she01:0x020F0301	Samvis Gamgi ... vad har du gett dig in på nu?!
+she01:0x020F0302	Samvis Gamgi ... vad har du gett dig in på nu?!
+she01:0x020F0400	Frodo!
+she01:0x020F0401	Han måste räddas!
+she01:0x020F0402	Han måste räddas!
+she01:0x020F0403	Håll ut, herr Frodo!
+she01:0x020F0404	Håll ut, herr Frodo!
+she01:0x020F0405	Fortare, Samvis! Fortare!
+she01:0x020F0406	Fortare, Samvis! Fortare!
+she01:0x020F0407	Kom igen, du klarar det, Sam! Visst gör du det!
+she01:0x020F0408	Kom igen, du klarar det, Sam! Visst gör du det!
+she01:0x020F0409	Håll i dig! Jag kommer!
+she01:0x020F040A	Håll i dig! Jag kommer!
+she01:0x020F040B	Håll ut, herr Frodo! Jag kommer!
+she01:0x020F040C	Håll ut, herr Frodo! Jag kommer!
+she01:0x020F040D	Jag är här, herr Frodo!!
+she01:0x020F040E	Jag är här, herr Frodo!!
+she01:0x020F040F	Herr Frodo! Var är du?!
+she01:0x020F0410	Herr Frodo! Var är du?!
+she01:0x020F0411	Ingen tid att förlora!
+she01:0x020F0412	Ingen tid att förlora!
+she01:0x020F0413	Jag är här, herr Frodo! Jag är här!
+she01:0x020F0414	Jag är här, herr Frodo! Jag är här!
+she01:0x020F0415	Du är tokig, Samvis Gamgi ... det vet du väl!
+she01:0x020F0416	Du är tokig, Samvis Gamgi ... det vet du väl!
+she01:0x020F0417	Frodo!
+she01:0x020F0500	Du stoppar inte mig!
+she01:0x020F0501	Du stoppar inte mig, inte en chans!
+she01:0x020F0502	Kom igen, Samvis! Svik inte herr Frodo!
+she01:0x020F0600	Jag tänker inte låta dig stoppa mig nu!!
+she01:0x020F0700	Inte så lätt som du tror!
+she01:0x020F0701	Inte så lätt som du tror!
+she01:0x020F0702	Där for du!!
+she01:0x020F0703	Där for du!!
+she01:0x020F0704	Nej!!!
+she01:0x020F0705	Försvinn! Bort med dig bara!!!
+she01:0x020F0706	Fortsätt, Samvis! De ger sig bara inte!
+she01:0x020F0707	Fortsätt, Samvis! De ger sig bara inte!
+she01:0x020F0800	Ur vägen!
+she01:0x020F0801	Ur vägen!
+she01:0x020F0900	Ur vägen med dig!!
+she01:0x020F0901	Ur vägen med dig!!
+she01:0x020F0902	Tillbaka! Tillbaka!!
+she01:0x020F0903	Tillbaka! Tillbaka!!
+she01:0x020F0904	Å nej, du!
+she01:0x020F0A00	Vad krävs det för att bli av med dem!!
+she01:0x020F0B00	På något sätt måste jag ta mig förbi!
+she01:0x020F0C00	Jag är här, herr Frodo! Jag är här!
+she01:0x020F0D00	Jag kan inte smyga förbi det där!!
+she01:0x020F0D01	Jag kan inte smyga förbi det där!!
+she01:0x020F0E00	Men det här kanske gör susen ...
+she01:0x020F0F00	Spring för livet, små monster!
+she01:0x020F0F01	Spring för livet, små monster!
+she01:0x020F1000	Tillbaka, era eländiga kryp!
+she01:0x020F1001	Tillbaka, era eländiga kryp!
+she01:0x020F1002	Tillbaka, era eländiga kryp!
+she01:0x020F1100	Det är dit jag måste ...
+she01:0x020F1200	Kom an, ditt avskum!
+she01:0x020F1300	Du ska aldrig röra honom igen!
+she01:0x020F1400	Just det!
+she01:0x020F1500	Det är mig du vill ha!
+she01:0x020F1600	... och jag tänker ta dig också!
+she01:0x020F1700	Hur stor ...
+she01:0x020F1800	... du än är!
+she01:0x020F1900	... ska jag hacka dig ...
+she01:0x020F1A00	... och hugga dig ...
+she01:0x020F1B00	... ända tills du ...
+she01:0x020F1C00	... släpper honom!!!!!
+she01:0x020F1D00	Jag har mosat dina ungar ...
+she01:0x020F1E00	Kom igen och gör slut på det!
+she01:0x020F1F00	Kom igen!
+she01:0x020F2000	Du och jag!
+she01:0x020F2100	En sista gång!
+she01:0x020F2200	För herr Frodo!!!!!
+she01:0x020F2300	Rädda mig! De är på alla sidor!
+she01:0x02100000	Hjälp, snälla hjälp mig, Sam!
+she01:0x02100001	Hjälp, snälla hjälp mig, Sam!
+she01:0x02100100	Åh, Sam! Snälla, hitta mig!
+she01:0x02100101	Åh, Sam! Snälla, hitta mig!
+she01:0x02100200	Sam!
+she01:0x02100201	Hjälp mig!
+she01:0x02100202	Hitåt!
+she01:0x02100203	Hjäääälp! Hjäälp!
+she01:0x02100204	Åh, Sam! Snälla, hitta mig!
+she01:0x02100205	Åh, Sam! Snälla, hitta mig!
+she01:0x02100206	Hallå! Är det någon där?!
+she01:0x02100207	Hallå! Är det någon där?!
+she01:0x02100208	Sméagol! Var är du?!
+she01:0x02100209	Han ledde oss i en fälla!
+she01:0x0210020A	Sam, hjälp mig!
+she01:0x0210020B	Sam, hjälp mig!
+she01:0x0210020C	Å neej! Försvinn!
+she01:0x0210020D	Sméagol?! Sam?!
+she01:0x0210020E	Hjäääälp!!
+she01:0x0210020F	Å, neeeeej!!
+she01:0x02100210	Å, neeeeej!!
+she01:0x02100211	Å, neeeeej!!
+she01:0x02100212	Å, neeeeej!!
+she01:0x02100213	Hjälp, snälla hjälp mig, Sam!
+she01:0x02100214	Hjälp, snälla hjälp mig, Sam!
+she01:0x02100215	Tillbaaakaaa!!!
+she01:0x02100216	Tillbaaakaaa!!!
+she01:0x02100217	Sam!
+she01:0x02100218	Sam!
+she01:0x02100219	Hjälp! Hjälp!
+she01:0x0210021A	Sam!
+she01:0x02100300	Hjälp mig, Sam!
+she01:0x02100301	Hjälp mig, Sam!
+she01:0x02100302	Hjälp mig!
+she01:0x02100303	Hjälp mig!
+she01:0x02100400	Aiya Earendil Elenion Ancalima!
+she01:0x02100401	Aiya Earendil Elenion Ancalima!
+she01:0x02100500	Bort från mig!
+she01:0x02100600	Åh, Sam! Snälla, hitta mig!
+she01:0x02100700	Tillbaka!
+she01:0x02100701	Tillbaka!
+she01:0x02100702	Aiya Earendil Elenion Ancalima!
+she01:0x02100703	Aiya Earendil Elenion Ancalima!
+she01:0x02100704	Å neej! Försvinn!
+she01:0x02100705	Å neej! Försvinn!
+she01:0x02100706	Bort från mig!
+she01:0x02100707	Bort från mig!
+she01:0x02100800	Hjäääälp!!
+she01:0x30000000	Ändå finns alltid hoppet kvar.
+she01:0x30000001	Sam ... Sam!
+she01:0x30000002	Neeeej!
+she01:0x30000003	Du kan inte stoppa mig!
+she01:0x30000004	Kom tillbaka, du! Jag är inte klar ... !!
+she01:0x30000005	Herr Frodo!
+she01:0x30000006	Det är Sam! Vakna!
+she01:0x30000007	Sover inte ... död.
+she01:0x30000008	Ser ut som gamla Honmonstret har haft lite kul!
+she01:0x30000009	Den lilla lortungen vaknar nog ... och önskar att han aldrig hade fötts!
+she01:0x3000000A	För tillbaka honom till fästningen!
+she01:0x3000000B	Ändå finns alltid hoppet kvar.
+she01:0x3000000C	Sam ... Sam!
+she01:0x3000000D	Neeeej!
+she01:0x3000000E	Du kan inte stoppa mig!
+she01:0x3000000F	Kom tillbaka, du! Jag är inte klar ... !!
+she01:0x30000010	Herr Frodo!
+she01:0x30000011	Det är Sam! Vakna!
+she01:0x30000012	Sover inte ... död.
+she01:0x30000013	Ser ut som gamla Honmonstret har haft lite kul!
+she01:0x30000014	Den lilla lortungen vaknar nog ... och önskar att han aldrig hade fötts!
+she01:0x30000015	För tillbaka honom till fästningen!

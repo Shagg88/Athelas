@@ -21,6 +21,7 @@
 #include <algorithm>
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_sdlrenderer3.h"
 #include "config.h"
@@ -30,6 +31,7 @@
 #include "gpu.h"
 #include "gameart.h"
 #include "update.h"
+#include "report.h"
 #include <shlobj.h>
 #include "font_cinzel.h"
 #include "font_garamond.h"
@@ -122,8 +124,8 @@ static void free_picture(Picture &p)
 // Game art: the menu pictures of the player's own Return of the King (PC, else Xbox), read
 // once on a worker thread (rotk_menu_art_load) and kept in memory as DXT1. In the
 // list of backgrounds they are entries "\001art:N". Both Return of the King pages
-// use them. The Two Towers page has its own, read from its files when shown
-// (entries "\002tt:...", see tt_art_list).
+// use them. The Two Towers and The Fellowship of the Ring pages have their own, read from their files when shown
+// (entries "\002tt:..." and "\002fx:...", see tt_art_list and fotr_art_list).
 static std::vector<ArtPic> g_art;
 static SDL_AtomicInt g_artState;       // 0 not started, 1 reading, 2 done
 static std::vector<std::string> g_artDirs;   // ROTK copies to try, PC first
@@ -157,7 +159,7 @@ struct Backgrounds {
     Picture cur, prev;
     double changedAt = 0;
     BgJob *job = nullptr;          // picture being read in the background
-    int group = -1;                // whose pictures are listed: 0 The Return of the King, 1 The Two Towers
+    int group = -1;                // whose pictures are listed: 0 The Return of the King, 1 The Two Towers, 2 The Fellowship of the Ring
     bool artIn = false;            // the game art was ready when the list was made
     int gen = 0;                   // bumped when the list is made again (a picture still being read is dropped)
 };
@@ -245,6 +247,12 @@ static int SDLCALL bg_worker(void *p)
             unsigned char *px = dxt1_to_rgba(ap.dxt.data(), ap.dxt.size(), ap.w, ap.h);
             if (!px) continue;
             j->px = px; j->w = ap.w; j->h = ap.h; j->showH = ap.w * 3 / 4; j->found = i;
+            break;
+        }
+        if (j->files[i].compare(0, 4, "\002fx:") == 0) {     // The Fellowship of the Ring: 640x480
+            unsigned char *px = fotr_picture_load(j->files[i], w, h);
+            if (!px) continue;
+            j->px = px; j->w = w; j->h = h; j->showH = h; j->found = i;
             break;
         }
         if (j->files[i].compare(0, 4, "\002tt:") == 0) {     // The Two Towers: 640x448 or 512x256, shown at 4:3
@@ -352,9 +360,9 @@ static void backgrounds_rebuild(Backgrounds &b, int group, const std::string &la
     b.index = -1;
     if ((g_bgShow == BG_ART_AND_MINE || g_bgShow == BG_ART) && group == 0 && b.artIn)
         for (size_t i = 0; i < g_art.size(); i++) b.files.push_back("\001art:" + std::to_string(i));
-    if ((g_bgShow == BG_ART_AND_MINE || g_bgShow == BG_ART) && group == 1 && !ttDir.empty()) {
+    if ((g_bgShow == BG_ART_AND_MINE || g_bgShow == BG_ART) && group >= 1 && !ttDir.empty()) {
         size_t first = b.files.size();
-        tt_art_list(ttDir, b.files);
+        if (group == 1) tt_art_list(ttDir, b.files); else fotr_art_list(ttDir, b.files);
         for (size_t i = b.files.size(); i > first + 1; i--)     // a different order each time
             std::swap(b.files[i - 1], b.files[first + (size_t)SDL_rand((Sint32)(i - first))]);
     }
@@ -533,12 +541,22 @@ static void row_begin(const char *label, const char *desc)
     ImGui::BeginGroup();
     ImGui::SetNextItemWidth(std::min(ImGui::GetContentRegionAvail().x - S(4), S(290)));
 }
+// The controller's (or the keyboard's) cursor is on something inside the item just drawn (a row's group)
+static bool nav_cursor_in_last_item()
+{
+    ImGuiContext &g = *GImGui;
+    if (!g.NavCursorVisible || !g.NavWindow || !g.NavId || g.NavWindow != ImGui::GetCurrentWindow()) return false;
+    ImRect r = ImGui::WindowRectRelToAbs(g.NavWindow, g.NavWindow->NavRectRel[g.NavLayer]);
+    return g.LastItemData.Rect.Contains(r.GetCenter());
+}
 static void row_end()
 {
     ImGui::EndGroup();
     ImGui::EndGroup();
-    if (g_rowDesc && *g_rowDesc && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort | ImGuiHoveredFlags_AllowWhenDisabled |
-                                                         ImGuiHoveredFlags_AllowWhenBlockedByActiveItem)) {
+    // the description: with the mouse over the row, or the controller's cursor on its control (no menu open)
+    bool navHere = nav_cursor_in_last_item() && !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel);
+    if (g_rowDesc && *g_rowDesc && (navHere || ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort | ImGuiHoveredFlags_AllowWhenDisabled |
+                                                                    ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))) {
         ImGui::BeginTooltip();
         ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
         ImGui::PushTextWrapPos(S(380));
@@ -579,6 +597,12 @@ static bool segmented(const char *id, int *v, const char *const *names, int n, c
     }
     ImGui::PopID();
     return changed;
+}
+
+// In a dialog: Escape, or B on a controller, closes it as its Cancel button would (ImGui's modal dialogs don't)
+static bool dialog_back()
+{
+    return ImGui::IsKeyPressed(ImGuiKey_Escape, false) || ImGui::IsKeyPressed(ImGuiKey_GamepadFaceRight, false);
 }
 
 static bool gold_button(const char *label, ImVec2 size, ImFont *font)
@@ -629,6 +653,13 @@ struct App {
     bool ttLooked = false;             // looked for the port program and asked it for its settings
     PortSettingsFile ttFile;
     bool ttLoaded = false;
+    // The Fellowship of the Ring (Xbox) port: the same kind of port and page as The Two Towers' (a settings.toml of
+    // its own). The page works on the tt fields above; the port not shown waits in these (tp_use swaps them).
+    int ttWho = 0;                     // whose port the tt fields hold: 0 The Two Towers, 1 The Fellowship of the Ring
+    Port ttOther;
+    bool ttOtherLooked = false;
+    PortSettingsFile ttOtherFile;
+    bool ttOtherLoaded = false;
     // The Return of the King (Xbox) port: same settings page as the PC version (ROTKFix.ini)
     Port rx;
     bool rxLooked = false;
@@ -677,7 +708,8 @@ static void refresh_controllers(App &a)
 static bool g_removeSelf;      // uninstalled from the launcher's own folder: delete the launcher when it closes
 static bool g_fixRemoved;      // ROTK Fix was just removed from the PC game shown (Play and Save are off)
 static bool g_xboxPage;
-static bool native_arm64();        // the Return of the King page is showing the Xbox version (PC-only options greyed out)
+static bool native_arm64();
+static bool arm_files_current();        // the Return of the King page is showing the Xbox version (PC-only options greyed out)
 
 // A note under a section whose options are the PC game's own and don't apply on Xbox
 static void pc_only_note()
@@ -1137,7 +1169,8 @@ static void capture_event(App &a, const SDL_Event &e)
         case SDL_GAMEPAD_BUTTON_WEST: ph = PH_X; break;         case SDL_GAMEPAD_BUTTON_NORTH: ph = PH_Y; break;
         case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER: ph = PH_LB; break; case SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER: ph = PH_RB; break;
         case SDL_GAMEPAD_BUTTON_LEFT_STICK: ph = PH_LS; break;  case SDL_GAMEPAD_BUTTON_RIGHT_STICK: ph = PH_RS; break;
-        case SDL_GAMEPAD_BUTTON_START: case SDL_GAMEPAD_BUTTON_BACK: a.capture = -1; return;   // stop
+        // stop (and the time it stopped, so the same press isn't taken as Play or Save once the controller moves the cursor again)
+        case SDL_GAMEPAD_BUTTON_START: case SDL_GAMEPAD_BUTTON_BACK: a.capture = -1; a.captureAt = ImGui::GetTime(); return;
         default: return;
         }
     } else if (e.type == SDL_EVENT_GAMEPAD_AXIS_MOTION && e.gaxis.value > 20000) {
@@ -1145,7 +1178,7 @@ static void capture_event(App &a, const SDL_Event &e)
         if (k < 0 || a.trigDown[k]) return;
         a.trigDown[k] = true;
         ph = k ? PH_RT : PH_LT;
-    } else if (e.type == SDL_EVENT_KEY_DOWN && e.key.key == SDLK_ESCAPE) { a.capture = -1; return; }
+    } else if (e.type == SDL_EVENT_KEY_DOWN && e.key.key == SDLK_ESCAPE) { a.capture = -1; a.captureAt = ImGui::GetTime(); return; }
     else return;
     // ignore the press that started it (A on a controller clicking the slot)
     if (ImGui::GetTime() - a.captureAt < 0.25) return;
@@ -1219,6 +1252,7 @@ static std::string kb_display(const std::string &list)
 static bool kb_capture_event(App &a, const SDL_Event &e)
 {
     if (a.kbCapture < 0) return false;
+    if (e.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN && e.gbutton.button == SDL_GAMEPAD_BUTTON_EAST) { a.kbCapture = -1; return true; }   // B: stop
     if (e.type != SDL_EVENT_KEY_DOWN && e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return false;
     if (ImGui::GetTime() - a.kbCaptureAt < 0.25) return e.type == SDL_EVENT_KEY_DOWN;   // the click that started it
     const char *name = nullptr;
@@ -1572,7 +1606,7 @@ static void add_game_from(App &a, const std::string &path)
 {
     LibGame g;
     if (detect_game_at(path, g) == GK_NONE) {
-        set_message(a, g.iso ? "That disc image isn't The Two Towers or The Return of the King for Xbox."
+        set_message(a, g.iso ? "That disc image isn't The Fellowship of the Ring, The Two Towers or The Return of the King for Xbox."
                              : "No supported game there: choose the folder with rotk.exe, or an extracted Xbox game (with default.xbe).", true);
         return;
     }
@@ -1611,7 +1645,7 @@ static bool make_shortcut(const std::wstring &lnk)
         sl->SetPath(exe);
         sl->SetWorkingDirectory(dir.c_str());
         sl->SetIconLocation(exe, 0);
-        sl->SetDescription(L"Athelas - The Return of the King and The Two Towers");
+        sl->SetDescription(L"Athelas - The Lord of the Rings games");
         IPersistFile *pf = nullptr;
         if (SUCCEEDED(sl->QueryInterface(IID_IPersistFile, (void **)&pf))) {
             ok = SUCCEEDED(pf->Save(lnk.c_str(), TRUE));
@@ -1715,6 +1749,8 @@ static void games_section(App &a)
 }
 
 static void rx_about(App &a);
+static void report_section(App &a);
+static std::string rx_log_path();
 // ---- Gameplay: both ROTK versions read [Gameplay] (ROTK Fix on PC, the port on Xbox)
 // ---------------------------------------------------------------------------
 // Achievements, as each game keeps them in its achievements.txt ([unlocked] id = date, [counters], [list] id =
@@ -1827,6 +1863,28 @@ static void tab_gameplay(App &a)
         ImGui::Checkbox("##allheroes", &s.allHeroes);
         row_end();
     }
+    if (g_xboxPage) {   // the Xbox port's own (rotk_eowyn.cpp)
+        row_begin("Eowyn instead of Faramir", "Éowyn takes Faramir's place: her figure and name on the character "
+                                             "select, her face on the HUD, and her in every level he can play, with "
+                                             "his moves, combos, bow and upgrades. Made from her own model in "
+                                             "Pelennor Fields when the game starts (a few seconds more). She has no "
+                                             "voice of her own, so she fights quietly (his shouts are left out).");
+        ImGui::Checkbox("##eowyn", &s.eowyn);
+        row_end();
+    }
+    if (g_xboxPage) {   // the Xbox port's subtitles (rotk_lang.cpp); ROTK on PC has no such hooks
+        section("Language");
+        row_begin("Translation subtitles", "The game's menus, prompts and spoken lines translated at the bottom of "
+                                          "the screen, in place of the game's English subtitles. The game's own text "
+                                          "stays as it is. Our own translations.");
+        ImGui::SetNextItemWidth(-1);
+        if (ImGui::BeginCombo("##subtitles", k_subtitleNames[s.subLang >= 0 && s.subLang < 10 ? s.subLang : 0])) {
+            for (int i = 0; i < 10; i++)
+                if (ImGui::Selectable(k_subtitleNames[i], s.subLang == i)) s.subLang = i;
+            ImGui::EndCombo();
+        }
+        row_end();
+    }
     if (g_xboxPage) {
         section("Cheats");
         ImGui::PushTextWrapPos(0);
@@ -1897,7 +1955,7 @@ static void update_popup(App &a)
         ImGui::SetCursorPosX(ImGui::GetWindowWidth() - S(30) - bw * 2 - S(12));
         if (orn_plate_button("Update", ImVec2(bw, bh), a.running == NULL)) { update_install_start(v); ImGui::CloseCurrentPopup(); }
         ImGui::SameLine(0, S(12));
-        if (orn_plate_button("Not now", ImVec2(bw, bh), true)) ImGui::CloseCurrentPopup();
+        if (orn_plate_button("Not now", ImVec2(bw, bh), true) || dialog_back()) ImGui::CloseCurrentPopup();
         ImGui::EndPopup();
     }
     ImGui::PopStyleVar();
@@ -1915,14 +1973,21 @@ static void update_section(App &a)
     int st = update_install_state(&prog, &err);
     ImGui::PushTextWrapPos(0);
     if (st == 1 || st == 2) {
-        ImGui::TextColored(C_GOLD_H, st == 1 ? "Downloading Athelas %s..." : "Installing Athelas %s...", v.c_str());
+        ImGui::TextColored(C_GOLD_H, st == 1 ? "Downloading Athelas %s..." : "Installing Athelas %s...", v.empty() ? LAUNCHER_VERSION : v.c_str());
         ImGui::PushStyleColor(ImGuiCol_PlotHistogram, rgb(176, 138, 62));
         ImGui::PushStyleColor(ImGuiCol_FrameBg, rgb(30, 27, 23));
         ImGui::ProgressBar(prog, ImVec2(-1, S(8)), "");
         ImGui::PopStyleColor(2);
         ImGui::TextColored(C_DIM, "%d%%", (int)(prog * 100 + 0.5f));
     } else if (st == 3) {
-        ImGui::TextColored(C_GOOD, "Athelas %s is installed. Start Athelas again to use it.", v.c_str());
+        ImGui::TextColored(C_GOOD, "Athelas %s is installed. Start Athelas again to use it.", v.empty() ? LAUNCHER_VERSION : v.c_str());
+    } else if (v.empty() && native_arm64() && !arm_files_current()) {
+        // a Windows on ARM PC without this release's ARM64 builds: the same version's ARM zip, installed over it
+        ImGui::TextColored(C_GOLD_H, "This PC can run the ARM64 builds of the Xbox ports, which are faster here. "
+                                     "They aren't installed for Athelas " LAUNCHER_VERSION " yet.");
+        if (st == -1) ImGui::TextColored(C_BAD, "%s", err.c_str());
+        else ImGui::TextUnformatted("Your settings, saves and achievements are kept.");
+        if (ImGui::Button("Install the ARM64 builds")) update_install_start(LAUNCHER_VERSION);
     } else if (!v.empty()) {
         ImGui::TextColored(C_GOLD_H, "Athelas %s is out (you have " LAUNCHER_VERSION ").", v.c_str());
         if (st == -1) ImGui::TextColored(C_BAD, "%s", err.c_str());
@@ -1948,12 +2013,24 @@ static void update_section(App &a)
 
 static void tab_about(App &a)
 {
-    if (g_xboxPage) { rx_about(a); update_section(a); return; }
+    if (g_xboxPage) { rx_about(a); report_section(a); update_section(a); return; }
     games_section(a);
     section("Setup");
     const GameInfo &g = a.game;
     status_dot(g.exeFound && g.versionOk, g.exeFound, g.exeFound ? g.versionText.c_str() : "rotk.exe not found - choose your game folder on the About tab", nullptr);
-    status_dot(g.hasDll && g.hasProxyD3D8 && g.hasProxyDinput, false, "ROTK Fix files", nullptr);
+    {   // the ROTK Fix in the game folder, and the one this Athelas folder installs from: both its own version
+        std::string inGame = g.hasDll ? fix_dll_version(a.dir + "\\ROTKFix.dll") : "";
+        std::string carried = fix_dll_version(pc_fix_source() + "\\ROTKFix.dll");
+        bool files = g.hasDll && g.hasProxyD3D8 && g.hasProxyDinput;
+        std::string t = "ROTK Fix files" + (inGame.empty() ? std::string() : " (" + inGame + ")");
+        bool current = inGame.empty() || carried.empty() || inGame == carried;
+        status_dot(files && current, files, t.c_str(), current ? nullptr : "Press Play to update ROTK Fix in the game folder.");
+        if (!carried.empty() && carried != LAUNCHER_VERSION && std::string(LAUNCHER_VERSION) != "dev") {
+            std::string w = "This Athelas folder's ROTK Fix is version " + carried + ", not " LAUNCHER_VERSION
+                            ". Unzip the whole Athelas " LAUNCHER_VERSION " download over this folder.";
+            status_dot(false, true, w.c_str(), "Its ROTK-PC\\pcfix folder is what Play and Set up copy into your game.");
+        }
+    }
     status_dot(g.hasDxvk, false, "Vulkan renderer (DXVK)", nullptr);
     {
         GpuInfo gi = gpu_info();
@@ -1992,7 +2069,7 @@ static void tab_about(App &a)
                            "(PC, 2003) play their own copy on modern PCs with modern display, graphics and controller support, and it starts "
                            "the PC ports of their own Xbox copies too.");
     ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
-    ImGui::TextColored(C_DIM, "Not affiliated with or endorsed by Electronic Arts, New Line Cinema, Warner Bros. or the Tolkien Estate. "
+    ImGui::TextColored(C_DIM, "Not affiliated with or endorsed by Electronic Arts, Vivendi Universal Games, New Line Cinema, Warner Bros. or the Tolkien Estate. "
                               "No game files are included; you need your own copy of the game. Background art is read from your own copy.");
     ImGui::PopFont();
     section("Open-source components");
@@ -2013,12 +2090,13 @@ static void tab_about(App &a)
     ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
     ImGui::TextColored(C_DIM, "Launcher version " LAUNCHER_VERSION "  -  made by Shagg, with Claude (Anthropic)");
     ImGui::PopFont();
+    report_section(a);
     update_section(a);
 
     section("Remove ROTK Fix");
     ImGui::PushTextWrapPos(0);
     ImGui::TextUnformatted("Takes ROTK Fix out of the game folder and puts the game's own controller and settings files back. "
-                           "Your saved games and screenshots are kept.");
+                           "Your saved games, screenshots, achievements and texture packs are kept.");
     ImGui::PopTextWrapPos();
     ImGui::PushStyleColor(ImGuiCol_Button, rgb(90, 36, 28));
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, rgb(120, 46, 34));
@@ -2036,7 +2114,8 @@ static void tab_about(App &a)
         if (!finished) {
             ImGui::TextUnformatted("This removes ROTK Fix and its settings from the game folder, "
                                    "and restores the game's Input.ini and your ROTK.ini. "
-                                   "The game will run as it did before ROTK Fix. Saved games and screenshots are kept.");
+                                   "The game will run as it did before ROTK Fix. Saved games, screenshots, achievements and "
+                                   "texture packs are kept.");
             if (!err.empty()) ImGui::TextColored(C_BAD, "%s", err.c_str());
             ImGui::Spacing();
             ImGui::PushStyleColor(ImGuiCol_Button, rgb(90, 36, 28));
@@ -2051,14 +2130,15 @@ static void tab_about(App &a)
             }
             ImGui::PopStyleColor(3);
             ImGui::SameLine();
-            if (ImGui::Button("Cancel", ImVec2(S(150), 0))) { err.clear(); ImGui::CloseCurrentPopup(); }
+            if (ImGui::Button("Cancel", ImVec2(S(150), 0)) || dialog_back()) { err.clear(); ImGui::CloseCurrentPopup(); }
+            ImGui::SetItemDefaultFocus();   // a controller's cursor starts on Cancel, not on Remove
         } else {
             ImGui::TextColored(C_GOOD, "ROTK Fix has been removed.");
             ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
             for (auto &d : done) ImGui::BulletText("%s", d.c_str());
             ImGui::PopFont();
             ImGui::Spacing();
-            if (ImGui::Button("Close", ImVec2(S(150), 0))) {
+            if (ImGui::Button("Close", ImVec2(S(150), 0)) || dialog_back()) {
                 if (g_removeSelf) a.quit = true;
                 else { ImGui::CloseCurrentPopup(); finished = false; a.game = inspect_game(a.dir); a.otherFor.clear(); }
             }
@@ -2120,6 +2200,7 @@ static void admin_setup_prompt(App &a)
 static std::string port_data_dir(const char *dir, const char *oldDir)
 {
     std::string d = exe_dir() + "\\" + dir;
+    if (!oldDir) return d;   // a port that had no test builds before
     std::string old = exe_dir() + "\\ROTKFix\\" + oldDir;
     static bool moved[2];
     bool &done = moved[dir[1] == 'T' ? 0 : 1];   // "TT-Xbox" / "ROTK-Xbox"
@@ -2130,9 +2211,37 @@ static std::string port_data_dir(const char *dir, const char *oldDir)
     }
     return d;
 }
-static std::string tt_data_dir() { return port_data_dir(DIR_TT_XBOX, "TwoTowers"); }
+// The ports with a settings.toml of their own share one page (the tt_ functions): who it is for
+struct TomlPortId {
+    GameKind kind;
+    const char *dir, *oldDir;          // the data folder beside Athelas, the one earlier test builds used
+    const char *exe, *iniKey, *log;    // the program, its [Ports] key in Athelas.ini, its log's name
+    const char *game;                  // "The Two Towers"
+    const char *original;              // the Original preset's description
+};
+static const TomlPortId k_tomlPorts[2] = {
+    { GK_TT_XBOX, DIR_TT_XBOX, "TwoTowers", "TwoTowers.exe", "TwoTowers", "tt.log", "The Two Towers",
+      "as it looked on the Xbox in 2003: 4:3, 30 fps, no anti-aliasing, filtering or sharpening." },
+    { GK_FOTR_XBOX, DIR_FOTR_XBOX, nullptr, "FOTRXbox.exe", "FOTRXbox", "fotrx.log", "The Fellowship of the Ring",
+      "as it looked on the Xbox in 2002: 4:3, 30 fps, no anti-aliasing, filtering or sharpening." },
+};
+static int g_ttWho = 0;                // App::ttWho, for the functions without the App
+static const TomlPortId &tp() { return k_tomlPorts[g_ttWho]; }
+static int tp_of(GameKind k) { return k == GK_FOTR_XBOX ? 1 : 0; }
+static bool tp_kind(GameKind k) { return k == GK_TT_XBOX || k == GK_FOTR_XBOX; }
+// The tt fields hold this port's state from here on
+static void tp_use(App &a, int who)
+{
+    if (a.ttWho == who) return;
+    std::swap(a.tt, a.ttOther);
+    std::swap(a.ttLooked, a.ttOtherLooked);
+    std::swap(a.ttFile, a.ttOtherFile);
+    std::swap(a.ttLoaded, a.ttOtherLoaded);
+    a.ttWho = g_ttWho = who;
+}
+static std::string tt_data_dir() { return port_data_dir(tp().dir, tp().oldDir); }
 static std::string tt_settings_path() { return tt_data_dir() + "\\settings.toml"; }
-static std::string tt_log_path() { return tt_data_dir() + "\\tt.log"; }
+static std::string tt_log_path() { return tt_data_dir() + "\\" + tp().log; }
 static std::string ports_ini() { return exe_dir() + "\\" ATHELAS_INI; }
 // [Ports] in Athelas.ini, or the older ROTKFix\ports.ini
 static std::string port_override(const char *key)
@@ -2158,9 +2267,24 @@ static bool native_arm64()
     }
     return v != 0;
 }
+// The ARM64 builds are this release's when Athelas's ARM zip put them there: it carries ARM64.txt with its version.
+// Otherwise (the regular zip was unpacked over an ARM install, as an update from 1.1.2 does) they are an older
+// release's, and the x64 builds run until the ARM files are installed again (update_section offers it).
+static bool arm_files_current()
+{
+    std::string v;
+    FILE *f = fopen((exe_dir() + "\\ARM64.txt").c_str(), "rb");
+    if (!f) return false;
+    char b[64] = {};
+    size_t n = fread(b, 1, sizeof b - 1, f);
+    fclose(f);
+    v.assign(b, n);
+    while (!v.empty() && (v.back() == '\r' || v.back() == '\n' || v.back() == ' ')) v.pop_back();
+    return v == LAUNCHER_VERSION;
+}
 static std::string arm64_twin(const std::string &exe)
 {
-    if (!native_arm64() || exe.size() < 4) return exe;
+    if (!native_arm64() || exe.size() < 4 || !arm_files_current()) return exe;
     std::string t = exe.substr(0, exe.size() - 4) + "-arm64.exe";
     return file_there(t) ? t : exe;
 }
@@ -2171,8 +2295,8 @@ static void tt_find(App &a)
     a.tt = Port();
     // [Ports] first (a program the player chose, e.g. a development build), then the TT-Xbox
     // folder next to the launcher (the release copy; TwoTowers in earlier test builds)
-    std::string cand[3] = { port_override("TwoTowers"), exe_dir() + "\\" DIR_TT_XBOX "\\TwoTowers.exe",
-                            exe_dir() + "\\TwoTowers\\TwoTowers.exe" };
+    std::string cand[3] = { port_override(tp().iniKey), exe_dir() + "\\" + tp().dir + "\\" + tp().exe,
+                            tp().oldDir ? exe_dir() + "\\" + tp().oldDir + "\\" + tp().exe : std::string() };
     for (int i = 0; i < 3; i++)
         if (!cand[i].empty() && file_there(cand[i])) { a.tt.exe = i ? arm64_twin(cand[i]) : cand[i]; break; }
     if (a.tt.exe.empty()) return;
@@ -2262,7 +2386,7 @@ static void tt_play(App &a, const LibGame &g)
     a.running = h;
     a.runningExe = a.tt.exe; a.runningArgs = args;
     a.runningLog = tt_log_path();
-    a.runningGame = "The Two Towers";
+    a.runningGame = tp().game;
     SDL_HideWindow(a.win);
 }
 
@@ -2295,6 +2419,136 @@ static std::string url_encode(const std::string &s)
     return o;
 }
 
+// ---- A problem report: every log and settings file Athelas knows of and a description of the PC in one zip
+// (report.cpp), then GitHub's new-issue page with what the zip can't say filled in. Athelas sends nothing: the
+// player reads the page, writes what happened and drags the zip in, or doesn't.
+static std::string g_reportZip, g_reportUrl, g_reportErr;
+
+static std::string report_game_name(const App &a)
+{
+    std::string n = a.cur >= 0 && a.cur < (int)a.lib.size() ? game_kind_name(a.lib[a.cur].kind) : "The Return of the King - PC";
+    for (size_t at; (at = n.find("  ")) != std::string::npos;) n.erase(at, 1);   // the page's wide "  -  " as " - "
+    return n;
+}
+
+static std::string report_versions(const App &a)
+{
+    std::string s = "Athelas " LAUNCHER_VERSION;
+    std::string arch = exe_machine(exe_dir() + "\\Athelas.exe");
+    std::string pcfix = a.game.hasDll ? fix_dll_version(a.dir + "\\ROTKFix.dll") : "";
+    if (!pcfix.empty()) s += ", ROTK Fix " + pcfix;
+    for (int who = 0; who < 2; who++) {   // the TOML ports: the one in the tt fields, and the other
+        const Port &p = who == a.ttWho ? a.tt : a.ttOther;
+        if (p.exe.empty()) continue;
+        std::string m = exe_machine(p.exe), name = k_tomlPorts[who].exe;
+        s += ", " + (p.version.empty() ? name.substr(0, name.size() - 4) : p.version) + (m.empty() ? "" : " " + m);
+    }
+    if (!a.rx.exe.empty()) { std::string m = exe_machine(a.rx.exe); s += ", " + (a.rx.version.empty() ? "ROTKXbox" : a.rx.version) + (m.empty() ? "" : " " + m); }
+    return s;
+}
+
+static void rx_find(App &a);
+static bool make_report(App &a, std::string title)
+{
+    g_reportErr.clear();
+    // the ports' versions, when their pages haven't been shown yet
+    int shown = a.ttWho;
+    for (int who : { 1 - shown, shown }) { tp_use(a, who); if (!a.ttLooked) tt_find(a); }
+    if (!a.rxLooked) rx_find(a);
+    std::vector<ReportFile> files;
+    files.push_back({ "Athelas.ini", ports_ini() });
+    if (!a.dir.empty()) {
+        files.push_back({ "ROTK-PC/ROTKFix.log", a.dir + "\\ROTKFix.log" });
+        files.push_back({ "ROTK-PC/ROTKFix.ini", a.dir + "\\ROTKFix.ini" });
+        if (!a.game.rotkIniPath.empty()) files.push_back({ "ROTK-PC/ROTK.ini", a.game.rotkIniPath });
+    }
+    std::vector<std::pair<std::string, std::string>> dirs;   // each port's folder: name in the zip, where
+    for (int who : { 0, 1 }) {
+        g_ttWho = who;   // tt_ paths only (the fields stay as they are)
+        std::string d = tp().dir;
+        files.push_back({ d + "/" + tp().log, tt_log_path() });
+        files.push_back({ d + "/settings.toml", tt_settings_path() });
+        dirs.push_back({ d, tt_data_dir() });
+    }
+    g_ttWho = a.ttWho;
+    files.push_back({ "ROTK-Xbox/rotkx.log", rx_log_path() });
+    files.push_back({ "ROTK-Xbox/settings.toml", rx_data_dir() + "\\settings.toml" });
+    dirs.push_back({ "ROTK-Xbox", rx_data_dir() });
+    // the newest crash dump of each port, when it is from the last two weeks (an old one is another problem)
+    for (auto &d : dirs) {
+        std::string dmp = report_newest_dump(d.second + "\\CrashDumps", 14);
+        if (!dmp.empty()) files.push_back({ d.first + "/" + dmp.substr(dmp.find_last_of('\\') + 1), dmp, false });
+    }
+    std::string sys = report_system_text();
+    std::string versions = report_versions(a);
+    GpuInfo gi = gpu_info();
+    std::string vk = gi.state == GPU_VULKAN_OK ? "Vulkan: " + gi.name + (gi.software ? " (software)" : "")
+                   : gi.state == GPU_VULKAN_TOO_OLD ? "Vulkan: too old for DXVK (" + gi.name + ")"
+                   : gi.state == GPU_NO_VULKAN ? "Vulkan: none" : "Vulkan: still checking";
+    std::string pads;
+    for (SDL_Gamepad *p : a.pads) {
+        const char *n = SDL_GetGamepadName(p);
+        if (n) pads += (pads.empty() ? "" : ", ") + std::string(n);
+    }
+    std::string extra = "Versions: " + versions + "\r\n" + vk + "\r\nControllers: " + (pads.empty() ? "none" : pads) + "\r\n";
+    for (auto &g : a.lib)
+        extra += std::string("Game: ") + game_kind_name(g.kind) + (g.iso ? ", disc image" : ", folder") +
+                 (g.titleId ? ", " + std::string(game_region_name(g)) + " copy" : "") + " - " + g.path + "\r\n";
+    if (!report_write(files, sys + extra, g_reportZip, g_reportErr)) return false;
+
+    // the issue: the template's headings, with what is known filled in
+    std::string pcLines;
+    for (size_t at = 0; at < sys.size();) {
+        size_t e = sys.find("\r\n", at);
+        std::string l = sys.substr(at, e - at);
+        if (!l.rfind("Windows:", 0) || !l.rfind("Processor:", 0) || !l.rfind("Memory:", 0) || !l.rfind("Graphics:", 0) || !l.rfind("Display:", 0))
+            pcLines += "- " + l + "\n";
+        if (e == std::string::npos) break;
+        at = e + 2;
+    }
+    pcLines += "- Controllers: " + (pads.empty() ? std::string("none connected") : pads) + "\n";
+    std::string zipName = g_reportZip.substr(g_reportZip.find_last_of('\\') + 1);
+    std::string body = "**Which game**\n" + report_game_name(a) + "\n\n**Athelas version**\n" + versions +
+                       "\n\n**What happened**\n<!-- What you saw, and what you did just before. Screenshots help. -->\n\n\n"
+                       "**Your PC**\n" + report_anonymise(pcLines) +
+                       "\n**The log**\n<!-- Drag \"" + zipName + "\" from the folder Athelas just opened into this box. "
+                       "It has the logs and settings, with your Windows user name taken out. -->\n";
+    if (title.empty()) title = report_game_name(a) + ": ";
+    g_reportUrl = "https://github.com/Shagg88/Athelas/issues/new?labels=bug&title=" + url_encode(title) + "&body=" + url_encode(body);
+    ShellExecuteA(NULL, "open", "explorer.exe", ("/select,\"" + g_reportZip + "\"").c_str(), NULL, SW_SHOWNORMAL);
+    ShellExecuteA(NULL, "open", g_reportUrl.c_str(), NULL, NULL, SW_SHOWNORMAL);
+    return true;
+}
+
+// On each About page
+static void report_section(App &a)
+{
+    section("Report a problem");
+    ImGui::PushTextWrapPos(0);
+    ImGui::TextUnformatted("Something wrong? This puts the logs, the settings and a description of this PC into one zip, "
+                           "then opens a new report on GitHub with the details filled in. Write what happened and drag "
+                           "the zip in.");
+    ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
+    ImGui::TextColored(C_DIM, "Athelas doesn't send anything itself: you see the report and choose what to post. Your "
+                              "Windows user name is taken out of the files; the folders your games are in stay.");
+    ImGui::PopFont();
+    ImGui::PopTextWrapPos();
+    if (ImGui::Button("Make a problem report")) {
+        if (!make_report(a, "")) set_message(a, g_reportErr, true);
+    }
+    if (!g_reportZip.empty() && g_reportErr.empty()) {
+        ImGui::SameLine();
+        if (ImGui::Button("Show the zip")) ShellExecuteA(NULL, "open", "explorer.exe", ("/select,\"" + g_reportZip + "\"").c_str(), NULL, SW_SHOWNORMAL);
+        ImGui::SameLine();
+        if (ImGui::Button("Open the report page")) ShellExecuteA(NULL, "open", g_reportUrl.c_str(), NULL, NULL, SW_SHOWNORMAL);
+        ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
+        ImGui::PushTextWrapPos(0);
+        ImGui::TextColored(C_GOOD, "Saved: %s", g_reportZip.c_str());
+        ImGui::PopTextWrapPos();
+        ImGui::PopFont();
+    }
+}
+
 // After a crash: the log and a bug report a click away (the report opens the repository's form, its title filled in)
 static void crash_box(App &a, const std::string &text, const std::string &title)
 {
@@ -2303,7 +2557,8 @@ static void crash_box(App &a, const std::string &text, const std::string &title)
         { 0, 1, "Open log folder" },
         { 0, 2, "Report a problem" },
     };
-    std::string t = text + "\n\nIf it keeps happening, please report it and attach the log file: it shows what went wrong.";
+    std::string t = text + "\n\nIf it keeps happening, please report it: \"Report a problem\" puts the logs into one zip "
+                           "and opens the report page on GitHub, for you to attach it.";
     SDL_MessageBoxData box = { SDL_MESSAGEBOX_ERROR, NULL, "Athelas", t.c_str(), 3, buttons, NULL };
     int pressed = 0;
     if (!SDL_ShowMessageBox(&box, &pressed)) return;
@@ -2313,8 +2568,10 @@ static void crash_box(App &a, const std::string &text, const std::string &title)
         else
             ShellExecuteA(NULL, "open", a.runningLog.substr(0, a.runningLog.find_last_of('\\')).c_str(), NULL, NULL, SW_SHOWNORMAL);
     } else if (pressed == 2) {
-        std::string url = "https://github.com/Shagg88/Athelas/issues/new?template=bug_report.md&title=" + url_encode(title);
-        ShellExecuteA(NULL, "open", url.c_str(), NULL, NULL, SW_SHOWNORMAL);
+        if (!make_report(a, title)) {   // the report couldn't be written: the form on its own
+            std::string url = "https://github.com/Shagg88/Athelas/issues/new?template=bug_report.md&title=" + url_encode(title);
+            ShellExecuteA(NULL, "open", url.c_str(), NULL, NULL, SW_SHOWNORMAL);
+        }
     }
 }
 
@@ -2545,23 +2802,31 @@ static void tt_setting_row(App &a, const PortSetting &ps)
 }
 
 static void tt_tabs(App &a, const LibGame &g);
+static std::wstring tt_widen(const std::string &s) { return std::wstring(s.begin(), s.end()); }   // ASCII names
+static void tt_locate_button(App &a)
+{
+    std::string label = std::string("Locate ") + tp().exe + "...";
+    if (ImGui::Button(label.c_str())) {
+        std::string f;
+        std::wstring exe = tt_widen(tp().exe), title = L"Choose " + exe, type = tt_widen(tp().game) + L" port (" + exe + L")";
+        if (pick_file(f, title.c_str(), type.c_str(), exe.c_str())) {
+            SHCreateDirectoryExA(NULL, (exe_dir() + "\\ROTKFix").c_str(), NULL);
+            WritePrivateProfileStringA("Ports", tp().iniKey, f.c_str(), ports_ini().c_str());
+            tt_find(a);
+        }
+    }
+}
 static void draw_tt(App &a, const LibGame &g)
 {
+    tp_use(a, tp_of(g.kind));
     if (!a.ttLooked) tt_find(a);
     ImGui::PushTextWrapPos(0);
     if (a.tt.exe.empty()) {
         ImGui::Spacing();
-        ImGui::TextColored(C_WARN, "The Two Towers port (TwoTowers.exe) wasn't found.");
-        ImGui::TextUnformatted("It is normally in the TT-Xbox folder next to Athelas.exe. If you have it somewhere else, show the launcher where.");
+        ImGui::TextColored(C_WARN, "%s port (%s) wasn't found.", tp().game, tp().exe);
+        ImGui::Text("It is normally in the %s folder next to Athelas.exe. If you have it somewhere else, show the launcher where.", tp().dir);
         ImGui::PopTextWrapPos();
-        if (ImGui::Button("Locate TwoTowers.exe...")) {
-            std::string f;
-            if (pick_file(f, L"Choose TwoTowers.exe", L"The Two Towers port (TwoTowers.exe)", L"TwoTowers.exe")) {
-                SHCreateDirectoryExA(NULL, (exe_dir() + "\\ROTKFix").c_str(), NULL);
-                WritePrivateProfileStringA("Ports", "TwoTowers", f.c_str(), ports_ini().c_str());
-                tt_find(a);
-            }
-        }
+        tt_locate_button(a);
         return;
     }
     if (!tt_ready(a)) {
@@ -2571,13 +2836,7 @@ static void draw_tt(App &a, const LibGame &g)
         ImGui::PopTextWrapPos();
         if (ImGui::Button("Try again")) tt_find(a);
         ImGui::SameLine();
-        if (ImGui::Button("Locate TwoTowers.exe...")) {
-            std::string f;
-            if (pick_file(f, L"Choose TwoTowers.exe", L"The Two Towers port (TwoTowers.exe)", L"TwoTowers.exe")) {
-                WritePrivateProfileStringA("Ports", "TwoTowers", f.c_str(), ports_ini().c_str());
-                tt_find(a);
-            }
-        }
+        tt_locate_button(a);
         return;
     }
     ImGui::PopTextWrapPos();
@@ -2593,7 +2852,7 @@ static int tt_tab_of(const std::string &sec)
     if (sec == "controls" || sec == "input") return 2;
     if (sec == "audio" || sec == "sound") return 3;
     if (sec == "network") return 4;
-    if (sec == "gameplay" || sec == "cheats" || sec == "achievements" || sec == "discord") return 5;
+    if (sec == "gameplay" || sec == "cheats" || sec == "achievements" || sec == "discord" || sec == "language") return 5;
     return 1;   // graphics, textures and anything else
 }
 
@@ -2646,7 +2905,8 @@ static bool tt_hidden(const PortSetting &ps)
 {
     if (ps.section == "system" && ps.key == "one_core") return !native_arm64();   // shown on Windows on ARM PCs only
     return (ps.section == "display" && ps.key == "fps_cap") || ps.section == "window" || ps.section == "keyboard" ||
-           (ps.section == "discord" && ps.key == "app_id");
+           (ps.section == "discord" && ps.key == "app_id") ||
+           ps.section == "network";   // system link: The Two Towers has none (no network library in the game), so it does nothing
 }
 // The tab a setting is shown on: its section's, except the frame rate, which is on Display as in ROTK's
 static int tt_tab_of_setting(const PortSetting &ps) { return ps.section == "graphics" && ps.key == "fps" ? 0 : tt_tab_of(ps.section); }
@@ -2892,7 +3152,7 @@ static void tt_tab_graphics(App &a)
         section("Quality");
         std::string help;
         for (auto &p : a.tt.presets) {
-            const char *d = p.name == "Original" ? "as it looked on the Xbox in 2003: 4:3, 30 fps, no anti-aliasing, filtering or sharpening."
+            const char *d = p.name == "Original" ? tp().original
                           : p.name == "Balanced" ? "widescreen, light anti-aliasing and filtering, light sharpening."
                           : p.name == "High"     ? "widescreen, 4x anti-aliasing, 16x texture filtering, sharper textures and sharpening."
                           : p.name == "Ultra"    ? "8x anti-aliasing, and drawn at 150% resolution for an even cleaner picture."
@@ -3071,8 +3331,8 @@ static void tt_tab_graphics(App &a)
         if (prep) {
             mark("textures", "replace");
             bool v = tt_val(a, *prep) == "true";
-            std::string h = "Shows sharper or remade pictures from texture packs. A pack goes in its own folder inside "
-                            "TT-Xbox\\textures\\replace; remove the folder to go back to the original pictures.";
+            std::string h = std::string("Shows sharper or remade pictures from texture packs. A pack goes in its own folder inside ") +
+                            tp().dir + "\\textures\\replace; remove the folder to go back to the original pictures.";
             row_begin("Use texture packs", h.c_str());
             if (ImGui::Checkbox("##tttexrepl", &v)) a.ttFile.set(prep->section, prep->key, v ? "true" : "false");
             row_end();
@@ -3080,13 +3340,14 @@ static void tt_tab_graphics(App &a)
         if (pdump) {
             mark("textures", "dump");
             bool v = tt_val(a, *pdump) == "true";
-            row_begin("Save game textures", "For making texture packs: every picture the game uses is saved as a PNG in "
-                                            "TT-Xbox\\textures\\dump as you play. Levels load a little slower the first time. "
-                                            "Turn it off when you have what you need.");
+            std::string h = std::string("For making texture packs: every picture the game uses is saved as a PNG in ") + tp().dir +
+                            "\\textures\\dump as you play. Levels load a little slower the first time. Turn it off when you have what you need.";
+            row_begin("Save game textures", h.c_str());
             if (ImGui::Checkbox("##tttexdump", &v)) a.ttFile.set(pdump->section, pdump->key, v ? "true" : "false");
             row_end();
         }
-        row_begin("Textures folder", "Opens TT-Xbox\\textures, where the replace and dump folders are.");
+        std::string h = std::string("Opens ") + tp().dir + "\\textures, where the replace and dump folders are.";
+        row_begin("Textures folder", h.c_str());
         if (ImGui::Button("Open folder##tttex")) tt_open_textures();
         row_end();
     }
@@ -3364,9 +3625,16 @@ static void tt_tab_gameplay(App &a)
     }
     bool more = false;
     for (auto &ps : a.tt.settings) {
-        if (tt_tab_of_setting(ps) != 5 || tt_hidden(ps) || ps.section == "cheats") continue;
+        if (tt_tab_of_setting(ps) != 5 || tt_hidden(ps) || ps.section == "cheats" || ps.section == "language") continue;
         if (std::find(done.begin(), done.end(), ps.section + "." + ps.key) != done.end()) continue;
         if (!more) { section(head ? "More" : "Gameplay"); more = true; }
+        tt_setting_row(a, ps);
+    }
+    // [language]: the subtitles in another language
+    bool lang = false;
+    for (auto &ps : a.tt.settings) {
+        if (ps.section != "language" || tt_hidden(ps)) continue;
+        if (!lang) { section("Language"); lang = true; }
         tt_setting_row(a, ps);
     }
     // [cheats]: the game's own secret codes, as switches
@@ -3449,11 +3717,30 @@ static void tt_about(App &a)
     if (ImGui::Button("Reset to defaults")) {
         a.ttFile = PortSettingsFile();
         tt_save(a);
-        set_message(a, "The Two Towers settings are back to their defaults", false);
+        set_message(a, std::string(tp().game) + " settings are back to their defaults", false);
     }
     games_section(a);
+    report_section(a);
 }
 
+
+// With a controller, LB and RB step to the previous and next tab (+1 / -1 here, 0 for none), unless a control is
+// being changed (they speed it up or slow it down then), a menu is open or a button is being set
+static int g_padTabFocus;   // frames left to put the controller's cursor on the new tab's first control
+static int pad_tab_step(const App &a)
+{
+    if (!(ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) || ImGui::IsAnyItemActive() || a.capture >= 0 ||
+        a.kbCapture >= 0 || ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel))
+        return 0;
+    int step = (int)ImGui::IsKeyPressed(ImGuiKey_GamepadR1, false) - (int)ImGui::IsKeyPressed(ImGuiKey_GamepadL1, false);
+    if (step) g_padTabFocus = 2;
+    return step;
+}
+// Just after the open tab's BeginTabItem: after LB / RB, the cursor goes to the new tab itself (Down enters its page)
+static void pad_tab_focus()
+{
+    if (g_padTabFocus > 0 && --g_padTabFocus == 0) { ImGui::FocusItem(); ImGui::SetNavCursorVisible(true); }
+}
 
 // Tabs spread evenly over the width, each in a carved frame (orn_tab) with its name centred.
 // ImGui's own tabs stay underneath, invisible, and only handle the clicks; 'sel' is the tab
@@ -3498,7 +3785,7 @@ static void tt_tabs(App &a, const LibGame &)
     static const char *tight[] = { "Display", "Graphics", "Controls", "Audio", "Network", "Gameplay", "About" };
     static const int order[] = { 0, 1, 2, 5, 3, 4, 6 };
     bool has[7] = {};
-    for (auto &ps : a.tt.settings) has[tt_tab_of_setting(ps)] = true;
+    for (auto &ps : a.tt.settings) if (!tt_hidden(ps)) has[tt_tab_of_setting(ps)] = true;
     has[1] = true;   // the preset lives there
     has[6] = true;
     int count = 0;
@@ -3512,6 +3799,7 @@ static void tt_tabs(App &a, const LibGame &)
     float tabW = tabs_begin(shownNames, shownN, ttSel);
     if (ImGui::BeginTabBar("tttabs")) {
         static int startTab = getenv("ROTKFIX_TAB") ? atoi(getenv("ROTKFIX_TAB")) : -1;
+        if (int step = pad_tab_step(a)) startTab = (ttSel + step + shownN) % shownN;
         int shown = 0;
         for (int t : order) {
             if (!has[t]) continue;
@@ -3520,8 +3808,9 @@ static void tt_tabs(App &a, const LibGame &)
             ImGui::SetNextItemWidth(tabW);
             if (ImGui::BeginTabItem(ids[t], nullptr, tf)) {
                 ttSel = idx;
+                pad_tab_focus();
                 ImGui::PopFont();
-                ImGui::BeginChild("tttab", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_NoBackground);
+                ImGui::BeginChild("tttab", ImVec2(0, 0), ImGuiChildFlags_NavFlattened, ImGuiWindowFlags_NoBackground);
                 if (t == 0) tt_tab_display(a); else if (t == 1) tt_tab_graphics(a); else if (t == 2) tt_tab_controls(a);
                 else if (t == 5) tt_tab_gameplay(a); else if (t < 5) tt_settings_on_tab(a, t); else tt_about(a);
                 if (getenv("ROTKFIX_SCROLL_END")) ImGui::SetScrollY(ImGui::GetScrollMaxY());   // testing
@@ -3543,7 +3832,7 @@ static void tt_tabs(App &a, const LibGame &)
 static bool tt_value_equal(const std::string &x, const std::string &y);
 static std::string tt_summary(const App &a)
 {
-    if (!tt_ready(a)) return "The Two Towers  |  port not found";
+    if (!tt_ready(a)) return std::string(tp().game) + "  |  port not found";
     std::string s;
     const PortSetting *p;
     int w = 0, h = 0;
@@ -3704,7 +3993,7 @@ static void draw_other_game(App &a)
             ImGui::PopTextWrapPos();
             return;
         }
-        if (g.kind == GK_TT_XBOX) { ImGui::PopTextWrapPos(); draw_tt(a, g); return; }
+        if (tp_kind(g.kind)) { ImGui::PopTextWrapPos(); draw_tt(a, g); return; }
         ImGui::TextColored(C_WARN, "Recognised, but not playable from here yet.");
         ImGui::TextUnformatted("The Xbox Return of the King needs its own PC port, which is still to be built. When it's ready, "
                                "its settings will appear here and Play will start it with your game files.");
@@ -3745,7 +4034,7 @@ static void draw_setup(App &a)
     }
     section("Let's find your games");
     ImGui::PushTextWrapPos(0);
-    ImGui::TextUnformatted("This launcher plays your own copies of The Return of the King (PC or Xbox) and The Two Towers (Xbox). "
+    ImGui::TextUnformatted("This launcher plays your own copies of The Return of the King (PC or Xbox), The Two Towers (Xbox) and The Fellowship of the Ring (Xbox). "
                            "Show it where your games are; it remembers them.");
     ImGui::PopTextWrapPos();
 
@@ -3833,10 +4122,10 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
         art_start(dirs);
     }
     {
-        bool tt = a.cur >= 0 && a.cur < (int)a.lib.size() && a.lib[a.cur].kind == GK_TT_XBOX;
-        int group = tt ? 1 : 0;
+        GameKind k = a.cur >= 0 && a.cur < (int)a.lib.size() ? a.lib[a.cur].kind : GK_NONE;
+        int group = k == GK_TT_XBOX ? 1 : k == GK_FOTR_XBOX ? 2 : 0;
         if (group != a.bg.group || (group == 0 && art_ready() && !a.bg.artIn))
-            backgrounds_rebuild(a.bg, group, exe_dir(), tt ? a.lib[a.cur].path : std::string());
+            backgrounds_rebuild(a.bg, group, exe_dir(), group ? a.lib[a.cur].path : std::string());
     }
     backgrounds_poll(a.bg, ren);
     if (!a.bg.job && !a.bg.files.empty() &&
@@ -3948,9 +4237,12 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
         if (fix_installed(a.other)) use_pc_game(a, a.lib[a.cur].path);
     }
     const bool own = own_game(a);
-    // The Two Towers shown, and its port ready: Play and Save work for it
-    if (!own && a.lib[a.cur].kind == GK_TT_XBOX && !a.ttLooked) tt_find(a);
-    const bool ttShown = !own && a.lib[a.cur].kind == GK_TT_XBOX && game_region_supported(a.lib[a.cur]) && a.ttLooked && tt_ready(a);
+    // The Two Towers or The Fellowship of the Ring shown, and its port ready: Play and Save work for it
+    if (!own && tp_kind(a.lib[a.cur].kind)) {
+        tp_use(a, tp_of(a.lib[a.cur].kind));
+        if (!a.ttLooked) tt_find(a);
+    }
+    const bool ttShown = !own && tp_kind(a.lib[a.cur].kind) && game_region_supported(a.lib[a.cur]) && a.ttLooked && tt_ready(a);
     // The Return of the King on Xbox: the same settings page as the PC version
     const bool rxShown = !own && a.lib[a.cur].kind == GK_ROTK_XBOX && game_region_supported(a.lib[a.cur]);
     if (rxShown && !a.rxLooked) rx_find(a);
@@ -3982,7 +4274,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
                 st.push_back({ a.controllers > 0, true, a.controllers > 1 ? std::to_string(a.controllers) + " controllers" : a.controllers ? "Controller" : "No controller",
                                a.controllers ? a.controller : "Connect a controller - it will be picked up automatically." });
         } else {
-        bool tt = lg.kind == GK_TT_XBOX;
+        bool tt = tp_kind(lg.kind);
         if (tt && !a.ttLooked) tt_find(a);
         bool ready = game_region_supported(lg) && (tt ? tt_ready(a) : game_kind_playable(lg.kind));
         st.push_back({ ready, true, ready ? "Ready" : !game_region_supported(lg) ? "Not supported" : tt ? "Port not found" : "Not playable yet", lg.path });
@@ -4034,19 +4326,19 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     const float inset = frameT * 0.5f + S(5);   // clear of the frame's lines
     ImGui::SetCursorPos(ImVec2(panelX + inset, bannerH + inset));
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0, 0, 0, 0));
-    ImGui::BeginChild("panel", ImVec2(panelW - inset * 2, size.y - bannerH - barH - S(30) - inset * 2), ImGuiChildFlags_AlwaysUseWindowPadding);
+    ImGui::BeginChild("panel", ImVec2(panelW - inset * 2, size.y - bannerH - barH - S(30) - inset * 2), ImGuiChildFlags_AlwaysUseWindowPadding | ImGuiChildFlags_NavFlattened);
     g_labelW = std::max(S(230), ImGui::GetContentRegionAvail().x * 0.36f);
     if (ttShown) {
         if (!a.ttLoaded) tt_load_settings(a);
         tt_tabs(a, a.lib[a.cur]);
     } else if (!own && !rxShown) {
-        ImGui::BeginChild("other", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_NoBackground);
+        ImGui::BeginChild("other", ImVec2(0, 0), ImGuiChildFlags_NavFlattened, ImGuiWindowFlags_NoBackground);
         draw_other_game(a);
         ImGui::Dummy(ImVec2(0, S(10)));
         games_section(a);
         ImGui::EndChild();
     } else if (!rxShown && !g.exeFound) {
-        ImGui::BeginChild("setup", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_NoBackground);
+        ImGui::BeginChild("setup", ImVec2(0, 0), ImGuiChildFlags_NavFlattened, ImGuiWindowFlags_NoBackground);
         draw_setup(a);
         ImGui::EndChild();
     } else {
@@ -4060,6 +4352,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
             { "###audio", tab_audio }, { "###gameplay", tab_gameplay }, { "###about", tab_about } };
         // ROTKFIX_TAB=n (testing): open on tab n
         static int startTab = getenv("ROTKFIX_TAB") ? atoi(getenv("ROTKFIX_TAB")) : -1;
+        if (int step = pad_tab_step(a)) startTab = (rotkSel + step + 6) % 6;
         int ti = 0;
         for (auto &t : tabs) {
             int idx = ti;
@@ -4067,8 +4360,9 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
             ImGui::SetNextItemWidth(tabW);
             if (ImGui::BeginTabItem(t.name, nullptr, tf)) {
                 rotkSel = idx;
+                pad_tab_focus();
                 ImGui::PopFont();
-                ImGui::BeginChild("tab", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_NoBackground);
+                ImGui::BeginChild("tab", ImVec2(0, 0), ImGuiChildFlags_NavFlattened, ImGuiWindowFlags_NoBackground);
                 t.fn(a);
                 ImGui::Dummy(ImVec2(0, S(6)));
                 if (getenv("ROTKFIX_SCROLL_END")) ImGui::SetScrollY(ImGui::GetScrollMaxY());   // testing
@@ -4101,7 +4395,15 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
         float cardW = bx - saveW - S(24) - panelX;   // under the panel, the picture beside it kept clear
         bool msg = !a.message.empty() && ImGui::GetTime() - a.messageAt < (a.messageBad ? 30.0 : 4.0);
         std::string newer = update_install_state(nullptr, nullptr) > 0 ? std::string() : update_newer();   // not while it installs
-        float cardH = S(32) + (newer.empty() ? 0.0f : S(18));
+        // playing with a controller: its shortcuts, in its own names, while there's no message to show
+        std::string padHint;
+        if (!msg && a.controllers > 0 && GImGui->NavCursorVisible && GImGui->NavInputSource == ImGuiInputSource_Gamepad) {
+            int ls = label_style(a);
+            padHint = ls == NAMES_PS ? "L1 / R1: tabs  \xc2\xb7  Options: Play  \xc2\xb7  Share: Save  \xc2\xb7  Circle: back"
+                    : ls == NAMES_NINTENDO ? "L / R: tabs  \xc2\xb7  +: Play  \xc2\xb7  \xe2\x80\x93: Save  \xc2\xb7  B: back"
+                    : "LB / RB: tabs  \xc2\xb7  Menu: Play  \xc2\xb7  View: Save  \xc2\xb7  B: back";
+        }
+        float cardH = S(32) + (newer.empty() ? 0.0f : S(18)) + (padHint.empty() ? 0.0f : S(18));
         if (msg) {   // room for the message, however many lines it wraps to
             ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
             cardH += ImGui::CalcTextSize(a.message.c_str(), nullptr, false, cardW - S(18)).y + S(2);
@@ -4124,6 +4426,10 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
         if (msg) {
             ImGui::SetCursorPosX(panelX + S(10));
             ImGui::TextColored(a.messageBad ? C_BAD : C_GOOD, "%s", a.message.c_str());
+        }
+        if (!padHint.empty()) {
+            ImGui::SetCursorPosX(panelX + S(10));
+            ImGui::TextColored(C_GOLD, "%s", padHint.c_str());
         }
         ImGui::PopTextWrapPos();
         ImGui::PopFont();
@@ -4166,7 +4472,13 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     if (autoPlay && rxShown && rx_ready(a)) { autoPlay = false; if (save(a)) rx_play(a, a.lib[a.cur]); }
     ImGui::SetCursorPos(ImVec2(bx, by));
     bool playOk = !(ttShown ? a.running != NULL : rxShown ? (!rx_ready(a) || a.running != NULL) : (!own || !g.exeFound || g_fixRemoved));
-    if (orn_arch_button("PLAY", ImVec2(playW, playH), F_PLAY, playOk)) {
+    // a controller's Start is Play, and its View / Back button Save, wherever the cursor is (not with a menu open,
+    // a control being changed or a button being set)
+    bool padFree = (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) && !ImGui::IsAnyItemActive() &&
+                   a.capture < 0 && a.kbCapture < 0 && !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel);
+    bool padPlay = padFree && ImGui::IsKeyPressed(ImGuiKey_GamepadStart, false);
+    bool padSave = padFree && ImGui::IsKeyPressed(ImGuiKey_GamepadBack, false);
+    if (orn_arch_button("PLAY", ImVec2(playW, playH), F_PLAY, playOk) || (padPlay && playOk)) {
         if (ttShown) tt_play(a, a.lib[a.cur]);
         else if (rxShown) { if (save(a)) rx_play(a, a.lib[a.cur]); }
         else if (save(a)) {
@@ -4184,12 +4496,58 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     bx -= saveW + S(12);
     ImGui::SetCursorPos(ImVec2(bx, by + (playH - btnH) * 0.5f));
     bool saveOk = ttShown || rxShown || !(!own || !g.exeFound || g_fixRemoved);
-    if (orn_plate_button("Save", ImVec2(saveW, btnH), saveOk)) { if (ttShown) tt_save(a); else save(a); }
+    if (orn_plate_button("Save", ImVec2(saveW, btnH), saveOk) || (padSave && saveOk)) {
+        if (ttShown) tt_save(a); else save(a);
+    }
 
     ImGui::End();
 }
 
 // ---------------------------------------------------------------------------
+
+// ATHELAS_TEST_PAD=<file> (testing): a virtual controller, its presses read from that file as they are written
+// ("DOWN DOWN A", names below; the file is removed once read), so controller use can be tried without one
+static void test_pad_poll()
+{
+    static const char *file = getenv("ATHELAS_TEST_PAD");
+    if (!file) return;
+    static SDL_Joystick *js = nullptr;
+    struct Ev { double at; int button; bool down; };
+    static std::vector<Ev> queue;
+    if (!js) {
+        SDL_VirtualJoystickDesc d;
+        SDL_INIT_INTERFACE(&d);
+        d.type = SDL_JOYSTICK_TYPE_GAMEPAD;
+        d.naxes = SDL_GAMEPAD_AXIS_COUNT;
+        d.nbuttons = SDL_GAMEPAD_BUTTON_COUNT;
+        d.name = "Athelas test pad";
+        SDL_JoystickID id = SDL_AttachVirtualJoystick(&d);
+        js = id ? SDL_OpenJoystick(id) : nullptr;
+        if (!js) { file = nullptr; return; }
+    }
+    double now = SDL_GetTicks() / 1000.0;
+    if (FILE *f = fopen(file, "rb")) {
+        char buf[4096];
+        size_t n = fread(buf, 1, sizeof buf - 1, f);
+        fclose(f);
+        remove(file);
+        buf[n] = 0;
+        static const struct { const char *name; int b; } names[] = {
+            { "A", SDL_GAMEPAD_BUTTON_SOUTH }, { "B", SDL_GAMEPAD_BUTTON_EAST }, { "X", SDL_GAMEPAD_BUTTON_WEST },
+            { "Y", SDL_GAMEPAD_BUTTON_NORTH }, { "LB", SDL_GAMEPAD_BUTTON_LEFT_SHOULDER }, { "RB", SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER },
+            { "START", SDL_GAMEPAD_BUTTON_START }, { "BACK", SDL_GAMEPAD_BUTTON_BACK }, { "UP", SDL_GAMEPAD_BUTTON_DPAD_UP },
+            { "DOWN", SDL_GAMEPAD_BUTTON_DPAD_DOWN }, { "LEFT", SDL_GAMEPAD_BUTTON_DPAD_LEFT }, { "RIGHT", SDL_GAMEPAD_BUTTON_DPAD_RIGHT },
+            { "LS", SDL_GAMEPAD_BUTTON_LEFT_STICK }, { "RS", SDL_GAMEPAD_BUTTON_RIGHT_STICK } };
+        double at = std::max(now, queue.empty() ? now : queue.back().at + 0.12);
+        for (char *t = strtok(buf, " \r\n\t"); t; t = strtok(nullptr, " \r\n\t"))
+            for (auto &nm : names)
+                if (!_stricmp(nm.name, t)) { queue.push_back({ at, nm.b, true }); queue.push_back({ at + 0.06, nm.b, false }); at += 0.18; }
+    }
+    while (!queue.empty() && queue.front().at <= now) {
+        SDL_SetJoystickVirtualButton(js, queue.front().button, queue.front().down);
+        queue.erase(queue.begin());
+    }
+}
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
 {
@@ -4241,8 +4599,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     io.IniFilename = nullptr;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
     ImFontConfig fc; fc.FontDataOwnedByAtlas = false; fc.OversampleH = 2;
-    F_BODY  = io.Fonts->AddFontFromMemoryTTF((void *)font_garamond_data, sizeof font_garamond_data, S(21), &fc);
-    F_SMALL = io.Fonts->AddFontFromMemoryTTF((void *)font_garamond_data, sizeof font_garamond_data, S(18), &fc);
+    // the body text with the accented Latin and the Cyrillic letters EB Garamond has (the subtitle languages' names)
+    static const ImWchar kBodyRanges[] = { 0x0020, 0x024F, 0x0400, 0x04FF, 0x2000, 0x206F, 0x20AC, 0x20AC, 0x2122, 0x2122, 0 };
+    F_BODY  = io.Fonts->AddFontFromMemoryTTF((void *)font_garamond_data, sizeof font_garamond_data, S(21), &fc, kBodyRanges);
+    F_SMALL = io.Fonts->AddFontFromMemoryTTF((void *)font_garamond_data, sizeof font_garamond_data, S(18), &fc, kBodyRanges);
     F_HEAD  = io.Fonts->AddFontFromMemoryTTF((void *)font_cinzel_data, sizeof font_cinzel_data, S(19), &fc);
     F_TITLE = io.Fonts->AddFontFromMemoryTTF((void *)font_uncial_data, sizeof font_uncial_data, S(64), &fc);   // the Athelas title
     F_PLAY  = io.Fonts->AddFontFromMemoryTTF((void *)font_cinzel_data, sizeof font_cinzel_data, S(34), &fc);
@@ -4285,7 +4645,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     // Not in a PC game's folder, but the player has Xbox games: open on the first of them
     // (The Return of the King first) instead of the PC setup screen.
     if (a.cur < 0)
-        for (GameKind k : { GK_ROTK_XBOX, GK_TT_XBOX })
+        for (GameKind k : { GK_ROTK_XBOX, GK_TT_XBOX, GK_FOTR_XBOX })
             for (size_t i = 0; i < a.lib.size() && a.cur < 0; i++)
                 if (a.lib[i].kind == k && game_region_supported(a.lib[i])) a.cur = (int)i;
     if (const char *t = getenv("ROTKFIX_GAME")) { int n = atoi(t); if (n >= 0 && n < (int)a.lib.size()) a.cur = n; }   // testing
@@ -4304,6 +4664,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     if (updates_on()) update_check_start(LAUNCHER_VERSION);
 
     while (!a.quit) {
+        test_pad_poll();
         SDL_Event e;
         while (SDL_PollEvent(&e)) {
             if (!kb_capture_event(a, e)) ImGui_ImplSDL3_ProcessEvent(&e);   // a key being set doesn't also click
@@ -4337,11 +4698,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
                 }
             }
         }
-        if (a.capture >= 0 || ImGui::GetTime() - a.captureAt < 0.5) io.ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
+        // the controller works the launcher only while it is the window in front: its events come in the background too
+        // (for setting buttons), and Start or Back there would start a game or save behind another app
+        if (a.capture >= 0 || ImGui::GetTime() - a.captureAt < 0.5 || !SDL_GetKeyboardFocus())
+            io.ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
         else io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
         ImGui_ImplSDLRenderer3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
+        {   // a button just set with the controller: its cursor back where it was
+            static bool padNavWas = true;
+            bool on = (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0;
+            if (on && !padNavWas && GImGui->NavInputSource == ImGuiInputSource_Gamepad) ImGui::SetNavCursorVisible(true);
+            padNavWas = on;
+        }
         draw_ui(a, io.DisplaySize, ren);
         ImGui::Render();
         SDL_SetRenderDrawColor(ren, 10, 8, 6, 255);

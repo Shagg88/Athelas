@@ -1,0 +1,458 @@
+# The Two Towers - Italian subtitles (our own translation; line numbers are the game's text IDs)
+2	Aiuto
+4	Premi START
+6	Continua
+7	Rigioca
+8	On
+9	Off
+10	Naviga
+11	Seleziona
+12	Indietro
+13	@ 2002 New Line Productions, Inc. Il Signore degli Anelli, con i relativi personaggi, nomi e luoghi, * The Saul Zaentz Company d/b/a Tolkien Enterprises, in licenza a New Line Productions, Inc. Tutti i diritti riservati.
+14	EA GAMES* è un marchio Electronic Arts*.
+15	Codice di gioco e alcuni elementi audiovisivi @ 2002 Electronic Arts Inc. Tutti i diritti riservati.
+16	Nuova partita
+17	Carica partita
+18	Opzioni
+19	Modalità debug
+20	Funzioni bonus
+21	Salva partita
+24	Premi START per continuare
+25	Opzioni
+26	Configurazione controller
+27	Impostazione partita
+38	Difficoltà:
+39	Facile
+40	Normale
+41	Esperto
+42	Mono
+43	Stereo
+44	Surround
+45	Impostazione partita
+46	Volume voci:
+47	Volume musica:
+48	Sottotitoli:
+49	Vibrazione:
+50	Volume gioco:
+51	Audio:
+53	Scegli la partita da caricare:
+54	Scegli dove salvare:
+55	Scegli l'ingresso MEMORY CARD:
+56	Disco rigido Xbox
+57	Ingresso MEMORY CARD 2
+58	Scegli l'ingresso MEMORY CARD:
+59	Annulla
+60	Sì
+61	No
+62	Sei sicuro?
+63	Vuoi davvero acquistare questo potenziamento?
+64	Sei sicuro? I risultati dell'ultima volta che hai giocato questa missione andranno persi.
+65	Sei sicuro? Perderai tutti i progressi non salvati di questa partita.
+66	Sei sicuro? Perderai i progressi di questa missione.
+67	Vuoi davvero sovrascrivere questa partita?
+68	Hai terminato gli acquisti dei potenziamenti?
+69	Salva partita su disco rigido
+70	Carica partita da disco rigido
+75	Scegli la difficoltà
+76	Facile
+77	Normale
+78	Esperto
+80	Bloccato
+81	Completato
+83	Non giocato
+85	Prologo
+86	Colle Vento
+87	Cancello di Moria
+88	Tomba di Balin
+89	Amon Hen
+90	Foresta di Fangorn
+91	Pianure di Rohan
+92	Ovestfalda
+93	Breccia di Rohan
+94	Mura Fossato
+95	Breccia nelle mura
+96	Cortile del Trombatorrione
+97	Torre di Orthanc
+98	Fosso di Helm:
+99	New Line Zoo
+100	Scegli un filmato da riprodurre:
+101	Introduzione
+102	Finale
+116	Aragorn
+117	Legolas
+118	Gimli
+119	Isildur
+120	Piano
+128	Punti potenziamento:
+129	4) Inserisci la sequenza di tasti indicata.
+130	Codici segreti
+131	Sempre devastante:
+132	2 giocatori:
+133	Nemici piccoli:
+134	Tutti i potenziamenti:
+135	Invulnerabile:
+136	Rallentatore:
+137	Per inserire un codice:
+138	1) Avvia una missione.
+139	2) Premi START per mettere in pausa.
+140	3) Tieni premuti
+141	Salute infinita:
+142	Proiettili infiniti:
+143	Termina missione:
+144	Modalità pausa:
+145	Aggiungi esperienza:
+146	Sali di livello:
+147	Ripristina salute:
+148	Ripristina proiettili:
+149	Potenzia proiettili:
+150	Mostra potenziamenti
+151	Esci al menu
+152	Missione successiva
+153	Missione fallita.
+154	Rigioca la missione
+155	Esci al menu
+156	Riprova
+161	Riconoscimenti
+176	Rigioca missione
+180	Seleziona una lingua.
+181	Inglese
+196	Velocità
+197	Violento
+198	Uccisione
+199	Speciale
+200	Combo
+207	Acquistato
+208	Non ancora sbloccato. Premi A per continuare.
+209	Non hai abbastanza punti potenziamento per acquistare questo potenziamento. Premi A per continuare.
+210	o
+211	dopo una parata
+212	a terra
+230	Spazio libero
+231	Partita 2
+232	Partita 3
+233	Partita 4
+234	Partita 5
+235	Partita 6
+236	Partita 7
+237	Partita 8
+238	Partita 9
+239	Partita 10
+240	Partita 11
+270	Nessuna memory card (PS2) inserita. Per salvare i dati di gioco servono almeno 80 KB. Vuoi continuare?
+271	Spazio insufficiente sulla memory card (PS2) nell'ingresso MEMORY CARD 1. Per salvare i dati servono almeno 80 KB. Vuoi continuare?
+272	Spazio insufficiente sulla memory card (PS2) nell'ingresso MEMORY CARD 2. Per salvare i dati servono almeno 80 KB. Vuoi continuare?
+273	Spazio insufficiente sulle memory card (PS2) negli ingressi MEMORY CARD. Per salvare i dati servono almeno 80 KB. Vuoi continuare?
+274	Nessuna memory card (PS2) inserita nell'ingresso MEMORY CARD 1. Premi X per continuare.
+275	Nessuna memory card (PS2) inserita nell'ingresso MEMORY CARD 2. Premi X per continuare.
+276	Ricollega il controller e premi START per continuare.
+277	La memory card (PS2) nell'ingresso MEMORY CARD 2 non è formattata. Formattarla?
+278	Blocchi liberi insufficienti su Xbox per salvare le partite. Premi A per continuare senza salvare o B per liberare almeno
+279	Ricollega il controller e premi START per continuare
+280	Blocchi liberi insufficienti sul disco rigido per questo salvataggio.
+281	blocchi da liberare.
+282	Formattazione non riuscita! Errore della memory card (PS2) nell'ingresso MEMORY CARD 2! Premi X per continuare.
+283	Salvataggio non riuscito. Premi A per continuare.
+284	Salvataggio non riuscito. Premi A per continuare.
+285	Partita salvata. Premi A per continuare.
+286	Dati salvati sulla memory card (PS2) nell'ingresso MEMORY CARD 2! Premi X per continuare.
+287	Salvataggio sulla memory card (PS2) nell'ingresso MEMORY CARD 1 in corso. Non rimuovere la memory card (PS2) e non resettare né spegnere la console.
+288	Salvataggio sulla memory card (PS2) nell'ingresso MEMORY CARD 2 in corso. Non rimuovere la memory card (PS2) e non resettare né spegnere la console.
+289	Caricamento dalla memory card (PS2) nell'ingresso MEMORY CARD 1 in corso. Non rimuovere la memory card (PS2) e non resettare né spegnere la console.
+290	Caricamento dalla memory card (PS2) nell'ingresso MEMORY CARD 2 in corso. Non rimuovere la memory card (PS2) e non resettare né spegnere la console.
+291	Caricamento non riuscito. Premi A per continuare.
+292	Caricamento non riuscito. Premi A per continuare.
+293	Vuoi salvare la partita?
+294	Nessuna partita salvata. Premi A per continuare.
+295	Nessuna partita salvata. Premi A per continuare.
+296	blocchi.
+297	La memory card (PS2) nell'ingresso MEMORY CARD 1 non è formattata. Premi X per continuare.
+298	La memory card (PS2) nell'ingresso MEMORY CARD 2 non è formattata. Premi X per continuare.
+299	Lettura dalla memory card (PS2) nell'ingresso MEMORY CARD 1 in corso. Non rimuovere la memory card (PS2) e non resettare né spegnere la console.
+300	Lettura dalla memory card (PS2) nell'ingresso MEMORY CARD 2 in corso. Non rimuovere la memory card (PS2) e non resettare né spegnere la console.
+301	C'è un problema con il disco in uso. Potrebbe essere sporco o danneggiato.
+320	Missione 1
+321	Missione 2
+322	Missione 3
+323	Missione 4
+324	Missione 5
+325	Missione 6
+326	Missione 7
+327	Missione 8
+328	Missione 9
+329	Missione 10
+330	Missione 11
+331	Missione 12
+332	Missione 13
+333	Missione A
+334	Missione B
+335	Missione C
+336	Missione D
+401	Esperienza missione:
+403	Valutazione missione:
+405	Punti potenziamento totali:
+450	Perfetto
+451	Eccellente
+452	Buono
+453	Discreto
+454	Scarso
+455	Abilità
+460	Attacco
+461	Forte
+462	Difesa
+463	Veloce
+464	Attacco
+465	Violento
+500	Combinazione rapida, efficace contro i nemici più piccoli e senza scudo.
+501	Combinazione potente per sfondare gli ostacoli o spezzare gli scudi nemici.
+502	Tieni premuto il grilletto sinistro per usarlo. Spara con A (tieni premuto per aumentare il danno).
+503	Questo affondo finisce qualsiasi nemico a terra.
+504	Respingi i nemici e allontanali dalla loro portata d'attacco.
+505	Blocca gli attacchi e i proiettili nemici.
+506	Un attacco devastante. Tieni premuto Y per usarlo.
+507	Aumenta permanentemente la tua salute.
+508	Carica in avanti e getta a terra i nemici senza scudo.
+509	Attacca mentre ti rialzi, cogliendo di sorpresa i nemici.
+510	Combo molto efficace per abbattere i nemici senza scudo.
+511	Molto efficace per sbarazzarti il più rapidamente possibile dei nemici con scudo.
+512	MOSSA COLLEGATA: uccidi all'istante un goblin che ti attacca.
+513	Si usano come l'Arco dei Dúnedain, ma le frecce uncinate dei Rohirrim infliggono danni gravi.
+514	Aumenta permanentemente la tua salute. (Richiede Forza dei Sovrintendenti)
+515	Carica in avanti dalla distanza e getta a terra i nemici senza scudo. (Richiede Attacco furioso)
+516	Ferisci, atterra e colpisci il nemico con questo attacco combinato.
+517	Usa questa combo per colpire un nemico senza scudo, finirlo e colpirne subito un altro.
+518	MOSSA COLLEGATA: uccidi all'istante un orchetto che ti attacca.
+519	Aumenta permanentemente la tua salute. (Richiede Forza di Isildur)
+520	Un attacco ancora più devastante. (Richiede Furia del Ramingo)
+521	Aumenta il danno del tuo attacco veloce.
+522	Ferisci, atterra e finisci i nemici potenti con questa combo.
+523	Aumenta permanentemente la tua salute. (Richiede Forza di Elendil)
+524	Questo attacco devastante dà fuoco a più nemici. (Richiede Furia della natura)
+525	Le frecce di ferro di Gondor infliggono danni terribili. (Richiede Arco di Rohan)
+526	MOSSA COLLEGATA: uccidi all'istante un Uruk-hai che ti attacca.
+527	Usala contro un nemico potente per spezzargli lo scudo, gettarlo a terra e colpirlo.
+528	Nulla
+529	Nulla
+530	Combinazione rapida, efficace contro i nemici più piccoli e senza scudo.
+531	Combinazione potente per sfondare gli ostacoli o spezzare gli scudi nemici.
+532	Tieni premuto il grilletto sinistro per usarlo. Lancia con A (tieni premuto per aumentare il danno).
+533	Questo colpo d'ascia finisce qualsiasi nemico a terra.
+534	Respingi i nemici e allontanali dalla loro portata d'attacco.
+535	Blocca gli attacchi e i proiettili nemici.
+536	Un attacco devastante. Tieni premuto Y per usarlo.
+537	Aumenta permanentemente la tua salute.
+538	Aumenta permanentemente la tua salute. (Richiede Potenza della roccia)
+539	Carica in avanti e getta a terra i nemici senza scudo.
+540	Combo molto efficace per abbattere i nemici senza scudo.
+541	Molto efficace per sbarazzarti il più rapidamente possibile dei nemici con scudo.
+542	MOSSA COLLEGATA: uccidi all'istante un goblin che ti attacca.
+543	Aumenta permanentemente la tua salute. (Richiede Potenza del ferro)
+544	Carica in avanti dalla distanza e getta a terra i nemici senza scudo. (Richiede Attacco furioso)
+545	Attacca mentre ti rialzi, cogliendo di sorpresa i nemici.
+546	Ferisci, atterra e colpisci il nemico con questo attacco combinato.
+547	Usa questa combo per colpire un nemico senza scudo, finirlo e colpirne subito un altro.
+548	MOSSA COLLEGATA: uccidi all'istante un orchetto che ti attacca.
+549	Aumenta permanentemente la tua salute. (Richiede Runa di protezione)
+550	Aumenta permanentemente la tua salute. (Richiede Potenza di Balin)
+551	Si lanciano come le Asce di Erebor, ma le affilatissime asce di Moria infliggono danni ancora maggiori.
+552	Un attacco ancora più devastante. (Richiede Furia del nano)
+553	Ferisci, atterra e finisci i nemici potenti con questa combo.
+554	Aumenta permanentemente la tua salute. (Richiede Potenza di Gloin)
+555	Questo attacco devastante dà fuoco a più nemici. (Richiede Furia della montagna)
+556	Queste lame dal filo di Mithril infliggono danni terribili. (Richiede Asce di Moria)
+557	Aumenta il danno del tuo attacco violento.
+558	MOSSA COLLEGATA: uccidi all'istante un Uruk-hai che ti attacca.
+559	Usala contro un nemico potente per spezzargli lo scudo, gettarlo a terra e colpirlo.
+560	Combinazione rapida, efficace contro i nemici più piccoli e senza scudo.
+561	Combinazione potente per sfondare gli ostacoli o spezzare gli scudi nemici.
+562	Tieni premuto il grilletto sinistro per usarlo. Spara con A (tieni premuto per aumentare il danno).
+563	Questo affondo finisce qualsiasi nemico a terra.
+564	Respingi i nemici e allontanali dalla loro portata d'attacco.
+565	Blocca gli attacchi e i proiettili nemici.
+566	Un attacco devastante. Tieni premuto Y per usarlo.
+567	Aumenta permanentemente la tua salute.
+568	Carica in avanti e getta a terra i nemici senza scudo.
+569	Si usano come l'Arco di Bosco Atro, ma le frecce di frassino di Gran Burrone infliggono danni ancora maggiori.
+570	Combo molto efficace per abbattere i nemici senza scudo.
+571	Molto efficace per sbarazzarti il più rapidamente possibile dei nemici con scudo.
+572	MOSSA COLLEGATA: uccidi all'istante un goblin che ti attacca.
+573	Carica in avanti dalla distanza e getta a terra i nemici senza scudo. (Richiede Attacco furioso)
+574	Le frecce incantate di Lothlorien infliggono danni spaventosi. (Richiede Arco di Gran Burrone)
+575	Ferisci, atterra e colpisci il nemico con questo attacco combinato.
+576	Usa questa combo per colpire un nemico senza scudo, finirlo e colpirne subito un altro.
+577	Queste frecce magiche danno fuoco ai nemici. (Richiede Arco lungo di Lothlorien)
+578	Aumenta permanentemente la tua salute. (Richiede Forza di Celeborn)
+579	Un attacco ancora più devastante. (Richiede Furia dell'elfo)
+580	MOSSA COLLEGATA: uccidi all'istante un orchetto che ti attacca.
+581	Ferisci, atterra e finisci i nemici potenti con questa combo.
+582	Queste frecce trapassano e feriscono tutti i nemici sulla loro traiettoria. (Richiede Frecce del fuoco di drago)
+583	Attacca mentre ti rialzi, cogliendo di sorpresa i nemici.
+584	Aumenta il danno di ogni freccia che scocchi.
+585	MOSSA COLLEGATA: uccidi all'istante un Uruk-hai che ti attacca.
+586	Usala contro un nemico potente per spezzargli lo scudo, gettarlo a terra e colpirlo.
+600	Triplo colpo
+601	Doppio fendente
+602	Arco dei Dúnedain
+603	Colpo delle ombre
+604	Calcio del guerriero
+605	Parata con la spada
+606	Furia del Ramingo
+607	Forza dei Sovrintendenti
+608	Attacco furioso
+609	Attacco nascente
+610	Colpo del terrore di Isildur
+611	Giustizia di Isildur
+612	Flagello dei goblin
+613	Arco di Rohan
+614	Forza di Isildur
+615	Carica
+616	Carica mortale di Isildur
+617	Mossa di Isildur
+618	Flagello degli orchetti
+619	Forza di Elendil
+620	Furia della natura
+621	Maestria nella spada
+622	Furia di Isildur
+623	Forza degli Argonath
+624	Ira di Numenor
+625	Arco di Gondor
+626	Flagello di Saruman
+627	Giudizio di Isildur
+628	Nulla
+629	Nulla
+630	Triplo colpo
+631	Doppio fendente
+632	Asce di Erebor
+633	Colpo delle ombre
+634	Affondo d'ascia
+635	Parata con l'ascia
+636	Furia del nano
+637	Potenza della roccia
+638	Potenza del ferro
+639	Attacco furioso
+640	Colpo del terrore di Balin
+641	Giustizia di Balin
+642	Flagello dei goblin
+643	Runa di protezione
+644	Carica
+645	Attacco nascente
+646	Carica mortale di Balin
+647	Mossa di Balin
+648	Flagello degli orchetti
+649	Potenza di Balin
+650	Potenza di Gloin
+651	Asce di Moria
+652	Furia della montagna
+653	Furia di Balin
+654	Potenza di Khazad-dûm
+655	Ira di Moria
+656	Asce delle montagne
+657	Dominio dell'ascia
+658	Flagello di Saruman
+659	Giudizio di Balin
+660	Triplo colpo
+661	Doppio fendente
+662	Arco di Bosco Atro
+663	Colpo delle ombre
+664	Calcio del guerriero
+665	Parata con il coltello
+666	Furia dell'elfo
+667	Forza di Celeborn
+668	Attacco furioso
+669	Arco di Gran Burrone
+670	Colpo fatale di Elrond
+671	Giustizia di Elrond
+672	Flagello dei goblin
+673	Carica
+674	Arco lungo di Lothlorien
+675	Carica mortale di Elrond
+676	Mossa di Elrond
+677	Frecce del fuoco di drago
+678	Forza di Galadriel
+679	Furia di Gil-galad
+680	Flagello degli orchetti
+681	Furia di Elrond
+682	Frecce di Mithril
+683	Attacco nascente
+684	Dominio dell'arco elfico
+685	Flagello di Saruman
+686	Giudizio di Elrond
+700	Livello
+800	Para per bloccare gli attacchi nemici e deviare le frecce.
+801	Parata
+802	Tieni premuto il grilletto sinistro per passare all'arma a distanza. Premi A per sparare. Usa la levetta sinistra per mirare.
+804	Arma a distanza
+805	Fuoco
+806	Usa un attacco veloce per colpire i nemici senza scudo.
+807	Usa l'attacco violento per spezzare gli scudi nemici.
+808	Attacco violento
+809	Attacco veloce
+810	Guadagna punti esperienza per far salire di livello il tuo personaggio e acquistare preziosi potenziamenti.
+811	Punti esperienza guadagnati
+812	Usa combinazioni avanzate ed evita i colpi nemici per riempire l'indicatore abilità e ottenere il massimo dei punti esperienza.
+813	Indicatore abilità
+814	Mira
+815	Salto indietro
+816	Mossa finale
+817	Respinta
+818	Fuoco/Attacco veloce
+819	Movimento/Mira
+820	Pausa
+840	Intervista
+841	Peter Jackson e Barrie Osborne
+842	Elijah Wood
+843	Ian McKellen
+844	Il Signore degli Anelli
+845	Come è nato il videogioco
+846	Il Signore degli Anelli
+847	Scene esclusive del film
+848	'La Compagnia dell'Anello'
+849	Foto di produzione
+850	Fangorn e Orthanc
+851	Rohan e il Fosso di Helm
+852	Viggo Mortensen
+853	Orlando Bloom
+854	John Rhys-Davies
+855	Codici segreti
+856	Gioca con Aragorn
+857	Gioca con Legolas
+858	Gioca con Gimli
+859	Gioca con Isildur
+860	Missione segreta
+861	Gioca con il personaggio segreto
+862	Concept art
+900	Completa il Cancello di Moria per sbloccare
+901	Completa la Tomba di Balin per sbloccare
+902	Completa Amon Hen per sbloccare
+903	Completa la Foresta di Fangorn per sbloccare
+904	Completa le Pianure di Rohan per sbloccare
+905	Completa l'Ovestfalda per sbloccare
+906	Completa la Breccia di Rohan per sbloccare
+907	Completa Fosso di Helm: Mura Fossato per sbloccare
+908	Completa Fosso di Helm: Breccia nelle mura per sbloccare
+909	Raggiungi il livello 5 con Aragorn
+910	Raggiungi il livello 5 con Legolas
+911	Raggiungi il livello 5 con Gimli
+912	Completa Fosso di Helm: Cortile del Trombatorrione e raggiungi il livello 10 con Aragorn
+913	Completa Fosso di Helm: Cortile del Trombatorrione e raggiungi il livello 10 con Legolas
+914	Completa Fosso di Helm: Cortile del Trombatorrione e raggiungi il livello 10 con Gimli
+915	Completa la missione segreta con un personaggio qualsiasi
+916	Completa la missione segreta con il personaggio segreto
+917	Peter Jackson e Barrie Osborne parlano del film e del gioco
+918	Elijah Wood racconta come ha interpretato Frodo nel videogioco 'Il Signore degli Anelli'
+919	Ian McKellen racconta come ha interpretato Gandalf nel videogioco 'Il Signore degli Anelli'
+920	Dietro le quinte della realizzazione del videogioco 'Il Signore degli Anelli'
+921	Foto di personaggi e ambientazioni de 'La Compagnia dell'Anello'
+922	Foto di personaggi e ambientazioni di Fangorn e Orthanc
+923	Illustrazioni di John Howe e Alan Lee ispirate a 'Il Signore degli Anelli'
+924	Foto di personaggi e ambientazioni di Rohan e del Fosso di Helm
+925	Viggo Mortensen racconta come ha interpretato Aragorn nel videogioco 'Il Signore degli Anelli'
+926	Orlando Bloom racconta come ha interpretato Legolas nel videogioco 'Il Signore degli Anelli'
+927	John Rhys-Davies racconta come ha interpretato Gimli nel videogioco 'Il Signore degli Anelli'
+928	Codici segreti per sbloccare i contenuti nascosti del videogioco 'Il Signore degli Anelli'
+950	Cambia selezione
+951	Conferma selezione
+952	Indietro
+953	Cambia o modifica selezione
+954	Esci al menu principale
+955	Cambia immagine
+956	Usa i tuoi punti potenziamento per acquistare miglioramenti per il tuo personaggio.

@@ -1,0 +1,12 @@
+
+# ---- The Fellowship of the Ring hooks (appended to game.toml by the config build) ----
+[[hook]]                   # XapiInitProcess: failed disc authentication (0x75A28 < 0) -> continue instead of booting to the dashboard (0x75BC9)
+at = 0x00075B7E
+call = "FOTR_DiscCheckFailed"
+on_true = 0x00075B83
+[[hook]]                   # the new game's first scene ("Bag_End" at 0x1E1070, copied by 0x11E800): FOTR_SCENE in the test build
+at = 0x00129CBE
+call = "FOTR_StartScene"
+[[hook]]                   # a logo movie's end (0x93550): the next logo's number in eax; [graphics] skip_logos makes it 5, the last, so the title screen follows logo_1
+at = 0x000935A4
+call = "FOTR_LogoEnded"

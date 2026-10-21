@@ -1,0 +1,2405 @@
+# The Fellowship of the Ring - Swedish game text (our own translation, shown in the game's own menus and boxes; keys are the game's text names)
+hud:1stPersonClue001	Du måste gå in i siktesläget för att träffa Hals vindflöjel med en sten.
+hud:1stPersonClue002	Klicka på höger styrspak för att gå in i siktesläget.
+hud:1stPersonClue003	Sikta med vänster styrspak. Tryck på <A> för att kasta ett föremål.
+hud:21st_Hall	Den tjugoförsta salen
+hud:2nd_Hall	Den andra salen
+hud:3_passages	Tre gångar
+hud:Abyss	Khazad-Dums bro
+hud:Anduin_1	Amon Hen
+hud:Anduin_Aragorn	Toppen av Amon Hen
+hud:AppleClue001	Slå på stammen på ett äppelträd för att få ett äpple att falla.
+hud:Aragorn006a	Se upp var du går här inne. Ett felsteg kan bli ditt sista.
+hud:Aragorn018	Nu, Legolas! Gör slut på den vidriga besten!
+hud:Aragorn029	Jag har fortfarande inte hittat den försvunna hobbiten. Jag måste fortsätta leta.
+hud:Aragorn035	Ah, de här melonerna duger fint som hobbithuvuden. De går sönder övertygande i mörkret.
+hud:Aragorn038	De här små stockarna ger mina lockbeten övertygande armar och ben i mörkret. Grindvakten lär knappast sakna dem.
+hud:Aragorn070	De här trasorna gör mina lockbeten mer övertygande.
+hud:Aragorn073	Det här höet hjälper till att göda mina små lockbeten.
+hud:Aragorn113	Gamle Smörblomma sköter sitt värdshus väl för att vara så trög.
+hud:Aragorn114	Det borde finnas hö till lockbetena i stallet.
+hud:Aragorn120	Amon Sul... en gång stolt, nu ett krossat minne.
+hud:Aragorn121	Troll... vilket djävulskap har de för sig?
+hud:Aragorn123	Det trollet! Något liknande har jag aldrig sett!
+hud:Aragorn124	Tornets ruiner ser annorlunda ut än sist jag var här... som om en stor kamp ägt rum därinne.
+hud:Aragorn125	Hobbitarna är goda kockar, om än inte krigare.
+hud:Aragorn127	Athelas! Det här bör lindra Frodos sår en tid.
+hud:Aragorn128	Vi närmar oss Vattnadal... håll ut, Frodo!
+hud:Aragorn129	Fler troll än vanligt här... ett dystert tecken.
+hud:Aragorn130	Orcherna drar mot Lothlórien... jag fruktar att de tänker anfalla snart!
+hud:Aragorn134	Nazgûl har bytt ut sina hästar... mot vingbestar!
+hud:Aragorn137	Jag borde snart återvända till Den Stegrande Ponnyn. Fienden får inte hitta hobbitarna!
+hud:Aragorn138	Orcherna släpper oss inte utan strid!
+hud:Aragorn139	Låst. Jag måste hitta ett sätt att öppna den här dörren, och fort!
+hud:Aragorn140	Det måste finnas en spak eller ett reglage här någonstans... något som öppnar den dörren!
+hud:Aragorn141	Vägen är fri!
+hud:Aragorn143	Reglaget fungerar inte utan en spak.
+hud:Aragorn144a	Hm. Låst. Och med rätta, att döma av hur det ser ut här.
+hud:Aragorn145	Vanliga vapen biter inte på Nazgûl! Eld är mitt enda hopp!
+hud:Arch_Room	Valvsalen
+hud:async_loading	Laddar...
+hud:AthelasClue001	Använd athelas för att bota förgiftning.
+hud:AthelasFrodoClue001	Använd den här athelasen på Frodo för att bromsa verkan av hans Morgulsår.
+hud:AttackClue001	Tryck på <A> för att anfalla bin.
+hud:AutoSaveConfirm	Automatisk sparning lyckades.
+hud:Bag_End	Säcks ände
+hud:Bag_End_Night	Säcks ände om natten
+hud:Balins_Tomb	Balins grav
+hud:BalrogNoFire	Eld gör bara balrogen starkare!
+hud:BalrogNoFire001	Eld gör bara balrogen starkare!
+hud:Barrow_Downs_Backside	Gravhögarnas baksida
+hud:Barrow_Downs_Frontside	Gravhögarnas framsida
+hud:Barrow_Wight_Lair	Gravhögsvättens håla
+hud:BarrowClue	Jag måste hitta en väg ut ur Gamla skogen!
+hud:BeatFellBeastClue001	Besegra Nazgûls vingbest!
+hud:BeatWillowClue001	Slå på trädets "armar"!
+hud:BeatWraithClue001	Du måste strida mot ringvålnaden!
+hud:BeeClue	Bina kommer från bikupor! Håll in <B> för att parera deras attacker.
+hud:BeeClue2	Vänd dig mot biet och håll in <LT> för att sikta på det.
+hud:BellAmmo	Det verkade inte väcka tillräckligt med uppmärksamhet.
+hud:Bilbos_Room	Kammare i Vattnadal
+hud:Bombadil001	Hej dol! Glad dol! Ring en dong dillo!
+hud:Bombadil002	Ring en dong! Hoppa på! Fal lal pilträdet!
+hud:Bombadil003	Tom Bom, glade Tom, Tom Bombadillo!
+hud:Bombadil012	Hej! Kom derry dol! Hoppa på, mina vänner!
+hud:Bombadil013	Hobbitar! Ponnyer med! Vi älskar att festa!
+hud:Bombadil014	Låt nu leken börja! Låt oss sjunga tillsammans!
+hud:Bombadil020	Ho! Tom Bombadill, Tom Bombadillo!
+hud:Bombadil021	Vid vatten, skog och kulle, vid vass och pil,
+hud:Bombadil022	Vid eld, sol och måne, lyssna nu och hör oss!
+hud:Bombadil023	Kom, Tom Bombadill, för vår nöd är nära!
+hud:Bombadil024	Ut med dig, gamla vätte! Försvinn i solens ljus!
+hud:Bombadil025	Skrumpna som den kalla dimman, tills världen är läkt!
+hud:Bombadil026	Ut i de karga länderna långt bortom bergen!
+hud:Bombadil027	Kom aldrig hit igen! Lämna din grav tom!
+hud:Bombadil028	Förlorad och glömd må du vara, mörkare än mörkret,
+hud:Bombadil029	Där portarna står stängda för evigt, tills världen är läkt.
+hud:Boromir005a	Jag tycker fortfarande att vi borde ha styrt mot Gondor.
+hud:BreakThingsClue	Tryck på <A> för att slå sönder behållare med din vandringsstav. Vissa behållare i ditt hem innehåller användbara föremål.
+hud:BrokenSwitchAgain	Ännu ett trasigt reglage.
+hud:Bywater	Vattnaby
+hud:Bywater_Night	Vattnaby om natten
+hud:CombatRange	Frodos övningsplats
+hud:CombatRange1	Aragorns övningsplats
+hud:CombatRange2	Gandalfs övningsplats
+hud:Common_House_Interior	Familjen Gamgis hem
+hud:Common_interior	Hobbithem i Bri
+hud:Commonhouse_bywater	Familjen Bolgers hem
+hud:CorruptionClue001	Får kan vara till besvär, men det finns inget att vinna på att slå dem!
+hud:CorruptionClue002	Grisar kan vara till besvär, men det finns inget att vinna på att slå dem!
+hud:CorruptionClue003	Höns kan vara till besvär, men det finns inget att vinna på att slå dem!
+hud:CorruptionClue004	Hästar är så ädla djur. Det finns inget att vinna på att slå dem!
+hud:CorruptionTotal	Renhet: %d / %d
+hud:CountHUD	Antal: %d
+hud:DamageHUD	Skada: %d
+hud:Dell	Dalsänkan
+hud:dialog_continue	<X> Fortsätt
+hud:dialog_continue_a	<A> Fortsätt
+hud:dialog_skip	<A> Hoppa över
+hud:DoorNoKey	Dörren saknar en nyckel.
+hud:DurationHUD	Varaktighet: %d
+hud:DwarvenShotFound	Du har plockat upp dvärgkulor.
+hud:EnemiesDefeated	Besegrade fiender: %d
+hud:FireClue	Det gör ont att röra vid eld!
+hud:FireworksClue001	Kasta en smällare i fyrverkerilådan för att njuta av en fyrverkerishow!
+hud:FoundApple001	Du har plockat upp ett ruttet äpple.
+hud:FoundElvinArrows	Du har plockat upp alviska pilar.
+hud:FoundElvinShot	Du har plockat upp alviska kulor.
+hud:FoundEssence	Du har fått en flaska andeessens.
+hud:FoundHinge001	Du har hittat ett gångjärn.
+hud:FoundRamPart001	Du har hittat en del till murbräckan.
+hud:FoundSilverlode	Du har fått en flaska vatten från Silverådran.
+hud:FoundTome	Du har fått en uråldrig alvisk bok.
+hud:Frodo006	Det måste finnas ett sätt att hissa upp den här grinden!
+hud:Frodo053b	Jag skulle kunna ge mig ut på vägen precis som Bilbo!
+hud:Frodo060a	Men Gandalf kom inte tillbaka. Och när nätterna blev längre bestämde jag mig för att jag kanske måste ge mig av utan honom.
+hud:Frodo060b	På morgonen på min födelsedag, den 22 september, gav jag mig ut på en sista promenad runt Fylke.
+hud:Frodo060c	Jag måste ta farväl av mina grannar... och sälja mitt hem till Lobelia Säcksdal-Bagger.
+hud:Frodo060d	Sedan skulle jag hämta Ringen på Säcks ände och ge mig ut på vägen om kvällen...
+hud:Frodo091	Jag måste lämna nyckeln till Säcks ände till Gubben Gamgi på Säckgatan nummer 3!
+hud:Frodo130	Ryttaren! Han har sett mig!
+hud:Frodo131	Försvinn! Håll dig undan!
+hud:Frodo132	Ännu en svart ryttare!
+hud:Frodo133	Jag måste hålla mig gömd!
+hud:Frodo134	Kan inte stanna här länge.
+hud:Frodo135	Det där fallna trädet längre fram ser ut som ett bra gömställe!
+hud:Frodo136	Jag måste ta mig till Maggots gård!
+hud:Frodo150b	Ja, verkligen.
+hud:Frodo213	Vi åt vår första goda måltid på länge och sjöng sånger och berättade historier till långt in på natten.
+hud:Frodo213a	Vi sov gott och var utvilade nog att fortsätta vår färd.
+hud:Frodo223	Ho! Tom Bombadill, Tom Bombadillo!
+hud:Frodo224	Vid vatten, skog och kulle, vid vass och pil,
+hud:Frodo225	Vid eld, sol och måne, lyssna nu och hör oss!
+hud:Frodo226	Kom, Tom Bombadill, för vår nöd är nära!
+hud:Frodo237	Jag tror jag stannar inomhus. Mycket säkrare, skulle jag tro!
+hud:Frodo258	Det är låst. Jag borde nog fråga värdshusvärden först.
+hud:Frodo271	Den här behöver du inte längre, din skurk!
+hud:Frodo272	Jag måste hitta de andra innan de här skurkarna fångar dem!
+hud:Frodo280	Det finns ett värdshus, ett glatt gammalt värdshus
+hud:Frodo281	Under en gammal grå kulle,
+hud:Frodo282	Och där kokar de en gryta så brun
+hud:Frodo283	Att själva Mannen i månen flög ner
+hud:Frodo284	Om natten för att äta sig mätt.
+hud:Frodo338	Jag måste hitta ett sätt att slå på klockan.
+hud:Frodo354	Bilbo... jag undrar vart vägen har fört honom?
+hud:Frodo356	Ingen tid för lekar nu... för mycket att göra!
+hud:Frodo360	Om det bara fanns tid för en tupplur!
+hud:Frodo361	Det här gästrummet har haft många besökare. Trollkarlen Gandalf, Thorin, Konung under berget...
+hud:Frodo363	Den här pumpan blir en underbar paj!
+hud:Frodo365	Oj! Du börjar bli lite rund, gamle gosse!
+hud:Frodo366	Skön kudde, den där.
+hud:Frodo367	Ah, Bilbo... din smak är oklanderlig!
+hud:Frodo368	Känns konstigt att flytta de här sakerna... jag kan inte se dem höra hemma någon annanstans!
+hud:Frodo369	Vilken vacker fågel!
+hud:Frodo372	Ah, festträdet! Det kommer aldrig att se en fest som farbror Bilbos elvtioförsta födelsedag!
+hud:Frodo375	Bron till Vattnaby. Samma väg som Bilbo tog när han började sitt äventyr för länge sedan.
+hud:Frodo384	Jag undrar vad han skulle göra med svansen om han fick tag på den?
+hud:Frodo385	Den enda draken i Fylke är den här, gudskelov!
+hud:Frodo392	Det är så likt Merry och Pippin att lämna de riskabla sysslorna åt mig!
+hud:Frodo395	Här är ett av de där paketen med örter som Noakes talade om.
+hud:Frodo396	Ännu en av Noakes örtknippen.
+hud:Frodo400	Ganska mörkt i kväll... dystert också...
+hud:Frodo401	Bäst att låta sheriffarna sköta klockringningen!
+hud:Frodo402	Så kall luften är... märkligt, även för att vara höst!
+hud:Frodo408	Det där trädet var inte där nyss! Det flyttade sig för att spärra vägen!
+hud:Frodo410	De där spindlarna! De är enorma!
+hud:Frodo411	Sams hem. Kommer han att sakna det lika mycket som jag kommer att sakna Säcks ände?
+hud:Frodo418	Vidstige! Hjälp!
+hud:Frodo421	Ringen... jag känner mig så konstig... som om en börda vilar på mig.
+hud:Frodo425	Ah! En lilja!
+hud:Frodo426	Här är en lilja till. Jag undrar vem den här Guldbär är?
+hud:Frodo428	Sam, den här grytan luktar ljuvligt!
+hud:Frodo429	Jag undrar hur gammalt Toms hem är... knappast så gammalt som han!
+hud:Frodo432	Den gamla trädkojan! Den står kvar... jag lekte i den som pojke!
+hud:Frodo433	Det här är några av Gandalfs fyrverkerier! Någon ung slyngel måste ha lagt beslag på dem när han inte såg!
+hud:Frodo434	Ingen verkar vara hemma. Tom och Guldbär måste vara någon annanstans!
+hud:Frodo435	Gravhögarna... till och med Tom är försiktig med det här stället!
+hud:Frodo438	Jag hoppas att maten räcker här ute.
+hud:Frodo441	Undrar var värdshusvärden är? Det här verkar vara hans disk!
+hud:Frodo448	Jag undrar var den här mattan kommer ifrån... ett färgstarkt verk, minsann!
+hud:Frodo449	Värden måste vara en ivrig läsare... hans bibliotek är mycket välförsett!
+hud:Frodo455	Få i landet kan mäta sig med Elronds bibliotek!
+hud:Frodo456	Om jag bara hade tid att läsa hälften av de här böckerna! Då skulle jag behöva leva lika länge som en alv!
+hud:Frodo458	Bilbos bok! Jag hoppas verkligen att han blir klar med den en dag.
+hud:Frodo459	Vilken vacker utsikt! Det här stället är verkligen dyrbart.
+hud:Frodo460	Det här stället... Caras Galadhon... aldrig har jag sett sådan skönhet!
+hud:Frodo462	Hm. Det verkar som om kläppen till varningsklockan saknas.
+hud:Frodo463	Jag tror att det är dags för mig... och Ringen... att lämna Hobbiton och påbörja den här färden.
+hud:Frodo464	Ringen får vänta. Jag har mer att uträtta i Hobbiton.
+hud:Frodo465	Sheriffarna vet om vargarna nu. Bäst att inte ringa i varningsklockan igen!
+hud:Frodo465a	Bäst att inte ringa i varningsklockan igen!
+hud:Frodo479	Jag har fortfarande saker att uträtta innan jag ger mig av mot Gamla skogen.
+hud:Frodo482	Det vore bäst att ge sig av med de andra.
+hud:Frodo495	En bruten svamp skulle bli ett bra vägmärke... jag vill inte gå vilse som de andra!
+hud:Frodo496	Det krävs mer än en vandringsstav för att komma in här!
+hud:Frodo496a	Det krävs mer än stenar för att komma in här!
+hud:Frodo496b	Det krävs mer än smällare för att komma in här!
+hud:Frodo496c	Det krävs mer än äpplen för att komma in här!
+hud:Frodo496d	De kanske är instängda här inne!
+hud:Frodo497	De här plattformarna är verkligen en klurig gåta.
+hud:Frodo512	Kartan till Erebor, Ensliga berget... från Bilbos resa för länge sedan. Vilket äventyr det var!
+hud:Frodo513	Sam kommer att sakna sitt hem något fruktansvärt... han har aldrig varit borta länge.
+hud:Frodo514	Sam har en riktig boksamling! Gubben var misstänksam när Bilbo lärde Sam att läsa, men han tror inte att Bilbo menade något illa med det.
+hud:Frodo515	Jag minns när Gubben och Sam gjorde klart de här bänkarna.
+hud:Frodo516	Det ser ut som om Sam nästan har packat färdigt. Jag hoppas verkligen att han kommer ihåg att ta med rep!
+hud:Frodo517	Kvarnen är inte särskilt välskött. Jag hoppas att jag inte blir biten av en råtta!
+hud:Frodo519	Jag undrar vad Tjockis tänker göra med det här?
+hud:Frodo521	Ingen hemma... synd.
+hud:Frodo522	Det är för sent att hälsa på grannarna.
+hud:Frodo523	De måste vara ute på fälten. Synd.
+hud:Frodo524	Det är sent, och med vargar i farten... nåja, ingen idé att ställa till med uppståndelse.
+hud:Frodo525	Jag måste hitta Lobelia och sälja Säcks ände till henne.
+hud:Frodo526	Nå, hur startar man den här förbaskade saken?
+hud:FrodoLocked	Det är låst. Bäst att inte tränga sig på.
+hud:FrodoMissingSwitch	Någon har lagt beslag på handtaget till det här reglaget. Han kan inte ha kommit långt!
+hud:FrodoPoisonedAgain	Frodos Morgulsår är för starkt. Han behöver mer athelas.
+hud:FrodoRunicKeyClue	Den här måste passa i en dörr i närheten.
+hud:FrodoSong1	 
+hud:FrodoSong2	 
+hud:FullHUD	Läkning: Full
+hud:GameOverAragorn	Aragorn har dött.\n\n<A> Försök igen\n<X> Fortsätt sparat spel\n<B> Avsluta
+hud:GameOverFrodo	Frodo har dött.\n\n<A> Försök igen\n<X> Fortsätt sparat spel\n<B> Avsluta
+hud:GameOverFrodoCorruption	Frodo har duckat under för fördärvets makter. Tryck på <A> för att börja om eller på <B> för att avsluta.
+hud:GameOverGandalf	Gandalf har dött.\n\n<A> Försök igen\n<X> Fortsätt sparat spel\n<B> Avsluta
+hud:GameOverGeneric	Ditt uppdrag har misslyckats.\n\n<A> Försök igen\n<X> Fortsätt sparat spel\n<B> Avsluta
+hud:GameOverQuote	Ditt uppdrag står på en knivsegg. Avvik det minsta, så misslyckas det... till fördärv för alla.
+hud:Gandalf007	Det är som Ori förkunnade... det finns en hemlighet bortom Durins ansikte!
+hud:Gandalf009	Det här stället är värt att undersöka... gamla hemligheter kan avslöjas härinne!
+hud:Gandalf010	På graven står det... Balin, Fundins son, Morias herre.
+hud:Gandalf011	Här vilar Morias siste dvärgkonung.
+hud:Gandalf012	Vi borde ge oss av snart.
+hud:Gandalf019	Se där! En runnyckel!
+hud:Gandalf020	En av orcherna bar på den.
+hud:Gandalf021	Utan en matchande nyckel går dörren inte att öppna.
+hud:Gandalf022	Lyckan ler mot oss.
+hud:Gandalf023	Fly! Lämna det här stället! Ett stort mörker närmar sig!
+hud:Gandalf037	Det här var en snygg röra!
+hud:Gandalf044	Besten försvagas. Stå fast!
+hud:Gandalf045	Besten är omtöcknad! Nu har vi chansen att öppna dörrarna!
+hud:Gandalf049	Inte medan besten fortfarande slår!
+hud:Gandalf051	Tre gångar att välja mellan.
+hud:Gandalf052	Jag tycker inte om lukten från den vänstra. Det finns något vidrigt där nere.
+hud:Gandalf053	Den mittersta känns inte heller bra.
+hud:Gandalf054	Den högra gången är bäst. Den bör leda oss vidare.
+hud:Gandalf056	Jag är en tjänare av den Hemliga elden, bärare av Anors flamma. Du kan inte passera!
+hud:Gandalf057	Gå tillbaka till Skuggan, Udûns flamma! Du kan inte passera!
+hud:Gandalf095	Mellon!
+hud:Gandalf097	Det måste finnas en väg runt den här gropen. Den kanske kan fyllas... med de lösa stenarna där uppe!
+hud:Gandalf097a	Med tillräcklig kraft lossnar de här stenarna och störtar ner!
+hud:Gandalf110	Kan inte stanna här länge... fienden rör sig mot oss!
+hud:Gandalf111	Det som återstår av den här stigen bör leda oss till Järnekslandets portar och Moria bortom dem.
+hud:Gandalf112	Det här vattnet... så dystert och unket. Vi måste ta oss runt det!
+hud:Gandalf113	Ja, då är det avgjort. Det finns bara en väg ut, och den ligger på andra sidan Moria.
+hud:Gandalf114	Väggarna här är försvagade av ålder. Vi måste vara försiktiga när vi går här!
+hud:Gandalf116	Vatten flödar fritt genom gruvorna, fast jag skulle inte dricka det.
+hud:Gandalf118	Som jag fruktade... orcherna har inte lämnat Moria.
+hud:Gandalf119	Spakar som den här finns över hela Moria. Många fungerar fortfarande, trots sin höga ålder.
+hud:Gandalf120	Den här plattformen ser stadig ut. Jag tror att den kan sänkas ner till djupet på något sätt.
+hud:Gandalf123	Det verkar som om den här hissen fungerar, fast hur orcherna har underhållit den vet jag inte.
+hud:Gandalf126	Se där...! En dvärg! Vi måste befria honom från orcherna!
+hud:Gandalf128	Usch! Jag visste att jag kände lukten av något vidrigt här nere!
+hud:Gandalf129	Det skulle förklara hettan jag märkte tidigare.
+hud:Gandalf130	En staty av en dvärghjälte, eller kanske en kung... kanske föreställer den Durin själv.
+hud:Gandalf132	Hm. Reglaget som styr den här bron ligger på andra sidan klyftan. Jag måste träffa det på något sätt om jag ska komma över.
+hud:Gandalf133	Morias portar ligger nära... någonstans i klippväggen, tror jag.
+hud:Gandalf135	Spaken till det här reglaget saknas.
+hud:Gandalf136	Det krävs mer än ett hugg från Glamdring för att rubba de här stenarna.
+hud:Gandalf137	Märkligt... ljusstrålen har ingen verkan.
+hud:Gandalf138	Stenarna är varmare, visst... men de ligger kvar.
+hud:Gandalf139	Blixten verkar inte göra jobbet, är jag rädd.
+hud:Gandalf140	Morias portar ligger nära. Någonstans i klippväggen, tror jag.
+hud:GandalfBridgeWarning	Jag måste möta besten!
+hud:GandalfHelp	Jag överger inte brödraskapet!
+hud:GandalfHelp2	Morias portar ligger nära... någonstans i klippväggen, tror jag.
+hud:GandalfTemp001	Den där kristallen där uppe... jag tror att den har med den här gåtan att göra! Jag undrar om jag kan träffa den med en eldstöt.
+hud:GandalfTrapBlocked	Något blockerar dörren.
+hud:Gates_of_Moria	Morias portar
+hud:GearNoPin	Det ser ut som om de här kugghjulen saknar en metallsprint.
+hud:Gimli017b	Orcherna ska ångra den dag de besudlade det här stället!
+hud:GiveAppleHint001	Ge det ruttna äpplet (och dess mask) till Milo genom att välja det och trycka på <BL>.
+hud:GiveClue	Välj ett föremål och tryck på <BL> för att ge bort det.
+hud:GiveDeedHint001	Ge köpebrevet till Lobelia genom att välja det och trycka på <BL>.
+hud:GiveHerbHint001	Ge örterna till gamle Noakes genom att välja dem och trycka på <BL>.
+hud:GiveKeyHint001	Ge nyckeln till Säcks ände till Gubben genom att välja den och trycka på <BL>.
+hud:GloinSurprise	Då måste jag hjälpa dig.
+hud:Goldberry001	Låt nu sången börja! Låt oss sjunga tillsammans!
+hud:Goldberry002	Om sol, stjärnor, måne och dimma, regn och mulet väder!
+hud:Goldberry003	Ljus på det spirande lövet, dagg på fjädern,
+hud:Goldberry004	Vind på den öppna kullen, klockor i ljungen,
+hud:Goldberry005	Vass vid den skuggiga dammen, liljor på vattnet;
+hud:Goldberry006	Gamle Tom Bombadill och Flodens dotter!
+hud:GoldberrySong1	 
+hud:Gollum019	Min skattt... gollum... min skatttt!
+hud:GotSilverware	Du har fått lite silverbestick.
+hud:GrainClue	Det verkar som om grisarna behöver lite uppmuntran för att stanna!
+hud:Green_Dragon	Den Gröna Draken
+hud:Green_Hill_Country	Gröna kullarnas land
+hud:Green_Hill_Country_Night	Gröna kullarnas land om natten
+hud:Hall_of_Statues	Statyernas sal
+hud:HealsHUD	Läkning: %d
+hud:HealthTotal	Hälsa: %d / %d
+hud:Hobbiton	Hobbiton
+hud:Hobbiton_Night	Hobbiton om natten
+hud:House_of_Elrond	Elronds hus
+hud:IGC_chamber	Alvkammaren
+hud:IGC_forest	Lóriens skogar
+hud:IGC_mirror	Galadriels trädgård
+hud:itemAragorn1	Andúril
+hud:itemAragorn2	Svärdet hette ursprungligen Narsil och krossades i striden mot Sauron. Alviska smeder smidde om det, och Aragorn gav det namnet Andúril – Västerns flamma.
+hud:itemAragorn3	Båge
+hud:itemAragorn4	Bärs av jägare, utbygdsjägare och bågskyttar över hela Midgård.
+hud:itemAragorn5	Långsvärd
+hud:itemAragorn6	En stadig klinga, vanlig i alla Midgårds länder.
+hud:itemArrow1	Brandpilar
+hud:itemArrow10	Lätta metallpilar som flyger snabbt genom luften.
+hud:itemArrow2	Särskilt tillverkade pilar som brinner medan de flyger.
+hud:itemArrow3	Stålpilar
+hud:itemArrow4	Krigspilar med vassa metallspetsar.
+hud:itemArrow5	Fackla
+hud:itemArrow6	En enkel ljuskälla.
+hud:itemArrow7	Träpilar
+hud:itemArrow8	Vanliga jaktpilar som finns över hela Midgård.
+hud:itemArrow9	Alviska pilar
+hud:itemFrodo1	Den enda ringen
+hud:itemFrodo10	En vass kort klinga smidd av människorna i Västerland i forna tider.
+hud:itemFrodo11	Stick
+hud:itemFrodo12	Ett alviskt kortsvärd smitt av Gondolins smeder under den första åldern -- knivskarpt, och det lyser blått när orcher är nära.
+hud:itemFrodo13	En fin sång från Tom Bombadill, som bara ska användas i den största nöd.
+hud:itemFrodo13a	Bombadills sång
+hud:itemFrodo14	Tjockis vandringsstav
+hud:itemFrodo15	En stor, utsökt utformad käpp, snidad av det finaste trä.
+hud:itemFrodo2	Härskarringen, smidd under den andra åldern av Mörkrets herre Sauron i Domedagsbergets eldar.
+hud:itemFrodo3	Mithrilbrynja
+hud:itemFrodo4	En fin brynja av mithril, den starkaste och dyrbaraste metallen i Midgård.
+hud:itemFrodo5	Vandringsstav
+hud:itemFrodo6	En vackert snidad, kraftig träkäpp, perfekt för promenader på landet.
+hud:itemFrodo7	Dyrkset
+hud:itemFrodo8	En samling huvudnycklar, dyrkar och andra verktyg som är bra för att dyrka upp lås.
+hud:itemFrodo9	Västerlandsk dolk
+hud:itemGandalf1	Glamdring
+hud:itemGandalf10	En eldstöt far ut ur Gandalfs hand.
+hud:itemGandalf11	Läkning
+hud:itemGandalf12	Gandalfs sår försvinner när den här trollformeln kastas.
+hud:itemGandalf13	Förlamning
+hud:itemGandalf14	Fiender tvärstannar när de träffas av den här trollformeln.
+hud:itemGandalf15	Stavslag
+hud:itemGandalf16	En kraftvåg strömmar ut från Gandalfs stav.
+hud:itemGandalf17	Stavljus
+hud:itemGandalf18	Ett stavljus som lyser upp vägen, men gör det lättare att bli upptäckt.
+hud:itemGandalf2	Det vassa alviska långsvärdet, känt som Fiendehammaren, lyser med ett blekt sken när fiender är nära.
+hud:itemGandalf3	Ljusstråle
+hud:itemGandalf4	En kraftfull stråle av rent vitt ljus.
+hud:itemGandalf5	Kedjeblixt
+hud:itemGandalf6	En vild blixt som far från fiende till fiende.
+hud:itemGandalf7	Förvirring
+hud:itemGandalf8	Böjer fiendens svaga sinnen så att de slåss mot varandra.
+hud:itemGandalf9	Eldstöt
+hud:itemHealing1	Athelasblad
+hud:itemHealing10	Imladris styrkedryck. En kraftfull, uppiggande dryck som tillverkas av alverna i Vattnadal.
+hud:itemHealing11	Svampar
+hud:itemHealing12	Smakrika svampar som finns över hela Midgård. En särskilt omtyckt maträtt i Fylke.
+hud:itemHealing13	Honungskaka
+hud:itemHealing14	En söt godbit, full av energi. Ger ökad kraft.
+hud:itemHealing14a	En söt godbit, full av energi. Ökar farten.
+hud:itemHealing15	Beryll
+hud:itemHealing16	En dyrbar ädelsten som många i Midgård värdesätter.
+hud:itemHealing17	Näckros
+hud:itemHealing18	Guldbärs favoritblomma.
+hud:itemHealing19	Läkeörter
+hud:itemHealing2	Athelasväxtens blad har stor läkande kraft och dessutom en behaglig doft. Botar förgiftning.
+hud:itemHealing20	Kungsblad, ett skarpdoftande ogräs som tros ha medicinska egenskaper.
+hud:itemHealing3	Athelasväxt
+hud:itemHealing4	En växt känd för sin kraftfulla läkande förmåga, förd till Midgård av númenoreerna.
+hud:itemHealing5	Cram
+hud:itemHealing6	Ett smaklöst men närande vägbröd som bakas av människorna i Norden för färder i Vildmarken.
+hud:itemHealing7	Lembas
+hud:itemHealing8	Läckra gyllene mjölkakor inlindade i mallornblad – används som vägbröd av alverna i Lórien. Återställer all förlorad hälsa.
+hud:itemHealing9	Miruvor
+hud:itemquest1	Angelicas present
+hud:itemquest10	Vackra småsaker åt Flodens dotter.
+hud:itemquest11	Gandalfs röse
+hud:itemquest12	En liten sten med Gandalfs märke.
+hud:itemquest13	Gandalfs brev
+hud:itemquest14	Ett brev från Gandalf till Frodo.
+hud:itemquest17	Hökudde
+hud:itemquest18	En hög med nyslaget hö.
+hud:itemquest2	En liten spegel, från Bilbo till Angelica.
+hud:itemquest21	Nyckel till hobbitrummet
+hud:itemquest22	En nyckel till ett rum på värdshuset Den Stegrande Ponnyn, byggt särskilt för hobbitar.
+hud:itemquest23	Lobelias present
+hud:itemquest24	En uppsättning silverskedar, från Bilbo till Lobelia.
+hud:itemquest25	Meloner
+hud:itemquest26	Mogen, fyllig frukt.
+hud:itemquest27	Gamla kläder
+hud:itemquest28	Slitna arbetskläder.
+hud:itemquest29	Sida ur Mazarbuls bok
+hud:itemquest3	Köpebrev för Säcks ände
+hud:itemquest30	En sida utriven ur en krönika över Balins folks historia i Moria.
+hud:itemquest30a	...drog ut i full styrka... tjugoförsta salen. Hantverkarna fann en fälla... många\norcher... den tredje sonen föll... före den andre. Balin hedrade dem...
+hud:itemquest31	Runnyckel
+hud:itemquest32	Används för att låsa upp listiga dvärglås.
+hud:itemquest33	Små stockar
+hud:itemquest34	En hög med tändved.
+hud:itemquest35	Rutten fisk
+hud:itemquest36	En present från Gollum.
+hud:itemquest37	Sprint till vindflöjeln
+hud:itemquest38	En liten metallsprint.
+hud:itemquest39	Klockkläpp
+hud:itemquest4	Köpebrevet för Säcks ände, en ganska berömd hobbithåla.
+hud:itemquest40	Används för att få varningsklockan att ringa.
+hud:itemquest41	Durins yxa
+hud:itemquest42	En dvärgkonungs stora yxa, länge trodd förlorad.
+hud:itemquest43	Galadhrims båge
+hud:itemquest44	En fin båge, lång och kraftig, med en sträng av alvhår.
+hud:itemquest45	Númenoreiskt svärd
+hud:itemquest46	En klinga från forntida Númenor, tagen som byte av orcherna för länge sedan.
+hud:itemquest47	Ruttet äpple
+hud:itemquest48	Ett skämt äpple, komplett med mask.
+hud:itemquest49	Ägg
+hud:itemquest5	Nyckel till Säcks ände
+hud:itemquest50	Ett gårdsfärskt hönsägg.
+hud:itemquest51	Säck med säd
+hud:itemquest52	Lämpligt som djurfoder.
+hud:itemquest53	Gångjärn
+hud:itemquest54	Ett kraftigt grindgångjärn.
+hud:itemquest55	Tjockis salva
+hud:itemquest56	En gåva från Bilbo till Tjockis. Ökar användarens maximala hälsa med 25 procent.
+hud:itemquest57	Dvärgtonikum
+hud:itemquest58	Ökar användarens maximala hälsa med 35 procent.
+hud:itemquest59	Flaska med vatten från Silverådran
+hud:itemquest6	En sliten, kraftig metallnyckel. Öppnar dörren till Säcks ände.
+hud:itemquest60	Ökar användarens maximala hälsa med 50 procent.
+hud:itemquest61	Andeessens
+hud:itemquest62	Ökar Gandalfs maximala andekraft.
+hud:itemquest63	Uråldrig alvisk bok
+hud:itemquest64	En bok med alviska runor som Gandalf kan använda.
+hud:itemquest65	Silverbestick
+hud:itemquest66	En särskild uppsättning bestick i hobbitstorlek, mycket uppskattad på värdshus och matställen.
+hud:itemquest67	Spak till reglage
+hud:itemquest68	Aktiverar reglaget när man drar i den.
+hud:itemquest69	Spegel
+hud:itemquest7	Brosch
+hud:itemquest70	Ger en användbar spegelbild
+hud:itemquest71	Stridsyxa
+hud:itemquest72	Långbåge
+hud:itemquest73	Västerlandsk dolk
+hud:itemquest74	Långsvärd
+hud:itemquest75	Ingen
+hud:itemquest8	En vacker brosch med en blå sten.
+hud:itemquest9	Fjärilar
+hud:itemThrown1	Äpplen
+hud:itemThrown10	Lätta metallkulor tillverkade av forna tiders alver.
+hud:itemThrown2	Goda men hårda frukter.
+hud:itemThrown3	Dvärgkulor
+hud:itemThrown4	Hårda stålkulor tillverkade av forna tiders dvärgar.
+hud:itemThrown5	Stenar
+hud:itemThrown6	Släta runda stenar, perfekta att kasta.
+hud:itemThrown7	Smällare
+hud:itemThrown8	Liten sprängladdning. Kan användas för att antända brännbara föremål.
+hud:itemThrown9	Alviska kulor
+hud:Jail_Room	Fängelsehålan
+hud:KillOrcsClue	En av de här orcherna måste ha spaken!
+hud:LadderClue001	Gå nära en stege nertill för att automatiskt börja klättra.
+hud:Lobelia007	Försvinn härifrån! Säcks ände tillhör en äkta Bagger nu!
+hud:Lookout_mound	Utkikskullen
+hud:MaggotDone	Det var den sista av Maggots svampar!
+hud:MaggotMore	Det finns fortfarande svampar kvar!
+hud:MaggotMushroom1	Bonden Maggot har tagit tillbaka sin svamp!
+hud:MaggotMushroom2	Bonden Maggot har tagit tillbaka sina 2 svampar!
+hud:MaggotMushroom3	Bonden Maggot har tagit tillbaka sina 3 svampar!
+hud:MaggotMushroom4	Bonden Maggot har tagit tillbaka sina 4 svampar!
+hud:MaggotMushroom5	Bonden Maggot har tagit tillbaka sina 5 svampar!
+hud:MaggotMushroom6	Bonden Maggot har tagit tillbaka sina 6 svampar!
+hud:map_region_1_description_1	Hobbitarnas land väster om floden Brandyvin. Hobbiton, Frodo Baggers hem, ligger i Västfjärdingen.
+hud:map_region_1_description_2	Hobbitarnas land väster om floden Brandyvin. Hobbiton, Frodo Baggers hem, ligger i Västfjärdingen. Vattnaby ligger nära Hobbiton och Stora östvägen. Många hobbitar besöker värdshuset Den Gröna Draken för en god måltid och det senaste skvallret.
+hud:map_region_1_description_3	Hobbitarnas land väster om floden Brandyvin. Hobbiton, Frodo Baggers hem, ligger i Västfjärdingen. Vattnaby ligger nära Hobbiton och Stora östvägen. Många hobbitar besöker värdshuset Den Gröna Draken för en god måltid och det senaste skvallret. Bortom Östfjärdingen ligger Bockland, en hobbitkoloni. Den ligger mellan Fylke och Gamla skogen, en plats dit många hobbitar inte vågar gå.
+hud:map_region_1_name	Fylke
+hud:map_region_2_description_1	Märkliga och illasinnade träd gör färden genom skogen farlig.
+hud:map_region_2_description_2	Märkliga och illasinnade träd gör färden genom skogen farlig. Tom Bombadills och Guldbärs hem ligger nära Gamla skogens slut, strax före det kusliga land som kallas Gravhögarna.
+hud:map_region_2_description_3	Märkliga och illasinnade träd gör färden genom skogen farlig. Tom Bombadills och Guldbärs hem ligger nära Gamla skogens slut, strax före det kusliga land som kallas Gravhögarna. På höglandet finns ett antal uråldriga gravkullar, eller gravhögar. Legenden säger att andar spökar i gravarna.
+hud:map_region_2_name	Gamla skogen
+hud:map_region_3_description_1	Byn Bri är full av både pittoreska hobbithålor och människornas stenhus.
+hud:map_region_3_description_2	Byn Bri är full av både pittoreska hobbithålor och människornas stenhus. Värdshuset Den Stegrande Ponnyn är ett populärt härbärge i Briland. Värden, Barliman Smörblomma, är en vänlig om än något glömsk karl.
+hud:map_region_3_description_3	Byn Bri är full av både pittoreska hobbithålor och människornas stenhus. Värdshuset Den Stegrande Ponnyn är ett populärt härbärge i Briland. Värden, Barliman Smörblomma, är en vänlig om än något glömsk karl. Bri lockar många resenärer från Östvägen och Grönvägen, två uråldriga landsvägar.
+hud:map_region_3_name	Bri
+hud:map_region_4_description_1	Kullen, även kallad Amon Sul, hade en gång ett mäktigt torn på sin topp.
+hud:map_region_4_description_2	Kullen, även kallad Amon Sul, hade en gång ett mäktigt torn på sin topp. Resterna av tornet står kvar som en dyster påminnelse om en fjärran tidsålder.
+hud:map_region_4_description_3	Kullen, även kallad Amon Sul, hade en gång ett mäktigt torn på sin topp. Resterna av tornet står kvar som en dyster påminnelse om en fjärran tidsålder. Bortom Väderklint ligger ett skogsområde som kallas Trollskogarna, efter de fruktansvärda varelser som jagar där.
+hud:map_region_4_name	Väderklint
+hud:map_region_5_description_1	"Det sista hemtrevliga huset" öster om havet är en dold tillflykt grundad av den store Elrond.
+hud:map_region_5_description_2	"Det sista hemtrevliga huset" öster om havet är en dold tillflykt grundad av den store Elrond. Det ligger i en dal nära Dimmiga bergen och kallas Imladris av alverna. Vattnadal är en tillflykt för alla välvilliga folk, skyddad av Elronds makt mot Saurons fruktansvärda styrkor.
+hud:map_region_5_name	Vattnadal
+hud:map_region_6_description_1	Dvärgstaden Khazad-dûm ligger under Dimmiga bergen.
+hud:map_region_6_description_2	Dvärgstaden Khazad-dûm ligger under Dimmiga bergen. Den var en gång hem för Durins folk, och dess många stora salar vittnar om dvärgarnas hantverksskicklighet.
+hud:map_region_6_description_3	Dvärgstaden Khazad-dûm ligger under Dimmiga bergen. Den var en gång hem för Durins folk, och dess många stora salar vittnar om dvärgarnas hantverksskicklighet. Moria föll efter en lång belägring. Sedan dess har den härjats av orcher och hemsökts av en ondska som väckts i den svarta avgrundens djup.
+hud:map_region_6_name	Moria
+hud:map_region_7_description_1	I den skyddade tillflykt som kallas Vildmarkens Gyllene skog bor galadhrim ("trädfolket").
+hud:map_region_7_description_2	I den skyddade tillflykt som kallas Vildmarkens Gyllene skog bor galadhrim ("trädfolket"). Caras Galadhon, hem för Fru Galadriel och Herre Celeborn, ligger i skogens hjärta. Mycket få har skådat den majestätiska alvstaden.
+hud:map_region_7_name	Lothlórien
+hud:map_region_8_description_1	Anduin, även kallad den Stora floden, rinner söderut genom Midgård tills den når havet vid Belfalasbukten.
+hud:map_region_8_description_2	Anduin, även kallad den Stora floden, rinner söderut genom Midgård tills den når havet vid Belfalasbukten. Mitt på Anduins lopp ligger den stora sjön Nen Hithoel.
+hud:map_region_8_description_3	Anduin, även kallad den Stora floden, rinner söderut genom Midgård tills den når havet vid Belfalasbukten. Mitt på Anduins lopp ligger den stora sjön Nen Hithoel. Sjöns ö Tol Brandir var en gång hem för en av de sju seende stenarna. Sjön mynnar i de stora Raurosfallen, omgivna av Emyn Muils kullar.
+hud:map_region_8_name	Floden Anduin
+hud:MeleeWeapon	Vapen: %s
+hud:menu_attract_press_start	Tryck på START för att börja.
+hud:menu_cheat_accept	Fuskkod godkänd
+hud:menu_cheat_ammunition	ammunition 
+hud:menu_cheat_and	och
+hud:menu_cheat_enabled	aktiverad
+hud:menu_cheat_health	hälsa 
+hud:menu_cheat_infinite	Oändlig 
+hud:menu_cheat_invalid	Ogiltig fuskkod
+hud:menu_cheat_ring	Ring 
+hud:menu_cheat_spirit	andekraft 
+hud:menu_cheat1_code	Oändlig Ringanvändning: <Y><B><A><B><Y><X>
+hud:menu_cheat1_off	Oändlig Ringanvändning avaktiverad
+hud:menu_cheat1_on	Oändlig Ringanvändning aktiverad
+hud:menu_cheat2_code	Oändlig hälsa: <Y><A><X><B><A><Y>
+hud:menu_cheat2_off	Oändlig hälsa avaktiverad
+hud:menu_cheat2_on	Oändlig hälsa aktiverad
+hud:menu_cheat3_code	Oändlig andekraft: <X><Y><A><X><B><X>
+hud:menu_cheat3_off	Oändlig andekraft avaktiverad
+hud:menu_cheat3_on	Oändlig andekraft aktiverad
+hud:menu_cheat4_code	Oändlig ammunition: <X><B><Y><A><X><B>
+hud:menu_cheat4_off	Oändlig ammunition avaktiverad
+hud:menu_cheat4_on	Oändlig ammunition aktiverad
+hud:menu_fellowship_aragorn_d	"Inte alla som vandrar är vilse." Aragorn, kallad Vidstige, är utbygdsjägare. Han strövar genom landet från Fylke i norr till Gondor i söder och längre bort för att försvara Midgårds fria folk. Han är härdad av krig, men inte förhärdad. Han är en gammal vän till trollkarlen Gandalf och har svurit att med sitt liv skydda Frodo, Ringbäraren.
+hud:menu_fellowship_aragorn_n	Aragorn
+hud:menu_fellowship_boromir_d	"Genom vårt mod hålls Österns vilda folk fortfarande tillbaka och Morguls skräck på avstånd." Boromir är en stark och tapper krigare, härdad av år av försvar av Gondor mot Mordors styrkor. Han är son till Gondors rikshovmästare, som styr så länge riket saknar en rättmätig kung. Boromir är en stolt man, ivrig att finna vapen att bruka mot Sauron.
+hud:menu_fellowship_boromir_n	Boromir
+hud:menu_fellowship_frodo_d	"Det finns ett frö av mod gömt i hjärtat på den räddaste hobbit." Frodo är en energisk och klipsk hobbit. Han är föräldralös, och hans farbror Bilbo adopterade honom och lät honom bo hos sig. Andra hobbitar tyckte att Bilbo var konstig som blev vän med en trollkarl och reste med dvärgar för att besegra en drake. Inte Frodo, som drömde om att resa till vilda länder på sitt eget stora äventyr.
+hud:menu_fellowship_frodo_n	Frodo Bagger
+hud:menu_fellowship_gandalf_d	"Lägg dig inte i trollkarlars angelägenheter, ty de är listiga och snara till vrede." Gandalf är en trollkarl med enorm makt och visdom. Han är en av fem trollkarlar som sändes till Midgård för att hjälpa de fria folken att stå emot Saurons ondska. Han har rest till världens fjärran hörn och vunnit de visas beundran och mångas misstro. Han ser möjlighet till storhet hos de mest osannolika personer.
+hud:menu_fellowship_gandalf_n	Gandalf den grå
+hud:menu_fellowship_gimli_d	"Min yxa är rastlös i min hand. Ge mig en rad orchnackar och plats att svinga." Gimli är en modig dvärg med kort stubin och stort hjärta. Hans far är Glóin, en av de tolv dvärgar som reste med Bilbo på färden till Ensliga berget. Han säger vad han tycker, djärvt och utan fruktan. Gimli är vis i sten och jords vägar och en krigare som har få likar.
+hud:menu_fellowship_gimli_n	Gimli
+hud:menu_fellowship_legolas_d	"Välj en utter för simning, och för lätt löpning över gräs och löv, eller snö, en alv." Legolas Grönlöv är en snabb och smidig skogsalv. Han är beslutsam och hedervärd, men hyser agg mot dvärgarna. Legolas, son till kung Thranduil av Mörkmården, reser till Vattnadal som silvanalvernas sändebud. Han är en mästare i både krigets och fredens konst.
+hud:menu_fellowship_legolas_n	Legolas
+hud:menu_fellowship_merry_d	"Vi är förskräckligt rädda – men vi följer med dig, eller följer efter dig som hundar." Merry är en självsäker och glad hobbit. Han är son till Herren över Bockland och har en lätt elegans och charm. Merry är en naturlig ledare som älskar att noga planera upptåg och koka ihop sammansvärjningar med sina vänner. Han är ganska lärd och vet mycket om platser bortom Fylke.
+hud:menu_fellowship_merry_n	Meriadoc "Merry" Brandybock
+hud:menu_fellowship_pippin_d	"Dumbom till Took!" Pippin är en smidig ung hobbit som ofta är något dumdristig och impulsiv i sitt handlande. Han är fortfarande i tonåren, naiv och benägen att klaga. Men hans humor och lekfullhet väger upp många brister. Som son till Thain, Fylkes militära befälhavare, föddes Pippin till privilegier och bekvämlighet. Han är en av Frodos närmaste vänner.
+hud:menu_fellowship_pippin_n	Peregrin "Pippin" Took
+hud:menu_fellowship_sam_d	"Lita inte på ditt huvud, Samvis, det är inte den bästa delen av dig." Sam är en rättfram hobbit som kan vara envis och ihärdig. Han är inte den mest lärda hobbiten, men han har djup insikt om andra. Han kan tänka med hjärtat, och det sviker honom aldrig. Han växte upp med att sköta Fylkes trädgårdar och är nyfiken på världen. Hans goda sinnelag och sunda förnuft är ovärderliga för Frodo på den farliga färden.
+hud:menu_fellowship_sam_n	Samvis "Sam" Gamgi
+hud:menu_gamma_directions	Justera ljusstyrkan på din TV tills alla färgstaplar ovanför den grå linjen syns.
+hud:menu_hours_plural	timmar
+hud:menu_hours_singular	timme
+hud:menu_inventory1	Vapen
+hud:menu_inventory2	Föremål
+hud:menu_inventory3	Föremålets namn
+hud:menu_inventory4	Föremålets beskrivning
+hud:menu_load_game_1	Ladda spel
+hud:menu_load_game_2	Xbox-hårddisk
+hud:menu_load_game_3	Totalt antal block: 50 000+
+hud:menu_load_game_4	Tillgängliga block: 50 000+
+hud:menu_load_game_cancel	<B> Avbryt
+hud:menu_load_game_delete	<Y> Ta bort sparat spel
+hud:menu_load_game_load	<A> Ladda sparat spel
+hud:menu_loadsave_cheats	Gratulerar. Ditt stora mod och dina stora dåd var inte helt förgäves.\n\n
+hud:menu_loadsave_continue	<A> Fortsätt
+hud:menu_loadsave_delete	Ta bort sparat spel?\n\nTryck på <A> för att ta bort eller på <B> för att avbryta.
+hud:menu_loadsave_load_success	Spelet har laddats.
+hud:menu_loadsave_loadfailed	Det gick inte att ladda det sparade spelet.\n\nTryck på <A> för att fortsätta.
+hud:menu_loadsave_loading	Laddar spel från Xbox-hårddisken. Stäng inte av din Xbox-konsol.
+hud:menu_loadsave_max_games	Högst 4096 sparade spel är tillåtna. Tryck på <B> för att avbryta.
+hud:menu_loadsave_no_space	Din Xbox har inte %d lediga block för att spara spel.\n\nTryck på <A> för att fortsätta utan att spara eller på <B> för att starta Xbox Dashboard.
+hud:menu_loadsave_nosave	Du kan inte spara spelet här. Hitta säker, stabil mark och försök igen. Tryck på <B> för att gå tillbaka.
+hud:menu_loadsave_overwrite	Skriva över befintligt sparat spel?\n\nTryck på <A> för att skriva över eller på <B> för att avbryta.
+hud:menu_loadsave_save_success	Spelet har sparats.
+hud:menu_loadsave_savefailed	Din Xbox har inte tillräckligt med lediga block för att spara spel. Frigör %d block.\n\nTryck på <A> för att fortsätta.
+hud:menu_loadsave_saving	Sparar spel på Xbox-hårddisken. Stäng inte av din Xbox-konsol.
+hud:menu_map1	Fylke
+hud:menu_map2	Gamla skogen
+hud:menu_map3	Bri
+hud:menu_map4	Väderklint
+hud:menu_map5	Vattnadal
+hud:menu_map6	Moria
+hud:menu_map7	Lothlórien
+hud:menu_map8	Floden Anduin
+hud:menu_map9	<B> Tillbaka
+hud:menu_minutes_plural	minuter
+hud:menu_minutes_singular	minut
+hud:menu_options_Audio	Ljudinställningar
+hud:menu_options_back	<B> Tillbaka
+hud:menu_options_boolean0	Av
+hud:menu_options_boolean1	På
+hud:menu_options_GameOptions	Spelalternativ
+hud:menu_options_gamma	Ljusstyrka:
+hud:menu_options_gamma1	Tryck på <A> för att justera
+hud:menu_options_invert	Förstapersonsvy:
+hud:menu_options_invert1	Normal
+hud:menu_options_invert2	Inverterad
+hud:menu_options_Music	Musik:
+hud:menu_options_percent	%d%%
+hud:menu_options_Sound	Ljudeffekter:
+hud:menu_options_Subtitles	Undertexter:
+hud:menu_options_Vibration	Vibration:
+hud:menu_options_video	Bildinställningar
+hud:menu_options_widescreen	Bredbild:
+hud:menu_pause1	Utrustning
+hud:menu_pause10	<B> Återuppta
+hud:menu_pause11	Brödraskapet
+hud:menu_pause2	Världskarta
+hud:menu_pause3	Uppdragslogg
+hud:menu_pause4	Alternativ
+hud:menu_pause5	Spara spel
+hud:menu_pause6	Ladda spel
+hud:menu_pause7	Återuppta
+hud:menu_pause8	Avsluta
+hud:menu_pause9	<A> Välj
+hud:menu_quest01_1	Hitta köpebrevet för Säcks ände på Säcks ände
+hud:menu_quest01_2	Lämna köpebrevet till Lobelia Säcksdal-Bagger i Vattnaby
+hud:menu_quest01_3	Hitta den försvunna kläppen till varningsklockan
+hud:menu_quest01_4	Laga varningsklockan med kläppen
+hud:menu_quest01_5	Ring i varningsklockan
+hud:menu_quest01_d1	Sälj Säcks ände till Lobelia Säcksdal-Bagger
+hud:menu_quest01_t1	Försäljningen av Säcks ände
+hud:menu_quest02_1	Hämta Den enda ringen på Säcks ände
+hud:menu_quest02_2	Hämta nyckeln till Säcks ände
+hud:menu_quest02_3	Ge nyckeln till Säcks ände till Hamfast Gamgi på Säckgatan nummer 3
+hud:menu_quest02_4	Möt Merry, Pippin och Sam vid bonden Maggots gård
+hud:menu_quest02_d1	Hämta Ringen och tala med Gubben i hans hem
+hud:menu_quest02_t1	Förbered färden till Vattnadal
+hud:menu_quest03_1	Färdas genom Gamla skogen för att undvika de svarta ryttarna
+hud:menu_quest03_2	Rädda Merry och Pippin från Gamle gubben Pil
+hud:menu_quest03_3	Besegra gravhögsvätten
+hud:menu_quest03_4	Skriv in dig på värdshuset Den Stegrande Ponnyn
+hud:menu_quest03_5	Hitta 12 liljor åt Guldbär
+hud:menu_quest03_6	Ge 12 liljor till Tom Bombadill
+hud:menu_quest03_d1	Färdas säkert mot alvernas tillflykt
+hud:menu_quest03_t1	Påbörja färden till Vattnadal
+hud:menu_quest04_1	Rädda Ted Sandyman
+hud:menu_quest04_2	Hitta Sam
+hud:menu_quest04_3	Hitta Merry
+hud:menu_quest04_4	Hitta Pippin
+hud:menu_quest04_d1	Hitta Merry, Pippin och Sam i Gamla skogen
+hud:menu_quest04_t1	Hitta de försvunna hobbitarna
+hud:menu_quest05_1	Hitta Merry
+hud:menu_quest05_d1	Leta efter Merry i byn Bri
+hud:menu_quest05_t1	Hitta Merry
+hud:menu_quest06_1	Rensa en gammal hobbitkvinnas hus från råttor.
+hud:menu_quest06_2	Samla kläder
+hud:menu_quest06_3	Samla små stockar
+hud:menu_quest06_4	Samla meloner
+hud:menu_quest06_5	Samla en hökudde
+hud:menu_quest06_6	Återvänd till Den Stegrande Ponnyn
+hud:menu_quest06_d1	Hitta saker att göra lockbeten av hobbitar med
+hud:menu_quest06_t1	Samla delar till lockbeten
+hud:menu_quest07_1	Nå toppen av Väderklint
+hud:menu_quest07_2	Besegra olog-hai
+hud:menu_quest07_3	Skydda Frodo mot Nazgûl
+hud:menu_quest07_4	Hitta athelas för att behandla Frodos sår
+hud:menu_quest07_5	Led Frodo genom Trollskogarna
+hud:menu_quest07_d1	Skydda Frodo på hans färd till Vattnadal
+hud:menu_quest07_t1	Eskortera Frodo och hobbitarna till Vattnadal
+hud:menu_quest08_1	Färdas genom Moria
+hud:menu_quest08_2	Färdas längs floden Anduin
+hud:menu_quest08_d1	Färdas mot Domedagsberget
+hud:menu_quest08_t1	Färden till Domedagsberget
+hud:menu_quest09_1	Hitta ingången till Moria
+hud:menu_quest09_2	Besegra wargarna
+hud:menu_quest09_3	Fyll klyftan på bergsstigen
+hud:menu_quest09_4	Besegra Vaktaren i vattnet
+hud:menu_quest09_5	Öppna Morias portar
+hud:menu_quest09_d1	Led brödraskapet till Morias gruvor
+hud:menu_quest09_t1	Gå in i Morias gruvor
+hud:menu_quest10_1	Hitta en väg ut ur gruvområdet
+hud:menu_quest10_2	Fly från den tjugoförsta salen.
+hud:menu_quest10_3	Besegra grottrollet
+hud:menu_quest10_4	Besegra orchhövdingen
+hud:menu_quest10_5	Lämna Balins grav
+hud:menu_quest10_6	Nå Durins bro
+hud:menu_quest10_7	Skydda brödraskapet mot balrogen
+hud:menu_quest10_d1	Brödraskapet måste färdas genom Moria
+hud:menu_quest10_t1	Fly från Moria
+hud:menu_quest11_1	Ta dig förbi orchdammen
+hud:menu_quest11_2	Besegra Gollum i lägret
+hud:menu_quest11_3	Nå öns topp
+hud:menu_quest11_4	Rädda Sam
+hud:menu_quest11_5	Besegra Nazgûl och hans vingbest
+hud:menu_quest11_d1	Bana väg närmare Mordor
+hud:menu_quest11_t1	Följ floden Anduin mot Mordor
+hud:menu_quest12_1	Hitta den försvunna metallsprinten
+hud:menu_quest12_2	Laga kvarnens reglage med sprinten
+hud:menu_quest12_d1	(Valfritt) Ge en granne ett handtag
+hud:menu_quest12_t1	Laga Ted Sandymans kvarn
+hud:menu_quest13_1	Hitta 4 läkeörter i Gröna kullarnas land
+hud:menu_quest13_2	Ge 4 läkeörter till gamle Noakes i Vattnaby
+hud:menu_quest13_d1	(Valfritt) Hitta läkeörter och lämna dem till Fylkes brevbärare
+hud:menu_quest13_t1	Hitta läkeörter åt gamle Noakes
+hud:menu_quest14_1	Samla 6 svampar från Maggots gård
+hud:menu_quest14_d1	(Valfritt) Plocka smakrika svampar
+hud:menu_quest14_t1	Ta Maggots svampar
+hud:menu_quest15_1	Hitta alla 5 grisarna och för tillbaka dem till svinstian
+hud:menu_quest15_2	Hitta en säck säd att mata grisarna med
+hud:menu_quest15_3	Fyll grishon med säd
+hud:menu_quest15_d1	(Valfritt) Hjälp Milo Burrows att föra tillbaka sina grisar till stian
+hud:menu_quest15_t1	Hjälp en granne att fånga sina grisar
+hud:menu_quest16_1	Hjälp till att laga Hals vindflöjel
+hud:menu_quest16_d1	(Valfritt) Hjälp Hal att laga sin vindflöjel
+hud:menu_quest16_t1	Hjälp en hobbit med ett kroppsarbete
+hud:menu_quest17_1	Hitta en mask åt Milo
+hud:menu_quest17_2	Ge masken till Milo
+hud:menu_quest17_d1	(Valfritt) Hitta en mask för att hjälpa Milo
+hud:menu_quest17_t1	Hjälp Milo Burrows med hans fiske
+hud:menu_quest18_1	Ge ett ägg till Tjockis
+hud:menu_quest18_2	Ge en honungskaka till Tjockis
+hud:menu_quest18_d1	(Valfritt) Hitta ingredienserna till pajen åt Tjockis
+hud:menu_quest18_t1	Hjälp Tjockis att baka en paj
+hud:menu_quest19_1	Hitta ciderfatet
+hud:menu_quest19_2	Bär ciderfatet till baren på Den Gröna Draken
+hud:menu_quest19_d1	(Valfritt) Hitta ciderfatet åt Rose
+hud:menu_quest19_t1	Hjälp Rose med hennes sysslor
+hud:menu_quest20_1	Hitta grindgångjärnet
+hud:menu_quest20_2	Laga grinden med gångjärnet
+hud:menu_quest20_d1	Hitta den saknade delen för att laga grinden
+hud:menu_quest20_t1	Laga Hobbitons grind
+hud:menu_save_game_back	<B> Avbryt
+hud:menu_save_game_delete	<Y> Ta bort sparat spel
+hud:menu_save_game_empty	Ny sparning
+hud:menu_save_game_gameinfo	%d av %d sparade spel\n%s\n%d %s %d %s spelad tid\nSparat %d/%d/%d\n%d block
+hud:menu_save_game_no_games	Det finns inga sparade spel
+hud:menu_save_game_select	<A> Spara spel
+hud:menu_save_game_title	Spara spel
+hud:menu_start1	Starta nytt spel
+hud:menu_start2	Fortsätt sparat spel
+hud:menu_start3	Spelalternativ
+hud:menu_start4	Avsluta spelet
+hud:menu_start5	<A> Välj
+hud:menu_start6	Medverkande
+hud:Merry065a	Bäst att vi sätter fart innan fler av de där sakerna kommer efter oss!
+hud:MerryPippinDead	Ack! Merry och Pippin har omkommit.
+hud:MGeneratorClue001	Vissa byggnader släpper ut fiender. Förstör dem för att hindra att fler fiender kommer!
+hud:Mill_Interior	Kvarnen
+hud:MillGiveKey001	Vänta. Jag måste fortfarande lämna nyckeln till Gubben.
+hud:MirrorOverhead	Tryck på <A> för att fortsätta
+hud:MirrorPickup	Du har plockat upp en spegel.
+hud:Narrator002e	Sidorna i din dagbok visar utrustningen, uppdragen, kartorna och vännerna du har samlat. Tryck på <LT> eller <RT> för att växla mellan sidorna.
+hud:Narrator003e	Uppdragsloggen har uppdaterats. Tryck på BACK för att öppna uppdragsloggen.
+hud:Narrator004e	Förstör de två tentaklerna närmast porten!
+hud:Narrator005e	Köpebrevet förvaras i en kista på Säcks ände.
+hud:Narrator006e	Det ser ut som om Milos fem grisar har rymt! Någon borde föra tillbaka dem till stian där de hör hemma. Uppdragsloggen har uppdaterats.
+hud:Narrator007e	Du har plockat upp några smällare.
+hud:Narrator008e	Du har plockat upp ett äpple.
+hud:Narrator009e	Du har plockat upp en svamp.
+hud:Narrator009e2	Du har plockat upp en svamp. Använd den för att återställa din hälsa.
+hud:Narrator010e	Du har plockat upp en metallsprint. Uppdragsloggen har uppdaterats.
+hud:Narrator010e2	Du har plockat upp en metallsprint.
+hud:Narrator010e3	Det här ser ut som ett bra ställe för metallsprinten.
+hud:Narrator011e	Du har plockat upp ett dyrkset.
+hud:Narrator012e	Du har plockat upp köpebrevet. Uppdragsloggen har uppdaterats.
+hud:Narrator013e	Du har plockat upp lite miruvor.
+hud:Narrator013e2	Du har plockat upp lite miruvor. Använd den för att återställa din andekraft.
+hud:Narrator014e	Du har plockat upp en sida ur en uråldrig dvärgkrönika.
+hud:Narrator015e	Du har plockat upp en limpa cram.
+hud:Narrator015e2	Du har plockat upp en limpa cram. Använd den för att återställa din hälsa.
+hud:Narrator016e	Du har plockat upp lite lembas.
+hud:Narrator016e2	Du har plockat upp lite lembas. Använd det för att återställa din hälsa.
+hud:Narrator017e	Du har plockat upp en runnyckel.
+hud:Narrator018e	Du har plockat upp klockkläppen.
+hud:Narrator019e	Du har plockat upp en honungskaka.
+hud:Narrator020e	Du har plockat upp en spak till ett reglage.
+hud:Narrator021e	Du har plockat upp ett ägg.
+hud:Narrator030a	Uppdragsloggen har uppdaterats.
+hud:Narrator030z	Du har plockat upp nyckeln till Säcks ände.
+hud:Narrator035	Det är låst. Ett dyrkset skulle komma väl till pass.
+hud:Narrator035e	Välj dyrksetet med styrkorset och tryck på <BL> för att använda det.
+hud:Narrator037	Du är inte redo att ta Ringen och påbörja din färd. Du har ännu inte sålt Säcks ände till Lobelia Säcksdal-Bagger.
+hud:Narrator047	Du har inte alla delar till lockbetena.
+hud:Narrator048	Nu har du alla delar till lockbetena.
+hud:Narrator050	Frodo blir anfallen!
+hud:Narrator052	Frodo har stupat i strid.
+hud:Narrator980	Det verkar som om Sam har sett något. Jag bör röra mig försiktigt!
+hud:Narrator981	Det verkar som om Pippin har sett något. Jag bör röra mig försiktigt!
+hud:Narrator982	Det verkar som om Merry har sett något. Jag bör röra mig försiktigt!
+hud:Narrator983	Besegra de 2 spindlarna som vaktar Ted!
+hud:Narrator987	Jag är inte så säker på att jag borde göra det här...
+hud:NarratorDagger	Du har plockat upp en västerlandsk dolk.
+hud:NarratorDoorClue001	Tryck på <X> för att öppna dörrar.
+hud:NarratorGrain	Du har plockat upp en säck säd.
+hud:NarratorLiftHelp	Tryck på <X> medan du rör vänster styrspak för att lyfta, bära eller släppa föremål.
+hud:NarratorPushHelp	Håll in <X> medan du rör vänster styrspak för att skjuta eller dra föremål.
+hud:NarratorSign001	Till Vattnaby
+hud:NarratorSign002	Till Hobbiton
+hud:NarratorSign003	Till Gröna kullarnas land
+hud:NarratorSign004	Till Krickhålan
+hud:NarratorSign005	Maggots gård
+hud:NarratorSign006	Säcks ände
+hud:NarratorSign006a	Till Säcks ände
+hud:NarratorSign007	Gamgi
+hud:NarratorSign008	Sandymans kvarn
+hud:NarratorSign009	Burrows
+hud:NarratorSign010	Twofoot
+hud:NarratorSign011	Boffin
+hud:NarratorSign012	Grubb
+hud:NarratorSign013	Brockhouse
+hud:NarratorSign014	Hornblower
+hud:NarratorSign015	Bolger
+hud:NarratorSign016	Goodbody
+hud:NarratorSign017	Noakes
+hud:NarratorSign018	Stoltfot
+hud:NarratorSign019	Den Gröna Draken
+hud:NarratorSign020	Murgrönebusken
+hud:NarratorSign021	Bracegirdle
+hud:NarratorSign022	Chubb
+hud:NarratorSign023	Sandyman
+hud:NarratorSign024	Smallburrow
+hud:NarratorSign025	Värdshuset Den Stegrande Ponnyn
+hud:NarratorSign026	Stall
+hud:NarratorSongEffect	Jag kanske borde ropa på hjälp!
+hud:NarratorSongNoEffect	Bombadills sång har ingen verkan just nu.
+hud:NarratorTom	Du har fått Bombadills sång.
+hud:NarratorXHelp	Tryck på <X> för att interagera med föremål.
+hud:Network_of_Stairs	Trappnätet
+hud:NewBow	Du har plockat upp Galadhrims båge.
+hud:NewSword	Du har plockat upp det númenoreiska svärdet.
+hud:NiceClue	Det är viktigt att låta grannarnas saker vara.
+hud:NoBlock	Jag kan inte parera just nu.
+hud:NoBlockWeapon	Det finns inget lämpligt vapen att parera med!
+hud:NoKeyClue	Hitta nyckeln till Säcks ände någonstans på Säcks ände.
+hud:NoRingHere	Ringen får inte användas på så helig mark!
+hud:NotForFrodo	Det här föremålet är inte avsett för mig.
+hud:NoThrow	Jag kan inte kasta härifrån.
+hud:Orc_Dam	Orchdammen
+hud:Orc_Dam_Camp	Lägerplatsen vid floden
+hud:Orc_Dam_Gollum	Lägerplatsen vid stranden
+hud:ParalysisGiven	Boken har avslöjat en trollformel.
+hud:PickedUp	%s hittad.
+hud:Pippin066a	Det verkar som om käringarna visste vad de pratade om! Det här stället är förskräckligt!
+hud:PoisonClue001	Du har blivit förgiftad!
+hud:PoisonClue002	De flesta gifter går över med tiden, och vissa föremål kan användas för att bota förgiftning.
+hud:PoisonClue003	Du är botad!
+hud:Prancing_Pony	Värdshuset Den Stegrande Ponnyn
+hud:PurityDropClue001	Vissa handlingar drar Frodo djupare in under Den enda ringens onda inflytande.
+hud:PurityRaiseClue001	Vissa handlingar minskar Den enda ringens fördärvande inflytande på Frodo.
+hud:RingClue001	När Den enda ringen snurrar finns ett dolt område i närheten.
+hud:RingClue002	De här områdena kan bara nås medan du bär Ringen.
+hud:RingTutorial001	Du kan bära Den enda ringen för att bli osynlig. Men det har ett pris.
+hud:RingTutorial002	Medan du bär Ringen fördärvar den dig sakta. Bär den för länge, så duckar du under för dess makt.
+hud:RingTutorial003	Goda gärningar och hjältemod tar bort en del av Ringens fördärv.
+hud:RingUses	Ringanvändningar: %d
+hud:Rot_Bridge	Roterande broar
+hud:Sam078a	Ah, jag försökte att inte gå vilse, Frodo, ärligt talat, men träden hade andra planer!
+hud:Sam083	Ahh! Aaaaah!
+hud:Secret_Cave_1	Dold grotta på landet
+hud:Secret_Cave_2	Dold grotta i byn
+hud:Secret_Cave_4	Dold labyrintgrotta
+hud:Secret_Cave_5	Dold stiggrotta
+hud:Secret_Cave_6	Dold gravhögsgrotta
+hud:Secret_Cave_7	Dold flodgrotta
+hud:Secret_well	Dold brunn i Hobbiton
+hud:SelectThingsClue	För att välja ett föremål i din utrustning trycker du styrkorset åt höger för att markera utrustningsfacket och uppåt eller nedåt för att bläddra bland dina föremål.
+hud:ShareMushrooms	Merry och Pippin har tagit 4 svampar.
+hud:Sign3Bagshot	Säckgatan nummer 3
+hud:SignBagshotRow	Säckgatan
+hud:SignSilo	Gratis säd åt alla!
+hud:SignToBagshot	Till Säckgatan
+hud:Silo_Interior	Silon
+hud:SpellNoEffect	Trollformeln har ingen verkan.
+hud:SpiritHUD	Andekostnad: %d
+hud:SpiritTotal	Andekraft: %d / %d
+hud:standard_loading	Laddar...
+hud:StartMillClue001	Ställ dig bredvid reglaget och tryck på <X> för att starta kvarnen.
+hud:StealPig	Milos grisar hör hemma i sin stia!
+hud:StealthClue001	Ljuset i mitten av statusfältet visar om Frodo har blivit upptäckt av en fiende.
+hud:StealthClue002	Om ljuset är gult har en fiende i närheten blivit uppmärksam på Frodo, men har ännu inte fått syn på honom.
+hud:StealthClue003	Men om ljuset blir rött har fienden upptäckt Frodo!
+hud:StealthClue004	För att smyga förbi en fiende rör du vänster styrspak lätt åt det håll du vill gå.
+hud:StealthClue005	Om du lyckas undvika en fiende blir ljuset grönt.
+hud:SwitchFixed	Reglaget har lagats.
+hud:TalkingClue	Tryck på <X> för att tala med andra figurer.
+hud:toms	Familjen Bombadills hem
+hud:TomSong0	 
+hud:TomSong1	 
+hud:TomSong2	 
+hud:TomSong3	 
+hud:TomSong4	 
+hud:Trans_Hobbiton_Night	Den kvällen stoppade jag Ringen i fickan och gjorde mina sista förberedelser för att lämna Hobbiton.
+hud:Trans_Hobbiton_Night2	Allt jag behövde göra var att gå till Säckgatan nummer 3 och lämna nyckeln till Säcks ände hos Gubben Gamgi.
+hud:Tree_Labyrinth	Trädlabyrinten
+hud:Troll_Shaws	Trollskogarna
+hud:TrunkHit	Det är ingen bra idé att skada trädets stam!
+hud:Tube_Bridges	Rörbroarna
+hud:Two_Hundred_Stairs	200 trappsteg
+hud:UnknownHerbs	Du har plockat upp några örter.
+hud:UnlockMaggotGate001	Bonden Maggots grind är låst... inget som ett dyrkset inte klarar av!
+hud:UseLeverClue001	Tryck på <X> för att dra i en spak.
+hud:UsePinHint001	Använd metallsprinten på kvarnens kugghjul genom att välja den och trycka på <BL>.
+hud:user_settings_damaged	Användarinställningarna har skadats. Standardinställningarna återställs.\n\nTryck på <A> för att fortsätta.
+hud:Village_of_Bree	Bri
+hud:WargClue	Besegra de fyra wargarna som anfaller brödraskapet!
+hud:warning_bad_game_disc	Det är något fel på skivan du använder. Den kan vara smutsig eller skadad.\n\nTryck på <A> för att fortsätta.
+hud:warning_load_game	Om du laddar ett spel förloras ditt nuvarande spel.\n\nTryck på <A> för att ladda eller på <B> för att återgå till föregående meny.
+hud:warning_lost_controller	Anslut handkontrollen igen och tryck på START för att fortsätta.
+hud:warning_quit_confirmation	Är du säker på att du vill avsluta?\n\nTryck på <A> för att avsluta eller på <B> för att återgå till spelet.
+hud:Weathertop_Newest	Väderklint
+hud:Wight001	Kall vare hand och hjärta och ben,
+hud:Wight002	och kall vare sömnen under sten;
+hud:Wight003	aldrig mer att vakna på stenig bädd,
+hud:Wight004	aldrig, tills solen slocknar och månen är död.
+hud:Wight005	I den svarta vinden ska stjärnorna dö,
+hud:Wight006	och här på guld ska de ännu ligga,
+hud:Wight007	tills mörkrets herre lyfter sin hand
+hud:Wight008	över dött hav och förtvinat land.
+hud:Withywindle_Path	Stigen längs Videvindeln
+hud:Wrestlers	Bäst att inte störa dem.
+hud:xbox_dings_test	<A> <B> <X> <Y> <LT> <RT> <BL> <W>
+hud:warning_damaged_save	Skadad sparfil
+dlg:1stPersonClue002	Klicka på höger styrspak för att gå in i siktesläget.
+dlg:Angelica004	Hej, Frodo.
+dlg:Angelica005	Vi kommer att sakna dig förskräckligt, Frodo.
+dlg:Angelica006	Du ska ju så väldigt långt bort. Nästan till andra änden av världen!
+dlg:Angelica007	Det är så långt att resa. Jag hoppas att du kan komma tillbaka till Hobbiton en dag.
+dlg:Angelica008	Adjö, Frodo.
+dlg:Angelica009	Frodo, har du sett min lilla vovve? Han är så sen till sitt bad, och han finns ingenstans!
+dlg:Appledore001	Jag gillar inte er hobbitar särskilt mycket. Stick!
+dlg:Appledore002	Lilla musen är på väg att fastna med sin håriga fot i en råttfälla!
+dlg:Appledore003	Du där!
+dlg:Appledore004	Va...?
+dlg:Appledore005	Öh...
+dlg:Appledore006	Agh!
+dlg:Appledore007	Uff!
+dlg:Appledore008	Jiiiih!
+dlg:Appledore009	Ghh... uunngh.
+dlg:Appledore010	Jaarrr!
+dlg:Appledore011	Hallå! Här borta!
+dlg:Appledore012	(lågt, sysslolöst visslande)
+dlg:Appledore013	Behöver hjälp här!
+dlg:Aragorn001	De föredrar de lägre nivåerna... trots skuggan av fruktan som vilar över dem.
+dlg:Aragorn002	Durins bro är nära. Med tur tar vi oss över den utan missöden.
+dlg:Aragorn003	Hur upphäver vi det här skyddet?
+dlg:Aragorn004	Ett grottroll!
+dlg:Aragorn005	Moria är vidsträckt och djupt. Med tur kan vi undvika alla orcher.
+dlg:Aragorn006	Se upp var du går här inne. Ett felsteg kan bli ditt sista.
+dlg:Aragorn007	Jag följer med, men jag säger er alla... akta er för Morias hemligheter!
+dlg:Aragorn008	Gandalf, hörde du det där?
+dlg:Aragorn009	Gandalf talar sanning. Våra bekymmer kan bli värre, och fortare än vi önskar!
+dlg:Aragorn010	Där wargen ylar, smyger orchen... vi bör inte dröja.
+dlg:Aragorn011	Jag fruktar att vi inte kan undvika orcherna för evigt. Vi måste vara redo.
+dlg:Aragorn012	Hobbitarna behöver vila, Gandalf. Det här verkar vara en bra lägerplats.
+dlg:Aragorn013	Till vapen! Till vapen!
+dlg:Aragorn014	Nej, Frodo!
+dlg:Aragorn015	Låt Ringbäraren söka skydd... nu är det dags för Andúril att slå till!
+dlg:Aragorn016	Du borde gå nu, Frodo, medan du har chansen!
+dlg:Aragorn017	Elendil!
+dlg:Aragorn018	Nu, Legolas! Gör slut på den vidriga besten!
+dlg:Aragorn019	Frodo! Boromir! Gör er redo... orcherna har byggt befästningar!
+dlg:Aragorn020	Vägen är fri, för tillfället.
+dlg:Aragorn021	Vad är det här? Något rör sig!
+dlg:Aragorn022	Gollum! Stanna där du står, varelse!
+dlg:Aragorn023	Var stilla, så blir du inte skadad! Varför är du här?
+dlg:Aragorn024	Presenter? Tala tydligt!
+dlg:Aragorn025	Han har undkommit mig!
+dlg:Aragorn026	Presenter. Så märkligt...
+dlg:Aragorn027	Kom hit, du!
+dlg:Aragorn028	Nu har Gollum undkommit mig två gånger. Men det är inget alltför allvarligt misstag. Den av Ringen fördärvade varelsen har ju till och med rymt från alvernas förvar.
+dlg:Aragorn030	Där är du, Merry!
+dlg:Aragorn031	De kallar mig Vidstige. Jag är en vän till Gandalf.
+dlg:Aragorn032	Gå tillbaka till värdshuset och leta upp dina vänner. Säg åt Smörblomma att inkvartera er i mitt rum!
+dlg:Aragorn033	Jag tror att det är dags att få de här fienderna att tappa spåret.
+dlg:Aragorn034	Jag ska samla ihop lite saker och göra lockbeten av er hobbitar. Ni får se. Gå nu!
+dlg:Aragorn036	Det är min sak.
+dlg:Aragorn038a	De här små stockarna ger mina lockbeten övertygande armar och ben i mörkret. Grindvakten lär knappast sakna dem.
+dlg:Aragorn043	Saurons makt är bunden till den här Ringen. Vi måste bära den djupt in i Mordor och förstöra den i Domedagsbergets eldar.
+dlg:Aragorn045	Alvsmederna har smitt om Narsil, mina förfäders klinga. Ni har gjort mig en stor ära.
+dlg:Aragorn046	Det ska få ett nytt namn... Andúril, Västerns flamma!
+dlg:Aragorn047	Du har mitt tack, Arwen Undómiel. Och min kärlek.
+dlg:Aragorn048	Elrond valde dina följeslagare väl, Frodo. Vi ska inte svika dig!
+dlg:Aragorn049	Här, Sam. Oroa dig inte, jag är fortfarande med dig!
+dlg:Aragorn051	Jag har inte varit här på många långa år, men jag minns vägen till Caras Galadhon, alvernas trädstad.
+dlg:Aragorn054	Vänta. Vi går alla med förbundna ögon.
+dlg:Aragorn054a	Ska vi säga pest och pina över alver och deras stela nackar? Hela sällskapet ska behandlas lika. Bind för ögonen på oss alla, Haldir.
+dlg:Aragorn055	Det finns ingen ondska i det här landet, eller hos dess folk, om man inte själv för den hit.
+dlg:Aragorn058	Det du gjorde var värre än något din vän kunde ha sagt!
+dlg:Aragorn059	Jag vill växla några ord med dig någonstans i lugn och ro.
+dlg:Aragorn060	Jag kallas Vidstige. Och om det jag säger är till hjälp för dig, vill jag att du tar mig med dig.
+dlg:Aragorn061	Utmärkt. Du verkar komma till sans igen efter din olycka.
+dlg:Aragorn061a	Jag är Aragorn, Arathorns son. Och om jag kan rädda dig, genom liv eller död, så ska jag göra det.
+dlg:Aragorn062	Jag trodde att jag skulle behöva övertala dig utan bevis... men mitt utseende talar emot mig.
+dlg:Aragorn062a	Men ser fula ut?
+dlg:Aragorn064	Stanna här. Jag hittar honom.
+dlg:Aragorn065	Ni borde sova, allihop. Jag håller vakt i natt. Vi ger oss av i gryningen.
+dlg:Aragorn066	Mot Vattnadal. Men inte längs huvudvägen.
+dlg:Aragorn067	Mina genvägar blir aldrig fel.
+dlg:Aragorn068	Det angår inte dig, hästtjuv.
+dlg:Aragorn069	Det har jag redan gjort. Försvinn nu!
+dlg:Aragorn071	Djärva ord från en smutsig orchavkomma från Mordor.
+dlg:Aragorn072	Hitta ett säkrare rum. Det kan finnas fler av de där männen här omkring.
+dlg:Aragorn076	Jag är inte säker. Det är för långt bort för att se. Men det verkar komma från Väderklint.
+dlg:Aragorn077	Vi vet mer när vi når Väderklint.
+dlg:Aragorn078	Du har inte sett med en utbygdsjägares ögon! Ser du den där röset? Det finns runor på den!
+dlg:Aragorn079	Det verkar vara ett G och en 3:a.
+dlg:Aragorn080	Och 3:an kan betyda ett datum... den 3 oktober var inte länge sedan.
+dlg:Aragorn081	Om han var här gav han sig av i all hast. Han kanske stötte på troll. Eller något värre...
+dlg:Aragorn082	Mordors ringvålnader. Vi måste skynda vidare.
+dlg:Aragorn083	För tillfället. Ringvålnaderna väntar på att Frodo ska dukta under för sitt sår innan de anfaller... igen.
+dlg:Aragorn084	Den där kniven i mörkret. Såret tar överhanden och förvandlar honom till en lägre vålnad.
+dlg:Aragorn084a	Jag kan inte läka honom... men jag kan bromsa mörkret som växer inom honom.
+dlg:Aragorn085	Jag behöver en läkeväxt som heter athelas och kommer från det forntida landet Númenor. Du känner den kanske som kungsblad.
+dlg:Aragorn086	Jag tror att den växer vilt i trakten.
+dlg:Aragorn087	De svarta ryttarna gömmer sig och väntar på att deras Morgulkniv ska besegra Frodo. Men Frodos motståndskraft är stark. Vi måste skynda till Vattnadal!
+dlg:Aragorn089	Fatta mod, Frodo! Vi klarar det här tillsammans!
+dlg:Aragorn090	Jag kan jaga och hitta mat i vildmarken.
+dlg:Aragorn091	Dra åt svångremmen och tänk på festmåltiden vid Elronds bord i Vattnadal.
+dlg:Aragorn092	Det ser jag.
+dlg:Aragorn093	Det här är Glorfindel, av Elronds hus i Vattnadal.
+dlg:Aragorn094	Här. Frodo har ett Morgulsår. Han måste till Vattnadal.
+dlg:Aragorn095	Ack, min fru! Gandalf föll i skuggan. Han tog sig inte ut ur Moria.
+dlg:Aragorn096	Väck de andra och gör er redo att bryta upp. Att smyga hjälper oss kanske inte här... vi kan bli tvungna att slåss.
+dlg:Aragorn097	God kväll.
+dlg:Aragorn098	Är det första gången du är på ett värdshus, herr Underberg?
+dlg:Aragorn099	Heh... jag förstår. Tja, om du tänker stanna här borde du tala med värden. Väntar du för länge får du sova i stallet!
+dlg:Aragorn101	Hnngh!
+dlg:Aragorn102	Aagh!
+dlg:Aragorn103	Nnaaargh!
+dlg:Aragorn104	Hnf!
+dlg:Aragorn105	Åhhh... agh!
+dlg:Aragorn106	Usch!
+dlg:Aragorn107	Naaaah!
+dlg:Aragorn108	Hiih!
+dlg:Aragorn109	Mmph!
+dlg:Aragorn111	Herr Underberg? Jag skulle hindra din vän från att prata, om jag var du.
+dlg:Aragorn112	Du borde göra något, och fort!
+dlg:Aragorn135	Gandalf! Ta den här!
+dlg:Aragorn136	Var på din vakt här, herr Underberg. Du kommer att märka att Bri inte är lika vänligt som Fylke.
+dlg:Aragorn142	Orcherna är i rörelse... och de är fler! Gör er redo för strid!
+dlg:Aragorn150	Vad är det?
+dlg:Aragorn151	Kalla på en råttfångare.
+dlg:Aragorn152	Inbrottstjuv...?
+dlg:Aragorn153	Hm... jag kanske tar en titt ändå.
+dlg:Aragorn154	Din källare är fri från råttor. Får jag ta några av dina trasor som belöning?
+dlg:Aragorn155	Tack så mycket. Jag skulle gå inomhus om jag var du...
+dlg:Aragorn156	Självklart. God natt.
+dlg:Arwen001	Förnyas ska klingan som brustit. Den kronlöse åter blir kung.
+dlg:Arwen002	Du hedrar oss genom att bära den mot vår gemensamma fiende, Aragorn, Arathorns son, ättling till Númenors kungar.
+dlg:Arwen003	Må den få se Mörkrets herres undergång och sedan föra dig tryggt tillbaka till mig, min älskade.
+dlg:Arwen004	Mae govannen, mellon.
+dlg:Arwen006	Din väg blir mödosam, Ringbärare. Må stjärnorna lysa på ditt ansikte!
+dlg:Bilbo001	Där är du ju, Frodo, min gosse! Jag har några gåvor åt dig att ha på vägen.
+dlg:Bilbo002	Först har vi Stick! En alvprins klinga. Du kommer att behöva den, ska du se.
+dlg:Bilbo003	Det här är en mithrilskjorta ur drakskatten. Mycket lätt, men starkare än något stål.
+dlg:Bilbo004	Hjälpa dig? Jag har dragit en fruktansvärd undergång över dig.
+dlg:Bilbo004a	Jag skulle ta den dumma gamla Ringen själv, men utan den har åren hunnit ikapp mig. Jag är inte "välbevarad" längre.
+dlg:Bilbo005	Ah, ja. Ta hand om dig, Frodo! Och ta med dig alla nyheter du kan! Jag skriver en bok om ditt äventyr.
+dlg:Bob001	Ledsen, herrn. Stallet är stängt. Jag måste få det rent innan chefen flår mig!
+dlg:Bob002	Jag känner ingen Bagger, jag svär!
+dlg:Bob003	Jag är skyldig dig mitt liv, herrn. De där männen söderifrån... de ville döda mig!
+dlg:Bob004	Det har ni rätt i, herrn! De där smutsiga spiltorna kan vänta!
+dlg:Bombadil004	Hoppsan! Sakta i backarna, små vänner! Vart är ni på väg, flåsande som blåsbälgar? Vad står på?
+dlg:Bombadil005	Jag är Tom Bombadill!
+dlg:Bombadil006	Kom nu! Berätta vad ert bekymmer är!
+dlg:Bombadil007	Gamle gubben Pil? Jag kan en ramsa för honom! Jag sjunger märgen kall i honom om han inte uppför sig.
+dlg:Bombadil008	Släpp ut dem igen, Gamle gubben Pil! Du ska inte vara vaken! Ät jord! Drick vatten! Sov nu! Bombadill talar!
+dlg:Bombadil009	Nå, mina små vänner! Ni ska komma till Tom Bombadills hus.
+dlg:Bombadil010	Kom nu och hjälp Tom att hitta liljor åt den fagra fru Guldbär!
+dlg:Bombadil011	Tid nog för frågor runt kvällsvardsbordet!
+dlg:Bombadil015	Här är min Guldbär!
+dlg:Bombadil016	Va? Vad? Vet ni inte mitt namn? Det är det enda svaret. För vem är ni, utan ert namn?
+dlg:Bombadil016a	Men ni är unga, och jag är gammal. Äldst, det är vad jag är.
+dlg:Bombadil017	Hans dyrbara Ring har ingen makt över Tom Bombadill... Och nu, glada vänner, är det dags för kvällsvard!
+dlg:Bombadil018	Håll er till det gröna gräset när ni går, pojkar! Rör inte gamla stenar och snoka inte i gamla, döda gravhögsvättars hus!
+dlg:Bombadil019	Här är en sång att sjunga om ni hamnar i fara.
+dlg:Bombadil030	Nå, små vänner! Gamle Tom har besvarat ert rop.
+dlg:Bombadil031	Låt oss gå ut på rent gräs.
+dlg:Bombadil032	Förtrollningen över den här gravhögen är bruten, och ingen vätte ska någonsin komma tillbaka hit.
+dlg:Bombadil033	Jag har strött ut gravhögens skatter. De är fria för alla som hittar dem!
+dlg:Bombadil034	Gamle Tom har tagit en vacker leksak åt sin fru, och här är några fina klingor åt unga hobbitar som vandrar in i mörker och fara!
+dlg:Bombadil035	De smiddes för länge sedan av Västerlands människor bortom havet, i forntida Númenor.
+dlg:Bombadil035a	De besvor sina klingor till förbannelse för Mörkrets herre.
+dlg:Bombadil035b	Númenors kungar är glömda nu, men deras söner vandrar i ensamhet och skyddar enkelt folk från onda ting.
+dlg:Bombadil036	Gamle Tom ska se till att ni kommer tryggt över gränsen till hans land. Därifrån bör ni färdas till Bri, en fin by!
+dlg:Bombadil036a	Stanna över natten på värdshuset Den Stegrande Ponnyn.
+dlg:Bombadil037	Sedan ska vi sätta oss vid ett bord dukat med grädde, honungskakor och vitt bröd och smör!
+dlg:Bombadil038	Hoppa på, lille vän! Fler liljor åt fagra Guldbär.
+dlg:Bombadil039	Fagra liljor åt den fagra flodens dotter! Kom, låt oss gå och möta henne!
+dlg:Bombadil040	Va? Bråttom? Guldbär och kvällsvarden finns där när vi kommer fram, min gosse! Tänk på liljorna nu!
+dlg:Boromir001	Nog pratat om det förflutna... det är nuet som bekymrar mig. Vilar vi, eller går vi vidare?
+dlg:Boromir002	Låt oss hoppas att inga orcher kommer på besök medan vi sover i det här väldiga hålet.
+dlg:Boromir003	Ett hobbitupptåg, kanske?
+dlg:Boromir004	Vår tur verkar ha surnat på sistone.
+dlg:Boromir005	Jag tycker fortfarande att vi borde ha styrt mot Gondor.
+dlg:Boromir005a	Jag tycker fortfarande att vi borde ha styrt mot Gondor.
+dlg:Boromir006	Det är ett olycksbådande namn. Men i Gondor får vi starka bundsförvanter.
+dlg:Boromir007	Jag går inte, om inte hela sällskapet röstar emot mig.
+dlg:Boromir008	Ringbärarens röst bör höras.
+dlg:Boromir009	Till vapen! Gondor!
+dlg:Boromir010	Det här är dårskap. Vi borde styra mot Gondor genast!
+dlg:Boromir011	Kan du ordet, Gandalf?
+dlg:Boromir012	Vi måste vidare, och snart... innan orcherna kommer.
+dlg:Boromir013	Berättelserna jag hörde om det här stället som barn gör det inte rättvisa.
+dlg:Boromir014	Till vapen! Gondor!
+dlg:Boromir016	Det är inte Aragorn som bekymrar mig, utan du. Du har en svår väg framför dig.
+dlg:Boromir017	Och ändå... lider du i onödan?
+dlg:Boromir018	Vad är det för varning?
+dlg:Boromir019	Vår styrka har länge skyddat ert lilla Fylke!
+dlg:Boromir020	Det finns fortfarande hopp om att Gondor inte faller.
+dlg:Boromir021	Ja, Ringen... Vi kan använda dess makt till det goda!
+dlg:Boromir025	Vad vill du att vi ska göra?
+dlg:Boromir026	Tänk på mitt råd, Frodo... det är allt jag ber dig om.
+dlg:Boromir027	Nog! Jag säger att vi använder Ringen som vapen! För ingen av er är mäktig nog att bära Ringen till Mordor!
+dlg:Boromir027a	Förstöra den? Vill du leverera vårt största vapen ända fram till vår fiendes tröskel?
+dlg:Boromir030	Jag kom till Vattnadal för att söka svar om en dröm... en syn som sa att halvlängdsmannen skulle träda fram.
+dlg:Boromir030a	Är du den halvlängdsmannen? Uppdraget är så stort, och du är så liten...
+dlg:Boromir031	Jag känner mig inte särskilt säker på den här alviska damen och hennes avsikter.
+dlg:Boromir033	Trogna bundsförvanter väntar i mitt hemland. Gondor står ensamt emot Mordors härar!
+dlg:Butterbur001	Ett ögonblick, om ni ursäktar!
+dlg:Butterbur002	Nob! Var är du? Vi har gäster! Raska på!
+dlg:Butterbur003	Nå... god kväll, lille herrn. Barliman Smörblomma, till er tjänst! Vad kan jag stå till tjänst med?
+dlg:Butterbur004	Ni är från Fylke, så som ni låter. Vi får inte många från Fylke nu för tiden.
+dlg:Butterbur004a	Fylke... vad är det nu det påminner mig om? Får jag fråga vad ni heter?
+dlg:Butterbur005	Där ser man. Nu är det borta igen. Det kommer tillbaka när jag får tid att tänka.
+dlg:Butterbur006	Jag springer benen av mig med alla resenärer i kväll. Det är en sådan folkmassa i huset som det inte varit på många år!
+dlg:Butterbur007	Tur att ni är hobbit. Det är den enda sortens rum vi har kvar. Här är er nyckel!
+dlg:Butterbur008	Nob! Nob, din ullfotade sölkorv! Var är du?
+dlg:Butterbur009	Var är Bob? Leta rätt på honom, och det på stört! Han har ponnyer att ställa in, genast!
+dlg:Butterbur010	Ni får ursäkta mig, herrn... jag har ett sällskap dvärgar att ta hand om, och alla de här främlingarna som kommer upp längs Grönvägen söderifrån! Hektiska dagar, det här!
+dlg:Butterbur011	Ursäkta, jag behöver växla ett ord.
+dlg:Butterbur012	Jag kom ihåg vad det var jag glömde.
+dlg:Butterbur013	Om en hobbit från Fylke som heter Bagger, men kallar sig Underberg.
+dlg:Butterbur014	Trollkarlen Gandalf. Han bad mig skicka det här brevet till er i Fylke, men jag glömde. Han lär väl förvandla mig till en vedklabb.
+dlg:CaveTroll001	Hah!
+dlg:CaveTroll002	Öh?!
+dlg:CaveTroll003	Hmmnn...
+dlg:CaveTroll004	Urr!
+dlg:CaveTroll005	Hrrrrgh!
+dlg:CaveTroll006	Eiiieaaar!
+dlg:CaveTroll007	Eeeeeaagh!
+dlg:CaveTroll008	Grrraaaar!
+dlg:CaveTroll009	Roooar!
+dlg:CaveTroll010	(tung andning)
+dlg:CaveTroll011	Raaarr!
+dlg:Celeborn001	Här är ni åtta, men nio lämnade Vattnadal, så stod det i budskapet.
+dlg:Celeborn002	Under alla de långa åren fulla av sorgliga tidender är dessa de ondaste.
+dlg:Celeborn003	Vi får höra berättelsen en annan dag, för ni är trötta och sorgsna.
+dlg:Celeborn004	Vi ska göra vad vi kan för att hjälpa er, särskilt den som bär bördan.
+dlg:Celeborn005	Vila, så ska vi inte tala om vägen framför er på ett tag.
+dlg:Dwarf001	Nali, till er tjänst.
+dlg:Dwarf002	Och vad tycker ni om Bri, Underberg? Faller det er i smaken?
+dlg:Dwarf003	Ni känner till Erebor? Vad jag saknar mitt fjärran hem!
+dlg:Dwarf004	Snart återvänder jag dit, när mina affärer i väster är avslutade. Det ska bli skönt att vara bland mitt folk igen!
+dlg:Dwarf005	Detsamma, gode Underberg! Må ert Fylke alltid vara grönt och fagert!
+dlg:Dwarf006	Ensliga berget kallar på mig... Erebor, Erebor! Snart vandrar jag åter genom dina heliga salar.
+dlg:Dwarf007	Vart tog han vägen? Trolldom!
+dlg:Dwarf008	Låt oss ta en sång!
+dlg:Elrond001	Mina vänner, det här är hobbiten Frodo, Drogos son. Han har offrat mycket för att föra Den enda ringen till Vattnadal.
+dlg:Elrond002	Frodo, det här är ledarna för Midgårds fria folk.
+dlg:Elrond003	Gimli, Glóins son, från dvärgriket Erebor, där Mörkrets herre Sauron hotar med invasion.
+dlg:Elrond004	Legolas, son till Thranduil, skogsalvernas kung. De bekämpar Saurons styrkor i Mörkmården.
+dlg:Elrond005	Boromir, son till Gondors rikshovmästare. Gondors människor lider stora förluster för att skydda oss alla mot Saurons härar.
+dlg:Elrond006	En liten styrka som smyger kan lyckas där en stor armé skulle misslyckas.
+dlg:Elrond011	Jag tror att den här uppgiften har tilldelats dig, Frodo. Om inte du finner vägen, så gör ingen det.
+dlg:Elrond012	Nej, sannerligen inte, eftersom det inte går att skilja dig från honom, Sam Gamgi!
+dlg:Elrond014	Gandalf ska leda ett brödraskap av fria folk mot Sauron. Nio vandrare mot Sauron och hans nio ryttare.
+dlg:Elrond016	Legolas ska företräda alverna och Gimli dvärgarna. För människorna går Aragorn och Boromir från Gondor. För de två återstående ska jag kalla på stora hjältar, som--
+dlg:Elrond017	Du kan inte ens föreställa dig faran som väntar...
+dlg:Elrond018	Nåväl. Ringens brödraskap ska bege sig till Mordor.
+dlg:Elrond020	Det är inte dags för dig att lämna Vattnadal än.
+dlg:Elrond021	Din färd börjar snart, Ringbärare. Vila nu!
+dlg:Elrond022	Alviska spejare har rensat bort fiendens tjänare i närheten. Ringen färdas söderut i säkerhet till våra gränser.
+dlg:Elrond025	Ringbäraren får inte kasta bort Ringen, och inte heller låta den falla i fiendens händer.
+dlg:Elrond026	De andra följer honom som fria följeslagare. Ingen ed eller förpliktelse binder er att gå längre än ni vill.
+dlg:Elrond028	Gandalf ska leda er nu. Må alla fria folks välsignelser följa er.
+dlg:FalseStrider001	Hej! Jag skulle vilja ge dig ett gott råd, unge hobbit.
+dlg:FalseStrider002	Det finns farligt folk här omkring i kväll. Jag hoppas att du klarar dig!
+dlg:FalseStrider003	Det hoppas jag också. Ha en trevlig vistelse!
+dlg:FalseStrider004	Jag är glad att se att du är oskadd.
+dlg:FalseStrider005	Ursäkta mig, herr... öh, Underberg, var det väl?
+dlg:FalseStrider006	Kan jag få växla några ord med dig?
+dlg:FalseStrider007	Ursäkta, men jag har hört att du ska österut. Visste du att vägen inte är säker för oskyldigt folk?
+dlg:FalseStrider008	Jag ska själv österut. Jag kan tänka mig att resa med ert sällskap, helt kostnadsfritt.
+dlg:FalseStrider009	Jag är en mycket erfaren vägvisare och en utmärkt jägare. Jag kan laga läckra måltider på vägen.
+dlg:FalseStrider010	Nå, då är det avgjort, min vän! Vi reser tillsammans!
+dlg:FalseStrider011	Utmärkt! Följ med mig. Vi ska diskutera våra resplaner.
+dlg:FalseStrider012	Nej? Ett oklokt val, herr Underberg. Mycket oklokt!
+dlg:FalseStrider013	Ett så fint vapen du har, herr Underberg. Synd att du inte kommer att behöva det längre!
+dlg:FalseStrider014	Du kommer att ge en fin belöning, min gosse... en riktigt fin belöning!
+dlg:Fatty001	Hej, Frodo!
+dlg:Fatty002	Ja, minsann. Jag har slagit vad med Robin Smallburrow. Han tror inte att jag kan baka en paj på en eftermiddag! Ha!
+dlg:Fatty003	Tja, jag ville baka en äppelpaj, men alla mina äpplen har ruttnat! De kryllar praktiskt taget av mask! Förskräckligt!
+dlg:Fatty004	Visst är det? Så äppelpaj var uteslutet. Tur att jag hade gott om pumpor till hands, va?
+dlg:Fatty005	Håll det för dig själv, Frodo, men jag spelade gamle Smallburrow ett litet spratt. Jag använde hans dyrbara klockkläpp till att mala mitt mjöl! Jag kan knappt vänta på att få se hans min när han får veta det!
+dlg:Fatty006	En nödsituation? I Fylke? Du har lyssnat på en drakhistoria för mycket från din farbror Bilbo.
+dlg:Fatty007	Men du har väl rätt. Skulle du kunna ta tillbaka kläppen? Jag är förskräckligt upptagen med den här pajen.
+dlg:Fatty008	Den bästa! Så fort jag hittar lite honungskaka och några ägg. Då ska jag visa den där Robin Smallburrow vem som är bagare!
+dlg:Fatty009	Säg... du skulle väl inte ha någon honungskaka till hands? Eller några ägg?
+dlg:Fatty010	Du har väl ingen honungskaka, va? Jag skulle verkligen behöva lite till pajen!
+dlg:Fatty011	Jag behöver några ägg om jag ska kunna baka den här pajen.
+dlg:Fatty012	Tack, Frodo! Den här honungskakan ser riktigt söt ut!
+dlg:Fatty013	Det här är fina ägg, Frodo. Mina komplimanger till hönan!
+dlg:Fatty014	Nå! Allt är i ordning. Nu ska pajen bakas!
+dlg:Fatty015	Tack så mycket, Frodo! Du är en god vän. Varsågod.
+dlg:Fatty016	Och nu, om du ursäktar mig... jag har ett vad att vinna!
+dlg:Fatty017	Jag hälsar på dig i Krickhålan när jag kan, Frodo. Be mig bara inte åka båt!
+dlg:Ferny001	Hörru! Vad vill du, tjockis?
+dlg:Ferny002	Varför går du inte och ställer dig vid brasan med resten av ungarna? Bill Ferny försöker koppla av!
+dlg:Ferny003	Du igen? Försvinn innan jag ger dig åt mina hundar, din lilla skadedjursråtta!
+dlg:Ferny004	Bah! Ett gycklartrick, inget annat.
+dlg:Ferny005	Vad vill du, Långben?
+dlg:Ferny006	Vadå? Tänker du kalla mig hästtjuv?
+dlg:Ferny007	Du har stuckit näsan på fel ställe! Jag har sett dig prata med Fylkeråttorna!
+dlg:Ferny007a	Du vill ha belöningen för Bagger helt för dig själv! Men du kommer inte att få den!
+dlg:Ferny008	Hah! Där fick jag dig!
+dlg:Ferny009	Va?!
+dlg:Ferny010	Öhhh...
+dlg:Ferny011	Aj!
+dlg:Ferny012	Agh!
+dlg:Ferny013	Jaaaah!
+dlg:Ferny014	Åååååh... usch
+dlg:Ferny015	Ta den här!
+dlg:Ferny016	Hörru! Här borta!
+dlg:Ferny017	(sysslolöst nynnande)
+dlg:Ferny018	Hallå! Hjälp!
+dlg:FMV2001	I Mordors skuggor smidde Mörkrets herre Sauron Den enda ringen för att förslava alla alver, dvärgar och människor i Midgård.
+dlg:FMV2002	Midgårds fria folk störtade Sauron, men förlorade Ringen.
+dlg:FMV2003	Nu har fienden återvänt, och från sitt mörka torn i Mordor söker han sin Ring.
+dlg:FMV2004	Vi måste hitta Ringen först och förstöra den.
+dlg:FMV2005	Men vem förmår bära Ringen?
+dlg:FMV2006	Den svage skulle fördärvas.
+dlg:FMV2007	Den mäktige skulle bli ett hot lika stort som Sauron.
+dlg:FMV2008	Vem kan överleva Ringen?
+dlg:FMV2009	Men vem förmår bära Ringen?
+dlg:FMV3001	O Elbereth! Gilthoniel!
+dlg:FMV3002	(smärtfyllt skrik när han blir huggen)
+dlg:FMV3003	(ett gällt skrik)
+dlg:FMV4001	Vid Elbereth och Lúthien, ni ska varken få Ringen eller mig!
+dlg:FMV4002	Unh! (faller av hästen)
+dlg:FMV5001	Du kan inte passera!
+dlg:FMV5002	Fly, era dårar!
+dlg:FMV5003	Gandalf! Nej!
+dlg:FMV5004	Gandalf!
+dlg:FMV5005	Nej!
+dlg:FMV6001	(dödsskrik)
+dlg:FMV7001	Ringens brödraskap har segrat.
+dlg:FMV7002	De har fällt den flygande ringvålnaden.
+dlg:FMV7003	De har fört Frodo i säkerhet ända till Mordors gräns.
+dlg:FMV7004	Så har brödraskapet lyckats.
+dlg:FMV7005	Men jag ser Ringbäraren ensam när han går in i det Mörka landet.
+dlg:FMV7006	Men inte helt ensam.
+dlg:FMV7007	Men jag ser Ringbäraren gå in i det Mörka landet ensam.
+dlg:FMV7008	Men inte helt ensam.
+dlg:FMV7009	Men inte ensam.
+dlg:FMV7010	Men inte ensam.
+dlg:FMV7011	Min skatt!
+dlg:FMV7012	Min dyrbara skatt!
+dlg:FOTR001	Sagan om ringen
+dlg:Frodo005	Ja, men säg åt de andra sheriffarna att hålla utkik efter fler faror i Fylke.
+dlg:Frodo007	Jag hoppas att du har rätt.
+dlg:Frodo008	Jag kan inte låta bli att känna att vi blir förföljda.
+dlg:Frodo009	Det verkar som om vi är instängda. En dörr... stängdes under natten.
+dlg:Frodo010	För Fylke!
+dlg:Frodo011	Låt oss vila medan vi kan.
+dlg:Frodo012	Jag undrar om Bilbo kände så här när han gick vilse under Dimmiga bergen?
+dlg:Frodo013	Den Ori som reste med Bilbo?
+dlg:Frodo014	Ori! Han reste med Bilbo för länge sedan.
+dlg:Frodo015	Ska vi vända tillbaka?
+dlg:Frodo016	Vart ska vi gå?
+dlg:Frodo017	Jag vill inte gå... men jag vill inte heller överge Gandalfs råd.
+dlg:Frodo018	Saurons räckvidd har sannerligen blivit lång.
+dlg:Frodo019	Finns det en port här?
+dlg:Frodo020	Det låter som en hammare... någon där nere skickar signaler.
+dlg:Frodo021	Jag håller ett öga på Stick... när det lyser är orcherna nära!
+dlg:Frodo022	Sam!
+dlg:Frodo023	Det här är mitt fel! Ringvålnaden tog Sam för mig. Jag måste gottgöra det!
+dlg:Frodo024	Sam! Är du oskadd?
+dlg:Frodo025	Jag överger dig inte åt Nazgûl.
+dlg:Frodo046b	En dag kom trollkarlen Gandalf till Fylke i ett brådskande ärende.
+dlg:Frodo047	Välkommen tillbaka, Gandalf. Blir det fyrverkerier? Lektioner i alviska? Berättelser om forntida Númenor?
+dlg:Frodo048	Farbror Bilbos magiska ring?
+dlg:Frodo049	Nej!
+dlg:Frodo050	Jag ser... fina linjer... linjer av eld! I en flytande skrift! Vad står det?
+dlg:Frodo051	Låt oss förstöra den!
+dlg:Frodo052	Ta den dit! Ta den!
+dlg:Frodo053	Då... då måste jag vakta Ringen.
+dlg:Frodo053a	Jag är en fara för Fylke. Jag måste ge mig av.
+dlg:Frodo053b	Jag skulle kunna ge mig ut på vägen precis som Bilbo!
+dlg:Frodo054	Han skadar dig inte... svara bara på hans fråga!
+dlg:Frodo055	Håll det hemligt, Sam... annars hoppas jag att Gandalf förvandlar dig till en prickig padda!
+dlg:Frodo055a	Men vart ska vi ta vägen?
+dlg:Frodo055b	Jag kunde ge mig av i höst, på min födelsedag.
+dlg:Frodo056	Österut... Jag säger till alla att jag köper ett hus i Krickhålan, nära mina släktingar i Bockland.
+dlg:Frodo057	Jag måste sälja Säcks ände. Familjen Säcksdal-Bagger har försökt lägga beslag på stället i åratal. Synd att låta dem få det.
+dlg:Frodo058	Farväl, Gandalf!
+dlg:Frodo059	Du kan lita på Sam.
+dlg:Frodo060	Jag förstår. Farväl, Gandalf.
+dlg:Frodo061	God kväll, mäster Gamgi.
+dlg:Frodo062	Jag har ingen lust att göra hans bekantskap.
+dlg:Frodo063	Var är Sam?
+dlg:Frodo064	Vad har de för sig?
+dlg:Frodo065	Nå, här är nyckeln till Säcks ände åt Lobelia. Jag möter väl Sam vid Maggots gård. God kväll, mäster Gamgi.
+dlg:Frodo066	En ryttare! Helt i svart.
+dlg:Frodo073	God morgon, Sam. Redo att ge dig av mot Bockland?
+dlg:Frodo074	Lobelia Säcksdal-Bagger köper stället. Du behöver aldrig mer rensa ogräs på Säcks ände.
+dlg:Frodo075	Säcks ände har den finaste trädgården i Fylke, tack vare ditt arbete.
+dlg:Frodo076	De gick en lång promenad hit ut bara för en drink... jag undrar vilket ofog de har för sig?
+dlg:Frodo077	Vi får se...
+dlg:Frodo077a	Snart, Sam. Jag har några saker att ta hand om först.
+dlg:Frodo078	Hej, Angelica.
+dlg:Frodo079	Verkligen.
+dlg:Frodo079a	Verkligen.
+dlg:Frodo080	Bara till andra änden av Fylke.
+dlg:Frodo081	Det hoppas jag också.
+dlg:Frodo082	Adjö, Angelica.
+dlg:Frodo083	Så! Jag har ringt i varningsklockan.
+dlg:Frodo084	Jag ringde i klockan. Lobelia vill att du ska veta att det finns vargar i Fylke!
+dlg:Frodo085	Jaså.
+dlg:Frodo086	Det gläder mig att Fylke är väl skyddat.
+dlg:Frodo087	Hejsan, Lobelia.
+dlg:Frodo088	Det kan jag inte säga. Men angående Säcks ände...
+dlg:Frodo089	Jag är säker på att sheriffen håller alla i säkerhet.
+dlg:Frodo090	Ring bara i varningsklockan. Om han är någonstans i Vattnaby kommer han springande.
+dlg:Frodo092	Hejsan, mäster Gamgi.
+dlg:Frodo093	Han är en mycket duktig arbetare, mäster Gamgi.
+dlg:Frodo094	Vargar? I Fylke?
+dlg:Frodo095	Jag hoppas att vargarna försvinner lika fort som de kom. Adjö, mäster Gamgi.
+dlg:Frodo096	Det gör jag verkligen. Doftrika, eller hur?
+dlg:Frodo097	Jag förstår.
+dlg:Frodo098	Tack, herrn.
+dlg:Frodo099	Hejsan, Noakes! Vad roligt att se dig på benen igen.
+dlg:Frodo100	Det gläder mig att höra.
+dlg:Frodo101	Bra. Nå, jag ska iväg till--
+dlg:Frodo102	Det måste vara ett mycket speciellt te. Och nu måste jag--
+dlg:Frodo103	Jag kanske kan hjälpa till.
+dlg:Frodo104	Nej. Jag måste fortfarande hämta det.
+dlg:Frodo105	Här är köpebrevet för Säcks ände.
+dlg:Frodo106	Jag måste hämta några tillhörigheter. Jag lämnar nyckeln till Säcks ände hos mäster Gamgi på Säckgatan nummer 3, om det går bra.
+dlg:Frodo107	God dag, Lobelia.
+dlg:Frodo108	Det hoppas jag verkligen.
+dlg:Frodo109	Det gäller Säcks ände. Du sa att du ville köpa det.
+dlg:Frodo110	Ah... jag måste ha lämnat det på Säcks ände!
+dlg:Frodo111	Strunt i Sam. Vad för er två skurkar ända hit till Vattnaby?
+dlg:Frodo112	Kom ni hela vägen hit bara för frukostens skull?
+dlg:Frodo113	Jag minns hans vilda hundar!
+dlg:Frodo114	Gamle Maggot hotade med att låta mig känna på deras bett.
+dlg:Frodo115	Jag älskar verkligen svamp...
+dlg:Frodo117	Hejsan, sheriffen. Jag säger bara adjö.
+dlg:Frodo118	Vad? Äventyr? Jag har inga äventyr.
+dlg:Frodo119	Naturligtvis. Nå, adjö, Robin.
+dlg:Frodo120	Hejsan, Rosie.
+dlg:Frodo121	Jag hinner ifatt honom innan jag ger mig av.
+dlg:Frodo122	Det hoppas jag sannerligen.
+dlg:Frodo123	Vad har han gjort?
+dlg:Frodo123a	Jag är säker på att Sam aldrig skulle göra något sådant.
+dlg:Frodo124	Tack så mycket, gamle Twofoot.
+dlg:Frodo125	Det hoppas jag också.
+dlg:Frodo126	Livet är lugnare nu.
+dlg:Frodo127	Jag är glad att du är oskadd, Robin.
+dlg:Frodo128	Det har jag hört.
+dlg:Frodo129	Att jag borde ge mig iväg.
+dlg:Frodo137	Hej på dig.
+dlg:Frodo138	Frodo.
+dlg:Frodo139	Frodo.
+dlg:Frodo140	Ha en trygg resa!
+dlg:Frodo144	Ingen orsak, Hal.
+dlg:Frodo149	Hejsan, Hal.
+dlg:Frodo150	Ja, verkligen.
+dlg:Frodo150a	Ja, verkligen.
+dlg:Frodo151	Vad är det för fel på den?
+dlg:Frodo152	Tråkigt att höra.
+dlg:Frodo153	Jag ska ta en titt på den innan jag ger mig av.
+dlg:Frodo154	Vad bra att den fungerar igen.
+dlg:Frodo155	Men tack, Ted. Ha en bra dag.
+dlg:Frodo156	Hejsan, Ted. Jag ville säga adjö innan jag...
+dlg:Frodo157	Faktiskt inte. Du verkar bara stå och hänga.
+dlg:Frodo158	Är det därför kvarnen inte fungerar?
+dlg:Frodo159	Jag säger till om jag ser den. Hur ser den ut?
+dlg:Frodo161	Förlåt?
+dlg:Frodo162	Men jag är en fattig lantlig hobbit utan guld att avvara!
+dlg:Frodo163	Vad för slags pinne?
+dlg:Frodo163a	Den djärve sheriffen har äntligen fångat den fruktade stråtrövaren!
+dlg:Frodo163b	Ge mig pinnen från kvarnen.
+dlg:Frodo163c	Det är bäst för dig att du talar sanning.
+dlg:Frodo164	Strunt samma varför... men jag kan inte stanna. Jag måste ge mig av nu genast... till Krickhålan.
+dlg:Frodo165	Men... hur kunde du veta det?
+dlg:Frodo165a	Hur?
+dlg:Frodo165b	Det verkar som om jag inte kan lita på någon!
+dlg:Frodo166	Öh... trevligt att se er igen, herrn.
+dlg:Frodo167	Till mitt nya hem i Krickhålan.
+dlg:Frodo168	Tja... jag tror det är dags för oss att ge oss iväg.
+dlg:Frodo169	Tack, herrn.
+dlg:Frodo170	Synd att jag har varit så rädd för era hundar. Jag har gått miste om en god vän.
+dlg:Frodo171	De förbaskade hundarna!
+dlg:Frodo172	Det skulle vara jag, herrn.
+dlg:Frodo173	Inbrottstjuv...?
+dlg:Frodo174	Nej! Jag menar, så är det, herrn.
+dlg:Frodo178	Jag måste gå, Robin!
+dlg:Frodo179	Håll ut, Robin!
+dlg:Frodo180	Fru Galadriel? Du bär en av maktringarna. När jag bär Den enda ringen, varför kan jag inte se in i ditt sinne, eller de andras?
+dlg:Frodo181	Aragorn har varit borta ett tag. Jag hoppas att hans spaning går bra!
+dlg:Frodo183	Ja... jag vet vad jag borde göra... men jag är rädd för att göra det.
+dlg:Frodo184	Jag vet att du vill att jag ska bära Ringen till Gondor. Och det verkar klokt... om det inte vore för varningen i mitt hjärta.
+dlg:Frodo185	En varning mot den enkla vägen. Mot att vägra min börda. Och, om det måste sägas, mot att lita på styrkan och ärligheten hos världens Storfolk.
+dlg:Frodo186	Jag tvivlar inte på Gondors mod. Men tänk om det inte räcker?
+dlg:Frodo187	Det finns inget hopp så länge Ringen finns.
+dlg:Frodo188	Allt som görs med Ringen förvandlas till ondska!
+dlg:Frodo190	Alla kan fördärvas. Vissa fortare än andra.
+dlg:Frodo192	Jag har en känsla av att vi blir förföljda... men av vad?
+dlg:Frodo193	Hallå! Merry! Pippin! Sam! Var är ni?
+dlg:Frodo194	Stanna där ni är! Jag hittar er!
+dlg:Frodo195	Vem är det... Ted? Ted Sandyman?
+dlg:Frodo196a	Ingen orsak, Ted. Är du oskadd?
+dlg:Frodo197	Vad gör du här?
+dlg:Frodo199	Adjö, Ted.
+dlg:Frodo201a	En god måltid skulle definitivt lugna mig när det gäller det här stället.
+dlg:Frodo202	Kan du leda oss runt dalen, Merry?
+dlg:Frodo203	Låt oss vila här och oroa oss för det i morgon.
+dlg:Frodo204	Vi kan inte sova än. Vi måste ta oss bort från det här stället!
+dlg:Frodo205	Märkligt... jag hör det också... känner mig sömnig.
+dlg:Frodo206	V-vad?! Det där trädet...! Det har tagit Merry och Pippin! Sam! Vakna!
+dlg:Frodo207	Vem? Vem ska klämma er?!
+dlg:Frodo208	Vad nu?!
+dlg:Frodo209	Hjälp!
+dlg:Frodo210	Vem... vem är du?
+dlg:Frodo211	Mina vänner sitter fast i det där pilträdet!
+dlg:Frodo212	Tack!
+dlg:Frodo212a	Vem är du?
+dlg:Frodo212b	Tack!
+dlg:Frodo212c	Tack!
+dlg:Frodo214	Tack, Tom Bombadill.
+dlg:Frodo215	Utmärkt! Om vi håller den här takten lämnar vi Gravhögarna före solnedgången i morgon!
+dlg:Frodo216	Tom är den ende som inte påverkas av Ringen. Jag undrar varför?
+dlg:Frodo217	Sam! Merry! Pippin! Var är ni?!
+dlg:Frodo218	Var kan de vara? Sam! Merry! Någon!
+dlg:Frodo219	Var är ni?!
+dlg:Frodo220	Vad är det där?
+dlg:Frodo221	Sam! Merry! Vakna, allihop!
+dlg:Frodo222	Jag måste befria dem... få ut dem härifrån!
+dlg:Frodo228	Vi kan inte tacka dig nog!
+dlg:Frodo229	Tack, Tom.
+dlg:Frodo230	Jag undrar om den här klingan kan skada en av de svarta ryttarna...
+dlg:Frodo231	Ett gott råd. Visa vägen.
+dlg:Frodo234	Varför inte? Tom rekommenderade det.
+dlg:Frodo235	Oroa dig inte, Sam. Det här kommer att gå bra.
+dlg:Frodo236	Jag ordnar med värden medan ni tre hittar något att äta. Och kom ihåg. Från och med nu heter jag herr Underberg.
+dlg:Frodo238	Trevligt att träffas. Jag heter Underberg.
+dlg:Frodo239	Nej, det vill säga, det är första gången jag är på det här värdshuset.
+dlg:Frodo240	Just det! Tack för rådet.
+dlg:Frodo241	Vi ger oss av snart nog, Sam. Oroa dig inte.
+dlg:Frodo242	Jaså?
+dlg:Frodo243	Det ska jag nog.
+dlg:Frodo244	Tid för den måltiden senare. Jag måste fortfarande ordna logi.
+dlg:Frodo245	Hejsan.
+dlg:Frodo246	Nej! Underberg... jag heter Underberg.
+dlg:Frodo247	Vad för dig till Bri?
+dlg:Frodo248	Jaså...?
+dlg:Frodo249	Jag förstår.
+dlg:Frodo250	Det är... ett släktarvegods, faktiskt. Min farfar fick det av Gamle Took själv!
+dlg:Frodo251	Ett gott råd. Tack så mycket.
+dlg:Frodo252	Gör dig inte för bekväm... saker kan förändras.
+dlg:Frodo253	Förlåt?
+dlg:Frodo254	Hej på dig.
+dlg:Frodo255	Trevligt att träffas. Jag heter Underberg.
+dlg:Frodo256	Det är trevligt nog, fast det är inte Fylke... eller Riket under berget, skulle jag tro!
+dlg:Frodo257	Lycka till, Nali.
+dlg:Frodo259	Hejsan. Jag skulle vilja--
+dlg:Frodo260	Ett rum för fyra, tack.
+dlg:Frodo261	Herr Underberg.
+dlg:Frodo262	Ja.
+dlg:Frodo263	Vad vill du?
+dlg:Frodo264	Det har jag hört.
+dlg:Frodo265	Det är ett generöst erbjudande.
+dlg:Frodo266	Vad...? Var är jag?
+dlg:Frodo267	Vem den mannen än var, så har han inget gott i sinnet. Jag måste fly härifrån genast!
+dlg:Frodo270	Prisjägare! Det här stället är sannerligen farligt!
+dlg:Frodo272	Jag måste hitta de andra innan de här skurkarna fångar dem!
+dlg:Frodo278	Folk i Bri! Tack för ert vänliga mottagande!
+dlg:Frodo279	Nåväl... en sång.
+dlg:Frodo280	Det finns ett värdshus, ett glatt gammalt värdshus
+dlg:Frodo281	Under en gammal grå kulle,
+dlg:Frodo282	Och där kokar de en gryta så brun
+dlg:Frodo283	Att själva Mannen i månen flög ner
+dlg:Frodo284	Om natten för att äta sig mätt.
+dlg:Frodo285	Det var en olyckshändelse!
+dlg:Frodo286	Jag skulle inte gå med på något sådant förrän jag visste mycket mer om dig.
+dlg:Frodo287	Vad?
+dlg:Frodo288	Vem har sagt det till dig?
+dlg:Frodo291	Hans rätta namn är Aragorn...
+dlg:Frodo292	Jag trodde dig... eller ville tro dig. Fiendens spioner ser fagra ut men känns fula. Medan du känns fager...
+dlg:Frodo293	Svarta ryttare! Jag hoppas att den här planen fungerar!
+dlg:Frodo297	Vidstige! Vad är det där för ljus?
+dlg:Frodo298	Det är som blixtar!
+dlg:Frodo299	G för Gandalf!
+dlg:Frodo300	Gandalf har varit här!
+dlg:Frodo301	Svarta ryttare! De rör sig längs vägen där nere!
+dlg:Frodo302	Vad har hänt? Var är den bleke kungen?
+dlg:Frodo303	Jag går så gott jag kan...
+dlg:Frodo305	Maten håller på att ta slut. Förrådet räcker inte till Vattnadal.
+dlg:Frodo306	Ruinerna i det här landet är så märkliga... som om ett stort och vackert rike fallit i spillror.
+dlg:Frodo307	En ryttare närmar sig!
+dlg:Frodo308	Av Gandalf?
+dlg:Frodo310	Gandalf!
+dlg:Frodo311	Då har vi klarat det. Men... vi behövde dig, Gandalf.
+dlg:Frodo311a	Tack för att du skickade Aragorn. Jag visste inte att han kunde bekämpa ringvålnader! Jag trodde att han bara var en utbygdsjägare.
+dlg:Frodo312	Jag tar Ringen, fast jag inte vet vägen.
+dlg:Frodo313	Tack för allt du har gjort för att hjälpa mig.
+dlg:Frodo313a	Som du själv en gång sa: "Det gamla som är starkt vissnar inte." Du borde lyssna på dina egna ord!
+dlg:Frodo314	Nå, här är vi! Ett brödraskap av... åtta?
+dlg:Frodo315	Vad kommer vi att se?
+dlg:Frodo316	Jag ska titta.
+dlg:Frodo317	Jag ser ett land i skuggor... och en gammal man som går mot mig. Gandalf? Nej... vita kläder... Saruman?
+dlg:Frodo318	Där är havet... ett högt skepp från väster... och en vit fästning med sju torn.
+dlg:Frodo319	Ännu ett skepp, med svarta segel och ett vitt träd som emblem!
+dlg:Frodo320	Jag ser ett stort slag... och ett öga... omgivet av eld!
+dlg:Frodo322	Vilket väljer du, min fru?
+dlg:Frodo323	Jag skulle ge dig Ringen om du bad om den.
+dlg:Frodo326	Har du inte hört? Kvarnen går igen!
+dlg:Frodo327	Jag hittade sprinten.
+dlg:Frodo328	Hjälper gärna till!
+dlg:Frodo331	När flykten verkade omöjlig räddade han oss. Och han föll.
+dlg:Frodo335a	Men Elrond valde honom. Han är modig och trofast.
+dlg:Frodo337	Förbaskad otur! Jag skulle verkligen behöva min dolk nu!
+dlg:Frodo339	Jag får inte låta den där ryttaren se mig.
+dlg:Frodo340	Om jag inte hittar de andra snart...
+dlg:Frodo341	Det krävs ett särskilt vapen för att stoppa den här saken... om något alls kan!
+dlg:Frodo342	Varför lyssnade vi inte på Tom... vänta! Tom kanske är nära!
+dlg:Frodo344	Ungh!
+dlg:Frodo345	Aagh!
+dlg:Frodo346	Aiiieeah!
+dlg:Frodo347	Åhh...
+dlg:Frodo348	Nej! Aaagh...
+dlg:Frodo349	Usch!
+dlg:Frodo350	Hoooooa!
+dlg:Frodo351	Uff!
+dlg:Frodo352	Umph!
+dlg:Frodo419	Och där är Bilbo... han verkar orolig... men för vad?
+dlg:Frodo420	"Väl mött, vän"... eller det tror jag i alla fall.
+dlg:Frodo432	Den gamla trädkojan! Den står kvar. Jag lekte i den som pojke!
+dlg:Frodo466	Och hej på dig också, Lotho. Är din mor i Vattnaby? Jag måste tala med henne.
+dlg:Frodo467	Då kanske du blir överraskad. God dag, Lotho.
+dlg:Frodo468	Inte i dag, Milo. Hur nappar fisken?
+dlg:Frodo469	Vad har du för bete?
+dlg:Frodo470	Men Milo... du måste komma över din rädsla för mask om du ska bli fiskare.
+dlg:Frodo471	Tja, om jag råkar på någon mask tar jag med den.
+dlg:Frodo472	Varsågod, Milo. Den här masken borde fungera!
+dlg:Frodo473	Vad vill du att en mask ska vara?
+dlg:Frodo474	Tack, Milo. Lycka till med fisket!
+dlg:Frodo475	Jag vet inte... gamle Maggot är skräcken för alla inkräktare.
+dlg:Frodo476	Han har en hel flock hundar!
+dlg:Frodo478	Bäst att vi sätter fart innan gamle Maggot får tag på oss.
+dlg:Frodo480	Jag tror att det vore bäst om vi gav oss av så snart som möjligt.
+dlg:Frodo481	Jag måste ta hand om några saker. Det tar inte lång tid.
+dlg:Frodo485	Hej, Milo.
+dlg:Frodo486	Jaså? Vad har hänt?
+dlg:Frodo487	Varför skulle någon göra så, undrar jag?
+dlg:Frodo488	Jag förstår. Nå, lycka till.
+dlg:Frodo489	Ursäkta?
+dlg:Frodo490	Det kanske finns något jag kan göra.
+dlg:Frodo491	Så. Det var den sista av busfröna.
+dlg:Frodo492	Ingen orsak. Lycka till med fisket.
+dlg:Frodo494	Du har rätt. Jag ska hålla mig ur vägen för honom.
+dlg:Frodo500	Vi uppskattar sällskapet.
+dlg:Frodo501	Tack, men vi reser på egen hand.
+dlg:Frodo502	Jag tycker inte om att vänta, men jag litar på Aragorns omdöme i saken.
+dlg:Frodo503	Hej, Bilbo. Det ser ut som om vi ger oss av snart. Jag ville titta in och säga adjö.
+dlg:Frodo504	Ta hand om dig, farbror Bilbo. Jag tar med alla nyheter jag kan! Och gamla sånger och berättelser också.
+dlg:Frodo505	Väl mött du också, vän.
+dlg:Frodo526	Nå, hur startar man den här förbaskade saken?
+dlg:Frodo539	Hejsan, Minto. Vad är det?
+dlg:Frodo540	Lobelia? Varför?
+dlg:Frodo541	Vad gjorde du?
+dlg:Frodo542	Försök att inte slösa bort fullt dugliga äpplen på det sättet.
+dlg:Frodo543	Det menar du säkert inte, Minto.
+dlg:Frodo544	Hej, Tjockis. Bakar du i dag?
+dlg:Frodo545	Jaså! Vad för slags pajer bakar du?
+dlg:Frodo546	Så förskräckligt!
+dlg:Frodo547	Det var det verkligen.
+dlg:Frodo548	Men hur skulle han kunna varna Fylke vid en nödsituation?
+dlg:Frodo549	Nåja, Tjockis. Men det är bäst att det blir en riktigt god paj!
+dlg:Frodo550	Lycka till, Tjockis.
+dlg:Frodo551	Tack, Tjockis!
+dlg:Frodo552	Det var bara ett dumt spratt.
+dlg:Frodo553	Självklart, Rose.
+dlg:Frodo554	Jag ska se vad jag kan göra.
+dlg:Frodo555	Ja, nå, jag har ett brådskande ärende, sheriffen. Skulle du kunna öppna grinden åt mig?
+dlg:Frodo556	Den här ryttaren... var han klädd i svart?
+dlg:Frodo557	Jag ska hjälpa till att laga grinden. Jag vill verkligen ge mig av i kväll.
+dlg:Frodo558	Det här borde fungera, sheriffen!
+dlg:Gaffer001	God kväll, Frodo. En underlig ryttare kom och frågade efter dig.
+dlg:Gaffer002	Inte jag heller. Det gick kalla kårar längs ryggen bara av att höra hans ihåliga röst.
+dlg:Gaffer003	Han väntade på dig, men den förbaskade Pippin Took kom och hämtade honom! Sa att de skulle möta dig vid Maggots gård. Något om en genväg.
+dlg:Gaffer004	Det sa de inte. Men Pippin verkade väldigt nöjd med sig själv, och Sam var inte vidare glad över det. Det är bäst för honom att han inte hittar på något rackarspel!
+dlg:Gaffer005	Nej, herr Bagger har rest bort. Gav sig av i morse.
+dlg:Gaffer006	Varför angår varken mig eller dig!
+dlg:Gaffer007	Det är ingen hemlighet. Han går till Bockby, eller något sådant ställe.
+dlg:Gaffer008	Ja, en bra bit längs Östvägen. Har aldrig varit så långt själv. De är ett konstigt släkte i Bockland.
+dlg:Gaffer009	Nej, jag kan inte lämna något meddelande. Och nu god natt på er!
+dlg:Gaffer010	Nämen hejsan, unge Frodo. Jag hoppas att min pojk Sam sköter din trädgård där borta i Krickhålan bra. Om han slarvar ska du se till att skicka bud till mig.
+dlg:Gaffer011	Han är inget annat än en dumbom. Men det är snällt av dig att ta med dig grabben!
+dlg:Gaffer011a	Var försiktig där ute på vägen. Jag har hört talas om konstiga saker. Hungriga vargar har setts i Sydfjärdingen!
+dlg:Gaffer011b	Eller... det har jag hört av Hugo Bracegirdle på värdshuset Murgrönebusken.
+dlg:Gaffer012	Det var vad jag sa till honom. Vargar i Fylke?!
+dlg:Gaffer012a	Det har inte funnits vargar sedan Den stränga vintern, när Brandyvin frös till och vita vargar kom ner från norr.
+dlg:Gaffer013	Min gamle far berättade de historierna när jag bara var en pojkvasker! Aldrig trodde jag att jag skulle få uppleva sådana tider.
+dlg:Gaffer014	Låt vargarna yla så mycket de vill, bara de låter mina potäter vara!
+dlg:Gaffer015a	God kväll, unge Frodo.
+dlg:Gaffer016	Jag skulle hålla mig undan från den där ryttaren om jag var du. Inte för att jag har något emot Storfolket, men den där betyder trubbel!
+dlg:Galadriel001	Här är Galadriels spegel. Jag har fört dig hit för att du ska se i den... om du vill.
+dlg:Galadriel002	Saker du önskar se, och saker du inte bett om. Sådant som var, som är och som ännu kan komma att bli.
+dlg:Galadriel003	Vill du vända dig bort från Frodos uppdrag?
+dlg:Galadriel004	Vill du titta nu, Frodo?
+dlg:Galadriel005	Jag vet vad du såg, för det finns i mitt sinne också. Men fienden kan inte skada dig här.
+dlg:Galadriel006	Det här landet bevaras inte bara av sång och pilar. Se Nenya, Diamantens ring! En ring som Sauron inte kan härska över.
+dlg:Galadriel007	Om du inte misslyckas och han får tag på Ringen. Då skulle vi ligga blottade inför honom.
+dlg:Galadriel008	Men om du lyckas kommer min makt att avta, och Lothlórien att blekna bort.
+dlg:Galadriel009	Min kärlek till mitt folk är djupare än havet. Ändå skulle jag kasta bort allt hellre än att underkasta mig Sauron! Jag vill att du förstör Ringen.
+dlg:Galadriel011	Skulle du frivilligt ge mig Ringen? I Mörkrets herres ställe skulle du sätta en drottning!
+dlg:Galadriel012	Och jag ska inte vara mörk, utan vacker och fruktansvärd som morgonen och natten!
+dlg:Galadriel013	Alla ska älska mig och förtvivla!
+dlg:Galadriel014	Nej... jag består provet. Jag ska avta och fara västerut och förbli Galadriel.
+dlg:Galadriel015	Därför att du inte har försökt. Men jag varnar dig för att göra det.
+dlg:Galadriel016	Du skulle behöva bli mycket starkare och öva din vilja till att behärska andra.
+dlg:Galadriel016a	Och då skulle du förlora den enda dygd som gör dig bättre i stånd att stå emot Ringen än någon av de visa och mäktiga.
+dlg:Galadriel017	Vi ska inte tala mer om det. Låt oss gå.
+dlg:Galadriel018	Gandalf den grå gav sig av med ert sällskap. Var är han nu?
+dlg:Galadriel019	Ditt uppdrag står på en knivsegg. Avvik det minsta, så misslyckas det... till fördärv för alla.
+dlg:Galadriel020	Men hoppet lever så länge hela brödraskapet är troget!
+dlg:Gandalf001	Utgången närmar sig. Snart har vi Morias gruvor tryggt bakom oss!
+dlg:Gandalf002	Jag tror att vi är i de övre salarna... kanske den tjugonde eller tjugoförsta. De har plundrats grundligt och är av föga intresse för orcherna.
+dlg:Gandalf003	Durins bane... en mörk varelse som släpptes lös för länge sedan av dvärgar som sökte mithril. De grävde för girigt och för djupt.
+dlg:Gandalf004	Vi vilar... det här är en lika säker plats som någon annan. I morgon tar vi oss vidare.
+dlg:Gandalf005	Den norra utgången leder oss vidare. Den bör öppnas när den här dvärggåtan är löst!
+dlg:Gandalf006	Och så lyser ljuset på Durins ansikte, alla dvärgars fader! En ny väg ligger framför oss... låt oss utforska den.
+dlg:Gandalf008	Durins yxa... det är ett byte som orcherna aldrig ska få!
+dlg:Gandalf010	På graven står det... Balin, Fundins son, Morias herre.
+dlg:Gandalf011	Här vilar Morias siste dvärgkonung.
+dlg:Gandalf012	Vi borde ge oss av snart.
+dlg:Gandalf013	Boken är en krönika över Balins tid i Moria.
+dlg:Gandalf014	Jag fruktar att tidenderna verkligen är dystra. De hade tidig framgång och drev ut en här av vättar. Sedan upptäckte de mithril... Morias rikedom.
+dlg:Gandalf015	Sedan berättar den om Balins död... ett anfall av orcher... långsamt men säkert trängdes dvärgarna tillbaka och blev instängda.
+dlg:Gandalf016	De sista raderna lyder: "Vi kan inte komma ut. Slutet närmar sig. Trummor... trummor i djupet... De kommer."
+dlg:Gandalf017	Här gjorde de sitt sista motstånd. Försöket att återta Moria var tappert, men dåraktigt. Vi borde gå vidare.
+dlg:Gandalf018	Stå fast!
+dlg:Gandalf019	Se där! En runnyckel!
+dlg:Gandalf020	En av orcherna bar på den.
+dlg:Gandalf021	Utan en matchande nyckel går dörren inte att öppna.
+dlg:Gandalf024	Det kan jag inte säga säkert. Tre eller fyra dagars marsch, förutsatt att vi inte går vilse eller råkar illa ut.
+dlg:Gandalf025	Densamme.
+dlg:Gandalf026	Vila, Ori... dina sår är mycket svåra.
+dlg:Gandalf027	Vad menar du?
+dlg:Gandalf028	Han... är borta...
+dlg:Gandalf029	Den här dvärgen känner jag!
+dlg:Gandalf030	Ja... och han har gått för att förenas med Balin och de andra. Vila i frid, gamle vän.
+dlg:Gandalf031	Caradhras har besegrat oss.
+dlg:Gandalf032	Ringen är inte i säkerhet i Vattnadal.
+dlg:Gandalf033	Det finns en annan väg... Morias gruvor.
+dlg:Gandalf034	Fienden räknar med det, så Ringen får inte komma i närheten av Gondor.
+dlg:Gandalf035	Saurons hundar är över oss! Gör er redo!
+dlg:Gandalf036	Vi måste nå Moria, och det snart!
+dlg:Gandalf038	Vi har kommit till Morias västport. Här tog alvlandet Järnekslandet slut.
+dlg:Gandalf039	Dvärgdörrar är inte gjorda för att synas när de är stängda... Se!
+dlg:Gandalf040	Det står: "Durins dörrar, Morias herre. Säg vän och stig in."
+dlg:Gandalf042	Om du är en vän, säg lösenordet för att öppna dörrarna.
+dlg:Gandalf043	Om jag får vara i fred en stund ska jag leta efter ordet!
+dlg:Gandalf046	Lösenordet är det alviska ordet för vän. Mellon!
+dlg:Gandalf047	Inte tillräckligt med tid! Besten anfaller igen!
+dlg:Gandalf048	Jag har valt fel... dörren förblir stängd!
+dlg:Gandalf050	Dumbom till Took! Kasta dig själv i nästa gång, så blir vi av med dig!
+dlg:Gandalf055	Gå! Det här är en fiende som ingen av er kan rå på! Jag måste möta balrogen ensam!
+dlg:Gandalf058	Nåväl, Gimli. Vi slår läger här... men inte länge! Orcherna är ute och smyger!
+dlg:Gandalf059	I dag måste vi tala om en skugga från det förflutna. Ringen du har ärvt kan vara mycket farlig.
+dlg:Gandalf060	Magiska ringar, som du kallar dem, gjordes av alver. Men den här ringen, tror jag, gjordes av någon annan... Ge mig ringen.
+dlg:Gandalf061	Titta noga.
+dlg:Gandalf062	En ring att härska över dem alla, en ring att finna dem, en ring att föra dem alla och i mörkret binda dem.
+dlg:Gandalf063	Det här är Den enda ringen som härskar över dem alla.
+dlg:Gandalf064	Forntidens kungar bland alver, dvärgar och människor använde maktringarna för att härska över sina länder.
+dlg:Gandalf064a	Mörkrets herre Sauron skapade den här Ringen för att härska över alla de andra. När han föll i strid förlorade han den.
+dlg:Gandalf064b	Den märkliga varelsen som kallas Gollum hittade Ringen och fördärvades av den. Bilbo vann den av Gollum, och nu är den din.
+dlg:Gandalf064c	Men Ringarnas herre har återvänt, och alla hans tankar är inriktade på att hitta Ringen.
+dlg:Gandalf065	Den kan bara förstöras där den smiddes... i Domedagsberget, eldberget i Mordor.
+dlg:Gandalf066	Nej! Fresta mig inte! Om jag bar Ringen skulle jag bli som Mörkrets herre själv!
+dlg:Gandalf066a	Och jag ska hjälpa dig att bära den här bördan, så länge den är din att bära.
+dlg:Gandalf067	Käre Frodo! Hobbitar är verkligen förunderliga varelser!\n
+dlg:Gandalf068	Men du behöver inte gå ensam, om det finns någon du kan lita på. Men var försiktig. Fienden har många spioner!
+dlg:Gandalf069	Vad gör du på Säcks ände?
+dlg:Gandalf070	Jaså? Ljudet av saxen tystnade för en god stund sedan. Hur länge har du tjuvlyssnat?
+dlg:Gandalf071	Var inte dum! Vad har du hört?
+dlg:Gandalf072	Jag har kommit på något bättre... Han ska följa med dig, Frodo!
+dlg:Gandalf073	Mot faran, men inte för obetänksamt och inte för rakt. Och du får inte försvinna. Ta dig tid att ordna dina affärer innan du ger dig av.
+dlg:Gandalf074	Just det. Och nu måste jag gå. Jag har mycket att uträtta.
+dlg:Gandalf075	Se till att Samvis Gamgi inte pratar! Annars förvandlar jag honom till en prickig padda!
+dlg:Gandalf076	När du har gett dig av ska du resa som herr Underberg. Namnet Bagger är inte säkert utanför Fylke!
+dlg:Gandalf076a	Och... använd inte Ringen, för den kan fördärva det mest oskyldiga hjärta.
+dlg:Gandalf076b	Farväl, Frodo... jag är tillbaka till din födelsedag.
+dlg:Gandalf077	Käre Frodo,
+dlg:Gandalf078	Dåliga nyheter. Du måste ge dig av till Vattnadal före slutet av juli. Vänta inte till din födelsedag. Jag möter dig om jag kan eller följer efter dig om jag inte kan.
+dlg:Gandalf079	Du kan lita på utbygdsjägaren som kallas Vidstige, men se till att han är den riktige Vidstige. Hans rätta namn är...
+dlg:Gandalf082	Ja, jag är här. Och du kan skatta dig lycklig att du alls är någonstans, efter alla de befängda saker du har gjort!
+dlg:Gandalf083	Jag hölls fången genom förräderi av Saruman den vite, trollkarlarnas överhuvud.
+dlg:Gandalf084	Men nu är jag fri, och förbluffad över att du har burit Ringen hela den här vägen! Hobbitar verkar särskilt motståndskraftiga mot Ringens ondska.
+dlg:Gandalf085	Bara en utbygdsjägare? Käre Frodo, utbygdsjägarna är de sista resterna av det forntida Númenors kungar.
+dlg:Gandalf086	Men nu är din del i färden till Domedagsberget fullbordad. Du får höra allt om det på många möten. Du ska vara gäst vid Elronds rådslag.
+dlg:Gandalf086a	Vi kan inte använda den. Den fördärvar alla som bär den. Ju mäktigare bäraren är, desto farligare blir han!
+dlg:Gandalf086b	Jag vågar inte ta Ringen för att gömma den. Jag tar inte Ringen för att bruka den.
+dlg:Gandalf086c	Det kan inte Frodo heller. Och inte jag heller. Inte ens alvernas största herrar kunde tvinga sig en väg genom Mordor. Jag litar hellre på hobbitvänskap än på uråldrig makt.
+dlg:Gandalf088	När ni såg eld och blixtar på Väderklint såg ni följderna av min strid med ringvålnaderna. Hade jag kommit tre dagar senare hade jag mött er.
+dlg:Gandalf089	Brödraskapet är redo, Elrond.
+dlg:Gandalf094	Edro, Annon!
+dlg:Gandalf095	Mellon!
+dlg:Gandalf095a	Öppna dig, öppna dig!
+dlg:Gandalf095b	Edro, öppna dig!
+dlg:Gandalf096	Nåväl, men inte senare. Bege dig till Vattnadal i öster och sök råd hos Elrond Halvalv.
+dlg:Gandalf098	Nå så! Samvis Gamgi, inte sant?
+dlg:Gandalf099	Uff!
+dlg:Gandalf100	Hurrgh!
+dlg:Gandalf101	Gaaaah!
+dlg:Gandalf102	Mmf!
+dlg:Gandalf103	Agh! Ahhhh...
+dlg:Gandalf104	Usch!
+dlg:Gandalf105	Åååååh!
+dlg:Gandalf131	Synd att jag inte kunde förgöra Nazgûl när vi drabbade samman på Väderklint!
+dlg:Gandalf134	Jag är för trött för att kasta en sådan trollformel.
+dlg:GandalfHelp	Jag överger inte brödraskapet!
+dlg:Gimli001	Låt Durins yxa klyva orchskallar igen! Baruk Khazad!
+dlg:Gimli002	Khazad-dûms härlighet! Skåda dess majestät!
+dlg:Gimli003	Mitt folk byggde skydd som det här mot inkräktare. Vi löste antagligen ut mekanismen av misstag under natten.
+dlg:Gimli004	Jag slår vad om att det har med de här kristallerna att göra... kristaller och ljus. Vi måste få ljus att lysa på dem på något sätt!
+dlg:Gimli005	Du hade kanske föredragit att stanna kvar med den där saken i sjön?
+dlg:Gimli006	Khazad-dûm är mer än gruvdrift, min vän.
+dlg:Gimli007	Det är Ori, min fars vän och Erebors hjälte!
+dlg:Gimli008	Ack, nej... bara vi nio.
+dlg:Gimli009	Durins yxa...? Den har länge ansetts förlorad för oss!
+dlg:Gimli010	Ori... var stark! Stanna hos oss!
+dlg:Gimli011	Han ska bli hämnad! Det svär Gimli, Glóins son!
+dlg:Gimli012	Det är Ori, min fars vän och Erebors hjälte!
+dlg:Gimli013	Han har uthärdat orchernas värsta och överlevt! Han är ett hoppfullt tecken på att orcherna inte kan hålla Moria för evigt!
+dlg:Gimli013a	Du ska bli hämnad, du gamle. Baruk Khazad!
+dlg:Gimli014	Jag följer er till Moria och ska få skåda den stora underjordiska staden Khazad-dûm.
+dlg:Gimli015	Orcher plundrade Moria och stal vår skatt för att bygga upp Mordors arméer. Men vår gamle vän Balin ledde en expedition för att återta Khazad-dûm.
+dlg:Gimli015a	Om vi går till Moria kan Balin hjälpa oss i vårt uppdrag!
+dlg:Gimli016	Mmm... det här ser ut som en bra plats att vila på. Men håll er borta från den där brunnen!
+dlg:Gimli017	Orcherna ska ångra den dag de besudlade det här stället!
+dlg:Gimli017a	Orcherna ska ångra den dag de besudlade det här stället!
+dlg:Gimli018	Durins bane har kommit!
+dlg:Gimli019	Sannerligen, Gandalf! Jag ska bära den med heder och återföra den till Ensliga berget där den hör hemma!
+dlg:Gimli020	Jag håller med. Det här är en lika bra plats som någon annan i närheten.
+dlg:Gimli021	Vi måste distrahera varelsen medan de räddar vår kamrat! Baruk Khazad! Till strid!
+dlg:Gimli022	Ju förr vi når Anduins slut, desto bättre. Jag tycker inte om mängden vättar jag har sett!
+dlg:Gimli023	Mäktig nog att gå in i Mordor? Inte ens alla Midgårds arméer tillsammans skulle kunna gå in i Mordor!
+dlg:Gimli024	Min far Glóin reste med din farbror Bilbo för många år sedan. Dvärgarna i Ensliga berget vördar fortfarande Bilbo jämte våra största hjältar!
+dlg:Gimli024a	Dvärgarna flyr i alla fall inte från Midgård! Men alverna seglar bort till säkerheten i väster under vår mörkaste stund!
+dlg:Gimli024b	Hans tapperhet hjälpte oss att vinna tillbaka vårt berg från draken Smaug. En högst hedervärd hobbit är Bilbo Bagger!
+dlg:Gimli025	Trolös är den som säger farväl när vägen mörknar!
+dlg:Gimli026	Jag är ingen spion! Jag tänker inte gå blind som en fånge! Mitt folk tjänar inte fienden!
+dlg:Gimli027	Jag går vidare som en fri man!
+dlg:Gimli028	Ha ha ha! En glad trupp dårar kommer vi att se ut som. Jag är nöjd om Legolas delar min blindhet.
+dlg:Gimli029	Fru Galadriel! Det förvånar mig att säga det, men hon är vacker bortom all tro! Ja, det finns ingen vackrare, i något land.
+dlg:Gimli031	När vi korsar Dimmiga bergen färdas vi kanske genom Moria, den stora underjordiska stad som dvärgarna kallar Khazad-dûm!
+dlg:Gloin001	Glóin, till er tjänst. Mörkrets herre Sauron sände budbärare till dvärgkungen och sökte efter din farbror Bilbo.
+dlg:Gloin002	Mordors hantlangare visste att Bilbo var med dvärgar när han hittade Ringen. De hotade oss och erbjöd oss mycket guld om vi hjälpte dem att hitta Bilbo och Ringen.
+dlg:Gloin003	Men vi körde iväg dem! Vi går hellre i krig mot Mordor än sviker hobbitarna!
+dlg:Gloin004	Jag ser oro i ditt ansikte, min gosse! Var lugn! Du kommer att göra din släkt stolt!
+dlg:Glorfindel001	Ai na vedui Dúnadan!
+dlg:Glorfindel001a	Mae govannen, mellon!
+dlg:Glorfindel002	Hell och väl mött till slut! Vi blev tillsagda att hålla utkik efter er.
+dlg:Glorfindel003	Nej. Elrond fick nyheter om er från alver som färdades nära Fylke. Så snart han förstod att något var på tok sände han ut ryttare åt alla håll.
+dlg:Glorfindel004	Då ska han rida min häst Asfaloth.
+dlg:Glorfindel005	Hans gång är mjuk, och han låter ingen ryttare falla från sin rygg.
+dlg:Glorfindel006	Fly! Fienden är över oss! Fly till vadet!
+dlg:Glorfindel007	Rid vidare! Noro lim! Noro lim, Asfaloth!
+dlg:Goatleaf001	Stopp! Vad gör du här ute?
+dlg:Goatleaf002	Det är min sak nu. Du kommer att tigga om att få berätta, när mina vänner har gått löst på dig!
+dlg:Goatleaf003	Vem där?!
+dlg:Goatleaf004	Aah!
+dlg:Goatleaf005	Hmmm...
+dlg:Goatleaf006	Aj!
+dlg:Goatleaf007	Agh!
+dlg:Goatleaf008	Aaaaah!
+dlg:Goatleaf009	Åhhhh...
+dlg:Goatleaf010	Jaah!
+dlg:Goatleaf011	Här borta! Här borta!
+dlg:Goatleaf012	(obegripligt mummel)
+dlg:Goatleaf013	Hjälp! Hjäääälp!
+dlg:GoblinSA001	A hah!
+dlg:GoblinSA002	Aah!
+dlg:GoblinSA003	Va?
+dlg:GoblinSA004	Jii!
+dlg:GoblinSA005	Eiii!
+dlg:GoblinSA006	Jaah!
+dlg:GoblinSA007	Ullk... uggh...
+dlg:GoblinSA008	Eld!
+dlg:GoblinSA009	Hallå! Hallå!
+dlg:GoblinSA010	(obegripligt mummel)
+dlg:GoblinSA011	Haaaah!
+dlg:Goldberry007	Kom, kära vänner! Skratta och var glada! Jag är Guldbär, Flodens dotter.
+dlg:Goldberry008	Ni är kanske fortfarande rädda för dimma och trädskuggor. Frukta ingenting! För i natt är ni under Tom Bombadills tak.
+dlg:Goldberry008a	Tom fanns här före floden och träden. Tom minns den första regndroppen, det första Storfolket och det första Småfolket.
+dlg:Goldberry008b	Han fanns här före kungar och gravhögsvättar, innan alverna drog västerut och innan haven böjdes. Innan Mörkrets herre kom från Utanför.
+dlg:Goldberry009	Skynda nu, fagra gäster! Norrut med vinden i vänster öga, och välsignelse över era steg! Skynda medan solen skiner!
+dlg:Goldberry010	Farväl, vänner... det var ett glatt möte!
+dlg:Gollum001	Sss! Var är den? Min skatttt!
+dlg:Gollum002	Hssss! Utbygdsjägare! Den kommer att skada osss, det gör den!
+dlg:Gollum003	Iiii! Skada inte osss, snälla, inte lille Sméagol, gollum!
+dlg:Gollum004	Här för att ge presssenter, ja, gollum. Presssenter!
+dlg:Gollum005	Presssenter till utbygdsjägaresss, jasss. Presenter!
+dlg:Gollum006	Utbygdsjägaren ville skada oss, min skatt, ja! Nu ska orcherna skada utbygdsjägaren!
+dlg:Gollum007	Orcher! Kom och skada dem, min skatt! Kom och skada dem nu!
+dlg:Gollum008	Där är den... jasss...
+dlg:Gollum009	Aiie! Skada oss inte, min skatt!
+dlg:Gollum010	Hmmm...
+dlg:Gollum011	Iiiii!
+dlg:Gollum012	Waah!
+dlg:Gollum013	Jiiiieeee!
+dlg:Gollum014	Iiii! Snälla skada oss inte, min skatt, vi ska vara snälla, ja!
+dlg:Gollum015	Rrraagh!
+dlg:Gollum016	Orchersss! Orchersss! Otäcka orcher, ja!
+dlg:Gollum017	Mmm... gollum, gollum...
+dlg:Gollum018	Hjälp! Hjälp oss, min skattt!
+dlg:Gollum020	Åhh... gollum... <sniff> ahh, min skattt...
+dlg:Hal001	Jag är rädd att min vindflöjel fortfarande inte snurrar.
+dlg:Hal002	Vindflöjeln snurrar som ny. Tack så hemskt mycket för det!
+dlg:Hal003	Du har hjälpt en gammal man när andra kanske inte hade gjort det, och jag tackar dig för det. Jag måste ha något här som belöning.
+dlg:Hal007	Å, hejsan Frodo. Du har en vacker dag för att börja din resa till Krickhålan.
+dlg:Hal008	Jag är för gammal för så långa promenader. Jag kan inte ens klättra högt nog för att laga min vindflöjel.
+dlg:Hal009	Den har fastnat.
+dlg:Hal010	Den där slyngeln Sancho Stoltfot kastade pinnar på den. Nu snurrar den inte alls.
+dlg:Hal011	Tja, det skulle passa mig utmärkt! Stegen står där borta.
+dlg:Hal012	Folket i Krickhålan har tur som får en så hjälpsam karl som du till granne.
+dlg:Hal013	Hejsan, Frodo.
+dlg:Hal014	Du har hjälpt en gammal man när andra kanske inte hade gjort det, och jag tackar dig för det.
+dlg:Hal016	Här. Ta lite ägg! Färska i dag!
+dlg:Haldir001	Var lugna. Jag är Haldir från Lórien.
+dlg:Haldir002	Jag har följt er en god stund. Ni andas så högt att jag kunde skjuta er i mörkret!
+dlg:Haldir003	Frukta inte. Fru Galadriel väntar er. Men dvärgen får inte beträda vårt land.
+dlg:Haldir004	Nåväl. Men han måste gå med förbundna ögon.
+dlg:Haldir005	Det är vår lag.
+dlg:Haldir006	Så får det bli. Jag ska leda er tryggt till Caras Galadhon, där Herre Celeborn och Fru Galadriel väntar er.
+dlg:Heathertoes001	Gå och gräv en håla, din knatte!
+dlg:Heathertoes002	Prata, din lilla mus! Prata, annars ska jag få dig att pipa!
+dlg:Heathertoes003	Arrr... dig ska jag också få att pipa, vandrare!
+dlg:Heathertoes004	Stanna där du är!
+dlg:Heathertoes005	Va...?!
+dlg:Heathertoes006	Öhm...
+dlg:Heathertoes007	Umph!
+dlg:Heathertoes008	Jerrg!
+dlg:Heathertoes009	Aaaagh!
+dlg:Heathertoes010	(smärtfyllt stön)
+dlg:Heathertoes011	Dö! Aaar!
+dlg:Heathertoes012	Hörru! Här borta!
+dlg:Heathertoes013	(rapar, följt av ett belåtet grymtande)
+dlg:Heathertoes014	Hjälp mig, era hundar!
+dlg:Legolas001	Det gör jag också. Jag tröttnar på det här stället... det är så kallt och mörkt.
+dlg:Legolas002	Jag längtar efter att vara bland träden, andas frisk luft och se himlen.
+dlg:Legolas003	Hur lång tid tar det att ta sig igenom det här stället?
+dlg:Legolas004	Stanken av orch finns överallt här!
+dlg:Legolas005	Moria... den svarta avgrunden... där solen är utplånad för evigt!
+dlg:Legolas006	Lyssna... vad är det för ljud?
+dlg:Legolas007	Jag är inte säker, men jag tror att något följer efter oss... tyst... i mörkret.
+dlg:Legolas008	Ai! Ai! En balrog!
+dlg:Legolas009	Jag är snabbast! Jag förföljer Nazgûl!
+dlg:Legolas010	Vi måste vara snabba, vänner. Den bevingade Nazgûl är snart över oss!
+dlg:Legolas011	Elbereth Gilthoniel!
+dlg:Legolas012	Den bevingade gångaren försvagas!
+dlg:Legolas013	Ai! Var på er vakt! Den kommer tillbaka!
+dlg:Legolas014	Slå till nu, medan besten är omtöcknad! Träffa den svaga punkten!
+dlg:Legolas015	Besten är stark igen! Vi måste nöta ner den om vi ska segra!
+dlg:Legolas016	De här onda varelserna kanske försöker marschera längre norrut, men alverna i Lórien kommer att stoppa dem.
+dlg:Legolas018a	Vi har fått veta att den märkliga varelsen som kallas Gollum berättade för Mörkrets herre att Bagger från Fylke tog Ringen.
+dlg:Legolas018b	Gollum hölls fången av skogsalverna, men han rymde. Han söker fortfarande efter Ringen.
+dlg:Legolas021	Alverna sjunger en klagosång över Gandalf. Jag delar deras sorg.
+dlg:Legolas021a	Alverna sörjer Gandalf. Jag delar deras sorg.
+dlg:Legolas022	Pest och pina över dvärgar och deras stela nackar!
+dlg:Legolas023	Men jag är en alv! Jag är släkt med folket här.
+dlg:Legolas024	En mörk gåta. De som är mäktiga nog att gå in i Mordor vågar inte röra Ringen.
+dlg:Legolas025	Alverna har försökt sluta sig samman med dvärgarna mot Sauron. Men dvärgarna föredrog att gömma sig i sina mörka grottor och räkna sina skatter.
+dlg:Legolas026	I Mörkmården talar vi fortfarande varmt om din farbror Bilbo. Det krävs mod att leka gåtlek med en drake.
+dlg:Lobelia008	Ingen tid för pladder, pojke! Ring i den där klockan!
+dlg:Lobelia009	Var är sheriffen? Var är den där late Robin Smallburrow?
+dlg:Lobelia010	Bry dig inte om det där. Det finns vargar i Fylke!
+dlg:Lobelia011	Hur skulle han kunna det? Jag har inte berättat om vargarna för honom än! Gå härifrån, Frodo. Jag behöver sheriffen!
+dlg:Lobelia012	Stå inte bara där, då! Ring i varningsklockan!
+dlg:Lobelia013	Du igen? Jag hoppas verkligen att du har med dig köpebrevet för Säcks ände!
+dlg:Lobelia014	Det du behöver göra är att vässa ditt slöa förstånd och ge mig det där köpebrevet! Iväg med dig nu!
+dlg:Lobelia015	Åh! Jag kan knappt tro det! Köpebrevet för Säcks ände!
+dlg:Lobelia016	Vad? Gamgi? Den där smutsiga potatisgrävaren och hans son kan plundra hela Säcks ände mitt i natten!
+dlg:Lobelia016a	Åh! Varför du umgås med det slaget förstår jag aldrig, Frodo!
+dlg:Lobelia016b	Att ha bönder och dvärgar och trollkarlar till sällskap och aldrig bjuda sitt eget kött och blod på te! Alltså!
+dlg:Lobelia017	Ja, ja, en mycket god dag minsann! Min söte lille Lotho kommer att bli så glad! Säcks ände äntligen!
+dlg:Lobelia018	Nå! Äntligen kom någon till sans och ringde i den där klockan! Nu får vi säkerhet och ordning i Fylke.
+dlg:Lobelia019	Nå... vad var det du ville tala med mig om? Fatta dig kort, jag har mycket att sköta!
+dlg:Lobelia020	Vad? Men jag trodde att du ljög, din bedräglige pojke. Det tror jag när jag har köpebrevet i handen. Har du det med dig?
+dlg:Lobelia021	Avskyvärda pojke! Ge mig köpebrevet, så diskuterar vi saken. Till dess... god dag!
+dlg:Lotho001	Nämen, är det inte självaste herr Frodo Halv-Bagger, ute på promenad bland det vanliga folket!
+dlg:Lotho004	Låt mig ge dig ett råd, Frodo. Sätt dig inte upp mot familjen Säcksdal-Bagger. Jag kommer att bli herre på Säcks ände en dag, och över mycket annat dessutom.
+dlg:Lotho004a	Då får vi se, käre Frodo. Vi får se vem som är herre, och vem som blir förödmjukad!
+dlg:Lotho007	Ser man på! Mor säger att du kom till sans och sålde Säcks ände till oss. Det var på tiden att du insåg att vi står över dig!
+dlg:Lotho007a	Nu blir det förstklassiga hobbitar på Säcks ände, och inte det slags dvärgar och trollkarlar som du och Bilbo verkar föredra.
+dlg:Lotho008	Se till att du har flyttat från Säcks ände till det överenskomna datumet!
+dlg:Lotho008a	Jag skulle avsky att se sheriffen släpa dig i kedjor från ditt älskade hem... det vill säga mitt älskade hem.
+dlg:Lotho009	Mor? Ja, hon är här... jag tror att hon är på värdshuset Murgrönebusken, fast jag tvivlar på att hon vill tala med en sådan som du.
+dlg:Maggot001	Grip! Huggtand! Varg! Kom igen, pojkar!
+dlg:Maggot002	Vad är det här för pladder så här dags på natten? Tala högre!
+dlg:Maggot003	Nämen, är det inte Peregrin Took. Du har tur att jag känner dig. Jag skulle just släppa lös mina hundar!
+dlg:Maggot004	En högst besynnerlig karl red förbi här och ställde konstiga frågor. Hör du! Vem är det där med dig, Pippin?
+dlg:Maggot005	Frodo Bagger!
+dlg:Maggot006	Bagger! Nej, det var det märkligaste av allt! Vad tror ni att den där främlingen frågade efter?
+dlg:Maggot007	Han kom ridande på en svart häst, i svart mantel och huva. Och han frågade efter Bagger!
+dlg:Maggot007a	Jag sa till honom att alla Bagger bor i Hobbiton. Han säger att Bagger är på väg österut till fots. Och nu dyker Frodo Bagger upp på min gård!
+dlg:Maggot007b	Samme Frodo Bagger som var en av de värsta unga slynglarna i trakten, kan jag tillägga.
+dlg:Maggot007c	Vart är ni på väg?
+dlg:Maggot008	Jag ser att du är i knipa, Frodo. Du borde aldrig ha blandat dig med det där konstiga folket i Hobbiton!
+dlg:Maggot008a	Jag slår vad om att den där främlingen har kommit efter guldet som Bilbo tog med sig hem från främmande trakter.
+dlg:Maggot009	Nej, han kommer att vänta! Ni får åka i min vagn, gömda från insyn.
+dlg:Maggot010	Och vi skickar iväg er med ett väldigt fat av fru Maggots svampar!
+dlg:Maggot011	Javisst. Ska vi ge oss av nu?
+dlg:Maggot012	Säg bara till när ni är redo.
+dlg:Maggot013	Jag gör i ordning vagnen.
+dlg:Maggot014	Redo att åka?
+dlg:Maggot015	Håll inte på hela natten!
+dlg:Maggot016	Jag hämtar vagnen.
+dlg:Maggot017	Grip! Huggtand! Varg! Vad är det här för oväsen?
+dlg:Maggot018	Ser man på. Vi har en tjuv på fälten.
+dlg:Maggot019	Färdig med svampstölderna? Eller vill du hellre göra upp med pojkarna?
+dlg:Maggot020	Iväg med dig nu, annars låter jag pojkarna göra sig av med dig ordentligt!
+dlg:Maggot021	Försvinn nu, innan jag ändrar mig!
+dlg:Maggot022	Du igen?! Ut! Ut med dig, annars blir du mat åt mina hundar!
+dlg:MAGoblin001	Vaddå?
+dlg:MAGoblin002	Jah!
+dlg:MAGoblin003	Errr...
+dlg:MAGoblin004	Ack!
+dlg:MAGoblin005	Jiie!
+dlg:MAGoblin006	Jaaagh!
+dlg:MAGoblin007	Ulllggh!
+dlg:MAGoblin008	Jaaa!
+dlg:MAGoblin009	(skarp vissling)
+dlg:MAGoblin010	(skarp vissling)
+dlg:MAOrc001	Lömsk, va?
+dlg:MAOrc002	Ahh!
+dlg:MAOrc003	Errm...
+dlg:MAOrc004	Usch!
+dlg:MAOrc005	Aagh!
+dlg:MAOrc006	Jaawgh!
+dlg:MAOrc007	Gaaargh!
+dlg:MAOrc008	Eld!
+dlg:MAOrc009	Inkräktare!
+dlg:MAOrc010	(spottar)
+dlg:MAOrc011	Hjälp!
+dlg:Merry001	Aldrig hade jag trott att dvärgar kunde bygga ett så enormt ställe!
+dlg:Merry002	Orchtrubbel.
+dlg:Merry003	Hur lång tid tog det att hugga ut allt det här, undrar jag?
+dlg:Merry004	De där wargarna var stora nog att rida på!
+dlg:Merry005	Vad betyder det... "säg vän och stig in"...?
+dlg:Merry006	Pippin, det är ingen... bra idé.
+dlg:Merry007	Laviner var kanske bättre ändå.
+dlg:Merry013	Glömde den där latmasken Sam Gamgi att berätta att vi skulle vara här?
+dlg:Merry014	Dra fram en stol.
+dlg:Merry015	Säg inget till honom... åh, för sent. Vår sammansvärjning är avslöjad. Vi kan lika gärna berätta allt för honom nu!
+dlg:Merry016	Tre är ett sällskap! Precis som förr! Minns du de där svamparna?
+dlg:Merry017	Jag tror att Frodo är rädd! Är du rädd, Pippin?
+dlg:Merry018	Bara för att han fångade dig!
+dlg:Merry019	Minns du doften av de där svamparna som stektes?
+dlg:Merry020	Då är det avgjort!
+dlg:Merry022	Vad dröjde du för, kusin? Tittade du in på Den Gröna Draken på vägen?
+dlg:Merry023	Du menar Vattnadal. Och vi följer med dig.
+dlg:Merry023a	Det är faktiskt familjen Säcksdal-Bagger du ska tacka. Jag övade på att smyga mig på Bilbo en dag när han hörde Lotho ropa efter honom.
+dlg:Merry023b	Bilbo satte på sig Ringen och försvann! Efter det höll vi ögonen öppna. Vi spionerade på dig och Gandalf.
+dlg:Merry023c	Du kan lita på att vi håller ihop med dig ända till det bittra slutet!
+dlg:Merry023d	Men du kan inte lita på att vi låter dig möta faran ensam!
+dlg:Merry024	Det blev inget med att stjäla några svampar innan vi ger oss av.
+dlg:Merry025	Åh. Det måste vara en annan Bagger.
+dlg:Merry026	De här alvbåtarna är ett under! Något liknande har jag aldrig sett!
+dlg:Merry027	Vi är här borta!
+dlg:Merry029	Mycket nära Videvindelns dal. Men vi borde inte gå närmare.
+dlg:Merry030	Videvindelns dal är den konstigaste delen av hela skogen! Mittpunkten som allt det konstiga kommer ifrån, så att säga!
+dlg:Merry031	Jag trodde att jag kunde, men som de här träden flyttar på sig, jag vet inte! Det är... det är som om de leder oss dit...
+dlg:Merry032	Förlåt att jag ledde oss till ett så farligt ställe. Men vi har åtminstone skakat av oss den där svarta ryttaren!
+dlg:Merry032a	Han galopperar fram och tillbaka längs Östvägen och säger Bagger? Bagger? Vi lurade honom!
+dlg:Merry033	Orkar inte mer... måste ta en tupplur!
+dlg:Merry034	Sluta! Sluta med det! Han klämmer mig i två delar om du inte slutar!
+dlg:Merry035	Ja, tack!
+dlg:Merry036	Vi är inte långt från huvudvägen, enligt mina beräkningar.
+dlg:Merry037	Och vad i all världen menade han med "äldst"?
+dlg:Merry038	Om hälften av historierna jag hört om Gravhögarna är sanna måste vi hålla noggrann vakt.
+dlg:Merry039	Den är fullkomligt ren. Orörd av tiden.
+dlg:Merry040	Åh, Sam! Det här är lika bra som ett värdshus där hemma... bara mycket större!
+dlg:Merry041	Okej. Kom nu, Sam, Pippin. Adjö, herr Underberg.
+dlg:Merry042	Vi borde ha kommit hit för länge sedan! God mat och utmärkt dryck!
+dlg:Merry043	Det får jag oroa mig för när den tiden kommer. Till dess ska jag vila mina trötta fötter och njuta av den lokala gästfriheten.
+dlg:Merry044	Tänk... hobbitar och Storfolk som kommer överens i en och samma by.
+dlg:Merry045	Vart ska vi ta vägen?
+dlg:Merry046	Vem är du?
+dlg:Merry047	Nåväl, min vän. Vad ska vi göra nu?
+dlg:Merry048	Och du då?
+dlg:Merry049	Ursäkta?
+dlg:Merry058	Och inga spår av Gandalf heller.
+dlg:Merry059	Du är i säkerhet.
+dlg:Merry060	Ryttarna kan vara var som helst... alldeles inpå oss! Det är så mörkt ute. Vi borde röra på oss, inte sitta still och vänta!
+dlg:Merry061	Merry och Pippin!
+dlg:Merry062	Jag tänker studera mäster Elronds kartor och böcker medan vi är här. Det finns mycket att lära!
+dlg:Merry063	Tänk, Frodo... allt det här byggt i och på väldiga träd! Det är underbart, verkligen underbart!
+dlg:Merry064	Jag vill helst inte vänta tills den där svarta ryttaren kommer tillbaka.
+dlg:Merry065	Bäst att vi sätter fart innan fler av de där sakerna kommer efter oss!
+dlg:Merry068	Där är du, kusin.
+dlg:Merry069	Det är bara en gammal ruggig byracka.
+dlg:Merry070	Bara tre.
+dlg:Merry072	Ärligt talat, Frodo, du är långsammare än Maggots hundar!
+dlg:Merry073	Snyggt gjort, Frodo.
+dlg:Merry074	Det där förskräckliga trädet! Det tänkte äta upp Pippin och mig!
+dlg:Merry075	Du fick oss att oroa oss ett tag, kusin. Tur att mäster Elrond kunde läka ditt otäcka sår!
+dlg:Milo009	Har du kommit för att fiska, Frodo? Tjockis övergav mig för att baka en paj, av alla saker!
+dlg:Milo010	Ah, inte alls! Jag tror att jag är förhäxad!
+dlg:Milo011	Öh... bete? Heh heh... tja...
+dlg:Milo012	Du har väl rätt, Frodo... fast jag skulle inte veta var jag ska hitta någon.
+dlg:Milo013	Ah... tja, om det inte är besvärligt...
+dlg:Milo014	Fortfarande ingen tur! Öh... hittat några maskar?
+dlg:Milo015	Usch! Varför måste de vara så... så... maskiga?!
+dlg:Milo016	Javisst, javisst... tjänster ska ha gentjänster. Ta de här!
+dlg:Milo017	Jag försökte använda dem som sänken, men...
+dlg:Milo018	Det verkar som om fiskarna ogillar mask lika mycket som jag!
+dlg:Milo019	Ingen tid att prata, Frodo! Mina grisar har rymt!
+dlg:Milo020	Jag vet inte! Jag kom för att mata dem och då sprang de omkring över hela hagen! Någon måste ha släppt ut dem ur stian!
+dlg:Milo021	Jag vet inte, men om de inte är tillbaka i stian innan min fru kommer hem är jag illa ute!
+dlg:Milo022	Vänta! Vänta! Vill du hjälpa mig?
+dlg:Milo023	Tja, jag hade hoppats på att fiska lite med Tjockis Bolger. Jag kan ju inte gärna fiska när mina grisar springer lösa!
+dlg:Milo024	Det hoppas jag!
+dlg:Milo025	Grisarna springer fortfarande lösa i hagen! Åh, i den här takten får jag aldrig fiska!
+dlg:Milo026	Du är en bra karl, Frodo!
+dlg:Milo027	Tack. Det kommer jag att behöva! Hej så länge, Frodo.
+dlg:Minto001	Hejsan, herr Bagger.
+dlg:Minto002	Fru Säcksdal-Bagger försökte slå mig med sitt paraply.
+dlg:Minto003	Jag jagade Sancho Stoltfot förbi Säcks ände. Hon sa att det inte var något ställe för små ligister.
+dlg:Minto004	När hon vände sig bort kastade jag ett äpple! Det var nära att jag träffade henne också!
+dlg:Minto005	Hon gav mig en blick som kunde få mjölk att surna och gick sedan ner till Vattnaby. Skönt att bli av med henne, säger jag!
+dlg:Minto006	Du har rätt! En sten hade varit bättre!
+dlg:Minto007	Förlåt, herr Bagger. Nå, adjö.
+dlg:Minto008	Har du sett Sancho Stoltfot? Han tog några av mina smällare!
+dlg:MMGoblin001	Vem där?
+dlg:MMGoblin002	Iii!
+dlg:MMGoblin003	Öhhh...
+dlg:MMGoblin004	Ehh!
+dlg:MMGoblin005	Hiih!
+dlg:MMGoblin006	Haaargh!
+dlg:MMGoblin007	Åhhh...
+dlg:MMGoblin008	Aaaah!
+dlg:MMGoblin009	(skarp vissling)
+dlg:MMGoblin010	N/A
+dlg:MMGoblin011	(skarp vissling)
+dlg:MMOrc001	Stanna, du där!
+dlg:MMOrc002	Va?!
+dlg:MMOrc003	Öhm...
+dlg:MMOrc004	Gah!
+dlg:MMOrc005	Uff!
+dlg:MMOrc006	Gaagh!
+dlg:MMOrc007	Ulk! Öhhh....
+dlg:MMOrc008	Jaaaaah!
+dlg:MMOrc009	Inkräktare!
+dlg:MMOrc010	(lågt morrande)
+dlg:MMOrc011	Hjälp!
+dlg:Mugwort001	God dag, grabben. Du är en Bagger, inte sant... Bilbo?
+dlg:Mugwort002	Frodo Bagger! Som bor i det där fina stället uppe på Kullen! Bilbos ställe. Hur har du haft det, Bilbo?
+dlg:Mugwort003	Frodo! Just det... nå, ingen tid att prata. Jag ska till Bri... i ett ärende åt Ted Sandyman, för att hämta delar till kvarnen.
+dlg:Mugwort004	Tack, Bilbo. Jag vill helst inte åka, men vi behöver den där kvarnen, och Ted säger att han är för viktig för att åka själv.
+dlg:Mugwort005	God dag, Bilbo. Ingen tid att prata. Jag ska till Bri för att laga kvarnen.
+dlg:Mugwort006	Hejsan. Du ser bekant ut! Bagger, va? Från Fylke!
+dlg:Mugwort007	Underberg... Du ser precis ut som en Bagger jag känner.
+dlg:Mugwort008	Ted Sandyman skickade mig hit till Bri för att hämta några delar till kvarnhjulet.
+dlg:Mugwort009	Ja. Det förbaskade hjälpmedlet tappade en sprint häromdagen. Den kan inte gå utan den!
+dlg:Mugwort010	Säg, Underberg... det är en fin klinga du har där. Aldrig sett något liknande! Var har du fått tag i den?
+dlg:Mugwort011	En kunglig gåva var det! Jag skulle hålla den gömd om jag var du.
+dlg:Mugwort012	Hejsan igen. Bri är ett riktigt livligt ställe, va, herr Underberg?
+dlg:Mugwort013	Vilken tur! Lagade Sandyman den?
+dlg:Mugwort014	Så det är dig jag ska tacka! Och tackar dig gör jag!
+dlg:Mugwort015	Nå, bäst att jag ger mig tillbaka till kvarnen, Bilbo. Sandyman vill att jag ska jobba, inte flanera på landet!
+dlg:Narrator001	Välj ett lösenord.
+dlg:Narrator030	Uppdragsloggen har uppdaterats.
+dlg:Narrator031	<X> Ja
+dlg:Narrator032	<B> Nej
+dlg:Narrator033	<X> Ja
+dlg:Narrator034	<B> Nej
+dlg:Narrator040	Är du redo att ta Ringen och påbörja din färd?
+dlg:Narrator041	<X> Ja
+dlg:Narrator042	<B> Nej
+dlg:Narrator049	Frodo har dukat under för sitt Morgulsår.
+dlg:Narrator053	<A> Edro, Annon, <B> Mellon,
+dlg:Narrator054	<X> Öppna dig, öppna dig, <Y> Edro, öppna dig
+dlg:Narrator899	Vilket föremål vill du ha?
+dlg:Narrator899a	<X> Tjockis vandringsstav
+dlg:Narrator899b	<B> Tjockis salva
+dlg:Narrator899c	<X> Dvärgtonikum
+dlg:Narrator899d	<X> Brandpilar
+dlg:Narrator899e	<B> Stålpilar
+dlg:NarratorChoice	Välj en figur.
+dlg:NarratorOptions1	<X> Frodo, <B> Aragorn,
+dlg:NarratorOptions2	<Y> Gandalf
+dlg:Naz001	Bagger... Ringen...
+dlg:Naz002	(väsande)
+dlg:Naz003	(väsande)
+dlg:Naz004	(väsande, raspigt morrande)
+dlg:Naz005	(väsande, raspigt stönande)
+dlg:Naz006	(tunga sniffande ljud)
+dlg:NazM001	Du kan inte vinna!
+dlg:NazM002	Det kan inte vara möjligt!
+dlg:NazM003	Underkasta dig, dåre!
+dlg:NazM004	Gör slut på den här dårskapen... lämna över Ringen!
+dlg:Noakes001	Har du hittat några av de där örterna än?
+dlg:Noakes002	Hejsan, unge Bagger.
+dlg:Noakes003	Å, jo... men det är teet som gör underverk. Inte doften!
+dlg:Noakes004	Jag behöver inte alla de här örterna... varför behåller du inte några själv?
+dlg:Noakes005	Skål för din hälsa, unge Bagger! Och en trevlig promenad till Krickhålan.
+dlg:Noakes006	Nämen, tack ska du ha. Jag är frisk som en häst igen. Folk kommer att kalla mig välbevarad, som de gör med din farbror Bilbo, välsigne honom.
+dlg:Noakes007	Jo, det är det här nya örtteet jag har druckit!
+dlg:Noakes008	Mina gamla ben är inte stela och ömma, och det är ett faktum! Det är ett under.
+dlg:Noakes009	Inte speciellt alls. Örterna växer vilt i nordlanden. Persilja, tallbarr och kungsblad.
+dlg:Noakes010	Jag känner doften av några av de där örterna nu. Jag tror att du har några.
+dlg:Noakes011	God dag, unge Bagger! Jag vet att dina släktingar i Bockland larvar sig med båtar, men håll dig du borta från dem!
+dlg:Noakes012	Jag hade fyra örtknippen... tills den där Sancho Stoltfot tog dem! Strödde ut dem överallt!
+dlg:Noakes013	Jag kommer att behöva fler örter, men jag tackar dig så vänligt för hjälpen!
+dlg:Nob001	Kommer strax, herrn.
+dlg:Nob002	God kväll, herrn.
+dlg:Nob003	Här, herrn! Här är jag!
+dlg:Nob003a	Här, herrn!
+dlg:Nob004	Jag tar itu med det genast, herrn.
+dlg:OldTimer001	Hörru! Du! Hjälp!
+dlg:OldTimer002	Råttor, det är vad det är, och massor av dem! Nere i min källare är de! Gnager sönder alla mina saker!
+dlg:OldTimer003	Och det är inte allt! Det finns en inbrottstjuv där nere också!
+dlg:OldTimer004a	En lömsk liten rackare, så som han såg ut! Jag såg honom gå in! Men när jag följde efter blev jag biten av en råtta!
+dlg:OldTimer005	Se dig för var du sätter fötterna, då! Förbaskade råttor överallt där nere! Har aldrig sett på maken!
+dlg:OldTimer006	Hallå, du! Blivit av med de där råttorna än? Eller tjuven?
+dlg:OldTimer007	Nå? Är min källare fri från råttor? Jag såg den lilla ligisten springa ut! Han smet innan jag hann ge honom en smäll i skallen, dock!
+dlg:OldTimer008	Ta för dig! Jag har ingen nytta av dem sedan råttorna slet sönder dem ändå!
+dlg:OldTimer009	Det behöver du inte säga två gånger! Alla möjliga konstiga, kringdrivande ligister i farten i kväll... närvarande sällskap undantaget, förstås.
+dlg:OlogH001	O ho!
+dlg:OlogH002	Hum?
+dlg:OlogH003	Hurrm...
+dlg:OlogH004	Urrr!
+dlg:OlogH005	Rurrr!
+dlg:OlogH006	Raarrgh!
+dlg:OlogH007	Ooog... uuugh...
+dlg:OlogH008	Roooaar!
+dlg:OlogH009	(kurrande mage)
+dlg:Ori001	Du hedrar mig, Glóins son. Och Gandalf! Min gamle vän.
+dlg:Ori002	Har Durins söner kommit för att hämnas? Är ni här med en här av dvärgar?
+dlg:Ori003	Då måste jag hjälpa er.
+dlg:Ori004	Sök... Mazarbuls kammare. Där ska ni finna... Durins... stora yxa.
+dlg:Ori005	Ni måste... föra den... till vårt folk.
+dlg:Ori006b	Ljuset... på Durins... ansikte... visar vägen... nnn...
+dlg:Pippin001	Rädd för vad?
+dlg:Pippin002	Jag tror att jag gillar den här delen bättre än de där gruvgångarna.
+dlg:Pippin003	Det var inte jag, jag svär!
+dlg:Pippin004	Trubbel? Vad för slags trubbel?!
+dlg:Pippin005	Ser inte orcher i mörkret?
+dlg:Pippin006	Om jag ändå hade lyssnat på Elrond! Jag duger inte till det här... till strid!
+dlg:Pippin007	Vad står det i skriften?
+dlg:Pippin008	Men du är en liten fångst, Sam. Den skulle nog kasta tillbaka dig!
+dlg:Pippin009	Om det finns några dvärgar kvar här inne hoppas jag att de har ett välfyllt skafferi. Jag svälter!
+dlg:Pippin015	Hejsan, Frodo! Vad tog så lång tid?
+dlg:Pippin016	Frukost, fast vi har kommit fram till lunch nu!
+dlg:Pippin017	Kan inte säga. Det är en sammansvärjning.
+dlg:Pippin018	Eftersom du ska gå förbi gamle Maggots gård tänkte vi ge oss på hans trädgård igen.
+dlg:Pippin019	Jag är aldrig rädd, Merry. De där hundarna skäller mycket men bits aldrig!
+dlg:Pippin020	Var bara försiktig den här gången.
+dlg:Pippin021	Vi möter dig vid Maggots gård.
+dlg:Pippin023	Där är han, den gamla latmasken!
+dlg:Pippin024	Du trodde att du var så slug. Men vår sammansvärjning överlistade dig! Vi vet allt om Ringen och Mörkrets herre!
+dlg:Pippin024a	Så vi följer med. För att skydda dig.
+dlg:Pippin024b	Hur skulle vi kunna låta bli att veta? När du gick och muttrade: "Får jag någonsin se den dalen igen?"
+dlg:Pippin024c	Genom vår främste sammansvuren. Tills han blev ertappad!
+dlg:Pippin024d	Vi har bevarat din hemlighet bättre än du själv!
+dlg:Pippin024e	Fast vi är förskräckligt rädda. Vi följer med dig eller följer efter som hundar!
+dlg:Pippin024f	Nej, Sam. Hundar.
+dlg:Pippin025	Och gamle Maggot också, så som det låter.
+dlg:Pippin026	God kväll, herr Maggot.
+dlg:Pippin027	Du minns Meriadoc Brandybock. Tillåt mig presentera Samvis Gamgi och--
+dlg:Pippin028	Frodo uppför sig mycket bättre nu för tiden.
+dlg:Pippin029	Hörru! Frodo!
+dlg:Pippin030a	Aldrig trodde jag att potatis kunde lukta så gott!
+dlg:Pippin031	Vet du att ett av de där träden stack ut en gren mot mig? Det var nära att jag snubblade!
+dlg:Pippin032	Det är svalt under pilträden... mindre flugor!
+dlg:Pippin033	T-trädet! Det säger han!
+dlg:Pippin034	Väldigt mycket!
+dlg:Pippin035	Tror du inte på historierna om gamla, döda gravhögsvättar?
+dlg:Pippin035a	Och varför serverade han inte bacon? Eller kotletter? Eller korv?
+dlg:Pippin036	Jag saknar fru Guldbärs kvällsvard! Ah, vilken fest! Kan vi gå tillbaka nu?
+dlg:Pippin037	Ja, tack igen!
+dlg:Pippin038	Ju större värdshus, desto större måltider!
+dlg:Pippin039	Sam kanske hittar ett potatisland att sova i.
+dlg:Pippin040	Jag förstår inte vad Sam håller på om! Det här är ett fint värdshus! Med en fin kock i köket, kan jag tillägga! Smaka på grytan!
+dlg:Pippin041	Åh, ja. Man vill inte gärna sova i stallet!
+dlg:Pippin042	Har du smakat på grytan än? Jag tror jag tar en portion till... kanske en tredje!
+dlg:Pippin043	Vänta, vänta, vänta... jag kommer till det bästa nu!
+dlg:Pippin044	Och ett fint trick var det!
+dlg:Pippin045	Hallå! Vem är du, och vad vill du?
+dlg:Pippin046	Alla här vill växla ett ord.
+dlg:Pippin047	Ha ha... åh.
+dlg:Pippin049	Ah, jag borde ha anat det... fler genvägar och långa förseningar! Sist vi försökte det var vi nära att bli uppätna av ett träd!
+dlg:Pippin052	Nå, här är vi! Kallt, blåsigt och belägrat av troll!
+dlg:Pippin053	Ryttarna har gett sig av!
+dlg:Pippin054	Rötter och bär... hmf! Vilken spännande måltid... usch!
+dlg:Pippin055	Jag är så hungrig att de där rötterna och bären börjar smaka gott.
+dlg:Pippin056	Hobbitar är också ett fritt folk!
+dlg:Pippin057	Elrond har tur att han lät Merry och mig följa med! Vi höll på att planera en ny sammansvärjning ifall de inte lät oss gå!
+dlg:Pippin058	Har du smakat de här alviska delikatesserna? Jag har aldrig ätit något liknande. Tänk att få tusentals år på sig att fullända sina recept!
+dlg:Pippin059	Fylke känns så långt borta! Jag visste att världen var stor, men inte så här stor!
+dlg:Pippin060	All den här väntan har gjort mig hungrig. Jag får ta Frodos svampar!
+dlg:Pippin061	Det var den bästa festen någonsin! Fyrverkerier som bara en trollkarl kunde göra!
+dlg:Pippin062	Gamle Bilbo börjar på ett långt, tråkigt tal. Men han har ett ess i rockärmen... eller i fickan!
+dlg:Pippin062a	Så Bilbo säger till de etthundrafyrtiofyra hobbitarna på festen att de är ett gross hobbitar! Alla blir så förolämpade att de inte ser hans hand glida ner i fickan...
+dlg:Pippin065	Vad väntar vi på? Ju förr vi hittar liljor, desto förr får vi äta!
+dlg:Pippin066	Det verkar som om käringarna visste vad de pratade om! Det här stället är förskräckligt!
+dlg:Pippin067	Vad sa han nyss?
+dlg:Pippin068	Redo att ge dig på bonden Maggots svampar?
+dlg:Pippin069	Men Frodo. Du oroar dig alldeles för mycket.
+dlg:Pippin071	Du slösar tid, Frodo. Ju förr du hämtar svamparna, desto förr får vi äta!
+dlg:Pippin072	Äntligen svamp!
+dlg:Pippin073	Den här Guldbär... tror du att hon är en bra kock?
+dlg:Pippin074	Jag förstår varför Bilbo stannar här... Vattnadal är magnifikt! Jag tror aldrig att jag kommer att få bättre måltider... någonsin!
+dlg:Robin001	Vad är det som pågår? Jag gillar inte vårdslöst klockringande!
+dlg:Robin002	Jaså. Är det allt? Jag har hört det ryktet, men jag tror inte att någon har sett de här vargarna. Inte ens Lobelia.
+dlg:Robin003	Om några vargar närmar sig Fylke kommer gränsvakterna att jaga bort dem, precis som de jagar bort rävar och sådant.
+dlg:Robin004	Om det var allt så har jag ett krus att återvända till på Den Gröna Draken.
+dlg:Robin005	Inget är bättre än ett krus eller två medan jag går min sheriffrunda och hör det senaste skvallret.
+dlg:Robin006	Den där Lobelia... Hon har alltid ett eller annat att klaga på.
+dlg:Robin006a	Men du slipper väl lyssna på henne i Krickhålan!
+dlg:Robin006b	Skål för långa avstånd till besvärliga släktingar!
+dlg:Robin007	Hej, Frodo. Har du tid att ta ett krus med mig?
+dlg:Robin008	Ute på äventyr?
+dlg:Robin009	Varför inte? Alla de stora drakarna gömmer sig för de fruktade Baggrarna? Ha! Oroa dig inte, Frodo. Det är bara mitt lilla skämt!
+dlg:Robin009a	Alla vet att du är en respektabel hobbit, till skillnad från din farbror Bilbo, välsigne honom.
+dlg:Robin010	God kväll, Frodo. Håll ögonen öppna... vargen jagar ofta om natten!
+dlg:Robin011	Ah, Frodo! Jag står i skuld till dig!
+dlg:Robin012	Om du inte hade kommit hade jag blivit ett midnattsmål för den där besten.
+dlg:Robin013	Vi har inte sett vargar på hundra år.
+dlg:Robin014	Det är ett olycksbådande tecken. Vad kan det betyda?
+dlg:Robin015	Vad? Å, du har rätt, Frodo. Och jag borde återgå till min patrull!
+dlg:Robin016	Ja, självklart! Jag darrar fortfarande efter den där besten, vet du!
+dlg:Robin016a	Jag blev bara sheriff så att jag kunde gå runt på landet och prata med folk. Om jag hade vetat att det skulle vara så farligt...
+dlg:Robin017	Lev väl, Frodo.
+dlg:Robin018	En varg! Nu är det ute med mig!
+dlg:Robin019	Frodo! Se upp!
+dlg:Robin022	Förresten, Frodo... säg till din vän Tjockis Bolger att jag såg honom smita iväg med klockkläppen.
+dlg:Rose001	Hejsan igen, Frodo. Får jag be dig om en tjänst?
+dlg:Rose002	Och hej på dig, Frodo Bagger! Jag önskar dig vackert väder på din resa. Öh... var är Samvis?
+dlg:Rose003	Du kommer väl tillbaka då och då, Frodo?
+dlg:Rose004	Tja, du kanske kan lära den där Samvis lite hyfs!
+dlg:Rose005	Inget jag har ertappat honom med, men... han är nog en av de där skojarna som har ringt i Vattnabys varningsklocka med stenar!
+dlg:Rose005a	Om vi någon gång behöver ringa i klockan kanske sheriff Robin struntar i det och tror att det är ett barnspratt.
+dlg:Rose005b	Kanske... nå, lycka till i Vattnaby. Kom tillbaka så ofta du kan!
+dlg:Rose006	Aldrig trodde jag att du skulle ringa i varningsklockan, Frodo. Jag hoppas verkligen att Lobelia har fel om vargarna.
+dlg:Rose007	Skulle du kunna bära hit det där ciderfatet? Det är förskräckligt tungt.
+dlg:Rose008	Tack så hemskt mycket, Frodo. Om bara den där Samvis var lika snäll som du!
+dlg:Rose009	Tack så mycket, Frodo. Här. Jag har något åt dig. En inflyttningspresent.
+dlg:Rose011	Det var så lite. Jag hoppas att du kommer ihåg dina gamla vänner när du har kommit i ordning i Krickhålan.
+dlg:Sam001	Var är vi egentligen, herr Gandalf?
+dlg:Sam002	Man skulle kunna få plats med hela Säcks ände i en enda kammare här, och ändå ha plats över!
+dlg:Sam003	Inte jag, herr Gimli! Jag chansar hellre här inne!
+dlg:Sam004	Om det finns dvärgar här nere hoppas jag att de kommer snart! Vi behöver all hjälp vi kan få!
+dlg:Sam005	Mitt hjärta har sjunkit ner i tårna, men vi är inte uppätna än!
+dlg:Sam006	Vem vet vad som simmar omkring där nere på jakt efter ett mål mat?
+dlg:Sam007	Inget växer här inne utom otäckt slem. Vad är ett hem utan en trädgård?
+dlg:Sam008	Bra nog för att ta mig härifrån, det är säkert! Jag trodde att jag skulle bli den där sakens kvällsmat!
+dlg:Sam009	Ahh! Gör mig inte illa!
+dlg:Sam010	Ingenting, herrn! Klipper gräset under fönstret!
+dlg:Sam011	Tjuvlyssnat? Jag har inte stulit nåt, herrn.
+dlg:Sam012	Åh, Frodo! Låt honom inte förvandla mig till något onaturligt!
+dlg:Sam013	Tja... jag hörde mycket som jag inte begrep... om herrar och ringar och ett eldigt berg... och alver, herrn! Jag var tvungen att lyssna! Jag skulle så gärna vilja se alver!
+dlg:Sam014	Jag, herrn...? Gå och se alver och allting?
+dlg:Sam015	Åh, ja! Inte ett ord från Sam Gamgi!
+dlg:Sam016	Alver! Jag ska få se alver!
+dlg:Sam023	God morgon, herr Frodo.
+dlg:Sam024	Alldeles redo. Eller blir det, så fort jag har skött om Säcks ände.
+dlg:Sam025	Jag skulle vilja rensa bort de där Säcksdal-Baggrarna från Säcks ände, om du förstår vad jag menar.
+dlg:Sam025a	Nej, jag måste rensa den där trädgården en sista gång, Frodo. Säga adjö till den. Ställa den i ordning innan Lotho och Lobelia förstör den.
+dlg:Sam026	Åh nej, öh, det finns säkert många finare... Åh! Merry och Pippin bad dig möta dem på värdshuset Den Gröna Draken.
+dlg:Sam027	Ursäkta, herrn, men det finns inte mycket ofog att hitta på Den Gröna Draken. Värden tolererar det inte.
+dlg:Sam028	Ger vi oss av för att se alverna snart, Frodo?
+dlg:Sam029	Frodo!
+dlg:Sam030	Och Gandalf sa ju att du skulle ta med dem du kan lita på!
+dlg:Sam031	Hundar!
+dlg:Sam031a	Maggots hundar! De kommer!
+dlg:Sam032	Jag måste säga att jag inte tycker om att resa med båt!
+dlg:Sam033	Och vilse, så som det ser ut! De här träden har en egen vilja!
+dlg:Sam034a	Det dröjer inte länge innan kvällsmaten är klar.
+dlg:Sam035a	Var är vi, förutom i Gamla skogen?
+dlg:Sam036	Varför inte?
+dlg:Sam037	Merry trodde att han hittade i den här skogen. Men hur ska någon kunna hitta när skogen inte står still?
+dlg:Sam038	Jag tycker inte om det här trädet... litar inte på det... hör du hur det sjunger om sömn? Det är inte rätt... inte rätt alls!
+dlg:Sam039	Jag... jag vet inte!
+dlg:Sam041	De blir klämda!
+dlg:Sam042	Var...?
+dlg:Sam043	Inte snart nog för min smak. Jag litar inte på det som gömmer sig i dimman på Gravhögarna.
+dlg:Sam044	Inte förrän i dag. Men Tom sa något annat.
+dlg:Sam045	Han fanns här innan Mörkrets herre kom från Utanför. Utanför vad, undrar jag?
+dlg:Sam046	Jag tycker inte om att tillbringa natten bland de här gravstenarna. De ser ut som jättetänder som sticker upp ur marken.
+dlg:Sam047	Vi ska väl inte bo på det här värdshuset?
+dlg:Sam048	Jag tänkte att vi kanske kunde försöka bo hos några av hobbitarna i Bri. Det vore mer... hemtrevligt.
+dlg:Sam049	Jag tycker fortfarande inte om hur det här stället ser ut.
+dlg:Sam050	Det är det som oroar mig, om du förstår vad jag menar, herrn... vi kommer att vara borta... borta för gott!
+dlg:Sam051	Vad är det för kock som inte har potäter i grytan? Det är ingen gryta alls utan potäter, brukade min gamle far säga.
+dlg:Sam056	Tycker du att vi borde ge oss av snart, Frodo?
+dlg:Sam058	Vänta lite! Var är Merry? Han har fortfarande inte kommit tillbaka från sin promenad!
+dlg:Sam059	Vilken dag det har varit! Jag kan knappt hålla ögonen öppna.
+dlg:Sam061	Vad står det?
+dlg:Sam062	Den bleke kungen? Det är bara vi här, Frodo!
+dlg:Sam063	Vad menar du?
+dlg:Sam064	Hur då?
+dlg:Sam066	Vattnadal! Äntligen ska jag få se alver!
+dlg:Sam067	Hoppas att det inte finns fler troll här omkring!
+dlg:Sam068	Du tänker väl inte skicka iväg honom ensam?
+dlg:Sam069	Det blir bra att ha ett sådant sällskap på vår färd, Frodo.
+dlg:Sam070	Var är Vidstige?
+dlg:Sam071	Alver!
+dlg:Sam072	Ah!
+dlg:Sam073	Jag undrar om jag får se någon alvmagi medan vi är här?
+dlg:Sam074	Jag ska kika lite.
+dlg:Sam075	Det är bara stjärnor... vänta! Vad... det är Ted Sandyman som hugger ner alla våra träd! Honom ska jag hugga ner!
+dlg:Sam076	Åh, vilket djävulskap! De har grävt upp Säckgatan! De har jagat bort min gamle far! Jag måste hem till Fylke!
+dlg:Sam076a	Öh... nej.
+dlg:Sam078	Ah, jag försökte att inte gå vilse, Frodo, ärligt talat, men träden hade andra planer!
+dlg:Sam079	Nej!
+dlg:Sam080	En alv!
+dlg:Sam081	Jag är glad att den här Tom Bombadill dök upp när han gjorde!
+dlg:Sam082	Det är svårt att tro att jag är här... i Vattnadal... med alver och dvärgar och allting! Om min gamle far bara kunde se mig nu!
+dlg:Sancho004	Stanna och lämna ut!
+dlg:Sancho005	Jag är den fruktade stråtrövaren Sancho, och jag kräver tull, min herre!
+dlg:Sancho006	Det var vad Ted Sandyman sa. Så den fruktade stråtrövaren var tvungen att ta en pinne ur kvarnen! Stoppade hela rasket, det gjorde jag!
+dlg:Sancho007	Du kan inte fånga den fruktade stråtrövaren.
+dlg:Sancho007a	Du skrämmer inte den fruktade stråtrövaren!
+dlg:Sancho007b	Jag har den inte! Jag kastade den på en vindflöjel, och nu sitter den fast där uppe!
+dlg:Sancho008	Du tar mig inte utan strid, din skojare! Jag är den mäktige Stoltfot!
+dlg:Shirriff001	Herr Bagger! Det här är inte den bästa natten för en promenad, om du förstår vad jag menar.
+dlg:Shirriff002	Det skulle jag gärna, men en av Storfolket kom förbi till häst och förstörde gångjärnet! Ja, han hade förstört mig också om jag inte hade sprungit.
+dlg:Shirriff003	Ja, från topp till tå. En stor svart häst också!
+dlg:Shirriff004	Det finns reservdelar borta i Sandymans kvarn! Jag skulle gå, men jag har mitt jobb att sköta. Men om den där ryttaren kommer tillbaka vet jag inte vad jag ska ta mig till.
+dlg:Shirriff005	Någon tur, herr Bagger? Ingen kommer igenom den här grinden förrän vi har lagat gångjärnet!
+dlg:Shirriff006	Ja, det kommer det att göra! Snyggt gjort, herr Bagger! Lycka till!
+dlg:Shirriff007	Jag hoppas att den där ryttaren stannar där han tog vägen och aldrig kommer tillbaka!
+dlg:Ted005	Nå, Bagger? Hittat den där metallsprinten...? Eller blev du distraherad av lunchen?
+dlg:Ted006	Ser man på! Kvarnhjulet snurrar igen... tack vare Frodo Bagger, av alla människor!
+dlg:Ted007	Du har gjort mig en värdefull tjänst i dag, Bagger.
+dlg:Ted008	Ser du inte att jag är upptagen?
+dlg:Ted009	Tja, om du visste något om kvarnar skulle du veta att jag försöker hitta en mycket viktig metallsprint som måste ha ramlat ut ur mitt kvarnhjul.
+dlg:Ted010	Åh, bry du dig inte om huruvida den fungerar eller inte! Jag har skickat Mugwort till Bri efter en ersättning.
+dlg:Ted011	Om inte jag har hittat den än kan du aldrig hitta den. Men, öh... den ser ut som en vanlig metallsprint. Och nu, god dag på dig!
+dlg:Ted013	Jag skickade min karl till Bri efter den där delen... helt i onödan. Förbaskad otur!
+dlg:Ted014	Hallå! Är det någon där? Hjälp!
+dlg:Ted015	Frodo? Frodo Bagger?! Stå inte bara där! Hjälp mig!
+dlg:Ted016	Aldrig trodde jag att jag skulle säga det här, men... tack. Om du inte hade kommit...
+dlg:Ted017a	Så bra man kan begära, för att nästan ha blivit kvällsmat åt de där sakerna!
+dlg:Ted018	Jag var på väg till byn Bri när jag bestämde mig för att gena genom Gamla skogen... så att jag kunde skratta åt de dårar som tror på sägner om trädmän och sådant.
+dlg:Ted021	Men nu ska jag tillbaka till Fylke, så fort jag kan!
+dlg:Ted022	Lämnar du inte Gamla skogen? Då är du en dåre!
+dlg:Ted025	Ärligt talat, Bagger, om du är så bekymrad över kvarnen, varför lagar du den inte själv?
+dlg:Ted026	Om du måste fortsätta kommer du att behöva den här. Den öppnar en grind i skogsbrynet. Se till att du inte tappar bort den!
+dlg:Ted027	Den kostade mig en nätt summa, ska du veta. Tappar du bort den väntar jag mig ersättning!
+dlg:Ted028	Och nu, om du ursäktar mig, tar jag farväl av det här eländiga stället. Farväl... Bagger.
+dlg:Ted029	Jag letade överallt runt kugghjulslådan där bakom kvarnen, och den fanns ingenstans.
+dlg:Trans_Bree_Weathertop	Tidigt nästa morgon ledde jag de fyra hobbitarna tryggt ut ur Bri och in i den trollhemsökta vildmarken bortom. Vi närmade oss kullen som alverna kallar Amon Sûl och människorna kallar Väderklint.
+dlg:Trans_Lothlorien_Anduin	Nästa dag tog vi farväl av Lórien. Celeborn och Galadriel gav oss båtar av alviskt hantverk, och vi gav oss ut på den Stora floden Anduin, mot Mordor.
+dlg:Trans_Moria_Lothlorien	Vi kämpade oss vidare, ut ur Morias mörka djup. Och snart nådde vi den Gyllene skogen... Lothlórien.
+dlg:Trans_OldForest_Bree	Vi lämnade Gravhögarnas kalla stenfält och kom fram till byn Bri på kullens sluttning – hem för både hobbitar och Storfolk. Vi sa adjö till Tom och gick in i Bri, på jakt efter en varm brasa och en dörr mellan oss och natten. Till slut hittade vi ett glatt värdshus med en skylt som visade Den Stegrande Ponnyn.
+dlg:Trans_Rivendell_Moria	Det var december när vi gav oss av på vägen mot Mordor, genom det forntida Järnekslandet. Vi var omgivna på alla sidor av Saurons makt, för fåglar och djur och till och med vädret kunde böjas efter Saurons vilja. Mörkrets herre slungade en rasande snöstorm mot oss när vi försökte ta oss över det stora berget Caradhras. Vi kämpade vidare, tills en lavin tvingade oss att lämna berget och söka en annan väg...
+dlg:Trans_Shire_OldForest	Bonden Maggots vagn förde oss tryggt bort från hans gård och in till Bocklands gränser. Men den svarte ryttaren dundrade fortfarande fram längs Östvägen. Vi bestämde oss för att gå söderut och gena genom Gamla skogen. Merry hade varit i Gamla skogen och kände till lite om dess vägar. Det är ett mörkt, gåtfullt ställe, men inte lika farligt som en svart ryttare.
+dlg:Trans_Weathertop_Rivendell	På Elronds befallning svepte floden Bruinens vatten bort ringvålnaderna. Vi kom in i alvernas dolda dal Vattnadal. Elrond, Vattnadals herre, läkte såret efter Morgulklingan. Frodo vaknade och såg ett välbekant ansikte.
+dlg:Troll001	Hörru! Du!
+dlg:Troll002	Va?!
+dlg:Troll003	Öhm...
+dlg:Troll004	Guuh!
+dlg:Troll005	Rruuh!
+dlg:Troll006	Eeaaggh!
+dlg:Troll007	Uh! Uhhhh...
+dlg:Troll008	Waaaagh!
+dlg:Troll009	Hörru! Hit borta!
+dlg:Troll010	(rapar)
+dlg:Troll011	Hörru! Hjälp!
+dlg:Twofoot001	Hejsan, unge Bagger. Grattis på födelsedagen!
+dlg:Twofoot002	Jag har inte sett din trollkarlsvän här på sistone! Jag saknar verkligen de där fyrverkerierna!
+dlg:Twofoot003	Jag minns den dagen när alla de där dvärgarna kom och hälsade på herr Bilbo. Dvärgar och en trollkarl!
+dlg:Twofoot004	Jag vet inte om lugnare. Man hör så konstiga historier nu för tiden!
+dlg:Twofoot004a	Sedan länge döda gravhögsvättar som vaknar nära Gamla skogen. Stora arméer i öster och söder!
+dlg:Twofoot004b	Dvärgar och Storfolk som flyr. Alver som reser västerut och aldrig kommer tillbaka... Ah, men här står jag och pratar på... trygg resa!
+dlg:Twofoot005	Var försiktiga ute på vägen, du och Sam, Frodo. Bockland ligger lite för nära Gamla skogen för min smak!
+dlg:Twofoot005a	Håll er borta från de där trädmännen jag har hört talas om. Och vandra inte ut på Gravhögarna!
+dlg:Undead001	(skarpt väsande)
+dlg:Undead002	(raspigt stönande)
+dlg:Undead003	(raspigt stönande, väsande)
+dlg:Undead004	(utdraget jämmer)
+dlg:Undead005	(stönande som tonar bort i tystnad)
+dlg:Undead006	(skarpt väsande)
+dlg:Uruk001	Stanna!
+dlg:Uruk002	Garn!
+dlg:Uruk003	Hmm...
+dlg:Uruk004	Umph!
+dlg:Uruk005	Agh!
+dlg:Uruk006	Jaagh!
+dlg:Uruk007	Glllk... usch... aaah...
+dlg:Uruk008	Rraaaaggh!
+dlg:Uruk009	(skarp vissling)
+dlg:Uruk010	(strupigt morrande)
+dlg:Urukhai666	Bwuh huh huh huhhh!
+dlg:Wight001	Kall vare hand och hjärta och ben,
+dlg:Wight002	och kall vare sömnen under sten;
+dlg:Wight003	aldrig mer att vakna på stenig bädd,
+dlg:Wight004	aldrig, tills solen slocknar och månen är död.
+dlg:Wight005	I den svarta vinden ska stjärnorna dö,
+dlg:Wight006	och här på guld ska de ännu ligga,
+dlg:Wight007	tills mörkrets herre lyfter sin hand
+dlg:Wight008	över dött hav och förtvinat land.
+dlg:Wight009	Där är du!
+dlg:Wight010	Hnnh?!
+dlg:Wight011	Hissss...
+dlg:Wight012	Rrrrrr!
+dlg:Wight013	Raaargh!
+dlg:Wight014	Sssss!
+dlg:Willow001	Dö... död åt er alla...
+dlg:Wraith001	Varför... gav sig Baggersss av?
+dlg:Wraith002	Varrrrt... tog Baggersss... vägen?
+dlg:Wraith003	Ärrr... det stället... långt härifrån?
+dlg:Wraith004	Kan du ssssända... ett meddelande?

@@ -41,11 +41,13 @@ int64_t NowMs() {
 
 void HarnessLevel();  // rotk_harness_level.cpp, test build only
 void InitFonts();     // rotk_fonts.cpp
+void InitEowyn();     // rotk_eowyn.cpp
 
 // GameInfo::loaded: the image is in memory, the game has not started
 void Loaded() {
     HarnessLevel();
     InitFonts();
+    InitEowyn();
     if (!g_skip_all_videos) return;
     int changed = 0;
     for (uint32_t i = 0; i < kMovieTableMax; i++) {

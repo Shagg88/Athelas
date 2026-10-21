@@ -13,6 +13,8 @@ mkdir "%OUT%\TwoTowers"
 copy /y "%OUT%\%GAME_EXE%.exe" "%OUT%\TwoTowers\" >nul || exit /b 1
 copy /y "%SDK%\THIRD_PARTY.txt" "%OUT%\TwoTowers\" >nul || exit /b 1
 copy /y "%SDK%\LICENSE" "%OUT%\TwoTowers\LICENSE-XboxXBE-Recomp.txt" >nul || exit /b 1
+rem the subtitles' translations (our own text, lang\<code>.txt)
+if exist lang xcopy /e /i /q /y lang "%OUT%\TwoTowers\lang" >nul || exit /b 1
 rem the exe's SHA-256, for the release notes
 certutil -hashfile "%OUT%\TwoTowers\%GAME_EXE%.exe" SHA256 | findstr /v ":" > "%OUT%\TwoTowers\%GAME_EXE%.exe.sha256"
 echo Launcher folder: %CD%\%OUT%\TwoTowers
@@ -30,5 +32,6 @@ rd /s /q "%OUT%\release" 2>nul
 mkdir "%OUT%\release\assets"
 copy /y "%OUT%\TwoTowers\*" "%OUT%\release\" >nul || exit /b 1
 copy /y README.md "%OUT%\release\" >nul || exit /b 1
-tar -a -c -f "%GAME_EXE%.zip" -C "%OUT%\release" %GAME_EXE%.exe %GAME_EXE%.exe.sha256 THIRD_PARTY.txt LICENSE-XboxXBE-Recomp.txt README.md assets || exit /b 1
+if exist lang xcopy /e /i /q /y lang "%OUT%\release\lang" >nul || exit /b 1
+tar -a -c -f "%GAME_EXE%.zip" -C "%OUT%\release" %GAME_EXE%.exe %GAME_EXE%.exe.sha256 THIRD_PARTY.txt LICENSE-XboxXBE-Recomp.txt README.md assets lang || exit /b 1
 echo Zip: %CD%\%GAME_EXE%.zip

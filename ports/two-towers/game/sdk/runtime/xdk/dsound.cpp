@@ -76,6 +76,14 @@ X86Func* Find(uint32_t guest);
 #define HAS_DirectSoundUseLightHRTF 0
 #endif
 // XDK 4928 (The Two Towers) names, absent from 5849 configs
+#ifndef SYM_IDirectSound_SetAllParameters
+#define SYM_IDirectSound_SetAllParameters FFFFFE51
+#define HAS_IDirectSound_SetAllParameters 0
+#endif
+#ifndef SYM_IDirectSoundBuffer_AddRef
+#define SYM_IDirectSoundBuffer_AddRef FFFFFE52
+#define HAS_IDirectSoundBuffer_AddRef 0
+#endif
 #ifndef SYM_IDirectSoundBuffer_PlayEx
 #define SYM_IDirectSoundBuffer_PlayEx FFFFFE40
 #define HAS_IDirectSoundBuffer_PlayEx 0
@@ -701,6 +709,20 @@ HLE_STDCALL(IDirectSound_SetPosition, 5) {
     for (int i = 0; i < 3; i++) g_listener[i] = F32(a[1 + i]);
     return 0;
 }
+// (this, DS3DLISTENER*, apply): the listener all at once: size, position, velocity, front, top (3 floats each), then
+// the distance, rolloff and doppler factors (The Fellowship of the Ring, XDK 4831, sets it only this way)
+HLE_STDCALL(IDirectSound_SetAllParameters, 3) {
+    uint32_t q = a[1];
+    if (!q) return 0;
+    std::lock_guard<std::recursive_mutex> lock(g_lock);
+    auto f = [&](uint32_t off) { return F32(R32(q + off)); };
+    for (int i = 0; i < 3; i++) {
+        g_listener[i] = f(4 + uint32_t(i) * 4);
+        g_front[i] = f(28 + uint32_t(i) * 4);
+        g_top[i] = f(40 + uint32_t(i) * 4);
+    }
+    return 0;
+}
 HLE_STDCALL(IDirectSound_SetOrientation, 8) {
     std::lock_guard<std::recursive_mutex> lock(g_lock);
     for (int i = 0; i < 3; i++) {
@@ -800,6 +822,8 @@ HLE_STDCALL(IDirectSound_CreateSoundBuffer, 4) { return NewBuffer(a[1], a[2]); }
     }                                                       \
     static uint32_t buf_##name([[maybe_unused]] Voice& v, [[maybe_unused]] const Args& a)
 
+// (this): the buffer is the host's, so its count is too (The Fellowship of the Ring, XDK 4831, calls it)
+BUFFER(AddRef, 1) { return uint32_t(++v.refs); }
 BUFFER(Release, 1) {
     if (--v.refs > 0) return uint32_t(v.refs);
     if (v.owned) mem::FreeContiguous(v.owned);

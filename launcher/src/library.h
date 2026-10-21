@@ -1,14 +1,14 @@
 // ROTK Fix Launcher - the player's games: which versions they have and where.
 // The launcher can start more than one game: the PC Return of the King (ROTK Fix
-// itself) and, as their ports become ready, the Xbox Return of the King and The
-// Two Towers (Xbox). Each game stays where the player keeps it; the list of
+// itself) and, as their ports become ready, the Xbox Return of the King, The
+// Two Towers and The Fellowship of the Ring (Xbox). Each game stays where the player keeps it; the list of
 // places is remembered in ROTKFix\games.ini next to the launcher.
 #pragma once
 #include <string>
 #include <vector>
 #include <stdint.h>
 
-enum GameKind { GK_NONE, GK_ROTK_PC, GK_ROTK_XBOX, GK_TT_XBOX, GK_COUNT };
+enum GameKind { GK_NONE, GK_ROTK_PC, GK_ROTK_XBOX, GK_TT_XBOX, GK_FOTR_XBOX, GK_COUNT };
 
 struct LibGame {
     GameKind kind = GK_NONE;

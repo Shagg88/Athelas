@@ -12,7 +12,7 @@ bool update_checked();
 // the page players download it from
 const char *update_page();
 
-// Installing it: the release's Athelas-<version>.zip and its .sha256 are downloaded, the zip checked against it and
+// Installing it: the release's Athelas-<version>.zip (Athelas-<version>-arm64.zip on Windows on ARM) and its .sha256 are downloaded, the zip checked against it and
 // unpacked over this folder (settings, saves and achievements are not in it, so they stay). Then update_restart.
 void update_install_start(const std::string &version);
 // 0 idle, 1 downloading, 2 unpacking, 3 done (restart), -1 failed (error says why); progress 0 to 1

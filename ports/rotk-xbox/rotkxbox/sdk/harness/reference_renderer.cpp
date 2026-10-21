@@ -1309,8 +1309,10 @@ void Draw(const State& s, uint32_t prim, uint32_t start, uint32_t count, const u
                     float b1 = ((p2.x - cx) * (p0.y - cy) - (p0.x - cx) * (p2.y - cy)) * inv_area;
                     float b2 = 1 - b0 - b1;
                     if (b0 < 0 || b1 < 0 || b2 < 0) continue;
+                    // a quad at the far plane (The Fellowship of the Ring's movies) interpolates a hair past it
                     float z = b0 * p0.z + b1 * p1.z + b2 * p2.z;
-                    if (z < 0 || z > s.zscale) continue;
+                    if (z < -s.zscale * 1e-6f || z > s.zscale * (1 + 1e-6f)) continue;
+                    z = std::clamp(z, 0.0f, s.zscale);
                     float iw = b0 * p0.iw + b1 * p1.iw + b2 * p2.iw;
                     Vec attr[kAttrs];
                     for (int a = 0; a < kAttrs; a++)

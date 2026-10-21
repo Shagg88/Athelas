@@ -28,7 +28,14 @@ void ApplyDisplay() {}
 Mode Desktop() { return {1280, 720}; }
 Mode Output() { return Desktop(); }
 float RenderScale(uint32_t) { return 1.0f; }
-bool Widescreen() { return true; }
+// WIDESCREEN=0 in the environment: the console's 4:3 (default: a widescreen display, as on a wide monitor)
+bool Widescreen() {
+    static const bool wide = [] {
+        const char* e = std::getenv("WIDESCREEN");
+        return !e || std::atoi(e) != 0;
+    }();
+    return wide;
+}
 float g_max_frame_aspect = 16.0f / 9.0f;
 // ASPECT=2.37 (in the environment; TT_ASPECT in older scripts) tests an ultrawide screen
 float FrameAspect() {
@@ -54,6 +61,18 @@ int Instance() {
 void* Window() { return nullptr; }
 // achievements: logged, nothing kept
 }  // namespace app
+namespace app {
+// the headless run has no overlay: a subtitle is logged instead
+void Subtitle(const std::string& utf8, double seconds) {
+    static std::string last;
+    if (utf8 == last) return;
+    last = utf8;
+    LOGI("subtitle (%.0f s): %s", seconds, utf8.c_str());
+}
+void ClearSubtitle() {}
+void DrawSubtitles(float) {}
+}  // namespace app
+
 namespace ach {
 void Unlock(const char* id) {
     static std::map<std::string, bool> seen;
@@ -122,11 +141,13 @@ std::recursive_mutex& UiLock() {
     return m;
 }
 
-// as the window's: frames at most fps_cap a second (a game's frame rate setting), so game time can be checked
+// as the window's: frames at most fps_cap a second (a game's frame rate setting), so game time can be checked;
+// FPS=N in the environment caps at N instead (0 none: frames as fast as they come)
 void Pace() {
     using clock = std::chrono::steady_clock;
     static clock::time_point next = clock::now();
-    uint32_t cap = Get().fps_cap;
+    static const char* env = std::getenv("FPS");
+    uint32_t cap = env ? uint32_t(std::atoi(env)) : Get().fps_cap;
     auto now = clock::now();
     if (!cap) {
         next = now;

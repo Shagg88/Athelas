@@ -3,14 +3,16 @@ Athelas
 By Shagg, with Claude (Anthropic).
 
 An unofficial, free fan project that lets you play your own copies of three
-Lord of the Rings games on a modern PC, all from one launcher, Athelas
-(Athelas.exe - named after kingsfoil, the healing herb):
+Lord of the Rings games, in four versions, on a modern PC, all from one
+launcher, Athelas (Athelas.exe - named after kingsfoil, the healing herb):
 
 - The Return of the King (PC, 2003), through ROTK Fix: any screen size and
   refresh rate, smooth high frame rates, sharper graphics, and modern Xbox,
   PlayStation and Switch controllers.
 - The Return of the King (Xbox), through its native PC port, ROTKXbox.exe.
 - The Two Towers (Xbox), through its native PC port, TwoTowers.exe.
+- The Fellowship of the Ring (Xbox), through its native PC port,
+  FOTRXbox.exe (new in 1.4, a first version).
 
 Not affiliated with or endorsed by Electronic Arts, New Line Cinema, Warner
 Bros. or the Tolkien Estate. No game files are included: you need your own
@@ -30,8 +32,8 @@ REQUIREMENTS
   current driver). Without one the game still runs through Windows' own
   Direct3D 8, but sharpening, colour looks and texture filtering are off;
   the launcher's About tab shows which one you have.
-- The Two Towers and The Return of the King (Xbox): your own US Xbox copy,
-  and a DirectX 12 graphics card.
+- The Two Towers, The Return of the King and The Fellowship of the Ring
+  (Xbox): your own US Xbox copy, and a DirectX 12 graphics card.
 - ROTK (PC) 3D sound and EAX need Microsoft's free "Visual C++ Redistributable
   (x86)", which most PCs already have from other games. Without it the game
   plays its original sound, and the launcher's sound setting says so.
@@ -97,7 +99,8 @@ UNINSTALL
 ---------
 Open the launcher, go to About, and press "Remove ROTK Fix". It removes every
 ROTK Fix file from the game folder and puts the game's own files back. Saved
-games and screenshots are kept. Then delete the launcher's folder.
+games, screenshots, achievements and texture packs are kept (the last two in
+the ROTKFix folder). Then delete the launcher's folder.
 
 
 WHILE PLAYING
@@ -107,8 +110,8 @@ WHILE PLAYING
   ]                    Next colour look
 
 
-THE TWO TOWERS (XBOX) - port 1.0.1
-----------------------------------
+THE TWO TOWERS (XBOX)
+---------------------
 An unofficial native PC port of the original Xbox game (US release),
 recompiled for Windows, in the TT-Xbox folder and started from Athelas.
 It plays as on the Xbox by default. Options include widescreen up to 32:9
@@ -121,6 +124,13 @@ adjustable damage for each side.
   they will most likely crash.
 - Keyboard and mouse or controller (see KEYBOARD, MOUSE AND THE IN-GAME
   MENU below). The game's hints still show controller buttons.
+- Play as Gandalf or Boromir: in the Gates of Moria and Balin's Tomb, the
+  hero screen has Gandalf and Boromir after Aragorn. Each plays with his own
+  model, walk and run; Gandalf's ranged attack is a blast of light.
+- Translation subtitles (Gameplay tab, Language): the game's menus, prompts
+  and descriptions translated at the bottom of the screen, in German, French,
+  Spanish, Italian, Brazilian Portuguese, Polish, Dutch, Swedish or Russian
+  (our own translations). The game's own text and voices stay English.
 - Settings: on the launcher's Two Towers page (or in TT-Xbox\settings.toml);
   the ones that take effect at once are also in the in-game menu (F10).
   Its saves are in TT-Xbox\saves.
@@ -138,8 +148,8 @@ Reporting a problem: see REPORTING A PROBLEM below. The log is TT-Xbox\tt.log,
 and after a crash the newest Game.<date>_<time>.dmp in TT-Xbox\CrashDumps.
 
 
-THE RETURN OF THE KING (XBOX) - port 1.0.1
-------------------------------------------
+THE RETURN OF THE KING (XBOX)
+-----------------------------
 An unofficial native PC port of the Xbox version, in the ROTK-Xbox folder and
 started from Athelas. It uses the same settings page as the PC version, with
 frame rates up to 240, widescreen, and fixes for slowdowns and vanishing
@@ -156,6 +166,12 @@ enemies at high frame rates.
   controller plugged in, the game's hints show the keys.
 - Gameplay tab (shared with the PC version): damage taken, enemy damage, and
   every level and character unlocked. All off by default.
+- Eowyn instead of Faramir (Gameplay tab): Éowyn takes his place on the
+  character select, on the HUD and in every level he plays, with his moves
+  and bow. She is made from her own model in your game files when the game
+  starts. She has no voice of her own, so she fights quietly.
+- Translation subtitles (Gameplay tab, Language): the menus, prompts and
+  spoken lines in the same nine languages as The Two Towers.
 - Known issue: the picture is darker than the PC version because it keeps the
   Xbox's brightness curve: raise Brightness to about 1.2-1.3 to match.
 
@@ -164,9 +180,47 @@ Its saves are in ROTK-Xbox\saves.
 Reporting a problem: see REPORTING A PROBLEM below. The log is
 ROTK-Xbox\rotkx.log, and after a crash the newest .dmp in ROTK-Xbox\CrashDumps.
 
+THE FELLOWSHIP OF THE RING (XBOX) - first version
+-------------------------------------------------
+New in 1.4: an unofficial native PC port of the Xbox game (US release, 2002),
+in the FOTR-Xbox folder and started from Athelas. This is its first version:
+every level starts and runs in testing, but it hasn't been played much yet,
+so please report anything that goes wrong.
+- Needs your own Xbox disc dump: the extracted folder or an .iso (US
+  release). Nothing in it is changed.
+- It plays as on the Xbox by default: 30 fps and the console's 4:3. Options:
+  frame rates up to 240 (the game keeps its normal speed), widescreen (the
+  game's own 16:9 mode, with a wider view and its HUD laid out for it, and
+  up to 21:9 and 32:9 ultrawide, see WIDE AND ULTRAWIDE SCREENS), field of
+  view,
+  render resolution, anti-aliasing, texture filtering, sharpening, HDR, the
+  Original / Balanced / High / Ultra presets, skip the opening logos, and
+  sharper, upscaled cutscenes with the movie display modes.
+- Game text language (Gameplay tab): the game's menus, hints, items, quest
+  journal and dialogue text in German, French, Spanish, Italian, Brazilian
+  Portuguese, Polish, Dutch, Swedish or Russian (our own translations), in
+  place of the English. The voices stay English. Polish and Russian use free
+  open fonts for the letters the game's own fonts lack.
+- Difficulty (Gameplay tab): the damage you take and the damage your hits
+  do, each as a share of the game's own.
+- Cheats as switches: the game's own secret codes for infinite health,
+  spirit, ammunition and Ring.
+- Achievements: one for each part of the journey and one for the whole
+  story (see ACHIEVEMENTS).
+- Controls tab: the controller's buttons, named after the game's own moves.
+- Not yet: an ARM64 build (on Windows on ARM it runs through Windows'
+  translation).
+- Needs Windows 10 or 11 (64-bit) and a Direct3D 12 graphics card.
 
-KEYBOARD, MOUSE AND THE IN-GAME MENU (both Xbox ports)
-------------------------------------------------------
+Settings: on the launcher's Fellowship of the Ring page (or in
+FOTR-Xbox\settings.toml). Its saves are in FOTR-Xbox\saves.
+
+Reporting a problem: see REPORTING A PROBLEM below. The log is
+FOTR-Xbox\fotrx.log, and after a crash the newest .dmp in FOTR-Xbox\CrashDumps.
+
+
+KEYBOARD, MOUSE AND THE IN-GAME MENU (The Two Towers and ROTK Xbox)
+-------------------------------------------------------------------
 Keyboard and mouse work as well as a controller, as player 1 or player 2
 (Controls tab). The keys are the PC version of The Return of the King's:
   W A S D              Move (hold Left Alt to walk)
@@ -204,38 +258,47 @@ controllers keep playing while another window is in front; turn it off so
 they only reach the game while its window is.
 
 
-ACHIEVEMENTS (all three games)
-------------------------------
+ACHIEVEMENTS (all four games)
+-----------------------------
 Each game has a set of achievements of its own: The Two Towers 14 (every
 level, and the secret mission), The Return of the King 29 on both PC and Xbox
 (every level, every hero, co-op, a hero at level 10, enemies defeated). They
 are earned as you play, and what your saves already hold counts too, so an
-old save earns the levels it has finished the first time you play.
+old save earns the levels it has finished the first time you play. The
+Fellowship of the Ring has 8: one for each part of the journey (the Shire,
+the Old Forest, Bree, Weathertop, Rivendell, Moria, Lothlorien), earned when
+you reach the next, and one for the whole story.
 
 A note shows in the bottom right corner when you earn one ("Achievement
 notes", Gameplay tab; on the PC version with the Vulkan renderer, the
 default). The launcher's Gameplay tab lists them, earned and not, and the
 in-game menu (F10) has an Achievements page in the Xbox ports. They are kept
 in achievements.txt: in the ROTKFix folder in the game folder for the PC
-version, and in the TT-Xbox and ROTK-Xbox folders for the ports. They are
+version, and in the TT-Xbox, ROTK-Xbox and FOTR-Xbox folders for the ports. They are
 only kept on this PC; nothing is sent anywhere.
 
 
 REPORTING A PROBLEM
 -------------------
-Open an issue at https://github.com/Shagg88/Athelas/issues (a free GitHub
-account is needed) and choose "Bug report". Say which game and version
-(PC or Xbox), what happened and what you did just before, and attach the
-log: drag the file into the box.
+The quickest way: on the launcher's About tab, press "Make a problem report"
+(the same button is offered after a crash). It puts the logs, the settings,
+the newest crash dump of each Xbox port and a description of your PC
+(Windows, processor, graphics card and driver, screens, controllers) into one
+zip in the Reports folder beside Athelas.exe, shows it, and opens a new bug
+report on GitHub with those details filled in. Write what happened and what
+you did just before, and drag the zip into the box. Athelas sends nothing
+itself; your Windows user name is taken out of the files, but the folder
+names where your games are stay. A free GitHub account is needed.
+
+By hand: open an issue at https://github.com/Shagg88/Athelas/issues, choose
+"Bug report", and attach the log (drag the file into the box):
   The Return of the King (PC)    ROTKFix.log in the game folder
   The Return of the King (Xbox)  ROTK-Xbox\rotkx.log
   The Two Towers                 TT-Xbox\tt.log
-After an Xbox port crashes, also the newest .dmp file in its CrashDumps folder.
-GitHub doesn't take .dmp files as they are: right-click the file, choose
-"Compress to ZIP file" (Windows 11) or Send to > Compressed (zipped)
-folder (Windows 10), and attach the zip.
-The logs hold your settings, your graphics card and Windows version, and the
-folder names where your games are, which can include your Windows user name.
+  The Fellowship of the Ring     FOTR-Xbox\fotrx.log
+After an Xbox port crashes, also the newest .dmp file in its CrashDumps folder,
+zipped first (right-click > Compress to ZIP file): GitHub doesn't take .dmp
+files as they are.
 
 
 TEXTURE PACKS
@@ -277,15 +340,23 @@ Controls tab is set to "Second controller" (the default).
 
 WINDOWS ON ARM (SNAPDRAGON LAPTOPS)
 -----------------------------------
-Athelas runs on Windows on ARM PCs through Windows' own translation, which
-costs the Xbox ports a lot of speed. Native ARM64 builds of the ports
-(TwoTowers-arm64.exe, ROTKXbox-arm64.exe) are being tested: see the
-"1.1-arm-test" pre-release on the Athelas GitHub page. Put them beside the
-usual exes and the launcher starts them by itself on an ARM PC (the About tab
-then says "ARM64 build").
+On a Windows on ARM PC, download Athelas-<version>-arm64.zip instead of the
+usual zip. It has everything the usual one has, plus native ARM64 builds of
+the Xbox ports (TwoTowers-arm64.exe, ROTKXbox-arm64.exe), which the launcher
+starts by itself on an ARM PC (the About tab then says "ARM64 build"). The
+launcher's updates fetch the ARM zip there too. If the ARM64 builds in the
+folder are from another version, the launcher runs the usual ones instead and
+offers to install the right ARM64 builds on the About tab. The Fellowship of
+the Ring has no ARM64 build yet: it runs through Windows' translation there.
 
 ROTK on PC itself is a 32-bit Intel program, so on ARM it always runs through
 Windows' translation; ROTK Fix works with it the same.
+If ROTK on PC crashes at random on an ARM PC, make Windows' translation
+stricter for it: right-click rotk.exe in the game folder, Properties >
+Compatibility > Change emulation settings (under Windows on Arm), choose "Use
+advanced settings" and set Multi-core settings to "Strict multi-core
+operation" ("Very strict" if it still happens). The game runs a little
+slower that way. Choose Default there to undo it.
 
 If an Xbox port crashes at random on an ARM PC, turn on "One processor core"
 at the bottom of its Graphics tab (shown on ARM PCs only): the game's threads
@@ -295,7 +366,7 @@ us if it helps.
 
 STEAM DECK AND LINUX
 --------------------
-All three games run through Proton, Steam's Windows layer. This has been tested
+The games run through Proton, Steam's Windows layer. This has been tested
 on Linux in a setup like the Deck's (1280x800, Proton's graphics layers), and
 players have reported The Two Towers working on a real Deck. More reports are
 welcome.
@@ -311,8 +382,10 @@ welcome.
      example copied from a Windows PC. Athelas sets ROTK Fix up there and tells
      Proton to use its files; no launch options are needed. The original disc
      release's copy protection can't run under Proton, so that copy won't start.
-- Controls: the Deck's controls work as an Xbox controller in all three games
+- Controls: the Deck's controls work as an Xbox controller in every game
   and in Athelas (the touchscreen and trackpads also work in Athelas).
+  In Athelas: the D-pad moves, A chooses, B goes back, LB / RB change tab,
+  Menu plays and View saves; the line under the summary reminds you.
 - The Balanced preset suits the Deck; 60 fps is a good target for battery life.
 
 
@@ -325,6 +398,9 @@ Menus, text and the HUD fill the screen up to 16:9. On wider screens they stay
 the pause screen still reach the edges.
 The trailer keeps its 4:3 shape with black bars. Story cutscenes and the
 opening logos fill the width on 16:9, and the height on wider screens.
+The Fellowship of the Ring (Xbox) does the same with widescreen on: the world
+reaches the sides of a 21:9 or 32:9 screen, and its HUD and menus stay 16:9 in
+the middle (the menus with bars at the sides). Its films keep 16:9 at most.
 To try an ultrawide shape on a normal monitor, set Display mode to Windowed:
 the Resolution list then also offers window sizes such as 2560 x 1080 (21:9).
 
@@ -357,9 +433,10 @@ About tab shows where). The settings.toml in ROTK-Xbox only holds defaults that
 ROTKFix.ini replaces each time the game starts; it says so at its top.
 
 The Two Towers: TT-Xbox\settings.toml.
+The Fellowship of the Ring: FOTR-Xbox\settings.toml.
 
-Starting ROTKXbox.exe or TwoTowers.exe directly, without the launcher, uses
-the same settings.
+Starting ROTKXbox.exe, TwoTowers.exe or FOTRXbox.exe directly, without the
+launcher, uses the same settings.
 
 
 ROTKFIX.INI SETTINGS
@@ -444,12 +521,16 @@ The launcher writes ROTKFix.ini in the game folder. You can also edit it in Note
   EnemyDamage            Damage your hits do to enemies, % of the game's (10-500) (default 100)
   UnlockAll              1 = every level and character can be chosen (default 0)
   AllHeroes              Xbox version: 1 = every hero on the character select of a level you've completed (default 0)
+  Eowyn                  Xbox version: 1 = Eowyn instead of Faramir (character select, HUD, levels) (default 0)
 
 [Cheats]  Cheats: the game's own secret codes (Xbox version)
   Invulnerable           1 = enemies can't hurt you (default 0)
   InfiniteMissiles       1 = arrows and throwing weapons never run out (default 0)
   AlwaysDevastating      1 = every attack is a devastating one (default 0)
   PerfectMode            1 = the game's Perfect Mode code (default 0)
+
+[Language]  Translation subtitles (Xbox version)
+  Subtitles              off, de, fr, es, it, pt, pl, nl, sv, ru: the game's text and spoken lines translated at the bottom of the screen (default off)
 
 [Achievements]  Achievements (both versions; the list is in ROTKFix\\achievements.txt)
   Notify                 1 = a note in the corner when you earn one (default 1)
@@ -494,6 +575,9 @@ The launcher writes ROTKFix.ini in the game folder. You can also edit it in Note
 [Extras]  Extras
   DeveloperButtons       1 = show the hidden developer menu buttons (testing) (default 0)
 
+[System]  Windows on ARM (Xbox version)
+  OneCore                1 = the game's threads take turns on one processor core, as on the Xbox (try it if the game crashes at random) (default 0)
+
 [Log]  Log (ROTKFix.log)
   Enabled                (default 1)
   Detailed               1 = much more detail, for tracking down a problem (default 0)
@@ -514,7 +598,9 @@ ROTKFix\licenses in the game folder once ROTK Fix is set up there)
   stb_image, stb_image_write (MIT / public domain)
   Uncial Antiqua, Cinzel, EB Garamond fonts (SIL Open Font License)  launcher
   Liberation Sans (SIL Open Font License)  letters in the button pictures
-  XboxXBE-Recomp (MIT, (c) 2026 TGP482)  runtime in TwoTowers.exe and ROTKXbox.exe
+  XboxXBE-Recomp (MIT, (c) 2026 TGP482)  runtime in the three Xbox ports
+  PT Sans, Uncial Antiqua, Cormorant Unicase (SIL Open Font License)
+                       Polish and Russian text in FOTR-Xbox\fonts
   toml++ (MIT)         settings files in the Xbox ports
-  (the Xbox ports' own lists are in TT-Xbox\THIRD_PARTY.txt and ROTK-Xbox\THIRD_PARTY.txt)
+  (each Xbox port's own list is THIRD_PARTY.txt in its folder)
 ROTK Fix and Athelas are MIT licensed, (c) 2026 Shagg.

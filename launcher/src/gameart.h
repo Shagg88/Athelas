@@ -27,3 +27,9 @@ unsigned char *dxt1_to_rgba(const uint8_t *src, size_t srcLen, int w, int h);
 void tt_art_list(const std::string &gameDir, std::vector<std::string> &out);
 // One of those pictures as RGBA (malloc'd), checking its header first.
 unsigned char *tt_picture_load(const std::string &entry, int &w, int &h);
+
+// The Fellowship of the Ring (Xbox): the three loading-screen sketches (Aragorn, Frodo, Gandalf) and the load
+// menu's night landscape, 640x480 linear pictures in XboxMedia\*.xpr. Adds "\002fx:<offset>:<file>" entries for
+// the files that exist (cheap); the offset is where the file starts (inside a disc image, or 0).
+void fotr_art_list(const std::string &gameDir, std::vector<std::string> &out);
+unsigned char *fotr_picture_load(const std::string &entry, int &w, int &h);

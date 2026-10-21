@@ -41,6 +41,7 @@ X86_FUNC(sub_0004E890) {
 
 namespace tt {
 bool g_hud_edges = true;  // settings.toml [graphics] hud_edges
+bool InMenus();           // tt_extras.cpp: the front end, the screens between levels too
 }
 
 namespace {
@@ -118,8 +119,10 @@ void HudPlace(float x0, float x1, float y0, float y1, float w, float f, float& a
     // and the world drawn in this very frame (it comes before the HUD): a loading screen drawn just as a level ends
     // (none or one 3D draw) is laid out centred, not as HUD. The game then loads for seconds without a new frame,
     // so that one frame stays on screen; the time rule alone placed its tip text and picture at the left edge
+    // The screens between levels count as no world either: the save screen's map is 3D (200 draws a frame), which
+    // once sent its dialog boxes and their frames to the screen's sides
     bool world = now - g_world_ms <= kWorldGoneMs && g_world_ms - g_world_since >= kWorldSteadyMs &&
-                 g_world_draws >= kWorldDrawsNow;
+                 g_world_draws >= kWorldDrawsNow && !tt::InMenus();
     // menus and the title screen: their picture is one panel inset from the edges of the 640 x 480 screen (24 to 616
     // across, 18 to 462 down: a TV's safe area), with black around it. In a frame that has that panel everything is
     // enlarged by the same 8% about the middle, so the panel meets the screen's edges and the menu's text, which is

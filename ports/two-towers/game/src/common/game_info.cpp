@@ -2,7 +2,7 @@
 #include "app/app.h"
 
 #ifndef GAME_VERSION
-#define GAME_VERSION "1.0.1"  // CMakeLists.txt sets it (XBE_VERSION); the headless harness does not
+#define GAME_VERSION "1.4.0"  // CMakeLists.txt sets it (XBE_VERSION); the headless harness does not
 #endif
 
 namespace tt {
@@ -14,6 +14,7 @@ extern bool g_skip_logos;  // tt_movies.cpp
 extern bool g_skip_all_videos;  // tt_movies.cpp
 extern bool g_kill_points;      // tt_killpoints.cpp
 extern bool g_all_heroes;       // tt_playas.cpp
+extern uint32_t g_subtitles;    // tt_lang.cpp
 extern bool g_cheat_invulnerable, g_cheat_devastating, g_cheat_missiles, g_cheat_slow;  // tt_cheats.cpp
 void InitRenderer();  // tt_renderer.cpp: the water simulation's targets at the console's size
 extern uint32_t g_damage_taken, g_enemy_damage;  // tt_devsettings.cpp
@@ -82,6 +83,13 @@ const app::GameInfo app::kGame = {
                  "once the game is beaten. A level not completed yet keeps the game's choice; the Prologue and "
                  "Weathertop keep the hero the game gives them.",
                  &tt::g_all_heroes},
+                {"language", "subtitles", cfg::Type::Choice, "Translation subtitles",
+                 "The game's menus, prompts and descriptions translated at the bottom of the screen, as the game shows "
+                 "them. The game's own text stays as it is.",
+                 nullptr, &tt::g_subtitles, nullptr, 0, 0, {"off", "de", "fr", "es", "it", "pt", "pl", "nl", "sv", "ru"},
+                 nullptr, nullptr,
+                 {"Off", "Deutsch", "Fran\u00e7ais", "Espa\u00f1ol", "Italiano", "Portugu\u00eas (Brasil)", "Polski",
+                  "Nederlands", "Svenska", "\u0420\u0443\u0441\u0441\u043a\u0438\u0439"}},
                 {"cheats", "invulnerable", cfg::Type::Bool, "Invulnerable",
                  "The game's own secret code: enemies can't hurt you.", &tt::g_cheat_invulnerable},
                 {"cheats", "always_devastating", cfg::Type::Bool, "Always devastating",
@@ -128,6 +136,7 @@ const app::GameInfo app::kGame = {
     .file_opened = tt::FileOpened,
     .required_file = RequiredFile,
     .in_menus = tt::InMenus,  // Esc goes back in the front end's menus; Enter (A) goes on there as it is
+    .menu_start_with_a = true,  // and presses Start too: the title's "press start button" takes nothing else (#8)
     .achievements = tt::Achievements(),
     .discord_app_id = TT_DISCORD_APP_ID,
     .activity = tt::Activity,

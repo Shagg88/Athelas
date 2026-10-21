@@ -39,4 +39,22 @@ X86_FUNC(sub_0002EAF0) {
     LOGR("watch frame %u pos %.3f %.3f %.3f d %.4f %.4f %.4f", n++, a[0], a[1], a[2], a[0] - b[0], a[1] - b[1],
          a[2] - b[2]);
 }
+namespace {
+float Fl(uint32_t a) {
+    uint32_t u = kernel::R32(a);
+    float f;
+    std::memcpy(&f, &u, 4);
+    return f;
+}
+}  // namespace
+// ROTK_AUDIO_TRACE: each sound command (0x7FD40: the character's sounds, command, channel, sound and two more).
+// "audio: play" events (0x7C5B0) are command 1; a hero's channel 2 is his voice, 0 footsteps, 3 swings
+X86_EXTERN_FUNC(__imp__sub_0007FD40);
+X86_FUNC(sub_0007FD40) {
+    static const bool on = std::getenv("ROTK_AUDIO_TRACE") != nullptr;
+    if (on)
+        LOGR("audio cmd p%u c%u s%d v %g %g %g", kernel::R32(ctx.esp + 4) & 0xFF, kernel::R32(ctx.esp + 8),
+             int32_t(kernel::R32(ctx.esp + 12)), Fl(ctx.esp + 16), Fl(ctx.esp + 20), Fl(ctx.esp + 24));
+    __imp__sub_0007FD40(ctx, base);
+}
 #endif

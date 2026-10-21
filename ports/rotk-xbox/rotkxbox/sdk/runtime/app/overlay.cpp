@@ -382,8 +382,11 @@ void OverlayInit() {
     ImGuiIO& io = ImGui::GetIO();
     ImFontConfig fc;
     fc.OversampleH = 2;
+    // Latin with its accents (the Latin-1 and Extended-A letters: French, German, Spanish, Italian, Portuguese,
+    // Polish, Dutch, Swedish), general punctuation, and Cyrillic: the menu's own text and the subtitles' languages
+    static const ImWchar kRanges[] = {0x0020, 0x024F, 0x0400, 0x052F, 0x2000, 0x206F, 0x20AC, 0x20AC, 0x2122, 0x2122, 0};
     g_font = io.Fonts->AddFontFromMemoryCompressedTTF(overlay_font_compressed_data, int(overlay_font_compressed_size),
-                                                      kFontPixels, &fc);
+                                                      kFontPixels, &fc, kRanges);
     io.FontDefault = g_font;
     io.BackendFlags |= ImGuiBackendFlags_HasGamepad;  // FeedPads; the Win32 backend's XInput reading is compiled out
     ImGuiStyle& st = ImGui::GetStyle();
@@ -420,6 +423,7 @@ void DrawOverlay(double) {
     else io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
     static bool shown = false;  // drawn last frame: a new opening takes the keyboard and controller focus
     ach::DrawNotes(UiScale());
+    DrawSubtitles(UiScale());
     if (!g_open) {
         shown = false;
         return;

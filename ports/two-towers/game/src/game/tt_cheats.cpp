@@ -52,12 +52,14 @@ Switch g_inv, g_dev, g_mis, g_slow;
 }  // namespace
 
 namespace tt {
+void GandalfFrame();  // tt_gandalf.cpp
 // once a frame, from the frame wait (tt_extras.cpp), on the game's thread
 void CheatsFrame(X86Context& ctx) {
     (void)ctx;
+    GandalfFrame();  // in the menus too, where it lets go of a level's characters
     if (InMenus()) return;
     uint32_t player = kernel::R32(kPlayer);
-    bool have_player = player >= 0x10000 && player < 0x4000000;
+    bool have_player = player >= 0x10000 && player < 0x84000000;  // the player is in the contiguous memory (0x8...)
     g_inv.Apply(g_cheat_invulnerable || Env("invulnerable"), [&](bool on) {
         if (!have_player) return;
         uint32_t v = kernel::R32(player + 0x110);
