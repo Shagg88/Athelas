@@ -40,7 +40,7 @@ endif()
 # versions; with the threaded renderer the title then rewrites vertex memory the render thread has not read yet
 # (spiky, ghosted characters). Draw on the title's thread, as the headless harness does.
 # the release's version: --version, and the exe's Properties in Windows
-set(XBE_VERSION 1.5.0)
+set(XBE_VERSION 1.5.1)
 set(XBE_PRODUCT "The Two Towers PC port")
 add_xbe_image(TwoTowers default.xbe game.toml ${GAME_PARTITIONS} game)
 target_compile_definitions(TwoTowers PRIVATE XBE_RENDER_THREAD=0)

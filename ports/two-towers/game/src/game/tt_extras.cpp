@@ -23,7 +23,9 @@ namespace tt {
 // one. For the keyboard: Esc goes back in the front end's menus, and Enter or the left button presses Start as well
 // (the title's "press start", #8), so a pause taken for the front end paused again on every click.
 std::atomic<bool> g_front_end{true};
-// the title screen ("press start button", ui\startup.bff) is up: the last menu file opened, no level since (#17)
+// a screen whose "press start button" A's keys press too: the boot screen (ui\startup.bff) or the title and main
+// menu shown after the prologue and on leaving a level (ui\mainmenu.bff), as the last menu file opened (#8). On the
+// others, the between-level screen (ui\endlvl.bff, its Yes/No pop-ups, #17), saving, options and upgrades, A is A.
 std::atomic<bool> g_title{true};
 void AchievementsFile(const std::string& lower_name);  // tt_achievements.cpp
 void GandalfWorld(const std::string& lower_name);      // tt_gandalf.cpp
@@ -34,7 +36,10 @@ void FileOpened(const char* name) {
     GandalfWorld(n);
     auto ends = [&](const char* e) { size_t k = std::strlen(e); return n.size() >= k && n.compare(n.size() - k, k, e) == 0; };
     bool was = g_front_end;
-    if (n.find("\\ui\\") != std::string::npos && ends(".bff")) g_title = n.find("\\ui\\startup.bff") != std::string::npos;
+    if (n.find("\\ui\\") != std::string::npos && ends(".bff")) {
+        g_title = n.find("\\ui\\startup.bff") != std::string::npos || n.find("\\ui\\mainmenu.bff") != std::string::npos;
+        LOGI("tt: menu file %s", name);
+    }
     if (n.find("\\worlds\\") != std::string::npos && (ends(".bfa") || ends(".bfl") || ends(".bfg") || ends(".bfi")))
         g_front_end = g_title = false;
     else if (n.find("\\ui\\") != std::string::npos && ends(".bff") && n.find("\\ui\\load") == std::string::npos &&

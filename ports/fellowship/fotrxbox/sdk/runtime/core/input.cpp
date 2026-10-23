@@ -87,13 +87,14 @@ void UpdatePads() {
 }  // namespace
 
 void Init() {
-    // WGI reads the triggers apart and HIDAPI takes PlayStation and Switch pads. Reads come from the guest's threads,
-    // so SDL's own thread takes the device notices.
+    // XInput takes the Xbox pads (with it on, SDL's WGI leaves them to it, so none is listed twice): WGI alone missed
+    // an Xbox 360 wireless controller (#18). WGI takes the other pads, reading the triggers apart, and HIDAPI
+    // PlayStation and Switch pads. Reads come from the guest's threads, so SDL's own thread takes the device notices.
     SDL_SetHint(SDL_HINT_JOYSTICK_THREAD, "1");
     SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
     SDL_SetHint(SDL_HINT_JOYSTICK_WGI, "1");
     SDL_SetHint(SDL_HINT_JOYSTICK_RAWINPUT, "0");
-    SDL_SetHint(SDL_HINT_XINPUT_ENABLED, "0");
+    SDL_SetHint(SDL_HINT_XINPUT_ENABLED, "1");
     SDL_SetHint(SDL_HINT_JOYSTICK_DIRECTINPUT, "0");
     if (!SDL_Init(SDL_INIT_GAMEPAD)) {
         LOGE("input: SDL failed to start, no controllers: %s", SDL_GetError());

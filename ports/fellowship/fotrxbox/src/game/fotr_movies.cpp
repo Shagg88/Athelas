@@ -12,6 +12,7 @@
 #include <string>
 #include <thread>
 
+#include "app/app.h"
 #include "core/log.h"
 #include "cpu/x86_context.h"
 #include "gpu/backend.h"
@@ -88,14 +89,21 @@ const int kWatch = (gpu::g_draw_observer = Watch, 0);
 
 namespace fotr {
 // GameInfo::file_opened
+void PromptsFile(const char* name);  // fotr_prompts.cpp
 void FileOpened(const char* name) {
     AchievementsFile(name);  // fotr_achievements.cpp
+    PromptsFile(name);
     const char* m = std::strstr(name, "\\movies\\");
     if (!m) m = std::strstr(name, "\\Movies\\");
     if (!m) return;
     std::string n = m + 8;
     for (char& c : n) c = char(std::tolower(static_cast<unsigned char>(c)));
     int kind = n.find("start_menu") != std::string::npos ? 0 : n.find("fmv_") != std::string::npos ? 2 : 1;
+    // subtitles\<name>.srt, when the player has one (the title screen's moving background has nothing spoken)
+    if (kind) {
+        std::string stem = n.substr(n.find_last_of('\\') + 1);
+        app::MovieSubtitles(stem.substr(0, stem.find('.')));
+    }
     if (g_kind.exchange(kind) != kind || kind) LOGI("fotr: movie %s (%s)", n.c_str(), kind == 2 ? "letterboxed film" : kind ? "4:3" : "title screen background");
 }
 }  // namespace fotr

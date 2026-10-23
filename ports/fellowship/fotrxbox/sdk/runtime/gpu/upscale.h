@@ -56,6 +56,8 @@ public:
 bool InitStreamline(IDXGIAdapter* adapter, std::string& why);
 // after the swap chain is made: Streamline's bookkeeping runs on its Present (manual hooking)
 void UpgradeSwapChain(IDXGISwapChain** swap);
+// right after the device is made, once Streamline has started: the device it works with
+bool SetStreamlineDevice(ID3D12Device* dev);
 void ShutdownStreamline();
 
 // an upscaler for the output size; nullptr and why when it can't be had on this PC

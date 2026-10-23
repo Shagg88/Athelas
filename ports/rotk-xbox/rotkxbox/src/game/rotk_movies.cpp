@@ -6,7 +6,11 @@
 // [graphics] skip_all_videos (off by default, as on the console) sets every entry to 1.
 // The opening logos: on a first start (no saved game) they are the start of HELMFMV1.vid, the Helm's Deep intro, so
 // they can only be skipped with the whole intro (skip_all_videos). Once there is a save the game starts with LOGOS
-// (logos.vid: EA, New Line) after the copyright page instead. ROTK Fix's SkipOpeningLogos has no Xbox match.
+// (logos.vid: EA, New Line) after the copyright page instead. [graphics] skip_logos (as the other ports have it)
+// passes over LOGOS: the movie is made skippable as it starts (its table type answered 1) and the port presses A
+// for the player, on and off, until it has ended (the game's own skip; at most 10 s). The intro of a first start
+// keeps its logos (they are the film's own first seconds). ROTK_SKIP_MOVIE=<name> does the same to another movie
+// in test builds.
 //
 // Movie timing: while a movie plays the renderer shows it by the movie settings (gpu::g_movie), which is what
 // [graphics] cutscene_audio_delay needs to hold the picture back for Bluetooth sound. A movie frame is a draw from
@@ -18,9 +22,12 @@
 #include <thread>
 
 #include <cctype>
+#include <cstdlib>
 #include <cstring>
 #include <string>
 
+#include "app/app.h"
+#include "core/input.h"
 #include "core/log.h"
 #include "gpu/backend.h"
 #include "gpu/texture.h"
@@ -29,6 +36,9 @@
 
 namespace rotk {
 bool g_skip_all_videos = false;  // settings.toml [graphics] skip_all_videos
+bool g_skip_logos = false;       // settings.toml [graphics] skip_logos
+std::atomic<int64_t> g_skip_until{0};  // steady clock ms: A pressed for the player until then (skip_logos)
+std::atomic<bool> g_skip_seen{false};  // the skipped movie's frames have been drawn
 
 namespace {
 constexpr uint32_t kMovieTable = 0x179F30, kMovieTableMax = 64;
@@ -113,6 +123,7 @@ void WatchMovie(const gpu::State& s) {
     StartWatcher();
     rotk::g_movie_drawn = rotk::NowMs();
     gpu::g_movie = true;
+    rotk::g_skip_seen = true;
     if (!g_movie_new.exchange(false)) return;
     std::string n;
     {
@@ -135,10 +146,40 @@ const int kWatch = (gpu::g_draw_observer = WatchMovie, 0);
 // 0x111B90 (name in ebx): the movie table's type for a movie, asked once as each movie starts (0x111C89)
 X86_EXTERN_FUNC(__imp__sub_00111B90);
 X86_FUNC(sub_00111B90) {
+    std::string name;
     if (ctx.ebx) {
         std::lock_guard l(g_name_lock);
-        g_movie_name = static_cast<const char*>(::kernel::HostPtr(ctx.ebx));
+        g_movie_name = name = static_cast<const char*>(::kernel::HostPtr(ctx.ebx));
         g_movie_new = true;
     }
     __imp__sub_00111B90(ctx, base);
+    app::MovieSubtitles(name);  // subtitles\<name>.srt, when the player has one
+    for (char& c : name) c = char(std::toupper(static_cast<unsigned char>(c)));
+#ifndef _WIN32
+    static const char* test = std::getenv("ROTK_SKIP_MOVIE");
+    bool skip = rotk::g_skip_logos && name == "LOGOS";
+    if (test && name == test) skip = true;
+#else
+    bool skip = rotk::g_skip_logos && name == "LOGOS";
+#endif
+    if (skip) {
+        ctx.eax = 1;  // may be skipped
+        rotk::g_skip_seen = false;
+        rotk::g_skip_until = rotk::NowMs() + 10000;
+        LOGR("rotk: movie %s skipped (skip_logos)", name.c_str());
+    }
 }
+
+namespace rotk {
+// GameInfo::pad (rotk_controls.cpp), player 1: A pressed for 100 ms in every 200 while a skipped movie plays; done
+// once its frames have stopped coming (the movie flag down after they were seen)
+void SkipPress(int port, input::Pad& pad) {
+    if (port != 0 || g_skip_until == 0) return;
+    int64_t now = NowMs();
+    if (now > g_skip_until || (g_skip_seen && !gpu::g_movie)) {
+        g_skip_until = 0;
+        return;
+    }
+    if (now / 100 % 2 == 0) pad.analog[0] = 255;
+}
+}  // namespace rotk

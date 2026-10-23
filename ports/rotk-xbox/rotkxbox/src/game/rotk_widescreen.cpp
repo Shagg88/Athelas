@@ -40,6 +40,25 @@ uint32_t g_draw_percent = 100;  // [graphics] draw_distance, ROTKFix.ini [Graphi
 bool g_alpha_edges = false;     // [graphics] alpha_edges, ROTKFix.ini [Graphics] AlphaEdgeSmoothing
 bool g_hud_edges = false;       // [graphics] hud_edges, ROTKFix.ini [Graphics] HUDEdges
 bool g_safe_area = false;       // [graphics] safe_area: the console's black TV border around the picture
+// F1, as in The Two Towers: the HUD hidden in a level (Place2D); ROTK_HUD_HIDDEN in test builds hides it from the start
+#ifndef _WIN32
+std::atomic<bool> g_hud_hidden{std::getenv("ROTK_HUD_HIDDEN") != nullptr};
+#else
+std::atomic<bool> g_hud_hidden{false};
+#endif
+bool InMenus();                          // rotk_controls.cpp
+
+// window messages first (GameInfo::message): F1 hides and shows the HUD
+bool Message(void*, uint32_t msg, uintptr_t wp, intptr_t lp, intptr_t*) {
+    constexpr uint32_t kKeyDown = 0x100;  // WM_KEYDOWN
+    constexpr uintptr_t kF1 = 0x70;      // VK_F1
+    bool repeat = lp & (intptr_t(1) << 30);
+    if (msg == kKeyDown && wp == kF1 && !repeat) {
+        g_hud_hidden = !g_hud_hidden;
+        LOGR("rotk: HUD %s (F1)", g_hud_hidden ? "hidden" : "shown");
+    }
+    return false;
+}
 
 // after the settings load
 void InitCamera() {
@@ -152,7 +171,33 @@ void MakeGroups() {
     d.clear();
 }
 
+// F1 in a level: each 2D draw on the screen but full-screen pictures, screen copies, fades and movie frames goes
+// off the left edge (x' = 4), so the HUD, its numbers and the hints aren't seen; menus over a full-screen picture
+// stay (a frame with one is a menu's)
+bool HideHud(const gpu::State& s, float x0, float x1, float y0, float y1, float& a, float& b) {
+    if (!rotk::g_hud_hidden || rotk::InMenus()) return false;
+    uint32_t w, h;
+    gpu::SurfaceSize(s.rt, w, h);
+    if (w != 640 || h != 480) return false;
+    static uint32_t menu_frame = ~0u;
+    uint32_t now = ::kernel::R32(kFrameCount);
+    bool spans = x0 <= -0.98f && x1 >= 0.98f, tall = y0 <= -0.98f && y1 >= 0.98f;
+    gpu::TextureDesc d;
+    bool tex = s.textures[0] && gpu::Describe(s.textures[0], d);
+    if (spans && tall) {  // a fade or a gradient (small textures), or a full-screen picture (a menu's)
+        if (tex && d.width < 640 && d.width > 128 && d.height > 128) menu_frame = now;
+        return false;
+    }
+    if (menu_frame == now || (tex && d.width >= 640 && d.height >= 480)) return false;
+    gpu::TextureDesc y;
+    if (s.textures[2] && gpu::Describe(s.textures[2], y) && y.width == 768 && y.height == 544) return false;
+    a = 0;
+    b = 4;
+    return true;
+}
+
 bool Place2D(const gpu::State& s, float x0, float x1, float y0, float y1, float& a, float& b) {
+    if (HideHud(s, x0, x1, y0, y1, a, b)) return true;
     if (!app::Widescreen()) return false;
     float frame = app::FrameAspect();
     bool ultra = frame > 16.0f / 9.0f + 0.01f;

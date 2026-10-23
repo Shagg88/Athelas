@@ -196,7 +196,8 @@ public:
         d.flags = hdr_ ? 0 : FFX_UPSCALE_FLAG_NON_LINEAR_COLOR_SRGB;
         ffxReturnCode_t r = g_ffx_fn.Dispatch(&ctx_, &d.header);
         if (r != FFX_API_RETURN_OK) {
-            LOG_FIRST(3, "FSR: dispatch failed (%u)", r);
+            static int logged = 0;
+            if (logged++ < 3) LOGR("upscaler: FSR did not run (%u); the normal picture instead", unsigned(r));
             return false;
         }
         return true;
@@ -290,7 +291,8 @@ public:
         c.motionVectorsDilated = sl::Boolean::eFalse;
         c.motionVectorsJittered = sl::Boolean::eFalse;
         if (slSetConstants(c, *token, view_) != sl::Result::eOk) {
-            LOG_FIRST(3, "DLSS: constants not taken");
+            static int logged = 0;
+            if (logged++ < 3) LOGR("upscaler: DLSS did not take the frame's settings; the normal picture instead");
             return false;
         }
         sl::Extent in{0, 0, f.render_w, f.render_h}, out{0, 0, f.out_w, f.out_h};
@@ -306,13 +308,15 @@ public:
         };
         auto* cmd = reinterpret_cast<sl::CommandBuffer*>(f.cl);
         if (slSetTagForFrame(*token, view_, tags, 4, cmd) != sl::Result::eOk) {
-            LOG_FIRST(3, "DLSS: resources not taken");
+            static int logged = 0;
+            if (logged++ < 3) LOGR("upscaler: DLSS did not take the frame's resources; the normal picture instead");
             return false;
         }
         const sl::BaseStructure* inputs[] = {&view_};
         sl::Result r = slEvaluateFeature(sl::kFeatureDLSS, *token, inputs, 1, cmd);
         if (r != sl::Result::eOk) {
-            LOG_FIRST(3, "DLSS: evaluate failed (%d)", int(r));
+            static int logged = 0;
+            if (logged++ < 3) LOGR("upscaler: DLSS did not run (%d); the normal picture instead", int(r));
             return false;
         }
         return true;
@@ -365,8 +369,10 @@ bool InitStreamline(IDXGIAdapter* adapter, std::string& why) {
     p.featuresToLoad = features;
     p.numFeaturesToLoad = 1;
     // manual hooking: the renderer's own device and swap chain; OTA lets the NVIDIA driver bring newer DLSS models
+    // frame-based tagging: slSetTagForFrame refuses the frame's resources without it (Streamline 2.14), and DLSS was then
+    // never run (1.5)
     p.flags = sl::PreferenceFlags::eUseManualHooking | sl::PreferenceFlags::eAllowOTA | sl::PreferenceFlags::eLoadDownloadedPlugins |
-              sl::PreferenceFlags::eDisableCLStateTracking;
+              sl::PreferenceFlags::eDisableCLStateTracking | sl::PreferenceFlags::eUseFrameBasedResourceTagging;
     p.engine = sl::EngineType::eCustom;
     p.engineVersion = "Athelas";
     p.projectId = "a7d3b1e2-5c4f-4e8a-9b6d-41f0c2e8a915";
@@ -379,6 +385,19 @@ bool InitStreamline(IDXGIAdapter* adapter, std::string& why) {
         return false;
     }
     g_sl_ready = true;
+    return true;
+}
+
+namespace {
+bool g_sl_device = false;
+}
+
+// right after the device is made: Streamline's Present bookkeeping needs it before the swap chain is upgraded, else it
+// logs an error at every frame until the first upscaled one
+bool SetStreamlineDevice(ID3D12Device* dev) {
+    if (!g_sl_ready || g_sl_device) return g_sl_device;
+    if (slSetD3DDevice(dev) != sl::Result::eOk) return false;
+    g_sl_device = true;
     return true;
 }
 
@@ -409,13 +428,9 @@ std::unique_ptr<Upscaler> Create(Kind k, Quality q, ID3D12Device* dev, ID3D12Com
             why = g_sl_why;
             return nullptr;
         }
-        static bool device_set = false;
-        if (!device_set) {
-            if (slSetD3DDevice(dev) != sl::Result::eOk) {
-                why = "DLSS could not use the graphics device";
-                return nullptr;
-            }
-            device_set = true;
+        if (!SetStreamlineDevice(dev)) {
+            why = "DLSS could not use the graphics device";
+            return nullptr;
         }
         DXGI_ADAPTER_DESC ad{};
         if (adapter) adapter->GetDesc(&ad);

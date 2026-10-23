@@ -24,14 +24,14 @@ uint8_t* Base() { return g_base; }
 
 // physical memory shows at 0x80000000 and again at 0xF0000000 (write combined view)
 static bool InPhysical(uint32_t va) {
-    return (va >= kContiguousBase && va < kContiguousBase + kPhysicalSize) ||
-           (va >= kWriteCombineBase && va < kWriteCombineBase + kPhysicalSize);
+    return (va >= kContiguousBase && va < kContiguousBase + kMappedPhysical) ||
+           (va >= kWriteCombineBase && va < kWriteCombineBase + kMappedPhysical);
 }
 
 bool Init() {
     const uint64_t size = 1ull << 32;
 #ifdef _WIN32
-    HANDLE ram = CreateFileMappingW(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, kPhysicalSize, nullptr);
+    HANDLE ram = CreateFileMappingW(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, kMappedPhysical, nullptr);
     // a fixed base keeps crash dumps comparable between runs
     for (uint64_t hint : {0x100000000ull, 0x200000000ull, 0x300000000ull, 0ull}) {
         uint8_t* b = static_cast<uint8_t*>(VirtualAlloc(reinterpret_cast<void*>(hint), size, MEM_RESERVE, PAGE_NOACCESS));
@@ -39,13 +39,13 @@ bool Init() {
         VirtualFree(b, 0, MEM_RELEASE);
         // reserve around the two physical windows, then map the same memory into both
         const uint64_t cuts[][2] = {{0, kContiguousBase},
-                                    {kContiguousBase + kPhysicalSize, kWriteCombineBase},
-                                    {kWriteCombineBase + kPhysicalSize, size}};
+                                    {kContiguousBase + kMappedPhysical, kWriteCombineBase},
+                                    {kWriteCombineBase + kMappedPhysical, size}};
         bool ok = ram != nullptr;
         for (auto& c : cuts)
             ok = ok && VirtualAlloc(b + c[0], size_t(c[1] - c[0]), MEM_RESERVE, PAGE_NOACCESS) == b + c[0];
-        ok = ok && MapViewOfFileEx(ram, FILE_MAP_ALL_ACCESS, 0, 0, kPhysicalSize, b + kContiguousBase) == b + kContiguousBase;
-        ok = ok && MapViewOfFileEx(ram, FILE_MAP_ALL_ACCESS, 0, 0, kPhysicalSize, b + kWriteCombineBase) == b + kWriteCombineBase;
+        ok = ok && MapViewOfFileEx(ram, FILE_MAP_ALL_ACCESS, 0, 0, kMappedPhysical, b + kContiguousBase) == b + kContiguousBase;
+        ok = ok && MapViewOfFileEx(ram, FILE_MAP_ALL_ACCESS, 0, 0, kMappedPhysical, b + kWriteCombineBase) == b + kWriteCombineBase;
         if (ok) {
             g_base = b;
             break;
@@ -58,9 +58,9 @@ bool Init() {
     void* p = mmap(reinterpret_cast<void*>(0x100000000ull), size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
     g_base = p == MAP_FAILED ? nullptr : static_cast<uint8_t*>(p);
     int fd = g_base ? memfd_create("ram", 0) : -1;
-    if (fd < 0 || ftruncate(fd, kPhysicalSize) ||
-        mmap(g_base + kContiguousBase, kPhysicalSize, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0) == MAP_FAILED ||
-        mmap(g_base + kWriteCombineBase, kPhysicalSize, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0) == MAP_FAILED)
+    if (fd < 0 || ftruncate(fd, kMappedPhysical) ||
+        mmap(g_base + kContiguousBase, kMappedPhysical, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0) == MAP_FAILED ||
+        mmap(g_base + kWriteCombineBase, kMappedPhysical, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0) == MAP_FAILED)
         g_base = nullptr;
 #endif
     if (!g_base) {
@@ -412,13 +412,22 @@ uint32_t AllocationSize(uint32_t va) {
     return 0;
 }
 
+uint32_t AllocHostPhysical(uint32_t size, uint32_t align) {
+    std::lock_guard<std::recursive_mutex> lock(g_lock);
+    static uint32_t next = kPhysicalSize;
+    uint32_t at = (next + align - 1) & ~(align - 1);
+    if (at + size > kMappedPhysical || at + size < at) return 0;
+    next = at + size;
+    return kContiguousBase | at;
+}
+
 uint32_t PhysicalFromVirtual(uint32_t va) {
-    if (InPhysical(va)) return va & (kPhysicalSize - 1);
+    if (InPhysical(va)) return va & 0x0FFFFFFFu;
     return va;
 }
 
 uint32_t VirtualFromPhysical(uint32_t pa) {
-    if (pa < kPhysicalSize) return kContiguousBase | pa;
+    if (pa < kMappedPhysical) return kContiguousBase | pa;
     return pa;
 }
 

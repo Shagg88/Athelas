@@ -39,7 +39,7 @@ endif()
 # Draw on the title's thread, as The Two Towers' port and the headless harness do; the threaded renderer can be
 # tried once the game runs.
 # the version and name Windows shows in the exe's properties (keep in step with src/common/game_info.cpp)
-set(XBE_VERSION 1.5.0)
+set(XBE_VERSION 1.5.1)
 set(XBE_PRODUCT "FOTR Xbox PC port")
 add_xbe_image(FOTRXbox Default.xbe game.toml ${GAME_PARTITIONS} game)
 target_compile_definitions(FOTRXbox PRIVATE XBE_RENDER_THREAD=0)

@@ -107,6 +107,10 @@ std::vector<cfg::Desc> SettingsList() {
          "cut off).\nStretch: the whole movie frame is stretched to the screen.\n4:3: the movie as on the console, with "
          "bars at the sides.",
          nullptr, &s.movie_display, nullptr, 0, 0, {"fit", "stretch", "4:3"}, nullptr, nullptr, {"Fit", "Stretch", "4:3"}},
+        {"graphics", "movie_subtitles", Type::Bool, "Movie subtitles",
+         "Subtitles for the film clips, from subtitle files (.srt) in the subtitles folder beside the game, named as "
+         "the movie (the log names each movie as it starts). The games have none of their own.",
+         &s.movie_subtitles},
         {"graphics", "movie_sharpening", Type::Int, "Sharper cutscenes",
          "The movies are only 640 x 480. This sharpens them at their own pixel size before they are stretched to your "
          "screen, so faces and edges look crisper. 0 shows them as the game always did.",

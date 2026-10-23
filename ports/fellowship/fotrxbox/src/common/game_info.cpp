@@ -1,6 +1,6 @@
 #include "app/app.h"
 #ifndef GAME_VERSION
-#define GAME_VERSION "1.5.0"  // CMakeLists.txt sets it (XBE_VERSION); the headless harness does not
+#define GAME_VERSION "1.5.1"  // CMakeLists.txt sets it (XBE_VERSION); the headless harness does not
 #endif
 
 namespace fotr {
@@ -10,13 +10,22 @@ void FileOpened(const char* name);
 extern bool g_cheat_ring, g_cheat_health, g_cheat_spirit, g_cheat_ammo;  // src/game/fotr_cheats.cpp
 extern uint32_t g_text_language;  // src/game/fotr_lang.cpp
 extern uint32_t g_fov_percent;    // src/game/fotr_camera.cpp
+extern uint32_t g_button_pictures;  // src/game/fotr_prompts.cpp
+extern bool g_sharp_text;           // src/game/fotr_text.cpp
 extern bool g_invert_camera_y, g_invert_camera_x;  // src/game/fotr_input.cpp
 void Pad(int port, input::Pad& pad);
 extern uint32_t g_damage_taken, g_enemy_damage;  // src/game/fotr_difficulty.cpp
 void Init();
 std::vector<ach::Def> Achievements();  // src/game/fotr_achievements.cpp
+std::string Activity();                // src/game/fotr_achievements.cpp: the region, for the Discord status
 void FrameShown(double fps);           // src/game/fotr_camera.cpp
+bool Message(void* hwnd, uint32_t msg, uintptr_t wp, intptr_t lp, intptr_t* result);  // fotr_camera.cpp: F1
 }  // namespace fotr
+
+// the Discord application whose name Discord shows as the game ("The Fellowship of the Ring"); null: no Discord status
+#ifndef FOTRX_DISCORD_APP_ID
+#define FOTRX_DISCORD_APP_ID nullptr
+#endif
 
 // what the runtime asks of the game; strings must be set, hooks may stay null
 const app::GameInfo app::kGame = {
@@ -41,6 +50,15 @@ const app::GameInfo app::kGame = {
                  "How wide the camera sees while you play, as a share of the game's own (100). Wider shows more "
                  "around Frodo but makes everything look further away. Cutscenes keep their own.",
                  nullptr, &fotr::g_fov_percent, nullptr, 70, 150},
+                {"graphics", "sharp_text", cfg::Type::Bool, "Sharper text",
+                 "The game's text (menus, hints, dialogue, the quest journal) drawn at three times its size, so it "
+                 "stays sharp at high resolutions. Read at start.",
+                 &fotr::g_sharp_text},
+                {"graphics", "button_pictures", cfg::Type::Choice, "Button pictures",
+                 "Which controller's buttons the game's hints and menus show. Auto follows the controller you play "
+                 "with when the game starts.",
+                 nullptr, &fotr::g_button_pictures, nullptr, 0, 0, {"auto", "xbox", "playstation", "nintendo", "keyboard"},
+                 nullptr, nullptr, {"Auto", "Xbox", "PlayStation", "Nintendo", "Keyboard keys"}},
                 {"input", "invert_camera_y", cfg::Type::Bool, "Invert camera up/down",
                  "Reverses up and down on the controller's right stick, which moves the camera. For players used to "
                  "inverted camera controls.", &fotr::g_invert_camera_y},
@@ -49,10 +67,10 @@ const app::GameInfo app::kGame = {
                  &fotr::g_invert_camera_x},
                 {"gameplay", "damage_taken", cfg::Type::Int, "Damage you take",
                  "How hard enemies hit you, as a share of the game's own (100). Lower is easier.",
-                 nullptr, &fotr::g_damage_taken, nullptr, 25, 300},
+                 nullptr, &fotr::g_damage_taken, nullptr, 10, 500},
                 {"gameplay", "enemy_damage", cfg::Type::Int, "Damage enemies take",
                  "How hard your hits and shots are on enemies, as a share of the game's own (100). Higher is easier.",
-                 nullptr, &fotr::g_enemy_damage, nullptr, 25, 300},
+                 nullptr, &fotr::g_enemy_damage, nullptr, 10, 500},
                 {"cheats", "infinite_health", cfg::Type::Bool, "Infinite health",
                  "The game's own secret code (Y A X B A Y): health never runs out.", &fotr::g_cheat_health},
                 {"cheats", "infinite_spirit", cfg::Type::Bool, "Infinite spirit",
@@ -87,6 +105,7 @@ const app::GameInfo app::kGame = {
     .button_actions = {"Attack", "Crouch", "Action", "Jump", "Use Belt Item", "Switch Weapons / Tools", "Target Left",
                        "Target Right"},
     .init = fotr::Init,  // after the settings load, before the window and boot
+    .message = fotr::Message,  // window messages first: F1 hides the HUD
     .ui = fotr::FrameShown,  // each frame shown: wider screens tell menus from fades by it
     .pad = fotr::Pad,        // the camera stick reversed when asked ([input] invert_camera_*)
     // the in-game menu (F10): these take effect at once
@@ -94,4 +113,6 @@ const app::GameInfo app::kGame = {
                       "cheats.infinite_spirit", "cheats.infinite_ammo", "cheats.infinite_ring"},
     .file_opened = fotr::FileOpened,  // the movies, to show each by the movie settings; achievements
     .achievements = fotr::Achievements(),
+    .discord_app_id = FOTRX_DISCORD_APP_ID,
+    .activity = fotr::Activity,
 };

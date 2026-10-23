@@ -40,9 +40,11 @@ void Apply() {
 X86_FUNC(__imp__sub_000D66E0);
 namespace fotr {
 void CameraFrame(X86Context& ctx, uint8_t* base);  // fotr_camera.cpp
+void PromptsFrame();                               // fotr_prompts.cpp
 }
 X86_FUNC(sub_000D66E0) {
     Apply();
     fotr::CameraFrame(ctx, base);
+    fotr::PromptsFrame();
     __imp__sub_000D66E0(ctx, base);
 }

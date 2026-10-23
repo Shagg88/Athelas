@@ -30,6 +30,8 @@
 
 namespace tt {
 bool g_all_heroes = false;  // [gameplay] all_heroes
+bool g_unlock_all = false;  // [gameplay] unlock_all
+bool InMenus();             // tt_extras.cpp
 }
 
 X86_EXTERN_FUNC(__imp__sub_000D3C00);
@@ -85,6 +87,15 @@ X86_FUNC(sub_00073960) {  // the level select's "is the game beaten" (ecx the sc
 
 X86_FUNC(sub_000D2420) {  // (level, hero): 1 once that hero has completed that level
     uint32_t ret = kernel::R32(ctx.esp), level = kernel::R32(ctx.esp + 4) & 0xFF, hero = kernel::R32(ctx.esp + 8);
+    // unlock_all: in the front end every level reads as completed by every hero, so the game counts itself beaten
+    // and opens what it opens then: every level for every hero, Isildur, the bonus levels and extras. Only the
+    // answers change; the progress in the save stays the player's own, and in a level the game asks as before
+    if (tt::g_unlock_all && level <= 14 && hero >= 1 && hero <= 4 && tt::InMenus()) {
+        LOG_FIRST(1, "tt: every level open (unlock_all)");
+        ctx.eax = (ctx.eax & ~0xFFu) | 1;
+        ctx.esp += 4;
+        return;
+    }
     if ((level == 11 || level == 13) && hero >= 1 && hero <= 3 && tt::g_all_heroes && HeroQuestion(ret)) {
         // the heroes' labels ask with the level picked in esi; the screen's set-up with the screen in esi
         uint32_t picked = ret >= 0x75540 && ret < 0x75578   ? ctx.esi

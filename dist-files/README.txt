@@ -126,7 +126,13 @@ adjustable damage for each side.
   files. Other releases are recognised and you're warned before they start;
   they will most likely crash.
 - Keyboard and mouse or controller (see KEYBOARD, MOUSE AND THE IN-GAME
-  MENU below). The game's hints still show controller buttons.
+  MENU below).
+- Button pictures (Controls tab): the game's hints and menus show Xbox,
+  PlayStation or Nintendo buttons, or the keyboard's keys. Auto follows what
+  you play with. The same in all three Xbox ports.
+- Unlock all levels and characters (Gameplay tab): every level, Isildur and
+  the extras from the start, as once the game is beaten. Your saved progress
+  isn't changed.
 - Play as Gandalf or Boromir: in the Gates of Moria and Balin's Tomb, the
   hero screen has Gandalf and Boromir after Aragorn. Each plays with his own
   model, walk and run; Gandalf's ranged attack is a blast of light.
@@ -140,14 +146,7 @@ adjustable damage for each side.
 - The game's own files are only read, never changed.
 - Needs Windows 10 or 11 (64-bit) and a Direct3D 12 graphics card.
 
-Keys while playing:
-  F10                  Settings menu (the game pauses)
-  \                    Screenshot (saved to the Screenshots folder)
-  F1                   Hide or show the HUD
-  [                    Sharpening off/on
-  ]                    Next colour look
-  F8                   Texture packs off/on, to compare
-  F7                   A pair of screenshots, with and without texture packs
+Keys while playing: see KEYBOARD, MOUSE AND THE IN-GAME MENU below.
 
 Reporting a problem: see REPORTING A PROBLEM below. The log is TT-Xbox\tt.log,
 and after a crash the newest Game.<date>_<time>.dmp in TT-Xbox\CrashDumps.
@@ -156,9 +155,10 @@ and after a crash the newest Game.<date>_<time>.dmp in TT-Xbox\CrashDumps.
 THE RETURN OF THE KING (XBOX)
 -----------------------------
 An unofficial native PC port of the Xbox version, in the ROTK-Xbox folder and
-started from Athelas. It uses the same settings page as the PC version, with
-frame rates up to 240, widescreen, and fixes for slowdowns and vanishing
-enemies at high frame rates.
+started from Athelas. It has its own settings page, laid out like The Two
+Towers' and Fellowship's (since 1.5.1; your earlier choices are brought over
+from ROTKFix.ini the first time), with frame rates up to 240, widescreen, and
+fixes for slowdowns and vanishing enemies at high frame rates.
 - Needs your own Xbox disc dump: the extracted folder or an .iso (US
   release). Nothing in it is changed.
 - Sharper text and menus: if you also have The Return of the King (PC), its
@@ -169,8 +169,8 @@ enemies at high frame rates.
 - Keyboard and mouse, an in-game settings menu (F10), and pausing in the
   background: see KEYBOARD, MOUSE AND THE IN-GAME MENU below. With no
   controller plugged in, the game's hints show the keys.
-- Gameplay tab (shared with the PC version): damage taken, enemy damage, and
-  every level and character unlocked. All off by default.
+- Gameplay tab: damage taken, enemy damage, every level and character
+  unlocked, and the game's own cheats as switches. All off by default.
 - Eowyn instead of Faramir (Gameplay tab): Éowyn takes his place on the
   character select, on the HUD and in every level he plays, with his moves
   and bow. She is made from her own model in your game files when the game
@@ -201,6 +201,8 @@ so please report anything that goes wrong.
   render resolution, anti-aliasing, texture filtering, sharpening, HDR, the
   Original / Balanced / High / Ultra presets, skip the opening logos, and
   sharper, upscaled cutscenes with the movie display modes.
+- Sharper text (Graphics tab): the game's text drawn at three times its size,
+  so menus, hints and dialogue stay sharp at high resolutions.
 - Game text language (Gameplay tab): the game's menus, hints, items, quest
   journal and dialogue text in German, French, Spanish, Italian, Brazilian
   Portuguese, Polish, Dutch, Swedish or Russian (our own translations), in
@@ -212,9 +214,9 @@ so please report anything that goes wrong.
   spirit, ammunition and Ring.
 - Achievements: one for each part of the journey and one for the whole
   story (see ACHIEVEMENTS).
-- Controls tab: the controller's buttons, named after the game's own moves.
-- Not yet: an ARM64 build (on Windows on ARM it runs through Windows'
-  translation).
+- Controls tab: the controller's buttons, named after the game's own moves,
+  and Button pictures: the hints and menus show Xbox, PlayStation or Nintendo
+  buttons, or the keyboard's keys (Auto follows what you play with).
 - Needs Windows 10 or 11 (64-bit) and a Direct3D 12 graphics card.
 
 Settings: on the launcher's Fellowship of the Ring page (or in
@@ -224,8 +226,8 @@ Reporting a problem: see REPORTING A PROBLEM below. The log is
 FOTR-Xbox\fotrx.log, and after a crash the newest .dmp in FOTR-Xbox\CrashDumps.
 
 
-KEYBOARD, MOUSE AND THE IN-GAME MENU (The Two Towers and ROTK Xbox)
--------------------------------------------------------------------
+KEYBOARD, MOUSE AND THE IN-GAME MENU (the three Xbox ports)
+-----------------------------------------------------------
 Keyboard and mouse work as well as a controller, as player 1 or player 2
 (Controls tab). The keys are the PC version of The Return of the King's:
   W A S D              Move (hold Left Alt to walk)
@@ -241,8 +243,19 @@ Keyboard and mouse work as well as a controller, as player 1 or player 2
   F5                   Special ability (The Return of the King)
   Esc                  Pause; in the menus, back
   Arrow keys           Menus
-Each key can be changed on the launcher's Controls tab: click a move, then
-press the key or mouse button.
+In The Fellowship of the Ring the same keys press the same Xbox buttons (Left
+mouse / Enter is A, Attack; Left Ctrl is B, Crouch; and so on); the Controls
+tab names each one's move. Each key can be changed on the launcher's Controls
+tab: click a move, then press the key or mouse button.
+
+Keys while playing:
+  F10                  Settings menu (the game pauses)
+  \                    Screenshot (saved to the Screenshots folder)
+  F1                   Hide or show the HUD
+  [                    Sharpening off/on
+  ]                    Next colour look
+  F8                   Texture packs off/on, to compare
+  F7                   A pair of screenshots, with and without texture packs
 
 The mouse: hold the ranged attack (Left Shift) and move the mouse to aim
 ("Mouse aiming", with a sensitivity setting). In the game's menus the mouse
@@ -469,14 +482,21 @@ If you play from an image of your own disc, mount it in a virtual drive before
 pressing Play. The launcher shows "Disc version (protected)" for this copy.
 
 
+MOVIE SUBTITLES (the three Xbox ports)
+--------------------------------------
+The games have no subtitles for their film clips. The ports show them from
+subtitle files you add: an .srt file (the common SubRip format, UTF-8) named
+as the movie, in the subtitles folder of that game's port (TT-Xbox,
+ROTK-Xbox or FOTR-Xbox; the Graphics tab's Movies section has a button that
+opens it). The log names each movie as it starts ("subtitles: ... the movie
+fmv_2"). "Movie subtitles" on the same tab turns them off.
+
+
 WHERE YOUR SETTINGS ARE
 -----------------------
-The Return of the King, PC and Xbox: both versions share one file, ROTKFix.ini,
-so what you set in the launcher applies to both. It is in the PC game's folder,
-or in the launcher's folder if you only have the Xbox version (the launcher's
-About tab shows where). The settings.toml in ROTK-Xbox only holds defaults that
-ROTKFix.ini replaces each time the game starts; it says so at its top.
-
+The Return of the King (PC): ROTKFix.ini in the game's folder.
+The Return of the King (Xbox): ROTK-Xbox\settings.toml. (Up to 1.5 it shared
+ROTKFix.ini with the PC version; 1.5.1 brings those settings over once.)
 The Two Towers: TT-Xbox\settings.toml.
 The Fellowship of the Ring: FOTR-Xbox\settings.toml.
 

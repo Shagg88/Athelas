@@ -298,6 +298,8 @@ void Fail(int code, const std::wstring& message) {
     LOGE("Exit (%d): %s", code, narrow.c_str());
     logx::Flush();
     if (!Args().no_dialogs) MessageBoxW(nullptr, message.c_str(), kGame.short_title, MB_ICONERROR);
+    // as kernel::Shutdown: NVIDIA's Streamline crashes in its own clean-up at exit, so with it loaded no DLL clean-up
+    if (GetModuleHandleW(L"sl.interposer.dll")) TerminateProcess(GetCurrentProcess(), UINT(code));
     ExitProcess(UINT(code));
 }
 

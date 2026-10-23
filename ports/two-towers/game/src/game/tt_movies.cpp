@@ -7,6 +7,7 @@
 #include <cstring>
 #include <string_view>
 
+#include "app/app.h"
 #include "core/log.h"
 #include "gpu/backend.h"
 #include "kernel/kernel.h"
@@ -37,6 +38,7 @@ X86_FUNC(sub_000E8B70) {
     std::string_view nm(what);
     bool full = (nm.size() > 3 && nm.substr(nm.size() - 3) == "int") || nm == "makingof" || nm == "death";
     gpu::g_movie_shape = full ? gpu::kMovie43 : gpu::kMovieFit;
+    app::MovieSubtitles(what);  // subtitles\<name>.srt, when the player has one
     tt::g_movie_playing++;
     gpu::g_movie = true;
     __imp__sub_000E8B70(ctx, base);

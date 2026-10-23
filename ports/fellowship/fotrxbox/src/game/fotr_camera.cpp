@@ -196,6 +196,7 @@ std::array<float, 4> g_orig{}, g_put{};
 }  // namespace
 
 namespace fotr {
+extern std::atomic<bool> g_hud_hidden;  // F1 (below)
 // the draw observer, before each draw (the renderer's thread)
 void WideHud(const gpu::State& cs) {
     auto& s = const_cast<gpu::State&>(cs);
@@ -229,6 +230,14 @@ void WideHud(const gpu::State& cs) {
     }
     const auto& w = s.vsc[kRow + 3];
     if (w[0] != 0 || w[1] != 0 || w[2] != 0 || w[3] != 1) return;  // orthographic only
+    // F1: the HUD's pieces put off the left of the screen (x = -4 whatever the vertex), put back as a squeeze is
+    if (g_hud_hidden) {
+        g_orig = row;
+        row = {0, 0, 0, -4};
+        g_put = row;
+        g_squeezed = true;
+        return;
+    }
     float k = Wider();
     if (k <= 1.0f) return;
     g_orig = row;
@@ -298,4 +307,21 @@ void CameraFrame(X86Context& ctx, uint8_t* base) {
 namespace fotr {
 // GameInfo::ui: once a frame shown, after its draws
 void FrameShown(double) { g_frame++; }
+
+// window messages first (GameInfo::message): F1 hides and shows the HUD, as in the other ports
+#ifndef _WIN32
+std::atomic<bool> g_hud_hidden{std::getenv("FOTR_HUD_HIDDEN") != nullptr};  // test builds: hidden from the start
+#else
+std::atomic<bool> g_hud_hidden{false};
+#endif
+bool Message(void*, uint32_t msg, uintptr_t wp, intptr_t lp, intptr_t*) {
+    constexpr uint32_t kKeyDown = 0x100;  // WM_KEYDOWN
+    constexpr uintptr_t kF1 = 0x70;      // VK_F1
+    bool repeat = lp & (intptr_t(1) << 30);
+    if (msg == kKeyDown && wp == kF1 && !repeat) {
+        g_hud_hidden = !g_hud_hidden;
+        LOGR("fotr: HUD %s (F1)", g_hud_hidden ? "hidden" : "shown");
+    }
+    return false;
+}
 }

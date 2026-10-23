@@ -2,7 +2,7 @@
 #include "app/app.h"
 
 #ifndef GAME_VERSION
-#define GAME_VERSION "1.5.0"  // CMakeLists.txt sets it (XBE_VERSION); the headless harness does not
+#define GAME_VERSION "1.5.1"  // CMakeLists.txt sets it (XBE_VERSION); the headless harness does not
 #endif
 
 namespace tt {
@@ -14,9 +14,20 @@ extern bool g_skip_logos;  // tt_movies.cpp
 extern bool g_skip_all_videos;  // tt_movies.cpp
 extern bool g_kill_points;      // tt_killpoints.cpp
 extern bool g_all_heroes;       // tt_playas.cpp
+extern bool g_unlock_all;       // tt_playas.cpp
 extern uint32_t g_subtitles;    // tt_lang.cpp
 extern bool g_cheat_invulnerable, g_cheat_devastating, g_cheat_missiles, g_cheat_slow;  // tt_cheats.cpp
 void InitRenderer();  // tt_renderer.cpp: the water simulation's targets at the console's size
+extern bool g_alpha_edges;       // tt_view.cpp
+void ApplyView();                // tt_view.cpp
+extern uint32_t g_button_pictures;  // tt_prompts.cpp
+void InitPrompts();                 // tt_prompts.cpp
+// after the settings load: the renderer's extension, the leaf edges, the hints' button pictures
+void Init() {
+    InitRenderer();
+    ApplyView();
+    InitPrompts();
+}
 extern uint32_t g_damage_taken, g_enemy_damage;  // tt_devsettings.cpp
 void FileOpened(const char* name);  // tt_extras.cpp: the front end or a level
 bool InMenus();
@@ -67,18 +78,29 @@ const app::GameInfo app::kGame = {
                  "How wide the camera sees, as a share of the game's own (100). Wider shows more of the battle but "
                  "makes characters look further away.",
                  nullptr, &tt::g_fov_percent, nullptr, 70, 150, {}, "fov_percent"},
+                {"graphics", "alpha_edges", cfg::Type::Bool, "Smooth leaf edges",
+                 "With anti-aliasing on, smooths the edges of leaves, grass and fences.", &tt::g_alpha_edges},
+                {"graphics", "button_pictures", cfg::Type::Choice, "Button pictures",
+                 "Which controller's buttons the game's hints and menus show. Auto follows the controller you play "
+                 "with.",
+                 nullptr, &tt::g_button_pictures, nullptr, 0, 0, {"auto", "xbox", "playstation", "nintendo", "keyboard"},
+                 nullptr, nullptr, {"Auto", "Xbox", "PlayStation", "Nintendo", "Keyboard keys"}},
                 {"gameplay", "damage_taken", cfg::Type::Int, "Damage you take",
                  "How hard enemies hit you and your allies, as a share of the chosen difficulty's own (100). Lower is "
                  "easier.",
-                 nullptr, &tt::g_damage_taken, nullptr, 25, 300},
+                 nullptr, &tt::g_damage_taken, nullptr, 10, 500},
                 {"gameplay", "enemy_damage", cfg::Type::Int, "Damage enemies take",
                  "How hard you and your allies hit enemies, as a share of the chosen difficulty's own (100). Higher "
                  "is easier.",
-                 nullptr, &tt::g_enemy_damage, nullptr, 25, 300},
+                 nullptr, &tt::g_enemy_damage, nullptr, 10, 500},
                 {"gameplay", "kill_points", cfg::Type::Bool, "Kill points",
                  "Shows the points each killing blow earns after its rating (\"Excellent +150\"), as The Return of "
                  "the King does. Off: as the game shows it.",
                  &tt::g_kill_points},
+                {"gameplay", "unlock_all", cfg::Type::Bool, "Unlock all levels and characters",
+                 "Every level, Isildur and the extras can be chosen from the start, as once the game is beaten. Your "
+                 "saved progress isn't changed: turning it off again shows only what you've earned.",
+                 &tt::g_unlock_all},
                 {"gameplay", "all_heroes", cfg::Type::Bool, "All heroes in completed levels",
                  "In a level you've already completed, the level select offers every hero, Isildur too, as it does "
                  "once the game is beaten. A level not completed yet keeps the game's choice; the Prologue and "
@@ -120,7 +142,7 @@ const app::GameInfo app::kGame = {
                        "Killing Move"},
     .load = nullptr,                      // reads more from the settings file's toml::table
     .save = nullptr,                      // writes more into it
-    .init = tt::InitRenderer,             // after the settings load, before the window and boot
+    .init = tt::Init,                     // after the settings load, before the window and boot
     .loaded = nullptr,                    // image in memory, before its entry point runs
     .window = nullptr,                    // the game window is up
     .message = tt::Message,               // window messages first; true takes one

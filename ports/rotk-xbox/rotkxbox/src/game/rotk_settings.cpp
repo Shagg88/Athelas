@@ -1,7 +1,12 @@
-// ROTK Xbox: ROTK Fix's settings file. The launcher keeps one Return of the King page for the PC and Xbox versions;
-// started with --ini <ROTKFix.ini> (ROTK_INI on the headless harness) the port reads that file's keys, the same ones
-// ROTK Fix reads on PC, over its own settings.toml. Keys the Xbox version has no use for (Renderer, DxvkFolder,
-// HideRealControllers, HideMousePointer, LogInput, [Gamepad] Enabled, SkipOpeningLogos) are left alone.
+// ROTK Xbox: its settings are its own settings.toml, as in the other Xbox ports (Athelas 1.5.1 on). Up to 1.5 the
+// launcher kept one Return of the King page for the PC and Xbox versions and the port read ROTK Fix's ROTKFix.ini
+// (the PC game's) over its settings.toml; to keep a player's choices, --import-ini <ROTKFix.ini> reads that file's
+// keys once into settings.toml and exits (the launcher runs it the first time it shows the Xbox page). Keys the Xbox
+// version has no use for (Renderer, DxvkFolder, HideRealControllers, HideMousePointer, LogInput, [Gamepad] Enabled,
+// SkipOpeningLogos) are left alone. ROTK_INI=<file> on the headless harness reads one at each start.
+//
+// The PC game's ROTKFix.ini is still looked for at each start (g_ini_file): Sharper text reads the PC version's
+// fonts and pictures from the Data folder beside it.
 #include <algorithm>
 #include <cstdio>
 #include <cctype>
@@ -41,7 +46,7 @@ extern bool g_eowyn;                            // rotk_eowyn.cpp
 extern uint32_t g_subtitles;                    // rotk_lang.cpp
 extern bool g_cheat_invulnerable, g_cheat_missiles, g_cheat_devastating, g_cheat_perfect;  // rotk_cheats.cpp
 extern uint32_t g_damage_percent, g_enemy_damage_percent;  // rotk_secrets.cpp
-void LoadControls(const std::string* (*get)(void*, const char*, const char*), void* ctx);
+void ImportControls(const std::string* (*get)(void*, const char*, const char*), void* ctx);
 void InitFrameRate();
 void InitCamera();
 void InitPrompts();
@@ -82,14 +87,25 @@ bool ReadIni(const std::filesystem::path& file, Ini& ini) {
     return true;
 }
 
-std::filesystem::path IniArgument() {
+// the value after a command line option ("--ini"), or empty
+std::filesystem::path Argument(const wchar_t* name) {
+    std::filesystem::path p;
 #ifdef _WIN32
     int n = 0;
     wchar_t** v = CommandLineToArgvW(GetCommandLineW(), &n);
-    std::filesystem::path p;
     for (int i = 1; v && i + 1 < n; i++)
-        if (std::wstring(v[i]) == L"--ini") p = v[i + 1];
+        if (std::wstring(v[i]) == name) p = v[i + 1];
     if (v) LocalFree(v);
+#else
+    (void)name;
+#endif
+    return p;
+}
+
+// the PC game's ROTKFix.ini, for its Data folder: --ini (an older launcher), else that of the PC game Athelas knows
+std::filesystem::path PcIni() {
+#ifdef _WIN32
+    std::filesystem::path p = Argument(L"--ini");
     if (!p.empty()) return p;
     // started on its own from Athelas's ROTK-Xbox folder: the ROTKFix.ini Athelas would pass, that of the PC game it
     // knows (Athelas.ini's Game = rotk-pc|<folder>), else the one beside Athelas
@@ -164,15 +180,13 @@ constexpr const char* kKeyboardKeys[keys::kCount] = {
     "Pause", "Back", "Special", "RightStick",
     "MenuUp", "MenuDown", "MenuLeft", "MenuRight"};
 
-void ApplyIni() {
-    std::filesystem::path file = IniArgument();
-    if (file.empty()) return;
+// ROTKFix.ini's values over the settings; false when it can't be read
+bool ApplyIni(const std::filesystem::path& file) {
     Ini ini;
     if (!ReadIni(file, ini)) {
-        LOGR("rotk: settings file %s not found, using settings.toml", file.string().c_str());
-        return;
+        LOGR("rotk: settings file %s not found", file.string().c_str());
+        return false;
     }
-    g_ini_file = file;
     app::Settings& s = app::Get();
     Reader r{ini};
     // [Graphics]
@@ -233,7 +247,7 @@ void ApplyIni() {
         r.applied++;
     }
     // [Gamepad] Enabled is the PC's DirectInput gamepad layer; the Xbox version always reads the controller
-    LoadControls([](void* c, const char* section, const char* key) { return static_cast<Reader*>(c)->Get(section, key); }, &r);
+    ImportControls([](void* c, const char* section, const char* key) { return static_cast<Reader*>(c)->Get(section, key); }, &r);
     // [Gameplay]: damage the player takes and enemies take, in percent of the game's (The Two Towers' damage_taken and
     // enemy_damage), and every level and character open (the game's own developer switch)
     r.Int("Gameplay", "DamageTaken", g_damage_percent, 10, 500);
@@ -276,11 +290,7 @@ void ApplyIni() {
     r.Bool("Textures", "Dump", s.texture_dump);
     r.Bool("Textures", "Replace", s.texture_replace);
     LOGR("rotk: %d settings from %s (ROTK Fix's file)", r.applied, file.string().c_str());
-    // settings.toml beside the port says so at its top, for anyone who opens it looking for them (issue #4)
-    app::SetSettingsNote("# ROTK Xbox shares its settings with ROTK on PC. They are kept in:\n#   " + file.string() +
-                         "\n# Change them in Athelas (or the game's own menu): that file replaces what this one holds "
-                         "each time\n# the game starts.\n\n");
-    app::Save();
+    return true;
 }
 }  // namespace
 
@@ -299,66 +309,25 @@ void SettingChanged(const cfg::Desc& d) {
     if (k == "graphics.draw_distance") gpu::g_fog_scale = float(g_draw_percent) / 100.0f;
 }
 
-// GameInfo::save_settings: the in-game menu closed after a change. Its settings go into ROTKFix.ini (the file the
-// launcher and ROTK on PC read) under ROTK Fix's names; without --ini, into settings.toml.
-void SaveIni() {
-    if (g_ini_file.empty()) {
-        app::Save();
-        return;
-    }
-#ifdef _WIN32
-    const app::Settings& s = app::Get();
-    std::string file = g_ini_file.string();
-    auto put = [&](const char* section, const char* key, const std::string& v) {
-        WritePrivateProfileStringA(section, key, v.c_str(), file.c_str());
-    };
-    auto num = [](double v, int places) {
-        char b[32];
-        std::snprintf(b, sizeof b, "%.*f", places, v);
-        return std::string(b);
-    };
-    auto i = [](uint32_t v) { return std::to_string(v); };
-    put("Frame", "ShowFPS", i(s.show_fps));
-    put("Graphics", "VSync", i(s.vsync));
-    put("Graphics", "RenderScale", i(s.render_percent));
-    put("Graphics", "MSAA", i(s.msaa));
-    put("Graphics", "AnisotropicFiltering", i(s.aniso));
-    put("Graphics", "TextureLODBias", num(s.lod_bias, 2));
-    put("Graphics", "Sharpening", i(s.sharpening));
-    put("Graphics", "SmoothMenus", i(s.smooth_2d));
-    static const char* const kLooks[] = {"original", "film", "vivid", "dark"};
-    put("Graphics", "ColourLook", kLooks[std::min(s.colour_look, 3u)]);
-    put("Graphics", "ColourLookStrength", i(s.look_strength));
-    put("Graphics", "Brightness", num(s.brightness, 2));
-    put("Graphics", "FieldOfView", i(g_fov_percent));
-    put("Graphics", "DrawDistance", i(g_draw_percent));
-    put("Graphics", "HUDEdges", i(g_hud_edges));
-    put("System", "OneCore", i(s.one_core));
-    static const char* const kMovie[] = {"auto", "stretch", "4:3"};
-    put("Video", "MovieDisplay", kMovie[std::min(s.movie_display, 2u)]);
-    put("Video", "SharperMovies", i(s.movie_sharpening));
-    put("Video", "CutsceneAudioDelay", i(s.movie_delay));
-    put("Gamepad", "Vibration", i(s.vibration));
-    put("Gamepad", "StickDeadzone", i(s.stick_deadzone));
-    put("Gamepad", "TriggerThreshold", i(s.trigger_threshold));
-    put("Window", "PauseInBackground", i(s.pause_unfocused));
-    put("Window", "MuteInBackground", i(s.mute_unfocused));
-    put("Window", "BackgroundController", i(s.background_input));
-    put("Keyboard", "Enabled", i(s.keyboard));
-    put("Keyboard", "MouseAim", i(s.mouse_aim));
-    put("Keyboard", "MouseSensitivity", i(s.mouse_sensitivity));
-    put("Keyboard", "MouseInvertY", i(s.mouse_invert_y));
-    put("Keyboard", "MouseMenus", i(s.mouse_menus));
-    put("Keyboard", "Player", i(s.keyboard_player));
-    put("Achievements", "Notify", i(s.achievement_notes));
-    if (app::kGame.discord_app_id) put("Discord", "Enabled", i(s.discord));
-    LOGR("rotk: in-game menu settings written to %s", file.c_str());
-#endif
-}
-
 // GameInfo::init: after settings.toml loads, before the window and boot
 void Init() {
-    ApplyIni();
+    g_ini_file = PcIni();
+    if (!g_ini_file.empty()) LOGR("rotk: the PC game's settings file %s (for its Data folder)", g_ini_file.string().c_str());
+#ifdef _WIN32
+    // --import-ini <ROTKFix.ini>: its values into settings.toml, once, for the launcher
+    std::filesystem::path import = Argument(L"--import-ini");
+    if (!import.empty()) {
+        int code = ApplyIni(import) ? 0 : 1;
+        if (!code) {
+            app::Save();
+            LOGR("rotk: settings brought over from %s into %s", import.string().c_str(), app::SettingsFile().string().c_str());
+        }
+        std::fflush(nullptr);
+        std::exit(code);
+    }
+#else
+    if (const char* e = std::getenv("ROTK_INI")) ApplyIni(e);
+#endif
     InitFrameRate();
     InitCamera();
     InitPrompts();

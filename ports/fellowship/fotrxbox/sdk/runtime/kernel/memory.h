@@ -8,6 +8,10 @@ constexpr uint32_t kUserLow = 0x00010000;
 constexpr uint32_t kUserHigh = 0x7FFE0000;
 constexpr uint32_t kContiguousBase = 0x80000000;  // guest VA = kContiguousBase | physical
 constexpr uint32_t kPhysicalSize = 64u << 20;
+// past the console's 64 MB, physical memory the game never sees: buffers of the port's own that the game's code must
+// treat as its own memory (a texture it draws into), from AllocHostPhysical
+constexpr uint32_t kHostPhysicalSize = 16u << 20;
+constexpr uint32_t kMappedPhysical = kPhysicalSize + kHostPhysicalSize;
 constexpr uint32_t kWriteCombineBase = 0xF0000000;
 constexpr uint32_t kKernelDataBase = 0x80000000;   // first physical megabyte holds kernel variables
 constexpr uint32_t kKernelDataSize = 0x00100000;
@@ -40,6 +44,8 @@ void FreeContiguous(uint32_t va);
 uint32_t AllocationSize(uint32_t va);  // any allocator, 0 if unknown
 
 uint32_t AllocSystem(uint32_t size, uint32_t align = 16);
+// physical memory past the game's 64 MB (contiguous VA, kContiguousBase | physical); never freed; 0 when used up
+uint32_t AllocHostPhysical(uint32_t size, uint32_t align = 4096);
 void FreeSystem(uint32_t va);
 
 uint32_t AllocStack(uint32_t size);  // returns the top, guard below the bottom

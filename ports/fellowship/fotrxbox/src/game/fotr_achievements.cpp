@@ -39,6 +39,14 @@ int Index(const std::string& folder) {
 }  // namespace
 
 namespace fotr {
+// GameInfo::activity, for the Discord status as the other ports have it: the region being played ("Bree")
+std::string Activity() {
+    std::lock_guard lock(g_lock);
+    if (g_region == "river_anduin") return "The River Anduin";
+    int i = Index(g_region);
+    return i >= 0 && i < kCount ? kRegions[i].title : std::string();
+}
+
 std::vector<ach::Def> Achievements() {
     std::vector<ach::Def> v;
     for (const Region& r : kRegions) v.push_back({r.id, r.title, r.desc});

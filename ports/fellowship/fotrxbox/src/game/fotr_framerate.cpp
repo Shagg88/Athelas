@@ -13,8 +13,10 @@ uint32_t g_fps = 30;  // settings.toml [graphics] fps
 void InitLanguage();  // fotr_lang.cpp
 
 // GameInfo::init: after the settings load
+void InitText();  // fotr_text.cpp
 void Init() {
     InitLanguage();
+    InitText();
     app::Get().fps_cap = g_fps;
     LOGR("fotr: frame rate %u%s", g_fps, g_fps == 30 ? " (the console's)" : " (the console's is 30)");
 }

@@ -214,6 +214,12 @@ void Shutdown(int code) {
     TidyHardDisk();
     LOGR("Exit (%d)", code);
     logx::Flush();
+#ifdef _WIN32
+    // DLSS: NVIDIA's Streamline (and the newer copy its driver downloads) crashes in its own clean-up at exit, reading
+    // a device the game's threads no longer hold (0xC0000005 in sl.common on the PC, 1.5.1, after "Exit (0)"): with it
+    // loaded the process ends without the DLLs' clean-up. Nothing is lost: the log is flushed, the saves are written.
+    if (GetModuleHandleW(L"sl.interposer.dll")) TerminateProcess(GetCurrentProcess(), UINT(code));
+#endif
     std::_Exit(code);
 }
 

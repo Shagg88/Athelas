@@ -71,6 +71,7 @@ void Subtitle(const std::string& utf8, double seconds) {
 }
 void ClearSubtitle() {}
 void DrawSubtitles(float) {}
+void MovieSubtitles(const std::string& name) { LOGI("subtitles: movie %s starts", name.c_str()); }
 }  // namespace app
 
 namespace ach {

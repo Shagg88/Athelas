@@ -653,16 +653,14 @@ struct App {
     bool ttLooked = false;             // looked for the port program and asked it for its settings
     PortSettingsFile ttFile;
     bool ttLoaded = false;
-    // The Fellowship of the Ring (Xbox) port: the same kind of port and page as The Two Towers' (a settings.toml of
-    // its own). The page works on the tt fields above; the port not shown waits in these (tp_use swaps them).
-    int ttWho = 0;                     // whose port the tt fields hold: 0 The Two Towers, 1 The Fellowship of the Ring
-    Port ttOther;
-    bool ttOtherLooked = false;
-    PortSettingsFile ttOtherFile;
-    bool ttOtherLoaded = false;
-    // The Return of the King (Xbox) port: same settings page as the PC version (ROTKFix.ini)
-    Port rx;
-    bool rxLooked = false;
+    // The Fellowship of the Ring and The Return of the King (Xbox) ports: the same kind of port and page as The Two
+    // Towers' (a settings.toml of its own). The page works on the tt fields above; the ports not shown wait in these,
+    // by k_tomlPorts' order (tp_use moves them in and out).
+    int ttWho = 0;                     // whose port the tt fields hold: 0 The Two Towers, 1 Fellowship, 2 Return of the King
+    Port ttPark[3];
+    bool ttParkLooked[3] = {};
+    PortSettingsFile ttParkFile[3];
+    bool ttParkLoaded[3] = {};
     bool firstRunPreset = false;       // no ROTKFix.ini yet: the preset may still follow the graphics card
     HANDLE running = NULL;             // a port that is playing; the launcher waits, hidden
     std::string runningLog, runningGame;
@@ -1751,9 +1749,7 @@ static void games_section(App &a)
     if (ImGui::Button("Show new pictures")) a.bg.group = -1;   // list again on the next frame
 }
 
-static void rx_about(App &a);
 static void report_section(App &a);
-static std::string rx_log_path();
 // ---- Gameplay: both ROTK versions read [Gameplay] (ROTK Fix on PC, the port on Xbox)
 // ---------------------------------------------------------------------------
 // Achievements, as each game keeps them in its achievements.txt ([unlocked] id = date, [counters], [list] id =
@@ -2016,7 +2012,6 @@ static void update_section(App &a)
 
 static void tab_about(App &a)
 {
-    if (g_xboxPage) { rx_about(a); report_section(a); update_section(a); return; }
     games_section(a);
     section("Setup");
     const GameInfo &g = a.game;
@@ -2222,24 +2217,33 @@ struct TomlPortId {
     const char *game;                  // "The Two Towers"
     const char *original;              // the Original preset's description
 };
-static const TomlPortId k_tomlPorts[2] = {
+static const int k_tomlPortCount = 3;
+static const TomlPortId k_tomlPorts[k_tomlPortCount] = {
     { GK_TT_XBOX, DIR_TT_XBOX, "TwoTowers", "TwoTowers.exe", "TwoTowers", "tt.log", "The Two Towers",
       "as it looked on the Xbox in 2003: 4:3, 30 fps, no anti-aliasing, filtering or sharpening." },
     { GK_FOTR_XBOX, DIR_FOTR_XBOX, nullptr, "FOTRXbox.exe", "FOTRXbox", "fotrx.log", "The Fellowship of the Ring",
       "as it looked on the Xbox in 2002: 4:3, 30 fps, no anti-aliasing, filtering or sharpening." },
+    // its own page since Athelas 1.5.1 (it shared the PC version's ROTKFix.ini before: rx_import brings that over)
+    { GK_ROTK_XBOX, DIR_ROTK_XBOX, "ROTKXbox", "ROTKXbox.exe", "ROTKXbox", "rotkx.log", "The Return of the King",
+      "as it looked on the Xbox in 2003: 4:3, 30 fps, no anti-aliasing, filtering or sharpening." },
 };
 static int g_ttWho = 0;                // App::ttWho, for the functions without the App
 static const TomlPortId &tp() { return k_tomlPorts[g_ttWho]; }
-static int tp_of(GameKind k) { return k == GK_FOTR_XBOX ? 1 : 0; }
-static bool tp_kind(GameKind k) { return k == GK_TT_XBOX || k == GK_FOTR_XBOX; }
-// The tt fields hold this port's state from here on
+static int tp_of(GameKind k) { return k == GK_FOTR_XBOX ? 1 : k == GK_ROTK_XBOX ? 2 : 0; }
+static bool tp_kind(GameKind k) { return k == GK_TT_XBOX || k == GK_FOTR_XBOX || k == GK_ROTK_XBOX; }
+// The tt fields hold this port's state from here on: the one there is parked in its place, this one taken out of its
 static void tp_use(App &a, int who)
 {
     if (a.ttWho == who) return;
-    std::swap(a.tt, a.ttOther);
-    std::swap(a.ttLooked, a.ttOtherLooked);
-    std::swap(a.ttFile, a.ttOtherFile);
-    std::swap(a.ttLoaded, a.ttOtherLoaded);
+    int was = a.ttWho;
+    std::swap(a.tt, a.ttPark[was]);
+    std::swap(a.ttLooked, a.ttParkLooked[was]);
+    std::swap(a.ttFile, a.ttParkFile[was]);
+    std::swap(a.ttLoaded, a.ttParkLoaded[was]);
+    std::swap(a.tt, a.ttPark[who]);
+    std::swap(a.ttLooked, a.ttParkLooked[who]);
+    std::swap(a.ttFile, a.ttParkFile[who]);
+    std::swap(a.ttLoaded, a.ttParkLoaded[who]);
     a.ttWho = g_ttWho = who;
 }
 static std::string tt_data_dir() { return port_data_dir(tp().dir, tp().oldDir); }
@@ -2292,6 +2296,23 @@ static std::string arm64_twin(const std::string &exe)
     return file_there(t) ? t : exe;
 }
 
+// The Return of the King on Xbox read the PC version's ROTKFix.ini up to Athelas 1.5. The first time its own page
+// looks for the port, the port brings that file's values (and button layout) into its settings.toml and exits;
+// [Xbox] ROTKSettingsImported in Athelas.ini says it's done. No PC game, or no ROTKFix.ini: nothing to bring.
+static void rx_import(App &a)
+{
+    if (tp().kind != GK_ROTK_XBOX || a.tt.exe.empty()) return;
+    if (GetPrivateProfileIntA("Xbox", "ROTKSettingsImported", 0, ports_ini().c_str())) return;
+    std::string ini = a.dir.empty() ? std::string() : a.dir + "\\ROTKFix.ini";
+    if (!ini.empty() && file_there(ini)) {
+        SHCreateDirectoryExA(NULL, tt_data_dir().c_str(), NULL);
+        std::string out, args = "--import-ini \"" + ini + "\" --config \"" + tt_settings_path() + "\" --log \"" +
+                                tt_data_dir() + "\\rotkx-import.log\" --no-dialogs";
+        if (run_capture(a.tt.exe, args, out, 30000) != 0) return;   // tried again the next time
+    }
+    WritePrivateProfileStringA("Xbox", "ROTKSettingsImported", "1", ports_ini().c_str());
+}
+
 static void tt_find(App &a)
 {
     a.ttLooked = true;
@@ -2303,6 +2324,7 @@ static void tt_find(App &a)
     for (int i = 0; i < 3; i++)
         if (!cand[i].empty() && file_there(cand[i])) { a.tt.exe = i ? arm64_twin(cand[i]) : cand[i]; break; }
     if (a.tt.exe.empty()) return;
+    rx_import(a);
     port_query(a.tt);
     // movies "fit" (the film filling the width) for a new settings file, as ROTK's MovieDisplay = auto; the port's
     // own default is the console's 4:3
@@ -2383,6 +2405,8 @@ static void tt_play(App &a, const LibGame &g)
     std::string args = "--game \"" + g.path + "\" --config \"" + tt_settings_path() + "\" --textures \"" + tex +
                        "\" --log \"" + tt_log_path() + "\" --saves \"" + saves + "\" --shader-cache \"" + tt_data_dir() +
                        "\\shadercache\" --screenshots \"" + shots + "\" --no-dialogs";
+    // The Return of the King: the PC version's folder, whose Data its Sharper text reads (beside its ROTKFix.ini)
+    if (tp().kind == GK_ROTK_XBOX && !a.dir.empty()) args += " --ini \"" + a.dir + "\\ROTKFix.ini\"";
     std::string err;
     HANDLE h = port_start(a.tt.exe, args, err);
     if (!h) { set_message(a, err, true); return; }
@@ -2440,24 +2464,23 @@ static std::string report_versions(const App &a)
     std::string arch = exe_machine(exe_dir() + "\\Athelas.exe");
     std::string pcfix = a.game.hasDll ? fix_dll_version(a.dir + "\\ROTKFix.dll") : "";
     if (!pcfix.empty()) s += ", ROTK Fix " + pcfix;
-    for (int who = 0; who < 2; who++) {   // the TOML ports: the one in the tt fields, and the other
-        const Port &p = who == a.ttWho ? a.tt : a.ttOther;
+    for (int who = 0; who < k_tomlPortCount; who++) {   // the TOML ports: the one in the tt fields, and the others
+        const Port &p = who == a.ttWho ? a.tt : a.ttPark[who];
         if (p.exe.empty()) continue;
         std::string m = exe_machine(p.exe), name = k_tomlPorts[who].exe;
         s += ", " + (p.version.empty() ? name.substr(0, name.size() - 4) : p.version) + (m.empty() ? "" : " " + m);
     }
-    if (!a.rx.exe.empty()) { std::string m = exe_machine(a.rx.exe); s += ", " + (a.rx.version.empty() ? "ROTKXbox" : a.rx.version) + (m.empty() ? "" : " " + m); }
     return s;
 }
 
-static void rx_find(App &a);
 static bool make_report(App &a, std::string title)
 {
     g_reportErr.clear();
-    // the ports' versions, when their pages haven't been shown yet
+    // the ports' versions, when their pages haven't been shown yet (the one shown last, so it stays in the tt fields)
     int shown = a.ttWho;
-    for (int who : { 1 - shown, shown }) { tp_use(a, who); if (!a.ttLooked) tt_find(a); }
-    if (!a.rxLooked) rx_find(a);
+    for (int who = 0; who < k_tomlPortCount; who++) if (who != shown) { tp_use(a, who); if (!a.ttLooked) tt_find(a); }
+    tp_use(a, shown);
+    if (!a.ttLooked) tt_find(a);
     std::vector<ReportFile> files;
     files.push_back({ "Athelas.ini", ports_ini() });
     if (!a.dir.empty()) {
@@ -2466,7 +2489,7 @@ static bool make_report(App &a, std::string title)
         if (!a.game.rotkIniPath.empty()) files.push_back({ "ROTK-PC/ROTK.ini", a.game.rotkIniPath });
     }
     std::vector<std::pair<std::string, std::string>> dirs;   // each port's folder: name in the zip, where
-    for (int who : { 0, 1 }) {
+    for (int who = 0; who < k_tomlPortCount; who++) {
         g_ttWho = who;   // tt_ paths only (the fields stay as they are)
         std::string d = tp().dir;
         files.push_back({ d + "/" + tp().log, tt_log_path() });
@@ -2474,9 +2497,6 @@ static bool make_report(App &a, std::string title)
         dirs.push_back({ d, tt_data_dir() });
     }
     g_ttWho = a.ttWho;
-    files.push_back({ "ROTK-Xbox/rotkx.log", rx_log_path() });
-    files.push_back({ "ROTK-Xbox/settings.toml", rx_data_dir() + "\\settings.toml" });
-    dirs.push_back({ "ROTK-Xbox", rx_data_dir() });
     // the newest crash dump of each port, when it is from the last two weeks (an old one is another problem)
     for (auto &d : dirs) {
         std::string dmp = report_newest_dump(d.second + "\\CrashDumps", 14);
@@ -2639,7 +2659,7 @@ static void port_finished(App &a, DWORD code)
     set_message(a, m, true);
     // a crash or a failed start (not a setting or a game file the player can put right from the message)
     if (code == 1 || code == 6 || code > 0xFF) {
-        const Port &p = a.runningExe == a.tt.exe ? a.tt : a.rx;
+        const Port &p = a.tt;   // the port that ran (the launcher was hidden meanwhile, the page unchanged)
         std::string arch = exe_machine(a.runningExe);
         char c[16]; snprintf(c, sizeof c, "0x%08lX", (unsigned long)code);
         std::string title = a.runningGame + ": " + (code == 1 ? "doesn't start" : code == 6 ? "graphics driver stopped"
@@ -2909,10 +2929,16 @@ static bool tt_hidden(const PortSetting &ps)
     if (ps.section == "system" && ps.key == "one_core") return !native_arm64();   // shown on Windows on ARM PCs only
     return (ps.section == "display" && ps.key == "fps_cap") || ps.section == "window" || ps.section == "keyboard" ||
            (ps.section == "discord" && ps.key == "app_id") ||
-           ps.section == "network";   // system link: The Two Towers has none (no network library in the game), so it does nothing
+           (ps.section == "network" && tp().kind != GK_ROTK_XBOX);   // system link co-op: The Return of the King's only
+                                                                     // (the others have no network play, so it does nothing)
 }
 // The tab a setting is shown on: its section's, except the frame rate, which is on Display as in ROTK's
-static int tt_tab_of_setting(const PortSetting &ps) { return ps.section == "graphics" && ps.key == "fps" ? 0 : tt_tab_of(ps.section); }
+// (and the hints' button pictures, which are on Controls)
+static int tt_tab_of_setting(const PortSetting &ps)
+{
+    if (ps.section == "graphics" && ps.key == "button_pictures") return 2;
+    return ps.section == "graphics" && ps.key == "fps" ? 0 : tt_tab_of(ps.section);
+}
 
 
 // ---- The Two Towers' Display tab, laid out exactly like ROTK's (tab_display):
@@ -3216,6 +3242,13 @@ static void tt_tab_graphics(App &a)
             ImGui::EndCombo();
         }
         row_end();
+        // smooth leaf edges: alpha to coverage, which only works with anti-aliasing on
+        if (const PortSetting *pe = tt_setting(a, "graphics", "alpha_edges")) {
+            mark("graphics", "alpha_edges");
+            ImGui::BeginDisabled(cur == "0");
+            tt_setting_row(a, *pe);
+            ImGui::EndDisabled();
+        }
         break;
     }
     if (const PortSetting *ps = tt_setting(a, "graphics", "anisotropic_filtering")) {
@@ -3255,6 +3288,10 @@ static void tt_tab_graphics(App &a)
                   ps->help.empty() ? "Smooths menus, text and the HUD when they are drawn larger than the console's screen." : ps->help.c_str());
         if (ImGui::Checkbox("##ttsmooth2d", &v)) a.ttFile.set(ps->section, ps->key, v ? "true" : "false");
         row_end();
+    }
+    if (const PortSetting *ps = tt_setting(a, "graphics", "sharp_text")) {   // The Return of the King's
+        mark("graphics", "sharp_text");
+        tt_setting_row(a, *ps);
     }
     if (const PortSetting *ps = tt_setting(a, "graphics", "console_textures")) {
         mark("graphics", "console_textures");
@@ -3309,7 +3346,9 @@ static void tt_tab_graphics(App &a)
     }
 
     const PortSetting *pws = tt_setting(a, "graphics", "widescreen");
-    if (pws || tt_has(a, "graphics", "fov") || tt_has(a, "graphics", "hud_edges")) section("View");
+    if (pws || tt_has(a, "graphics", "fov") || tt_has(a, "graphics", "hud_edges") || tt_has(a, "graphics", "draw_distance") ||
+        tt_has(a, "graphics", "safe_area"))
+        section("View");
     bool ws = pws ? tt_val(a, *pws) == "true" : false;
     if (pws) {
         mark("graphics", "widescreen");
@@ -3335,6 +3374,18 @@ static void tt_tab_graphics(App &a)
         if (ImGui::SliderInt("##ttfov", &v, (int)ps->min, (int)ps->max, v == 100 ? "100%%  (game's own)" : "%d%%"))
             a.ttFile.set(ps->section, ps->key, std::to_string(v));
         row_end();
+    }
+    if (const PortSetting *ps = tt_setting(a, "graphics", "draw_distance")) {   // The Return of the King's
+        mark("graphics", "draw_distance");
+        int v = atoi(tt_val(a, *ps).c_str());
+        row_begin(ps->label.c_str(), ps->help.c_str());
+        if (ImGui::SliderInt("##ttdraw", &v, (int)ps->min, (int)ps->max, v == 100 ? "100%%  (game's own)" : "%d%%"))
+            a.ttFile.set(ps->section, ps->key, std::to_string(v));
+        row_end();
+    }
+    if (const PortSetting *ps = tt_setting(a, "graphics", "safe_area")) {
+        mark("graphics", "safe_area");
+        tt_setting_row(a, *ps);
     }
 
     const PortSetting *prep = tt_setting(a, "textures", "replace"), *pdump = tt_setting(a, "textures", "dump");
@@ -3370,7 +3421,7 @@ static void tt_tab_graphics(App &a)
         const PortSetting *pmd = tt_setting(a, "graphics", "movie_display"), *pms = tt_setting(a, "graphics", "movie_sharpening"),
                           *psa = tt_setting(a, "graphics", "skip_all_videos"), *psl = tt_setting(a, "graphics", "skip_logos"),
                           *pad = tt_setting(a, "graphics", "cutscene_audio_delay");
-        if (pmd || pms || psa || psl || pad) section("Movies");
+        if (pmd || pms || psa || psl || pad || tt_has(a, "graphics", "movie_subtitles")) section("Movies");
         if (pmd && pmd->type == "choice") {
             mark("graphics", "movie_display");
             std::string cur = toml_unquote(tt_val(a, *pmd));
@@ -3402,6 +3453,17 @@ static void tt_tab_graphics(App &a)
             bool v = tt_val(a, *psl) == "true";
             row_begin("Skip opening logos", psl->help.c_str());
             if (ImGui::Checkbox("##ttlogos", &v)) a.ttFile.set(psl->section, psl->key, v ? "true" : "false");
+            row_end();
+        }
+        if (const PortSetting *psub = tt_setting(a, "graphics", "movie_subtitles")) {
+            mark("graphics", "movie_subtitles");
+            tt_setting_row(a, *psub);
+            row_begin("Subtitles folder", "Where the subtitle files go: one .srt file per movie, named as the movie.");
+            if (ImGui::Button("Open folder##ttsubs")) {
+                std::string d = a.tt.exe.substr(0, a.tt.exe.find_last_of('\\')) + "\\subtitles";
+                SHCreateDirectoryExA(NULL, d.c_str(), NULL);
+                ShellExecuteA(NULL, "open", d.c_str(), NULL, NULL, SW_SHOWNORMAL);
+            }
             row_end();
         }
         if (pad) {
@@ -3872,117 +3934,9 @@ static std::string tt_summary(const App &a)
     return s;
 }
 
-// ---------------------------------------------------------------------------
-// The Return of the King (Xbox), played through its PC port, ROTKXbox.exe. It reads
-// ROTK Fix's own ROTKFix.ini, so it shares the PC version's settings page.
-// The port is where the player pointed to it (ROTKFix\ports.ini, [Ports] ROTKXbox=), or
-// else next to the launcher (ROTKXbox\ROTKXbox.exe). Its log, saves and its own
-// texture packs (Xbox textures differ from the PC ones) live in ROTKFix\ROTKXbox.
-
+// The Return of the King (Xbox) data folder (ROTK-Xbox beside Athelas; ROTKXbox in earlier test builds), for the PC
+// page's Xbox-only parts (g_xboxPage, no longer set: the Xbox version has its own page, the tt_ functions')
 static std::string rx_data_dir() { return port_data_dir(DIR_ROTK_XBOX, "ROTKXbox"); }
-static std::string rx_log_path() { return rx_data_dir() + "\\rotkx.log"; }
-
-static void rx_find(App &a)
-{
-    a.rxLooked = true;
-    a.rx = Port();
-    // [Ports] first (a program the player chose, e.g. a development build), then the ROTK-Xbox
-    // folder next to the launcher (the release copy; ROTKXbox in earlier test builds)
-    std::string cand[3] = { port_override("ROTKXbox"), exe_dir() + "\\" DIR_ROTK_XBOX "\\ROTKXbox.exe",
-                            exe_dir() + "\\ROTKXbox\\ROTKXbox.exe" };
-    for (int i = 0; i < 3; i++)
-        if (!cand[i].empty() && file_there(cand[i])) { a.rx.exe = i ? arm64_twin(cand[i]) : cand[i]; break; }
-    if (a.rx.exe.empty()) return;
-    std::string out;
-    if (run_capture(a.rx.exe, "--version", out, 15000) == 0) {
-        while (!out.empty() && (out.back() == '\n' || out.back() == '\r' || out.back() == ' ')) out.pop_back();
-        a.rx.version = out;
-    }
-}
-static bool rx_ready(const App &a) { return !a.rx.exe.empty(); }
-
-static void rx_play(App &a, const LibGame &g)
-{
-    std::string d = rx_data_dir();
-    SHCreateDirectoryExA(NULL, (d + "\\textures\\replace").c_str(), NULL);
-    SHCreateDirectoryExA(NULL, (d + "\\saves").c_str(), NULL);
-    std::string args = "--game \"" + g.path + "\" --ini \"" + a.dir + "\\ROTKFix.ini\" --log \"" + rx_log_path() +
-                       "\" --saves \"" + d + "\\saves\" --screenshots \"" + exe_dir() + "\\Screenshots\" --textures \"" + d +
-                       "\\textures\" --config \"" + d + "\\settings.toml\" --shader-cache \"" + d + "\\shadercache\" --no-dialogs";
-    std::string err;
-    HANDLE h = port_start(a.rx.exe, args, err);
-    if (!h) { set_message(a, err, true); return; }
-    a.running = h;
-    a.runningExe = a.rx.exe; a.runningArgs = args;
-    a.runningLog = rx_log_path();
-    a.runningGame = "The Return of the King";
-    SDL_HideWindow(a.win);
-}
-
-static void rx_locate_button(App &a)
-{
-    if (ImGui::Button("Locate ROTKXbox.exe...")) {
-        std::string f;
-        if (pick_file(f, L"Choose ROTKXbox.exe", L"The Return of the King Xbox port (ROTKXbox.exe)", L"ROTKXbox.exe")) {
-            SHCreateDirectoryExA(NULL, (exe_dir() + "\\ROTKFix").c_str(), NULL);
-            WritePrivateProfileStringA("Ports", "ROTKXbox", f.c_str(), ports_ini().c_str());
-            rx_find(a);
-        }
-    }
-}
-
-// About tab on the Xbox version's page
-static void rx_about(App &a)
-{
-    const LibGame &g = a.lib[a.cur];
-    section("The Return of the King  -  Xbox");
-    row_begin("Location", nullptr);
-    ImGui::PushTextWrapPos(0); ImGui::TextUnformatted(g.path.c_str()); ImGui::PopTextWrapPos();
-    row_end();
-    row_begin("Version", nullptr);
-    ImGui::Text("Xbox, %s copy, %s", game_region_name(g), g.iso ? "disc image" : "extracted files");
-    if (g.titleId) { ImGui::SameLine(); ImGui::TextColored(C_DIM, "(title ID %08X)", (unsigned)g.titleId); }
-    row_end();
-    // where the settings are: one file for both versions of ROTK, not the ROTK-Xbox folder's settings.toml (issue #4)
-    section("Settings");
-    {
-        std::string ini = a.dir + "\\ROTKFix.ini";
-        row_begin("Settings file", a.game.exeFound
-            ? "The PC and Xbox versions of The Return of the King share this one file: what you set here applies to "
-              "both. The settings.toml in the ROTK-Xbox folder only holds defaults that this file replaces when the "
-              "game starts."
-            : "The Xbox version keeps its settings in this file, the one ROTK on PC would share. The settings.toml "
-              "in the ROTK-Xbox folder only holds defaults that this file replaces when the game starts.");
-        ImGui::PushTextWrapPos(0); ImGui::TextUnformatted(ini.c_str()); ImGui::PopTextWrapPos();
-        if (GetFileAttributesA(ini.c_str()) != INVALID_FILE_ATTRIBUTES && ImGui::Button("Show in folder##rxini"))
-            ShellExecuteA(NULL, "open", "explorer.exe", ("/select,\"" + ini + "\"").c_str(), NULL, SW_SHOWNORMAL);
-        row_end();
-    }
-    section("Port");
-    ImGui::PushTextWrapPos(0);
-    if (rx_ready(a)) {
-        ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
-        std::string arch = exe_machine(a.rx.exe);
-        ImGui::TextColored(C_DIM, "%s%s  -  %s", a.rx.version.empty() ? "ROTKXbox" : a.rx.version.c_str(),
-                           arch.empty() ? "" : (" (" + arch + " build)").c_str(), a.rx.exe.c_str());
-        ImGui::TextColored(C_DIM, "Log, saves and Xbox texture packs: %s", rx_data_dir().c_str());
-        ImGui::PopFont();
-        ImGui::PopTextWrapPos();
-        if (ImGui::Button("Open folder##rx")) {
-            SHCreateDirectoryExA(NULL, (rx_data_dir() + "\\textures\\replace").c_str(), NULL);
-            ShellExecuteA(NULL, "open", rx_data_dir().c_str(), NULL, NULL, SW_SHOWNORMAL);
-        }
-        ImGui::SameLine();
-        rx_locate_button(a);
-    } else {
-        ImGui::TextColored(C_WARN, "The Return of the King Xbox port (ROTKXbox.exe) wasn't found.");
-        ImGui::TextUnformatted("It is normally in the ROTK-Xbox folder next to Athelas.exe. If you have it somewhere else, show the launcher where.");
-        ImGui::PopTextWrapPos();
-        rx_locate_button(a);
-    }
-    games_section(a);
-}
-
 
 // Shown for a game other than this folder's PC game
 static void draw_other_game(App &a)
@@ -4250,16 +4204,14 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
         if (fix_installed(a.other)) use_pc_game(a, a.lib[a.cur].path);
     }
     const bool own = own_game(a);
-    // The Two Towers or The Fellowship of the Ring shown, and its port ready: Play and Save work for it
+    // an Xbox game shown (The Two Towers, The Fellowship of the Ring, The Return of the King), and its port ready: Play
+    // and Save work for it
     if (!own && tp_kind(a.lib[a.cur].kind)) {
         tp_use(a, tp_of(a.lib[a.cur].kind));
         if (!a.ttLooked) tt_find(a);
     }
     const bool ttShown = !own && tp_kind(a.lib[a.cur].kind) && game_region_supported(a.lib[a.cur]) && a.ttLooked && tt_ready(a);
-    // The Return of the King on Xbox: the same settings page as the PC version
-    const bool rxShown = !own && a.lib[a.cur].kind == GK_ROTK_XBOX && game_region_supported(a.lib[a.cur]);
-    if (rxShown && !a.rxLooked) rx_find(a);
-    g_xboxPage = rxShown;
+    g_xboxPage = false;   // The Return of the King on Xbox had the PC version's page up to 1.5; it has its own now
 
     // status (top right, one per line)
     struct St { bool ok, warn; std::string label, tip; };
@@ -4280,18 +4232,10 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     if (!own) {   // another game is shown: just say what it is
         st.clear();
         const LibGame &lg = a.lib[a.cur];
-        if (rxShown) {
-            bool r = rx_ready(a);
-            st.push_back({ r, true, r ? "Ready" : "Port not found", r ? a.rx.exe : "ROTKXbox.exe wasn't found - see the About tab." });
-            if (a.s.padEnabled)
-                st.push_back({ a.controllers > 0, true, a.controllers > 1 ? std::to_string(a.controllers) + " controllers" : a.controllers ? "Controller" : "No controller",
-                               a.controllers ? a.controller : "Connect a controller - it will be picked up automatically." });
-        } else {
         bool tt = tp_kind(lg.kind);
         if (tt && !a.ttLooked) tt_find(a);
         bool ready = game_region_supported(lg) && (tt ? tt_ready(a) : game_kind_playable(lg.kind));
         st.push_back({ ready, true, ready ? "Ready" : !game_region_supported(lg) ? "Not supported" : tt ? "Port not found" : "Not playable yet", lg.path });
-        }
     }
     if (own && a.s.padEnabled)
         st.push_back({ a.controllers > 0 && g.hasSdl, true, a.controllers > 1 ? std::to_string(a.controllers) + " controllers" : a.controllers ? "Controller" : "No controller",
@@ -4344,13 +4288,13 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     if (ttShown) {
         if (!a.ttLoaded) tt_load_settings(a);
         tt_tabs(a, a.lib[a.cur]);
-    } else if (!own && !rxShown) {
+    } else if (!own) {
         ImGui::BeginChild("other", ImVec2(0, 0), ImGuiChildFlags_NavFlattened, ImGuiWindowFlags_NoBackground);
         draw_other_game(a);
         ImGui::Dummy(ImVec2(0, S(10)));
         games_section(a);
         ImGui::EndChild();
-    } else if (!rxShown && !g.exeFound) {
+    } else if (!g.exeFound) {
         ImGui::BeginChild("setup", ImVec2(0, 0), ImGuiChildFlags_NavFlattened, ImGuiWindowFlags_NoBackground);
         draw_setup(a);
         ImGui::EndChild();
@@ -4428,7 +4372,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
         ImGui::SetCursorPos(ImVec2(panelX + S(10), by + (playH - cardH) * 0.5f + S(5)));
         ImGui::PushTextWrapPos(panelX + cardW - S(8));
         if (own && !g.exeFound) ImGui::TextColored(C_DIM, "Add a game to begin");
-        else if (own || rxShown) ImGui::TextColored(C_DIM, "%d x %d  |  %s  |  %d fps  |  %s", w, h, dm[a.s.displayMode], fps, pn[detect_preset(a.s)]);
+        else if (own) ImGui::TextColored(C_DIM, "%d x %d  |  %s  |  %d fps  |  %s", w, h, dm[a.s.displayMode], fps, pn[detect_preset(a.s)]);
         else if (ttShown) ImGui::TextColored(C_DIM, "%s", tt_summary(a).c_str());
         else ImGui::TextColored(C_DIM, "%s  |  %s", game_kind_name(a.lib[a.cur].kind),
                                 game_kind_playable(a.lib[a.cur].kind) ? "settings in its own launcher" : "not playable yet");
@@ -4482,9 +4426,8 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     if (autoUpdate && !update_newer().empty()) { autoUpdate = false; update_install_start(update_newer()); }
     static bool autoPlay = getenv("ROTKFIX_PLAY") != nullptr;
     if (autoPlay && ttShown) { autoPlay = false; tt_play(a, a.lib[a.cur]); }
-    if (autoPlay && rxShown && rx_ready(a)) { autoPlay = false; if (save(a)) rx_play(a, a.lib[a.cur]); }
     ImGui::SetCursorPos(ImVec2(bx, by));
-    bool playOk = !(ttShown ? a.running != NULL : rxShown ? (!rx_ready(a) || a.running != NULL) : (!own || !g.exeFound || g_fixRemoved));
+    bool playOk = !(ttShown ? a.running != NULL : (!own || !g.exeFound || g_fixRemoved));
     // a controller's Start is Play, and its View / Back button Save, wherever the cursor is (not with a menu open,
     // a control being changed or a button being set)
     bool padFree = (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) && !ImGui::IsAnyItemActive() &&
@@ -4493,7 +4436,6 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     bool padSave = padFree && ImGui::IsKeyPressed(ImGuiKey_GamepadBack, false);
     if (orn_arch_button("PLAY", ImVec2(playW, playH), F_PLAY, playOk) || (padPlay && playOk)) {
         if (ttShown) tt_play(a, a.lib[a.cur]);
-        else if (rxShown) { if (save(a)) rx_play(a, a.lib[a.cur]); }
         else if (save(a)) {
             std::string err;
             // Athelas was updated since ROTK Fix was set up there: the game gets the new ROTK Fix first
@@ -4508,7 +4450,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     }
     bx -= saveW + S(12);
     ImGui::SetCursorPos(ImVec2(bx, by + (playH - btnH) * 0.5f));
-    bool saveOk = ttShown || rxShown || !(!own || !g.exeFound || g_fixRemoved);
+    bool saveOk = ttShown || !(!own || !g.exeFound || g_fixRemoved);
     if (orn_plate_button("Save", ImVec2(saveW, btnH), saveOk) || (padSave && saveOk)) {
         if (ttShown) tt_save(a); else save(a);
     }

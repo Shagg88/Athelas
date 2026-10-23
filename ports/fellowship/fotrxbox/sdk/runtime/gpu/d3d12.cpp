@@ -429,6 +429,12 @@ struct Tex {
     DXGI_FORMAT repl_fmt = DXGI_FORMAT_UNKNOWN;
     uint32_t repl_levels = 0;
     uint64_t pack_hash = 0;  // the contents' hash a texture pack names it by, 0 if it cannot be in one
+    // a game's own picture for this linear texture (g_builtin_contents), with the contents' hash it was made for:
+    // drawn again while the game uploads the same contents (ROTK's menu pictures, every frame)
+    ComPtr<ID3D12Resource> own;
+    DXGI_FORMAT own_fmt = DXGI_FORMAT_UNKNOWN;
+    uint32_t own_levels = 0;
+    uint64_t own_hash = 0;
 };
 
 // a texture pack file loaded, or a failed load remembered
@@ -1050,7 +1056,10 @@ bool D3D12Backend::CreateDevice() {
     // the next start
     if (app::Get().upscaler == up::kDlss) {
         std::string why;
-        if (up::InitStreamline(adapter_.Get(), why)) LOGR("upscaler: NVIDIA Streamline started for DLSS");
+        if (up::InitStreamline(adapter_.Get(), why)) {
+            LOGR("upscaler: NVIDIA Streamline started for DLSS");
+            if (!up::SetStreamlineDevice(dev_.Get())) LOGR("upscaler: DLSS could not use the graphics device");
+        }
         else LOGR("upscaler: DLSS is not available: %s", why.c_str());
     }
     D3D12_COMMAND_QUEUE_DESC qd{};
@@ -2636,6 +2645,8 @@ bool D3D12Backend::CreateTexture(Tex& tx, const TextureDesc& d, const FormatInfo
     g_perf.newtex++;
     PerfScope perf_create{g_perf.create};
     if (tx.res) CurrentFrame().garbage.push_back(tx.res);
+    if (tx.repl) CurrentFrame().garbage.push_back(tx.repl);
+    if (tx.own) CurrentFrame().garbage.push_back(tx.own);
     tx = Tex{};
     tx.d = d;
     tx.fmt = HostFormat(fi.host);
@@ -2729,6 +2740,7 @@ void D3D12Backend::UploadTexture(Tex& tx, const TextureDesc& d, const FormatInfo
         }
     }
     Transition(tx.res.Get(), st, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    if (tx.repl) CurrentFrame().garbage.push_back(std::move(tx.repl));  // may still be drawn by a frame in flight
     tx.repl = nullptr;
     tx.pack_hash = 0;
     if (packable) TexturePack(tx, d, p, colours, levels);
@@ -2758,12 +2770,33 @@ void D3D12Backend::TexturePack(Tex& tx, const TextureDesc& d, const uint8_t* p, 
     if (!file && !pack::g_builtin && !pack::g_builtin_contents) return;
     auto [it, fresh] = pack_cache_.try_emplace(h);
     if (fresh && file && !LoadPackTexture(*file, it->second)) LOGW("texture pack: %s is not a PNG or DDS file the renderer takes", file->string().c_str());
+    if (fresh && !file && d.linear && tx.own && tx.own_hash == h) {
+        pack_cache_.erase(it);  // the same contents as last time: the picture made then
+        tx.repl = tx.own;
+        tx.repl_fmt = tx.own_fmt;
+        tx.repl_levels = tx.own_levels;
+        return;
+    }
     if (fresh && !file) {
         pack::Image img;
         bool got = pack::g_builtin_contents &&
                    pack::g_builtin_contents({d.format, d.width, d.height, d.levels, p, TotalSize(d), colours}, img);
         if (!got && pack::g_builtin) got = pack::g_builtin(h, d.width, d.height, img);
         if (got) CreatePackTexture(img, pack::PngName(d.width, d.height, h), it->second);
+        if (got && d.linear) {
+            // a game's own picture for a linear texture (text it draws afresh, Fellowship's sharper text): kept by
+            // this texture alone, not by contents, as such textures change all the time
+            if (tx.own) CurrentFrame().garbage.push_back(std::move(tx.own));
+            tx.own = it->second.res;
+            tx.own_fmt = it->second.fmt;
+            tx.own_levels = it->second.levels;
+            tx.own_hash = h;
+            tx.repl = tx.own;
+            tx.repl_fmt = tx.own_fmt;
+            tx.repl_levels = tx.own_levels;
+            pack_cache_.erase(it);
+            return;
+        }
         if (!got && d.linear) {  // not kept: linear textures are often movie frames, each new
             pack_cache_.erase(it);
             return;
