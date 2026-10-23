@@ -184,7 +184,7 @@ void Merge(int port, input::Pad& p) {
             return std::fabs(v) < 0.02f ? 0.0f : std::max(-1.0f, std::min(1.0f, v));
         };
         g_aim_x = toward(g_aim_x, float(dx) * k);
-        g_aim_y = toward(g_aim_y, float(-dy) * k);
+        g_aim_y = toward(g_aim_y, float(s.mouse_invert_y ? dy : -dy) * k);
         ax = g_aim_x;
         ay = g_aim_y;
         if (ax != 0 || ay != 0) any = true;
@@ -200,7 +200,8 @@ void Merge(int port, input::Pad& p) {
             held[kStart] = held[kA];
             held[kA] = false;
         } else {
-            held[kStart] = app::kGame.menu_start_with_a && held[kA];
+            held[kStart] = app::kGame.menu_start_with_a && held[kA] &&
+                           (!app::kGame.start_with_a_now || app::kGame.start_with_a_now());
         }
         held[kB] = held[kB] || start;
     }

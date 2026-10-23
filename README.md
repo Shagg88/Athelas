@@ -74,6 +74,8 @@ drawn landscape instead. All game and film artwork belongs to its owners.*
 ## Requirements
 
 - Windows 10 or 11 (64-bit), or Linux / Steam Deck through Proton (The Two Towers reported working on a real Steam Deck; see README.txt).
+- Mac: through CrossOver (DirectX 12 through Apple's D3DMetal). Tested in a Wine setup like CrossOver's, not yet on a
+  real Mac: reports welcome. See README.txt's Mac section.
 - Your own US copy of each game. No game files are included.
 - **The Return of the King (PC):** a Vulkan 1.3 graphics driver is recommended. Without one, the game runs
   through Windows' Direct3D 8 with the DXVK-only options (sharpening, colour looks, texture filtering)
@@ -89,7 +91,8 @@ Played through its PC port, `TwoTowers.exe`, started from the launcher.
 - Keyboard and mouse or a controller. `F10` (or both stick clicks) opens an in-game settings menu; every setting is
   also on the launcher's page or in `settings.toml`.
 - The game's own files are only read, never changed.
-- Keys: `F10` settings menu, `\` screenshot, `F1` hide the HUD, `[` sharpening off/on, `]` next colour look.
+- Keys: `F10` settings menu, `\` screenshot, `F1` hide the HUD, `[` sharpening off/on, `]` next colour look,
+  `F8` texture packs off/on, `F7` a pair of screenshots with and without texture packs.
 - Problem reports: the log (`TT-Xbox\tt.log` next to the launcher), plus the newest `.dmp` in
   `TT-Xbox\CrashDumps` after a crash.
 

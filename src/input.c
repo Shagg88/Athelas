@@ -153,7 +153,11 @@ static int sdl_ready(void)
     char p[MAX_PATH];
     path_in_dir(p, "SDL3.dll");
     g_sdl = LoadLibraryA(p);
-    if (!g_sdl) { logf_("gamepad: SDL3.dll not found in game folder (error %lu)", GetLastError()); return 0; }
+    if (!g_sdl) {
+        logf_("gamepad: SDL3.dll not found in game folder (error %lu): the ROTK Fix Gamepad gets no input and real "
+              "controllers are left to the game; start the game from Athelas to put SDL3.dll back", GetLastError());
+        return 0;
+    }
 #define LOAD(fn) if (!(p_##fn = (__typeof__(p_##fn))(void *)GetProcAddress(g_sdl, #fn))) { logf_("gamepad: SDL3.dll missing " #fn); return 0; }
     LOAD(SDL_SetHint) LOAD(SDL_Init) LOAD(SDL_GetError) LOAD(SDL_GetGamepads) LOAD(SDL_free)
     LOAD(SDL_OpenGamepad) LOAD(SDL_CloseGamepad) LOAD(SDL_GamepadConnected) LOAD(SDL_UpdateGamepads)
@@ -163,7 +167,11 @@ static int sdl_ready(void)
      * the app is in the background, and read raw input on its own thread. */
     p_SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
     p_SDL_SetHint(SDL_HINT_JOYSTICK_THREAD, "1");
-    if (!p_SDL_Init(SDL_INIT_GAMEPAD)) { logf_("gamepad: SDL_Init failed: %s", p_SDL_GetError()); return 0; }
+    if (!p_SDL_Init(SDL_INIT_GAMEPAD)) {
+        logf_("gamepad: SDL_Init failed: %s (the ROTK Fix Gamepad gets no input; real controllers are left to the game)",
+              p_SDL_GetError());
+        return 0;
+    }
     g_sdlState = 1;
     logf_("gamepad: SDL3 ready");
     return 1;
@@ -972,7 +980,9 @@ typedef struct { LPDIENUMDEVICESCALLBACKA cb; LPVOID ref; int stopped; } EnumCtx
 static BOOL CALLBACK enum_filter(LPCDIDEVICEINSTANCEA di, LPVOID p)
 {
     EnumCtx *c = (EnumCtx *)p;
-    if (g_padEnabled && g_hideReal && is_game_controller(di->dwDevType)) {
+    /* real controllers are hidden only while the ROTK Fix Gamepad works: without SDL3 (missing or failed, issue
+     * #15) the game gets them as it would without ROTK Fix */
+    if (g_padEnabled && g_hideReal && is_game_controller(di->dwDevType) && sdl_ready()) {
         static int logged;
         if (g_logInput && logged < 8) { logged++; logf_("gamepad: hiding real controller \"%s\" from the game", di->tszInstanceName); }
         return DIENUM_CONTINUE;
@@ -999,7 +1009,7 @@ static HRESULT WINAPI di_EnumDevices(IDirectInput8A *This, DWORD type, LPDIENUMD
      * When real controllers are hidden anyway there is nothing to ask for. */
     int controllerOnly = type == DI8DEVCLASS_GAMECTRL ||
                          (type >= DI8DEVTYPE_JOYSTICK && type <= DI8DEVTYPE_1STPERSON);
-    if (g_padEnabled && g_hideReal && controllerOnly) return DI_OK;
+    if (g_padEnabled && g_hideReal && controllerOnly && sdl_ready()) return DI_OK;
     EnumCtx c = { cb, ref, 0 };
     LARGE_INTEGER t0, t1, fq; QueryPerformanceCounter(&t0);
     HRESULT hr = IDirectInput8_EnumDevices(REAL(This), type, enum_filter, &c, flags);

@@ -2,7 +2,7 @@
 #include "app/app.h"
 
 #ifndef GAME_VERSION
-#define GAME_VERSION "1.4.0"  // CMakeLists.txt sets it (XBE_VERSION); the headless harness does not
+#define GAME_VERSION "1.5.0"  // CMakeLists.txt sets it (XBE_VERSION); the headless harness does not
 #endif
 
 namespace tt {
@@ -20,6 +20,7 @@ void InitRenderer();  // tt_renderer.cpp: the water simulation's targets at the 
 extern uint32_t g_damage_taken, g_enemy_damage;  // tt_devsettings.cpp
 void FileOpened(const char* name);  // tt_extras.cpp: the front end or a level
 bool InMenus();
+bool TitleScreen();  // tt_extras.cpp: the title screen is up
 std::vector<ach::Def> Achievements();  // tt_achievements.cpp
 std::string Activity();
 }
@@ -137,6 +138,7 @@ const app::GameInfo app::kGame = {
     .required_file = RequiredFile,
     .in_menus = tt::InMenus,  // Esc goes back in the front end's menus; Enter (A) goes on there as it is
     .menu_start_with_a = true,  // and presses Start too: the title's "press start button" takes nothing else (#8)
+    .start_with_a_now = tt::TitleScreen,  // on the title screen only: the Yes/No pop-ups between levels take A (#17)
     .achievements = tt::Achievements(),
     .discord_app_id = TT_DISCORD_APP_ID,
     .activity = tt::Activity,

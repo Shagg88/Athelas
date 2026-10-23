@@ -32,7 +32,12 @@ private:
         std::vector<float> b;
         uint32_t at = 0;
         void Size(uint32_t n) { b.assign(n ? n : 1, 0.0f); at = 0; }
-        float Read(uint32_t back) const { return b[(at + b.size() - back % b.size()) % b.size()]; }
+        // back is at most the size (the lengths are sized for their reads): a subtraction, not two divisions
+        float Read(uint32_t back) const {
+            uint32_t n = uint32_t(b.size());
+            if (back > n) back %= n;
+            return b[at >= back ? at - back : at + n - back];
+        }
         void Write(float x) { b[at] = x; at = at + 1 == b.size() ? 0 : at + 1; }
     };
     uint32_t rate_;

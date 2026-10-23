@@ -215,6 +215,7 @@ static void load_settings(void)
                   "Player           = 1\n"
                   "MouseAim         = 1\n"
                   "MouseSensitivity = 100\n"
+                  "MouseInvertY     = 0\n"
                   "MouseMenus       = 1\n"
                   "MoveForward      = W\n"
                   "MoveBack         = S\n"
@@ -1174,6 +1175,20 @@ BOOL WINAPI DllMain(HINSTANCE inst, DWORD reason, LPVOID reserved)
         logf_("ROTK Fix " ROTKFIX_VERSION " loaded (Limiter=%d TargetFPS=%d Spin=%dus)",
               g_limiterMode, g_targetFps, g_spinUs);
         logf_("display scaling: %s", g_dpiAware ? "per-monitor DPI aware (real screen pixels)" : "not DPI aware (older Windows)");
+        {   /* under Wine (CrossOver on a Mac says Darwin): problem reports tell themselves apart */
+            HMODULE nt = GetModuleHandleA("ntdll.dll");
+            typedef const char *(__cdecl *WineVer_t)(void);
+            typedef void (__cdecl *WineHost_t)(const char **, const char **);
+            WineVer_t ver = nt ? (WineVer_t)(void *)GetProcAddress(nt, "wine_get_version") : NULL;
+            WineHost_t host = nt ? (WineHost_t)(void *)GetProcAddress(nt, "wine_get_host_version") : NULL;
+            if (ver) {
+                const char *sys = NULL, *rel = NULL;
+                if (host) host(&sys, &rel);
+                int mac = sys && strcmp(sys, "Darwin") == 0;
+                logf_("running on Wine %s%s%s%s%s%s", ver(), sys ? " on " : "", sys ? (mac ? "macOS (Darwin" : sys) : "",
+                      rel ? " " : "", rel ? rel : "", mac ? ")" : "");
+            }
+        }
 
         QueryPerformanceFrequency(&g_freq);
         g_period = g_freq.QuadPart / g_targetFps;

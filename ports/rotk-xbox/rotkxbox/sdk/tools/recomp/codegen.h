@@ -36,7 +36,19 @@ private:
     std::string Target(uint32_t t);  // goto or tail call
     std::string Hex(uint32_t v) const;
     std::string FuncName(uint32_t va) const;
-    void Line(const std::string& s) { body_ += s; body_ += '\n'; }
+    void Line(const std::string& s);
+    void RawLine(const std::string& s) { body_ += s; body_ += '\n'; }
+    // x87 stack cache (see codegen_x87cache.cpp): within a run of code with no branch, call or label, the stack's
+    // slots live in locals named at translation time (x87_r0..7, relative to x87_t0, the top at the run's start)
+    struct X87Cache {
+        bool t0 = false;      // x87_t0 holds ctx.top as the run began
+        int d = 0;            // pushes less pops since then
+        uint8_t loaded = 0;   // locals holding their slot
+        uint8_t dirty = 0;    // locals newer than their slot
+    } x87_;
+    bool x87_on_ = false;     // the cache is used (XBE_X87_CACHE, on by default)
+    void X87Flush();
+    std::string X87Rewrite(const std::string& s, std::string& pre);
     void Unimpl(uint32_t va, const ZydisDecodedInstruction& in, const ZydisDecodedOperand* ops);
     std::string Text(uint32_t va, const ZydisDecodedInstruction& in, const ZydisDecodedOperand* ops) const;
 

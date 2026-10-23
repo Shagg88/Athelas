@@ -82,8 +82,16 @@ void Save() {
     }
     std::filesystem::rename(tmp, File(), ec);
     if (ec) {
-        std::filesystem::copy_file(tmp, File(), std::filesystem::copy_options::overwrite_existing, ec);
-        std::filesystem::remove(tmp, ec);
+        // a plain copy, not std::filesystem::copy_file: that calls CopyFile2, which Wine 9 (and so CrossOver on a
+        // Mac) doesn't have, and the game closed at the second start when the rename had failed once
+        std::ifstream i(tmp, std::ios::binary);
+        std::ofstream o(File(), std::ios::binary | std::ios::trunc);
+        if (i && o) o << i.rdbuf();
+        i.close();
+        if (o) {
+            o.close();
+            std::filesystem::remove(tmp, ec);
+        }
     }
 }
 

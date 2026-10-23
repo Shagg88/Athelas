@@ -164,6 +164,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             if (wp == VK_F3 && !diag::CaptureDir().empty()) DumpThreads();
             // \, the key above Enter on a US keyboard (VK_OEM_5): a screenshot, once a press
             if (wp == VK_OEM_5 && !(lp & (1 << 30))) gpu::g_screenshot = true;
+            // F8: texture packs off and on, to compare; F7: a pair of screenshots, with and without them
+            if (wp == VK_F8 && !(lp & (1 << 30))) {
+                bool off = !gpu::g_pack_off;
+                gpu::g_pack_off = off;
+                LOGR("texture packs %s (F8)", off ? "off" : "on");
+            }
+            if (wp == VK_F7 && !(lp & (1 << 30))) gpu::g_pack_pair = true;
             // ] (VK_OEM_6): the next colour look, as ROTK Fix
             if (wp == VK_OEM_6 && !(lp & (1 << 30))) {
                 static const char* const kNames[] = {"original", "film", "vivid", "dark fantasy"};
@@ -316,6 +323,22 @@ void Pace() {
     auto period = std::chrono::nanoseconds(1000000000ull / cap);
     next += period;
     if (next < now - period) next = now;
+    // Windows 10 1803 and later: a high resolution timer wakes within about half a millisecond, so only the last
+    // quarter millisecond is spun (at 240 fps the 1 ms sleeps left up to 2 ms of each 4 ms frame spinning a core)
+#ifndef CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
+#define CREATE_WAITABLE_TIMER_HIGH_RESOLUTION 0x00000002
+#endif
+    static HANDLE timer = CreateWaitableTimerExW(nullptr, nullptr, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
+    if (timer) {
+        for (;;) {
+            auto left = next - clock::now() - std::chrono::microseconds(250);
+            if (left <= std::chrono::microseconds(100)) break;
+            LARGE_INTEGER due;
+            due.QuadPart = -std::max<int64_t>(1, std::chrono::duration_cast<std::chrono::nanoseconds>(left).count() / 100);
+            if (!SetWaitableTimer(timer, &due, 0, nullptr, nullptr, FALSE) || WaitForSingleObject(timer, 50) != WAIT_OBJECT_0)
+                break;
+        }
+    }
     while (clock::now() + std::chrono::milliseconds(2) < next) Sleep(1);
     while (clock::now() < next) std::this_thread::yield();
 }

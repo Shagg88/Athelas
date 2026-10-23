@@ -404,6 +404,7 @@ bool load_settings(const std::string &dir, Settings &s)
     s.kbEnabled = geti(ini, "Keyboard", "Enabled", 1) != 0;
     s.mouseAim = geti(ini, "Keyboard", "MouseAim", 1) != 0;
     s.mouseSens = clampi(geti(ini, "Keyboard", "MouseSensitivity", 100), 10, 400);
+    s.mouseInvertY = geti(ini, "Keyboard", "MouseInvertY", 0) != 0;
     s.mouseMenus = geti(ini, "Keyboard", "MouseMenus", 1) != 0;
     s.cheatInvulnerable = geti(ini, "Cheats", "Invulnerable", 0) != 0;
     s.cheatMissiles = geti(ini, "Cheats", "InfiniteMissiles", 0) != 0;
@@ -590,6 +591,7 @@ static const std::vector<IniSection> &ini_layout()
             { "Player", "1", "Which player the keyboard plays as in co-op: 1 or 2" },
             { "MouseAim", "1", "1 = while the ranged attack is held, moving the mouse aims" },
             { "MouseSensitivity", "100", "Mouse aiming, % (10-400)" },
+            { "MouseInvertY", "0", "1 = mouse aiming up and down reversed (forward aims down)" },
             { "MouseMenus", "1", "1 = in the game's menus the wheel moves up and down and a right click goes back" },
             { "MoveForward", "W", "Keys, comma separated: A-Z, 0-9, F1-F12, Space, Enter, Esc, Tab, Backspace, LShift, LCtrl, LAlt, Up, Down, Left, Right, Numpad0-9, Mouse1-Mouse5 ..." },
             { "MoveBack", "S", nullptr }, { "MoveLeft", "A", nullptr }, { "MoveRight", "D", nullptr },
@@ -736,6 +738,7 @@ static bool write_rotkfix_ini(const std::string &p, const Settings &s, bool crea
     set("Keyboard", "Enabled", std::to_string((int)s.kbEnabled));
     set("Keyboard", "MouseAim", std::to_string((int)s.mouseAim));
     set("Keyboard", "MouseSensitivity", std::to_string(s.mouseSens));
+    set("Keyboard", "MouseInvertY", std::to_string((int)s.mouseInvertY));
     set("Keyboard", "MouseMenus", std::to_string((int)s.mouseMenus));
     set("Cheats", "Invulnerable", std::to_string((int)s.cheatInvulnerable));
     set("Cheats", "InfiniteMissiles", std::to_string((int)s.cheatMissiles));
@@ -827,7 +830,7 @@ bool save_rotkfix_ini(const std::string &dir, const Settings &s, std::string &er
     return write_rotkfix_ini(dir + "\\ROTKFix.ini", s, false, err);
 }
 
-bool save_settings(const std::string &dir, const Settings &s, std::string &err)
+bool save_settings(const std::string &dir, const Settings &s, std::string &err, int controllers)
 {
     std::string p = dir + "\\ROTKFix.ini";
     const char *ini = p.c_str();
@@ -860,10 +863,31 @@ bool save_settings(const std::string &dir, const Settings &s, std::string &err)
     ok &= puti(r, "Audio", "Volume_Music", s.volMusic);
     ok &= puti(r, "Audio", "Volume_Voice", s.volVoice);
     ok &= puti(r, "Audio", "Volume_Sfx", s.volSfx);
+    // controller support needs SDL3.dll beside rotk.exe: put back from the launcher's own copy if it went missing
+    // (issue #15: with it missing the gamepad layout had no input at all, and the keyboard none in play)
+    if (s.padEnabled && !file_exists(dir + "\\SDL3.dll") && _stricmp(dir.c_str(), exe_dir().c_str()))
+        CopyFileA((exe_dir() + "\\SDL3.dll").c_str(), (dir + "\\SDL3.dll").c_str(), TRUE);
+    bool padP1 = s.padEnabled && controllers != 0 && file_exists(dir + "\\SDL3.dll");
+    if (!s.padEnabled) {
+        // controller support off: a player left on a ROTK Fix Gamepad layout (no longer offered to the game) gets
+        // the game's own keyboard and mouse layout back
+        for (const char *in : { "input0", "input1" })
+            if (_strnicmp(gets(r, in, "map", "").c_str(), "ROTKFixPad", 10) == 0) {
+                ok &= puts_(r, in, "map", "ROTKDefault");
+                ok &= puts_(r, in, "mode", "KB");
+            }
+    }
+    if (s.padEnabled && !padP1) {
+        // no controller connected (or no SDL3.dll): player 1 plays with the game's own keyboard and mouse layout
+        ok &= puts_(r, "input0", "map", "ROTKDefault");
+        ok &= puts_(r, "input0", "mode", "KB");
+    }
     if (s.padEnabled) {
         // Player 1 uses the ROTK Fix Gamepad; forget saved layouts made for other controllers.
-        ok &= puts_(r, "input0", "map", "ROTKFixPad");
-        ok &= puts_(r, "input0", "mode", "JS");
+        if (padP1) {
+            ok &= puts_(r, "input0", "map", "ROTKFixPad");
+            ok &= puts_(r, "input0", "mode", "JS");
+        }
         // Player 2 (co-op): the second controller, or the game's keyboard layout
         ok &= puts_(r, "input1", "map", s.player2 ? "ROTKFixPad2" : "ROTKDefault");
         ok &= puts_(r, "input1", "mode", s.player2 ? "JS" : "KB");

@@ -39,6 +39,7 @@
 #include "gpu/shaders.h"
 #include "gpu/texture.h"
 #include "gpu/texture_pack.h"
+#include "gpu/upscale.h"
 #include "gpu/vertex.h"
 #include "kernel/kernel.h"
 
@@ -57,6 +58,8 @@ constexpr uint32_t kSrvCount = 3 * 32768;
 constexpr uint32_t kSamplerCount = 2048;
 constexpr uint32_t kRtvCount = 1024;
 constexpr uint32_t kDsvCount = 256;
+constexpr uint32_t kMotionSlots = 4;  // RTVs for the upscaler's motion targets, after the back buffers
+constexpr DXGI_FORMAT kMotionFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;  // motion in xy, a the cut-out test
 constexpr DXGI_FORMAT kBgra = DXGI_FORMAT_B8G8R8A8_UNORM;
 
 // perf diagnostic: where a frame's time goes, logged once a second with diag::Perf
@@ -186,6 +189,26 @@ float4 vs(uint id : SV_VertexID) : SV_Position {
     return float4(t * float2(2, -2) + float2(-1, 1), 0, 1);
 }
 float4 psmain() : SV_Target { return col; }
+)";
+
+// XBE_UP_SHOW_MOTION=1: the upscaler's motion vectors shown in place of the frame (grey still; red/green the
+// horizontal/vertical motion, blue its size), to check them where no upscaler runs
+const char* kMotionShowHlsl = R"(
+Texture2D<float4> img : register(t0);
+struct O { float4 p : SV_Position; float2 uv : TEXCOORD0; };
+O vs(uint id : SV_VertexID) {
+    O o;
+    o.uv = float2((id << 1) & 2, id & 2);
+    o.p = float4(o.uv * float2(2, -2) + float2(-1, 1), 0, 1);
+    return o;
+}
+float4 psmain(O i) : SV_Target {
+    if (i.uv.x < 0.5) discard;  // the picture on the left, its motion on the right
+    uint w, h;
+    img.GetDimensions(w, h);
+    float2 m = img.Load(int3(min(i.uv * float2(w, h), float2(w - 1, h - 1)), 0)).xy;
+    return float4(saturate(0.5 + m.x * 40), saturate(0.5 + m.y * 40), saturate(length(m) * 100), 1);
+}
 )";
 
 const char* kDepthHlsl = R"(
@@ -415,6 +438,11 @@ struct PackTex {
     uint32_t levels = 0;
 };
 
+// a shader source from shaders.seed (see ReadShaderSeed)
+struct SeedShader {
+    std::string entry, profile, src;
+};
+
 struct PsoKey {
     uint64_t vs;
     uint64_t ps;
@@ -530,7 +558,9 @@ public:
     void Flush() override;
     void SetGamma(const uint8_t* ramp) override;
     void BeginQuery() override;
-    void Screenshot(Target& t);
+    void Screenshot(Target& t, const std::string& suffix = {});  // suffix: a pair's (F7) name after the game's
+    int pair_step_ = 0;  // F7: 1 while the pair's second shot is due
+    std::string pair_name_;
     uint8_t Brighten(uint8_t v) const;
     void EndQuery(uint32_t index) override;
     bool QueryResult(uint32_t index, uint32_t& pixels) override;
@@ -569,6 +599,14 @@ private:
     Alloc Upload(uint64_t size, uint64_t align = 256);
     Frame& CurrentFrame() { return frames_[frame_ % kFrames]; }
     uint32_t AllocSrvSlots(uint32_t n);
+    // the last draw's texture views: a draw with the same textures and views in the same frame reuses its slots
+    // (more than half the draws do, The Fellowship of the Ring in Bywater) instead of writing four views again
+    struct LastViews {
+        uint64_t frame = ~0ull;
+        uint32_t slot = 0;
+        ID3D12Resource* res[4] = {};
+        D3D12_SHADER_RESOURCE_VIEW_DESC sv[4] = {};
+    } last_views_;
     D3D12_CPU_DESCRIPTOR_HANDLE Cpu(ID3D12DescriptorHeap* h, uint32_t i, uint32_t inc) {
         auto c = h->GetCPUDescriptorHandleForHeapStart();
         c.ptr += size_t(i) * inc;
@@ -622,7 +660,7 @@ private:
     bool AssembleDraw(const State& s, uint32_t prim, uint32_t start, uint32_t count, const uint8_t* indices,
                       Assembled& a);
     bool BindTargets(const State& s);
-    void EnsureVertexShader(const State& s, const Assembled& a, DrawShaders& sh);
+    void EnsureVertexShader(const State& s, const Assembled& a, DrawShaders& sh, MotionKind mk = kMotionNone);
     bool BindStageTexturesAndTargets(const State& s, DrawTextures& stages);
     ID3D12Resource* BindTexture(const State& s, int stage, DrawTextures& stages);
     ID3D12Resource* BindTargetTexture(const State& s, int stage, const TextureDesc& d, Target& t, bool box,
@@ -633,7 +671,7 @@ private:
     void UploadTexture(Tex& tx, const TextureDesc& d, const FormatInfo& fi, const uint8_t* p, const uint32_t* colours,
                        bool same);
     void UploadTextureLevel(Tex& tx, uint32_t f, uint32_t l, const std::vector<uint8_t>& px, uint32_t pitch);
-    void EnsurePixelShader(const PixelKey& pk, DrawShaders& sh);
+    void EnsurePixelShader(const PixelKey& pk, DrawShaders& sh, bool motion = false);
     void BuildPipelineKey(const State& s, const Assembled& a, uint64_t vh, uint64_t ph, PsoKey& k);
     void KeyDepthStencil(const State& s, const Assembled& a, PsoKey& k);
     ID3D12PipelineState* EnsurePipeline(const PsoKey& k, ID3DBlob* vs, ID3DBlob* ps);
@@ -785,6 +823,7 @@ private:
     // background thread makes them again from the cached shaders, before the game asks for them
     void StartWarmUp();
     void WarmUp(std::vector<PsoKey> keys);
+    void CompileSeed(std::vector<SeedShader> seed);
     std::thread warm_;
     std::atomic<bool> warm_stop_{false};
     std::mutex warm_mu_;
@@ -859,6 +898,50 @@ private:
     uint32_t bb_h_ = 0;
     float scale_ = 1.0f;
     float xmul_ = 1.0f;  // extra width of the targets (g_wide_targets)
+    float TargetScale();  // render_percent's, or the upscaler's render size
+
+    // upscaling, [graphics] upscaler (FSR, DLSS): the frame drawn smaller and jittered, with motion vectors to a
+    // second target, then the upscaler makes the shown frame from it and its history (upscale.h)
+    std::unique_ptr<up::Upscaler> up_;
+    uint32_t up_kind_ = 0, up_quality_ = 0, up_ow_ = 0, up_oh_ = 0, up_rw_ = 0, up_rh_ = 0;  // as made
+    bool up_hdr_ = false;
+    uint32_t up_failed_ = 0;      // the kind that could not be made (back to render_percent until the setting changes)
+    std::string up_logged_;       // the last line logged about it
+    ComPtr<IDXGIAdapter1> adapter_;
+    bool UpWanted() const;        // the setting asks for one that may work here
+    bool UpOn() const { return UpWanted(); }  // the frame is drawn for one (made at the first Present that needs it)
+    bool Upscale(Target& t, uint32_t ow, uint32_t oh, D3D12_CPU_DESCRIPTOR_HANDLE rh);  // true: up_out_ holds the frame
+    void NextJitter(const Target& t, uint32_t ow);
+    ComPtr<ID3D12Resource> up_out_;
+    D3D12_RESOURCE_STATES up_out_state_ = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+    struct Motion {
+        ComPtr<ID3D12Resource> res;
+        D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        uint32_t w = 0, h = 0, slot = 0;
+        uint64_t frame = ~0ull;  // presents_ when last cleared, so drawn this frame when equal
+        const Target* depth = nullptr;  // the depth drawn with it this frame (checked against targets_ before use)
+    };
+    std::unordered_map<uint32_t, Motion> motion_;  // by guest surface (Target::data), for the surfaces shown
+    std::array<uint32_t, 4> shown_surf_{};         // the surfaces presented lately
+    Motion* EnsureMotion(const Target& rt);
+    Motion* bound_mv_ = nullptr;
+    float jit_[4] = {};      // this frame's jitter in clip units (b2's jit)
+    float jit_px_[2] = {};   // and in render pixels, for the upscaler
+    uint64_t jit_n_ = 0;
+    // each draw's constants a frame ago: matched by what it draws and the how-manieth such draw of the frame it is
+    struct PrevDraw {
+        std::array<std::array<float, 4>, 192> vsc;
+        float wvp[16];
+    };
+    std::unordered_map<uint64_t, uint32_t> prev_index_, cur_index_, occ_;
+    std::vector<PrevDraw> prev_draws_, cur_draws_;
+    // matched by the exact draw (its buffers and range), else the same shader drawing as many, else the same shader
+    // by its order (buffers a game refills each frame move, so the looser keys catch those)
+    uint64_t mv_keys_[3] = {};
+    uint64_t mv_key_ = 0;
+    uint32_t mv_draws_ = 0, mv_found_ = 0;
+    bool up_reset_ = true;
+    std::chrono::steady_clock::time_point up_t_ = std::chrono::steady_clock::now();
     float WideMul() const;
     // surfaces locked without a wait: copies in flight, the newest finished one goes to guest memory
     struct Late {
@@ -957,6 +1040,19 @@ bool D3D12Backend::CreateDevice() {
     DXGI_ADAPTER_DESC1 ad{};
     if (adapter) adapter->GetDesc1(&ad);
     LOGR("D3D12 adapter: %ls", adapter ? ad.Description : L"default");
+    adapter_ = adapter;
+    if (!adapter_) {
+        // the default adapter, for DLSS's card check
+        ComPtr<IDXGIAdapter1> a0;
+        if (SUCCEEDED(factory_->EnumAdapters1(0, &a0))) adapter_ = a0;
+    }
+    // DLSS: Streamline starts before the swap chain is made; it is set up only when asked for, so it takes effect at
+    // the next start
+    if (app::Get().upscaler == up::kDlss) {
+        std::string why;
+        if (up::InitStreamline(adapter_.Get(), why)) LOGR("upscaler: NVIDIA Streamline started for DLSS");
+        else LOGR("upscaler: DLSS is not available: %s", why.c_str());
+    }
     D3D12_COMMAND_QUEUE_DESC qd{};
     qd.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
     if (FAILED(dev_->CreateCommandQueue(&qd, IID_PPV_ARGS(&queue_)))) {
@@ -994,6 +1090,12 @@ bool D3D12Backend::CreateSwapChain(HWND hwnd) {
         return false;
     }
     factory_->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER);
+    {
+        // DLSS (manual hooking): Streamline's own bookkeeping runs on the swap chain's Present
+        IDXGISwapChain1* raw = sc1.Detach();
+        up::UpgradeSwapChain(reinterpret_cast<IDXGISwapChain**>(&raw));
+        sc1.Attach(raw);
+    }
     sc1.As(&swap_);
     if (hdr_) {
         UINT support = 0;
@@ -1058,7 +1160,7 @@ void D3D12Backend::CreateBackBufferViews() {
 void D3D12Backend::CreateHeaps() {
     srv_inc_ = CreateHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, kSrvCount, true, srv_heap_);
     smp_inc_ = CreateHeap(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, kSamplerCount, true, smp_heap_);
-    rtv_inc_ = CreateHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, kRtvCount + kFrames, false, rtv_heap_);
+    rtv_inc_ = CreateHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, kRtvCount + kFrames + kMotionSlots, false, rtv_heap_);
     dsv_inc_ = CreateHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, kDsvCount, false, dsv_heap_);
     CreateHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, true, ui_heap_);
     for (uint32_t i = kRtvCount; i-- > 0;) free_rtv_.push_back(i);
@@ -1071,11 +1173,13 @@ bool D3D12Backend::CreateRootSignature() {
     ranges[0].NumDescriptors = 4;
     ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
     ranges[1].NumDescriptors = 4;
-    D3D12_ROOT_PARAMETER params[4] = {};
+    D3D12_ROOT_PARAMETER params[5] = {};
     params[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
     params[0].Descriptor.ShaderRegister = 0;
     params[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
     params[1].Descriptor.ShaderRegister = 1;
+    params[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;  // b2: the previous frame's constants, motion shaders only
+    params[4].Descriptor.ShaderRegister = 2;
     for (int i = 0; i < 2; i++) {
         params[2 + i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
         params[2 + i].DescriptorTable.NumDescriptorRanges = 1;
@@ -1083,7 +1187,7 @@ bool D3D12Backend::CreateRootSignature() {
         params[2 + i].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
     }
     D3D12_ROOT_SIGNATURE_DESC rsd{};
-    rsd.NumParameters = 4;
+    rsd.NumParameters = 5;
     rsd.pParameters = params;
     rsd.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
     ComPtr<ID3DBlob> rs;
@@ -1122,7 +1226,7 @@ float D3D12Backend::WideMul() const {
 }
 
 void D3D12Backend::LoadSettings() {
-    scale_ = app::RenderScale(guest_h_);
+    scale_ = TargetScale();
     xmul_ = WideMul();
     g_colour_look = std::min(app::Get().colour_look, kColourLooks - 1);
     samples_ = PickSamples();
@@ -1162,6 +1266,7 @@ void D3D12Backend::Submit(bool wait) {
         f.garbage.clear();
         f.used = 0;
         f.srv = 0;
+        last_views_.frame = ~0ull;  // the slots are written again
         cl_->Reset(f.alloc.Get(), nullptr);
         Begin();
     }
@@ -1175,7 +1280,7 @@ float MovieFitAspect() { return std::clamp(app::FrameAspect(), 16.0f / 9.0f, std
 
 // the picture as shown: the frame at its render size, made as wide as the screen shows it (16:9 with widescreen),
 // saved as <PREFIX>_<date>_<time>_<ms>.png as ROTK Fix names its own, on the texture pack writer's thread
-void D3D12Backend::Screenshot(Target& t) {
+void D3D12Backend::Screenshot(Target& t, const std::string& suffix) {
     // the frame through the same pass as the screen (brightness, sharpening, colour look), without HDR; a movie as
     // the screen shows it: the screen's shape at the frame's height, the picture placed by movie_display as in
     // BlitMovie, with its bars
@@ -1259,7 +1364,7 @@ void D3D12Backend::Screenshot(Target& t) {
     char name[96];
     std::snprintf(name, sizeof(name), "%s_%04u-%02u-%02u_%02u-%02u-%02u_%03u.png", prefix.c_str(), st.wYear, st.wMonth,
                   st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
-    std::filesystem::path file = app::ScreenshotDir() / name;
+    std::filesystem::path file = app::ScreenshotDir() / (suffix.empty() ? std::string(name) : prefix + suffix);
     pack::WritePngLater(file, w, h, std::move(px));
     LOGR("screenshot: %s (%ux%u)", file.string().c_str(), w, h);
 }
@@ -1377,6 +1482,7 @@ uint32_t D3D12Backend::AllocSrvSlots(uint32_t n) {
     if (f.srv + n > per) {
         LOG_FIRST(4, "d3d12: descriptor ring wrapped within a frame");
         f.srv = 0;
+        last_views_.frame = ~0ull;  // the slots are written again
     }
     uint32_t i = uint32_t(frame_ % kFrames) * per + f.srv;
     f.srv += n;
@@ -1551,22 +1657,36 @@ bool D3D12Backend::BindTargets(const State& s) {
         }
         t->drawn = true;
     }
-    if (rt != bound_rt_ || ds != bound_ds_ || ms != bound_ms_) {
-        D3D12_CPU_DESCRIPTOR_HANDLE rh =
-            rt ? Cpu(rtv_heap_.Get(), ms ? rt->ms_view : rt->view, rtv_inc_) : D3D12_CPU_DESCRIPTOR_HANDLE{};
+    // a frame for the upscaler: its motion target beside it, cleared on the frame's first draw
+    Motion* mv = UpOn() && rt && !ms ? EnsureMotion(*rt) : nullptr;
+    if (mv) {
+        Transition(mv->res.Get(), mv->state, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        if (mv->frame != presents_) {
+            float zero[4] = {};
+            cl_->ClearRenderTargetView(Cpu(rtv_heap_.Get(), mv->slot, rtv_inc_), zero, 0, nullptr);
+            mv->frame = presents_;
+            mv->depth = nullptr;
+        }
+        if (ds) mv->depth = ds;
+    }
+    if (rt != bound_rt_ || ds != bound_ds_ || ms != bound_ms_ || mv != bound_mv_) {
+        D3D12_CPU_DESCRIPTOR_HANDLE rh[2] = {
+            rt ? Cpu(rtv_heap_.Get(), ms ? rt->ms_view : rt->view, rtv_inc_) : D3D12_CPU_DESCRIPTOR_HANDLE{},
+            mv ? Cpu(rtv_heap_.Get(), mv->slot, rtv_inc_) : D3D12_CPU_DESCRIPTOR_HANDLE{}};
         D3D12_CPU_DESCRIPTOR_HANDLE dh =
             ds ? Cpu(dsv_heap_.Get(), ms ? ds->ms_view : ds->view, dsv_inc_) : D3D12_CPU_DESCRIPTOR_HANDLE{};
-        cl_->OMSetRenderTargets(rt ? 1 : 0, rt ? &rh : nullptr, FALSE, ds ? &dh : nullptr);
+        cl_->OMSetRenderTargets(rt ? (mv ? 2 : 1) : 0, rt ? rh : nullptr, FALSE, ds ? &dh : nullptr);
         bound_rt_ = rt;
         bound_ds_ = ds;
         bound_ms_ = ms;
+        bound_mv_ = mv;
     }
     return true;
 }
 
 // anti-aliasing's sample count: the setting, lowered to what the card takes for the frame's colour and depth
 uint32_t D3D12Backend::PickSamples() {
-    uint32_t want = app::Get().msaa;
+    uint32_t want = UpWanted() ? 0 : app::Get().msaa;
     if (want < 2) return 1;
     for (uint32_t n = std::min(want, 8u); n >= 2; n /= 2) {
         bool ok = true;
@@ -1971,6 +2091,86 @@ std::filesystem::path CachedShaderPath(uint64_t hash) {
     return app::ShaderCacheDir() / (pack::Name(Hash(kCacheSalt, sizeof(kCacheSalt), hash)) + ".dxbc");
 }
 
+// a compiled shader into the cache through a temporary file, so another thread never reads half of one
+void WriteCachedShader(uint64_t hash, const void* data, size_t size) {
+    std::filesystem::path cached = CachedShaderPath(hash);
+    std::error_code ec;
+    std::filesystem::create_directories(cached.parent_path(), ec);
+    static std::atomic<uint32_t> seq{0};
+    std::filesystem::path tmp = cached;
+    tmp += ".tmp" + std::to_string(GetCurrentThreadId()) + "_" + std::to_string(seq++);
+    {
+        std::ofstream out(tmp, std::ios::binary);
+        out.write(static_cast<const char*>(data), std::streamsize(size));
+        if (!out) {
+            out.close();
+            std::filesystem::remove(tmp, ec);
+            return;
+        }
+    }
+    std::filesystem::rename(tmp, cached, ec);
+    if (ec) std::filesystem::remove(tmp, ec);
+}
+
+uint64_t ShaderHash(const std::string& src, const char* entry, const char* profile) {
+    uint64_t profile_seed = Hash(profile, std::strlen(profile));
+    uint64_t entry_seed = Hash(entry, std::strlen(entry), profile_seed);
+    return Hash(src.data(), src.size(), entry_seed);
+}
+
+// Shader seeds: shaders.seed beside the exe lists shader sources (entry point, profile, HLSL) recorded from every
+// level of the game (XBE_SHADER_RECORD=<file> in a test build writes such a list); at a start, the ones not in the
+// shader cache yet are compiled in the background, so a first play does not stall on them. pipelines.seed (the
+// pipelines.bin layout) adds those pipelines to the warm-up. A seed shader the game never makes is only unused.
+constexpr char kSeedMagic[4] = {'A', 'S', 'S', '1'};
+
+bool ReadSeedString(FILE* f, std::string& out) {
+    uint32_t n = 0;
+    if (std::fread(&n, 4, 1, f) != 1 || n > (16u << 20)) return false;
+    out.resize(n);
+    return n == 0 || std::fread(out.data(), 1, n, f) == n;
+}
+
+std::vector<SeedShader> ReadShaderSeed(const std::filesystem::path& file) {
+    std::vector<SeedShader> v;
+    FILE* f = _wfopen(file.c_str(), L"rb");
+    if (!f) return v;
+    char magic[4];
+    if (std::fread(magic, 4, 1, f) == 1 && !std::memcmp(magic, kSeedMagic, 4)) {
+        SeedShader s;
+        while (ReadSeedString(f, s.entry) && ReadSeedString(f, s.profile) && ReadSeedString(f, s.src)) v.push_back(s);
+    }
+    std::fclose(f);
+    return v;
+}
+
+// XBE_SHADER_RECORD=<file>: each shader source compiled or read from the cache, once, appended to a seed file
+void RecordShader(const std::string& src, const char* entry, const char* profile, uint64_t hash) {
+    static const char* path = std::getenv("XBE_SHADER_RECORD");
+    if (!path || !*path) return;
+    static std::mutex mu;
+    static std::unordered_set<uint64_t> seen;
+    static FILE* f = nullptr;
+    std::lock_guard<std::mutex> lock(mu);
+    if (!f) {
+        std::filesystem::path p = std::filesystem::u8path(path);
+        for (const SeedShader& s : ReadShaderSeed(p)) seen.insert(ShaderHash(s.src, s.entry.c_str(), s.profile.c_str()));
+        bool fresh = seen.empty();
+        f = _wfopen(p.c_str(), fresh ? L"wb" : L"ab");
+        if (!f) return;
+        if (fresh) std::fwrite(kSeedMagic, 4, 1, f);
+    }
+    if (!seen.insert(hash).second) return;
+    auto put = [&](const void* d, uint32_t n) {
+        std::fwrite(&n, 4, 1, f);
+        if (n) std::fwrite(d, 1, n, f);
+    };
+    put(entry, uint32_t(std::strlen(entry)));
+    put(profile, uint32_t(std::strlen(profile)));
+    put(src.data(), uint32_t(src.size()));
+    std::fflush(f);
+}
+
 ComPtr<ID3DBlob> ReadCachedShader(uint64_t hash) {
     ComPtr<ID3DBlob> code;
     std::ifstream f(CachedShaderPath(hash), std::ios::binary | std::ios::ate);
@@ -1983,14 +2183,12 @@ ComPtr<ID3DBlob> ReadCachedShader(uint64_t hash) {
 
 ID3DBlob* D3D12Backend::Compile(const std::string& src, const char* entry, const char* profile, uint64_t& hash) {
     // one source can hold several entry points
-    uint64_t profile_seed = Hash(profile, std::strlen(profile));
-    uint64_t entry_seed = Hash(entry, std::strlen(entry), profile_seed);
-    hash = Hash(src.data(), src.size(), entry_seed);
+    hash = ShaderHash(src, entry, profile);
     auto it = blobs_.find(hash);
     if (it != blobs_.end()) return it->second.Get();
+    RecordShader(src, entry, profile, hash);
     // compiled once and kept in the shader cache (shadercache\ beside the exe, or --shader-cache): a shader the game
     // first uses mid-play (a cutscene ending, a new effect) does not stall the frame on D3DCompile again in later runs
-    std::filesystem::path cached = CachedShaderPath(hash);
     ComPtr<ID3DBlob> code = ReadCachedShader(hash);
     if (code) {
         blobs_[hash] = code;
@@ -2008,10 +2206,7 @@ ID3DBlob* D3D12Backend::Compile(const std::string& src, const char* entry, const
         return nullptr;
     }
     blobs_[hash] = code;
-    std::error_code ec;
-    std::filesystem::create_directories(cached.parent_path(), ec);
-    std::ofstream out(cached, std::ios::binary);
-    out.write(static_cast<const char*>(code->GetBufferPointer()), std::streamsize(code->GetBufferSize()));
+    WriteCachedShader(hash, code->GetBufferPointer(), code->GetBufferSize());
     return code.Get();
 }
 
@@ -2204,8 +2399,22 @@ void D3D12Backend::FillPipelineDesc(const PsoKey& k, ID3DBlob* vs, ID3DBlob* ps,
     d.RasterizerState.DepthClipEnable = TRUE;
     FillDepthStencilDesc(k, d.DepthStencilState);
     d.PrimitiveTopologyType = TopologyType(k.topo);
-    d.NumRenderTargets = k.has_rt ? 1 : 0;
+    d.NumRenderTargets = k.has_rt;
     d.RTVFormats[0] = k.has_rt ? DXGI_FORMAT(k.rtfmt) : DXGI_FORMAT_UNKNOWN;
+    if (k.has_rt == 2) {
+        // motion: written by what draws over the scene; of what blends into it, only alpha blended cut-outs (leaves,
+        // grass, fences) where they are at least half opaque (the shader's alpha is 0 or 1); additive glows and the
+        // like keep the motion of what is behind them
+        d.RTVFormats[1] = kMotionFormat;
+        d.BlendState.IndependentBlendEnable = TRUE;
+        auto& m = d.BlendState.RenderTarget[1];
+        bool cutout = k.blend && Blend(k.src, false) == D3D12_BLEND_SRC_ALPHA && Blend(k.dst, false) == D3D12_BLEND_INV_SRC_ALPHA;
+        m.BlendEnable = cutout;
+        m.SrcBlend = m.SrcBlendAlpha = cutout ? D3D12_BLEND_SRC_ALPHA : D3D12_BLEND_ONE;
+        m.DestBlend = m.DestBlendAlpha = cutout ? D3D12_BLEND_INV_SRC_ALPHA : D3D12_BLEND_ZERO;
+        m.BlendOp = m.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+        m.RenderTargetWriteMask = k.blend && !cutout ? 0 : UINT8(D3D12_COLOR_WRITE_ENABLE_RED | D3D12_COLOR_WRITE_ENABLE_GREEN);
+    }
     d.DSVFormat = k.has_ds ? DXGI_FORMAT_D24_UNORM_S8_UINT : DXGI_FORMAT_UNKNOWN;
     d.SampleDesc.Count = std::max(k.samples, 1u);
     d.BlendState.AlphaToCoverageEnable = k.a2c != 0;
@@ -2275,9 +2484,61 @@ void D3D12Backend::StartWarmUp() {
         std::fflush(pso_list_);
     }
     if (!pso_list_) LOGW("d3d12: the pipeline list %s can't be written; no warm-up next time", file.string().c_str());
-    if (keys.empty()) return;
-    LOGR("d3d12: warming up %zu pipelines from earlier runs", keys.size());
-    warm_ = std::thread([this, keys = std::move(keys)]() mutable { WarmUp(std::move(keys)); });
+    size_t own = keys.size();
+    // the release's pipeline seed (pipelines.seed beside the exe, the same layout): added after the player's own
+    std::unordered_set<uint64_t> have;
+    for (const PsoKey& k : keys) have.insert(Hash(&k, sizeof(k)));
+    if (FILE* f = _wfopen((app::ExeDir() / "pipelines.seed").c_str(), L"rb")) {
+        PipelineListHeader h;
+        if (std::fread(&h, sizeof(h), 1, f) == 1 && !std::memcmp(&h, &want, sizeof(want))) {
+            PsoKey k;
+            while (std::fread(&k, sizeof(k), 1, f) == 1)
+                if (have.insert(Hash(&k, sizeof(k))).second) keys.push_back(k);
+        }
+        std::fclose(f);
+    }
+    std::vector<SeedShader> seed = ReadShaderSeed(app::ExeDir() / "shaders.seed");
+    if (keys.empty() && seed.empty()) return;
+    LOGR("d3d12: warming up %zu pipelines from earlier runs and %zu from the seed, %zu seed shaders", own,
+         keys.size() - own, seed.size());
+    warm_ = std::thread([this, keys = std::move(keys), seed = std::move(seed)]() mutable {
+        CompileSeed(std::move(seed));
+        WarmUp(std::move(keys));
+    });
+}
+
+// the seed's shaders not in the cache yet, compiled on a few background threads (half the processors, at most 4)
+void D3D12Backend::CompileSeed(std::vector<SeedShader> seed) {
+    if (seed.empty()) return;
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
+    auto start = PerfClock::now();
+    std::vector<size_t> todo;
+    for (size_t i = 0; i < seed.size(); i++) {
+        std::error_code ec;
+        uint64_t h = ShaderHash(seed[i].src, seed[i].entry.c_str(), seed[i].profile.c_str());
+        if (!std::filesystem::exists(CachedShaderPath(h), ec)) todo.push_back(i);
+    }
+    if (todo.empty()) return;
+    std::atomic<size_t> next{0}, made{0};
+    unsigned n = std::clamp(std::thread::hardware_concurrency() / 2, 1u, 4u);
+    std::vector<std::thread> pool;
+    for (unsigned t = 0; t < n; t++)
+        pool.emplace_back([&] {
+            SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
+            for (size_t i; !warm_stop_ && (i = next++) < todo.size();) {
+                const SeedShader& s = seed[todo[i]];
+                ComPtr<ID3DBlob> code, err;
+                if (FAILED(D3DCompile(s.src.data(), s.src.size(), nullptr, nullptr, nullptr, s.entry.c_str(),
+                                      s.profile.c_str(), D3DCOMPILE_OPTIMIZATION_LEVEL1, 0, &code, &err)))
+                    continue;
+                WriteCachedShader(ShaderHash(s.src, s.entry.c_str(), s.profile.c_str()), code->GetBufferPointer(),
+                                  code->GetBufferSize());
+                made++;
+            }
+        });
+    for (auto& t : pool) t.join();
+    LOGR("d3d12: compiled %zu seed shaders in %.1f s (%zu were cached already)", made.load(), PerfMs(start) / 1000.0,
+         seed.size() - todo.size());
 }
 
 void D3D12Backend::WarmUp(std::vector<PsoKey> keys) {
@@ -2625,7 +2886,7 @@ ID3D12Resource* D3D12Backend::BindGuestTexture(const State& s, int stage, const 
         hud_logged_.insert(tx.pack_hash);
         LOGR("texture pack: drawn in 2D (HUD, menu, text): %s", pack::PngName(d.width, d.height, tx.pack_hash).c_str());
     }
-    if (tx.repl) {
+    if (tx.repl && !g_pack_off) {
         stages.sv[stage].Format = tx.repl_fmt;
         stages.sv[stage].Texture2D.MipLevels = tx.repl_levels;
         return tx.repl.Get();
@@ -2809,7 +3070,7 @@ std::string VertexHlsl(const State& s, const Assembled& a, const DrawShaders& sh
 }
 
 // sets sh.vh and sh.vs_code, compiling the shader on a cache miss
-void D3D12Backend::EnsureVertexShader(const State& s, const Assembled& a, DrawShaders& sh) {
+void D3D12Backend::EnsureVertexShader(const State& s, const Assembled& a, DrawShaders& sh, MotionKind mk) {
     auto vit = shader_src_.find(sh.vkey);
     if (vit != shader_src_.end()) {
         sh.vs_code = blobs_[vit->second].Get();
@@ -2817,7 +3078,9 @@ void D3D12Backend::EnsureVertexShader(const State& s, const Assembled& a, DrawSh
         return;
     }
     std::string src = VertexHlsl(s, a, sh);
-    sh.vs_code = Compile(sh.quad ? QuadHlsl(std::move(src)) : src, "main", "vs_5_0", sh.vh);
+    if (sh.quad) src = QuadHlsl(std::move(src));
+    if (mk) src = MotionHlsl(std::move(src), mk);
+    sh.vs_code = Compile(src, "main", "vs_5_0", sh.vh);
     shader_src_[sh.vkey] = sh.vh;
 }
 
@@ -2876,7 +3139,7 @@ bool D3D12Backend::BindStageTexturesAndTargets(const State& s, DrawTextures& sta
 constexpr uint64_t kPixelKeySalt = 0x9E3779B97F4A7C15ull;
 
 // sets sh.ph and sh.ps_code, compiling the shader on a cache miss
-void D3D12Backend::EnsurePixelShader(const PixelKey& pk, DrawShaders& sh) {
+void D3D12Backend::EnsurePixelShader(const PixelKey& pk, DrawShaders& sh, bool motion) {
     // pixel shaders share the map with vertex shaders, the salt keeps their keys apart
     auto pit = shader_src_.find(sh.pkey ^ kPixelKeySalt);
     if (pit != shader_src_.end()) {
@@ -2884,7 +3147,7 @@ void D3D12Backend::EnsurePixelShader(const PixelKey& pk, DrawShaders& sh) {
         sh.ph = pit->second;
         return;
     }
-    sh.ps_code = Compile(PixelHlsl(pk), "main", "ps_5_0", sh.ph);
+    sh.ps_code = Compile(motion ? MotionPixelHlsl(PixelHlsl(pk)) : PixelHlsl(pk), "main", "ps_5_0", sh.ph);
     shader_src_[sh.pkey ^ kPixelKeySalt] = sh.ph;
 }
 
@@ -2944,7 +3207,7 @@ void D3D12Backend::BuildPipelineKey(const State& s, const Assembled& a, uint64_t
         }
     }
     k.topo = uint32_t(a.topology);
-    k.has_rt = bound_rt_ != nullptr;
+    k.has_rt = bound_rt_ ? (bound_mv_ ? 2 : 1) : 0;  // 2: with the upscaler's motion target
     k.has_ds = bound_ds_ != nullptr;
     k.rtfmt = bound_rt_ ? bound_rt_->fmt : 0;
     k.samples = bound_ms_ ? samples_ : 1;
@@ -3175,6 +3438,37 @@ void D3D12Backend::UploadConstants(const State& s, const DrawShaders& sh, const 
     std::memcpy(dc.cpu, &c, sizeof(c));
     cl_->SetGraphicsRootConstantBufferView(0, vc.gpu);
     cl_->SetGraphicsRootConstantBufferView(1, dc.gpu);
+    if (bound_mv_) {
+        // b2: the draw's constants a frame ago (its own now when it is new: no motion of its own), and the jitter
+        struct MotionConstants {
+            float cprev[192][4];
+            float wvp_prev[16];
+            float jit[4];
+        };
+        Alloc mc = Upload(sizeof(MotionConstants), 256);
+        auto* m = reinterpret_cast<MotionConstants*>(mc.cpu);
+        const PrevDraw* pd = nullptr;
+        if (mv_key_) {
+            mv_draws_++;
+            for (uint64_t key : mv_keys_) {
+                auto it = prev_index_.find(key);
+                if (it != prev_index_.end()) {
+                    pd = &prev_draws_[it->second];
+                    mv_found_++;
+                    break;
+                }
+            }
+            uint32_t idx = uint32_t(cur_draws_.size());
+            cur_draws_.emplace_back();
+            std::memcpy(cur_draws_.back().vsc.data(), s.vsc.data(), sizeof(s.vsc));
+            std::memcpy(cur_draws_.back().wvp, c.wvp, sizeof(c.wvp));
+            for (uint64_t key : mv_keys_) cur_index_.emplace(key, idx);
+        }
+        std::memcpy(m->cprev, pd ? pd->vsc.data() : s.vsc.data(), sizeof(m->cprev));
+        std::memcpy(m->wvp_prev, pd ? pd->wvp : c.wvp, sizeof(m->wvp_prev));
+        std::memcpy(m->jit, jit_, sizeof(m->jit));
+        cl_->SetGraphicsRootConstantBufferView(4, mc.gpu);
+    }
 }
 
 void D3D12Backend::CaptureTextures(const State& s, const DrawTextures& stages) {
@@ -3285,14 +3579,25 @@ bool UnitTexcoords(const Assembled& a) {
 
 // a stage without a texture gets a null view of its kind; the samplers read the views after
 void D3D12Backend::SetTextureViewsAndSamplers(const State& s, const Assembled& a, DrawTextures& stages) {
-    uint32_t slot = AllocSrvSlots(4);
     for (int i = 0; i < 4; i++) {
         D3D12_SHADER_RESOURCE_VIEW_DESC& sv = stages.sv[i];
         if (!stages.res[i]) {
             sv.ViewDimension = NullViewDimension(stages.info[i].kind);
             sv.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
         }
-        dev_->CreateShaderResourceView(stages.res[i], &sv, Cpu(srv_heap_.Get(), slot + i, srv_inc_));
+    }
+    uint32_t slot;
+    if (last_views_.frame == frame_ && std::memcmp(last_views_.res, stages.res, sizeof(last_views_.res)) == 0 &&
+        std::memcmp(last_views_.sv, stages.sv, sizeof(last_views_.sv)) == 0) {
+        slot = last_views_.slot;
+    } else {
+        slot = AllocSrvSlots(4);
+        for (int i = 0; i < 4; i++)
+            dev_->CreateShaderResourceView(stages.res[i], &stages.sv[i], Cpu(srv_heap_.Get(), slot + i, srv_inc_));
+        last_views_.frame = frame_;
+        last_views_.slot = slot;
+        std::memcpy(last_views_.res, stages.res, sizeof(last_views_.res));
+        std::memcpy(last_views_.sv, stages.sv, sizeof(last_views_.sv));
     }
     cl_->SetGraphicsRootDescriptorTable(2, Gpu(srv_heap_.Get(), slot, srv_inc_));
     uint32_t samplers = EnsureStageSamplers(s, stages, UnitTexcoords(a));
@@ -3419,11 +3724,29 @@ void D3D12Backend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t 
     if (!BindTargets(s)) return;
     if (ext_ && ext_->Bound(*this, s, bound_rt_, bound_ds_, a.pretransformed) && !BindTargets(s)) return;
 
-    // vertex shader
+    // vertex shader; drawn for an upscaler, the motion variant: still and unjittered for 2D in screen space
     DrawShaders sh = ClassifyShaders(s, a, count);
     if (sh.prog) EnsureProgramHash(s);
     sh.vkey = VertexKey(s, a, sh);
-    EnsureVertexShader(s, a, sh);
+    MotionKind mk = kMotionNone;
+    mv_key_ = 0;
+    if (bound_mv_) {
+        bool flat = a.pretransformed || (g_screen_space_test && g_screen_space_test(s));
+        mk = flat ? kMotionFlat : sh.prog ? kMotionProgram : kMotionFixed;
+        if (!flat) {
+            // the same draw a frame ago: what it draws, then the how-manieth such draw this frame
+            // not the target (the game swaps between back buffers) nor where inline data sits (a ring)
+            uint64_t id[4] = {sh.vkey, s.streams[0].vb, uint64_t(s.index_buffer) << 32 | start, uint64_t(count) << 8 | prim};
+            uint64_t bases[3] = {Hash(id, sizeof(id)), Hash(&id[3], 8, sh.vkey ^ 0x5A5A), Hash(&sh.vkey, 8, 0xA5A5)};
+            for (int j = 0; j < 3; j++) {
+                uint32_t n = occ_[bases[j]]++;
+                mv_keys_[j] = Hash(&n, sizeof(n), bases[j]) | 1;
+            }
+            mv_key_ = mv_keys_[0];
+        }
+    }
+    if (mk) sh.vkey = Hash(&mk, sizeof(mk), sh.vkey ^ 0x6D6F74696F6E5F31ull);
+    EnsureVertexShader(s, a, sh, mk);
 
     // stage textures, then the pixel shader made for them
     DrawTextures stages;
@@ -3431,7 +3754,8 @@ void D3D12Backend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t 
     PixelKey pk = MakePixelKey(s, stages.info);
     pk.quad = sh.quad;
     sh.pkey = Hash(&pk, sizeof(pk));
-    EnsurePixelShader(pk, sh);
+    if (mk) sh.pkey ^= 0x6D6F74696F6E5F32ull;
+    EnsurePixelShader(pk, sh, mk != kMotionNone);
     if (!sh.vs_code || !sh.ps_code) return;
 
     // pipeline
@@ -3841,6 +4165,17 @@ void D3D12Backend::BlitFrame(Target& t, D3D12_CPU_DESCRIPTOR_HANDLE rh) {
     // drawn pixels it covers. One bilinear tap per screen pixel would weigh the drawn pixels unevenly at 1.5x, so fine
     // detail would pulse lighter and darker as the picture moves; sharpening then works on the shown pixels.
     float k = std::max(float(t.w) / vw, float(t.h) / vh);
+    uint32_t ow = uint32_t(std::lround(vw)), oh = uint32_t(std::lround(vh));
+    bool show_motion = false;
+    if (const char* e = std::getenv("XBE_UP_SHOW_MOTION"); e && *e == '1' && UpOn()) show_motion = true;
+    if (UpOn() && !show_motion && Upscale(t, ow, oh, rh)) {
+        src = up_out_.Get();
+        src_state = &up_out_state_;
+        fmt = up_out_->GetDesc().Format;
+        texel[0] = 1.0f / float(ow);
+        texel[1] = 1.0f / float(oh);
+        k = 1.0f;
+    }
     if (k > 1.01f) {
         uint32_t sw = uint32_t(std::lround(vw)), sh = uint32_t(std::lround(vh));
         ID3D12Resource* into = shown_.Get();
@@ -3870,6 +4205,17 @@ void D3D12Backend::BlitFrame(Target& t, D3D12_CPU_DESCRIPTOR_HANDLE rh) {
     float sharpen = g_sharpen_off ? 0.0f : std::min(app::Get().sharpening, 100u) / 100.0f;
     Blit(src, fmt, uv,
          {.gamma = gamma_, .rtv = bb_fmt_, .sharpen = sharpen, .texel = {texel[0], texel[1]}, .hdr = hdr_, .look = true});
+    if (show_motion) {
+        auto it = motion_.find(t.data);
+        if (it != motion_.end() && it->second.res) {
+            Transition(it->second.res.Get(), it->second.state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            ID3D12Resource* src3[3] = {it->second.res.Get(), nullptr, nullptr};
+            DXGI_FORMAT f3[3] = {kMotionFormat, kBgra, kBgra};
+            float p[8] = {};
+            Pass(kMotionShowHlsl, "psmain", bb_fmt_, rh, bb_w_, bb_h_, src3, f3, p, -1);
+            cl_->OMSetRenderTargets(1, &rh, FALSE, nullptr);
+        }
+    }
 }
 
 double MovieClock() {
@@ -4025,6 +4371,7 @@ void D3D12Backend::ResetFrame() {
     f.garbage.clear();
     f.used = 0;
     f.srv = 0;
+    last_views_.frame = ~0ull;  // the slots are written again
     cl_->Reset(f.alloc.Get(), nullptr);
     Begin();
 }
@@ -4160,6 +4507,23 @@ void D3D12Backend::Present(const Surface& front) {
     frame_sides_ = g_frame_sides.exchange(1.0f);
     if (!g_movie) movie_on_ = false;  // first, so a screenshot just after a movie shows the game
     if (t && g_screenshot.exchange(false)) Screenshot(*t);
+    // F7: this frame, then the next drawn with texture packs the other way round, as one pair of shots
+    if (t && pair_step_ == 1) {
+        Screenshot(*t, pair_name_ + (g_pack_off ? "_original.png" : "_pack.png"));
+        g_pack_off = !g_pack_off;
+        pair_step_ = 0;
+    } else if (t && g_pack_pair.exchange(false)) {
+        SYSTEMTIME st;
+        GetLocalTime(&st);
+        char name[64];
+        std::snprintf(name, sizeof(name), "_%04u-%02u-%02u_%02u-%02u-%02u", st.wYear, st.wMonth, st.wDay, st.wHour,
+                      st.wMinute, st.wSecond);
+        pair_name_ = name;
+        Screenshot(*t, pair_name_ + (g_pack_off ? "_original.png" : "_pack.png"));
+        g_pack_off = !g_pack_off;
+        pair_step_ = 1;
+        LOGR("texture pack: comparison pair (F7)");
+    }
     if (t && g_movie) KeepMovieFrame(*t);
     // brightness changed in the in-game menu: the ramp again, the identity one for a game that never set its own
     if (float b = app::Get().brightness; b != brightness_) {
@@ -4190,6 +4554,27 @@ void D3D12Backend::Present(const Surface& front) {
                   L"the graphics driver may also help; the log has the details.");
     }
 
+    if (t) {
+        // the surfaces shown lately are the ones an upscaler takes
+        if (std::find(shown_surf_.begin(), shown_surf_.end(), t->data) == shown_surf_.end()) {
+            std::rotate(shown_surf_.rbegin(), shown_surf_.rbegin() + 1, shown_surf_.rend());
+            shown_surf_[0] = t->data;
+        }
+        if (UpOn()) NextJitter(*t, up_ow_ ? up_ow_ : bb_w_);
+    }
+    // most of the frame unmatched a frame later: a cut (or a new place), the history goes
+    if (mv_draws_ >= 16 && mv_found_ * 3 < mv_draws_) up_reset_ = true;
+    if (UpOn() && presents_ % 600 == 300)
+        LOGI("upscaler: frame %llu, %u draws with motion, %u matched a frame back, shown %08X", (unsigned long long)presents_,
+             mv_draws_, mv_found_, t ? t->data : 0);
+    if (!cur_draws_.empty()) {
+        prev_index_.swap(cur_index_);
+        prev_draws_.swap(cur_draws_);
+    }
+    cur_index_.clear();
+    cur_draws_.clear();
+    occ_.clear();
+    mv_draws_ = mv_found_ = 0;
     presents_++;
     presents_seen_.store(presents_);
     frame_++;
@@ -4201,8 +4586,177 @@ void D3D12Backend::Present(const Surface& front) {
     ApplySettings();
 }
 
+float D3D12Backend::TargetScale() {
+    if (!UpWanted()) return app::RenderScale(guest_h_);
+    float h = float(app::Output().height) / up::Ratio(up::Quality(std::min(app::Get().upscaler_quality, 4u)));
+    return guest_h_ ? std::max(h / float(guest_h_), 0.1f) : 1.0f;
+}
+
+bool D3D12Backend::UpWanted() const {
+    uint32_t k = app::Get().upscaler;
+    return (k == up::kFsr || k == up::kDlss) && up_failed_ != k;
+}
+
+D3D12Backend::Motion* D3D12Backend::EnsureMotion(const Target& rt) {
+    if (rt.depth || std::find(shown_surf_.begin(), shown_surf_.end(), rt.data) == shown_surf_.end()) return nullptr;
+    Motion& m = motion_[rt.data];
+    if (m.res && m.w == rt.w && m.h == rt.h) return &m;
+    if (m.res) Release(m.res);
+    // a slot of its own among the few after the back buffers
+    std::array<bool, kMotionSlots> used{};
+    for (auto& [d, o] : motion_)
+        if (&o != &m && o.res) used[o.slot - (kRtvCount + kFrames)] = true;
+    uint32_t slot = 0;
+    while (slot < kMotionSlots && used[slot]) slot++;
+    if (slot == kMotionSlots) {
+        motion_.erase(rt.data);
+        return nullptr;
+    }
+    D3D12_HEAP_PROPERTIES hp{D3D12_HEAP_TYPE_DEFAULT};
+    D3D12_RESOURCE_DESC td = Texture2DDesc(kMotionFormat, rt.w, rt.h);
+    td.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+    D3D12_CLEAR_VALUE cv{};
+    cv.Format = td.Format;
+    m = Motion{};
+    if (FAILED(dev_->CreateCommittedResource(&hp, D3D12_HEAP_FLAG_NONE, &td, D3D12_RESOURCE_STATE_RENDER_TARGET, &cv,
+                                             IID_PPV_ARGS(&m.res)))) {
+        motion_.erase(rt.data);
+        return nullptr;
+    }
+    m.w = rt.w;
+    m.h = rt.h;
+    m.slot = kRtvCount + kFrames + slot;
+    dev_->CreateRenderTargetView(m.res.Get(), nullptr, Cpu(rtv_heap_.Get(), m.slot, rtv_inc_));
+    return &m;
+}
+
+// Halton (2, 3) over the upscaler's phase count, in render pixels from the pixel centre
+float Halton(uint32_t i, uint32_t b) {
+    float f = 1, r = 0;
+    for (; i; i /= b) {
+        f /= float(b);
+        r += f * float(i % b);
+    }
+    return r;
+}
+
+void D3D12Backend::NextJitter(const Target& t, uint32_t ow) {
+    int phases = up_ ? up_->Phases(t.w, ow) : 8;
+    uint32_t i = uint32_t(jit_n_++ % uint64_t(std::max(phases, 1))) + 1;
+    jit_px_[0] = Halton(i, 2) - 0.5f;
+    jit_px_[1] = Halton(i, 3) - 0.5f;
+    if (const char* e = std::getenv("XBE_UP_NO_JITTER"); e && *e == '1') jit_px_[0] = jit_px_[1] = 0;
+    // as the projection takes it: +2x / w, -2y / h in clip space
+    jit_[0] = 2.0f * jit_px_[0] / float(std::max(t.w, 1u));
+    jit_[1] = -2.0f * jit_px_[1] / float(std::max(t.h, 1u));
+    jit_[2] = jit_[3] = 0;
+}
+
+bool D3D12Backend::Upscale(Target& t, uint32_t ow, uint32_t oh, D3D12_CPU_DESCRIPTOR_HANDLE rh) {
+    auto it = motion_.find(t.data);
+    // nothing 3D drawn into this frame (menus, films): shown as it is, and the history starts again after
+    if (it == motion_.end() || it->second.frame != presents_ || !it->second.depth) {
+        up_reset_ = true;
+        return false;
+    }
+    Motion& m = it->second;
+    Target* depth = nullptr;
+    for (auto& [key, tg] : targets_)
+        if (&tg == m.depth) depth = &tg;
+    if (!depth || depth->w != t.w || depth->h != t.h || m.w != t.w || m.h != t.h) {
+        up_reset_ = true;
+        return false;
+    }
+    const app::Settings& st = app::Get();
+    bool hdr = t.fmt == DXGI_FORMAT_R16G16B16A16_FLOAT;
+    // made (again) for this output and render size
+    if (!up_ || up_ow_ != ow || up_oh_ != oh || up_rw_ != t.w || up_rh_ != t.h || up_hdr_ != hdr) {
+        if (up_) {
+            Submit(true);  // the old one's work done before it goes
+            up_.reset();
+        }
+        std::string why;
+        auto kind = up::Kind(st.upscaler);
+        up_ = up::Create(kind, up::Quality(std::min(st.upscaler_quality, 4u)), dev_.Get(), queue_.Get(), adapter_.Get(), ow,
+                         oh, t.w, t.h, hdr, why);
+        if (!up_) {
+            LOGR("upscaler: %s is not available: %s; the normal picture (Render resolution) instead", up::KindName(kind),
+                 why.c_str());
+            up_failed_ = st.upscaler;
+            return false;
+        }
+        up_kind_ = st.upscaler;
+        up_quality_ = st.upscaler_quality;
+        up_ow_ = ow;
+        up_oh_ = oh;
+        up_rw_ = t.w;
+        up_rh_ = t.h;
+        up_hdr_ = hdr;
+        up_reset_ = true;
+        LOGR("upscaler: %s, %ux%u drawn, %ux%u shown", up_->Describe().c_str(), t.w, t.h, ow, oh);
+        up_out_.Reset();
+    }
+    DXGI_FORMAT of = hdr ? DXGI_FORMAT_R16G16B16A16_FLOAT : DXGI_FORMAT_R8G8B8A8_UNORM;
+    if (!up_out_ || up_out_->GetDesc().Width != ow || up_out_->GetDesc().Height != oh || up_out_->GetDesc().Format != of) {
+        if (up_out_) Release(up_out_);
+        up_out_.Reset();
+        D3D12_HEAP_PROPERTIES hp{D3D12_HEAP_TYPE_DEFAULT};
+        D3D12_RESOURCE_DESC td = Texture2DDesc(of, ow, oh);
+        td.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+        up_out_state_ = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+        if (FAILED(dev_->CreateCommittedResource(&hp, D3D12_HEAP_FLAG_NONE, &td, up_out_state_, nullptr, IID_PPV_ARGS(&up_out_))))
+            return false;
+    }
+    const auto kRead = D3D12_RESOURCE_STATES(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    Transition(t.res.Get(), t.state, kRead);
+    Transition(depth->res.Get(), depth->state, kRead);
+    Transition(m.res.Get(), m.state, kRead);
+    Transition(up_out_.Get(), up_out_state_, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    up::Frame f;
+    f.cl = cl_.Get();
+    f.color = t.res.Get();
+    f.depth = depth->res.Get();
+    f.motion = m.res.Get();
+    f.output = up_out_.Get();
+    f.render_w = t.w;
+    f.render_h = t.h;
+    f.out_w = ow;
+    f.out_h = oh;
+    f.jitter_x = jit_px_[0];
+    f.jitter_y = jit_px_[1];
+    // a test: XBE_UP_JITTER_SIGN=-x, -y or -xy flips what the upscaler is told (the drawn jitter stays)
+    if (const char* e = std::getenv("XBE_UP_JITTER_SIGN")) {
+        if (std::strchr(e, 'x')) f.jitter_x = -f.jitter_x;
+        if (std::strchr(e, 'y')) f.jitter_y = -f.jitter_y;
+    }
+    f.reset = up_reset_;
+    auto now = std::chrono::steady_clock::now();
+    f.dt_ms = float(std::clamp(std::chrono::duration<double, std::milli>(now - up_t_).count(), 1.0, 100.0));
+    up_t_ = now;
+    f.hdr = hdr;
+    bool ok = up_->Evaluate(f);
+    // the upscalers leave their own root signature and heaps bound
+    ID3D12DescriptorHeap* heaps[] = {srv_heap_.Get(), smp_heap_.Get()};
+    cl_->SetDescriptorHeaps(2, heaps);
+    cl_->SetGraphicsRootSignature(root_.Get());
+    cl_->OMSetRenderTargets(1, &rh, FALSE, nullptr);
+    bound_rt_ = bound_ds_ = nullptr;
+    bound_mv_ = nullptr;
+    if (!ok) return false;
+    up_reset_ = false;
+    return true;
+}
+
 void D3D12Backend::ApplySettings() {
-    float want = app::RenderScale(guest_h_), want_x = WideMul();
+    // another upscaler or quality: made again for the next frame (a kind that failed is tried again once changed)
+    const app::Settings& st = app::Get();
+    if (up_ && (st.upscaler != up_kind_ || st.upscaler_quality != up_quality_)) {
+        Flush();
+        up_.reset();
+        up_reset_ = true;
+    }
+    if (up_failed_ && st.upscaler != up_failed_) up_failed_ = 0;
+    float want = TargetScale(), want_x = WideMul();
     bool remake = ext_ && ext_->Settings();
     uint32_t samples = PickSamples();
     if (std::fabs(want - scale_) > 1e-4f || std::fabs(want_x - xmul_) > 1e-4f || remake || samples != samples_) {
@@ -4212,6 +4766,8 @@ void D3D12Backend::ApplySettings() {
             if (tg.ms) (tg.depth ? free_dsv_ : free_rtv_).push_back(tg.ms_view);
         }
         targets_.clear();
+        motion_.clear();
+        up_reset_ = true;
         scale_ = want;
         xmul_ = want_x;
         samples_ = samples;

@@ -6,6 +6,8 @@
 #include <cstdlib>
 #include <atomic>
 #include <chrono>
+#include <condition_variable>
+#include <mutex>
 #include <map>
 #include <thread>
 #include <unordered_map>
@@ -258,6 +260,10 @@ void ApplyDefaultStates(X86Context& ctx) {
 constexpr bool kVBlank = XDK_CDevice_VBlankCount != xdk::kUnknown && XDK_CDevice_VBlankEvent != xdk::kUnknown &&
                          XDK_CDevice_VBlankCallback != xdk::kUnknown;
 
+std::mutex g_blank_mutex;
+std::condition_variable g_blank_cv;
+uint64_t g_blank_seq = 0;
+
 // what the library's vertical blank interrupt leaves for the title: count, event, callback
 void VerticalBlank(X86Context& ctx) {
     using clock = std::chrono::steady_clock;
@@ -279,6 +285,11 @@ void VerticalBlank(X86Context& ctx) {
             CallGuest(ctx, callback, {info});
         }
         shown = swaps;
+        {
+            std::lock_guard<std::mutex> l(g_blank_mutex);
+            g_blank_seq++;
+        }
+        g_blank_cv.notify_all();
         // the title clears the event in its own memory before a wait, which the host object does not see
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         ResetEvent(*event);
@@ -288,6 +299,12 @@ void VerticalBlank(X86Context& ctx) {
 }  // namespace
 
 gpu::State& State() { return g_state; }
+
+void WaitVBlank(int max_ms) {
+    std::unique_lock<std::mutex> l(g_blank_mutex);
+    uint64_t seen = g_blank_seq;
+    g_blank_cv.wait_for(l, std::chrono::milliseconds(max_ms), [&] { return g_blank_seq != seen; });
+}
 std::recursive_mutex& Lock() { return g_lock; }
 
 }  // namespace d3d
@@ -1298,6 +1315,37 @@ void Walk(uint32_t end) {
         uint32_t head = R32(p), method = head & 0x1FFC, n = (head >> 18) & 0x7FF;
         p += 4;
         if ((head & 0xA0030003) || n * 4 > end - p) break;  // anything but a method header
+        // runs moved in one copy, as the loop below would one value at a time (the walk was a fifth of the CPU time
+        // in The Fellowship of the Ring, mostly inline vertices pushed value by value)
+        const uint8_t* src = kernel::g_base + p;
+        if ((head & 0x40000000) && method == 0x1818) {  // vertices inline
+            if (g_im_prim) {
+                size_t o = g_arr_inline.size();
+                g_arr_inline.resize(o + n);
+                std::memcpy(g_arr_inline.data() + o, src, size_t(n) * 4);
+            }
+            p += n * 4;
+            continue;
+        }
+        if ((head & 0x40000000) && method == 0x1800) {  // two 16-bit indices a value, the low one first
+            if (g_im_prim) {
+                size_t o = g_arr_indices.size();
+                g_arr_indices.resize(o + size_t(n) * 2);
+                std::memcpy(g_arr_indices.data() + o, src, size_t(n) * 4);
+            }
+            p += n * 4;
+            continue;
+        }
+        if (method >= 0x0B80 && method < 0x0C00 && ((head & 0x40000000) || method + n * 4 <= 0x0C00)) {  // constants
+            constexpr uint32_t kSlots = sizeof(g_state.vsc) / 4;
+            if (g_vsc_load < kSlots) {
+                uint32_t k = std::min(n, kSlots - g_vsc_load);
+                std::memcpy(reinterpret_cast<uint8_t*>(g_state.vsc.data()) + size_t(g_vsc_load) * 4, src, size_t(k) * 4);
+            }
+            g_vsc_load += n;
+            p += n * 4;
+            continue;
+        }
         for (uint32_t i = 0; i < n; i++, p += 4) {
             uint32_t m = head & 0x40000000 ? method : method + i * 4, v = R32(p);
             float f, *a = g_im_attr;

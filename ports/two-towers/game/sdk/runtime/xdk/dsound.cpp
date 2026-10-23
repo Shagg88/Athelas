@@ -371,6 +371,10 @@ void Render(float* out, uint32_t frames) {
         float send = reverb ? SendLevel(v) : 0.0f;
         uint32_t base = v.data + v.play_start;
         double step = double(v.freq ? v.freq : v.rate) / audio::kRate;
+        // a buffer's loop or play range (fixed while the lock is held); mono voices read each frame once
+        uint32_t start = v.looping ? FramesOf(v, v.loop_start) : 0;
+        uint32_t end = v.stream ? 0 : FramesOf(v, v.looping ? v.loop_start + v.loop_len : v.play_len);
+        const bool mono = v.channels == 1;
         for (uint32_t i = 0; i < frames; i++) {
             uint32_t f = uint32_t(v.pos);
             float a, b, a1, b1;  // this frame and the next, interpolated between
@@ -390,20 +394,18 @@ void Render(float* out, uint32_t frames) {
                 }
                 Packet& pk = v.packets.front();
                 a = Sample(v, pk.data, f, 0);
-                b = Sample(v, pk.data, f, 1);
+                b = mono ? a : Sample(v, pk.data, f, 1);
                 if (f + 1 < FramesOf(v, pk.size)) {
                     a1 = Sample(v, pk.data, f + 1, 0);
-                    b1 = Sample(v, pk.data, f + 1, 1);
+                    b1 = mono ? a1 : Sample(v, pk.data, f + 1, 1);
                 } else if (v.packets.size() > 1) {
                     a1 = Sample(v, v.packets[1].data, 0, 0);
-                    b1 = Sample(v, v.packets[1].data, 0, 1);
+                    b1 = mono ? a1 : Sample(v, v.packets[1].data, 0, 1);
                 } else {
                     a1 = a;
                     b1 = b;
                 }
             } else {
-                uint32_t start = v.looping ? FramesOf(v, v.loop_start) : 0;
-                uint32_t end = FramesOf(v, v.looping ? v.loop_start + v.loop_len : v.play_len);
                 if (f >= end) {
                     if (!v.looping || end <= start) {
                         v.playing = false;
@@ -415,10 +417,10 @@ void Render(float* out, uint32_t frames) {
                 }
                 if (!v.data) break;
                 a = Sample(v, base, f, 0);
-                b = Sample(v, base, f, 1);
+                b = mono ? a : Sample(v, base, f, 1);
                 uint32_t next = f + 1 < end ? f + 1 : v.looping ? start : f;
                 a1 = Sample(v, base, next, 0);
-                b1 = Sample(v, base, next, 1);
+                b1 = mono ? a1 : Sample(v, base, next, 1);
             }
             float t = float(v.pos - f);
             a += (a1 - a) * t;

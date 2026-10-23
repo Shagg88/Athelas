@@ -94,3 +94,21 @@ Copyright (c) 2012 Red Hat, Inc. with Reserved Font Name Liberation.
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1. The license text is at
 https://openfontlicense.org and in the release's licenses folder (LiberationSans-OFL.txt).
+
+
+AMD FidelityFX / FSR SDK 2.3 API headers (https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK), the FSR
+upscaler's interface (third_party/ffx)
+
+Copyright (C) 2026 Advanced Micro Devices, Inc. MIT licence, as written at the top of each header. The FSR DLLs
+themselves (amd_fidelityfx_loader_dx12.dll, amd_fidelityfx_upscaler_dx12.dll) are not in this repository; the
+release ships them under AMD's own licence (licenses\AMD-FSR-LICENSE.md).
+
+
+NVIDIA Streamline 2.14.16 headers (https://github.com/NVIDIA-RTX/Streamline), the DLSS interface
+(third_party/streamline)
+
+Copyright (c) 2022-2025 NVIDIA CORPORATION. MIT licence, as written at the top of each header and in
+third_party/streamline/LICENSE.txt. sl_security.h: its <softpub.h> include is written in lower case for MinGW.
+The Streamline and DLSS DLLs (sl.interposer.dll, sl.common.dll, sl.dlss.dll, nvngx_dlss.dll) are not in this
+repository; the release ships them under NVIDIA's own terms (licenses\NVIDIA-DLSS-LICENSE.txt,
+licenses\NVIDIA-Streamline-LICENSE.txt).

@@ -50,8 +50,15 @@ std::string OsVersion() {
     if (!display.empty()) name += " " + display;
     if (!build.empty()) name += " (build " + build + "." + std::to_string(ubr) + ")";
     using WineVersion = const char*(__cdecl*)();
-    if (auto wine = reinterpret_cast<WineVersion>(reinterpret_cast<void*>(GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "wine_get_version"))))
+    if (auto wine = reinterpret_cast<WineVersion>(reinterpret_cast<void*>(GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "wine_get_version")))) {
         name += std::string(" on Wine ") + wine();
+        // the system Wine runs on (CrossOver on a Mac says Darwin): Mac reports tell themselves apart
+        using WineHost = void(__cdecl*)(const char**, const char**);
+        const char *sys = nullptr, *rel = nullptr;
+        if (auto host = reinterpret_cast<WineHost>(reinterpret_cast<void*>(GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "wine_get_host_version"))))
+            host(&sys, &rel);
+        if (sys && *sys) name += std::string(" on ") + (std::strcmp(sys, "Darwin") == 0 ? "macOS (Darwin " : std::string(sys) + " (") + (rel ? rel : "") + ")";
+    }
     return name;
 }
 

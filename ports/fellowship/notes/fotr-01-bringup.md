@@ -98,3 +98,30 @@ are gone (they came from the late constant loads as well). Trans_bridges is a tr
 - Some pushed inline vertices are still dropped (480/1920 bytes with shader B00625D1, 960 with B00624E1): a vertex
   layout the packing does not explain yet.
 - Windows build not tried yet (needs the PC).
+
+## Draw distance (2026-10-22, investigation, nothing changed in the game)
+- The gameplay projection (0x5843E from 0x10DBFF) gets near 1 / far 10000 from the view (+0x454 / +0x458); far x4
+  changed 0.9% of the pixels in Weathertop (a line in the sky only): the far plane is not what limits the view.
+- The world is drawn as pushed buffers (RunPushBuffer 0x190610, 24 sites); meshes go 0xF9B90 (frame) -> objects'
+  draw methods 0x20660 / 0x20760 (tables 0x1C7014 / 0x1C6FB8) -> 0xCD740 -> 0xC9CA0. The object's mesh is picked by
+  0x1266D0: [obj+0x13B] set -> [[obj+0x104]+0x158], else LOD entry [[obj+0x104]+0xEC] + [obj+0x124] * 0x11C.
+- 0x12AA6E: squared distance from the camera ([[0x1ECBDC]+4]+0x264) to the object; skipped when beyond
+  ([obj+0x94] + [ebx+0xAC])^2, faded over the last 100 units ([obj+0x13C]). The ranges in Weathertop are 60-270.
+  Tripled (FOTR_DD_MUL=3): 8% more draws, but no difference to be seen in Weathertop or Bree frames, walking or not.
+- Next step needs a place where pop-in shows (from a player): record that walk (REF=10 REF_FROM/TO) and find the draw
+  that appears. Probes kept in a git stash (zz_probe_draw.cpp: PROBE_DRAW logs callers / ranges, FOTR_DD_MUL).
+
+## Draw distance, round 2 (2026-10-22): what each control does, nothing changed in the game
+- 0x12A950 (one model part; 0x12AA6E is its middle) is called per part from 0x12BBA0 (a model, [model+0xF0] parts of
+  0x11C bytes in [model+0xEC]). [part+0xAC] is the part's bounding radius (0x11BED0 = the matrix's largest scale,
+  times it), not a distance. The view distance is the object's own [obj+0x94] (obj = [esp+0x3C] at 0x12AA6E):
+  hand-set, 100 to 1300 in Hobbiton (1000 most often). Faded over the last 100 units ([obj+0x13C]).
+- 0x12BCC0 draws a whole model ([esp+4] object, [esp+8] model; distance squared in [model+0x7C]): all 508 models in
+  Hobbiton are drawn from the first frame on, never hidden as a whole.
+- Tests (harness, open walks in Hobbiton, Green Hill Country, Bywater): far plane x4, part radius x3, view distances
+  x3: no object to be seen that was not there before. Most draws that come and go are the view's edges (turning).
+- What would settle it is a place a player sees pop-in; none reported in detail. Probes not kept (they are in this
+  note: hook 0x12AA6E for obj+0x94, 0x12BCC0 for models drawn after a gap).
+- The Two Towers (for the record): projection 0x4E890 near 2 far 800 (gameplay camera 0xE3220; 300 from 0xE7BFC);
+  far x3 turns the sky black (the sky is built around the far plane). "GRAPHICS/shadows distance" (0x18D800, 100)
+  x4: no difference to be seen. Fog is off. The Return of the King already has a draw distance setting (50 to 800%).

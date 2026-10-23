@@ -2,6 +2,7 @@
 #include "gpu/vertex.h"
 
 #include <algorithm>
+#include <cctype>
 #include <bit>
 #include <cstdarg>
 #include <cstdio>
@@ -939,6 +940,83 @@ std::string QuadHlsl(std::string s) {
 }
 )", "");
     for (int i = 0; i < 4; i++) sub(F("i.tc%d", i).c_str(), "unstretch(", ", i.e)");
+    return s;
+}
+
+
+namespace {
+void Sub(std::string& s, const std::string& at, const std::string& with, bool all = false) {
+    for (size_t p = s.find(at); p != std::string::npos; p = all ? s.find(at, p + with.size()) : std::string::npos)
+        s.replace(p, at.size(), with);
+}
+void AddMotionDecls(std::string& s) {
+    // two more interpolants (TEXCOORD5 is QuadHlsl's) and the previous frame's constants
+    Sub(s, "    float fogamt : TEXCOORD4;\n", "    float fogamt : TEXCOORD4;\n    float4 mvc : TEXCOORD6;\n    float4 mvp : TEXCOORD7;\n");
+    Sub(s, "    float4 lt[56];\n};\n",
+        "    float4 lt[56];\n};\ncbuffer MV : register(b2) { float4 cprev[192]; float4x4 wvp_prev; float4 jit; };\n");
+}
+// c[...] as cprev[...] in a vertex program's body
+std::string PrevConstants(const std::string& body) {
+    std::string o;
+    o.reserve(body.size() + 256);
+    for (size_t i = 0; i < body.size(); i++) {
+        bool ident = i > 0 && (std::isalnum((unsigned char)body[i - 1]) || body[i - 1] == '_');
+        if (body[i] == 'c' && i + 1 < body.size() && body[i + 1] == '[' && !ident) {
+            o += "cprev";
+            continue;
+        }
+        o += body[i];
+    }
+    return o;
+}
+}  // namespace
+
+std::string MotionHlsl(std::string s, MotionKind kind) {
+    AddMotionDecls(s);
+    const std::string epi = "\n    VOut o;\n    precise float4 p = oPos;\n";
+    size_t e = s.find(epi);
+    if (kind == kMotionProgram || (kind == kMotionFlat && e != std::string::npos)) {
+        if (e == std::string::npos) return s;
+        std::string prev = "\n    float4 mv_po = oPos;\n";
+        if (kind == kMotionProgram) {
+            size_t b = s.find(kVsPrologue);
+            if (b == std::string::npos) return s;
+            b += std::strlen(kVsPrologue);
+            // the program again on the previous frame's constants, in a scope of its own (its registers shadow these)
+            prev = "\n    float4 mv_po;\n    {\n" + std::string(kVsPrologue) + PrevConstants(s.substr(b, e - b)) + "    mv_po = oPos;\n    }\n";
+        }
+        s.insert(e, prev);
+        std::string jit = kind == kMotionProgram ? "    o.pos.xy += jit.xy * o.pos.w;\n" : "";
+        Sub(s, "    o.pos = q;\n",
+            "    o.pos = q;\n    {\n        float4 pp = mv_po;\n        pp.w = magclamp(pp.w);\n        float4 qp;\n"
+            "        qp.x = pp.x * 2 / surf.x - 1;\n        qp.y = 1 - pp.y * 2 / surf.y;\n        qp.z = pp.z * surf.z;\n"
+            "        qp.xyz *= pp.w;\n        qp.w = pp.w;\n        o.mvc = q;\n        o.mvp = qp;\n    }\n" + jit);
+        return s;
+    }
+    // fixed function, transformed here (flat: a 2D draw in screen space, left still and unjittered)
+    if (kind == kMotionFlat) {
+        Sub(s, "    o.pos = cp;\n", "    o.pos = cp;\n    o.mvc = cp;\n    o.mvp = cp;\n");
+        return s;
+    }
+    Sub(s, "    float4 cp = mul(ip, wvp);\n", "    float4 cp = mul(ip, wvp);\n    float4 mv_cp = mul(ip, wvp_prev);\n");
+    Sub(s, "    o.pos = cp;\n", "    o.pos = cp;\n    o.mvc = cp;\n    o.mvp = mv_cp;\n    o.pos.xy += jit.xy * o.pos.w;\n");
+    return s;
+}
+
+std::string MotionPixelHlsl(std::string s) {
+    AddMotionDecls(s);
+    Sub(s, "float4 main(VOut i, bool front : SV_IsFrontFace) : SV_Target {",
+        "struct POut {\n    float4 c : SV_Target0;\n    float4 mv : SV_Target1;\n};\n"
+        "POut main(VOut i, bool front : SV_IsFrontFace) {");
+    size_t r = s.rfind("return outc;\n}");
+    if (r != std::string::npos)
+        s.replace(r, std::strlen("return outc;\n}"),
+                  "POut po;\n    po.c = outc;\n"
+                  "    // from here to a frame ago, in UV units (y down); nothing for a vertex behind the camera then\n"
+                  "    float2 cn = i.mvc.xy / i.mvc.w, pn = i.mvp.xy / max(i.mvp.w, 1e-6);\n"
+                  "    po.mv.xy = i.mvp.w > 0 && i.mvc.w > 0 ? (pn - cn) * float2(0.5, -0.5) : 0;\n"
+                  "    po.mv.z = 0;\n    po.mv.w = outc.a >= 0.5 ? 1 : 0;  // a blended cut-out writes it where mostly opaque\n"
+                  "    return po;\n}");
     return s;
 }
 

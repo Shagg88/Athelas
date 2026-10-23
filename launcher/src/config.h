@@ -88,6 +88,7 @@ struct Settings {
     bool kbEnabled = true;        // [Keyboard] Enabled
     bool mouseAim = true;         // [Keyboard] MouseAim (Xbox version): the mouse aims while the ranged attack is held
     int  mouseSens = 100;         // [Keyboard] MouseSensitivity, percent
+    bool mouseInvertY = false;    // [Keyboard] MouseInvertY (Xbox version): mouse aiming up and down reversed
     bool mouseMenus = true;       // [Keyboard] MouseMenus: the wheel and right click in the game's menus
     bool cheatInvulnerable = false, cheatMissiles = false, cheatDevastating = false, cheatPerfect = false;  // [Cheats] (Xbox version)
     int  kbPlayer = 1;            // [Keyboard] Player: 1 or 2
@@ -146,7 +147,9 @@ void remove_launcher_after_exit();
 
 int  pick_refresh(const std::vector<int> &hz, int fps);
 bool load_settings(const std::string &dir, Settings &s);   // false = no ROTKFix.ini yet (defaults used)
-bool save_settings(const std::string &dir, const Settings &s, std::string &err);
+// controllers: how many are connected now (-1: unknown). Player 1 gets the ROTK Fix Gamepad layout only when one
+// is, as that layout has no keyboard controls for playing; otherwise the game's own keyboard and mouse layout
+bool save_settings(const std::string &dir, const Settings &s, std::string &err, int controllers = -1);
 bool save_rotkfix_ini(const std::string &dir, const Settings &s, std::string &err);   // ROTKFix.ini only
 bool install_input_profile(const std::string &dir, std::string &err);
 bool launch_game(const std::string &dir, std::string &err);

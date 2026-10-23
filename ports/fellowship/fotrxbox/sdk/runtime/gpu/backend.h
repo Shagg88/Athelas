@@ -73,6 +73,10 @@ inline std::atomic<bool> g_capture{false};
 inline std::atomic<bool> g_screenshot{false};
 // [ : sharpening off while held off, to compare; a press switches it back on
 inline std::atomic<bool> g_sharpen_off{false};
+// F8: texture pack replacements off (the game's own textures drawn), to compare; a press switches them back on
+inline std::atomic<bool> g_pack_off{false};
+// F7: a comparison pair of screenshots: this frame as it is, the next with texture packs the other way round (then back)
+inline std::atomic<bool> g_pack_pair{false};
 // the game shows a full-screen movie (its frame fills the back buffer): presented by [graphics] movie_display,
 // movie_sharpening and cutscene_audio_delay instead of as a game frame
 inline std::atomic<bool> g_movie{false};

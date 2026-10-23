@@ -2,6 +2,7 @@
 // Windows
 // SCRIPT file: lines of "frame buttons [frames held]", held 8 frames by default, # comments; buttons joined by +:
 // UP DOWN LEFT RIGHT START BACK A B X Y BLACK WHITE LT RT LS LSD LSL LSR (left stick up, down, left, right)
+// RSU RSD RSL RSR (right stick up, down, left, right)
 // cmd in the run folder: "buttons [frames held]" pressed once from the frame it is read, then removed
 #include <cstdio>
 #include <string>
@@ -63,6 +64,10 @@ void Apply(const std::string& s, Pad& p) {
         else if (b == "LSD") p.ly = -32767;
         else if (b == "LSL") p.lx = -32767;
         else if (b == "LSR") p.lx = 32767;
+        else if (b == "RSU") p.ry = 32767;
+        else if (b == "RSD") p.ry = -32767;
+        else if (b == "RSL") p.rx = -32767;
+        else if (b == "RSR") p.rx = 32767;
     }
 }
 

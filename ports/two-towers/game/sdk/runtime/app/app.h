@@ -61,6 +61,8 @@ struct Settings {
     bool smooth_2d = true;                 // unfiltered 2D pictures (menus, HUD) upscaled bicubic past 1.2x the console's lines
     bool show_fps = false;                 // [display] show_fps: the frames per second in the screen's top right corner
     uint32_t msaa = 0;                     // anti-aliasing samples: 0 off, 2, 4 or 8
+    uint32_t upscaler = 0;                 // 0 off, 1 FSR (AMD, any card), 2 DLSS (NVIDIA RTX): drawn smaller, upscaled temporally
+    uint32_t upscaler_quality = 1;         // 0 native (DLAA / FSR native AA), 1 quality, 2 balanced, 3 performance, 4 ultra performance
     bool hdr = false;                      // HDR output on an HDR screen (Windows HDR on), read at start
     uint32_t colour_look = 0;              // 0 original, 1 film, 2 vivid, 3 dark fantasy
     uint32_t look_strength = 100;          // 0 to 100, how much of the look
@@ -80,6 +82,7 @@ struct Settings {
     std::string keys[keys::kCount];        // each action's keys, comma separated; keys::kDefaults and the game's
     bool mouse_aim = true;                 // [keyboard] mouse_aim: while the ranged attack is held, the mouse aims (the left stick)
     uint32_t mouse_sensitivity = 100;      // [keyboard] mouse_sensitivity, percent
+    bool mouse_invert_y = false;           // [keyboard] mouse_invert_y: mouse aiming up and down reversed
     bool mouse_menus = true;               // [keyboard] mouse_menus: in the game's menus the wheel moves, right click goes back
     // [window]: when the game window loses the focus (another window in front, Alt-Tab)
     bool pause_unfocused = false;          // the game stops, picture and sound, until it has the focus again
@@ -221,6 +224,9 @@ struct GameInfo {
     bool (*in_menus)() = nullptr;
     bool menu_accept_start = false;
     bool menu_start_with_a = false;
+    // with menu_start_with_a: when it says so only (a title screen), A's keys press Start too; elsewhere in the menus
+    // they press A alone (The Two Towers' Yes/No pop-ups took the Start as their answer, #17)
+    bool (*start_with_a_now)() = nullptr;
     // achievements: every one the game has, in the order the lists show them (empty: none)
     std::vector<ach::Def> achievements;
     // Discord status: the game's Discord application id (its name is what Discord shows as the game), and what the

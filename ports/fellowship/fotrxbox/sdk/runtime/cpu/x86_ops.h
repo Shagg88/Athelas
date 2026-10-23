@@ -235,8 +235,26 @@ inline void x86_rep_stos(X86Context& ctx, uint8_t* base, uint32_t w) {
         ctx.ecx = 0;
         return;
     }
-    int32_t d = ctx.df ? -int32_t(w) : int32_t(w);
     uint32_t v = ctx.eax;
+    if (!ctx.df && (w == 2 || w == 4)) {
+        // rep stosw / stosd forwards: a value of one repeated byte (zero above all, the games' clears) is a memset,
+        // any other a plain fill; the same bytes as element by element (The Fellowship of the Ring cleared lists with
+        // rep stosd, 3% of the CPU time one element at a time)
+        uint32_t m = w == 2 ? 0xFFFFu : 0xFFFFFFFFu, vv = v & m;
+        uint8_t* p = base + ctx.edi;
+        if (vv == (vv & 0xFF) * (0x01010101u & m)) {
+            std::memset(p, int(vv & 0xFF), size_t(n) * w);
+        } else if (w == 4) {
+            for (uint32_t i = 0; i < n; i++) std::memcpy(p + size_t(i) * 4, &vv, 4);
+        } else {
+            uint16_t h = uint16_t(vv);
+            for (uint32_t i = 0; i < n; i++) std::memcpy(p + size_t(i) * 2, &h, 2);
+        }
+        ctx.edi += n * w;
+        ctx.ecx = 0;
+        return;
+    }
+    int32_t d = ctx.df ? -int32_t(w) : int32_t(w);
     for (; n; n--) {
         std::memcpy(base + ctx.edi, &v, w);
         ctx.edi += d;

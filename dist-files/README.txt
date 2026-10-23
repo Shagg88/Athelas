@@ -81,6 +81,9 @@ INSTALL
 The first time you press Save or Play, the launcher adds the controller layout
 to the game's Input.ini (the original is kept as Input.ini.original) and
 updates the game's settings file in Documents (a copy of yours is kept).
+ROTK (PC): player 1 plays with the controller when one is connected as you
+press Play, and with the game's own keyboard and mouse controls when none is
+(plug the controller in before pressing Play).
 
 
 NEW VERSIONS
@@ -143,6 +146,8 @@ Keys while playing:
   F1                   Hide or show the HUD
   [                    Sharpening off/on
   ]                    Next colour look
+  F8                   Texture packs off/on, to compare
+  F7                   A pair of screenshots, with and without texture packs
 
 Reporting a problem: see REPORTING A PROBLEM below. The log is TT-Xbox\tt.log,
 and after a crash the newest Game.<date>_<time>.dmp in TT-Xbox\CrashDumps.
@@ -320,6 +325,23 @@ includes no game art: packs are made from your own copy.
 Text, the movie picture and the screen effects cannot be replaced.
 
 
+FSR AND DLSS (THE XBOX PORTS)
+-----------------------------
+The Two Towers, The Return of the King (Xbox) and The Fellowship of the Ring can
+draw the game smaller and rebuild a sharp, smooth picture from several frames:
+faster, and it smooths jagged edges as well. Pick it in Athelas, the game's
+Graphics page, Upscaler (or in the game with F10):
+- AMD FSR: any graphics card (FSR 4 on the newest Radeon cards, FSR 3.1 on the
+  others, NVIDIA and Intel included).
+- NVIDIA DLSS: GeForce RTX cards. Takes effect the next time the game starts.
+Upscaler quality sets how much smaller the game is drawn: Native keeps the full
+size and only smooths (DLAA with DLSS), Quality is the best balance,
+Performance and Ultra performance are fastest. While one is on it replaces
+Render resolution and Anti-aliasing. Not on Windows on ARM. The files are in
+the upscalers folder, under AMD's and NVIDIA's own licences; the log says why
+when one can't be used on your PC.
+
+
 PLAYING CO-OP ONLINE
 --------------------
 Both Return of the King games have two-player co-op on one PC (The Two Towers
@@ -342,12 +364,12 @@ WINDOWS ON ARM (SNAPDRAGON LAPTOPS)
 -----------------------------------
 On a Windows on ARM PC, download Athelas-<version>-arm64.zip instead of the
 usual zip. It has everything the usual one has, plus native ARM64 builds of
-the Xbox ports (TwoTowers-arm64.exe, ROTKXbox-arm64.exe), which the launcher
-starts by itself on an ARM PC (the About tab then says "ARM64 build"). The
-launcher's updates fetch the ARM zip there too. If the ARM64 builds in the
-folder are from another version, the launcher runs the usual ones instead and
-offers to install the right ARM64 builds on the About tab. The Fellowship of
-the Ring has no ARM64 build yet: it runs through Windows' translation there.
+the Xbox ports (TwoTowers-arm64.exe, ROTKXbox-arm64.exe, FOTRXbox-arm64.exe),
+which the launcher starts by itself on an ARM PC (the About tab then says
+"ARM64 build"). The launcher's updates fetch the ARM zip there too. If the
+ARM64 builds in the folder are from another version, the launcher runs the
+usual ones instead and offers to install the right ARM64 builds on the About
+tab.
 
 ROTK on PC itself is a 32-bit Intel program, so on ARM it always runs through
 Windows' translation; ROTK Fix works with it the same.
@@ -387,6 +409,29 @@ welcome.
   In Athelas: the D-pad moves, A chooses, B goes back, LB / RB change tab,
   Menu plays and View saves; the line under the summary reminds you.
 - The Balanced preset suits the Deck; 60 fps is a good target for battery life.
+
+
+MAC
+---
+Athelas and the games are Windows programs. On a Mac (Apple Silicon or Intel)
+they run through CrossOver (codeweavers.com; a free trial, then paid), which
+turns Windows and DirectX 12 into macOS and Metal. They have been tested in a
+Wine setup like CrossOver's on Linux, not yet on a real Mac: reports are very
+welcome (see REPORTING A PROBLEM; the game's log says "on Wine ... on macOS").
+1. In CrossOver, make a new bottle for Windows 10 64-bit.
+2. Unzip Athelas (the usual zip, not the arm64 one) into a folder of its own,
+   then in CrossOver use Run Command and choose Athelas.exe in that bottle.
+   CrossOver can save it as a launcher for next time.
+3. Show Athelas your games:
+   - The Xbox games: your disc images (.iso) or extracted folders, anywhere on
+     the Mac (your Mac's folders are reachable from the bottle).
+   - The Return of the King (PC): install the game into the same bottle, then
+     choose its folder. As under Proton, the original disc release's copy
+     protection may not run there.
+- Keep DirectX 12 games on Apple's D3DMetal in the bottle's settings (the
+  default for DirectX 12 in current CrossOver versions).
+- The ARM64 builds are for Windows on ARM PCs: on a Mac the usual (x64) builds
+  are the ones to use; Athelas picks them by itself.
 
 
 WIDE AND ULTRAWIDE SCREENS
@@ -545,6 +590,7 @@ The launcher writes ROTKFix.ini in the game folder. You can also edit it in Note
   Player                 Which player the keyboard plays as in co-op: 1 or 2 (default 1)
   MouseAim               1 = while the ranged attack is held, moving the mouse aims (default 1)
   MouseSensitivity       Mouse aiming, % (10-400) (default 100)
+  MouseInvertY           1 = mouse aiming up and down reversed (forward aims down) (default 0)
   MouseMenus             1 = in the game's menus the wheel moves up and down and a right click goes back (default 1)
   MoveForward            Keys, comma separated: A-Z, 0-9, F1-F12, Space, Enter, Esc, Tab, Backspace, LShift, LCtrl, LAlt, Up, Down, Left, Right, Numpad0-9, Mouse1-Mouse5 ... (default W)
   MoveBack               (default S)

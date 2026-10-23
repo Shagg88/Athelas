@@ -23,6 +23,8 @@ namespace tt {
 // one. For the keyboard: Esc goes back in the front end's menus, and Enter or the left button presses Start as well
 // (the title's "press start", #8), so a pause taken for the front end paused again on every click.
 std::atomic<bool> g_front_end{true};
+// the title screen ("press start button", ui\startup.bff) is up: the last menu file opened, no level since (#17)
+std::atomic<bool> g_title{true};
 void AchievementsFile(const std::string& lower_name);  // tt_achievements.cpp
 void GandalfWorld(const std::string& lower_name);      // tt_gandalf.cpp
 void FileOpened(const char* name) {
@@ -32,14 +34,16 @@ void FileOpened(const char* name) {
     GandalfWorld(n);
     auto ends = [&](const char* e) { size_t k = std::strlen(e); return n.size() >= k && n.compare(n.size() - k, k, e) == 0; };
     bool was = g_front_end;
+    if (n.find("\\ui\\") != std::string::npos && ends(".bff")) g_title = n.find("\\ui\\startup.bff") != std::string::npos;
     if (n.find("\\worlds\\") != std::string::npos && (ends(".bfa") || ends(".bfl") || ends(".bfg") || ends(".bfi")))
-        g_front_end = false;
+        g_front_end = g_title = false;
     else if (n.find("\\ui\\") != std::string::npos && ends(".bff") && n.find("\\ui\\load") == std::string::npos &&
              n.find("\\ui\\options") == std::string::npos && n.find("\\ui\\upg") == std::string::npos)
         g_front_end = true;
     if (was != g_front_end) LOGI("tt: %s (%s)", g_front_end ? "front end" : "in a level", name);
 }
 bool InMenus() { return g_front_end.load(); }
+bool TitleScreen() { return g_front_end.load() && g_title.load(); }
 
 uint32_t g_fov_percent = 100;  // settings.toml [graphics] fov
 std::atomic<bool> g_hud_hidden{false};

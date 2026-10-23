@@ -1,6 +1,7 @@
 #include "xbe/image_hash.h"
 #include <algorithm>
 #include <cctype>
+#include <cstdlib>
 #include <cstdarg>
 #include <cstdio>
 #include <fstream>
@@ -64,30 +65,43 @@ std::string CodeGen::EmitFunction(uint32_t entry) {
                     if (x->set && !x->ret) targets.insert(x->to);
     }
     body_.clear();
+    {
+        static const char* e = std::getenv("XBE_X87_CACHE");
+        x87_on_ = !(e && *e == '0');
+    }
+    x87_ = {};
     if (body.empty()) Line(F("\tx86_trap(ctx, 0x%X, \"function was not decoded\");", entry));
     for (size_t i = 0; i < body.size(); i++) {
         uint32_t va = body[i];
+        if ((targets.count(va) && va != entry) || (va == entry && body.front() != entry) || (va == entry && labels_.count(entry))) {
+            X87Flush();  // a run ends where a branch may enter
+        }
         if ((targets.count(va) && va != entry) || (va == entry && body.front() != entry)) {
             Line(F("loc_%08X:", va));
             pending_.valid = false;
         }
+        if (!an_.cfg.hooks.empty() && an_.cfg.hooks.count(va)) X87Flush();
         if (!an_.cfg.hooks.empty()) EmitHooks(va, false);
         const Insn* info = an_.InsnAt(va);
         ZydisDecodedInstruction in;
         ZydisDecodedOperand ops[ZYDIS_MAX_OPERAND_COUNT];
         if (!info || info->flow == Flow::Invalid || !an_.Decode(va, in, ops)) {
+            X87Flush();
             Line(F("\tx86_trap(ctx, 0x%X, \"undecodable instruction\");", va));
             pending_.valid = false;
             continue;
         }
         Line("\t// " + F("%08X ", va) + Text(va, in, ops));
         uint32_t next_body = i + 1 < body.size() ? body[i + 1] : 0;
+        if (info->flow != Flow::Normal) X87Flush();  // a branch, call or return leaves the run
         EmitInsn(va, in, ops, next_body);
+        if (!an_.cfg.hooks.empty() && an_.cfg.hooks.count(va)) X87Flush();
         if (!an_.cfg.hooks.empty()) EmitHooks(va, true);
         bool falls = info->flow == Flow::Normal || info->flow == Flow::Call || info->flow == Flow::CallIndirect ||
                      info->flow == Flow::Jcc;
         uint32_t next = va + info->len;
         if (falls && next_body != next) {
+            X87Flush();
             if (an_.InsnAt(next) || an_.functions.count(next))
                 Line("\t" + Target(next));
             else
@@ -110,6 +124,10 @@ std::string CodeGen::EmitFunction(uint32_t entry) {
     out += F("X86_FUNC(__imp__%s) {\n", FuncName(entry).c_str());
     if (seh) out += "\tconst uint32_t x86_frame = ctx.esp;\n\ttry {\n";
     out += "\tX86_LOAD_FLAGS();\n\tuint32_t ca = 0, cb = 0;\n\t(void)ca; (void)cb;\n";
+    if (body_.find("x87_t0") != std::string::npos)
+        out += "\tuint32_t x87_t0 = 0; double x87_r0 = 0, x87_r1 = 0, x87_r2 = 0, x87_r3 = 0, x87_r4 = 0, x87_r5 = 0, x87_r6 = 0, "
+               "x87_r7 = 0;\n\t(void)x87_t0; (void)x87_r0; (void)x87_r1; (void)x87_r2; (void)x87_r3; (void)x87_r4; (void)x87_r5; "
+               "(void)x87_r6; (void)x87_r7;\n";
     // code below the entry (a shared tail reached by a jump) is emitted first, so enter by label
     bool entry_first = !body.empty() && body.front() == entry;
     if (!entry_first) out += F("\tgoto loc_%08X;\n", entry);

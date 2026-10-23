@@ -59,6 +59,13 @@ std::string FixedVertexHlsl(uint16_t regs, bool pretransformed, uint64_t decode 
 std::string PixelHlsl(const PixelKey& k);
 // a screen quad's vertex or pixel shader: texture coordinates as the quad was drawn, before its far edges were pulled out
 std::string QuadHlsl(std::string s);
+// a shader for a draw into a frame an upscaler (FSR, DLSS) takes: the vertex shader also works out where the vertex was a
+// frame earlier (the previous frame's constants, cbuffer b2) and jitters the position; the pixel shader writes the
+// motion, from the pixel to its place a frame earlier in UV units, to a second target. Separate shaders from the
+// ordinary ones (their keys are salted), so those, and the shader seeds, stay as they are.
+enum MotionKind { kMotionNone = 0, kMotionProgram = 1, kMotionFixed = 2, kMotionFlat = 3 };  // flat: screen space, still
+std::string MotionHlsl(std::string s, MotionKind vertex);   // a vertex shader's source
+std::string MotionPixelHlsl(std::string s);                 // a pixel shader's source
 
 // HLSL a backend extension adds; the defaults write the console path
 struct ShaderHooks {

@@ -255,6 +255,7 @@ void ApplyIni() {
     // the mouse (the Xbox port's own keys): aiming with the ranged attack held, the wheel and right click in menus
     r.Bool("Keyboard", "MouseAim", s.mouse_aim);
     r.Int("Keyboard", "MouseSensitivity", s.mouse_sensitivity, 10, 400);
+    r.Bool("Keyboard", "MouseInvertY", s.mouse_invert_y);
     r.Bool("Keyboard", "MouseMenus", s.mouse_menus);
     // [Keyboard]: the Xbox port's keyboard and mouse play (on PC the game's own keyboard controls)
     r.Bool("Keyboard", "Enabled", s.keyboard);
@@ -346,6 +347,7 @@ void SaveIni() {
     put("Keyboard", "Enabled", i(s.keyboard));
     put("Keyboard", "MouseAim", i(s.mouse_aim));
     put("Keyboard", "MouseSensitivity", i(s.mouse_sensitivity));
+    put("Keyboard", "MouseInvertY", i(s.mouse_invert_y));
     put("Keyboard", "MouseMenus", i(s.mouse_menus));
     put("Keyboard", "Player", i(s.keyboard_player));
     put("Achievements", "Notify", i(s.achievement_notes));

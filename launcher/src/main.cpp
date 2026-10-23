@@ -732,7 +732,7 @@ static bool save(App &a)
         if (d.rfind("\\\\.\\", 0) == 0) d = d.substr(4);   // \\.\DISPLAY2 -> DISPLAY2
         a.s.screen = m.primary ? "main" : d;
     }
-    if (!(g_xboxPage ? save_rotkfix_ini(a.dir, a.s, err) : save_settings(a.dir, a.s, err))) { set_message(a, err, true); return false; }
+    if (!(g_xboxPage ? save_rotkfix_ini(a.dir, a.s, err) : save_settings(a.dir, a.s, err, a.controllers))) { set_message(a, err, true); return false; }
     a.game = inspect_game(a.dir);
     set_message(a, "Settings saved", false);
     return true;
@@ -1482,6 +1482,9 @@ static void tab_controls(App &a)
         row_end();
         row_begin("Mouse sensitivity", "How far a mouse movement turns the aim (100% is the default).");
         ImGui::SliderInt("##mousesens", &s.mouseSens, 10, 400, "%d%%");
+        row_end();
+        row_begin("Invert mouse up/down", "Reverses up and down for mouse aiming: moving the mouse forward aims down.");
+        ImGui::Checkbox("##mouseinv", &s.mouseInvertY);
         row_end();
         row_begin("Mouse in the menus", "In the game's menus the mouse wheel moves up and down, a left click chooses and a right click goes back.");
         ImGui::Checkbox("##mousemenus", &s.mouseMenus);
@@ -3188,7 +3191,17 @@ static void tt_tab_graphics(App &a)
     bool image = tt_has(a, "graphics", "anti_aliasing") || tt_has(a, "graphics", "msaa") || tt_has(a, "graphics", "colour_look") ||
                  tt_has(a, "graphics", "anisotropic_filtering") || tt_has(a, "graphics", "lod_bias") ||
                  tt_has(a, "graphics", "sharpening") || tt_has(a, "graphics", "brightness");
+    image = image || tt_has(a, "graphics", "upscaler");
     if (image) section("Image");
+    // FSR / DLSS first: while one is on it takes the place of Render resolution and Anti-aliasing
+    if (const PortSetting *up = tt_setting(a, "graphics", "upscaler")) {
+        mark("graphics", "upscaler");
+        tt_setting_row(a, *up);
+        if (const PortSetting *q = tt_setting(a, "graphics", "upscaler_quality")) {
+            mark("graphics", "upscaler_quality");
+            if (toml_unquote(tt_val(a, *up)) != "0") tt_setting_row(a, *q);
+        }
+    }
     // Anti-aliasing first, as in ROTK
     for (const char *k : { "anti_aliasing", "msaa" }) {
         const PortSetting *ps = tt_setting(a, "graphics", k);
@@ -3594,7 +3607,7 @@ static void tt_tab_controls(App &a)
     // the mouse: aiming with the ranged attack held, the wheel and right click in the menus
     if (tt_setting(a, "keyboard", "mouse_aim")) {
         section("Mouse");
-        for (const char *k : { "mouse_aim", "mouse_sensitivity", "mouse_menus" })
+        for (const char *k : { "mouse_aim", "mouse_sensitivity", "mouse_invert_y", "mouse_menus" })
             if (const PortSetting *ps = tt_setting(a, "keyboard", k)) tt_setting_row(a, *ps);
     }
     // anything else the port puts on this tab

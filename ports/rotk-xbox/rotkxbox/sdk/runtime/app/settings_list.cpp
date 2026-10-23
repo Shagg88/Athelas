@@ -57,6 +57,16 @@ std::vector<cfg::Desc> SettingsList() {
         {"graphics", "anti_aliasing", Type::Choice, "Anti-aliasing",
          "Smooths jagged edges (MSAA). Higher costs speed, most of all with a high render resolution.", nullptr,
          &s.msaa, nullptr, 0, 0, {"0", "2", "4", "8"}, nullptr, nullptr, {"Off", "2x", "4x", "8x"}},
+        {"graphics", "upscaler", Type::Choice, "Upscaler",
+         "Draws the game smaller and rebuilds a sharp, smooth picture from several frames: faster, and it smooths jagged "
+         "edges as well. FSR works on any graphics card (FSR 4 on the newest AMD ones); DLSS needs an NVIDIA RTX card. "
+         "Replaces Render resolution and Anti-aliasing while on. DLSS takes effect at the next start.",
+         nullptr, &s.upscaler, nullptr, 0, 0, {"0", "1", "2"}, nullptr, nullptr, {"Off", "AMD FSR", "NVIDIA DLSS"}},
+        {"graphics", "upscaler_quality", Type::Choice, "Upscaler quality",
+         "How much smaller the game is drawn for the upscaler. Native draws it at full size and only smooths it (DLAA "
+         "with DLSS); Quality is the best balance; Performance and Ultra performance are fastest but softer.",
+         nullptr, &s.upscaler_quality, nullptr, 0, 0, {"0", "1", "2", "3", "4"}, nullptr, nullptr,
+         {"Native", "Quality", "Balanced", "Performance", "Ultra performance"}},
         {"graphics", "anisotropic_filtering", Type::Choice, "Texture filtering",
          "Anisotropic filtering: keeps ground and walls sharp at a distance.", nullptr, &s.aniso, nullptr, 0, 0,
          {"0", "2", "4", "8", "16"}, "anisotropic_filtering", nullptr, {"Off", "2x", "4x", "8x", "16x"}},
@@ -185,6 +195,8 @@ std::vector<cfg::Desc> SettingsList() {
     l.push_back({"keyboard", "mouse_sensitivity", Type::Int, "Mouse sensitivity",
                  "How far a mouse movement turns the aim, in % (100 is the default).", nullptr, &s.mouse_sensitivity,
                  nullptr, 10, 400});
+    l.push_back({"keyboard", "mouse_invert_y", Type::Bool, "Invert mouse up/down",
+                 "Reverses up and down for mouse aiming: moving the mouse forward aims down.", &s.mouse_invert_y});
     l.push_back({"keyboard", "mouse_menus", Type::Bool, "Mouse in the menus",
                  "In the game's menus the mouse wheel moves up and down, a left click chooses and a right click goes "
                  "back.",

@@ -292,10 +292,16 @@ private:
     // buffer's address, when they are set; the title points the same header elsewhere before the GPU gets there.
     uint32_t Header(uint32_t header) {
         if (!header || !ring_) return header;
+        // A header the title has freed while it is still set (The Fellowship of the Ring frees a scene's textures at a
+        // scene change before it sets the next ones, and draws nothing with them) is not read: the console's GPU
+        // reads only what a draw uses, and the freed pages fault here. Its last copy stands while the ring holds it.
+        if (!mem::IsCommitted(header)) return Stale(header);
         // vertex buffer, index buffer and palette headers are 12 bytes: reading 20 can run off the end of the heap
         const uint32_t type = kernel::R32(header) & 0x70000;  // 0 vertex, 0x10000 index, 0x30000 palette
+        const uint32_t n = type < 0x20000 || type == 0x30000 ? 12 : kHeaderBytes;
+        if (!mem::IsCommitted(header + n - 1)) return Stale(header);
         uint8_t now[kHeaderBytes] = {};
-        std::memcpy(now, kernel::HostPtr(header), type < 0x20000 || type == 0x30000 ? 12 : kHeaderBytes);
+        std::memcpy(now, kernel::HostPtr(header), n);
         Recent<HeaderCopy>& r = recent_headers_[(header >> 3) & 63];
         HeaderCopy& c = r.key == header ? *r.value : headers_[header];
         r = {header, &c};
@@ -304,6 +310,14 @@ private:
         c.made = ring_pos_;
         std::memcpy(c.bytes, now, kHeaderBytes);
         return c.at;
+    }
+
+    // a freed header's last copy, while the ring still holds it; none (unset) otherwise
+    uint32_t Stale(uint32_t header) {
+        LOG_FIRST(4, "render thread: header %08X is set but no longer in memory (freed); its last copy used", header);
+        auto it = headers_.find(header);
+        if (it != headers_.end() && it->second.made && ring_pos_ - it->second.made < kHeaderRing / 2) return it->second.at;
+        return 0;
     }
 
     // a field of the render thread's State, when it differs from what was sent

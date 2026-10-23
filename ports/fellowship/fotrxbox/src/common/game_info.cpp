@@ -1,6 +1,6 @@
 #include "app/app.h"
 #ifndef GAME_VERSION
-#define GAME_VERSION "1.4.0"  // CMakeLists.txt sets it (XBE_VERSION); the headless harness does not
+#define GAME_VERSION "1.5.0"  // CMakeLists.txt sets it (XBE_VERSION); the headless harness does not
 #endif
 
 namespace fotr {
@@ -10,6 +10,8 @@ void FileOpened(const char* name);
 extern bool g_cheat_ring, g_cheat_health, g_cheat_spirit, g_cheat_ammo;  // src/game/fotr_cheats.cpp
 extern uint32_t g_text_language;  // src/game/fotr_lang.cpp
 extern uint32_t g_fov_percent;    // src/game/fotr_camera.cpp
+extern bool g_invert_camera_y, g_invert_camera_x;  // src/game/fotr_input.cpp
+void Pad(int port, input::Pad& pad);
 extern uint32_t g_damage_taken, g_enemy_damage;  // src/game/fotr_difficulty.cpp
 void Init();
 std::vector<ach::Def> Achievements();  // src/game/fotr_achievements.cpp
@@ -39,6 +41,12 @@ const app::GameInfo app::kGame = {
                  "How wide the camera sees while you play, as a share of the game's own (100). Wider shows more "
                  "around Frodo but makes everything look further away. Cutscenes keep their own.",
                  nullptr, &fotr::g_fov_percent, nullptr, 70, 150},
+                {"input", "invert_camera_y", cfg::Type::Bool, "Invert camera up/down",
+                 "Reverses up and down on the controller's right stick, which moves the camera. For players used to "
+                 "inverted camera controls.", &fotr::g_invert_camera_y},
+                {"input", "invert_camera_x", cfg::Type::Bool, "Invert camera left/right",
+                 "Reverses left and right on the controller's right stick, which moves the camera.",
+                 &fotr::g_invert_camera_x},
                 {"gameplay", "damage_taken", cfg::Type::Int, "Damage you take",
                  "How hard enemies hit you, as a share of the game's own (100). Lower is easier.",
                  nullptr, &fotr::g_damage_taken, nullptr, 25, 300},
@@ -80,8 +88,9 @@ const app::GameInfo app::kGame = {
                        "Target Right"},
     .init = fotr::Init,  // after the settings load, before the window and boot
     .ui = fotr::FrameShown,  // each frame shown: wider screens tell menus from fades by it
+    .pad = fotr::Pad,        // the camera stick reversed when asked ([input] invert_camera_*)
     // the in-game menu (F10): these take effect at once
-    .live_settings = {"graphics.fov", "gameplay.damage_taken", "gameplay.enemy_damage", "cheats.infinite_health",
+    .live_settings = {"graphics.fov", "input.invert_camera_y", "input.invert_camera_x", "gameplay.damage_taken", "gameplay.enemy_damage", "cheats.infinite_health",
                       "cheats.infinite_spirit", "cheats.infinite_ammo", "cheats.infinite_ring"},
     .file_opened = fotr::FileOpened,  // the movies, to show each by the movie settings; achievements
     .achievements = fotr::Achievements(),

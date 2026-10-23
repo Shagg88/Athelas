@@ -23,6 +23,7 @@
 #include "app/app.h"
 #include "core/log.h"
 #include "kernel/kernel.h"
+#include "xdk/d3d8.h"
 #include "xdk/hle.h"
 
 namespace tt {
@@ -106,6 +107,17 @@ uint32_t Bits(float f) {
     return u;
 }
 }  // namespace
+
+// Sleep(0) (0xF8F31) from the frame wait's two loops (0xE0155 and 0xE0170, until the blank count at 0x4B7618 is
+// reached): the thread sleeps until the next vertical blank instead of spinning. The game spun there about 2 million
+// times a second, a whole processor core busy for nothing (heat, fans and battery on laptops and the Steam Deck).
+// It still wakes at the blank, as before; then the Sleep(0) itself, which also lets the pause hold the thread.
+X86_EXTERN_FUNC(__imp__sub_000F8F31);
+X86_FUNC(sub_000F8F31) {
+    uint32_t ret = ::kernel::R32(ctx.esp);
+    if ((ret == 0xE015C || ret == 0xE0177) && ::kernel::R32(ctx.esp + 4) == 0) d3d::WaitVBlank(20);
+    __imp__sub_000F8F31(ctx, base);
+}
 
 // rdtsc into a guest 64-bit value: the clock's own reads (its reset 0xE3292, 0xE3333 and each frame 0xE354A) count
 // virtually with TT_FIXED_FPS

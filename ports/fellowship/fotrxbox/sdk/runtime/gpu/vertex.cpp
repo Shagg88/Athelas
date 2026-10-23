@@ -295,6 +295,28 @@ void GatherVertices(const State& s, const DrawRange& d, const uint8_t* data, uin
     }
 }
 
+// Every stream the draw reads, over the vertices it reads, in memory the title still has. A buffer freed at a scene
+// change (The Fellowship of the Ring, leaving Bilbo's room) can stay set, and its memory taken by something else or
+// let go: a draw from it is left out rather than read from freed pages (which faulted the render thread).
+bool StreamsReadable(const State& s, const Inputs& inputs, const DrawRange& d) {
+    using namespace kernel;
+    uint32_t seen = 0;
+    for (int k = 0; k < inputs.nregs; k++) {
+        const auto& in = inputs.layout.inputs[size_t(inputs.regs[k])];
+        if (seen >> in.stream & 1) continue;
+        seen |= 1u << in.stream;
+        const auto& st = s.streams[size_t(in.stream)];
+        if (!st.vb || !mem::IsCommitted(st.vb) || !mem::IsCommitted(st.vb + kResData + 3)) return false;
+        uint64_t data = mem::VirtualFromPhysical(R32(st.vb + kResData));
+        uint64_t stride = StrideOf(s, inputs.layout, in);
+        uint64_t lo = data + uint64_t(d.first_vertex) * stride, hi = lo + uint64_t(d.span) * std::max<uint64_t>(stride, 1);
+        if (hi > 0xFFFFFFFFull) return false;
+        for (uint64_t p = lo & ~0xFFFull; p < hi; p += 0x1000)
+            if (!mem::IsCommitted(uint32_t(p))) return false;
+    }
+    return true;
+}
+
 // returns the buffer slot the stream got
 int AddRawBuffer(const State& s, const VertexShader& layout, const VertexShader::Input& in, const DrawRange& d,
                  bool dense, Assembled& out) {
@@ -544,6 +566,10 @@ bool Assemble(const State& s, uint32_t prim, uint32_t start, uint32_t count, con
     if (!nregs) return false;
     Inputs inputs = {*layout, regs, nregs};
 
+    if (!StreamsReadable(s, inputs, d)) {
+        LOG_FIRST(8, "gpu: a draw from a vertex buffer no longer in memory (freed) left out (%u vertices)", d.span);
+        return false;
+    }
     // a game's screen space squeeze (a 4:3 HUD kept in proportion on a 16:9 display) needs its own copy to change
     float squeeze = g_screen_space_hook ? g_screen_space_hook(s) : 1.0f;
     // the guest's own vertices when the input assembler can read every element of them
