@@ -19,8 +19,6 @@
  *
  * All four are off (100, 100, 0, 0) by default. */
 #include "rotkfix.h"
-#include <stdio.h>
-#include <string.h>
 
 static int g_damageTaken = 100, g_enemyDamage = 100, g_unlockAll = 0, g_allHeroes = 0;
 
@@ -49,9 +47,117 @@ static const BYTE SIG_UNLOCK[6] = { 0xA0, 0x80, 0x57, 0x8E, 0x00, 0xC3 };
 typedef int (__cdecl *Hit_t)(void *who, int amount, void *by);
 static Hit_t g_realHit;
 
+#define MAX_HIT_FILTERS 16
+static RF_HitFilter_t g_hitFilters[MAX_HIT_FILTERS];
+static int g_hitFilterCount = 0;
+
+void RF_RegisterHitFilter(RF_HitFilter_t fn)
+{
+    if (fn && g_hitFilterCount < MAX_HIT_FILTERS) {
+        g_hitFilters[g_hitFilterCount++] = fn;
+        logf_("gameplay: registered external hit filter #%d (%p)", g_hitFilterCount, fn);
+    }
+}
+
+int RF_IsPlayer(const void *entity)
+{
+    const BYTE *c = (const BYTE *)entity;
+    return c && readable(c + 0x7A, 2) && *(const WORD *)(c + 0x7A) == 0x63;
+}
+
+int RF_DealHit(void *who, int amount, void *by)
+{
+    return g_realHit ? g_realHit(who, amount, by) : 0;
+}
+
+void RF_ShowNotification(const char *title, const char *desc)
+{
+    achieve_push_note(title, desc);
+}
+
+void RF_ShowNotificationEx(const char *category, const char *title, const char *desc)
+{
+    achieve_push_note_ex(category, title, desc);
+}
+
+#define MAX_FRAME_HOOKS 16
+static RF_FrameHook_t g_frameHooks[MAX_FRAME_HOOKS];
+static int g_frameHookCount = 0;
+
+void RF_RegisterFrameHook(RF_FrameHook_t fn)
+{
+    if (fn && g_frameHookCount < MAX_FRAME_HOOKS) {
+        g_frameHooks[g_frameHookCount++] = fn;
+        logf_("gameplay: registered external frame hook #%d (%p)", g_frameHookCount, fn);
+    }
+}
+
+void RF_RunFrameHooks(void)
+{
+    for (int i = 0; i < g_frameHookCount; i++) {
+        if (g_frameHooks[i]) g_frameHooks[i]();
+    }
+}
+
+#define MAX_RENDER_HOOKS 16
+static RF_RenderHook_t g_renderHooks[MAX_RENDER_HOOKS];
+static int g_renderHookCount = 0;
+static RF_RenderHook_t g_resetHooks[MAX_RENDER_HOOKS];
+static int g_resetHookCount = 0;
+
+void RF_RegisterRenderHook(RF_RenderHook_t fn)
+{
+    if (fn && g_renderHookCount < MAX_RENDER_HOOKS) {
+        g_renderHooks[g_renderHookCount++] = fn;
+        logf_("gameplay: registered external render hook #%d (%p)", g_renderHookCount, fn);
+    }
+}
+
+void RF_RunRenderHooks(void *dev)
+{
+    for (int i = 0; i < g_renderHookCount; i++) {
+        if (g_renderHooks[i]) g_renderHooks[i](dev);
+    }
+}
+
+void RF_RegisterResetHook(RF_RenderHook_t fn)
+{
+    if (fn && g_resetHookCount < MAX_RENDER_HOOKS) {
+        g_resetHooks[g_resetHookCount++] = fn;
+        logf_("gameplay: registered external reset hook #%d (%p)", g_resetHookCount, fn);
+    }
+}
+
+void RF_RunResetHooks(void *dev)
+{
+    for (int i = 0; i < g_resetHookCount; i++) {
+        if (g_resetHooks[i]) g_resetHooks[i](dev);
+    }
+}
+
+int RF_TakeKeyPress(int dik)
+{
+    return input_take_key_presses(dik);
+}
+
+void RF_SimulateKeyPress(int dik)
+{
+    input_simulate_key_press(dik);
+}
+
+int RF_IsKeyDown(int dik)
+{
+    return input_is_key_down(dik);
+}
+
+void RF_RegisterHotkey(int dik)
+{
+    input_register_hotkey(dik);
+}
+
 static int is_player(const BYTE *c)
 {
-    return c && readable(c + 0x7A, 2) && *(const WORD *)(c + 0x7A) == 0x63;
+    return RF_IsPlayer(c);
 }
 
 static int scale(int amount, int pct)
@@ -68,17 +174,31 @@ static int __cdecl hook_hit(void *who, int amount, void *by)
     int counts = w && !is_player(w) && is_player((const BYTE *)by) && readable(w + 0x90, 4);
     int before = counts ? *(const int *)(w + 0x90) : 0;
     int r = hook_hit_scaled(who, amount, by);
-    if (counts && before > 0 && *(const int *)(w + 0x90) <= 0) achieve_enemy_defeated();
+    if (counts && before > 0 && *(const int *)(w + 0x90) <= 0) {
+        achieve_enemy_defeated();
+    }
     return r;
 }
 
 static int __cdecl hook_hit_scaled(void *who, int amount, void *by)
 {
     if (amount > 0 && who) {
-        int pct = is_player((const BYTE *)who) ? g_damageTaken : is_player((const BYTE *)by) ? g_enemyDamage : 100;
+        /* External mod filters (run before Athelas difficulty scaling) */
+        for (int i = 0; i < g_hitFilterCount; i++) {
+            if (g_hitFilters[i]) {
+                if (!g_hitFilters[i](who, &amount, by)) {
+                    return 0; /* filter suppressed the hit */
+                }
+            }
+        }
+
+        int player_taking_hit  = is_player((const BYTE *)who);
+        int player_dealing_hit = is_player((const BYTE *)by);
+
+        int pct = player_taking_hit ? g_damageTaken : player_dealing_hit ? g_enemyDamage : 100;
         if (pct != 100) {
             static volatile LONG logged[2];
-            int on_player = pct == g_damageTaken && is_player((const BYTE *)who);
+            int on_player = pct == g_damageTaken && player_taking_hit;
             int was = amount;
             amount = scale(amount, pct);
             if (!InterlockedExchange(&logged[on_player], 1))

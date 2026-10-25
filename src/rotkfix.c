@@ -88,16 +88,37 @@ static int      g_lateFrames;   /* frames that missed their deadline (build 2) *
 
 /* ---------------------------------------------------------------------- */
 
-void logf_(const char *fmt, ...)
+static void vlogf_(const char *fmt, va_list ap)
 {
     if (!g_log || g_logBytes > LOG_LIMIT) return;
     SYSTEMTIME st; GetLocalTime(&st);
     int n = fprintf(g_log, "[%02d:%02d:%02d.%03d] ", st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
-    va_list ap; va_start(ap, fmt); n += vfprintf(g_log, fmt, ap); va_end(ap);
+    n += vfprintf(g_log, fmt, ap);
     fputc('\n', g_log);
     g_logBytes += n > 0 ? n + 1 : 1;
     if (g_logBytes > LOG_LIMIT) fputs("(log size limit reached; nothing more is written this session)\n", g_log);
     fflush(g_log);
+}
+
+void logf_(const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    vlogf_(fmt, ap);
+    va_end(ap);
+}
+
+void RF_Log(const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    vlogf_(fmt, ap);
+    va_end(ap);
+}
+
+int RF_IsLogEnabled(void)
+{
+    return g_logEnabled;
 }
 
 void path_in_dir(char *out, const char *name)
@@ -398,8 +419,35 @@ static void note_level_file(const char *n)
     g_inMenuLevel = !_strnicmp(b, "fro", 3);
     logf_("level: loading %s", b);
 }
+static const char *redirect_mod_file(const char *n, char *buf, size_t max)
+{
+    (void)max;
+    if (!n || IsBadStringPtrA(n, MAX_PATH)) return n;
+    const char *d = NULL;
+    for (const char *p = n; *p; p++) {
+        if ((p == n || p[-1] == '\\' || p[-1] == '/') && !_strnicmp(p, "data\\", 5)) {
+            d = p;
+            break;
+        }
+    }
+    const char *sub = d ? d : (strrchr(n, '\\') ? strrchr(n, '\\') + 1 : n);
+    char rel[MAX_PATH];
+    snprintf(rel, sizeof rel, "ROTKFix\\mods\\%s", sub);
+    path_in_dir(buf, rel);
+    DWORD attr = GetFileAttributesA(buf);
+    if (attr != INVALID_FILE_ATTRIBUTES && !(attr & FILE_ATTRIBUTE_DIRECTORY)) {
+        static volatile LONG logged;
+        if (InterlockedIncrement(&logged) <= 30)
+            logf_("mods: redirecting file '%s' -> '%s'", n, buf);
+        return buf;
+    }
+    return n;
+}
+
 static HANDLE WINAPI hook_CreateFileA(LPCSTR n, DWORD a, DWORD sh, LPSECURITY_ATTRIBUTES sa, DWORD cd, DWORD fl, HANDLE t)
 {
+    char modPath[MAX_PATH];
+    if (n && a == GENERIC_READ) n = redirect_mod_file(n, modPath, sizeof modPath);
     InterlockedIncrement(&g_hitch[HITCH_FILES]);
     if (n && !IsBadStringPtrA(n, MAX_PATH)) { note_level_file(n); achieve_file(n); }
     if (n) { const char *b = strrchr(n, '\\'); lstrcpynA(g_lastFile, b ? b + 1 : n, sizeof g_lastFile); }
@@ -502,6 +550,61 @@ static BOOL WINAPI hook_SHGetSpecialFolderPathA(HWND h, LPSTR path, int csidl, B
 static void files_install(void)
 {
     g_realCreateFileA = (CreateFileA_t)iat_hook("kernel32.dll", "CreateFileA", (void *)hook_CreateFileA);
+}
+
+/* External mod loader: loads any custom code mod (*.dll) dropped into ROTKFix\mods\ */
+static void load_external_mods(void)
+{
+    char search[MAX_PATH];
+    path_in_dir(search, "ROTKFix\\mods\\*.dll");
+    WIN32_FIND_DATAA fd;
+    HANDLE h = FindFirstFileA(search, &fd);
+    if (h == INVALID_HANDLE_VALUE) return;
+    int count = 0;
+    char ini[MAX_PATH];
+    path_in_dir(ini, "ROTKFix.ini");
+
+    do {
+        if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+            /* 1. Check if disabled in ROTKFix.ini [Mods] */
+            if (GetPrivateProfileIntA("Mods", fd.cFileName, 1, ini) == 0) {
+                logf_("mods: '%s' is disabled in ROTKFix.ini [Mods]; skipping", fd.cFileName);
+                continue;
+            }
+
+            /* 2. Check if disabled in mod's own .ini (<name>.ini) */
+            char base[MAX_PATH];
+            lstrcpynA(base, fd.cFileName, sizeof base);
+            char *dot = strrchr(base, '.');
+            if (dot) *dot = '\0';
+
+            char modIniRel[MAX_PATH], fullModIni[MAX_PATH];
+            snprintf(modIniRel, sizeof modIniRel, "ROTKFix\\mods\\%s.ini", base);
+            path_in_dir(fullModIni, modIniRel);
+            if (GetFileAttributesA(fullModIni) != INVALID_FILE_ATTRIBUTES) {
+                if (GetPrivateProfileIntA("Mod", "Enabled", 1, fullModIni) == 0) {
+                    logf_("mods: '%s' is disabled in '%s' [Mod] Enabled=0; skipping", fd.cFileName, modIniRel);
+                    continue;
+                }
+            }
+
+            char rel[MAX_PATH], full[MAX_PATH];
+            snprintf(rel, sizeof rel, "ROTKFix\\mods\\%s", fd.cFileName);
+            path_in_dir(full, rel);
+            HMODULE m = LoadLibraryA(full);
+            if (m) {
+                typedef void (*ModInit_t)(void);
+                ModInit_t init = (ModInit_t)(void *)GetProcAddress(m, "ModInit");
+                if (init) init();
+                logf_("mods: loaded external mod '%s'", fd.cFileName);
+                count++;
+            } else {
+                logf_("mods: failed to load '%s' (error %lu)", fd.cFileName, GetLastError());
+            }
+        }
+    } while (FindNextFileA(h, &fd));
+    FindClose(h);
+    if (count > 0) logf_("mods: %d external code mod(s) initialized from ROTKFix\\mods\\", count);
 }
 
 static void hitch_install(void)
@@ -1149,7 +1252,7 @@ BOOL WINAPI DllMain(HINSTANCE inst, DWORD reason, LPVOID reserved)
     (void)reserved;
     if (reason == DLL_PROCESS_ATTACH) {
         DisableThreadLibraryCalls(inst);
-        GetModuleFileNameA(NULL, g_dir, MAX_PATH);
+        GetModuleFileNameA(inst, g_dir, MAX_PATH);
         char *slash = strrchr(g_dir, '\\');
         if (slash) *slash = 0;
 
@@ -1207,6 +1310,7 @@ BOOL WINAPI DllMain(HINSTANCE inst, DWORD reason, LPVOID reserved)
                                                                              (void *)hook_SHGetSpecialFolderPathA);
         files_install();
         achieve_start();
+        load_external_mods();
         if (g_logEnabled) hitch_install();
         if (g_logEnabled && g_detailLog) stall_start();
         code_seal();

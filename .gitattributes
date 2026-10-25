@@ -1,0 +1,29 @@
+# Normalize all text files to LF line endings
+* text=auto eol=lf
+
+# Shell scripts and C/C++ source code
+*.sh text eol=lf
+*.bash text eol=lf
+*.c text eol=lf
+*.cpp text eol=lf
+*.h text eol=lf
+*.def text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.ini text eol=lf
+*.py text eol=lf
+*.asm text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+
+# Binary files
+*.dll binary
+*.exe binary
+*.zip binary
+*.tar.gz binary
+*.png binary
+*.jpg binary
+*.ico binary
+*.obj binary
+*.o binary
+*.a binary

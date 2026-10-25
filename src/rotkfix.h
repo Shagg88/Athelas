@@ -45,12 +45,34 @@ void    sound_late_patch(void);   /* disc exe: from Direct3DCreate8 */
 /* gameplay.c */
 void    gameplay_load_settings(const char *ini);
 void    gameplay_patch(void);
+typedef int (*RF_HitFilter_t)(void *who, int *amount, void *by);
+typedef void (*RF_FrameHook_t)(void);
+typedef void (*RF_RenderHook_t)(void *d3d9dev);
+void    RF_RegisterHitFilter(RF_HitFilter_t fn);
+int     RF_IsPlayer(const void *entity);
+int     RF_DealHit(void *who, int amount, void *by);
+void    RF_ShowNotification(const char *title, const char *desc);
+void    RF_ShowNotificationEx(const char *category, const char *title, const char *desc);
+void    RF_Log(const char *fmt, ...);
+int     RF_IsLogEnabled(void);
+void    RF_RegisterFrameHook(RF_FrameHook_t fn);
+void    RF_RunFrameHooks(void);
+void    RF_RegisterRenderHook(RF_RenderHook_t fn);
+void    RF_RunRenderHooks(void *dev);
+void    RF_RegisterResetHook(RF_RenderHook_t fn);
+void    RF_RunResetHooks(void *dev);
+int     RF_TakeKeyPress(int dik);
+int     RF_IsKeyDown(int dik);
+void    RF_SimulateKeyPress(int dik);
+void    RF_RegisterHotkey(int dik);
 
 /* achieve.c */
 void    achieve_load_settings(const char *ini);
 void    achieve_start(void);                 /* DllMain: the list, the saved state, the progress and Discord threads */
 void    achieve_file(const char *name);       /* each file the game opens */
 void    achieve_enemy_defeated(void);         /* gameplay.c */
+void    achieve_push_note(const char *title, const char *desc);
+void    achieve_push_note_ex(const char *category, const char *title, const char *desc);
 struct IDirect3DDevice9;
 void    achieve_draw(struct IDirect3DDevice9 *dev);   /* post.c: the note over the finished frame */
 void    achieve_release(void);                /* post.c: the device is reset or made again */
@@ -64,9 +86,12 @@ void    textures_on_release(void *tex);
 
 /* input.c */
 void    input_load_settings(const char *ini);
+void    input_register_hotkey(int dik);
 int     input_keyboard_seen(void);
 void    input_inject_key_press(DWORD dik, DWORD delayMs);
 int     input_take_key_presses(int dik);   /* DirectInput key code, e.g. 0x43 = F9 */
+void    input_simulate_key_press(int dik);
+int     input_is_key_down(int dik);
 void    input_patch_prompts(void);
 void    icons_load_settings(const char *ini);
 void    icons_patch(void);                 /* button pictures in the game's fonts */

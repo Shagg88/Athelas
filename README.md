@@ -23,16 +23,16 @@ Download it from [Releases](../../releases): one zip with the launcher, ROTK Fix
 ## Screenshots
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/7a19a7d8-5653-4a2c-909e-cd8dd1dcf653" width="49%">
-  <img src="https://github.com/user-attachments/assets/a3e6f93c-6f4a-49a3-838f-882b6918a74c" width="49%">
-  <img src="https://github.com/user-attachments/assets/3430b371-e91e-4384-84d3-0da9656f378a" width="49%">
-  <img src="https://github.com/user-attachments/assets/12192f57-5179-470c-bee4-6dec1affec9d" width="49%">
+  <img src="docs/screenshots/01_display.png" width="49%" alt="Display Settings">
+  <img src="docs/screenshots/02_graphics.png" width="49%" alt="Graphics Settings">
+  <img src="docs/screenshots/03_controls.png" width="49%" alt="Controls & Gamepad Mapping">
+  <img src="docs/screenshots/04_audio.png" width="49%" alt="Audio & 3D Sound">
 </p>
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/4bea88f9-01f9-484e-8f0b-d22c6fbf1864" width="32%">
-  <img src="https://github.com/user-attachments/assets/f5a0d251-7208-46ff-aea8-03d63577a4f2" width="32%">
-  <img src="https://github.com/user-attachments/assets/d9600fa1-c760-4185-a82c-ada85b03ea87" width="32%">
+  <img src="docs/screenshots/05_gameplay.png" width="32%" alt="Gameplay Tweaks">
+  <img src="docs/screenshots/06_mods.png" width="32%" alt="Mods & Dynamic Plugins">
+  <img src="docs/screenshots/07_about.png" width="32%" alt="About & Backgrounds">
 </p>
 
 

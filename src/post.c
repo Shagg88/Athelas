@@ -419,6 +419,8 @@ static HRESULT WINAPI hook_Present9(IDirect3DDevice9 *dev, const RECT *a, const 
 {
     run_post(dev);
     achieve_draw(dev);   /* "Achievement earned", over the picture and under nothing */
+    RF_RunRenderHooks(dev); /* External mod visual render hooks (auras, HUD, effects) */
+    RF_RunFrameHooks();  /* External mod frame hooks / updates */
     /* Print Screen (DIK_SYSRQ) or \ (DIK_BACKSLASH): screenshot of the finished frame */
     if (input_keyboard_seen() && (input_take_key_presses(0xB7) + input_take_key_presses(0x2B)) > 0)
         shot_take(dev);
@@ -430,6 +432,7 @@ static HRESULT WINAPI hook_Reset9(IDirect3DDevice9 *dev, D3DPRESENT_PARAMETERS *
     release_default_pool();
     shot_release();
     achieve_release();
+    RF_RunResetHooks(dev);
     return g_realReset9(dev, pp);
 }
 

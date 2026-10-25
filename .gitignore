@@ -12,6 +12,7 @@ __pycache__/
 /logs/
 *.log
 *.exe
+*.dll
 !launcher/**/*.exe.manifest
 # working files: static-analysis reports, old source kept for reference
 *.plist

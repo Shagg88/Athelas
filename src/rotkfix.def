@@ -9,3 +9,18 @@ EXPORTS
     RF_ValidatePixelShader
     RF_ValidateVertexShader
     RF_DebugSetMute
+    RF_RegisterHitFilter
+    RF_IsPlayer
+    RF_DealHit
+    RF_ShowNotification
+    RF_ShowNotificationEx
+    RF_Log
+    RF_IsLogEnabled
+    RF_RegisterFrameHook
+    RF_RunFrameHooks
+    RF_RegisterRenderHook
+    RF_RegisterResetHook
+    RF_TakeKeyPress
+    RF_IsKeyDown
+    RF_SimulateKeyPress
+    RF_RegisterHotkey

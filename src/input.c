@@ -831,15 +831,39 @@ static KbGetData_t  g_realKbGetData;
 static IDirectInputDevice8A *volatile g_kbd;
 static BYTE          g_keyDown[256];
 static volatile LONG g_keyPresses[256];
+static BYTE          g_modHotkeys[256];
+
+void input_register_hotkey(int dik)
+{
+    if (dik >= 0 && dik <= 255) {
+        g_modHotkeys[dik] = 1;
+        logf_("input: registered dynamic mod hotkey (DIK %#x)", dik);
+    }
+}
+
+/* ROTK Fix's own hotkeys and dynamically registered mod hotkeys are hidden
+ * from the game, so pressing them does not also count as "any key" (which skips cutscenes). */
+static int is_hotkey(DWORD dik)
+{
+    if (dik <= 255 && g_modHotkeys[dik]) return 1;
+
+    /* ROTK Fix core hotkeys */
+    return dik == 0x2B /* \ screenshot */ || dik == 0xB7 /* Print Screen */
+        || dik == 0x1A /* [ sharpening */ || dik == 0x1B /* ] */ || dik == 0x43 /* F9 */;
+}
 
 static void key_event(DWORD dik, int down)
 {
     if (dik > 255) return;
     if (down && !g_keyDown[dik]) {
-        static int nlog;
-        if (nlog++ < 40) dlogf_("keyboard: key %#lx pressed%s", (unsigned long)dik, dik == 0x43 ? " (F9)" : "");
+        if (is_hotkey(dik)) {
+            logf_("keyboard: hotkey (code %#lx) pressed", (unsigned long)dik);
+        } else {
+            static int nlog;
+            if (nlog++ < 20) dlogf_("keyboard: key %#lx pressed", (unsigned long)dik);
+        }
+        InterlockedIncrement(&g_keyPresses[dik]);
     }
-    if (down && !g_keyDown[dik]) InterlockedIncrement(&g_keyPresses[dik]);
     g_keyDown[dik] = (BYTE)(down != 0);
 }
 
@@ -868,12 +892,15 @@ int input_take_key_presses(int dik)
     return (int)InterlockedExchange(&g_keyPresses[dik], 0);
 }
 
-/* ROTK Fix's own hotkeys are hidden from the game, so pressing them does
- * not also count as "any key" (which, for example, skips a cutscene). */
-static int is_hotkey(DWORD dik)
+void input_simulate_key_press(int dik)
 {
-    return dik == 0x2B /* \ screenshot */ || dik == 0xB7 /* Print Screen */
-        || dik == 0x1A /* [ sharpening */ || dik == 0x1B /* ] */ || dik == 0x43 /* F9 */;
+    if (dik >= 0 && dik <= 255) InterlockedIncrement(&g_keyPresses[dik]);
+}
+
+int input_is_key_down(int dik)
+{
+    if (dik < 0 || dik > 255) return 0;
+    return g_keyDown[dik] != 0;
 }
 
 static HRESULT WINAPI kb_GetDeviceState(IDirectInputDevice8A *This, DWORD cb, LPVOID data)

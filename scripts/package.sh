@@ -37,7 +37,26 @@ sh launcher/build.sh
 OUT=dist/Athelas-$VER
 FIX=$OUT/ROTK-PC/pcfix
 rm -rf "$OUT" "$OUT.zip"
-mkdir -p "$FIX/ROTKFix/dxvk" "$FIX/ROTKFix/licenses" "$OUT/licenses"
+mkdir -p "$FIX/ROTKFix/dxvk" "$FIX/ROTKFix/licenses" "$FIX/ROTKFix/mods" "$OUT/licenses"
+if [ -d mods ]; then
+    for mod_dir in mods/*; do
+        if [ -d "$mod_dir" ]; then
+            mod_name=$(basename "$mod_dir")
+            if [ -f "$mod_dir/build.sh" ]; then
+                echo "Building mod: $mod_name..."
+                (cd "$mod_dir" && sh build.sh)
+            fi
+            for f in "$mod_dir"/*.dll "$mod_dir"/*.ini; do
+                [ -f "$f" ] && cp "$f" "$FIX/ROTKFix/mods/"
+            done
+            if [ -f "$mod_dir/README.md" ]; then
+                cp "$mod_dir/README.md" "$FIX/ROTKFix/mods/${mod_name}-README.md"
+            elif [ -f "$mod_dir/README.txt" ]; then
+                cp "$mod_dir/README.txt" "$FIX/ROTKFix/mods/${mod_name}-README.txt"
+            fi
+        fi
+    done
+fi
 cp launcher/build/Athelas.exe dist-files/README.txt "$OUT/"
 cp "$SDL_DIR/i686-w64-mingw32/bin/SDL3.dll" "$OUT/"
 cp build/ROTKFix.dll build/d3d8.dll build/dinput8.dll "$SDL_DIR/i686-w64-mingw32/bin/SDL3.dll" "$FIX/"
