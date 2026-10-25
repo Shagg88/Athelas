@@ -52,11 +52,13 @@ drawn landscape instead. All game and film artwork belongs to its owners.*
 |---|---|
 | `launcher/` | Athelas, the launcher |
 | `src/`, `build.sh` | ROTK Fix, for the PC game |
+| `mods/` | Standalone code mods (e.g. `ValarBoons`) |
+| `examples/standalone-mod/` | Starter template and build script for standalone C code mods |
 | `ports/two-towers/` | The Two Towers PC port ([its README](ports/two-towers/README.md)) |
 | `ports/rotk-xbox/` | The Return of the King Xbox PC port ([its README](ports/rotk-xbox/README.md)) |
 | `ports/fellowship/` | The Fellowship of the Ring Xbox PC port ([its README](ports/fellowship/README.md)) |
 | `dist-files/README.txt` | The README that comes in the download, with every setting |
-| `docs/` | Release notes and engine notes |
+| `docs/` | Release notes, engine notes, and mod blueprints |
 | `scripts/` | Packaging the release zip |
 | `third_party/`, `licenses/` | Bundled libraries and every licence |
 
@@ -69,10 +71,26 @@ drawn landscape instead. All game and film artwork belongs to its owners.*
 - **Co-op:** two controllers on one PC, or online by streaming with Steam Remote Play Together or Parsec (see README.txt)
 - **Movies:** cutscenes fill widescreen screens with correct proportions; optional logo skip; a sound delay setting for Bluetooth speakers
 - **Texture packs:** dump the game's textures to PNG and load replacements from a folder (no game art included)
+- **Standalone code mods:** drop-in plugin architecture (`ROTKFix\mods\`) for community C/C++ mods with hit filtering, frame hooks, custom HUD/aura rendering, and in-launcher management
 - **Screenshots:** `\` or Print Screen saves a PNG
 - **Gameplay:** damage taken, enemy damage, every level and character unlocked, every hero in levels you've completed, the games' own cheat codes as switches, and kill points in The Two Towers (all off by default)
 - **Achievements:** in all four games, earned as you play (and from what your saves already hold), with a note on screen and the list in the launcher
 - **Launcher:** every setting in one place, with presets (Original, Balanced, High, Ultra)
+
+## Standalone Modding System
+
+ROTK Fix includes a dynamic plugin loader that allows community developers to build standalone mods without modifying or reverse-engineering original game files on disk:
+
+- **Drop-in Plugins:** Place compiled mod `.dll` and its matching `.ini` in `ROTKFix\mods\`. Athelas automatically detects them on startup.
+- **In-Launcher Control:** Enable, disable, and configure mods directly from the launcher's **Mods** tab.
+- **Modding API:** Clean engine hooks for custom gameplay:
+  - `RF_RegisterHitFilter`: Intercept, inspect, and scale incoming or outgoing combat damage, clamp maximum hit damage, and trigger retribution shock attacks.
+  - `RF_RegisterFrameHook`: Per-frame logic loop for cooldown timers, state machines, and active durations.
+  - `RF_RegisterRenderHook` / `RF_RegisterResetHook`: Direct3D9 rendering callbacks for on-screen HUD badges, screen edge auras, and device resets.
+  - `RF_RegisterHotkey`: Register custom hotkeys with the DirectInput pipeline to avoid swallowing native game keys.
+  - `RF_ShowNotificationEx`: Trigger in-game achievement-style notification banners.
+  - `RF_IsLogEnabled` / `RF_Log`: Unified logging routed through ROTKFix's global logging settings.
+- **Reference Mod & Template:** Includes [Valar Boons](mods/ValarBoons/README.md) as a complete mythological blessings mod, and a minimal starter template in [examples/standalone-mod](examples/standalone-mod/README.md). Technical engine offsets and future blueprints are documented in [docs/ROTK-MOD-IDEAS.md](docs/ROTK-MOD-IDEAS.md).
 
 ## Requirements
 
