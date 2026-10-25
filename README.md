@@ -30,9 +30,9 @@ Download it from [Releases](../../releases): one zip with the launcher, ROTK Fix
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/05_gameplay.png" width="32%" alt="Gameplay Tweaks">
-  <img src="docs/screenshots/06_mods.png" width="32%" alt="Mods & Dynamic Plugins">
-  <img src="docs/screenshots/07_about.png" width="32%" alt="About & Backgrounds">
+  <img src="https://github.com/user-attachments/assets/4bea88f9-01f9-484e-8f0b-d22c6fbf1864" width="32%">
+  <img src="https://github.com/user-attachments/assets/f5a0d251-7208-46ff-aea8-03d63577a4f2" width="32%">
+  <img src="https://github.com/user-attachments/assets/d9600fa1-c760-4185-a82c-ada85b03ea87" width="32%">
 </p>
 
 
