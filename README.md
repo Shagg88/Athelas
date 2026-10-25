@@ -27,6 +27,9 @@ Download it from [Releases](../../releases): one zip with the launcher, ROTK Fix
   <img src="docs/screenshots/02_graphics.png" width="49%" alt="Graphics Settings">
   <img src="docs/screenshots/03_controls.png" width="49%" alt="Controls & Gamepad Mapping">
   <img src="docs/screenshots/04_audio.png" width="49%" alt="Audio & 3D Sound">
+  <img src="docs/screenshots/05_gameplay.png" width="32%" alt="Gameplay Tweaks">
+  <img src="docs/screenshots/06_mods.png" width="32%" alt="Mods & Dynamic Plugins">
+  <img src="docs/screenshots/07_about.png" width="32%" alt="About & Backgrounds">
 </p>
 
 <p align="center">
