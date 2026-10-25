@@ -11,6 +11,9 @@
 *.md text eol=lf
 *.txt text eol=lf
 *.ini text eol=lf
+
+# Third-party licenses (preserve untouched)
+licenses/* -text
 *.py text eol=lf
 *.asm text eol=lf
 *.json text eol=lf
