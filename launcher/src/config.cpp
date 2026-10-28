@@ -434,7 +434,7 @@ bool load_settings(const std::string &dir, Settings &s)
     s.texReplace = geti(ini, "Textures", "Replace", 1) != 0;
     s.texDump = geti(ini, "Textures", "Dump", 0) != 0;
     std::string md = gets(ini, "Video", "MovieDisplay", "auto");
-    s.movieDisplay = !_stricmp(md.c_str(), "stretch") ? 1 : !_stricmp(md.c_str(), "4:3") ? 2 : 0;
+    s.movieDisplay = !_stricmp(md.c_str(), "stretch") ? 1 : !_stricmp(md.c_str(), "4:3") ? 2 : !_stricmp(md.c_str(), "zoom") ? 3 : 0;
     s.skipLogos = geti(ini, "Video", "SkipOpeningLogos", 0) != 0;
     s.audioDelayMs = clampi(geti(ini, "Video", "CutsceneAudioDelay", 0), 0, 1000);
     s.sharperMovies = clampi(geti(ini, "Video", "SharperMovies", 70), 0, 100);
@@ -714,7 +714,7 @@ static bool write_rotkfix_ini(const std::string &p, const Settings &s, bool crea
     set("Frame", "TargetFPS", std::to_string(s.targetFps));
     set("Frame", "Limiter", "1");
     set("Frame", "ShowFPS", std::to_string((int)s.showFps));
-    set("Video", "MovieDisplay", s.movieDisplay == 1 ? "stretch" : s.movieDisplay == 2 ? "4:3" : "auto");
+    set("Video", "MovieDisplay", s.movieDisplay == 1 ? "stretch" : s.movieDisplay == 2 ? "4:3" : s.movieDisplay == 3 ? "zoom" : "auto");
     set("Video", "SharperMovies", std::to_string(s.sharperMovies));
     set("Video", "CutsceneAudioDelay", std::to_string(s.audioDelayMs));
     set("Video", "AllowSkippingAllVideos", std::to_string((int)s.skipAllVideos));
@@ -980,8 +980,9 @@ static bool wine_forget_fix_dlls()
     return any;
 }
 
-bool launch_game(const std::string &dir, std::string &err)
+bool launch_game(const std::string &dir, std::string &err, void **process)
 {
+    if (process) *process = NULL;
     std::string exe = dir + "\\rotk.exe";
     wine_prefer_fix_dlls();
     STARTUPINFOA si; memset(&si, 0, sizeof si); si.cb = sizeof si;
@@ -994,12 +995,12 @@ bool launch_game(const std::string &dir, std::string &err)
             // way Explorer does, which shows Windows' usual permission prompt
             SHELLEXECUTEINFOA sei; memset(&sei, 0, sizeof sei);
             sei.cbSize = sizeof sei;
-            sei.fMask = SEE_MASK_NOASYNC;
+            sei.fMask = SEE_MASK_NOASYNC | (process ? SEE_MASK_NOCLOSEPROCESS : 0);
             sei.lpVerb = "open";
             sei.lpFile = exe.c_str();
             sei.lpDirectory = dir.c_str();
             sei.nShow = SW_SHOWNORMAL;
-            if (ShellExecuteExA(&sei)) return true;
+            if (ShellExecuteExA(&sei)) { if (process) *process = sei.hProcess; return true; }
             e = GetLastError();
             if (e == ERROR_CANCELLED) { err = "The game was not started (the Windows permission prompt was declined)."; return false; }
         }
@@ -1007,7 +1008,7 @@ bool launch_game(const std::string &dir, std::string &err)
         return false;
     }
     CloseHandle(pi.hThread);
-    CloseHandle(pi.hProcess);
+    if (process) *process = pi.hProcess; else CloseHandle(pi.hProcess);
     return true;
 }
 
@@ -1379,6 +1380,25 @@ bool install_to(const std::string &src, const std::string &dst, std::string &err
         DWORD e = 0;
         CreateDirectoryA((dst + "\\ROTKFix").c_str(), NULL);
         if (!copy_tree(from, dst + "\\ROTKFix", e)) { err = std::string("Could not copy ROTKFix\\") + sub + " (error " + std::to_string(e) + ")."; return false; }
+    }
+    // the mods that come with Athelas (ROTKFix\mods): their code updated, but a mod's .ini kept once it is there (it holds
+    // the player's choices, Enabled among them)
+    {
+        std::string from = src + "\\ROTKFix\\mods", to = dst + "\\ROTKFix\\mods";
+        WIN32_FIND_DATAA fd;
+        HANDLE h = FindFirstFileA((from + "\\*").c_str(), &fd);
+        if (h != INVALID_HANDLE_VALUE) {
+            CreateDirectoryA((dst + "\\ROTKFix").c_str(), NULL);
+            CreateDirectoryA(to.c_str(), NULL);
+            do {
+                if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) continue;
+                std::string n = fd.cFileName, f = from + "\\" + n, t = to + "\\" + n;
+                bool ini = n.size() > 4 && !_stricmp(n.c_str() + n.size() - 4, ".ini");
+                if (ini && file_exists(t)) continue;
+                if (!CopyFileA(f.c_str(), t.c_str(), FALSE)) { FindClose(h); err = "Could not copy ROTKFix\\mods\\" + n + "."; return false; }
+            } while (FindNextFileA(h, &fd));
+            FindClose(h);
+        }
     }
     return true;
 }

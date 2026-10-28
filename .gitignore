@@ -17,3 +17,5 @@ __pycache__/
 *.plist
 attic/
 /notes.md
+/mods/*/*.dll
+/examples/*/*.dll

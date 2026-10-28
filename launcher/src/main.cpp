@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <time.h>
 #include <string>
 #include <vector>
 #include <map>
@@ -32,6 +33,9 @@
 #include "gameart.h"
 #include "update.h"
 #include "report.h"
+#include "music.h"
+#include "userdata.h"
+#include "i18n.h"
 #include <shlobj.h>
 #include "font_cinzel.h"
 #include "font_garamond.h"
@@ -66,8 +70,10 @@ static const ImVec4 C_BAD    = rgb(220, 95, 80);
 static const ImVec4 C_PANEL  = rgb(16, 12, 9, 0.85f);
 static const ImVec4 C_LINE   = rgb(150, 118, 60, 0.6f);
 
-static ImFont *F_BODY, *F_SMALL, *F_HEAD, *F_TITLE, *F_PLAY;
+static ImFont *F_BODY, *F_SMALL, *F_HEAD, *F_TITLE, *F_PLAY, *F_TAB;
 static float g_scale = 1.0f;
+static float g_scale0 = 1.0f;      // g_scale at the window's first size; the window can be resized (since 1.7)
+static int g_baseW = 880, g_baseH = 640;   // that first size, in pixels
 static float S(float v) { return v * g_scale; }
 
 static void setup_style()
@@ -162,6 +168,8 @@ struct Backgrounds {
     int group = -1;                // whose pictures are listed: 0 The Return of the King, 1 The Two Towers, 2 The Fellowship of the Ring
     bool artIn = false;            // the game art was ready when the list was made
     int gen = 0;                   // bumped when the list is made again (a picture still being read is dropped)
+    std::string dir;               // the game it was listed from (groups 1 and 2)
+    bool fresh = false;            // listed again: show its first picture now rather than at the next change
 };
 
 // [Background] Show in ROTKFix\launcher.ini: what is shown behind the launcher.
@@ -356,11 +364,12 @@ static void backgrounds_rebuild(Backgrounds &b, int group, const std::string &la
     b.files.clear();
     b.gen++;
     b.group = group;
+    b.fresh = true;
     b.artIn = art_ready();
     b.index = -1;
     if ((g_bgShow == BG_ART_AND_MINE || g_bgShow == BG_ART) && group == 0 && b.artIn)
         for (size_t i = 0; i < g_art.size(); i++) b.files.push_back("\001art:" + std::to_string(i));
-    if ((g_bgShow == BG_ART_AND_MINE || g_bgShow == BG_ART) && group >= 1 && !ttDir.empty()) {
+    if ((g_bgShow == BG_ART_AND_MINE || g_bgShow == BG_ART) && (group == 1 || group == 2) && !ttDir.empty()) {
         size_t first = b.files.size();
         if (group == 1) tt_art_list(ttDir, b.files); else fotr_art_list(ttDir, b.files);
         for (size_t i = b.files.size(); i > first + 1; i--)     // a different order each time
@@ -664,6 +673,11 @@ struct App {
     bool firstRunPreset = false;       // no ROTKFix.ini yet: the preset may still follow the graphics card
     HANDLE running = NULL;             // a port that is playing; the launcher waits, hidden
     std::string runningLog, runningGame;
+    bool front = false;                // the front screen (the carousel of games) instead of a game's page
+    unsigned long long runningSince = 0;   // when it started (GetTickCount64), for its play time
+    std::string runningKey;            // its key in Athelas.ini's [PlayTime]: fotr, tt, rotk-xbox, rotk-pc
+    bool runningPc = false;            // the one playing is the PC game (rotk.exe), not a port
+    Session session;                   // this play, for its folder in Logs (userdata.h)
 };
 
 static const Monitor &mon(const App &a) { return a.monitors[std::min<size_t>(a.s.monitor, a.monitors.size() - 1)]; }
@@ -1077,11 +1091,15 @@ static void tab_graphics(App &a)
     row_end();
 
     section("Movies");
-    static const char *md[] = { "Fit", "Stretch", "4:3" };
-    row_begin("Movie display", "Fit: cutscenes and the opening logos fill the width with correct proportions; the trailer is shown 4:3.\n"
-                               "Stretch: the whole movie frame is stretched to the screen (thick bars, wider picture).\n"
-                               "4:3: every movie in its original frame with bars at the sides.");
-    segmented("md", &s.movieDisplay, md, 3);
+    // Zoom (the 4:3 movies fill the width too, their top and bottom cut off) is the Xbox port's; ROTK Fix has the three
+    static const char *md[] = { "Fit", "Stretch", "4:3", "Zoom" };
+    std::string mdh = "Fit: cutscenes and the opening logos fill the width with correct proportions; the trailer is shown 4:3.\n"
+                      "Stretch: the whole movie frame is stretched to the screen (thick bars, wider picture).\n"
+                      "4:3: every movie in its original frame with bars at the sides.";
+    if (g_xboxPage) mdh += "\nZoom: as Fit, and the trailer fills the width too, its top and bottom cut off.";
+    else if (s.movieDisplay > 2) s.movieDisplay = 0;
+    row_begin("Movie display", mdh.c_str());
+    segmented("md", &s.movieDisplay, md, g_xboxPage ? 4 : 3);
     row_end();
     row_begin("Sharper cutscenes", "The movies are only 512 x 480. This sharpens them at their own pixel size before they are stretched to your screen, "
                                    "so faces and edges look crisper. 0 shows them as the game always did.");
@@ -1132,6 +1150,11 @@ static int label_style(const App &a)
     return st == NAMES_ORIGINAL ? NAMES_XBOX : st;
 }
 
+// LT + RT together switches fullscreen (WinMain): the hint in the controller's own names
+static const char *fullscreen_hint(int ls)
+{
+    return ls == NAMES_PS ? "L2 + R2: fullscreen" : ls == NAMES_NINTENDO ? "ZL + ZR: fullscreen" : "LT + RT: fullscreen";
+}
 static const char *phys_label(int ph, int style)
 {
     static const char *const xbox[PAD_PHYS_COUNT] = { "A", "B", "X", "Y", "LB", "RB", "Back", "Start", "Left stick", "Right stick", "LT", "RT" };
@@ -1568,7 +1591,8 @@ static bool load_pc_settings(App &a, const std::string &dir)
     a.s = Settings();
     bool hadIni = load_settings(a.dir, a.s);
     if (!hadIni) { apply_preset(a.s, PRESET_HIGH); a.firstRunPreset = true; }
-    a.s.renderer = 0;   // Vulkan always; the DLL falls back to Direct3D 8 by itself if Vulkan is unavailable
+    // (Renderer as the settings file has it: Vulkan unless the player set native by hand. ROTK Fix checks for a
+    // Vulkan 1.3 device before it loads DXVK and uses Direct3D 8 without one, #27.)
     // the saved screen by name (the order of screens can change)
     for (size_t i = 0; i < a.monitors.size(); i++) {
         const Monitor &m = a.monitors[i];
@@ -1633,7 +1657,8 @@ static std::wstring shortcut_path(bool desktop)
         [] { std::wstring d = known_folder(FOLDERID_Programs); return d.empty() ? d : d + L"\\Athelas.lnk"; }() };
     return paths[desktop ? 0 : 1];
 }
-static bool make_shortcut(const std::wstring &lnk)
+static bool make_shortcut(const std::wstring &lnk, const std::wstring &args = L"",
+                          const std::wstring &desc = L"Athelas - The Lord of the Rings games")
 {
     wchar_t exe[MAX_PATH];
     GetModuleFileNameW(NULL, exe, MAX_PATH);
@@ -1646,7 +1671,8 @@ static bool make_shortcut(const std::wstring &lnk)
         sl->SetPath(exe);
         sl->SetWorkingDirectory(dir.c_str());
         sl->SetIconLocation(exe, 0);
-        sl->SetDescription(L"Athelas - The Lord of the Rings games");
+        sl->SetDescription(desc.c_str());
+        if (!args.empty()) sl->SetArguments(args.c_str());
         IPersistFile *pf = nullptr;
         if (SUCCEEDED(sl->QueryInterface(IID_IPersistFile, (void **)&pf))) {
             ok = SUCCEEDED(pf->Save(lnk.c_str(), TRUE));
@@ -1680,6 +1706,67 @@ static void shortcuts_section(App &a)
         ImGui::EndDisabled();
         ImGui::PopID();
     }
+    // one for each game too (as COGBox has): it opens Athelas and starts that game, with its settings and fixes
+    static const GameKind kinds[] = { GK_FOTR_XBOX, GK_TT_XBOX, GK_ROTK_XBOX, GK_ROTK_PC };
+    static const char *keys[] = { "fotr", "tt", "rotk-xbox", "rotk-pc" };
+    std::wstring desk = known_folder(FOLDERID_Desktop);
+    for (int k = 0; k < 4; k++) {
+        bool have = false;
+        for (const LibGame &g : a.lib) if (g.kind == kinds[k]) have = true;
+        if (!have || desk.empty()) continue;
+        std::string name = game_kind_name(kinds[k]);
+        std::string label = "Desktop shortcut: " + name;
+        ImGui::PushID(10 + k);
+        if (ImGui::Button(label.c_str())) {
+            std::wstring wname;
+            for (char c : name) wname += strchr("\\/:*?\"<>|", c) ? L'-' : (wchar_t)(unsigned char)c;
+            std::wstring args = L"--play " + std::wstring(keys[k], keys[k] + strlen(keys[k]));
+            if (make_shortcut(desk + L"\\" + wname + L".lnk", args, L"Play " + wname + L" through Athelas"))
+                set_message(a, "A " + name + " shortcut is on your desktop.", false);
+            else set_message(a, "The shortcut couldn't be made.", true);
+        }
+        ImGui::PopID();
+    }
+    ImGui::PushTextWrapPos(0);
+    ImGui::TextColored(C_DIM, "To pin one to the taskbar or Start, right-click the shortcut and choose Pin "
+                              "(Windows doesn't let programs do that themselves).");
+    ImGui::PopTextWrapPos();
+}
+
+static std::string ports_ini();
+// Athelas' own window (as COGBox has it): fullscreen with F11 or LT + RT together, from any screen, a borderless window
+// with its own buttons; its size and choices are remembered. Not the games' display settings.
+static bool launcher_ini_get(const char *k, int def) { return GetPrivateProfileIntA("Launcher", k, def, ports_ini().c_str()) != 0; }
+static void launcher_ini_put(const char *k, int v) { WritePrivateProfileStringA("Launcher", k, std::to_string(v).c_str(), ports_ini().c_str()); }
+static bool g_borderless;
+static void set_fullscreen(App &a, bool on)
+{
+    SDL_SetWindowFullscreen(a.win, on);
+    launcher_ini_put("Fullscreen", on);
+}
+static void set_borderless(App &a, bool on)
+{
+    g_borderless = on;
+    SDL_SetWindowBordered(a.win, !on);
+    launcher_ini_put("Borderless", on);
+}
+static void language_combo();
+static void window_section(App &a)
+{
+    section("This window");
+    bool fs = (SDL_GetWindowFlags(a.win) & SDL_WINDOW_FULLSCREEN) != 0;
+    if (ImGui::Checkbox("Fullscreen (F11, or LT + RT together)", &fs)) set_fullscreen(a, fs);
+    bool bl = g_borderless;
+    if (ImGui::Checkbox("Borderless window (no title bar)", &bl)) set_borderless(a, bl);
+    row_begin("Language", "Athelas' own language. The games' languages are on their Gameplay tabs.\n"
+                          "Translations are written by the project; corrections are welcome on GitHub (the lang folder).");
+    language_combo();
+    row_end();
+    ImGui::PushTextWrapPos(0);
+    ImGui::TextColored(C_DIM, "Athelas grows with its window: drag a corner, or maximise it. Borderless: Athelas draws its own "
+                              "minimise, maximise and close buttons in the top-right corner; drag the strip beside them to move it. "
+                              "These are for Athelas itself - each game's display settings are on its Display tab.");
+    ImGui::PopTextWrapPos();
 }
 
 static void games_section(App &a)
@@ -1723,6 +1810,7 @@ static void games_section(App &a)
     }
 
     shortcuts_section(a);
+    window_section(a);
 
     section("Background pictures");
     ImGui::PushTextWrapPos(0);
@@ -2010,6 +2098,564 @@ static void update_section(App &a)
     row_end();
 }
 
+struct ModEntry {
+    std::string id;
+    std::string name;
+    std::string description;
+    std::string author;
+    std::string version;
+    std::string category;
+    std::string dllName;
+    std::string iniPath;
+    std::string hotkeys;
+    std::string folder;
+    std::vector<std::string> games;
+    bool enabled = true;
+    bool supportsAll = false;
+
+    bool supportsGame(const std::string &gameKey) const {
+        if (supportsAll) return true;
+        for (const auto &g : games) {
+            if (!_stricmp(g.c_str(), gameKey.c_str()) || !_stricmp(g.c_str(), "all")) return true;
+        }
+        return false;
+    }
+};
+
+static std::string trim_str(const std::string &s) {
+    size_t start = s.find_first_not_of(" \t\r\n");
+    if (start == std::string::npos) return "";
+    size_t end = s.find_last_not_of(" \t\r\n");
+    return s.substr(start, end - start + 1);
+}
+
+static std::vector<std::string> split_games(const std::string &s) {
+    std::vector<std::string> res;
+    size_t pos = 0;
+    while (pos < s.size()) {
+        size_t next = s.find(',', pos);
+        if (next == std::string::npos) next = s.size();
+        std::string item = trim_str(s.substr(pos, next - pos));
+        if (!item.empty()) res.push_back(item);
+        pos = next + 1;
+    }
+    return res;
+}
+
+static const char *game_key_title(const std::string &k) {
+    if (!_stricmp(k.c_str(), "rotk-pc")) return "ROTK (PC)";
+    if (!_stricmp(k.c_str(), "rotk-xbox")) return "ROTK (Xbox)";
+    if (!_stricmp(k.c_str(), "tt-xbox")) return "Two Towers (Xbox)";
+    if (!_stricmp(k.c_str(), "fotr-xbox")) return "Fellowship (Xbox)";
+    if (!_stricmp(k.c_str(), "all")) return "All Games";
+    return k.c_str();
+}
+
+static std::string get_current_game_key(const App &a) {
+    if (a.cur >= 0 && a.cur < (int)a.lib.size()) {
+        GameKind k = a.lib[a.cur].kind;
+        if (k == GK_ROTK_PC) return "rotk-pc";
+        if (k == GK_ROTK_XBOX) return "rotk-xbox";
+        if (k == GK_TT_XBOX) return "tt-xbox";
+        if (k == GK_FOTR_XBOX) return "fotr-xbox";
+    }
+    return "rotk-pc";
+}
+
+static std::vector<ModEntry> scan_mods_dir(const std::string &dir, const std::string &rotkFixIni) {
+    std::vector<ModEntry> list;
+    if (dir.empty()) return list;
+
+    std::string pattern = dir + "\\*";
+    WIN32_FIND_DATAA fd;
+    HANDLE h = FindFirstFileA(pattern.c_str(), &fd);
+    if (h == INVALID_HANDLE_VALUE) return list;
+
+    std::map<std::string, ModEntry> found;
+
+    do {
+        if (!strcmp(fd.cFileName, ".") || !strcmp(fd.cFileName, "..")) continue;
+
+        // (folders: not mods. ROTK Fix loads the .dll files in the mods folder itself; mods\Data holds replacement
+        // game files)
+        if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) continue;
+        {
+            std::string fn = fd.cFileName;
+            size_t dot = fn.find_last_of('.');
+            if (dot == std::string::npos) continue;
+            std::string ext = fn.substr(dot);
+            std::string base = fn.substr(0, dot);
+
+            if (!_stricmp(ext.c_str(), ".ini")) {
+                std::string ini = dir + "\\" + fn;
+                ModEntry m;
+                m.iniPath = ini;
+                m.id = base;
+                char buf[512] = {};
+                GetPrivateProfileStringA("Mod", "Name", base.c_str(), buf, sizeof buf, ini.c_str());
+                m.name = buf;
+                GetPrivateProfileStringA("Mod", "Description", "External standalone mod plugin.", buf, sizeof buf, ini.c_str());
+                m.description = buf;
+                GetPrivateProfileStringA("Mod", "Author", "Community", buf, sizeof buf, ini.c_str());
+                m.author = buf;
+                GetPrivateProfileStringA("Mod", "Version", "1.0", buf, sizeof buf, ini.c_str());
+                m.version = buf;
+                GetPrivateProfileStringA("Mod", "Category", "Gameplay", buf, sizeof buf, ini.c_str());
+                m.category = buf;
+                GetPrivateProfileStringA("Mod", "Hotkeys", "", buf, sizeof buf, ini.c_str());
+                m.hotkeys = buf;
+                GetPrivateProfileStringA("Mod", "DLL", (base + ".dll").c_str(), buf, sizeof buf, ini.c_str());
+                m.dllName = buf;
+                GetPrivateProfileStringA("Mod", "Games", "rotk-pc", buf, sizeof buf, ini.c_str());
+                m.games = split_games(buf);
+                int en = GetPrivateProfileIntA("Mod", "Enabled", 1, ini.c_str());
+                m.enabled = (en != 0);
+                for (const auto &g : m.games) if (!_stricmp(g.c_str(), "all")) m.supportsAll = true;
+                found[base] = m;
+            } else if (!_stricmp(ext.c_str(), ".dll")) {
+                if (found.find(base) == found.end()) {
+                    ModEntry m;
+                    m.id = base;
+                    m.name = base;
+                    m.dllName = fn;
+                    m.description = "External standalone code mod (" + fn + ").";
+                    m.author = "Unknown";
+                    m.version = "1.0";
+                    m.category = "Gameplay";
+                    m.games = { "rotk-pc" };
+                    m.enabled = true;
+                    found[base] = m;
+                }
+            }
+        }
+    } while (FindNextFileA(h, &fd));
+    FindClose(h);
+
+    for (auto &kv : found) {
+        ModEntry &m = kv.second;
+        if (!rotkFixIni.empty() && GetFileAttributesA(rotkFixIni.c_str()) != INVALID_FILE_ATTRIBUTES) {
+            char val[16] = {};
+            if (GetPrivateProfileStringA("Mods", m.dllName.c_str(), "", val, sizeof val, rotkFixIni.c_str()) > 0) {
+                m.enabled = (atoi(val) != 0);
+            }
+        }
+        list.push_back(m);
+    }
+    return list;
+}
+
+static void save_mod_state(const ModEntry &m, const std::string &rotkFixIni) {
+    if (!m.iniPath.empty()) {
+        WritePrivateProfileStringA("Mod", "Enabled", m.enabled ? "1" : "0", m.iniPath.c_str());
+    }
+    if (!rotkFixIni.empty()) {
+        WritePrivateProfileStringA("Mods", m.dllName.c_str(), m.enabled ? "1" : "0", rotkFixIni.c_str());
+    }
+}
+
+// Data mods, one folder each in ROTK Fix's mods folder (<mod>\Data\...), in an order the player sets (as COGBox has
+// it): ROTKFix.ini [ModOrder] Order=a|b|c, [DataMods] <mod>=0/1. ROTK Fix uses them top to bottom; the lower one
+// wins a file both change. "Add a mod (.zip)" unpacks a data mod there, or a code mod's .dll/.ini after a warning.
+static std::vector<std::string> data_mods_ordered(const std::string &dir, const std::string &ini)
+{
+    std::vector<std::string> on_disk, out;
+    WIN32_FIND_DATAA fd;
+    HANDLE h = FindFirstFileA((dir + "\\*").c_str(), &fd);
+    if (h != INVALID_HANDLE_VALUE) {
+        do {
+            if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) || fd.cFileName[0] == '.' || !_stricmp(fd.cFileName, "Data")) continue;
+            DWORD at = GetFileAttributesA((dir + "\\" + fd.cFileName + "\\Data").c_str());
+            if (at != INVALID_FILE_ATTRIBUTES && (at & FILE_ATTRIBUTE_DIRECTORY)) on_disk.push_back(fd.cFileName);
+        } while (FindNextFileA(h, &fd));
+        FindClose(h);
+    }
+    char order[2048] = "";
+    GetPrivateProfileStringA("ModOrder", "Order", "", order, sizeof order, ini.c_str());
+    std::string o = order;
+    size_t at = 0;
+    while (at <= o.size()) {
+        size_t bar = o.find('|', at);
+        std::string n = o.substr(at, bar == std::string::npos ? std::string::npos : bar - at);
+        for (auto it = on_disk.begin(); it != on_disk.end(); ++it)
+            if (!_stricmp(it->c_str(), n.c_str())) { out.push_back(*it); on_disk.erase(it); break; }
+        if (bar == std::string::npos) break;
+        at = bar + 1;
+    }
+    for (auto &n : on_disk) out.push_back(n);
+    return out;
+}
+static void data_mods_store(const std::vector<std::string> &v, const std::string &ini)
+{
+    std::string o;
+    for (auto &n : v) o += (o.empty() ? "" : "|") + n;
+    WritePrivateProfileStringA("ModOrder", "Order", o.c_str(), ini.c_str());
+}
+static std::string mod_folder_name(const std::string &zip)
+{
+    std::string b = zip.substr(zip.find_last_of('\\') + 1);
+    if (b.size() > 4 && !_stricmp(b.c_str() + b.size() - 4, ".zip")) b.resize(b.size() - 4);
+    std::string r;
+    for (char c : b) r += (isalnum((unsigned char)c) || c == '-' || c == '_' || c == ' ') ? c : '_';
+    while (!r.empty() && (r.back() == ' ' || r.back() == '.')) r.pop_back();
+    if (r.empty() || !_stricmp(r.c_str(), "Data")) r = "Mod";
+    return r.substr(0, 60);
+}
+static void data_mods_section(App &a, const std::string &dir, const std::string &ini, bool &rescan)
+{
+    static std::string pendingZip;
+    static ModZip pending;
+    bool running = a.running != NULL;
+    if (running) ImGui::BeginDisabled();
+    if (ImGui::Button("Add a mod (.zip)...")) {
+        std::string f;
+        if (pick_file(f, L"Choose a mod's .zip", L"Zip files", L"*.zip")) {
+            pending = mod_zip_inspect(f);
+            pendingZip = f;
+            if (!pending.error.empty()) set_message(a, pending.error, true);
+            else if (pending.code) ImGui::OpenPopup("Add a code mod?");
+            else {
+                std::string name = mod_folder_name(f), err;
+                int n = 0;
+                if (mod_zip_install(f, dir, name, false, n, err)) {
+                    std::vector<std::string> v = data_mods_ordered(dir, ini);
+                    v.erase(std::remove_if(v.begin(), v.end(), [&](const std::string &x) { return !_stricmp(x.c_str(), name.c_str()); }), v.end());
+                    v.push_back(name);   // a new one goes last: it wins
+                    data_mods_store(v, ini);
+                    WritePrivateProfileStringA("DataMods", name.c_str(), "1", ini.c_str());
+                    set_message(a, "The mod \"" + name + "\" is added and ticked (" + std::to_string(n) + " files).", false);
+                } else set_message(a, "The mod couldn't be added: " + err, true);
+                rescan = true;
+            }
+        }
+    }
+    if (running) ImGui::EndDisabled();
+    ImGui::SetNextWindowSize(ImVec2(S(580), 0));
+    if (ImGui::BeginPopupModal("Add a code mod?", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove)) {
+        ImGui::PushTextWrapPos(0);
+        std::string list;
+        for (auto &d : pending.dlls) list += (list.empty() ? "" : ", ") + d;
+        ImGui::Text("This mod is a program (%s) that runs inside the game, with the same rights as the game.", list.c_str());
+        ImGui::TextColored(C_WARN, "Only add it if you trust where it came from. Athelas doesn't check what it does.");
+        ImGui::TextUnformatted("It is added to ROTK Fix's mods folder and ticked; untick it below to turn it off.");
+        ImGui::PopTextWrapPos();
+        ImGui::Spacing();
+        if (ImGui::Button("Add it", ImVec2(S(150), 0))) {
+            std::string err; int n = 0;
+            if (mod_zip_install(pendingZip, dir, "", true, n, err)) set_message(a, "The code mod is added (" + std::to_string(n) + " files).", false);
+            else set_message(a, "The mod couldn't be added: " + err, true);
+            rescan = true;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(S(150), 0)) || dialog_back()) ImGui::CloseCurrentPopup();
+        ImGui::SetItemDefaultFocus();
+        ImGui::EndPopup();
+    }
+
+    std::vector<std::string> v = data_mods_ordered(dir, ini);
+    if (v.empty()) return;
+    section("Data mods");
+    ImGui::PushTextWrapPos(0);
+    ImGui::TextColored(C_DIM, "Ticked mods are used top to bottom - where two change the same file, the lower one wins. "
+                              "Your game's own files aren't changed. Changes apply the next time the game starts.");
+    ImGui::PopTextWrapPos();
+    bool changed = false;
+    for (size_t i = 0; i < v.size(); i++) {
+        ImGui::PushID((int)i + 9000);
+        if (running) ImGui::BeginDisabled();
+        bool on = GetPrivateProfileIntA("DataMods", v[i].c_str(), 1, ini.c_str()) != 0;
+        if (ImGui::Checkbox("##on", &on)) WritePrivateProfileStringA("DataMods", v[i].c_str(), on ? "1" : "0", ini.c_str());
+        ImGui::SameLine();
+        char nm[160] = "", ver[40] = "";
+        std::string mi = dir + "\\" + v[i] + "\\mod.ini";
+        GetPrivateProfileStringA("Mod", "Name", v[i].c_str(), nm, sizeof nm, mi.c_str());
+        GetPrivateProfileStringA("Mod", "Version", "", ver, sizeof ver, mi.c_str());
+        ImGui::TextColored(on ? C_GOLD_H : C_DIM, "%d. %s%s%s", (int)i + 1, nm, ver[0] ? "  " : "", ver);
+        ImGui::SameLine();
+        if (i > 0 && ImGui::SmallButton("Up")) { std::swap(v[i], v[i - 1]); changed = true; }
+        if (i > 0) ImGui::SameLine();
+        if (i + 1 < v.size() && ImGui::SmallButton("Down")) { std::swap(v[i], v[i + 1]); changed = true; }
+        if (i + 1 < v.size()) ImGui::SameLine();
+        if (ImGui::SmallButton("Remove")) {   // to the Recycle Bin, so it can come back
+            std::string from = dir + "\\" + v[i]; from.push_back('\0');
+            SHFILEOPSTRUCTA op; memset(&op, 0, sizeof op);
+            op.wFunc = FO_DELETE; op.pFrom = from.c_str();
+            op.fFlags = FOF_NOCONFIRMATION | FOF_NOERRORUI | FOF_SILENT | FOF_ALLOWUNDO;
+            if (SHFileOperationA(&op) == 0 && !op.fAnyOperationsAborted) {
+                WritePrivateProfileStringA("DataMods", v[i].c_str(), NULL, ini.c_str());
+                set_message(a, "\"" + v[i] + "\" removed (it is in the Recycle Bin).", false);
+                v.erase(v.begin() + i);
+                changed = true;
+            } else set_message(a, "It couldn't be removed (is the game running?).", true);
+        }
+        if (running) ImGui::EndDisabled();
+        ImGui::PopID();
+        if (changed) break;
+    }
+    if (changed) data_mods_store(v, ini);
+    ImGui::Dummy(ImVec2(0, S(6)));
+    section("Code mods");
+}
+
+static void tab_mods(App &a)
+{
+    section("Mods & Plugins");
+
+    std::string primaryDir = a.dir + "\\ROTKFix\\mods";
+    std::string fallbackDir = pc_fix_source() + "\\ROTKFix\\mods";
+    std::string localDir = exe_dir() + "\\mods";
+
+    std::string activeDir = primaryDir;
+    if (GetFileAttributesA(primaryDir.c_str()) == INVALID_FILE_ATTRIBUTES) {
+        if (GetFileAttributesA(fallbackDir.c_str()) != INVALID_FILE_ATTRIBUTES) activeDir = fallbackDir;
+        else if (GetFileAttributesA(localDir.c_str()) != INVALID_FILE_ATTRIBUTES) activeDir = localDir;
+    }
+
+    std::string rotkFixIni = a.dir + "\\ROTKFix.ini";
+    if (GetFileAttributesA(rotkFixIni.c_str()) == INVALID_FILE_ATTRIBUTES) {
+        rotkFixIni = exe_dir() + "\\ROTKFix.ini";
+    }
+
+    std::string curGameKey = get_current_game_key(a);
+
+    static std::vector<ModEntry> s_mods;
+    static double s_lastScan = 0;
+    static bool s_forceScan = true;
+
+    double now = ImGui::GetTime();
+    if (s_forceScan || now - s_lastScan > 2.0) {
+        s_mods = scan_mods_dir(activeDir, rotkFixIni);
+        if (activeDir != fallbackDir && GetFileAttributesA(fallbackDir.c_str()) != INVALID_FILE_ATTRIBUTES) {
+            auto more = scan_mods_dir(fallbackDir, rotkFixIni);
+            for (auto &m : more) {
+                bool dup = false;
+                for (auto &ex : s_mods) if (!_stricmp(ex.id.c_str(), m.id.c_str())) { dup = true; break; }
+                if (!dup) s_mods.push_back(m);
+            }
+        }
+        s_lastScan = now;
+        s_forceScan = false;
+    }
+
+    int activeCount = 0;
+    for (auto &m : s_mods) if (m.enabled) activeCount++;
+
+    ImGui::PushTextWrapPos(0);
+    ImGui::TextColored(C_DIM, "Athelas supports external code mods (.dll) and asset replacements loaded dynamically without "
+                              "altering original game discs or archives. Below you can toggle each mod and inspect its properties.");
+    ImGui::PopTextWrapPos();
+    ImGui::Dummy(ImVec2(0, S(4)));
+
+    // Actions
+    if (ImGui::Button("Open Mods Folder")) {
+        SHCreateDirectoryExA(NULL, activeDir.c_str(), NULL);
+        ShellExecuteA(NULL, "open", activeDir.c_str(), NULL, NULL, SW_SHOWNORMAL);
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Refresh")) {
+        s_forceScan = true;
+    }
+    ImGui::SameLine(0, S(16));
+    static char s_modSearch[64] = "";
+    ImGui::SetNextItemWidth(std::max(S(120), ImGui::GetContentRegionAvail().x - S(70)));
+    ImGui::InputTextWithHint("##modsearch", "Search mods...", s_modSearch, sizeof(s_modSearch));
+    if (s_modSearch[0] != '\0') {
+        ImGui::SameLine();
+        if (ImGui::SmallButton("Clear")) {
+            s_modSearch[0] = '\0';
+        }
+    }
+    ImGui::TextColored(C_GOLD, "%d mod%s found  |  %d active", (int)s_mods.size(), s_mods.size() == 1 ? "" : "s", activeCount);
+    data_mods_section(a, primaryDir, rotkFixIni, s_forceScan);
+
+    ImGui::Dummy(ImVec2(0, S(8)));
+
+    if (s_mods.empty()) {
+        ImGui::PushTextWrapPos(0);
+        ImGui::TextColored(C_DIM, "No mods found in:");
+        ImGui::TextColored(C_TEXT, "  %s", activeDir.c_str());
+        ImGui::Spacing();
+        ImGui::TextColored(C_DIM, "To install a mod, drop its .dll and .ini files into that folder and press Refresh.");
+        ImGui::PopTextWrapPos();
+        return;
+    }
+
+    std::string q = s_modSearch;
+    for (char &c : q) c = (char)tolower(c);
+
+    int shownCount = 0;
+    for (size_t i = 0; i < s_mods.size(); i++) {
+        ModEntry &m = s_mods[i];
+        if (!q.empty()) {
+            std::string hay = m.name + " " + m.description + " " + m.author + " " + m.category + " " + m.dllName;
+            for (const auto &g : m.games) hay += " " + g;
+            for (char &c : hay) c = (char)tolower(c);
+            if (hay.find(q) == std::string::npos) continue;
+        }
+        shownCount++;
+        bool comp = m.supportsGame(curGameKey);
+
+        ImGui::PushID((int)i);
+        ImGui::BeginGroup();
+
+        if (ImGui::Checkbox("##en", &m.enabled)) {
+            save_mod_state(m, rotkFixIni);
+        }
+        ImGui::SameLine();
+        ImGui::PushFont(F_TAB, F_TAB->LegacySize);
+        ImGui::TextColored(m.enabled ? C_GOLD_H : C_DIM, "%s", m.name.c_str());
+        ImGui::PopFont();
+
+        ImGui::SameLine();
+        if (m.enabled) {
+            ImGui::TextColored(C_GOOD, "[Active]");
+        } else {
+            ImGui::TextColored(C_DIM, "[Disabled]");
+        }
+
+        ImGui::Indent(S(28));
+        ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
+        ImGui::TextColored(C_DIM, "v%s  |  Author: %s  |  Category: %s  |  Binary: %s",
+                           m.version.c_str(), m.author.c_str(), m.category.c_str(), m.dllName.c_str());
+        ImGui::PopFont();
+
+        ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
+        ImGui::TextColored(C_GOLD, "Supported Games:");
+        for (const auto &g : m.games) {
+            ImGui::SameLine();
+            bool curMatch = (_stricmp(g.c_str(), curGameKey.c_str()) == 0 || !_stricmp(g.c_str(), "all"));
+            ImGui::TextColored(curMatch ? C_GOOD : C_DIM, "[ %s%s ]", game_key_title(g), curMatch ? " (Current)" : "");
+        }
+        if (!comp) {
+            ImGui::SameLine();
+            ImGui::TextColored(C_WARN, "(Requires other LOTR game)");
+        }
+        ImGui::PopFont();
+
+        ImGui::PushTextWrapPos(0);
+        ImGui::TextColored(C_TEXT, "%s", m.description.c_str());
+        if (!m.hotkeys.empty()) {
+            ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
+            ImGui::TextColored(C_GOLD_H, "Controls / Hotkeys: %s", m.hotkeys.c_str());
+            ImGui::PopFont();
+        }
+        ImGui::PopTextWrapPos();
+
+        ImGui::Unindent(S(28));
+        ImGui::EndGroup();
+
+        ImGui::Dummy(ImVec2(0, S(6)));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0, S(6)));
+
+        ImGui::PopID();
+    }
+
+    if (shownCount == 0 && !s_mods.empty()) {
+        ImGui::PushTextWrapPos(0);
+        ImGui::Spacing();
+        ImGui::TextColored(C_DIM, "No mods match your search query \"%s\".", s_modSearch);
+        ImGui::PopTextWrapPos();
+    }
+}
+
+static std::string logs_dir() { return exe_dir() + "\\Logs"; }   // one folder per play (userdata.h)
+static void open_folder(const std::string &d) { SHCreateDirectoryExA(NULL, d.c_str(), NULL); ShellExecuteA(NULL, "open", d.c_str(), NULL, NULL, SW_SHOWNORMAL); }
+static void show_file(const std::string &f) { ShellExecuteA(NULL, "open", "explorer.exe", ("/select,\"" + f + "\"").c_str(), NULL, SW_SHOWNORMAL); }
+
+// On each game's About page (as COGBox has it): the saves backed up to a zip on the desktop and put back from one,
+// the folders, and for the Xbox ports their saved shaders cleared (set aside, not deleted)
+static void saves_section(App &a, const std::string &game, const std::string &saves, const std::string &shaders)
+{
+    section("Your saves");
+    ImGui::PushTextWrapPos(0);
+    ImGui::TextUnformatted("Back up saves puts a copy of this game's saves in a zip on your desktop. Restore saves puts one "
+                           "back - your current saves are backed up first, beside it, so nothing is lost.");
+    ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
+    ImGui::TextColored(C_DIM, "Saves: %s", saves.empty() ? "(not found)" : saves.c_str());
+    ImGui::PopFont();
+    ImGui::PopTextWrapPos();
+    bool busy = a.running != NULL || saves.empty();
+    if (busy) ImGui::BeginDisabled();
+    if (ImGui::Button("Back up saves")) {
+        if (!folder_has_files(saves)) set_message(a, game + " has no saves yet.", false);
+        else {
+            std::string zip = backup_name(game), err;
+            int n = 0;
+            if (backup_folder(saves, zip, n, err, game)) {
+                set_message(a, "Saves backed up (" + std::to_string(n) + (n == 1 ? " file" : " files") + ") to your desktop: " +
+                               zip.substr(zip.find_last_of('\\') + 1), false);
+                show_file(zip);
+            } else set_message(a, "The saves couldn't be backed up: " + err, true);
+        }
+    }
+    ImGui::SameLine();
+    static std::string pickZip, pickFor;
+    if (ImGui::Button("Restore saves...")) {
+        std::string f;
+        if (pick_file(f, L"Choose a saves backup (a zip Athelas made)", L"Zip files", L"*.zip")) {
+            pickZip = f; pickFor = saves;
+            ImGui::OpenPopup("Restore saves?");
+        }
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Open saves folder")) open_folder(saves);
+    if (busy) ImGui::EndDisabled();
+    if (ImGui::Button("Open logs")) {
+        std::string n = session_newest(logs_dir());
+        if (n.empty()) open_folder(logs_dir()); else show_file(n);
+    }
+    if (!shaders.empty()) {
+        ImGui::SameLine();
+        if (a.running) ImGui::BeginDisabled();
+        if (ImGui::Button("Clear shaders...")) {
+            if (!folder_has_files(shaders)) set_message(a, game + " has no saved shaders to clear.", false);
+            else ImGui::OpenPopup("Clear shaders?");
+        }
+        if (a.running) ImGui::EndDisabled();
+    }
+
+    ImGui::SetNextWindowSize(ImVec2(S(560), 0));
+    if (ImGui::BeginPopupModal("Restore saves?", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove)) {
+        ImGui::PushTextWrapPos(0);
+        ImGui::Text("Put back the saves in %s?", pickZip.substr(pickZip.find_last_of('\\') + 1).c_str());
+        ImGui::TextUnformatted("The saves there now are replaced. They are backed up to a zip on your desktop first "
+                               "(\"before restore\"), so you can go back.");
+        ImGui::PopTextWrapPos();
+        ImGui::Spacing();
+        if (ImGui::Button("Restore", ImVec2(S(150), 0))) {
+            std::string before, err;
+            if (restore_folder(pickZip, pickFor, game, before, err))
+                set_message(a, before.empty() ? "Saves restored." : "Saves restored. The ones before are in " + before.substr(before.find_last_of('\\') + 1) + " on your desktop.", false);
+            else set_message(a, "The saves weren't restored: " + err, true);
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(S(150), 0)) || dialog_back()) ImGui::CloseCurrentPopup();
+        ImGui::SetItemDefaultFocus();
+        ImGui::EndPopup();
+    }
+    ImGui::SetNextWindowSize(ImVec2(S(560), 0));
+    if (ImGui::BeginPopupModal("Clear shaders?", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove)) {
+        ImGui::PushTextWrapPos(0);
+        ImGui::Text("Clear the saved shaders of %s?", game.c_str());
+        ImGui::TextUnformatted("The next start builds them again, so expect some stutter the first time, as on a new PC. "
+                               "The folder is set aside (renamed), not deleted. Your saves and settings aren't touched.");
+        ImGui::PopTextWrapPos();
+        ImGui::Spacing();
+        if (ImGui::Button("Clear", ImVec2(S(150), 0))) {
+            std::string to, err;
+            if (shaders_set_aside(shaders, to, err)) set_message(a, "Shaders cleared (set aside as " + to.substr(to.find_last_of('\\') + 1) + ").", false);
+            else set_message(a, err, true);
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(S(150), 0)) || dialog_back()) ImGui::CloseCurrentPopup();
+        ImGui::SetItemDefaultFocus();
+        ImGui::EndPopup();
+    }
+}
+
 static void tab_about(App &a)
 {
     games_section(a);
@@ -2046,6 +2692,7 @@ static void tab_about(App &a)
     ImGui::TextColored(C_DIM, "Game folder: %s", a.dir.c_str());
     ImGui::PopFont();
     if (ImGui::Button("Open game folder")) ShellExecuteA(NULL, "open", a.dir.c_str(), NULL, NULL, SW_SHOWNORMAL);
+    saves_section(a, "The Return of the King", a.game.rotkIniDir, "");
 
     if (g.discProtected) {
         section("Original disc version");
@@ -2411,9 +3058,16 @@ static void tt_play(App &a, const LibGame &g)
     HANDLE h = port_start(a.tt.exe, args, err);
     if (!h) { set_message(a, err, true); return; }
     a.running = h;
+    a.runningSince = GetTickCount64();
+    a.runningKey = tp().kind == GK_FOTR_XBOX ? "fotr" : tp().kind == GK_TT_XBOX ? "tt" : "rotk-xbox";
     a.runningExe = a.tt.exe; a.runningArgs = args;
     a.runningLog = tt_log_path();
     a.runningGame = tp().game;
+    a.runningPc = false;
+    a.session = Session();
+    a.session.game = tp().game; a.session.exe = a.tt.exe; a.session.args = args; a.session.log = a.runningLog;
+    a.session.dumpDir = tt_data_dir() + "\\CrashDumps";
+    a.session.startedMs = a.runningSince; a.session.startedUnix = (long long)time(nullptr);
     SDL_HideWindow(a.win);
 }
 
@@ -2598,8 +3252,29 @@ static void crash_box(App &a, const std::string &text, const std::string &title)
     }
 }
 
+static void play_time_add(const std::string &key, unsigned long long secs);
+// The PC game has closed (the launcher waited, hidden, to time it): its play time and its folder in Logs, then the
+// launcher closes as it always did after ROTK - unless the game crashed (an exception code), when it says so.
+static void pc_finished(App &a, DWORD code)
+{
+    a.running = NULL;
+    play_time_add("rotk-pc", (GetTickCount64() - a.runningSince) / 1000);
+    bool crashed = code >= 0xC0000000;
+    char c[16]; snprintf(c, sizeof c, "0x%08lX", (unsigned long)code);
+    std::string m = crashed ? std::string("The Return of the King closed unexpectedly (") + c + "). Details are in ROTKFix.log in " + a.dir + "." : "";
+    session_save(logs_dir(), a.session, code, crashed ? m : "closed");
+    if (!crashed) { a.quit = true; return; }
+    SDL_ShowWindow(a.win);
+    SDL_RaiseWindow(a.win);
+    set_message(a, m, true);
+    crash_box(a, m, std::string("The Return of the King (PC): closed (") + c + ") - Athelas " LAUNCHER_VERSION);
+}
 static void port_finished(App &a, DWORD code)
 {
+    if (a.runningPc) { pc_finished(a, code); return; }
+    // (not when it didn't start: it couldn't boot, wrong files, another release, no Direct3D 12, a damaged settings
+    // file, or Windows couldn't load it)
+    if (!a.runningKey.empty() && !(code >= 1 && code <= 5) && code != 0xC0000135) play_time_add(a.runningKey, (GetTickCount64() - a.runningSince) / 1000);
     std::string why = port_log_reason(a.runningLog);
     std::string logDir = a.runningLog.substr(0, a.runningLog.find_last_of('\\'));
     std::string logName = a.runningLog.substr(a.runningLog.find_last_of('\\') + 1);
@@ -2627,6 +3302,7 @@ static void port_finished(App &a, DWORD code)
     }
     }
     a.running = NULL;
+    session_save(logs_dir(), a.session, code, code == 0 ? "closed normally" : m);
     if (code == 0) { a.quit = true; return; }       // played and quit: close, as after ROTK
     if (code == 3 && a.runningArgs.find("--any-release") == std::string::npos) {
         // another release of the game (another revision, or a modified copy): the player decides, as the port asks
@@ -2645,6 +3321,7 @@ static void port_finished(App &a, DWORD code)
             HANDLE h = port_start(a.runningExe, a.runningArgs + " --any-release", err);
             if (h) {
                 a.running = h;
+                a.runningSince = GetTickCount64();   // (not the time the question was up)
                 a.runningArgs += " --any-release";
                 return;
             }
@@ -3794,6 +4471,7 @@ static void tt_about(App &a)
         tt_save(a);
         set_message(a, std::string(tp().game) + " settings are back to their defaults", false);
     }
+    saves_section(a, tp().game, tt_data_dir() + "\\saves", tt_data_dir() + "\\shadercache");
     games_section(a);
     report_section(a);
 }
@@ -3831,9 +4509,9 @@ static float tabs_begin(const char *const *labels, int n, int sel)
         ImVec2 a(p.x + i * (w + gap), p.y + S(4)), b(a.x + w, p.y + h);
         bool hov = ImGui::IsMouseHoveringRect(a, b);
         orn_tab(dl, a, b, i == sel, hov);
-        ImVec2 ts = ImGui::CalcTextSize(labels[i]);
+        ImVec2 ts = ImGui::CalcTextSize(tr(labels[i]));
         dl->AddText(ImVec2(floorf(a.x + (w - ts.x) * 0.5f), floorf(a.y + (b.y - a.y - ts.y) * 0.5f)),
-                    ImGui::GetColorU32(i == sel ? C_GOLD_H : hov ? C_TEXT : rgb(200, 186, 160)), labels[i]);
+                    ImGui::GetColorU32(i == sel ? C_GOLD_H : hov ? C_TEXT : rgb(200, 186, 160)), tr(labels[i]));
     }
     // the line the tabs stand on, open under the chosen one
     float y = p.y + h, sx0 = p.x + sel * (w + gap), sx1 = sx0 + w;
@@ -4008,7 +4686,7 @@ static void draw_setup(App &a)
     // Xbox games: a folder with the extracted game, or a disc image
     section("Xbox games");
     ImGui::PushTextWrapPos(0);
-    ImGui::TextUnformatted("Choose the folder you extracted an Xbox game to (the one with default.xbe), or its disc image (.iso). "
+    ImGui::TextUnformatted("Choose the folder you extracted an Xbox game to (the one with default.xbe), or its disc image (.iso or .xiso). "
                            "Nothing is copied or changed. Only US copies are supported for now.");
     ImGui::PopTextWrapPos();
     if (ImGui::Button("Add a game folder...##setup")) {
@@ -4076,6 +4754,35 @@ static void draw_setup(App &a)
 // ---------------------------------------------------------------------------
 // Main screen
 
+#include "front.inc"
+
+// a newer Athelas: a button at the top right (at y), on every page and the front screen, that asks to install it and
+// shows the download
+static void update_button(App &a, ImVec2 size, float sy)
+{
+    const float pad = S(30);
+    {
+        std::string nv = update_newer();
+        float uprog = 0;
+        int ust = update_install_state(&uprog, nullptr);
+        if (!nv.empty() || ust == 1 || ust == 2) {
+            char lbl[64];
+            if (ust == 1 || ust == 2) snprintf(lbl, sizeof lbl, "Updating  %d%%##hdrupd", (int)(uprog * 100 + 0.5f));
+            else snprintf(lbl, sizeof lbl, "Update to %s##hdrupd", nv.c_str());
+            ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
+            float bw = std::max(S(150), ImGui::CalcTextSize(lbl, nullptr, true).x + S(28));
+            ImGui::SetCursorPos(ImVec2(size.x - pad - bw, sy + S(4)));
+            ImGui::PushStyleColor(ImGuiCol_Text, C_GOLD_H);
+            if (orn_plate_button(lbl, ImVec2(bw, S(30)), ust != 1 && ust != 2)) g_askUpdate = true;
+            ImGui::PopStyleColor();
+            if (ImGui::IsItemHovered() && ust != 1 && ust != 2)
+                ImGui::SetTooltip("Athelas %s is out. Your settings, saves and achievements are kept.", nv.c_str());
+            ImGui::PopFont();
+        }
+    }
+    update_popup(a);
+}
+
 static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
 {
     // change background every 15 s
@@ -4091,18 +4798,31 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     {
         GameKind k = a.cur >= 0 && a.cur < (int)a.lib.size() ? a.lib[a.cur].kind : GK_NONE;
         int group = k == GK_TT_XBOX ? 1 : k == GK_FOTR_XBOX ? 2 : 0;
-        if (group != a.bg.group || (group == 0 && art_ready() && !a.bg.artIn))
-            backgrounds_rebuild(a.bg, group, exe_dir(), group ? a.lib[a.cur].path : std::string());
+        std::string dir = group ? a.lib[a.cur].path : std::string();
+        if (a.front) front_bg_group(a, group, dir);   // the game in front of the carousel
+        if (group != a.bg.group || (group == 0 && art_ready() && !a.bg.artIn) || (group >= 1 && group <= 2 && dir != a.bg.dir)) {
+            backgrounds_rebuild(a.bg, group, exe_dir(), dir);
+            a.bg.dir = dir;
+        }
     }
     backgrounds_poll(a.bg, ren);
     if (!a.bg.job && !a.bg.files.empty() &&
-        (!a.bg.cur.tex || (a.bg.files.size() > 1 && ImGui::GetTime() - a.bg.changedAt > 10.0))) backgrounds_next(a.bg);
+        (!a.bg.cur.tex || a.bg.fresh || (a.bg.files.size() > 1 && ImGui::GetTime() - a.bg.changedAt > 10.0))) {
+        backgrounds_next(a.bg);
+        if (a.bg.job) a.bg.fresh = false;
+    }
 
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(size);
     ImGui::Begin("##main", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
                                     ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoScrollbar);
     draw_background(ImGui::GetBackgroundDrawList(), size, a.bg);
+    if (a.front) {
+        draw_front(a, size, ren);
+        update_button(a, size, S(34));
+        ImGui::End();
+        return;
+    }
 
     float pad = S(30), bannerH = S(142), barH = S(66);
     const GameInfo &g = a.game;
@@ -4117,87 +4837,57 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     ImVec2 tp = ImGui::GetCursorScreenPos();
     for (int dx = -1; dx <= 1; dx++)
         for (int dy = -1; dy <= 1; dy++)
-            if (dx || dy) dl->AddText(F_TITLE, F_TITLE->LegacySize, ImVec2(tp.x + dx * S(2), tp.y + dy * S(2)), IM_COL32(0, 0, 0, 110), "Athelas");
+            if (dx || dy) dl->AddText(F_TITLE, F_TITLE->LegacySize * ImGui::GetStyle().FontScaleMain, ImVec2(tp.x + dx * S(2), tp.y + dy * S(2)), IM_COL32(0, 0, 0, 110), "Athelas");
     ImGui::TextColored(C_GOLD_H, "Athelas");
     ImGui::PopFont();
-    ImGui::PushFont(F_BODY, F_BODY->LegacySize);   // (narrower than the headings, so the names fit beside the title)
-    const float pickW = titleX - pad - S(18);   // the menus stay clear of the title
-    // (two rows when there's a version to choose, else one, centred on the title)
-    bool twoRows = false;
+    // the game shown, top left, as on the front screen: its box and its name (it is chosen on the carousel; the Library
+    // button goes back there)
     {
-        int nRotk = 0;
-        for (const LibGame &lg : a.lib) if (lg.kind == GK_ROTK_PC || lg.kind == GK_ROTK_XBOX) nRotk++;
-        twoRows = nRotk > 1 && (a.cur < 0 || a.lib[a.cur].kind == GK_ROTK_PC || a.lib[a.cur].kind == GK_ROTK_XBOX);
-    }
-    const float rowH = ImGui::GetFrameHeight() + S(4);
-    const float pickY = S(84) - (twoRows ? rowH : rowH * 0.5f);
-    ImGui::SetCursorPos(ImVec2(pad + S(2), pickY));
-    // The Return of the King is one entry whatever versions the player has (PC, Xbox or
-    // both); with more than one, a second menu picks the version. Other games are listed as they are.
-    auto isRotk = [](GameKind k) { return k == GK_ROTK_PC || k == GK_ROTK_XBOX; };
-    std::vector<int> rotkIdx;
-    for (size_t i = 0; i < a.lib.size(); i++) if (isRotk(a.lib[i].kind)) rotkIdx.push_back((int)i);
-    bool curRotk = a.cur < 0 || isRotk(a.lib[a.cur].kind);
-    std::string curName = curRotk ? (rotkIdx.size() > 1 ? "The Return of the King" : (a.cur >= 0 ? game_kind_name(a.lib[a.cur].kind) : "The Return of the King  -  PC"))
-                                  : game_kind_name(a.lib[a.cur].kind);
-    if (a.cur < 0 && !g.exeFound) curName = "Welcome";   // the welcome screen: no game chosen yet
-    int entries = (rotkIdx.empty() ? 0 : 1) + (int)(a.lib.size() - rotkIdx.size());
-    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0, 0, 0, 0));
-    ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
-    if (entries > 1) {
-        // more than one game: the subtitle picks which one is shown
-        ImGui::SetNextItemWidth(std::min(pickW, ImGui::CalcTextSize(curName.c_str()).x + ImGui::GetFrameHeight() + S(24)));
-        if (ImGui::BeginCombo("##game", curName.c_str())) {
-            bool rotkListed = false;
-            for (size_t i = 0; i < a.lib.size(); i++) {
-                ImGui::PushID((int)i);
-                if (isRotk(a.lib[i].kind)) {
-                    if (!rotkListed) {
-                        rotkListed = true;
-                        const char *name = rotkIdx.size() > 1 ? "The Return of the King" : game_kind_name(a.lib[i].kind);
-                        if (ImGui::Selectable(name, curRotk && a.cur >= 0) && (!curRotk || a.cur < 0)) a.cur = (int)i;
-                    }
-                } else {
-                    bool sameKind = false;
-                    for (size_t j = 0; j < a.lib.size(); j++) if (j != i && a.lib[j].kind == a.lib[i].kind) sameKind = true;
-                    std::string label = game_kind_name(a.lib[i].kind);
-                    if (sameKind) label += "  (" + a.lib[i].path + ")";     // two copies of one version: say which
-                    if (ImGui::Selectable(label.c_str(), (int)i == a.cur)) a.cur = (int)i;
-                }
-                ImGui::PopID();
+        const float nameW = titleX - pad - S(18);
+        float x = pad + S(4), y = S(36);
+        if (!g_front.coversLooked) front_load_covers(ren);   // (a page opened first: the boxes' covers for its header)
+        front_art_poll(a, ren);
+        if (a.cur >= 0) {
+            int e = fr_entry_of(a.lib[a.cur].kind);
+            const FrontTex &ct = g_front.cover[e].tex ? g_front.cover[e] : g_front.art[e];
+            float bh = S(92), bw = bh * 0.70f;
+            ImDrawList *hd = ImGui::GetWindowDrawList();
+            ImVec2 p0 = ImGui::GetWindowPos() + ImVec2(x, y), p1 = p0 + ImVec2(bw, bh);
+            if (ct.tex) {
+                ImVec2 uv0, uv1;
+                crop_uv(ct.w, ct.h, bw, bh, uv0, uv1);
+                hd->AddRectFilled(p0 + ImVec2(S(3), S(4)), p1 + ImVec2(S(3), S(4)), IM_COL32(0, 0, 0, 120));
+                hd->AddImage((ImTextureID)(intptr_t)ct.tex, p0, p1, uv0, uv1);
+            } else {
+                hd->AddRectFilled(p0, p1, IM_COL32(18, 20, 17, 230));
+                hd->AddRectFilled(p0, ImVec2(p1.x, p0.y + bh * 0.085f), IM_COL32(96, 156, 38, 255));
             }
-            ImGui::EndCombo();
-        }
-    } else {
-        ImGui::PushTextWrapPos(pad + S(2) + pickW);
-        ImGui::TextColored(C_TEXT, "%s", curName.c_str());
-        ImGui::PopTextWrapPos();
-    }
-    // the version picker: PC / Xbox (with the folder when there are two copies of one)
-    if (curRotk && rotkIdx.size() > 1) {
-        auto verName = [&](int i) {
-            const LibGame &lg = a.lib[i];
-            std::string v = lg.kind == GK_ROTK_PC ? "PC" : "Xbox";
-            int same = 0;
-            for (int j : rotkIdx) if (a.lib[j].kind == lg.kind) same++;
-            if (same > 1) v += "  (" + lg.path + ")";
-            return v;
-        };
-        int shown = a.cur >= 0 ? a.cur : rotkIdx[0];
-        std::string vcur = verName(shown);
-        ImGui::SetCursorPos(ImVec2(pad + S(2), pickY + rowH));
-        ImGui::SetNextItemWidth(std::min(pickW, ImGui::CalcTextSize(vcur.c_str()).x + ImGui::GetFrameHeight() + S(24)));
-        if (ImGui::BeginCombo("##version", vcur.c_str())) {
-            for (int i : rotkIdx) {
-                ImGui::PushID(i);
-                if (ImGui::Selectable(verName(i).c_str(), i == shown)) a.cur = i;
-                ImGui::PopID();
-            }
-            ImGui::EndCombo();
+            hd->AddRect(p0, p1, IM_COL32(150, 118, 60, 200), 0.0f, S(1));
+            x += bw + S(12);
+            const char *title = k_frTitle[e];
+            // a dark plate behind the name, readable over any picture
+            ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
+            float tw = std::min(nameW - bw - S(12), ImGui::CalcTextSize(title).x);
+            ImGui::PopFont();
+            orn_plate(hd, ImGui::GetWindowPos() + ImVec2(x - S(8), y + S(12)), ImGui::GetWindowPos() + ImVec2(x + tw + S(12), y + S(66)),
+                      IM_COL32(15, 14, 13, 200), false);
+            ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
+            ImGui::SetCursorPos(ImVec2(x, y + S(18)));
+            ImGui::PushTextWrapPos(pad + nameW);
+            ImGui::TextColored(C_GOLD_H, "%s", title);
+            ImGui::PopTextWrapPos();
+            ImGui::PopFont();
+            ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
+            ImGui::SetCursorPosX(x);
+            ImGui::TextColored(C_DIM, "%s", game_kind_short(a.lib[a.cur].kind));
+            ImGui::PopFont();
+        } else {
+            ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
+            ImGui::SetCursorPos(ImVec2(x, S(74)));
+            ImGui::TextColored(C_GOLD_H, "WELCOME");
+            ImGui::PopFont();
         }
     }
-    ImGui::PopStyleColor(2);
-    ImGui::PopFont();
     // another PC copy chosen that already has ROTK Fix: show its settings
     if (a.cur >= 0 && a.lib[a.cur].kind == GK_ROTK_PC && !a.lib[a.cur].iso && _stricmp(a.lib[a.cur].path.c_str(), a.dir.c_str())) {
         if (a.otherFor != a.lib[a.cur].path) { a.other = inspect_game(a.lib[a.cur].path); a.otherFor = a.lib[a.cur].path; }
@@ -4251,32 +4941,13 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     }
     ImGui::PopFont();
     // a newer Athelas: a button under the status, on every page, that asks to install it (and shows the download)
-    {
-        std::string nv = update_newer();
-        float uprog = 0;
-        int ust = update_install_state(&uprog, nullptr);
-        if (!nv.empty() || ust == 1 || ust == 2) {
-            char lbl[64];
-            if (ust == 1 || ust == 2) snprintf(lbl, sizeof lbl, "Updating  %d%%##hdrupd", (int)(uprog * 100 + 0.5f));
-            else snprintf(lbl, sizeof lbl, "Update to %s##hdrupd", nv.c_str());
-            ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
-            float bw = std::max(S(150), ImGui::CalcTextSize(lbl, nullptr, true).x + S(28));
-            ImGui::SetCursorPos(ImVec2(size.x - pad - bw, sy + S(4)));
-            ImGui::PushStyleColor(ImGuiCol_Text, C_GOLD_H);
-            if (orn_plate_button(lbl, ImVec2(bw, S(30)), ust != 1 && ust != 2)) g_askUpdate = true;
-            ImGui::PopStyleColor();
-            if (ImGui::IsItemHovered() && ust != 1 && ust != 2)
-                ImGui::SetTooltip("Athelas %s is out. Your settings, saves and achievements are kept.", nv.c_str());
-            ImGui::PopFont();
-        }
-    }
-    update_popup(a);
+    update_button(a, size, sy);
 
     // ---- settings panel
     // an elven frame around it; the panel itself sits just inside the frame
     const float frameT = S(9);
     // on the right, the picture left of it in the clear
-    const float panelW = std::min(size.x - pad * 2, S(600)), panelX = size.x - pad - panelW;
+    const float panelW = std::min(size.x - pad * 2, S(600)), panelX = (size.x - panelW) * 0.5f;
     ImVec2 panelA = ImGui::GetWindowPos() + ImVec2(panelX, bannerH);
     ImVec2 panelB = panelA + ImVec2(panelW, size.y - bannerH - barH - S(30));
     orn_panel_fill(ImGui::GetWindowDrawList(), panelA, panelB, ImGui::GetColorU32(rgb(15, 14, 13, 0.70f)));
@@ -4299,17 +4970,17 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
         draw_setup(a);
         ImGui::EndChild();
     } else {
-    ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
-    static const char *tabNames[] = { "Display", "Graphics", "Controls", "Audio", "Gameplay", "About" };
+    ImGui::PushFont(F_TAB, F_TAB->LegacySize);
+    static const char *tabNames[] = { "Display", "Graphics", "Controls", "Audio", "Gameplay", "Mods", "About" };
     static int rotkSel = 0;
-    float tabW = tabs_begin(tabNames, 6, rotkSel);
+    float tabW = tabs_begin(tabNames, 7, rotkSel);
     if (ImGui::BeginTabBar("tabs")) {
         struct T { const char *name; void (*fn)(App &); } tabs[] = {
             { "###display", tab_display }, { "###graphics", tab_graphics }, { "###controls", tab_controls },
-            { "###audio", tab_audio }, { "###gameplay", tab_gameplay }, { "###about", tab_about } };
+            { "###audio", tab_audio }, { "###gameplay", tab_gameplay }, { "###mods", tab_mods }, { "###about", tab_about } };
         // ROTKFIX_TAB=n (testing): open on tab n
         static int startTab = getenv("ROTKFIX_TAB") ? atoi(getenv("ROTKFIX_TAB")) : -1;
-        if (int step = pad_tab_step(a)) startTab = (rotkSel + step + 6) % 6;
+        if (int step = pad_tab_step(a)) startTab = (rotkSel + step + 7) % 7;
         int ti = 0;
         for (auto &t : tabs) {
             int idx = ti;
@@ -4325,7 +4996,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
                 if (getenv("ROTKFIX_SCROLL_END")) ImGui::SetScrollY(ImGui::GetScrollMaxY());   // testing
                 else if (const char *sy = getenv("ROTKFIX_SCROLL_Y")) ImGui::SetScrollY(std::min((float)atof(sy) * g_scale, ImGui::GetScrollMaxY()));   // testing
                 ImGui::EndChild();
-                ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
+                ImGui::PushFont(F_TAB, F_TAB->LegacySize);
                 ImGui::EndTabItem();
             }
         }
@@ -4349,7 +5020,8 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     float bx = size.x - pad - playW;
     // summary and messages on a small parchment card, readable over any background
     {
-        float cardW = bx - saveW - S(24) - panelX;   // under the panel, the picture beside it kept clear
+        const float libW = S(130), cardX = pad + S(6) + libW + S(12);   // between the Library button and Save
+        float cardW = bx - saveW - S(24) - cardX;
         bool msg = !a.message.empty() && ImGui::GetTime() - a.messageAt < (a.messageBad ? 30.0 : 4.0);
         std::string newer = update_install_state(nullptr, nullptr) > 0 ? std::string() : update_newer();   // not while it installs
         // playing with a controller: its shortcuts, in its own names, while there's no message to show
@@ -4359,33 +5031,39 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
             padHint = ls == NAMES_PS ? "L1 / R1: tabs  \xc2\xb7  Options: Play  \xc2\xb7  Share: Save  \xc2\xb7  Circle: back"
                     : ls == NAMES_NINTENDO ? "L / R: tabs  \xc2\xb7  +: Play  \xc2\xb7  \xe2\x80\x93: Save  \xc2\xb7  B: back"
                     : "LB / RB: tabs  \xc2\xb7  Menu: Play  \xc2\xb7  View: Save  \xc2\xb7  B: back";
+            padHint = std::string(tr(padHint)) + "  \xc2\xb7  " + tr(fullscreen_hint(ls));   // (each part translated)
         }
-        float cardH = S(32) + (newer.empty() ? 0.0f : S(18)) + (padHint.empty() ? 0.0f : S(18));
+        float cardH = S(32) + (newer.empty() ? 0.0f : S(18));
+        if (!padHint.empty()) {   // (it can wrap to two lines on a narrow window)
+            ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
+            cardH += ImGui::CalcTextSize(padHint.c_str(), nullptr, false, cardW - S(18)).y;
+            ImGui::PopFont();
+        }
         if (msg) {   // room for the message, however many lines it wraps to
             ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
             cardH += ImGui::CalcTextSize(a.message.c_str(), nullptr, false, cardW - S(18)).y + S(2);
             ImGui::PopFont();
         }
-        ImVec2 c0 = ImGui::GetWindowPos() + ImVec2(panelX, by + (playH - cardH) * 0.5f), c1 = c0 + ImVec2(cardW, cardH);
+        ImVec2 c0 = ImGui::GetWindowPos() + ImVec2(cardX, by + (playH - cardH) * 0.5f), c1 = c0 + ImVec2(cardW, cardH);
         orn_plate(ImGui::GetWindowDrawList(), c0, c1, ImGui::GetColorU32(rgb(15, 14, 13, 0.86f)), false);
         ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
-        ImGui::SetCursorPos(ImVec2(panelX + S(10), by + (playH - cardH) * 0.5f + S(5)));
-        ImGui::PushTextWrapPos(panelX + cardW - S(8));
+        ImGui::SetCursorPos(ImVec2(cardX + S(10), by + (playH - cardH) * 0.5f + S(5)));
+        ImGui::PushTextWrapPos(cardX + cardW - S(8));
         if (own && !g.exeFound) ImGui::TextColored(C_DIM, "Add a game to begin");
         else if (own) ImGui::TextColored(C_DIM, "%d x %d  |  %s  |  %d fps  |  %s", w, h, dm[a.s.displayMode], fps, pn[detect_preset(a.s)]);
         else if (ttShown) ImGui::TextColored(C_DIM, "%s", tt_summary(a).c_str());
         else ImGui::TextColored(C_DIM, "%s  |  %s", game_kind_name(a.lib[a.cur].kind),
                                 game_kind_playable(a.lib[a.cur].kind) ? "settings in its own launcher" : "not playable yet");
         if (!newer.empty()) {
-            ImGui::SetCursorPosX(panelX + S(10));
+            ImGui::SetCursorPosX(cardX + S(10));
             ImGui::TextColored(C_GOLD_H, "Athelas %s is out  -  press Update at the top right", newer.c_str());
         }
         if (msg) {
-            ImGui::SetCursorPosX(panelX + S(10));
+            ImGui::SetCursorPosX(cardX + S(10));
             ImGui::TextColored(a.messageBad ? C_BAD : C_GOOD, "%s", a.message.c_str());
         }
         if (!padHint.empty()) {
-            ImGui::SetCursorPosX(panelX + S(10));
+            ImGui::SetCursorPosX(cardX + S(10));
             ImGui::TextColored(C_GOLD, "%s", padHint.c_str());
         }
         ImGui::PopTextWrapPos();
@@ -4436,18 +5114,13 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     bool padSave = padFree && ImGui::IsKeyPressed(ImGuiKey_GamepadBack, false);
     if (orn_arch_button("PLAY", ImVec2(playW, playH), F_PLAY, playOk) || (padPlay && playOk)) {
         if (ttShown) tt_play(a, a.lib[a.cur]);
-        else if (save(a)) {
-            std::string err;
-            // Athelas was updated since ROTK Fix was set up there: the game gets the new ROTK Fix first
-            if (fix_outdated(a.dir)) {
-                bool denied = false;
-                std::string why;
-                if (!install_to(pc_fix_source(), a.dir, why, denied)) set_message(a, "ROTK Fix couldn't be updated in the game folder (" + why + ") - the game starts with the previous version.", true);
-            }
-            if (launch_game(a.dir, err)) a.quit = true;
-            else set_message(a, err, true);
-        }
+        else pc_play(a);   // (Athelas updated since ROTK Fix was set up there: the game gets the new ROTK Fix first)
     }
+    // back to the front screen (the carousel), bottom left
+    ImGui::SetCursorPos(ImVec2(pad + S(6), by + (playH - btnH) * 0.5f));
+    if (orn_plate_button("\xe2\x80\xb9  Library", ImVec2(S(130), btnH), true) ||
+        (padFree && ImGui::IsKeyPressed(ImGuiKey_GamepadFaceUp, false)))
+        back_to_front(a);
     bx -= saveW + S(12);
     ImGui::SetCursorPos(ImVec2(bx, by + (playH - btnH) * 0.5f));
     bool saveOk = ttShown || !(!own || !g.exeFound || g_fixRemoved);
@@ -4455,6 +5128,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
         if (ttShown) tt_save(a); else save(a);
     }
 
+    draw_transition(a, size);
     ImGui::End();
 }
 
@@ -4496,12 +5170,175 @@ static void test_pad_poll()
         double at = std::max(now, queue.empty() ? now : queue.back().at + 0.12);
         for (char *t = strtok(buf, " \r\n\t"); t; t = strtok(nullptr, " \r\n\t"))
             for (auto &nm : names)
+{
+                if (!_stricmp(t, "TRIGGERS")) { queue.push_back({ at, -1, true }); queue.push_back({ at + 0.15, -1, false }); at += 0.3; break; }
                 if (!_stricmp(nm.name, t)) { queue.push_back({ at, nm.b, true }); queue.push_back({ at + 0.06, nm.b, false }); at += 0.18; }
+            }
     }
     while (!queue.empty() && queue.front().at <= now) {
-        SDL_SetJoystickVirtualButton(js, queue.front().button, queue.front().down);
+        if (queue.front().button < 0) {   // "TRIGGERS": LT and RT together
+            SDL_SetJoystickVirtualAxis(js, SDL_GAMEPAD_AXIS_LEFT_TRIGGER, queue.front().down ? 32767 : -32768);
+            SDL_SetJoystickVirtualAxis(js, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER, queue.front().down ? 32767 : -32768);
+        } else SDL_SetJoystickVirtualButton(js, queue.front().button, queue.front().down);
         queue.erase(queue.begin());
     }
+}
+
+// Japanese, Chinese and Korean: Windows' own font for them, merged in behind every font of the launcher (loaded
+// once, the first time such a language is chosen; outside a frame, as the font atlas wants)
+static bool g_langAsk;              // no language chosen yet: ask on the front screen
+static std::string g_langFontPending;
+static bool g_langFontsAll;         // the language list is showing: every language's font, for their names
+static void lang_font_for(const std::string &code)
+{
+    static std::vector<std::string> loaded;
+    std::string path = i18n_system_font(code);
+    if (path.empty() || std::find(loaded.begin(), loaded.end(), path) != loaded.end()) return;
+    FILE *f = fopen(path.c_str(), "rb");
+    if (!f) return;
+    fseek(f, 0, SEEK_END);
+    long n = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    if (n <= 0 || n > (64L << 20)) { fclose(f); return; }
+    void *data = IM_ALLOC((size_t)n);   // kept for the program's life: the atlas reads glyphs from it as they are needed
+    if (fread(data, 1, (size_t)n, f) != (size_t)n) { fclose(f); IM_FREE(data); return; }
+    fclose(f);
+    loaded.push_back(path);
+    ImGuiIO &io = ImGui::GetIO();
+    for (ImFont *ft : { F_BODY, F_SMALL, F_HEAD, F_TAB, F_TITLE, F_PLAY }) {
+        ImFontConfig m; m.FontDataOwnedByAtlas = false; m.MergeMode = true; m.DstFont = ft;
+        io.Fonts->AddFontFromMemoryTTF(data, (int)n, ft->LegacySize, &m);
+    }
+}
+static void set_language(const std::string &code)
+{
+    WritePrivateProfileStringA("Launcher", "Language", code.c_str(), ports_ini().c_str());
+    i18n_load(code);
+    g_langFontPending = i18n_current();   // its font, before the next frame
+    g_langAsk = false;
+}
+static std::string lang_label(const Language &l)   // "Deutsch (German)"; English: "English"
+{
+    static const char *en[][2] = { { "es", "Spanish" }, { "fr", "French" }, { "de", "German" }, { "it", "Italian" },
+        { "pt-BR", "Portuguese" }, { "pl", "Polish" }, { "ru", "Russian" }, { "ja", "Japanese" },
+        { "zh-Hans", "Chinese" }, { "ko", "Korean" } };
+    for (auto &e : en) if (l.code == e[0]) return l.name + "  (" + e[1] + ")##" + l.code;
+    return l.name + "##" + l.code;
+}
+static void language_combo()
+{
+    char cur[32] = "";
+    GetPrivateProfileStringA("Launcher", "Language", "auto", cur, sizeof cur, ports_ini().c_str());
+    std::string autoName = std::string(tr("Automatic")) + " (" + tr("Windows' language") + ")";
+    std::string shown = autoName;
+    for (const Language &l : languages()) if (l.code == cur) shown = l.name;
+    ImGui::SetNextItemWidth(S(320));
+    // (the names stay as they are: each in its own language)
+    if (ImGui::BeginCombo("##lang", shown.c_str())) {
+        g_langFontsAll = true;
+        if (ImGui::Selectable(autoName.c_str(), !strcmp(cur, "auto"))) set_language("auto");
+        for (const Language &l : languages())
+            if (ImGui::Selectable(lang_label(l).c_str(), l.code == cur)) set_language(l.code);
+        ImGui::EndCombo();
+    }
+}
+// First start: which language (on the front screen, once)
+static void language_first_ask()
+{
+    if (!g_langAsk) return;
+    if (!ImGui::IsPopupOpen("Language##first")) ImGui::OpenPopup("Language##first");
+    g_langFontsAll = true;
+    ImGui::SetNextWindowSize(ImVec2(S(480), 0));
+    if (ImGui::BeginPopupModal("Language##first", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar)) {
+        ImGui::TextColored(C_GOLD, "Athelas' language");
+        ImGui::Spacing();
+        std::string autoName = std::string(tr("Automatic")) + " (" + tr("Windows' language") + ")";
+        if (ImGui::Selectable(autoName.c_str())) { set_language("auto"); ImGui::CloseCurrentPopup(); }
+        for (const Language &l : languages())
+            if (ImGui::Selectable(lang_label(l).c_str())) { set_language(l.code); ImGui::CloseCurrentPopup(); }
+        ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
+        ImGui::PushTextWrapPos(0);
+        ImGui::TextColored(C_DIM, "You can change it later under This window, on any game's page.");
+        ImGui::PopTextWrapPos();
+        ImGui::PopFont();
+        ImGui::EndPopup();
+    }
+}
+
+// The window's size, remembered for next time (not while fullscreen or maximised: then only that it was)
+static void window_remember(SDL_Window *w)
+{
+    SDL_WindowFlags f = SDL_GetWindowFlags(w);
+    if (f & SDL_WINDOW_FULLSCREEN) return;
+    launcher_ini_put("Maximized", (f & SDL_WINDOW_MAXIMIZED) != 0);
+    if (f & (SDL_WINDOW_MAXIMIZED | SDL_WINDOW_MINIMIZED)) return;
+    int ww = 0, wh = 0;
+    SDL_GetWindowSize(w, &ww, &wh);
+    if (ww >= 400 && wh >= 300) { launcher_ini_put("Width", ww); launcher_ini_put("Height", wh); }
+}
+// Everything grows and shrinks with the window: the scale follows its size against the first one
+static void window_follow_size(App &a)
+{
+    int w = 0, h = 0;
+    SDL_GetWindowSize(a.win, &w, &h);
+    if (w <= 0 || h <= 0) return;
+    float f = std::min((float)w / g_baseW, (float)h / g_baseH);
+    f = std::max(0.6f, std::min(f, 4.0f));
+    static float cur = 1.0f;
+    if (fabsf(f - cur) < 0.01f) return;
+    cur = f;
+    g_scale = g_scale0 * f;
+    ImGuiStyle &st = ImGui::GetStyle();
+    st = ImGuiStyle();
+    setup_style();
+    st.FontSizeBase = F_BODY->LegacySize;
+    st.FontScaleMain = f;
+    orn_set_scale(g_scale);
+}
+// Borderless: the strip along the top moves the window, the edges resize it (Athelas' own buttons are left alone)
+static SDL_HitTestResult SDLCALL window_hit(SDL_Window *w, const SDL_Point *p, void *)
+{
+    if (!g_borderless || (SDL_GetWindowFlags(w) & SDL_WINDOW_FULLSCREEN)) return SDL_HITTEST_NORMAL;
+    int ww = 0, wh = 0;
+    SDL_GetWindowSize(w, &ww, &wh);
+    const int e = 6;
+    bool l = p->x < e, r = p->x >= ww - e, t = p->y < e, b = p->y >= wh - e;
+    if (!(SDL_GetWindowFlags(w) & SDL_WINDOW_MAXIMIZED)) {
+        if (t && l) return SDL_HITTEST_RESIZE_TOPLEFT;
+        if (t && r) return SDL_HITTEST_RESIZE_TOPRIGHT;
+        if (b && l) return SDL_HITTEST_RESIZE_BOTTOMLEFT;
+        if (b && r) return SDL_HITTEST_RESIZE_BOTTOMRIGHT;
+        if (t) return SDL_HITTEST_RESIZE_TOP;
+        if (b) return SDL_HITTEST_RESIZE_BOTTOM;
+        if (l) return SDL_HITTEST_RESIZE_LEFT;
+        if (r) return SDL_HITTEST_RESIZE_RIGHT;
+    }
+    float strip = S(30), buttons = S(3 * 40 + 12);
+    if (p->y < strip && p->x < ww - buttons && p->x > ww * 0.35f) return SDL_HITTEST_DRAGGABLE;   // (not over the title or tabs)
+    return SDL_HITTEST_NORMAL;
+}
+static void draw_window_buttons(App &a, ImVec2 size)
+{
+    if (!g_borderless || (SDL_GetWindowFlags(a.win) & SDL_WINDOW_FULLSCREEN)) return;
+    const float bw = S(40), bh = S(26);
+    ImGui::SetNextWindowPos(ImVec2(size.x - 3 * bw - S(6), S(2)));
+    ImGui::SetNextWindowSize(ImVec2(3 * bw + S(4), bh + S(4)));
+    ImGui::Begin("##winbuttons", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings |
+                 ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoFocusOnAppearing);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+    ImGui::PushStyleColor(ImGuiCol_Button, rgb(20, 16, 12, 0.6f));
+    bool maxed = (SDL_GetWindowFlags(a.win) & SDL_WINDOW_MAXIMIZED) != 0;
+    ImGui::SetCursorPos(ImVec2(0, 0));
+    if (ImGui::Button("_##min", ImVec2(bw, bh))) SDL_MinimizeWindow(a.win);
+    ImGui::SameLine();
+    if (ImGui::Button(maxed ? "[ ]##max" : "[  ]##max", ImVec2(bw, bh))) { if (maxed) SDL_RestoreWindow(a.win); else SDL_MaximizeWindow(a.win); }
+    ImGui::SameLine();
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, rgb(150, 40, 30));
+    if (ImGui::Button("X##close", ImVec2(bw, bh))) a.quit = true;
+    ImGui::PopStyleColor(2);
+    ImGui::PopStyleVar(2);
+    ImGui::End();
 }
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
@@ -4543,7 +5380,23 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
         float f = std::min(dmode->w * 0.95f / ww, dmode->h * 0.9f / wh);
         g_scale *= f; ww = (int)(ww * f); wh = (int)(wh * f);
     }
-    SDL_Window *win = SDL_CreateWindow("Athelas", ww, wh, 0);
+    g_scale0 = g_scale; g_baseW = ww; g_baseH = wh;
+    // the size it had last time (it can be resized, since 1.7); a small screen like the Steam Deck's: maximised and
+    // borderless unless the player chose otherwise
+    bool smallScreen = dmode && dmode->w <= 1280 && dmode->h <= 800;
+    int lastW = GetPrivateProfileIntA("Launcher", "Width", 0, ports_ini().c_str());
+    int lastH = GetPrivateProfileIntA("Launcher", "Height", 0, ports_ini().c_str());
+    if (lastW >= 400 && lastH >= 300 && (!dmode || (lastW <= dmode->w && lastH <= dmode->h))) { ww = lastW; wh = lastH; }
+    SDL_WindowFlags wf = SDL_WINDOW_RESIZABLE;
+    if (launcher_ini_get("Maximized", smallScreen)) wf |= SDL_WINDOW_MAXIMIZED;
+    g_borderless = launcher_ini_get("Borderless", smallScreen);
+    if (g_borderless) wf |= SDL_WINDOW_BORDERLESS;
+    if (launcher_ini_get("Fullscreen", 0)) wf |= SDL_WINDOW_FULLSCREEN;
+    SDL_Window *win = SDL_CreateWindow("Athelas", ww, wh, wf);
+    if (win) {
+        SDL_SetWindowMinimumSize(win, 640, 460);
+        SDL_SetWindowHitTest(win, window_hit, nullptr);
+    }
     SDL_Renderer *ren = win ? SDL_CreateRenderer(win, NULL) : nullptr;
     if (!ren) { MessageBoxA(NULL, SDL_GetError(), "Athelas", MB_ICONERROR); return 1; }
     SDL_SetRenderVSync(ren, 1);
@@ -4559,9 +5412,23 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     F_BODY  = io.Fonts->AddFontFromMemoryTTF((void *)font_garamond_data, sizeof font_garamond_data, S(21), &fc, kBodyRanges);
     F_SMALL = io.Fonts->AddFontFromMemoryTTF((void *)font_garamond_data, sizeof font_garamond_data, S(18), &fc, kBodyRanges);
     F_HEAD  = io.Fonts->AddFontFromMemoryTTF((void *)font_cinzel_data, sizeof font_cinzel_data, S(19), &fc);
+    F_TAB   = io.Fonts->AddFontFromMemoryTTF((void *)font_cinzel_data, sizeof font_cinzel_data, S(16.5f), &fc);
     F_TITLE = io.Fonts->AddFontFromMemoryTTF((void *)font_uncial_data, sizeof font_uncial_data, S(64), &fc);   // the Athelas title
     F_PLAY  = io.Fonts->AddFontFromMemoryTTF((void *)font_cinzel_data, sizeof font_cinzel_data, S(34), &fc);
     io.FontDefault = F_BODY;
+    {   // letters the heading fonts don't have (Cyrillic, more of Latin): from EB Garamond, merged in behind them
+        for (ImFont *f : { F_HEAD, F_TAB, F_TITLE, F_PLAY }) {
+            ImFontConfig m; m.FontDataOwnedByAtlas = false; m.MergeMode = true; m.DstFont = f; m.OversampleH = 2;
+            io.Fonts->AddFontFromMemoryTTF((void *)font_garamond_data, sizeof font_garamond_data, f->LegacySize, &m, kBodyRanges);
+        }
+    }
+    {   // the launcher's language (since 1.7): asked on first start; "auto" is Windows' language
+        char lang[32] = "";
+        GetPrivateProfileStringA("Launcher", "Language", "", lang, sizeof lang, ports_ini().c_str());
+        g_langAsk = !lang[0];
+        i18n_load(lang[0] ? lang : "auto");
+        lang_font_for(i18n_current());
+    }
     ImGui::GetStyle().FontSizeBase = F_BODY->LegacySize;   // 1.92: size of the default font
     setup_style();
     orn_set_scale(g_scale);
@@ -4606,6 +5473,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     if (const char *t = getenv("ROTKFIX_GAME")) { int n = atoi(t); if (n >= 0 && n < (int)a.lib.size()) a.cur = n; }   // testing
     a.monitors = enum_monitors();
     bool hadIni = load_pc_settings(a, pcDir.empty() ? exe_dir() : pcDir);
+    // the front screen first, unless ROTK Fix was just set up (its page says what to do next)
+    a.front = !justInstalled && !getenv("ATHELAS_PAGE");   // ATHELAS_PAGE (testing): open on the page
     refresh_controllers(a);
 
     bg_show_load();   // the pictures themselves are listed on the first frame
@@ -4615,18 +5484,38 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     if (protectedDir) set_message(a, "This game folder is protected by Windows, so settings can't be saved. "
                                      "Open the launcher again and allow the permission prompt.", true);
 
+    // "--play <fotr|tt|rotk-xbox|rotk-pc>" (a game's desktop shortcut): start that game as its Play button would
+    std::string playArg = quoted_arg("--play ");
+    music_init();    // the front screen's music (nothing plays without a sound device)
     update_tidy();   // what an update left behind
     if (updates_on()) update_check_start(LAUNCHER_VERSION);
 
+    bool playPending = !playArg.empty();
     while (!a.quit) {
+        if (playPending && ImGui::GetFrameCount() > 1) { playPending = false; shortcut_play(a, playArg); }
         test_pad_poll();
         SDL_Event e;
         while (SDL_PollEvent(&e)) {
             if (!kb_capture_event(a, e)) ImGui_ImplSDL3_ProcessEvent(&e);   // a key being set doesn't also click
             if (e.type == SDL_EVENT_QUIT) a.quit = true;
+            if (e.type == SDL_EVENT_KEY_DOWN && e.key.scancode == SDL_SCANCODE_F11 && !e.key.repeat && a.kbCapture < 0)
+                set_fullscreen(a, !(SDL_GetWindowFlags(win) & SDL_WINDOW_FULLSCREEN));
+            if (e.type == SDL_EVENT_GAMEPAD_AXIS_MOTION && a.capture < 0 && SDL_GetKeyboardFocus() == win) {
+                // LT + RT together: fullscreen on or off (once per press of both)
+                static bool both;
+                SDL_Gamepad *gp = SDL_GetGamepadFromID(e.gaxis.which);
+                bool now = gp && SDL_GetGamepadAxis(gp, SDL_GAMEPAD_AXIS_LEFT_TRIGGER) > 24000 &&
+                           SDL_GetGamepadAxis(gp, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) > 24000;
+                if (now && !both) set_fullscreen(a, !(SDL_GetWindowFlags(win) & SDL_WINDOW_FULLSCREEN));
+                both = now;
+            }
+            if (e.type == SDL_EVENT_WINDOW_RESIZED || e.type == SDL_EVENT_WINDOW_MAXIMIZED || e.type == SDL_EVENT_WINDOW_RESTORED)
+                window_remember(win);
+            if (e.type == SDL_EVENT_DROP_FILE && !a.running) front_drop(a, e.drop.data);   // a game dropped on the window
             if (e.type == SDL_EVENT_GAMEPAD_ADDED || e.type == SDL_EVENT_GAMEPAD_REMOVED) refresh_controllers(a);
             capture_event(a, e);
         }
+        music_pause(a.running != NULL);
         if (a.running) {   // a port is playing: wait, hidden, for it to close
             if (WaitForSingleObject(a.running, 100) == WAIT_OBJECT_0) {
                 DWORD code = 0;
@@ -4658,6 +5547,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
         if (a.capture >= 0 || ImGui::GetTime() - a.captureAt < 0.5 || !SDL_GetKeyboardFocus())
             io.ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
         else io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+        window_follow_size(a);
+        if (!g_langFontPending.empty()) { lang_font_for(g_langFontPending); g_langFontPending.clear(); }
+        if (g_langFontsAll) { for (const char *c : { "ja", "zh-Hans", "ko" }) lang_font_for(c); }
         ImGui_ImplSDLRenderer3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
@@ -4668,12 +5560,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
             padNavWas = on;
         }
         draw_ui(a, io.DisplaySize, ren);
+        draw_window_buttons(a, io.DisplaySize);
+        if (a.front && !a.running && !getenv("ATHELAS_PAGE")) language_first_ask();
         ImGui::Render();
         SDL_SetRenderDrawColor(ren, 10, 8, 6, 255);
         SDL_RenderClear(ren);
         ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), ren);
+        i18n_frame_end();
         SDL_RenderPresent(ren);
     }
+    music_shutdown();
     ImGui_ImplSDLRenderer3_Shutdown();
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();

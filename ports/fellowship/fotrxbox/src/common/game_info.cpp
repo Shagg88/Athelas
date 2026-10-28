@@ -1,6 +1,6 @@
 #include "app/app.h"
 #ifndef GAME_VERSION
-#define GAME_VERSION "1.5.1"  // CMakeLists.txt sets it (XBE_VERSION); the headless harness does not
+#define GAME_VERSION "1.6.0"  // CMakeLists.txt sets it (XBE_VERSION); the headless harness does not
 #endif
 
 namespace fotr {
@@ -15,6 +15,8 @@ extern bool g_sharp_text;           // src/game/fotr_text.cpp
 extern bool g_invert_camera_y, g_invert_camera_x;  // src/game/fotr_input.cpp
 void Pad(int port, input::Pad& pad);
 extern uint32_t g_damage_taken, g_enemy_damage;  // src/game/fotr_difficulty.cpp
+extern bool g_combat_test;      // src/game/fotr_extras.cpp
+extern uint32_t g_start_chapter;  // src/game/fotr_chapters.cpp
 void Init();
 std::vector<ach::Def> Achievements();  // src/game/fotr_achievements.cpp
 std::string Activity();                // src/game/fotr_achievements.cpp: the region, for the Discord status
@@ -71,6 +73,20 @@ const app::GameInfo app::kGame = {
                 {"gameplay", "enemy_damage", cfg::Type::Int, "Damage enemies take",
                  "How hard your hits and shots are on enemies, as a share of the game's own (100). Higher is easier.",
                  nullptr, &fotr::g_enemy_damage, nullptr, 10, 500},
+                {"gameplay", "combat_test", cfg::Type::Bool, "Combat Test (unused developer arenas)",
+                 "Left in the game but never switched on: in Bilbo's room in Rivendell, a choice of Frodo, Aragorn or "
+                 "Gandalf takes you to one of three test arenas with their own enemies. Their exits lead back to "
+                 "Bilbo's room.",
+                 &fotr::g_combat_test},
+                {"gameplay", "start_chapter", cfg::Type::Choice, "New game starts at",
+                 "The game has no chapter select: this starts a new game at the beginning of a later chapter instead "
+                 "of Bag End, to replay it. Items and quest steps from the chapters skipped are not given. Saved games "
+                 "are not affected.",
+                 nullptr, &fotr::g_start_chapter, nullptr, 0, 0,
+                 {"shire", "old_forest", "bree", "weathertop", "rivendell", "moria", "lothlorien", "anduin"}, nullptr,
+                 nullptr,
+                 {"The Shire (the game's own start)", "The Old Forest", "Bree", "Weathertop", "Rivendell", "Moria",
+                  "Lothlórien", "The River Anduin"}},
                 {"cheats", "infinite_health", cfg::Type::Bool, "Infinite health",
                  "The game's own secret code (Y A X B A Y): health never runs out.", &fotr::g_cheat_health},
                 {"cheats", "infinite_spirit", cfg::Type::Bool, "Infinite spirit",

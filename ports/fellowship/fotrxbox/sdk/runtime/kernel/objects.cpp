@@ -233,6 +233,7 @@ static uint32_t WaitFor(const std::vector<ObjectRef>& objs, bool wait_all, int64
 
 uint32_t Wait(const std::vector<ObjectRef>& objs, bool wait_all, int64_t timeout, bool alertable) {
     SuspendPoint();
+    Blocking told;
     int64_t t = WorkNow();
     uint32_t r = WaitFor(objs, wait_all, timeout, alertable);
     CountWait(WorkNow() - t);
@@ -337,6 +338,15 @@ void RunDpcs(X86Context& ctx) {
         uint32_t routine = R32(dpc + 0x0C), context = R32(dpc + 0x10);  // KDPC.DeferredRoutine and DeferredContext
         if (routine) CallGuest(ctx, routine, {dpc, context, d[1], d[2]});
     }
+}
+
+bool RemoveDpc(uint32_t dpc) {
+    std::lock_guard<std::mutex> lock(g_dpc_lock);
+    bool was = G<uint8_t>(dpc + 2) != 0;  // Inserted
+    G<uint8_t>(dpc + 2) = 0;
+    for (auto it = g_dpcs.begin(); it != g_dpcs.end();)
+        it = (*it)[0] == dpc ? g_dpcs.erase(it) : it + 1;
+    return was;
 }
 
 void QueueDpc(uint32_t dpc, uint32_t arg1, uint32_t arg2) {

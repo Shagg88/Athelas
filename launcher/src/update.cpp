@@ -113,8 +113,8 @@ static std::wstring exe_dir_w()
     return s.substr(0, s.find_last_of(L'\\'));
 }
 
-// a GET of https://github.com<path>, redirects followed (release files are served from another host)
-static bool http_get(const std::wstring &path, std::string &out, bool progress)
+// a GET of https://<host><path> (github.com unless given), redirects followed (release files are served from another host)
+static bool http_get(const std::wstring &path, std::string &out, bool progress, const wchar_t *host = kHost)
 {
     out.clear();
     bool ok = false;
@@ -122,7 +122,7 @@ static bool http_get(const std::wstring &path, std::string &out, bool progress)
                               WINHTTP_NO_PROXY_BYPASS, 0);
     if (!s) return false;
     WinHttpSetTimeouts(s, 10000, 10000, 15000, 30000);
-    HINTERNET c = WinHttpConnect(s, kHost, INTERNET_DEFAULT_HTTPS_PORT, 0);
+    HINTERNET c = WinHttpConnect(s, host, INTERNET_DEFAULT_HTTPS_PORT, 0);
     HINTERNET r = c ? WinHttpOpenRequest(c, L"GET", path.c_str(), NULL, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES,
                                          WINHTTP_FLAG_SECURE) : NULL;
     if (r && WinHttpSendRequest(r, WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0) &&
@@ -152,6 +152,8 @@ static bool http_get(const std::wstring &path, std::string &out, bool progress)
     WinHttpCloseHandle(s);
     return ok;
 }
+
+bool http_download(const wchar_t *host, const std::wstring &path, std::string &out) { return http_get(path, out, false, host); }
 
 static std::string sha256_hex(const std::string &data)
 {

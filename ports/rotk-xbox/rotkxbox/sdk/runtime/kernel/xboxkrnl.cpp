@@ -289,6 +289,7 @@ KERNEL_EXPORT(99, KeDelayExecutionThread, 3) {
         return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
     };
     SuspendPoint();
+    Blocking told;
     if (interval == 0) {
         std::this_thread::yield();
         return kSuccess;
@@ -803,9 +804,7 @@ KERNEL_EXPORT(119, KeInsertQueueDpc, 3) {
 }
 
 KERNEL_EXPORT(137, KeRemoveQueueDpc, 1) {
-    uint8_t was = G<uint8_t>(a[0] + 2);
-    G<uint8_t>(a[0] + 2) = 0;
-    return was;
+    return RemoveDpc(a[0]) ? 1 : 0;  // (taken out of the queue too, so it doesn't run after all)
 }
 
 KERNEL_EXPORT(109, KeInitializeInterrupt, 7) { return 0; }
@@ -870,6 +869,7 @@ KERNEL_EXPORT(92, KeAlertResumeThread, 1) { return kimpl_KeResumeThread(ctx, a);
 
 KERNEL_EXPORT(238, NtYieldExecution, 0) {
     SuspendPoint();
+    Blocking told;
     std::this_thread::yield();
     return kSuccess;
 }

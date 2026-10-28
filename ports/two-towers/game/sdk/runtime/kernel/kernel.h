@@ -160,6 +160,7 @@ void Freeze(bool on);
 bool Frozen();
 int64_t ToDeadline(int64_t due_100ns);        // relative or absolute to a steady clock deadline in ns
 void QueueDpc(uint32_t dpc, uint32_t arg1, uint32_t arg2);
+bool RemoveDpc(uint32_t dpc);  // a queued DPC taken out before it runs (KeRemoveQueueDpc): true when it was queued
 struct Thread;
 // apc_routine runs on apc_thread with (apc_context, due low, due high) each time the timer fires
 void SetTimer(ObjectRef timer, int64_t due, int32_t period_ms, uint32_t dpc, std::shared_ptr<Thread> apc_thread = nullptr,
@@ -197,6 +198,15 @@ void SetGuestAffinity(uint64_t mask);
 void Resume(Thread& t);
 uint32_t Suspend(Thread& t);  // previous count; another thread stops at its next kernel wait, delay or yield
 void SuspendPoint();           // blocks the current thread while it is suspended
+// set by a game: told on the calling thread around each kernel call that waits or gives up the processor (waits,
+// delays, yields, file reads) and each frame shown (D3DDevice_Swap): false before, true after. Null: nothing told.
+extern void (*g_blocking)(bool done);
+struct Blocking {
+    Blocking() { if (g_blocking) g_blocking(false); }
+    ~Blocking() { if (g_blocking) g_blocking(true); }
+    Blocking(const Blocking&) = delete;
+    Blocking& operator=(const Blocking&) = delete;
+};
 bool RunApcs(Thread& t);
 void QueueApc(Thread& t, uint32_t routine, uint32_t a1, uint32_t a2, uint32_t a3);
 std::vector<ThreadRef> Threads();

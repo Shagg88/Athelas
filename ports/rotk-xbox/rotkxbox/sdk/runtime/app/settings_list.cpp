@@ -105,8 +105,10 @@ std::vector<cfg::Desc> SettingsList() {
         {"graphics", "movie_display", Type::Choice, "Movie display",
          "Fit: the movies fill a wide screen with correct proportions (the black bars above and below the film are "
          "cut off).\nStretch: the whole movie frame is stretched to the screen.\n4:3: the movie as on the console, with "
-         "bars at the sides.",
-         nullptr, &s.movie_display, nullptr, 0, 0, {"fit", "stretch", "4:3"}, nullptr, nullptr, {"Fit", "Stretch", "4:3"}},
+         "bars at the sides.\nZoom: as Fit, and the movies made for a 4:3 screen fill a wide screen too, their top and "
+         "bottom cut off.",
+         nullptr, &s.movie_display, nullptr, 0, 0, {"fit", "stretch", "4:3", "zoom"}, nullptr, nullptr,
+         {"Fit", "Stretch", "4:3", "Zoom"}},
         {"graphics", "movie_subtitles", Type::Bool, "Movie subtitles",
          "Subtitles for the film clips, from subtitle files (.srt) in the subtitles folder beside the game, named as "
          "the movie (the log names each movie as it starts). The games have none of their own.",

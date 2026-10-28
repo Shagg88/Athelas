@@ -138,7 +138,7 @@ static void load(void)
 }
 
 /* ---- the note in the corner ---- */
-typedef struct { char title[48], desc[96]; } Note;
+typedef struct { char category[32], title[48], desc[96]; DWORD durationMs; } Note;
 static Note g_notes[8];
 static int g_noteHead, g_noteCount;
 static DWORD g_noteShown;   /* tick the front note went up, 0 not yet */
@@ -155,11 +155,48 @@ static void unlock(const char *id)
         logf_("achievements: earned \"%s\" (%s)", g_defs[i].title, id);
         if (g_notify && g_noteCount < 8) {
             Note *nt = &g_notes[(g_noteHead + g_noteCount++) % 8];
+            nt->category[0] = '\0';
             lstrcpynA(nt->title, g_defs[i].title, sizeof nt->title);
             lstrcpynA(nt->desc, g_defs[i].desc, sizeof nt->desc);
+            nt->durationMs = 6000;
         }
     }
     LeaveCriticalSection(&g_cs);
+}
+
+void achieve_push_note_custom(const char *category, const char *title, const char *desc, DWORD durationMs)
+{
+    if (!g_ready) return;
+    const char *cat = (category && category[0]) ? category : "Notification";
+    logf_("notify: [%s] \"%s\" - \"%s\"", cat, title ? title : "", desc ? desc : "");
+    EnterCriticalSection(&g_cs);
+    if (g_notify) {
+        /* If a note is already on screen for >= 600 ms, replace it immediately for responsive shortcut feedback */
+        /* (an achievement's own note always stays its full time) */
+        if (g_noteCount > 0 && g_noteShown && g_notes[g_noteHead].category[0] && (GetTickCount() - g_noteShown) >= 600) {
+            g_noteHead = (g_noteHead + 1) % 8;
+            g_noteCount--;
+            g_noteShown = 0;
+        }
+        if (g_noteCount < 8) {
+            Note *nt = &g_notes[(g_noteHead + g_noteCount++) % 8];
+            lstrcpynA(nt->category, cat, sizeof nt->category);
+            lstrcpynA(nt->title, title ? title : "", sizeof nt->title);
+            lstrcpynA(nt->desc, desc ? desc : "", sizeof nt->desc);
+            nt->durationMs = durationMs ? durationMs : 4500;
+        }
+    }
+    LeaveCriticalSection(&g_cs);
+}
+
+void achieve_push_note_ex(const char *category, const char *title, const char *desc)
+{
+    achieve_push_note_custom(category, title, desc, 4500);
+}
+
+void achieve_push_note(const char *title, const char *desc)
+{
+    achieve_push_note_custom("Notification", title, desc, 4500);
 }
 
 void achieve_enemy_defeated(void)
@@ -400,7 +437,8 @@ static int make_note_tex(IDirect3DDevice9 *dev, const Note *nt, UINT screenH)
     HFONT f2 = CreateFontA(-(int)(h * 0.3f), 0, 0, 0, FW_BOLD, 0, 0, 0, ANSI_CHARSET, OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH, "Georgia");
     HFONT f3 = CreateFontA(-(int)(h * 0.17f), 0, 0, 0, FW_NORMAL, 0, 0, 0, ANSI_CHARSET, OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH, "Georgia");
     SelectObject(dc, f1); SetTextColor(dc, RGB(235, 200, 110));
-    TextOutA(dc, pad, pad / 2 + 2, "Achievement earned", 18);
+    const char *cat = nt->category[0] ? nt->category : "Achievement earned";
+    TextOutA(dc, pad, pad / 2 + 2, cat, (int)strlen(cat));
     SelectObject(dc, f2); SetTextColor(dc, RGB(245, 238, 225));
     TextOutA(dc, pad, (int)(h * 0.3f), nt->title, (int)strlen(nt->title));
     SelectObject(dc, f3); SetTextColor(dc, RGB(170, 160, 145));
@@ -444,7 +482,10 @@ void achieve_draw(IDirect3DDevice9 *dev)
     if (!g_noteShown) g_noteShown = now ? now : 1;
     DWORD age = now - g_noteShown;
     int idx = g_noteHead;
-    if (age > 6000) {
+    DWORD maxAge = nt.durationMs ? nt.durationMs : 6000;
+    DWORD fadeOutStart = maxAge > 600 ? (maxAge - 600) : (maxAge * 9 / 10);
+    DWORD fadeOutDuration = maxAge > fadeOutStart ? (maxAge - fadeOutStart) : 600;
+    if (age > maxAge) {
         g_noteHead = (g_noteHead + 1) % 8; g_noteCount--; g_noteShown = 0;
         LeaveCriticalSection(&g_cs);
         return;
@@ -502,7 +543,7 @@ void achieve_draw(IDirect3DDevice9 *dev)
     IDirect3DDevice9_SetTextureStageState(dev, 1, D3DTSS_COLOROP, D3DTOP_DISABLE);
     IDirect3DDevice9_SetTextureStageState(dev, 1, D3DTSS_ALPHAOP, D3DTOP_DISABLE);
     IDirect3DDevice9_SetFVF(dev, D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_TEX1);
-    float fade = age < 300 ? age / 300.0f : age > 5400 ? (6000 - age) / 600.0f : 1.0f;
+    float fade = age < 300 ? age / 300.0f : age > fadeOutStart ? (maxAge - age) / (float)fadeOutDuration : 1.0f;
     DWORD c = ((DWORD)(fade * 255.0f) << 24) | 0xFFFFFF;
     float m = bd.Height / 40.0f;
     float x1 = bd.Width - m, y1 = bd.Height - m, x0 = x1 - g_noteW, y0 = y1 - g_noteH;

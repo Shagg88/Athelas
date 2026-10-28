@@ -1,4 +1,4 @@
-# Builds ROTK Fix on every push. Pushing a tag like v1.0 also publishes a
+# Builds Athelas & ROTK Fix on every push. Pushing a tag like v1.0 also publishes a
 # release with the zip, so every download is built from the code shown here.
 name: build
 on:
@@ -34,10 +34,10 @@ jobs:
           echo "VER=$VER" >> "$GITHUB_ENV"
       - uses: actions/upload-artifact@v4
         with:
-          name: ROTKFix-${{ env.VER }}
-          path: dist/ROTKFix-${{ env.VER }}.zip*
+          name: Athelas-${{ env.VER }}
+          path: dist/Athelas-${{ env.VER }}.zip*
       - name: Publish release
         if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/ROTKFix-$VER.zip dist/ROTKFix-$VER.zip.sha256 --draft --title "ROTK Fix $VER" --notes-file dist-files/README.txt
+        run: gh release create "$GITHUB_REF_NAME" dist/Athelas-$VER.zip dist/Athelas-$VER.zip.sha256 --draft --title "Athelas $VER" --notes-file dist-files/README.txt

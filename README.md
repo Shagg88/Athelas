@@ -14,6 +14,17 @@ packs are supported but I have not done any of those.  I'll be open to accepting
 
 Download it from [Releases](../../releases): one zip with the launcher, ROTK Fix and all three ports.
 
+Since 1.6 Athelas opens on your games as boxes on a carousel, with their original box art if you'd like it (see README.txt).
+
+Since 1.7 the launcher also has:
+- **Save backups**: back up a game's saves to a zip on your desktop and restore them (your current saves are zipped first)
+- **A log folder per play**, plain-English exit messages, and **Clear shaders** for the Xbox ports (set aside, not deleted)
+- **Mods from a .zip** for the PC game, with an order you set (Up / Down) and a warning before any code mod
+- **Desktop shortcuts** for Athelas and for each game
+- **A resizable window**: fullscreen with F11 or LT + RT, a borderless option, and maximised and borderless on a Steam Deck-sized screen
+- **11 languages**: English, Spanish, French, German, Italian, Portuguese (Brazil), Polish, Russian, Japanese, Chinese (Simplified), Korean
+- **Play time for the PC game** too
+
 > Not affiliated with or endorsed by Electronic Arts, New Line Cinema, Warner Bros. or the Tolkien Estate.
 > No game files are included. You need your own copy of each game: the PC game installed, or your own Xbox disc as
 > an `.iso` or extracted files (US releases). ROTK Fix doesn't change or bypass the PC game's copy protection. The
@@ -91,6 +102,7 @@ Played through its PC port, `TwoTowers.exe`, started from the launcher.
 - Keyboard and mouse or a controller. `F10` (or both stick clicks) opens an in-game settings menu; every setting is
   also on the launcher's page or in `settings.toml`.
 - The game's own files are only read, never changed.
+- Sharper text: the game's fonts redrawn at four times their size, crisp at high resolutions.
 - Keys: `F10` settings menu, `\` screenshot, `F1` hide the HUD, `[` sharpening off/on, `]` next colour look,
   `F8` texture packs off/on, `F7` a pair of screenshots with and without texture packs.
 - Problem reports: the log (`TT-Xbox\tt.log` next to the launcher), plus the newest `.dmp` in
@@ -109,14 +121,33 @@ Played through its PC port, `ROTKXbox.exe`, started from the launcher with the s
 
 ## The Fellowship of the Ring (Xbox)
 
-Played through its PC port, `FOTRXbox.exe`, started from the launcher. New in 1.4, a first version.
+Played through its PC port, `FOTRXbox.exe`, started from the launcher (since 1.4).
 
 - Supported: the US Xbox release, as a disc image (`.iso`) or the extracted files.
 - As on the Xbox by default (30 fps, 4:3); frame rates up to 240 at normal game speed, the game's own widescreen
   mode and ultrawide (21:9, 32:9), field of view, difficulty, sharper upscaled cutscenes, logo skip.
 - The game's text in nine languages (our own translations), the game's own cheat codes as switches, and
   achievements for each part of the journey.
+- A chapter select (a new game can start at the beginning of any chapter) and the developers' unused Combat Test
+  arenas, switched on from Bilbo's room in Rivendell.
 - Problem reports: `FOTR-Xbox\fotrx.log`, plus the newest `.dmp` in `FOTR-Xbox\CrashDumps` after a crash.
+
+## Steam Deck and Linux
+
+There's no Linux build or AppImage: Athelas and the games run through Proton, Steam's Windows layer, which also
+covers their DirectX 12. The Two Towers has been reported working on a real Steam Deck.
+
+1. In Desktop Mode, unzip Athelas into a folder of its own, for example `/home/deck/Games/Athelas`.
+2. In Steam: **Games > Add a Non-Steam Game to My Library**, and choose `Athelas.exe`. In its **Properties >
+   Compatibility**, tick **Force the use of a specific Steam Play compatibility tool** and pick the newest Proton.
+3. Start it from Steam (Game Mode works too) and point it at your games: disc images (.iso) or extracted folders
+   anywhere on the Deck or an SD card. For The Return of the King (PC), a folder with the installed game copied from a
+   Windows PC (the original disc's copy protection doesn't run under Proton).
+
+The Deck's controls work as an Xbox controller in Athelas and in every game. The Balanced preset at 60 fps suits the
+Deck. DLSS needs an NVIDIA card, so on the Deck leave the upscaler off or try FSR (it hasn't been tried on a Deck yet; if
+it can't start, the game shows its normal picture). Other Linux PCs work the same way
+through Steam, or through any Proton or Wine launcher with DXVK and VKD3D-Proton. More details are in README.txt.
 
 ## Reporting a problem
 

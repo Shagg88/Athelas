@@ -577,6 +577,7 @@ std::atomic<uint32_t> g_presents{0};
 }  // namespace
 
 HLE_STDCALL(D3DDevice_Swap, 1) {
+    kernel::Blocking told;  // the game told on its own thread, before and after (kernel::g_blocking)
     app::SplashFirstFrame();
     // handed over from the previous instance: the window opens on the second frame, the first picture with
     // anything drawn over it right after
@@ -1183,6 +1184,10 @@ uint32_t UpVertices(const void* src, uint32_t bytes) {
 
 void DrawUp(uint32_t prim, uint32_t count, const void* vertices, uint32_t stride) {
     if (!g_backend || !count || !stride) return;
+    if (uint64_t(count) * stride > kUpHalf) {  // more than the ring holds: not drawn, rather than from stale bytes
+        LOG_FIRST(4, "d3d: DrawVerticesUP of %u bytes skipped (more than %u)", count * stride, kUpHalf);
+        return;
+    }
     SyncDeferred();
     auto stream = g_state.streams[0];
     g_state.streams[0] = {UpVertices(vertices, count * stride), stride};
@@ -1442,6 +1447,10 @@ HLE_STDCALL(D3DDevice_DrawIndexedVerticesUP, 5) {
     const uint16_t* idx = static_cast<const uint16_t*>(HostPtr(a[2]));
     uint32_t top = 0;
     for (uint32_t i = 0; i < count; i++) top = std::max<uint32_t>(top, idx[i]);
+    if (uint64_t(top + 1) * stride > kUpHalf) {
+        LOG_FIRST(4, "d3d: DrawIndexedVerticesUP of %u bytes skipped (more than %u)", (top + 1) * stride, kUpHalf);
+        return 0;
+    }
     SyncDeferred();
     auto stream = g_state.streams[0];
     g_state.streams[0] = {UpVertices(HostPtr(a[3]), (top + 1) * stride), stride};

@@ -463,7 +463,7 @@ bool CodeGen::EmitMmx(uint32_t va, const ZydisDecodedInstruction& in, const Zydi
         case ZYDIS_MNEMONIC_PSRLQ: emit(F("uint64_t n = %s; %s = n >= 64 ? 0 : %s >> n;", src.c_str(), D.c_str(), D.c_str())); return true;
         case ZYDIS_MNEMONIC_PMADDWD:
             emit(F("int16_t a[4], b[4]; uint64_t x = %s, y = %s; std::memcpy(a, &x, 8); std::memcpy(b, &y, 8); "
-                   "int32_t r0 = a[0] * b[0] + a[1] * b[1], r1 = a[2] * b[2] + a[3] * b[3]; %s = (uint64_t)(uint32_t)r0 | ((uint64_t)(uint32_t)r1 << 32);",
+                   "uint32_t r0 = (uint32_t)(a[0] * b[0]) + (uint32_t)(a[1] * b[1]), r1 = (uint32_t)(a[2] * b[2]) + (uint32_t)(a[3] * b[3]); %s = (uint64_t)r0 | ((uint64_t)r1 << 32);",
                    D.c_str(), src.c_str(), D.c_str()));
             return true;
         case ZYDIS_MNEMONIC_PSADBW:

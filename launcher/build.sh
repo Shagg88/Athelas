@@ -19,6 +19,9 @@ $CXX -Wall -Wextra -Wno-missing-field-initializers -c src/gameart.cpp -o build/o
 [ build/obj/miniz.o -nt third_party/miniz/miniz.c ] || i686-w64-mingw32-gcc -O2 -c third_party/miniz/miniz.c -o build/obj/miniz.o
 $CXX -Wall -Wextra -Wno-missing-field-initializers -c src/update.cpp -o build/obj/update.o
 $CXX -Wall -Wextra -Wno-missing-field-initializers -c src/report.cpp -o build/obj/report.o
+$CXX -Wall -Wextra -Wno-missing-field-initializers -c src/music.cpp -o build/obj/music.o
+$CXX -Wall -Wextra -Wno-missing-field-initializers -c src/userdata.cpp -o build/obj/userdata.o
+$CXX -Wall -Wextra -Wno-missing-field-initializers -c src/i18n.cpp -o build/obj/i18n.o
 $CXX -Wall -Wextra -Wno-missing-field-initializers $VDEF -c src/main.cpp -o build/obj/main.o
 printf '#define VERSION_RC %s\n#define VERSION_STR "%s"\n' "$VERSION_RC" "$ROTKFIX_VERSION" > build/obj/version_rc.h
 i686-w64-mingw32-windres -Ibuild/obj src/launcher.rc -O coff -o build/obj/launcher_res.o

@@ -2,7 +2,7 @@
 #include "app/app.h"
 
 #ifndef GAME_VERSION
-#define GAME_VERSION "1.5.1"  // CMakeLists.txt sets it (XBE_VERSION); the headless harness does not
+#define GAME_VERSION "1.6.0"  // CMakeLists.txt sets it (XBE_VERSION); the headless harness does not
 #endif
 
 namespace tt {
@@ -22,11 +22,14 @@ extern bool g_alpha_edges;       // tt_view.cpp
 void ApplyView();                // tt_view.cpp
 extern uint32_t g_button_pictures;  // tt_prompts.cpp
 void InitPrompts();                 // tt_prompts.cpp
-// after the settings load: the renderer's extension, the leaf edges, the hints' button pictures
+extern bool g_sharp_text;           // tt_sharptext.cpp
+void InitSharpText();               // tt_sharptext.cpp
+// after the settings load: the renderer's extension, the leaf edges, the hints' button pictures, the fonts
 void Init() {
     InitRenderer();
     ApplyView();
     InitPrompts();
+    InitSharpText();
 }
 extern uint32_t g_damage_taken, g_enemy_damage;  // tt_devsettings.cpp
 void FileOpened(const char* name);  // tt_extras.cpp: the front end or a level
@@ -80,6 +83,10 @@ const app::GameInfo app::kGame = {
                  nullptr, &tt::g_fov_percent, nullptr, 70, 150, {}, "fov_percent"},
                 {"graphics", "alpha_edges", cfg::Type::Bool, "Smooth leaf edges",
                  "With anti-aliasing on, smooths the edges of leaves, grass and fences.", &tt::g_alpha_edges},
+                {"graphics", "sharp_text", cfg::Type::Bool, "Sharper text",
+                 "The game's text (menus, hints, subtitles, the scores) redrawn at four times its size, so it stays "
+                 "sharp at high resolutions. Read at start.",
+                 &tt::g_sharp_text},
                 {"graphics", "button_pictures", cfg::Type::Choice, "Button pictures",
                  "Which controller's buttons the game's hints and menus show. Auto follows the controller you play "
                  "with.",

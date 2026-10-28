@@ -1,6 +1,8 @@
 // ROTK Fix Launcher - drawn ornaments (see ornament.h). Everything is drawn with ImGui's
 // shapes at the current scale; there are no pictures.
 #include "ornament.h"
+#include "i18n.h"
+#include <string>
 #include "imgui_internal.h"
 #include <math.h>
 #include <algorithm>
@@ -218,10 +220,12 @@ bool orn_arch_button(const char *label, ImVec2 size, ImFont *font, bool enabled)
     dl->AddCircleFilled(V(cx, a.y + O(3)), O(3), fg, 12);
     dl->AddCircle(V(cx, a.y + O(3)), O(3), col(60, 42, 16), 12, O(1));
     ImGui::PushFont(font, font->LegacySize);
-    ImVec2 ts = ImGui::CalcTextSize(label, nullptr, true);
+    std::string shownS = tr(std::string(label, ImGui::FindRenderedTextEnd(label)));   // its translation (drawn here, not by ImGui)
+    const char *shown = shownS.c_str();
+    ImVec2 ts = ImGui::CalcTextSize(shown);
     ImVec2 tp(cx - ts.x * 0.5f, a.y + archH * 0.5f + (size.y - archH * 0.5f - ts.y) * 0.5f);
-    dl->AddText(V(tp.x + O(1), tp.y + O(1.5f)), col(20, 12, 4, enabled ? 200 : 60), label, ImGui::FindRenderedTextEnd(label));
-    dl->AddText(tp, enabled ? col(240, 220, 170) : col(120, 112, 100), label, ImGui::FindRenderedTextEnd(label));
+    dl->AddText(V(tp.x + O(1), tp.y + O(1.5f)), col(20, 12, 4, enabled ? 200 : 60), shown);
+    dl->AddText(tp, enabled ? col(240, 220, 170) : col(120, 112, 100), shown);
     ImGui::PopFont();
     return pressed && enabled;
 }
@@ -236,9 +240,11 @@ bool orn_plate_button(const char *label, ImVec2 size, bool enabled)
     ImDrawList *dl = ImGui::GetWindowDrawList();
     ImU32 fill = !enabled ? col(30, 28, 26, 220) : act ? col(70, 62, 46, 235) : hov ? col(54, 48, 38, 235) : col(28, 26, 24, 225);
     orn_plate(dl, p, V(p.x + size.x, p.y + size.y), fill, enabled && hov);
-    ImVec2 ts = ImGui::CalcTextSize(label, nullptr, true);
+    std::string shownS = tr(std::string(label, ImGui::FindRenderedTextEnd(label)));   // its translation (drawn here, not by ImGui)
+    const char *shown = shownS.c_str();
+    ImVec2 ts = ImGui::CalcTextSize(shown);
     ImVec2 tp(p.x + (size.x - ts.x) * 0.5f, p.y + (size.y - ts.y) * 0.5f);
-    dl->AddText(tp, enabled ? ImGui::GetColorU32(ImGuiCol_Text) : ImGui::GetColorU32(ImGuiCol_TextDisabled), label, ImGui::FindRenderedTextEnd(label));
+    dl->AddText(tp, enabled ? ImGui::GetColorU32(ImGuiCol_Text) : ImGui::GetColorU32(ImGuiCol_TextDisabled), shown);
     return pressed && enabled;
 }
 

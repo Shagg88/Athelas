@@ -20,7 +20,7 @@
 #               ARM64 builds are this release's; its updater fetches this zip on Windows on ARM)
 #
 # Layout (the launcher lives in a folder of its own; see README.txt):
-#   Athelas.exe, SDL3.dll, README.txt
+#   Athelas.exe, SDL3.dll, README.txt, lang\ (the launcher in other languages)
 #   ROTK-PC\pcfix\   what "Set up ROTK Fix" copies into a PC game folder:
 #                    ROTKFix.dll, d3d8.dll, dinput8.dll, SDL3.dll, ROTKFix\dxvk, \sound, \licenses
 #   TT-Xbox\, ROTK-Xbox\, FOTR-Xbox\   the Xbox ports (they keep their settings, saves and logs there too)
@@ -37,8 +37,29 @@ sh launcher/build.sh
 OUT=dist/Athelas-$VER
 FIX=$OUT/ROTK-PC/pcfix
 rm -rf "$OUT" "$OUT.zip"
-mkdir -p "$FIX/ROTKFix/dxvk" "$FIX/ROTKFix/licenses" "$OUT/licenses"
+mkdir -p "$FIX/ROTKFix/dxvk" "$FIX/ROTKFix/licenses" "$FIX/ROTKFix/mods" "$OUT/licenses"
+if [ -d mods ]; then
+    for mod_dir in mods/*; do
+        if [ -d "$mod_dir" ]; then
+            mod_name=$(basename "$mod_dir")
+            if [ -f "$mod_dir/build.sh" ]; then
+                echo "Building mod: $mod_name..."
+                (cd "$mod_dir" && sh build.sh)
+            fi
+            for f in "$mod_dir"/*.dll "$mod_dir"/*.ini; do
+                [ -f "$f" ] && cp "$f" "$FIX/ROTKFix/mods/"
+            done
+            if [ -f "$mod_dir/README.md" ]; then
+                cp "$mod_dir/README.md" "$FIX/ROTKFix/mods/${mod_name}-README.md"
+            elif [ -f "$mod_dir/README.txt" ]; then
+                cp "$mod_dir/README.txt" "$FIX/ROTKFix/mods/${mod_name}-README.txt"
+            fi
+        fi
+    done
+fi
 cp launcher/build/Athelas.exe dist-files/README.txt "$OUT/"
+# the launcher's translations (lang\<code>.txt, read by Athelas.exe)
+mkdir -p "$OUT/lang"; cp launcher/lang/*.txt "$OUT/lang/"
 cp "$SDL_DIR/i686-w64-mingw32/bin/SDL3.dll" "$OUT/"
 cp build/ROTKFix.dll build/d3d8.dll build/dinput8.dll "$SDL_DIR/i686-w64-mingw32/bin/SDL3.dll" "$FIX/"
 cp "$DXVK_DIR/x32/d3d8.dll" "$DXVK_DIR/x32/d3d9.dll" "$FIX/ROTKFix/dxvk/"

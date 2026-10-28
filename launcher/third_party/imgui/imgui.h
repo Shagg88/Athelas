@@ -31,6 +31,9 @@
 // (Integer encoded as XYYZZ for use in #if preprocessor conditionals, e.g. '#if IMGUI_VERSION_NUM >= 12345')
 #define IMGUI_VERSION       "1.93.0"
 #define IMGUI_VERSION_NUM   19300
+// Athelas: translation hooks (imgui.cpp; set by the launcher's i18n.cpp). text_end may come in as NULL.
+extern void (*GImTextTranslate)(const char** text, const char** text_end);
+extern const char* (*GImFormatTranslate)(const char* fmt);
 #define IMGUI_HAS_TABLE             // Added BeginTable() - from IMGUI_VERSION_NUM >= 18000
 #define IMGUI_HAS_TEXTURES          // Added ImGuiBackendFlags_RendererHasTextures - from IMGUI_VERSION_NUM >= 19198
 

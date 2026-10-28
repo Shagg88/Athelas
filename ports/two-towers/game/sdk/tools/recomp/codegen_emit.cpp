@@ -30,6 +30,11 @@ static void WriteIfChanged(const fs::path& p, const std::string& text) {
     }
     std::ofstream out(p, std::ios::binary);
     out << text;
+    out.close();
+    if (!out) {  // a full disk or a locked file: stop, rather than build from half a file
+        std::fprintf(stderr, "error: could not write %s\n", p.string().c_str());
+        std::exit(1);
+    }
 }
 
 std::string CodeGen::EmitFunction(uint32_t entry) {

@@ -1,6 +1,7 @@
 #include "core/settings_file.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <filesystem>
@@ -100,6 +101,7 @@ bool Apply(const Desc& d, const toml::node& n) {
             if (auto f = n.as_floating_point()) v = f->get();
             else if (auto i = n.as_integer()) v = double(i->get());
             else return false;
+            if (!std::isfinite(v)) return false;  // TOML allows nan and inf, which no range check stops
             if (v < d.min / 100.0 - 1e-9 || v > d.max / 100.0 + 1e-9) return false;
             *d.real = float(v);
             return true;

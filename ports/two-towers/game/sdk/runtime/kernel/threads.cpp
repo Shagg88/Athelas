@@ -247,6 +247,8 @@ uint32_t Suspend(Thread& t) {
     return prev;
 }
 
+void (*g_blocking)(bool done) = nullptr;
+
 void SuspendPoint() {
     Thread* t = Current();
     if (!t || t->suspend.load() <= 0) return;

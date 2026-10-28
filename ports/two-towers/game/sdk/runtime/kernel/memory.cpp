@@ -304,7 +304,9 @@ uint32_t FreeVirtual(uint32_t& base, uint32_t& size, uint32_t type) {
         return 0;
     }
     uint32_t first = base & ~(kPage - 1);
-    uint32_t end = size ? (base + size + kPage - 1) & ~(kPage - 1) : start + r->size;
+    uint64_t end64 = size ? (uint64_t(base) + size + kPage - 1) & ~uint64_t(kPage - 1) : uint64_t(start) + r->size;
+    if (end64 > uint64_t(start) + r->size) return 0xC000001A;  // STATUS_UNABLE_TO_FREE_VM: past its reservation
+    uint32_t end = uint32_t(end64);
     Decommit(first, end - first);
     for (uint32_t p = first; p < end; p += kPage) r->commit[(p - start) / kPage] = 0;
     base = first;

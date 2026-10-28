@@ -537,6 +537,7 @@ static uint32_t Transfer(const Args& a, bool write, uint32_t pages) {
 
 // reads are counted for the hitch lines (frame_work.cpp)
 static uint32_t TimedRead(const Args& a, uint32_t pages) {
+    Blocking told;
     int64_t t = WorkNow();
     uint32_t r = Transfer(a, false, pages);
     auto f = FileFromHandle(a[0]);
@@ -582,10 +583,16 @@ KERNEL_EXPORT(211, NtQueryInformationFile, 5) {
             IoStatus(iosb, kSuccess, 8);
             return kSuccess;
         }
-        case 14:  // FilePositionInformation
-            W64(out, f->pos);
+        case 14: {  // FilePositionInformation
+            uint64_t pos;
+            {
+                std::lock_guard<std::mutex> lock(f->io);  // (a read or write on another thread moves it)
+                pos = f->pos;
+            }
+            W64(out, pos);
             IoStatus(iosb, kSuccess, 8);
             return kSuccess;
+        }
         case 34:  // FileNetworkOpenInformation
             if (f->entry) FillNetworkInfo(out, *f->entry);
             else FillNetworkInfo(out, f->host);
@@ -608,9 +615,11 @@ KERNEL_EXPORT(226, NtSetInformationFile, 5) {
     if (f->entry && cls != 14 && cls != 4) return kAccessDenied;
     std::error_code ec;
     switch (cls) {
-        case 14:  // position
+        case 14: {  // position
+            std::lock_guard<std::mutex> lock(f->io);
             f->pos = R64(in);
             break;
+        }
         case 19:  // allocation: only a size below the end of file cuts it
         case 20:  // end of file
             if (f->fp) {
@@ -709,10 +718,11 @@ KERNEL_EXPORT(207, NtQueryDirectoryFile, 10) {
         IoStatus(iosb, kNoMoreFiles, 0);
         return f->next == 0 ? kNoSuchFile : kNoMoreFiles;
     }
-    size_t i = f->next++;
+    size_t i = f->next;
     std::string fname = f->entry ? f->disc_entries[i]->name : f->entries[i].path().filename().string();
     uint32_t need = 0x40 + uint32_t(fname.size());
-    if (len < need) return kBufferTooSmall;
+    if (len < need) return kBufferTooSmall;  // (the same entry again next time, in a larger buffer)
+    f->next++;
     std::memset(HostPtr(out), 0, need);
     // times, sizes and attributes sit at the same place
     if (f->entry) FillNetworkInfo(out + 8, *f->disc_entries[i]);

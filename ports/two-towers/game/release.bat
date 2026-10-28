@@ -2,7 +2,9 @@
 set "GAME_EXE=TwoTowers"
 cd /d "%~dp0"
 set "OUT=out\build\release"
-if not exist "%OUT%\%GAME_EXE%.exe" call build.bat || exit /b 1
+rem build first, so the copy is never older than the source (CI: no questions, no "play now")
+set CI=1
+call build.bat || exit /b 1
 rem the configure step writes where the SDK is
 if not exist "%OUT%\sdk_dir.txt" cmake --preset release >nul || exit /b 1
 if not exist "%OUT%\sdk_dir.txt" echo %OUT%\sdk_dir.txt was not written, update the SDK. && exit /b 1

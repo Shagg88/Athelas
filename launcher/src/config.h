@@ -44,7 +44,7 @@ struct Settings {
     bool skipAllVideos = true;
     bool texReplace = true;       // [Textures] Replace: use texture packs
     bool texDump = false;         // [Textures] Dump: save the game's textures as PNGs
-    int  movieDisplay = 0;        // 0 auto, 1 stretch, 2 4:3
+    int  movieDisplay = 0;        // 0 auto, 1 stretch, 2 4:3, 3 zoom (the Xbox port only)
     bool skipLogos = false;
     int  audioDelayMs = 0;
     int  sharperMovies = 70;      // 0-100
@@ -152,7 +152,8 @@ bool load_settings(const std::string &dir, Settings &s);   // false = no ROTKFix
 bool save_settings(const std::string &dir, const Settings &s, std::string &err, int controllers = -1);
 bool save_rotkfix_ini(const std::string &dir, const Settings &s, std::string &err);   // ROTKFix.ini only
 bool install_input_profile(const std::string &dir, std::string &err);
-bool launch_game(const std::string &dir, std::string &err);
+// process: when given, the started game's process handle (to wait for it), or NULL
+bool launch_game(const std::string &dir, std::string &err, void **process = nullptr);
 std::string exe_dir();
 // A wide (Unicode) path as the 2003 game and this launcher's ANSI calls can use it: as is when every
 // character fits the system's code page, otherwise its short 8.3 form (all ASCII); "" if neither works.

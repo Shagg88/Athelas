@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <string>
@@ -81,6 +82,9 @@ struct Image {
         return s;
     }
 
+    // n bytes at file offset off are in the file (a damaged or cut-short image is turned down, not read past)
+    bool Fits(uint64_t off, uint64_t n) const { return off <= file.size() && n <= file.size() - off; }
+
     bool Parse(std::vector<uint8_t> data, std::string& error) {
         file = std::move(data);
         if (file.size() < 0x180 || std::memcmp(file.data(), "XBEH", 4)) {
@@ -110,6 +114,10 @@ struct Image {
             error = "entry point key not recognised";
             return false;
         }
+        if (sec_addr < base || nsec > 0x10000 || !Fits(uint64_t(sec_addr) - base, uint64_t(nsec) * 56)) {
+            error = "the section table is outside the file (damaged or incomplete)";
+            return false;
+        }
         for (uint32_t i = 0; i < nsec; i++) {
             uint32_t o = sec_addr - base + i * 56;
             Section s;
@@ -119,11 +127,17 @@ struct Image {
             s.raw = U32(o + 12);
             s.rsize = U32(o + 16);
             uint32_t name = U32(o + 20);
-            if (name - base < header_size)
-                s.name = reinterpret_cast<const char*>(file.data() + (name - base));
+            if (name >= base && name - base < header_size && name - base < file.size()) {
+                const char* at = reinterpret_cast<const char*>(file.data() + (name - base));
+                s.name.assign(at, strnlen(at, std::min<size_t>(header_size, file.size()) - (name - base)));
+            }
             sections.push_back(s);
         }
         uint32_t nlib = U32(0x160), lib_addr = U32(0x164);
+        if (lib_addr && (lib_addr < base || nlib > 0x1000 || !Fits(uint64_t(lib_addr) - base, uint64_t(nlib) * 16))) {
+            error = "the library table is outside the file (damaged or incomplete)";
+            return false;
+        }
         for (uint32_t i = 0; i < nlib && lib_addr; i++) {
             uint32_t o = lib_addr - base + i * 16;
             Library l;
@@ -133,10 +147,10 @@ struct Image {
             std::memcpy(&l.major, file.data() + o + 8, 8);  // major, minor, build and flags, four uint16 in order
             libraries.push_back(l);
         }
-        if (cert - base + 12 <= file.size()) title_id = U32(cert - base + 8);  // certificate +8 is the title id
+        if (cert >= base && Fits(uint64_t(cert) - base, 12)) title_id = U32(cert - base + 8);  // certificate +8 is the title id
         if (tls_addr) {
             int64_t o = Offset(tls_addr);
-            if (o >= 0) {
+            if (o >= 0 && Fits(uint64_t(o), 24)) {
                 tls.data_start = U32(uint32_t(o));
                 tls.data_end = U32(uint32_t(o) + 4);
                 tls.index_addr = U32(uint32_t(o) + 8);

@@ -106,6 +106,63 @@ games, screenshots, achievements and texture packs are kept (the last two in
 the ROTKFix folder). Then delete the launcher's folder.
 
 
+YOUR GAMES ON THE CAROUSEL
+--------------------------
+Athelas opens on your games as boxes. Turn the carousel with the arrow keys,
+the D-pad or stick, the mouse wheel, or a click on a box at the side. Play
+starts the game in front; Settings opens its page (Library there goes back).
+With a controller: A plays, X opens Settings, Y gets box art.
+- Box art: "Get box art" downloads the original Xbox covers from RetroArch's
+  collection (libretro thumbnails) into the covers folder beside Athelas. Your
+  own scans there are used first: fotr.png, tt.png, rotk.png (or .jpg).
+  Without either, each box shows a cover made from the game's own art.
+- The Return of the King is one box for both versions: with both, Athelas asks
+  PC or Xbox, and can remember the answer ("Ask which version" undoes it).
+
+
+YOUR SAVES, LOGS AND THE LAUNCHER'S WINDOW
+------------------------------------------
+On each game's About tab:
+- Back up saves: a copy of that game's saves in a zip on your desktop.
+  Restore saves puts one back; your current saves are zipped first
+  ("... before restore ..." on the desktop), so nothing is lost.
+- Open logs: Athelas keeps one folder per play in its Logs folder (the log,
+  the exit code and what it means, any crash report), the newest 15.
+- Clear shaders (Xbox ports): the saved shaders are set aside (renamed, not
+  deleted); the next start builds them again, with some stutter at first.
+- Desktop shortcuts: one for Athelas and one for each game (it opens Athelas
+  and starts that game, with its settings). To pin one to the taskbar,
+  right-click the shortcut and choose Pin - Windows doesn't let programs do it.
+The window: drag a corner or maximise it and everything grows with it. F11,
+or LT + RT together on a controller, switches fullscreen from any screen.
+"Borderless window" hides the title bar (Athelas then has its own minimise,
+maximise and close buttons). On a small screen like the Steam Deck's it
+starts maximised and borderless.
+The launcher's language: asked on first start; change it under "This window"
+on any game's About tab. English, Spanish, French, German, Italian,
+Portuguese (Brazil), Polish, Russian, Japanese, Chinese (Simplified), Korean.
+The translations are in the lang folder; corrections are welcome on GitHub.
+The play time of the PC game is counted too: Athelas now waits, hidden,
+while it plays, and closes when it does.
+
+
+MODS (THE RETURN OF THE KING, PC)
+---------------------------------
+The Mods tab on the PC game's page: "Add a mod (.zip)" adds a mod.
+- A data mod (files laid out like the game's own, in a Data folder) goes
+  into its own folder, ROTKFix\mods\<name>\Data. The list under Data mods
+  has a tick for each, and Up / Down: they are used top to bottom, and where
+  two change the same file the lower one wins. Your game's own files are
+  never changed; Remove puts a mod in the Recycle Bin.
+- A code mod (a .dll and its .ini) is a program that runs inside the game:
+  Athelas asks first, and adds it only if you say so. Only add code mods you
+  trust. Tick one in the list to turn it on.
+Valar Boons comes with Athelas, switched off: the blessings of Manwe,
+Varda and Aule on the number keys 1-3 (4 all of them, 0 resets); see
+ValarBoons.ini. Loose files in ROTKFix\mods\Data (the older way) still work,
+under the data mods in the list.
+
+
 WHILE PLAYING
 -------------
   \  or Print Screen   Screenshot (saved to the Screenshots folder)
@@ -122,7 +179,7 @@ ultrawide, frame rates up to 240, render resolution up to 300%,
 anti-aliasing, texture filtering, sharpening and HDR, menus that fill the
 screen with smooth upscaling, movie display modes, controller remapping and
 adjustable damage for each side.
-- Supported: the US Xbox release, as a disc image (.iso) or the extracted
+- Supported: the US Xbox release, as a disc image (.iso or .xiso) or the extracted
   files. Other releases are recognised and you're warned before they start;
   they will most likely crash.
 - Keyboard and mouse or controller (see KEYBOARD, MOUSE AND THE IN-GAME

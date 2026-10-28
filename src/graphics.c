@@ -150,9 +150,65 @@ static void write_dxvk_conf(const char *dir)
     if (g_showFps && !GetEnvironmentVariableA("DXVK_HUD", NULL, 0)) SetEnvironmentVariableA("DXVK_HUD", "fps");
 }
 
+/* Is there a Vulkan 1.3 graphics device, as DXVK needs? Asked before DXVK is loaded: without one, DXVK doesn't
+ * return an error, it ends the game (abort() after "Failed to create Vulkan instance": a PC or virtual machine with
+ * no Vulkan driver, #27). The few Vulkan calls needed are declared here, as in the launcher's gpu.cpp. */
+typedef struct VkInstance_T *VkInstance;
+typedef struct VkPhysicalDevice_T *VkPhysicalDevice;
+typedef void (__stdcall *PFN_vkVoid)(void);
+typedef PFN_vkVoid (__stdcall *PFN_vkGIPA)(VkInstance, const char *);
+typedef struct { int sType; const void *pNext; const char *app; UINT appVer; const char *engine; UINT engineVer; UINT api; } VkAppInfo_;
+typedef struct { int sType; const void *pNext; UINT flags; const VkAppInfo_ *app; UINT nLayers; const char *const *layers;
+                 UINT nExt; const char *const *ext; } VkInstInfo_;
+typedef int (__stdcall *PFN_vkCreateInst)(const VkInstInfo_ *, const void *, VkInstance *);
+typedef void (__stdcall *PFN_vkDestroyInst)(VkInstance, const void *);
+typedef int (__stdcall *PFN_vkEnumDevs)(VkInstance, UINT *, VkPhysicalDevice *);
+typedef void (__stdcall *PFN_vkDevProps)(VkPhysicalDevice, void *);
+#define VK_API_(maj, min) (((UINT)(maj) << 22) | ((UINT)(min) << 12))
+
+static int vulkan_usable(void)
+{
+    HMODULE vk = LoadLibraryA("vulkan-1.dll");
+    if (!vk) { logf_("graphics: no Vulkan driver (vulkan-1.dll not found)"); return 0; }
+    PFN_vkGIPA gipa = (PFN_vkGIPA)(void *)GetProcAddress(vk, "vkGetInstanceProcAddr");
+    PFN_vkCreateInst create = gipa ? (PFN_vkCreateInst)(void *)gipa(NULL, "vkCreateInstance") : NULL;
+    VkAppInfo_ app = { 0, NULL, "ROTK Fix", 1, "ROTK Fix", 1, VK_API_(1, 1) };
+    VkInstInfo_ ci = { 1, NULL, 0, &app, 0, NULL, 0, NULL };
+    VkInstance inst = NULL;
+    int rc = create ? create(&ci, NULL, &inst) : -1;
+    if (rc != 0 || !inst) { logf_("graphics: no Vulkan driver (a Vulkan instance couldn't be made: %d)", rc); return 0; }
+    PFN_vkDestroyInst destroy = (PFN_vkDestroyInst)(void *)gipa(inst, "vkDestroyInstance");
+    PFN_vkEnumDevs enumerate = (PFN_vkEnumDevs)(void *)gipa(inst, "vkEnumeratePhysicalDevices");
+    PFN_vkDevProps props = (PFN_vkDevProps)(void *)gipa(inst, "vkGetPhysicalDeviceProperties");
+    VkPhysicalDevice devs[16];
+    UINT n = 16, best = 0;
+    char name[257] = "";
+    if (enumerate && props && enumerate(inst, &n, devs) >= 0) {
+        static unsigned char buf[4096];   /* VkPhysicalDeviceProperties: apiVersion at 0, deviceName at 20 */
+        for (UINT i = 0; i < n && i < 16; i++) {
+            UINT api;
+            memset(buf, 0, sizeof buf);
+            props(devs[i], buf);
+            memcpy(&api, buf, 4);
+            if (api > best) { best = api; memcpy(name, buf + 20, 256); name[256] = 0; }
+        }
+    }
+    if (destroy) destroy(inst, NULL);
+    if (best < VK_API_(1, 3)) {
+        logf_("graphics: no Vulkan 1.3 graphics device (best: %s, Vulkan %u.%u), as the Vulkan renderer needs",
+              name[0] ? name : "none", best >> 22, (best >> 12) & 0x3FF);
+        return 0;
+    }
+    return 1;
+}
+
 static HMODULE load_backend(void)
 {
     if (g_backend) return g_backend;
+    if (g_renderer == R_DXVK && !vulkan_usable()) {
+        logf_("graphics: falling back to Windows Direct3D 8");
+        g_renderer = R_NATIVE;
+    }
     if (g_renderer == R_DXVK) {
         char dir[MAX_PATH], dll[MAX_PATH];
         snprintf(dir, sizeof dir, "%s\\ROTKFix\\%s", g_dir, g_dxvkFolder);
@@ -1520,6 +1576,8 @@ __declspec(dllexport) IDirect3D8 *WINAPI RF_Direct3DCreate8(UINT sdk)
 {
     sound_late_patch();
     HMODULE b = load_backend();
+    mods_load();          /* code mods in ROTKFix\mods (outside the loader lock, before the game's first frame; after
+                             the renderer, so a mod that links d3d9.dll can't load Windows' copy before DXVK's) */
     Create8_t create = b ? (Create8_t)(void *)GetProcAddress(b, "Direct3DCreate8") : NULL;
     if (!create) { logf_("graphics: ERROR backend has no Direct3DCreate8"); return NULL; }
     IDirect3D8 *real = create(sdk);

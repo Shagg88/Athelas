@@ -73,7 +73,7 @@ struct Settings {
     // [controls]: for each Xbox button the game reads (A B X Y black white left trigger right trigger), the
     // controller button that presses it, as input::kSources; as on the Xbox by default
     uint32_t buttons[8] = {0, 1, 2, 3, 5, 4, 6, 7};
-    uint32_t movie_display = 0;            // movies: 0 fit (the middle 16:9, the default), 1 stretch, 2 4:3 (the console's frame)
+    uint32_t movie_display = 0;            // movies: 0 fit (the middle 16:9, the default), 1 stretch, 2 4:3 (the console's frame), 3 zoom (4:3 movies fill the width too)
     uint32_t movie_sharpening = 75;        // 0 to 100, sharpening at the movie's own pixel size (75 by default, the player's choice)
     uint32_t movie_delay = 0;              // ms the movie picture is held back, for late (Bluetooth) sound
     bool movie_subtitles = true;           // a movie's subtitles from subtitles\<movie>.srt beside the exe, when there

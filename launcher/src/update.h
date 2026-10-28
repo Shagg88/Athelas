@@ -21,3 +21,6 @@ int update_install_state(float *progress, std::string *error);
 void update_tidy();
 // starts Athelas again (the new one); the caller then quits
 bool update_restart();
+
+// a file from https://<host><path> (redirects followed), for the box art; false on any failure or an answer but 200
+bool http_download(const wchar_t *host, const std::wstring &path, std::string &out);

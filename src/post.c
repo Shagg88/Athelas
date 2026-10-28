@@ -419,6 +419,8 @@ static HRESULT WINAPI hook_Present9(IDirect3DDevice9 *dev, const RECT *a, const 
 {
     run_post(dev);
     achieve_draw(dev);   /* "Achievement earned", over the picture and under nothing */
+    RF_RunRenderHooks(dev); /* External mod visual render hooks (auras, HUD, effects) */
+    RF_RunFrameHooks();  /* External mod frame hooks / updates */
     /* Print Screen (DIK_SYSRQ) or \ (DIK_BACKSLASH): screenshot of the finished frame */
     if (input_keyboard_seen() && (input_take_key_presses(0xB7) + input_take_key_presses(0x2B)) > 0)
         shot_take(dev);
@@ -430,6 +432,7 @@ static HRESULT WINAPI hook_Reset9(IDirect3DDevice9 *dev, D3DPRESENT_PARAMETERS *
     release_default_pool();
     shot_release();
     achieve_release();
+    RF_RunResetHooks(dev);
     return g_realReset9(dev, pp);
 }
 
@@ -442,6 +445,7 @@ static HRESULT WINAPI hook_CreateDev9(IDirect3D9 *d3d, UINT ad, D3DDEVTYPE t, HW
         release_default_pool();
         shot_release();
         achieve_release();
+        RF_RunResetHooks(NULL);   /* the mods' objects too (a mod's reset hook is told the device is gone) */
         if (g_psPost) { IDirect3DPixelShader9_Release(g_psPost); g_psPost = NULL; }
         if (g_lutTex) { IDirect3DVolumeTexture9_Release(g_lutTex); g_lutTex = NULL; }
         g_lutDirty = 1; g_errors = 0; g_waitFrames = 0;

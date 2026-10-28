@@ -317,7 +317,7 @@ Lock2DSurface                                      = ["stack", "stack", "stack",
 at = 0x00075B7E
 call = "FOTR_DiscCheckFailed"
 on_true = 0x00075B83
-[[hook]]                   # the new game's first scene ("Bag_End" at 0x1E1070, copied by 0x11E800): FOTR_SCENE in the test build
+[[hook]]                   # the new game's first scene ("Bag_End" at 0x1E1070, copied by 0x11E800): [gameplay] start_chapter (FOTR_SCENE in the test build)
 at = 0x00129CBE
 call = "FOTR_StartScene"
 [[hook]]                   # a logo movie's end (0x93550): the next logo's number in eax; [graphics] skip_logos makes it 5, the last, so the title screen follows logo_1

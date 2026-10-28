@@ -1287,6 +1287,35 @@ void D3D12Backend::Flush() { Submit(true); }
 // than 16:9 raises it to their own shape)
 float MovieFitAspect() { return std::clamp(app::FrameAspect(), 16.0f / 9.0f, std::max(g_movie_fit_max.load(), 16.0f / 9.0f)); }
 
+// where movie_display puts a movie: the part of its frame shown (uv: left, top, width, height) and that part's shape
+// on screen; stretch: the whole screen instead. Zoom (3) fills the screen's width with a 4:3 movie, its top and
+// bottom cut off; the films (kMovieFit, kMovieWide) zoom as Fit shows them.
+struct MoviePlace {
+    float uv[4] = {0, 0, 1, 1};
+    float aspect = 4.0f / 3.0f;
+    bool stretch = false;
+};
+MoviePlace PlaceMovie(uint32_t display, uint32_t shape) {
+    MoviePlace p;
+    if (display == 3 && shape != kMovie43) display = 0;
+    if (display == 0 && shape == kMovieFit) {
+        // fit: the middle of the 4:3 frame, where the films are (their bars are outside it): 16:9, or up to the
+        // films' own shape on wider screens, which then get bars at the sides rather than lose the film's top
+        p.aspect = MovieFitAspect();
+        p.uv[3] = (4.0f / 3.0f) / p.aspect;
+        p.uv[1] = MovieFitTop(p.uv[3]);
+    } else if (display == 0 && shape == kMovieWide) {
+        p.aspect = 16.0f / 9.0f;  // a widescreen film squeezed into the 4:3 frame: the whole frame, unsqueezed
+    } else if (display == 3) {
+        p.aspect = std::max(app::FrameAspect(), 4.0f / 3.0f);  // the screen's shape, the frame's middle
+        p.uv[3] = (4.0f / 3.0f) / p.aspect;
+        p.uv[1] = 0.5f - p.uv[3] / 2;
+    } else if (display == 1) {
+        p.stretch = true;
+    }
+    return p;
+}
+
 // the picture as shown: the frame at its render size, made as wide as the screen shows it (16:9 with widescreen),
 // saved as <PREFIX>_<date>_<time>_<ms>.png as ROTK Fix names its own, on the texture pack writer's thread
 void D3D12Backend::Screenshot(Target& t, const std::string& suffix) {
@@ -1309,19 +1338,14 @@ void D3D12Backend::Screenshot(Target& t, const std::string& suffix) {
         o.sharpen = std::min(stg.movie_sharpening, 100u) / 100.0f;
         o.texel[0] = 1.0f / float(std::max(t.gw, 1u));
         o.texel[1] = 1.0f / float(std::max(t.gh, 1u));
-        float aspect = 4.0f / 3.0f;  // the picture's shape in the shot, placed with bars as BlitMovie shows it
-        uint32_t shape = g_movie_shape;
-        if (stg.movie_display == 0 && shape == kMovieFit) {
-            aspect = MovieFitAspect();
-            uv[3] = (4.0f / 3.0f) / aspect;
-            uv[1] = MovieFitTop(uv[3]);
-        } else if (stg.movie_display == 0 && shape == kMovieWide) {
-            aspect = 16.0f / 9.0f;
-        }
+        // the picture's shape in the shot, placed with bars as BlitMovie shows it
+        MoviePlace place = PlaceMovie(stg.movie_display, g_movie_shape);
+        std::copy(place.uv, place.uv + 4, uv);
+        float aspect = place.aspect;
         w = uint32_t(uint64_t(h) * std::max(bb_w_, 1u) / std::max(bb_h_, 1u));
         vw = std::min(float(w), float(h) * aspect);
         vh = vw / aspect;
-        if (stg.movie_display == 1) {
+        if (place.stretch) {
             vw = float(w);
             vh = float(h);
         }
@@ -4021,6 +4045,7 @@ void D3D12Backend::CopyByRegion(const Target& src_t, ID3D12Resource* src_res, D3
     Transition(dst_t.res.Get(), dst_t.state, D3D12_RESOURCE_STATE_COPY_DEST);
     D3D12_TEXTURE_COPY_LOCATION dl{dst_t.res.Get(), D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX};
     D3D12_TEXTURE_COPY_LOCATION sl{src_res, D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX};
+    float src_scale = float(src_t.w) / src_t.gw, src_sy = float(src_t.h) / src_t.gh;
     float dst_scale = float(dst_t.w) / dst_t.gw, dst_sy = float(dst_t.h) / dst_t.gh;
     bool listed = l.count && l.src_rects;
     uint32_t n = listed ? l.count : 1;
@@ -4030,10 +4055,10 @@ void D3D12Backend::CopyByRegion(const Target& src_t, ID3D12Resource* src_res, D3
         uint32_t dy = 0;
         if (listed) {
             GuestRect r = ReadGuestRect(l.src_rects, i);
-            b.left = ScaleUnsigned(r.left, dst_scale);
-            b.top = ScaleUnsigned(r.top, dst_sy);
-            b.right = std::min(ScaleUnsigned(r.right, dst_scale), src_t.w);
-            b.bottom = std::min(ScaleUnsigned(r.bottom, dst_sy), src_t.h);
+            b.left = ScaleUnsigned(r.left, src_scale);  // the source rect at the source's scale (the same as the
+            b.top = ScaleUnsigned(r.top, src_sy);       // destination's here: Copy draws across when they differ)
+            b.right = std::min(ScaleUnsigned(r.right, src_scale), src_t.w);
+            b.bottom = std::min(ScaleUnsigned(r.bottom, src_sy), src_t.h);
             dx = b.left;
             dy = b.top;
             if (l.dst_points) {
@@ -4074,8 +4099,10 @@ void D3D12Backend::Copy(const Surface& src, const Surface& dst, uint32_t count, 
     if (!dst_t || src_t == dst_t) return;
     CopyList l{.count = count, .src_rects = src_rects, .dst_points = dst_points};
     ReadyRes(*dst_t);  // a copy may cover part of it
-    if (src_t->fmt != dst_t->fmt) {
-        // formats differ: drawn across
+    bool same_scale = uint64_t(src_t->w) * dst_t->gw == uint64_t(dst_t->w) * src_t->gw &&
+                      uint64_t(src_t->h) * dst_t->gh == uint64_t(dst_t->h) * src_t->gh;
+    if (src_t->fmt != dst_t->fmt || !same_scale) {
+        // formats differ, or the two are drawn at different scales (a region copy can't resize): drawn across
         CopyByDraw(*src_t, src_t->res.Get(), src_t->state, *dst_t, l);
         ResWritten(*dst_t);
         return;
@@ -4305,21 +4332,12 @@ bool D3D12Backend::BlitMovie(const Target& t) {
     const app::Settings& st = app::Get();
     float w = float(bb_w_);
     float h = float(bb_h_);
-    float uv[4] = {0, 0, 1, 1};
-    float aspect = 4.0f / 3.0f;
-    uint32_t shape = g_movie_shape;
-    if (st.movie_display == 0 && shape == kMovieFit) {
-        // fit: the middle of the 4:3 frame, where the films are (their bars are outside it): 16:9, or up to the
-        // films' own shape on wider screens, which then get bars at the sides rather than lose the film's top
-        aspect = MovieFitAspect();
-        uv[3] = (4.0f / 3.0f) / aspect;
-        uv[1] = MovieFitTop(uv[3]);
-    } else if (st.movie_display == 0 && shape == kMovieWide) {
-        aspect = 16.0f / 9.0f;  // a widescreen film squeezed into the 4:3 frame: the whole frame, unsqueezed
-    }
+    MoviePlace place = PlaceMovie(st.movie_display, g_movie_shape);
+    float* uv = place.uv;
+    float aspect = place.aspect;
     float vw = std::min(w, h * aspect);
     float vh = vw / aspect;
-    if (st.movie_display == 1) {
+    if (place.stretch) {
         vw = w;
         vh = h;
     }

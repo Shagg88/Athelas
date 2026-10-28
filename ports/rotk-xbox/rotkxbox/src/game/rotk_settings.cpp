@@ -229,7 +229,7 @@ bool ApplyIni(const std::filesystem::path& file) {
     g_fps = limiter ? target : 30;
     r.Bool("Frame", "ShowFPS", s.show_fps);  // the frame rate counter, top right
     // [Video]
-    r.Word("Video", "MovieDisplay", s.movie_display, {"auto", "stretch", "4:3"});  // auto = fit, as the port calls it
+    r.Word("Video", "MovieDisplay", s.movie_display, {"auto", "stretch", "4:3", "zoom"});  // auto = fit, as the port calls it
     r.Int("Video", "SharperMovies", s.movie_sharpening, 0, 100);
     r.Int("Video", "CutsceneAudioDelay", s.movie_delay, 0, 500);
     r.Bool("Video", "AllowSkippingAllVideos", g_skip_all_videos);
