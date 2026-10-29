@@ -1148,3 +1148,4 @@ LT + RT: fullscreen = LT + RT: 全屏
 L2 + R2: fullscreen = L2 + R2: 全屏
 ZL + ZR: fullscreen = ZL + ZR: 全屏
 F11: fullscreen = F11: 全屏
+Made by Shagg = 由 Shagg 制作

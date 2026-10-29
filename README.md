@@ -88,7 +88,7 @@ drawn landscape instead. All game and film artwork belongs to its owners.*
 - Mac: through CrossOver (DirectX 12 through Apple's D3DMetal). Tested in a Wine setup like CrossOver's, not yet on a
   real Mac: reports welcome. See README.txt's Mac section.
 - Your own US copy of each game. No game files are included.
-- **The Return of the King (PC):** a Vulkan 1.3 graphics driver is recommended. Without one, the game runs
+- **The Return of the King (PC):** a Vulkan 1.4 graphics driver is recommended. Without one, the game runs
   through Windows' Direct3D 8 with the DXVK-only options (sharpening, colour looks, texture filtering)
   turned off. The launcher's About tab shows which renderer you'll get.
 - **The Two Towers, The Return of the King and The Fellowship of the Ring (Xbox):** a DirectX 12 graphics card.

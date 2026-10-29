@@ -1148,3 +1148,4 @@ LT + RT: fullscreen = LT + RT: tela cheia
 L2 + R2: fullscreen = L2 + R2: tela cheia
 ZL + ZR: fullscreen = ZL + ZR: tela cheia
 F11: fullscreen = F11: tela cheia
+Made by Shagg = Feito por Shagg

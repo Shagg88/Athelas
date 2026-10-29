@@ -1148,3 +1148,4 @@ LT + RT: fullscreen = LT + RT: 전체 화면
 L2 + R2: fullscreen = L2 + R2: 전체 화면
 ZL + ZR: fullscreen = ZL + ZR: 전체 화면
 F11: fullscreen = F11: 전체 화면
+Made by Shagg = 제작: Shagg

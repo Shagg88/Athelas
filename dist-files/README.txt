@@ -28,8 +28,8 @@ REQUIREMENTS
 - Windows 10 or 11 (64-bit), or Linux / Steam Deck through Proton (see STEAM
   DECK AND LINUX).
 - The Return of the King (PC): your own US copy, installed. A graphics card
-  with a Vulkan 1.3 driver is recommended (most cards from 2016 on, with a
-  current driver). Without one the game still runs through Windows' own
+  with a Vulkan 1.4 driver is recommended (most cards from 2016 on, with a
+  current driver). Without one the game still runs through Windows' own (Wine's own under Proton)
   Direct3D 8, but sharpening, colour looks and texture filtering are off;
   the launcher's About tab shows which one you have.
 - The Two Towers, The Return of the King and The Fellowship of the Ring
@@ -572,7 +572,7 @@ The launcher writes ROTKFix.ini in the game folder. You can also edit it in Note
   Height                 (default 0)
   RefreshRate            Fullscreen only; 0 = the screen's own (default 0)
   VSync                  1 = no tearing (default 1)
-  Renderer               dxvk = Vulkan (recommended), native = Windows' own Direct3D 8 (default dxvk)
+  Renderer               dxvk = Vulkan (recommended), native = Windows' own Direct3D 8 (Wine's under Proton) (default dxvk)
   DxvkFolder             Which DXVK inside the ROTKFix folder draws the game (default dxvk)
   MSAA                   Anti-aliasing: 0, 2, 4 or 8 (default 4)
   AnisotropicFiltering   Texture filtering: 0, 2, 4, 8 or 16 (default 16)

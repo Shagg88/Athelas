@@ -1148,3 +1148,4 @@ LT + RT: fullscreen = LT + RT: Vollbild
 L2 + R2: fullscreen = L2 + R2: Vollbild
 ZL + ZR: fullscreen = ZL + ZR: Vollbild
 F11: fullscreen = F11: Vollbild
+Made by Shagg = Erstellt von Shagg

@@ -344,7 +344,8 @@ static ImRect draw_box(ImDrawList *dl, const App &a, int e, float d, ImVec2 c, f
     // the PC box (the PC version's own scan) is a plain black case; the Xbox ones have their green band
     bool pcCase = e == FR_ROTK && g_front.coverFrom[e] == 1 && fr_first(a, e, GK_ROTK_XBOX) < 0;
     // a scanned cover has its own top band; a made one gets the case's green band
-    float band = pcCase || g_front.cover[e].tex ? 0.0f : h * 0.085f, edge = h * 0.012f;
+    float band = pcCase || g_front.cover[e].tex ? 0.0f : h * 0.085f;
+    float edge = g_front.cover[e].tex ? 0.0f : h * 0.012f;   // box art fills the case: no dark rim round it
 
     // the floor's reflection, fading downwards
     const FrontTex &ct = g_front.cover[e].tex ? g_front.cover[e] : g_front.art[e];
@@ -360,6 +361,13 @@ static ImRect draw_box(ImDrawList *dl, const App &a, int e, float d, ImVec2 c, f
     if (fabsf(yaw) > 0.02f) {
         float sx = yaw > 0 ? -hw : hw;
         ImU32 sc = shade(pcCase ? 22 : 30, pcCase ? 22 : 34, pcCase ? 24 : 28, light * 0.8f, alpha);
+        if (g_front.cover[e].tex) {   // box art: the spine is the cover's own edge, a little darker (no black side)
+            const FrontTex &cv = g_front.cover[e];
+            float ex = yaw > 0 ? 0.0f : 1.0f, ew = 0.02f * (yaw > 0 ? 1 : -1);
+            ImU32 sh = shade(255, 255, 255, light * 0.6f, alpha);
+            dl->AddImageQuad((ImTextureID)(intptr_t)cv.tex, P.at(sx, -hh, 0), P.at(sx, -hh, depth), P.at(sx, hh, depth), P.at(sx, hh, 0),
+                             ImVec2(ex, 0), ImVec2(ex + ew, 0), ImVec2(ex + ew, 1), ImVec2(ex, 1), sh);
+        } else
         dl->AddQuadFilled(P.at(sx, -hh, 0), P.at(sx, -hh, depth), P.at(sx, hh, depth), P.at(sx, hh, 0), sc);
         if (band > 0)
             dl->AddQuadFilled(P.at(sx, -hh, 0), P.at(sx, -hh, depth), P.at(sx, -hh + band, depth), P.at(sx, -hh + band, 0),

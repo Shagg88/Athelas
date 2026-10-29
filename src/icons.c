@@ -132,6 +132,7 @@ static int paint(FontIcons *fi, int style)
 #define MAX_FONT_TEX 32
 static BYTE *g_fontObj[MAX_FONT_TEX];
 static void *g_fontTex[MAX_FONT_TEX];
+static int g_fontWhite[MAX_FONT_TEX];   /* its letters are white: only their alpha shapes them */
 int icons_is_font_texture(const void *tex)
 {
     if (!tex) return 0;
@@ -147,7 +148,37 @@ static void remember_font(BYTE *font)
         if (g_fontObj[i] == font) { slot = i; break; }
         if (slot < 0 && !g_fontObj[i]) slot = i;
     }
-    if (slot >= 0) { g_fontObj[slot] = font; g_fontTex[slot] = tex; }
+    if (slot >= 0) { g_fontObj[slot] = font; g_fontTex[slot] = tex; g_fontWhite[slot] = 0; }
+}
+
+/* Are the font's letters white (every well-covered texel of the letters' rows light)? Then drawing it
+ * with texture colour x text colour looks the same as with the text colour alone. */
+static int letters_white(BYTE *font)
+{
+    IDirect3DTexture8 *tex = *(IDirect3DTexture8 **)(font + 0x438);
+    int tw = *(short *)(font + 0x418), th = *(short *)(font + 0x41a);
+    if (!tex || !readable(tex, 4) || tw <= 0 || th <= 0) return 0;
+    void **vt = *(void ***)tex;
+    D3DLOCKED_RECT lr;
+    if (FAILED(((Lock_t)vt[16])(tex, 0, &lr, NULL, D3DLOCK_READONLY)) || !lr.pBits) return 0;
+    int seen = 0, dark = 0;
+    for (int y = 0; y < th; y++) {
+        const WORD *row = (const WORD *)((const BYTE *)lr.pBits + (size_t)y * lr.Pitch);
+        for (int x = 0; x < tw; x++) {
+            WORD p = row[x];
+            if ((p >> 12) < 12) continue;
+            seen++;
+            if (((p >> 8) & 15) < 13 || ((p >> 4) & 15) < 13 || (p & 15) < 13) dark++;
+        }
+    }
+    ((Unlock_t)vt[17])(tex, 0);
+    return seen > 0 && dark * 50 < seen;   /* (a few edge texels may be off-white) */
+}
+int icons_font_is_white(const void *tex)
+{
+    if (!tex) return 0;
+    for (int i = 0; i < MAX_FONT_TEX; i++) if (g_fontTex[i] == tex) return g_fontWhite[i];
+    return 0;
 }
 
 static void __cdecl on_font_loaded(BYTE *font)
@@ -212,7 +243,10 @@ static void __cdecl on_font_loaded(BYTE *font)
     }
     for (int i = 0; i < NUM_ICONS; i++) table[ICON_CODE0 + i] = &fi->glyph[i];
     g_ready = 1;
-    dlogf_("icons: font %p (%dx%d, capital %dpx): %d px icons", (void *)font, tw, th, sa->h, H);
+    for (int i = 0; i < MAX_FONT_TEX; i++)
+        if (g_fontObj[i] == font) g_fontWhite[i] = letters_white(font);
+    dlogf_("icons: font %p (%dx%d, capital %dpx): %d px icons, letters %s", (void *)font, tw, th, sa->h, H,
+           icons_font_is_white(*(void **)(font + 0x438)) ? "white" : "coloured");
 }
 
 /* The text to show for a controller button: one icon character, or NULL. */

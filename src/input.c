@@ -1248,6 +1248,67 @@ static int __cdecl pointer_hidden(DWORD x, DWORD y)
     return g_hidePointer && g_pad && g_padActiveTick && (LONG)(g_padActiveTick - mouseTick) > 0;
 }
 
+/* ---- the special ability: "Button 7" / "Button 8" / "Buttons 7+8" ----
+ * The shop and the Options screen name the special ability's two buttons
+ * with fixed text: sprintf("%s 7"), ("%s 8") at 0x4ff71c / 0x4ff744 and
+ * ("%s 7+8", after an '@' the screen puts first) at 0x4ffb3f, text 0xE5
+ * being "Button(s)". They never ask for the binding, so the button-name hook
+ * above doesn't see them; with a controller in use they now name (or show)
+ * the buttons too: virtual buttons 7 and 8 are slots 6 and 7 (#34). */
+#define ADDR_SPRINTF 0x00511450u
+typedef int (__cdecl *Sprintf_t)(char *, const char *, ...);
+static const char *__cdecl special_button(int which)   /* 0: "7", 1: "8" */
+{
+    char *buf = (char *)(DWORD_PTR)(which ? 0x008E3758u : 0x008E37A8u);
+    const char *n = (g_pad && g_vpadOpened) ? pad_button_label((DWORD)(6 + which)) : NULL;
+    if (n) { lstrcpynA(buf, n, 32); return buf; }
+    ((Sprintf_t)ADDR_SPRINTF)(buf, which ? "%s 8" : "%s 7", ((const char *(__cdecl *)(int))ADDR_GAME_TEXT)(0xE5));
+    return buf;
+}
+static void __cdecl special_buttons(char *dst)   /* dst: after the '@' */
+{
+    char a[32] = "", b[32] = "";
+    const char *n = (g_pad && g_vpadOpened) ? pad_button_label(6) : NULL;
+    if (n) lstrcpynA(a, n, sizeof a);
+    n = (g_pad && g_vpadOpened) ? pad_button_label(7) : NULL;
+    if (n) lstrcpynA(b, n, sizeof b);
+    if (a[0] && b[0]) ((Sprintf_t)ADDR_SPRINTF)(dst, "%s + %s", a, b);
+    else ((Sprintf_t)ADDR_SPRINTF)(dst, "%s 7+8", ((const char *(__cdecl *)(int))ADDR_GAME_TEXT)(0xE5));
+}
+static void patch_special_buttons(void)
+{
+    /* push 0xe5; call text; push eax; push fmt; push buf; call sprintf; add esp,0x10; mov eax,buf */
+    static const BYTE sig7[] = { 0x68, 0xE5, 0, 0, 0, 0xE8, 0x9A, 0xE0, 0xFF, 0xFF, 0x50, 0x68, 0xD0, 0x59, 0x54, 0x00 };
+    static const BYTE sig8[] = { 0x68, 0xE5, 0, 0, 0, 0xE8, 0x72, 0xE0, 0xFF, 0xFF, 0x50, 0x68, 0xC8, 0x59, 0x54, 0x00 };
+    static const BYTE sigBoth[] = { 0x68, 0xE5, 0, 0, 0, 0xE8, 0x77, 0xDC, 0xFF, 0xFF, 0x50, 0x68, 0xF0, 0x59, 0x54, 0x00,
+                                    0x47, 0x57, 0xE8, 0xFA, 0x18, 0x01, 0x00, 0x83, 0xC4, 0x10 };
+    int n = 0;
+    struct { DWORD at; const BYTE *sig; int which; } one[2] = { { 0x004FF71Cu, sig7, 0 }, { 0x004FF744u, sig8, 1 } };
+    for (int i = 0; i < 2; i++) {
+        /* 0x22 bytes, ending in "jmp 0x4ff780": push which; call; add esp,4; jmp 0x4ff780 */
+        if (!readable((void *)one[i].at, 0x24) || memcmp((void *)one[i].at, one[i].sig, 16) || ((BYTE *)one[i].at)[0x22] != 0xEB) continue;
+        BYTE c[0x22];
+        memset(c, 0x90, sizeof c);
+        c[0] = 0x6A; c[1] = (BYTE)one[i].which;
+        c[2] = 0xE8; *(LONG *)(c + 3) = (LONG)((DWORD_PTR)&special_button - (one[i].at + 7));
+        c[7] = 0x83; c[8] = 0xC4; c[9] = 0x04;
+        c[10] = 0xE9; *(LONG *)(c + 11) = (LONG)(0x004FF780u - (one[i].at + 15));
+        if (write_code((void *)one[i].at, c, sizeof c)) n++;
+    }
+    const DWORD at = 0x004FFB3Fu;
+    if (readable((void *)at, sizeof sigBoth) && !memcmp((void *)at, sigBoth, sizeof sigBoth)) {
+        BYTE c[sizeof sigBoth];
+        memset(c, 0x90, sizeof c);
+        c[0] = 0x47;                                     /* inc edi (past the '@') */
+        c[1] = 0x57;                                     /* push edi */
+        c[2] = 0xE8; *(LONG *)(c + 3) = (LONG)((DWORD_PTR)&special_buttons - (at + 7));
+        c[7] = 0x83; c[8] = 0xC4; c[9] = 0x04;           /* add esp,4 */
+        if (write_code((void *)at, c, sizeof c)) n++;
+    }
+    if (n == 3) logf_("gamepad: special ability buttons named for the controller");
+    else logf_("gamepad: special ability button text not recognised (%d of 3)", n);
+}
+
 static void patch_menu_bits(void)
 {
     static const BYTE sigHelp[13] = { 0x68, 0x88, 0x00, 0x00, 0x00, 0xE8, 0x20, 0xDF, 0xFF, 0xFF, 0x83, 0xC4, 0x04 };
@@ -1300,6 +1361,7 @@ void input_patch_prompts(void)
     static const BYTE sigAction[5] = { 0x0F, 0xB6, 0x44, 0x24, 0x04 };            /* movzx eax, byte [esp+4] */
     if (!g_padEnabled) return;
     patch_menu_bits();
+    patch_special_buttons();
     if (!readable((void *)ADDR_BIND_NAME, 5) || memcmp((void *)ADDR_BIND_NAME, sigBind, 5) ||
         !readable((void *)ADDR_ACTION_NAME, 5) || memcmp((void *)ADDR_ACTION_NAME, sigAction, 5) ||
         !readable((void *)(ADDR_BIND_NAME + 0x92), 10) ||

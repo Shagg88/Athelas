@@ -23,6 +23,7 @@ kept. This release is about the launcher: it can now do what my other launcher, 
   maximised and borderless.
 - **Controller on the carousel, as in COGBox**: LB / RB light Play or Settings, A presses the lit one. The hints at
   the bottom now show the fullscreen shortcut too.
+- **Made by Shagg** and the version (v1.7.0) in the top right corner; the box art no longer has a black outline.
 - **The Shire theme** plays on The Fellowship of the Ring's box, from your own copy of the game.
 - **Mods from a .zip** (The Return of the King, PC): "Add a mod (.zip)" on the Mods tab. Data mods each get their own
   folder, with a tick, **Up / Down** to set which one wins when two change the same file, and Remove. A mod that is a
@@ -38,5 +39,5 @@ The three Xbox ports are the same as in 1.6.1.
 
 ## Checksums
 
-- `Athelas-1.7.0.zip`: `8e30c5dab5a65a1579e1c7b843da44036b4e35929b1134bb0ad34ca166501013`
-- `Athelas-1.7.0-arm64.zip` (Windows on ARM): `e59b50dec69d512a772bb5e7e6b6f444e7fdd7e5f932d3269d5907014beff4d7`
+- `Athelas-1.7.0.zip`: `51402ef21c31dcc795b831a43ecf7a9e0739084ecfa2f8ab0f7242843a781109`
+- `Athelas-1.7.0-arm64.zip` (Windows on ARM): `c194d51b7d80ca685086613135d74c57ad70eca15812d99c6d610a59deaad958`

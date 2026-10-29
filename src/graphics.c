@@ -150,7 +150,7 @@ static void write_dxvk_conf(const char *dir)
     if (g_showFps && !GetEnvironmentVariableA("DXVK_HUD", NULL, 0)) SetEnvironmentVariableA("DXVK_HUD", "fps");
 }
 
-/* Is there a Vulkan 1.3 graphics device, as DXVK needs? Asked before DXVK is loaded: without one, DXVK doesn't
+/* Is there a Vulkan 1.4 graphics device, as DXVK needs? Asked before DXVK is loaded: without one, DXVK doesn't
  * return an error, it ends the game (abort() after "Failed to create Vulkan instance": a PC or virtual machine with
  * no Vulkan driver, #27). The few Vulkan calls needed are declared here, as in the launcher's gpu.cpp. */
 typedef struct VkInstance_T *VkInstance;
@@ -194,8 +194,9 @@ static int vulkan_usable(void)
         }
     }
     if (destroy) destroy(inst, NULL);
-    if (best < VK_API_(1, 3)) {
-        logf_("graphics: no Vulkan 1.3 graphics device (best: %s, Vulkan %u.%u), as the Vulkan renderer needs",
+    /* DXVK 3.x (bundled: 3.1.1) needs Vulkan 1.4; a 1.3 device passed here before and left DXVK to fail */
+    if (best < VK_API_(1, 4)) {
+        logf_("graphics: no Vulkan 1.4 graphics device (best: %s, Vulkan %u.%u), as the Vulkan renderer (DXVK 3) needs",
               name[0] ? name : "none", best >> 22, (best >> 12) & 0x3FF);
         return 0;
     }
@@ -223,8 +224,13 @@ static HMODULE load_backend(void)
     GetSystemDirectoryA(sys, MAX_PATH);
     strncat(sys, "\\d3d8.dll", MAX_PATH - strlen(sys) - 1);
     g_backend = LoadLibraryA(sys);
-    if (g_backend) logf_("graphics: renderer = Windows Direct3D 8 (%s)", sys);
-    else logf_("graphics: ERROR could not load %s (error %lu)", sys, GetLastError());
+    {
+        DWORD e = GetLastError();
+        HMODULE nt = GetModuleHandleA("ntdll.dll");
+        int wine = nt && GetProcAddress(nt, "wine_get_version");
+        if (g_backend) logf_("graphics: renderer = %s (%s)", wine ? "Wine's own Direct3D 8 (Wine/Proton)" : "Windows Direct3D 8", sys);
+        else logf_("graphics: ERROR could not load %s (error %lu)", sys, e);
+    }
     return g_backend;
 }
 
@@ -1331,7 +1337,7 @@ static void fade_report(IDirect3DDevice8 *dev, UINT prims, UINT firstV, UINT num
           (unsigned long)g_curFVF, prims);
 }
 
-static HRESULT WINAPI hook_DrawPrimitive(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE pt, UINT start, UINT count)
+static HRESULT WINAPI draw_prim(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE pt, UINT start, UINT count)
 {
     g_hitch[HITCH_DRAWS]++;
     if (g_curFVF == FVF_MOVIE && pt == D3DPT_TRIANGLESTRIP && count == 2) {
@@ -1361,7 +1367,7 @@ static HRESULT WINAPI hook_DrawPrimitive(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE
     if (fw) set_narrow(dev);
     return hr;
 }
-static HRESULT WINAPI hook_DrawIndexedPrimitive(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE pt, UINT mi, UINT nv, UINT si, UINT pc)
+static HRESULT WINAPI draw_idx(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE pt, UINT mi, UINT nv, UINT si, UINT pc)
 {
     g_hitch[HITCH_DRAWS]++;
     if (!g_orthoFixed) {
@@ -1384,6 +1390,64 @@ static HRESULT WINAPI hook_DrawIndexedPrimitive(IDirect3DDevice8 *dev, D3DPRIMIT
         hr = g_realDrawIdx(dev, pt, mi, nv, si, pc);
     if (pic) picture_clamp(dev, sv, 1);
     if (fw) set_narrow(dev);
+    return hr;
+}
+
+/* Text drawn with the text colour alone (stage 0 colour = the diffuse colour, the font texture's colour unused,
+ * only its alpha): letters are white, so they look the same either way, but the button pictures painted into the
+ * font (icons.c) lose their symbol and show as plain white shapes: the combo list, the in-game hints and the shop
+ * (#34). For such a draw the colour becomes texture x text colour, which leaves the white letters as they were. */
+static int font_colour_fix(IDirect3DDevice8 *dev, DWORD saved[3])
+{
+    if (!g_tex0 || !icons_is_font_texture(g_tex0) || !icons_font_is_white(g_tex0)) return 0;
+    void **vt = *(void ***)dev;
+    DWORD op = 0, a1 = 0, a2 = 0;
+    ((GetTSS8_t)vt[62])(dev, 0, D3DTSS_COLOROP, &op);
+    ((GetTSS8_t)vt[62])(dev, 0, D3DTSS_COLORARG1, &a1);
+    ((GetTSS8_t)vt[62])(dev, 0, D3DTSS_COLORARG2, &a2);
+    /* the states text is drawn with, each new one logged (a few), so a screen this misses can be told from the log */
+    static DWORD seen[8][3]; static int nseen;
+    int known = 0;
+    for (int i = 0; i < nseen; i++) if (seen[i][0] == op && seen[i][1] == a1 && seen[i][2] == a2) known = 1;
+    if (!known && nseen < 8) {
+        seen[nseen][0] = op; seen[nseen][1] = a1; seen[nseen][2] = a2; nseen++;
+        logf_("graphics: text drawn with colour op %lu (%#lx, %#lx)", (unsigned long)op, (unsigned long)a1, (unsigned long)a2);
+    }
+    /* the colour alone: the diffuse colour selected, or the texture's alpha (not its colour) times it */
+    const DWORD rep = D3DTA_ALPHAREPLICATE;
+    int diffuseOnly = (op == D3DTOP_SELECTARG1 && a1 == D3DTA_DIFFUSE) || (op == D3DTOP_SELECTARG2 && a2 == D3DTA_DIFFUSE) ||
+                      ((op == D3DTOP_MODULATE || op == D3DTOP_MODULATE2X) &&
+                       ((a1 == (D3DTA_TEXTURE | rep) && a2 == D3DTA_DIFFUSE) || (a2 == (D3DTA_TEXTURE | rep) && a1 == D3DTA_DIFFUSE)));
+    if (!diffuseOnly) return 0;
+    static int logged;
+    if (!logged++) logf_("graphics: text drawn in its colour alone: button pictures keep their colours");
+    saved[0] = op; saved[1] = a1; saved[2] = a2;
+    ((SetTSS8_t)vt[63])(dev, 0, D3DTSS_COLOROP, op == D3DTOP_MODULATE2X ? D3DTOP_MODULATE2X : D3DTOP_MODULATE);
+    ((SetTSS8_t)vt[63])(dev, 0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+    ((SetTSS8_t)vt[63])(dev, 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+    return 1;
+}
+static void font_colour_restore(IDirect3DDevice8 *dev, const DWORD saved[3])
+{
+    void **vt = *(void ***)dev;
+    ((SetTSS8_t)vt[63])(dev, 0, D3DTSS_COLOROP, saved[0]);
+    ((SetTSS8_t)vt[63])(dev, 0, D3DTSS_COLORARG1, saved[1]);
+    ((SetTSS8_t)vt[63])(dev, 0, D3DTSS_COLORARG2, saved[2]);
+}
+static HRESULT WINAPI hook_DrawPrimitive(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE pt, UINT start, UINT count)
+{
+    DWORD sv[3];
+    int fix = font_colour_fix(dev, sv);
+    HRESULT hr = draw_prim(dev, pt, start, count);
+    if (fix) font_colour_restore(dev, sv);
+    return hr;
+}
+static HRESULT WINAPI hook_DrawIndexedPrimitive(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE pt, UINT mi, UINT nv, UINT si, UINT pc)
+{
+    DWORD sv[3];
+    int fix = font_colour_fix(dev, sv);
+    HRESULT hr = draw_idx(dev, pt, mi, nv, si, pc);
+    if (fix) font_colour_restore(dev, sv);
     return hr;
 }
 

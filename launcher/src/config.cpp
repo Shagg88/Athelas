@@ -942,34 +942,87 @@ bool install_input_profile(const std::string &dir, std::string &err)
 // the game folder's. Its per-program DLL settings (HKCU\Software\Wine\AppDefaults\rotk.exe\DllOverrides) say so
 // for rotk.exe alone, so ROTK Fix's loaders and DSOAL load. (WINEDLLOVERRIDES can't do it: Wine passes the launcher's
 // own value to a child process, not one set from Windows.)
-static void wine_prefer_fix_dlls()
+// Wine and Proton: rotk.exe told to prefer the game folder's d3d8 / dinput8 / dsound (ROTK Fix's) over Wine's
+// own. A value the player had already set for rotk.exe is kept under HKCU\Software\Athelas\WineBefore and put back
+// by Remove ROTK Fix. What was done (or what failed) goes into ROTKFix\wine-overrides.txt beside the game, for
+// reports; the game is started either way.
+static const char k_wine_key[] = "Software\\Wine\\AppDefaults\\rotk.exe\\DllOverrides";
+static const char k_wine_before[] = "Software\\Athelas\\WineBefore";
+static const char *const k_wine_dlls[] = { "d3d8", "dinput8", "dsound" };
+
+static bool on_wine()
 {
     HMODULE nt = GetModuleHandleA("ntdll.dll");
-    if (!nt || !GetProcAddress(nt, "wine_get_version")) return;
-    HKEY k;
-    if (RegCreateKeyExA(HKEY_CURRENT_USER, "Software\\Wine\\AppDefaults\\rotk.exe\\DllOverrides", 0, NULL, 0, KEY_SET_VALUE,
-                        NULL, &k, NULL) != ERROR_SUCCESS) return;
-    static const char v[] = "native,builtin";
-    for (const char *dll : { "d3d8", "dinput8", "dsound" })
-        RegSetValueExA(k, dll, 0, REG_SZ, (const BYTE *)v, sizeof v);
-    RegCloseKey(k);
+    return nt && GetProcAddress(nt, "wine_get_version");
 }
 
-// what wine_prefer_fix_dlls() wrote, removed again (Remove ROTK Fix); true when there was something to remove
+static void wine_prefer_fix_dlls(const std::string &dir)
+{
+    if (!on_wine()) return;
+    static const char v[] = "native,builtin";
+    std::string report;
+    HKEY k;
+    LONG rc = RegCreateKeyExA(HKEY_CURRENT_USER, k_wine_key, 0, NULL, 0, KEY_SET_VALUE | KEY_QUERY_VALUE, NULL, &k, NULL);
+    if (rc != ERROR_SUCCESS) {
+        report = "FAILED: the Wine DLL settings for rotk.exe couldn't be opened (error " + std::to_string(rc) + ")\r\n";
+    } else {
+        HKEY before = NULL;
+        RegCreateKeyExA(HKEY_CURRENT_USER, k_wine_before, 0, NULL, 0, KEY_SET_VALUE | KEY_QUERY_VALUE, NULL, &before, NULL);
+        for (const char *dll : k_wine_dlls) {
+            char cur[1024] = "";
+            DWORD type = 0, n = sizeof cur - 1;
+            bool had = RegQueryValueExA(k, dll, NULL, &type, (BYTE *)cur, &n) == ERROR_SUCCESS;
+            if (had && type == REG_SZ && strcmp(cur, v) == 0) { report += std::string(dll) + " = native,builtin (already)\r\n"; continue; }
+            // the player's own value, kept once (not overwritten by a later launch)
+            if (had && before && RegQueryValueExA(before, dll, NULL, NULL, NULL, NULL) != ERROR_SUCCESS)
+                RegSetValueExA(before, dll, 0, type, (const BYTE *)cur, n);
+            rc = RegSetValueExA(k, dll, 0, REG_SZ, (const BYTE *)v, sizeof v);
+            report += std::string(dll) + (rc == ERROR_SUCCESS ? " = native,builtin" : " FAILED (error " + std::to_string(rc) + ")") +
+                      (had ? " (was " + std::string(cur) + ")" : "") + "\r\n";
+        }
+        if (before) RegCloseKey(before);
+        RegCloseKey(k);
+    }
+    std::string path = dir + "\\ROTKFix\\wine-overrides.txt";
+    if (FILE *f = fopen(path.c_str(), "wb")) {
+        fputs("Wine/Proton DLL settings for rotk.exe, set by Athelas before starting the game:\r\n", f);
+        fputs(report.c_str(), f);
+        fclose(f);
+    }
+}
+
+// what wine_prefer_fix_dlls() wrote, undone (Remove ROTK Fix): the player's own earlier values put back, ours
+// deleted; true when there was something to undo
 static bool wine_forget_fix_dlls()
 {
-    HMODULE nt = GetModuleHandleA("ntdll.dll");
-    if (!nt || !GetProcAddress(nt, "wine_get_version")) return false;
+    if (!on_wine()) return false;
     HKEY k;
-    if (RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\Wine\\AppDefaults\\rotk.exe\\DllOverrides", 0, KEY_SET_VALUE | KEY_QUERY_VALUE,
-                      &k) != ERROR_SUCCESS) return false;
+    if (RegOpenKeyExA(HKEY_CURRENT_USER, k_wine_key, 0, KEY_SET_VALUE | KEY_QUERY_VALUE, &k) != ERROR_SUCCESS) return false;
+    HKEY before = NULL;
+    RegOpenKeyExA(HKEY_CURRENT_USER, k_wine_before, 0, KEY_SET_VALUE | KEY_QUERY_VALUE, &before);
     bool any = false;
-    for (const char *dll : { "d3d8", "dinput8", "dsound" }) any |= RegDeleteValueA(k, dll) == ERROR_SUCCESS;
+    for (const char *dll : k_wine_dlls) {
+        char old[1024];
+        DWORD type = 0, n = sizeof old - 1;
+        if (before && RegQueryValueExA(before, dll, NULL, &type, (BYTE *)old, &n) == ERROR_SUCCESS) {
+            any |= RegSetValueExA(k, dll, 0, type, (const BYTE *)old, n) == ERROR_SUCCESS;
+            RegDeleteValueA(before, dll);
+        } else {
+            any |= RegDeleteValueA(k, dll) == ERROR_SUCCESS;
+        }
+    }
+    if (before) RegCloseKey(before);
+    DWORD kept = 1;
+    if (RegOpenKeyExA(HKEY_CURRENT_USER, k_wine_before, 0, KEY_QUERY_VALUE, &before) == ERROR_SUCCESS) {
+        RegQueryInfoKeyA(before, NULL, NULL, NULL, NULL, NULL, NULL, &kept, NULL, NULL, NULL, NULL);
+        RegCloseKey(before);
+        if (!kept) RegDeleteKeyA(HKEY_CURRENT_USER, k_wine_before);   // nothing of the player's left to put back
+    }
     DWORD left = 0;
     RegQueryInfoKeyA(k, NULL, NULL, NULL, NULL, NULL, NULL, &left, NULL, NULL, NULL, NULL);
     RegCloseKey(k);
     if (left) return any;
-    RegDeleteKeyA(HKEY_CURRENT_USER, "Software\\Wine\\AppDefaults\\rotk.exe\\DllOverrides");
+    RegDeleteKeyA(HKEY_CURRENT_USER, k_wine_key);
     // rotk.exe's own key too, when nothing else (another setting of the user's) is in it
     if (RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\Wine\\AppDefaults\\rotk.exe", 0, KEY_QUERY_VALUE, &k) == ERROR_SUCCESS) {
         DWORD subkeys = 1, values = 1;
@@ -984,7 +1037,7 @@ bool launch_game(const std::string &dir, std::string &err, void **process)
 {
     if (process) *process = NULL;
     std::string exe = dir + "\\rotk.exe";
-    wine_prefer_fix_dlls();
+    wine_prefer_fix_dlls(dir);
     STARTUPINFOA si; memset(&si, 0, sizeof si); si.cb = sizeof si;
     PROCESS_INFORMATION pi;
     std::string cmd = "\"" + exe + "\"";

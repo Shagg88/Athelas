@@ -23,7 +23,7 @@ typedef int (VKAPI *PFN_vkEnumeratePhysicalDevices)(VkInstance, uint32_t *, VkPh
 typedef void (VKAPI *PFN_vkGetPhysicalDeviceProperties)(VkPhysicalDevice, void *);
 
 #define VK_API(maj, min) (((uint32_t)(maj) << 22) | ((uint32_t)(min) << 12))
-static const uint32_t k_needed = VK_API(1, 3);   // DXVK 2.x/3.x need Vulkan 1.3
+static const uint32_t k_needed = VK_API(1, 4);   // DXVK 3.x (bundled 3.1.1) needs Vulkan 1.4
 
 static void say(const char *s)
 {
@@ -31,7 +31,7 @@ static void say(const char *s)
     WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), s, (DWORD)strlen(s), &n, NULL);
 }
 
-// Prints "none", or "<api> <type> <name>" for the best device (Vulkan 1.3 first, then discrete first).
+// Prints "none", or "<api> <type> <name>" for the best device (Vulkan 1.4 first, then discrete first).
 int gpu_probe_main()
 {
     if (getenv("ROTKFIX_NO_VULKAN")) { say("none"); return 0; }   // testing

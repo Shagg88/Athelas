@@ -110,8 +110,18 @@ float HudSqueeze(const gpu::State& s) {
 struct Chain {
     float x0 = 0, x1 = -1, y0 = 0, y1 = -1;
     float b = 0;
+    bool edge = false;  // the chain began with a piece that hugs a side (only those are remembered in g_placed)
 } g_chain;
 std::atomic<uint64_t> g_chain_frame{0}, g_frame{0};  // the frame the chain was made in
+// the pieces sent to a side, in this frame and the one before: a piece that touches one of them goes where it went,
+// whatever was drawn just before it (#33). The health bar is drawn in layers: frame, segments, then the green fill
+// from 105 to the health left. A fill that ended short of the last segment didn't touch it, started a new chain in
+// the middle, and every layer drawn after it (the bar again, its frame) went to the middle 4:3 while the first
+// layer stayed at the edge: measured in 235 of the sampled frames of two levels, 0 with this (and the meter's
+// pieces likewise, 5 frames to 0)
+struct Placed { float x0, x1, y0, y1, b; };
+std::vector<Placed> g_placed, g_placed_before;
+uint64_t g_placed_frame = 0;
 std::atomic<uint64_t> g_panel_frame{~0ull >> 1};     // the last frame with a menu's inset panel
 
 void HudPlace(float x0, float x1, float y0, float y1, float w, float f, float& a, float& b, float& c, float& d) {
@@ -163,16 +173,40 @@ void HudPlace(float x0, float x1, float y0, float y1, float w, float f, float& a
                    y1 >= g_chain.y0 - kRows;
     if (touches) {
         b = g_chain.b;
-        g_chain = {x0, x1, y0, y1, b};
+        bool edge = g_chain.edge;
+        g_chain = {x0, x1, y0, y1, b, edge};
+        if (edge && b != centre && g_placed_frame == g_frame && g_placed.size() < 512) g_placed.push_back({x0, x1, y0, y1, b});
         return;
+    }
+    if (g_placed_frame != g_frame) {
+        g_placed_before.swap(g_placed);
+        g_placed.clear();
+        g_placed_frame = g_frame.load();
     }
     // only what hugs a side: the HUD sits within 96 of 640 pixels of the edge, centred text and menus start further in
     constexpr float kEdge = 0.15f;
+    bool edge = true;
     if (x0 < w * kEdge && x1 < w / 2) b = 0.0f;
     else if (x1 > w * (1 - kEdge) && x0 > w / 2) b = right;
-    else b = centre;
+    else {
+        b = centre;
+        edge = false;
+        // overlapping a piece that hugs a side (a layer of the same bar): with it. Only real overlap, and a piece
+        // moved this way is not remembered itself, so centred text drawn near the HUD can't be pulled along, or
+        // keep itself at the side from frame to frame
+        auto with = [&](const std::vector<Placed>& v) {
+            for (const Placed& p : v)
+                if (x0 <= p.x1 && x1 >= p.x0 && y0 <= p.y1 && y1 >= p.y0) {
+                    b = p.b;
+                    return true;
+                }
+            return false;
+        };
+        if (x1 - x0 <= w * kWide && !with(g_placed)) with(g_placed_before);
+    }
+    if (edge && b != centre && x1 - x0 <= w * kWide && g_placed.size() < 512) g_placed.push_back({x0, x1, y0, y1, b});
     if (x1 - x0 > w * kWide) g_chain = {};
-    else g_chain = {x0, x1, y0, y1, b};
+    else g_chain = {x0, x1, y0, y1, b, edge};
 }
 
 }  // namespace

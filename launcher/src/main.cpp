@@ -960,7 +960,7 @@ static void tab_graphics(App &a)
         ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
         ImGui::PushTextWrapPos(0);
         ImGui::TextColored(C_WARN, gi.state == GPU_VULKAN_TOO_OLD
-            ? "Your graphics driver's Vulkan is too old for the Vulkan renderer (DXVK needs Vulkan 1.3), so the game uses "
+            ? "Your graphics driver's Vulkan is too old for the Vulkan renderer (DXVK needs Vulkan 1.4), so the game uses "
               "Windows' own Direct3D 8 and the greyed-out options can't work. A newer graphics driver may fix this."
             : "No Vulkan graphics driver was found, so the game uses Windows' own Direct3D 8 and the greyed-out options "
               "can't work. Installing your graphics card maker's latest driver may fix this.");
@@ -1592,7 +1592,7 @@ static bool load_pc_settings(App &a, const std::string &dir)
     bool hadIni = load_settings(a.dir, a.s);
     if (!hadIni) { apply_preset(a.s, PRESET_HIGH); a.firstRunPreset = true; }
     // (Renderer as the settings file has it: Vulkan unless the player set native by hand. ROTK Fix checks for a
-    // Vulkan 1.3 device before it loads DXVK and uses Direct3D 8 without one, #27.)
+    // Vulkan 1.4 device before it loads DXVK and uses Direct3D 8 without one, #27.)
     // the saved screen by name (the order of screens can change)
     for (size_t i = 0; i < a.monitors.size(); i++) {
         const Monitor &m = a.monitors[i];
@@ -1739,6 +1739,7 @@ static std::string ports_ini();
 static bool launcher_ini_get(const char *k, int def) { return GetPrivateProfileIntA("Launcher", k, def, ports_ini().c_str()) != 0; }
 static void launcher_ini_put(const char *k, int v) { WritePrivateProfileStringA("Launcher", k, std::to_string(v).c_str(), ports_ini().c_str()); }
 static bool g_borderless;
+static SDL_Window *g_mainWin;   // (for the maker's mark: under the borderless window's own buttons)
 static void set_fullscreen(App &a, bool on)
 {
     SDL_SetWindowFullscreen(a.win, on);
@@ -4758,6 +4759,26 @@ static void draw_setup(App &a)
 
 // a newer Athelas: a button at the top right (at y), on every page and the front screen, that asks to install it and
 // shows the download
+// The maker's mark, top right on every screen (as COGBox has one): "Made by Shagg" and, under it, the version of
+// Athelas this is - the release's number, so nobody reads a port's own version for it. Returns the y below it.
+static float maker_mark(ImVec2 size)
+{
+    ImDrawList *dl = ImGui::GetWindowDrawList();
+    ImVec2 o = ImGui::GetWindowPos();
+    float right = size.x - S(48), y = S(34);   // (inside the window's frame)
+    if (g_borderless && g_mainWin && !(SDL_GetWindowFlags(g_mainWin) & SDL_WINDOW_FULLSCREEN))
+        y += S(26);   // (under Athelas' own window buttons)
+    const char *mark = tr("Made by Shagg");
+    const std::string ver = "v" LAUNCHER_VERSION;
+    float ms = F_SMALL->LegacySize * ImGui::GetStyle().FontScaleMain, vs = ms * 0.85f;
+    ImVec2 m = F_SMALL->CalcTextSizeA(ms, FLT_MAX, 0, mark), v = F_SMALL->CalcTextSizeA(vs, FLT_MAX, 0, ver.c_str());
+    ImVec2 mp = o + ImVec2(right - m.x, y), vp = o + ImVec2(right - v.x, y + m.y);
+    dl->AddText(F_SMALL, ms, mp + ImVec2(S(1), S(1)), IM_COL32(0, 0, 0, 170), mark);
+    dl->AddText(F_SMALL, ms, mp, ImGui::GetColorU32(C_GOLD), mark);
+    dl->AddText(F_SMALL, vs, vp + ImVec2(S(1), S(1)), IM_COL32(0, 0, 0, 170), ver.c_str());
+    dl->AddText(F_SMALL, vs, vp, ImGui::GetColorU32(C_DIM), ver.c_str());
+    return y + m.y + v.y + S(8);
+}
 static void update_button(App &a, ImVec2 size, float sy)
 {
     const float pad = S(30);
@@ -4817,9 +4838,16 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     ImGui::Begin("##main", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
                                     ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoScrollbar);
     draw_background(ImGui::GetBackgroundDrawList(), size, a.bg);
+    // an installed update: the new launcher takes over (whichever page is showing: checked before the front page
+    // returns, which 1.7.0 missed)
+    static bool restarted = false;
+    if (!restarted && update_install_state(nullptr, nullptr) == 3) {
+        restarted = true;
+        if (update_restart()) a.quit = true;
+    }
     if (a.front) {
         draw_front(a, size, ren);
-        update_button(a, size, S(34));
+        update_button(a, size, maker_mark(size));
         ImGui::End();
         return;
     }
@@ -4933,7 +4961,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
     float colW = 0;
     for (auto &x : st) colW = std::max(colW, ImGui::CalcTextSize(x.label.c_str()).x + S(15));
-    float sy = S(34), lh = ImGui::GetTextLineHeight() + S(4);
+    float sy = maker_mark(size), lh = ImGui::GetTextLineHeight() + S(4);
     for (auto &x : st) {
         ImGui::SetCursorPos(ImVec2(size.x - pad - colW, sy));
         status_dot(x.ok, x.warn, x.label.c_str(), x.tip.c_str());
@@ -5093,12 +5121,6 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
             }
         }
         if (getenv("ROTKFIX_TT_SAVE")) tt_save(a);
-    }
-    // an installed update: the new launcher takes over (whichever tab is showing)
-    static bool restarted = false;
-    if (!restarted && update_install_state(nullptr, nullptr) == 3) {
-        restarted = true;
-        if (update_restart()) a.quit = true;
     }
     static bool autoUpdate = getenv("ROTKFIX_UPDATE_NOW") != nullptr;   // testing: install a newer release at once
     if (autoUpdate && !update_newer().empty()) { autoUpdate = false; update_install_start(update_newer()); }
@@ -5437,6 +5459,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
 
     App a;
     a.win = win;
+    g_mainWin = win;
     // the player's games, remembered next to the launcher (ROTKFix\games.ini)
     a.lib = library_load(exe_dir());
     // Which PC game's settings to show: one named on the command line; else the launcher's own
