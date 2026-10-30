@@ -1,4 +1,16 @@
-# Athelas 1.7.3
+# Athelas 1.7.3: The Third Age arrives
+
+## ⚔️ New game: The Lord of the Rings: The Third Age
+
+**The Third Age joins Athelas as the fourth game**: the 2004 Xbox RPG, recompiled to run natively on your PC, and built on your PC like the other three.
+
+- **Achievements** for each of its nine areas, from Eregion to the Pelennor Fields, plus the kill deeds and Fate's
+  deeds every game shares.
+- **On the Journey page:** its areas on the map (with Eregion), level records, quests and Virtues.
+- **Widescreen, unlocked frame rate, field of view, draw distance, sharper 4x text** (the title too), smooth leaf
+  edges, the HUD at the screen edges, movie zoom, and gameplay and cheat options as in the other games.
+- **Drawing on a second core** (on by default): a large jump in frame rate. Turn it off in the Graphics tab if
+  characters ever show a ghost image.
 
 > # ⚠️ This update installs differently from every release before it
 >
@@ -36,17 +48,6 @@
 
 Press **Update** in the launcher, or unzip it over your Athelas folder: your settings, saves and achievements are
 kept.
-
-## New: The Third Age
-
-- **The Third Age (Xbox)** joins the launcher as the fourth game, built on your PC like the others.
-- **Achievements** for each of its nine areas, from Eregion to the Pelennor Fields, plus the kill deeds and Fate's
-  deeds every game shares.
-- **On the Journey page:** its areas on the map (with Eregion), level records, quests and Virtues.
-- **Widescreen, unlocked frame rate, field of view, draw distance, sharper 4x text** (the title too), smooth leaf
-  edges, the HUD at the screen edges, movie zoom, and gameplay and cheat options as in the other games.
-- **Drawing on a second core** (on by default): a large jump in frame rate. Turn it off in the Graphics tab if
-  characters ever show a ghost image.
 
 ## New: SMAA (all four Xbox games)
 
@@ -94,5 +95,5 @@ Online. Everything on it that changes how a game plays is **off by default**.
 
 ## Checksums (SHA-256)
 
-- Athelas-1.7.3.zip: `(filled in after the build)`
-- Athelas-1.7.3-arm64.zip: `(filled in after the build)`
+- Athelas-1.7.3.zip: `7ad643c935d2e6195b6ae0d73238ba36f94c18fc8235c6a89f09b033fa135950`
+- Athelas-1.7.3-arm64.zip: `3a7e67973d6b5a19e440a7f7df79342c66aab4cb3088b66be8c0454f30cca8c0`
