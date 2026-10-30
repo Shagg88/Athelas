@@ -36,9 +36,12 @@
 #include "music.h"
 #include "userdata.h"
 #include "i18n.h"
+#include "hwrec.h"
+#include "builder.h"
 #include <shlobj.h>
 #include "font_cinzel.h"
 #include "font_garamond.h"
+static bool rec_button(const char *id, const std::vector<std::string> &changes, bool canUndo, bool *undo);
 #include "font_uncial.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -665,17 +668,18 @@ struct App {
     // The Fellowship of the Ring and The Return of the King (Xbox) ports: the same kind of port and page as The Two
     // Towers' (a settings.toml of its own). The page works on the tt fields above; the ports not shown wait in these,
     // by k_tomlPorts' order (tp_use moves them in and out).
-    int ttWho = 0;                     // whose port the tt fields hold: 0 The Two Towers, 1 Fellowship, 2 Return of the King
-    Port ttPark[3];
-    bool ttParkLooked[3] = {};
-    PortSettingsFile ttParkFile[3];
-    bool ttParkLoaded[3] = {};
+    int ttWho = 0;                     // whose port the tt fields hold: 0 The Two Towers, 1 Fellowship, 2 Return of the King, 3 The Third Age
+    Port ttPark[4];
+    bool ttParkLooked[4] = {};
+    PortSettingsFile ttParkFile[4];
+    bool ttParkLoaded[4] = {};
     bool firstRunPreset = false;       // no ROTKFix.ini yet: the preset may still follow the graphics card
     HANDLE running = NULL;             // a port that is playing; the launcher waits, hidden
     std::string runningLog, runningGame;
     bool front = false;                // the front screen (the carousel of games) instead of a game's page
+    bool journey = false;              // the Journey page (journey.inc) in place of the front screen
     unsigned long long runningSince = 0;   // when it started (GetTickCount64), for its play time
-    std::string runningKey;            // its key in Athelas.ini's [PlayTime]: fotr, tt, rotk-xbox, rotk-pc
+    std::string runningKey;            // its key in Athelas.ini's [PlayTime]: fotr, tt, rotk-xbox, rotk-pc, ta
     bool runningPc = false;            // the one playing is the PC game (rotk.exe), not a port
     Session session;                   // this play, for its folder in Logs (userdata.h)
 };
@@ -954,6 +958,23 @@ static void tab_graphics(App &a)
     int sel = p;
     if (segmented("preset", &sel, pnames, 5, en)) apply_preset(s, sel);
     row_end();
+    if (!g_xboxPage) {
+        // ROTK (PC): Balanced for built-in graphics, High otherwise, Ultra only where its heavy fog scenes stay smooth
+        // (a very strong card, a screen up to 1440p at up to 120 Hz)
+        const HwInfo &h = hw_info();
+        int want = h.tier == 0 ? PRESET_BALANCED
+                 : h.tier == 3 && h.screenW <= 2560 && h.refresh <= 120 ? PRESET_ULTRA : PRESET_HIGH;
+        // Undo: the whole settings as they were (a Custom set too); offered until the preset is changed again
+        static std::remove_reference_t<decltype(s)> before = s;
+        static bool canUndo = false;
+        static int applied = -1;
+        if (canUndo && p != applied) canUndo = false;
+        std::vector<std::string> changes;
+        if (p != want) changes.push_back(std::string(tr("Preset")) + ": " + tr(pnames[want]));
+        bool undo = false;
+        if (rec_button("pc", changes, canUndo, &undo)) { before = s; apply_preset(s, want); applied = want; canUndo = true; }
+        if (undo) { s = before; canUndo = false; }
+    }
 
     section("Image");
     if (noVulkan) {
@@ -1707,10 +1728,10 @@ static void shortcuts_section(App &a)
         ImGui::PopID();
     }
     // one for each game too (as COGBox has): it opens Athelas and starts that game, with its settings and fixes
-    static const GameKind kinds[] = { GK_FOTR_XBOX, GK_TT_XBOX, GK_ROTK_XBOX, GK_ROTK_PC };
-    static const char *keys[] = { "fotr", "tt", "rotk-xbox", "rotk-pc" };
+    static const GameKind kinds[] = { GK_FOTR_XBOX, GK_TT_XBOX, GK_ROTK_XBOX, GK_ROTK_PC, GK_TA_XBOX };
+    static const char *keys[] = { "fotr", "tt", "rotk-xbox", "rotk-pc", "ta" };
     std::wstring desk = known_folder(FOLDERID_Desktop);
-    for (int k = 0; k < 4; k++) {
+    for (int k = 0; k < 5; k++) {
         bool have = false;
         for (const LibGame &g : a.lib) if (g.kind == kinds[k]) have = true;
         if (!have || desk.empty()) continue;
@@ -2148,6 +2169,7 @@ static const char *game_key_title(const std::string &k) {
     if (!_stricmp(k.c_str(), "rotk-xbox")) return "ROTK (Xbox)";
     if (!_stricmp(k.c_str(), "tt-xbox")) return "Two Towers (Xbox)";
     if (!_stricmp(k.c_str(), "fotr-xbox")) return "Fellowship (Xbox)";
+    if (!_stricmp(k.c_str(), "ta-xbox")) return "The Third Age (Xbox)";
     if (!_stricmp(k.c_str(), "all")) return "All Games";
     return k.c_str();
 }
@@ -2159,6 +2181,7 @@ static std::string get_current_game_key(const App &a) {
         if (k == GK_ROTK_XBOX) return "rotk-xbox";
         if (k == GK_TT_XBOX) return "tt-xbox";
         if (k == GK_FOTR_XBOX) return "fotr-xbox";
+        if (k == GK_TA_XBOX) return "ta-xbox";
     }
     return "rotk-pc";
 }
@@ -2865,7 +2888,7 @@ struct TomlPortId {
     const char *game;                  // "The Two Towers"
     const char *original;              // the Original preset's description
 };
-static const int k_tomlPortCount = 3;
+static const int k_tomlPortCount = 4;
 static const TomlPortId k_tomlPorts[k_tomlPortCount] = {
     { GK_TT_XBOX, DIR_TT_XBOX, "TwoTowers", "TwoTowers.exe", "TwoTowers", "tt.log", "The Two Towers",
       "as it looked on the Xbox in 2003: 4:3, 30 fps, no anti-aliasing, filtering or sharpening." },
@@ -2874,11 +2897,13 @@ static const TomlPortId k_tomlPorts[k_tomlPortCount] = {
     // its own page since Athelas 1.5.1 (it shared the PC version's ROTKFix.ini before: rx_import brings that over)
     { GK_ROTK_XBOX, DIR_ROTK_XBOX, "ROTKXbox", "ROTKXbox.exe", "ROTKXbox", "rotkx.log", "The Return of the King",
       "as it looked on the Xbox in 2003: 4:3, 30 fps, no anti-aliasing, filtering or sharpening." },
+    { GK_TA_XBOX, DIR_TA_XBOX, nullptr, "TAXbox.exe", "TAXbox", "ta.log", "The Third Age",
+      "as it looked on the Xbox in 2004: 4:3, 30 fps, no anti-aliasing, filtering or sharpening." },
 };
 static int g_ttWho = 0;                // App::ttWho, for the functions without the App
 static const TomlPortId &tp() { return k_tomlPorts[g_ttWho]; }
-static int tp_of(GameKind k) { return k == GK_FOTR_XBOX ? 1 : k == GK_ROTK_XBOX ? 2 : 0; }
-static bool tp_kind(GameKind k) { return k == GK_TT_XBOX || k == GK_FOTR_XBOX || k == GK_ROTK_XBOX; }
+static int tp_of(GameKind k) { return k == GK_FOTR_XBOX ? 1 : k == GK_ROTK_XBOX ? 2 : k == GK_TA_XBOX ? 3 : 0; }
+static bool tp_kind(GameKind k) { return k == GK_TT_XBOX || k == GK_FOTR_XBOX || k == GK_ROTK_XBOX || k == GK_TA_XBOX; }
 // The tt fields hold this port's state from here on: the one there is parked in its place, this one taken out of its
 static void tp_use(App &a, int who)
 {
@@ -2939,9 +2964,10 @@ static bool arm_files_current()
 }
 static std::string arm64_twin(const std::string &exe)
 {
-    if (!native_arm64() || exe.size() < 4 || !arm_files_current()) return exe;
+    if (!native_arm64() || exe.size() < 4) return exe;
     std::string t = exe.substr(0, exe.size() - 4) + "-arm64.exe";
-    return file_there(t) ? t : exe;
+    // (one the launcher built on this PC from the ARM64 kit carries its .build stamp)
+    return file_there(t) && (arm_files_current() || file_there(t + ".build")) ? t : exe;
 }
 
 // The Return of the King on Xbox read the PC version's ROTKFix.ini up to Athelas 1.5. The first time its own page
@@ -2961,6 +2987,8 @@ static void rx_import(App &a)
     WritePrivateProfileStringA("Xbox", "ROTKSettingsImported", "1", ports_ini().c_str());
 }
 
+// folders whose build failed this session and whose player chose the program already there (an earlier release's)
+static std::vector<std::string> g_keepOld;
 static void tt_find(App &a)
 {
     a.ttLooked = true;
@@ -2969,8 +2997,13 @@ static void tt_find(App &a)
     // folder next to the launcher (the release copy; TwoTowers in earlier test builds)
     std::string cand[3] = { port_override(tp().iniKey), exe_dir() + "\\" + tp().dir + "\\" + tp().exe,
                             tp().oldDir ? exe_dir() + "\\" + tp().oldDir + "\\" + tp().exe : std::string() };
+    // built on this PC from the release's kit (builder.h): not used while it needs building again (a new kit or game file)
+    bool rebuild = false;
+    if (cand[0].empty() || !file_there(cand[0]))
+        for (const LibGame &lg : a.lib) if (lg.kind == tp().kind) { rebuild = builder_needed(tp().dir, tp().exe, lg); break; }
+    if (rebuild && std::find(g_keepOld.begin(), g_keepOld.end(), tp().dir) != g_keepOld.end()) rebuild = false;
     for (int i = 0; i < 3; i++)
-        if (!cand[i].empty() && file_there(cand[i])) { a.tt.exe = i ? arm64_twin(cand[i]) : cand[i]; break; }
+        if (!cand[i].empty() && file_there(cand[i]) && !(i && rebuild)) { a.tt.exe = i ? arm64_twin(cand[i]) : cand[i]; break; }
     if (a.tt.exe.empty()) return;
     rx_import(a);
     port_query(a.tt);
@@ -3060,7 +3093,7 @@ static void tt_play(App &a, const LibGame &g)
     if (!h) { set_message(a, err, true); return; }
     a.running = h;
     a.runningSince = GetTickCount64();
-    a.runningKey = tp().kind == GK_FOTR_XBOX ? "fotr" : tp().kind == GK_TT_XBOX ? "tt" : "rotk-xbox";
+    a.runningKey = tp().kind == GK_FOTR_XBOX ? "fotr" : tp().kind == GK_TA_XBOX ? "ta" : tp().kind == GK_TT_XBOX ? "tt" : "rotk-xbox";
     a.runningExe = a.tt.exe; a.runningArgs = args;
     a.runningLog = tt_log_path();
     a.runningGame = tp().game;
@@ -3517,11 +3550,83 @@ static void tt_locate_button(App &a)
         }
     }
 }
+// The game's program built on this PC from the release's kit and the player's own copy (builder.h): started on its own
+// the first time the game's page is shown, a progress bar while it runs, plain sentences when something is wrong
+static void draw_build(App &a, const LibGame &g)
+{
+    static std::vector<std::string> started;   // folders started this session (a failed or cancelled one waits for a button)
+    BuildStatus st = builder_status();
+    bool mine = st.folder == tp().dir;
+    if (mine && st.phase == BP_DONE) { builder_clear(); tt_find(a); set_message(a, std::string(tp().game) + " is ready to play.", false); return; }
+    std::string logPath = tt_data_dir() + "\\build.log";
+    if (!builder_busy() && game_region_supported(g) && std::find(started.begin(), started.end(), tp().dir) == started.end()) {
+        started.push_back(tp().dir);
+        if (builder_start(tp().dir, tp().exe, tp().game, g, logPath)) st = builder_status(), mine = true;
+    }
+    ImGui::PushTextWrapPos(0);
+    ImGui::Spacing();
+    if (!mine && builder_busy()) {
+        ImGui::TextColored(C_DIM, "Athelas is building %s first. This game is built straight after.", st.game.c_str());
+        ImGui::PopTextWrapPos();
+        return;
+    }
+    if (mine && (st.phase == BP_TOOLS || st.phase == BP_READ || st.phase == BP_COMPILE || st.phase == BP_LINK)) {
+        std::string line = st.phase == BP_TOOLS ? "Getting the build tools ready..." :
+                           st.phase == BP_READ ? "Reading your copy of the game..." :
+                           st.phase == BP_LINK ? "Finishing up..." : std::string("Building ") + tp().game + " for your PC...";
+        float f = st.phase == BP_LINK ? 1.0f : st.total ? (float)st.done / st.total : 0.0f;
+        ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
+        ImGui::TextColored(C_GOLD_H, "%s", line.c_str());
+        ImGui::PopFont();
+        char pct[16]; snprintf(pct, sizeof pct, "%d%%", (int)(f * 100 + 0.5f));
+        ImGui::ProgressBar(f, ImVec2(-1, S(18)), pct);
+        if (st.phase == BP_COMPILE && st.left >= 0)
+            ImGui::TextColored(C_DIM, "About %d %s left", st.left < 60 ? (int)(st.left + 0.5) : (int)(st.left / 60 + 0.5),
+                               st.left < 60 ? "seconds" : "minutes");
+        ImGui::TextColored(C_DIM, "This happens once: Athelas makes the game's PC program from your own copy of the game.");
+        if (ImGui::Button("Cancel")) builder_cancel();
+        ImGui::PopTextWrapPos();
+        return;
+    }
+    if (mine && st.phase == BP_FAILED) {
+        ImGui::TextColored(C_BAD, "%s", st.error.c_str());
+        if (ImGui::Button("Try again")) builder_start(tp().dir, tp().exe, tp().game, g, logPath);
+        ImGui::SameLine();
+        if (ImGui::Button("Show the log")) show_file(st.log);
+        // an earlier release's program still in the folder: playable meanwhile (the build is tried again next start)
+        if (file_there(exe_dir() + "\\" + tp().dir + "\\" + tp().exe)) {
+            ImGui::Spacing();
+            ImGui::TextColored(C_DIM, "The version you played before is still here. You can play it until the new one builds.");
+            if (ImGui::Button("Play the previous version for now")) {
+                g_keepOld.push_back(tp().dir);
+                builder_clear();
+                tt_find(a);
+                set_message(a, std::string(tp().game) + ": playing the previous version. Athelas tries the update again next time it starts.", false);
+            }
+        }
+        ImGui::PopTextWrapPos();
+        return;
+    }
+    if (!game_region_supported(g)) {
+        ImGui::TextColored(C_WARN, "This copy isn't the US release, which is the one %s is made for.", tp().game);
+        ImGui::Text("It can be built anyway: the game may run, but some levels may not work as they should.");
+    } else if (mine && st.phase == BP_CANCELLED)
+        ImGui::Text("Building was stopped. It carries on from where it stopped.");
+    else
+        ImGui::Text("%s needs to be built for your PC from your copy of the game. This takes about a minute and happens once.", tp().game);
+    if (ImGui::Button(mine && st.phase == BP_CANCELLED ? "Carry on" : "Build for my PC")) builder_start(tp().dir, tp().exe, tp().game, g, logPath);
+    ImGui::PopTextWrapPos();
+}
 static void draw_tt(App &a, const LibGame &g)
 {
     tp_use(a, tp_of(g.kind));
     if (!a.ttLooked) tt_find(a);
     ImGui::PushTextWrapPos(0);
+    if (a.tt.exe.empty() && !builder_kit(tp().dir).empty()) {
+        ImGui::PopTextWrapPos();
+        draw_build(a, g);
+        return;
+    }
     if (a.tt.exe.empty()) {
         ImGui::Spacing();
         ImGui::TextColored(C_WARN, "%s port (%s) wasn't found.", tp().game, tp().exe);
@@ -3563,6 +3668,103 @@ static bool tt_value_equal(const std::string &x, const std::string &y)
     char *e1, *e2;
     double a = strtod(x.c_str(), &e1), b = strtod(y.c_str(), &e2);
     return *e1 == 0 && *e2 == 0 && e1 != x.c_str() && e2 != y.c_str() && fabs(a - b) < 1e-6;
+}
+
+// "Recommended for this PC": the button, and the box that says what the PC has and what will change before it does.
+// changes: what the box lists; apply() makes them; it returns true once applied (for Undo).
+static bool rec_button(const char *id, const std::vector<std::string> &changes, bool canUndo, bool *undo)
+{
+    bool applied = false;
+    const HwInfo &h = hw_info();
+    char btn[64];
+    snprintf(btn, sizeof btn, "%s##rec%s", tr("Recommended for this PC"), id);
+    row_begin("", "Looks at this PC's graphics card, video memory, screen and processor, and picks the settings that "
+                  "should run the game smoothly. You see what changes before anything does.");
+    static bool testOpen = getenv("ATHELAS_REC_OPEN") != nullptr;   // testing: the box open at once
+    if (ImGui::Button(btn) || testOpen) { testOpen = false; ImGui::OpenPopup((std::string("recpop") + id).c_str()); }
+    if (canUndo) {
+        ImGui::SameLine();
+        if (ImGui::Button((std::string(tr("Undo")) + "##recundo" + id).c_str())) *undo = true;
+    }
+    if (ImGui::BeginPopup((std::string("recpop") + id).c_str())) {
+        ImGui::TextColored(C_GOLD_H, "%s", tr("This PC"));
+        ImGui::Text("%s%s, %u MB", h.gpu.empty() ? tr("Unknown graphics card") : h.gpu.c_str(),
+                    h.integrated ? tr(" (built-in)") : "", h.vramMB);
+        ImGui::Text(tr("Screen %dx%d at %d Hz, %d processor threads"), h.screenW, h.screenH, h.refresh, h.cores);
+        ImGui::Text(tr("Rated: %s"), tr(hw_tier_name(h.tier)));
+        ImGui::Separator();
+        if (changes.empty()) ImGui::TextUnformatted(tr("Your settings already match the recommendation."));
+        else {
+            ImGui::TextColored(C_GOLD_H, "%s", tr("Will change"));
+            for (auto &c : changes) ImGui::BulletText("%s", c.c_str());
+            if (ImGui::Button(tr("Apply"))) { applied = true; ImGui::CloseCurrentPopup(); }
+            ImGui::SameLine();
+        }
+        if (ImGui::Button(tr("Close"))) ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
+    }
+    row_end();
+    return applied;
+}
+
+// the Xbox ports: a preset by the tier (Ultra's 150% render only where the card has room for it), and the frame
+// rate the screen can show, up to what the tier keeps steady
+static void tt_recommend_row(App &a)
+{
+    const HwInfo &h = hw_info();
+    static std::vector<std::pair<std::string, std::string>> before[4];   // per port: "section.key" -> value, for Undo
+    std::string want = h.tier == 0 ? "Balanced" : h.tier == 3 && (h.screenW <= 2560 || h.vramMB >= 12000) ? "Ultra" : "High";
+    const Port::Preset *pr = nullptr;
+    for (auto &p : a.tt.presets) if (p.name == want) pr = &p;
+    std::vector<std::pair<std::string, std::string>> set;   // "section.key" -> value
+    if (pr)
+        for (auto &kv : pr->values)
+            if (kv.first != "graphics.fps") set.push_back(kv);   // the frame rate: this PC's, below
+    if (const PortSetting *pf = tt_setting(a, "graphics", "fps")) {
+        int cap = h.tier == 0 ? 60 : h.tier == 1 ? 120 : h.tier == 2 ? 144 : 240;
+        cap = std::min(cap, h.refresh >= 50 ? h.refresh : 60);
+        std::string best;
+        int bestR = 0;
+        for (auto &ch : pf->choices) {
+            int r = atoi(ch.c_str() + (ch[0] == '"'));
+            if (r > bestR && r <= cap) { bestR = r; best = ch; }
+        }
+        if (!best.empty()) set.push_back({ "graphics.fps", best[0] == '"' ? best : "\"" + best + "\"" });
+    }
+    std::vector<std::string> changes;
+    std::vector<std::pair<std::string, std::string>> diff;
+    for (auto &kv : set) {
+        size_t dot = kv.first.find('.');
+        const PortSetting *ps = tt_setting(a, kv.first.substr(0, dot).c_str(), kv.first.substr(dot + 1).c_str());
+        if (!ps) continue;
+        std::string cur = tt_val(a, *ps);
+        if (tt_value_equal(cur, kv.second)) continue;
+        diff.push_back(kv);
+        std::string v = kv.second;
+        v.erase(std::remove(v.begin(), v.end(), '"'), v.end());
+        changes.push_back(std::string(tr(ps->label.c_str())) + ": " + v);
+    }
+    if (pr && !diff.empty()) changes.insert(changes.begin(), std::string(tr("Preset")) + ": " + tr(want.c_str()));
+    bool undo = false;
+    if (rec_button("tt", changes, !before[a.ttWho].empty(), &undo)) {
+        before[a.ttWho].clear();
+        for (auto &kv : diff) {   // every old value first, then the new ones
+            size_t dot = kv.first.find('.');
+            const PortSetting *ps = tt_setting(a, kv.first.substr(0, dot).c_str(), kv.first.substr(dot + 1).c_str());
+            before[a.ttWho].push_back({ kv.first, ps ? tt_val(a, *ps) : kv.second });
+        }
+        for (auto &kv : diff) {
+            size_t dot = kv.first.find('.');
+            a.ttFile.set(kv.first.substr(0, dot), kv.first.substr(dot + 1), kv.second);
+        }
+    }
+    if (undo) {
+        for (auto &kv : before[a.ttWho]) {
+            size_t dot = kv.first.find('.');
+            a.ttFile.set(kv.first.substr(0, dot), kv.first.substr(dot + 1), kv.second);
+        }
+        before[a.ttWho].clear();
+    }
 }
 
 // Preset menu: the port's presets, or "Custom" when the settings match none
@@ -4405,7 +4607,7 @@ static void tt_settings_on_tab(App &a, int tab)
 {
     const PortSetting *pw = tt_setting(a, "display", "width"), *ph = tt_setting(a, "display", "height");
     std::string sec = "\x01";
-    if (tab == 1 && !a.tt.presets.empty()) { section("Preset"); tt_preset_row(a); }
+    if (tab == 1 && !a.tt.presets.empty()) { section("Preset"); tt_preset_row(a); tt_recommend_row(a); }
     for (auto &ps : a.tt.settings) {
         if (tt_tab_of_setting(ps) != tab) continue;
         // the frame rate joins the Display tab's screen settings, without starting a Graphics heading there
@@ -4756,6 +4958,7 @@ static void draw_setup(App &a)
 // Main screen
 
 #include "front.inc"
+#include "journey.inc"
 
 // a newer Athelas: a button at the top right (at y), on every page and the front screen, that asks to install it and
 // shows the download
@@ -4818,7 +5021,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     }
     {
         GameKind k = a.cur >= 0 && a.cur < (int)a.lib.size() ? a.lib[a.cur].kind : GK_NONE;
-        int group = k == GK_TT_XBOX ? 1 : k == GK_FOTR_XBOX ? 2 : 0;
+        int group = k == GK_TT_XBOX ? 1 : k == GK_FOTR_XBOX ? 2 : k == GK_TA_XBOX ? 3 : 0;   // (3: no reader for The Third Age's art yet)
         std::string dir = group ? a.lib[a.cur].path : std::string();
         if (a.front) front_bg_group(a, group, dir);   // the game in front of the carousel
         if (group != a.bg.group || (group == 0 && art_ready() && !a.bg.artIn) || (group >= 1 && group <= 2 && dir != a.bg.dir)) {
@@ -4844,6 +5047,13 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     if (!restarted && update_install_state(nullptr, nullptr) == 3) {
         restarted = true;
         if (update_restart()) a.quit = true;
+    }
+    journey_env(a);   // Virtues (opt-in) for the game started next
+    if (a.journey) {
+        draw_journey(a, size, ren);
+        update_button(a, size, maker_mark(size));
+        ImGui::End();
+        return;
     }
     if (a.front) {
         draw_front(a, size, ren);
@@ -4953,7 +5163,7 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
         bool tt = tp_kind(lg.kind);
         if (tt && !a.ttLooked) tt_find(a);
         bool ready = game_region_supported(lg) && (tt ? tt_ready(a) : game_kind_playable(lg.kind));
-        st.push_back({ ready, true, ready ? "Ready" : !game_region_supported(lg) ? "Not supported" : tt ? "Port not found" : "Not playable yet", lg.path });
+        st.push_back({ ready, true, ready ? "Ready" : !game_region_supported(lg) ? "Not supported" : tt && !builder_kit(k_tomlPorts[tp_of(lg.kind)].dir).empty() ? (builder_busy() ? "Building..." : "Needs building") : tt ? "Port not found" : "Not playable yet", lg.path });
     }
     if (own && a.s.padEnabled)
         st.push_back({ a.controllers > 0 && g.hasSdl, true, a.controllers > 1 ? std::to_string(a.controllers) + " controllers" : a.controllers ? "Controller" : "No controller",
@@ -5366,6 +5576,20 @@ static void draw_window_buttons(App &a, ImVec2 size)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
 {
     if (cmdLine && strstr(cmdLine, "--vkprobe")) return gpu_probe_main();   // the background graphics check (gpu.cpp)
+    // ATHELAS_BUILD_TEST="<port folder>|<exe>|<game folder or .iso>" (testing): build that port's program from its kit as the
+    // game's page would, no window; the exit code is the result (0 built, 1 failed, 2 cancelled), the log in build-test.log
+    if (const char *bt = getenv("ATHELAS_BUILD_TEST")) {
+        std::string v = bt;
+        size_t p1 = v.find('|'), p2 = v.find('|', p1 + 1);
+        if (p1 == std::string::npos || p2 == std::string::npos) return 3;
+        LibGame g;
+        if (detect_game_at(v.substr(p2 + 1), g) == GK_NONE) return 4;
+        std::string folder = v.substr(0, p1), exe = v.substr(p1 + 1, p2 - p1 - 1);
+        if (!builder_start(folder.c_str(), exe.c_str(), "test", g, exe_dir() + "\\build-test.log")) return 5;
+        while (builder_busy()) Sleep(200);
+        BuildPhase ph = builder_status().phase;
+        return ph == BP_DONE ? (builder_needed(folder.c_str(), exe.c_str(), g) ? 6 : 0) : ph == BP_CANCELLED ? 2 : 1;
+    }
     if (!(cmdLine && strstr(cmdLine, "--install-to "))) gpu_probe_start();
     // "--install-to <dir>" (with administrator rights): put ROTK Fix into a protected game
     // folder, then carry on as the launcher for that game. "--pc <dir>": show that PC game.
@@ -5490,7 +5714,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     // Not in a PC game's folder, but the player has Xbox games: open on the first of them
     // (The Return of the King first) instead of the PC setup screen.
     if (a.cur < 0)
-        for (GameKind k : { GK_ROTK_XBOX, GK_TT_XBOX, GK_FOTR_XBOX })
+        for (GameKind k : { GK_ROTK_XBOX, GK_TT_XBOX, GK_FOTR_XBOX, GK_TA_XBOX })
             for (size_t i = 0; i < a.lib.size() && a.cur < 0; i++)
                 if (a.lib[i].kind == k && game_region_supported(a.lib[i])) a.cur = (int)i;
     if (const char *t = getenv("ROTKFIX_GAME")) { int n = atoi(t); if (n >= 0 && n < (int)a.lib.size()) a.cur = n; }   // testing
@@ -5498,6 +5722,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     bool hadIni = load_pc_settings(a, pcDir.empty() ? exe_dir() : pcDir);
     // the front screen first, unless ROTK Fix was just set up (its page says what to do next)
     a.front = !justInstalled && !getenv("ATHELAS_PAGE");   // ATHELAS_PAGE (testing): open on the page
+    if (getenv("ATHELAS_JOURNEY")) { a.journey = true; a.front = false; }   // testing: open on the Journey page
     refresh_controllers(a);
 
     bg_show_load();   // the pictures themselves are listed on the first frame
@@ -5507,7 +5732,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     if (protectedDir) set_message(a, "This game folder is protected by Windows, so settings can't be saved. "
                                      "Open the launcher again and allow the permission prompt.", true);
 
-    // "--play <fotr|tt|rotk-xbox|rotk-pc>" (a game's desktop shortcut): start that game as its Play button would
+    // "--play <fotr|tt|rotk-xbox|rotk-pc|ta>" (a game's desktop shortcut): start that game as its Play button would
     std::string playArg = quoted_arg("--play ");
     music_init();    // the front screen's music (nothing plays without a sound device)
     update_tidy();   // what an update left behind

@@ -2,6 +2,7 @@
 #include <string_view>
 #include <type_traits>
 
+#include "core/state_gen.h"
 #include "image_symbols.h"
 #include "kernel/kernel.h"
 
@@ -100,6 +101,7 @@ inline uint32_t Call(X86Context& ctx, uint32_t fn, const Map& m, std::initialize
     X86_FUNC(guest) {                                    \
         (void)base;                                      \
         A args{ctx};                                     \
+        ::core::StateChanged();                          \
         uint32_t r = fn(ctx, args);                      \
         ::kernel::Return(ctx, r, pops);                  \
     }                                                    \
@@ -129,6 +131,7 @@ inline uint32_t Call(X86Context& ctx, uint32_t fn, const Map& m, std::initialize
     X86_EXTERN_FUNC(orig);                           \
     static void fn(X86Context& ctx, const A& a);     \
     X86_FUNC(guest) {                                \
+        ::core::StateChanged();                      \
         fn(ctx, A{ctx});                             \
         orig(ctx, base);                             \
     }                                                \

@@ -29,6 +29,26 @@ uint64_t Add(const char* name, uint64_t n);   // adds and returns the new total
 void Flush();                                 // write what's not written yet (at exit)
 void DrawNotes(float scale);                  // the renderer's ImGui frame: "Achievement earned" in the corner
 void DrawList();                              // the in-game menu's page
+// Virtues (opt-in, the launcher's Journey page): ATHELAS_VIRTUES=<dealt>,<taken>, percents the launcher works out
+// from the deeds earned and sets for the game it starts. 100 each when it isn't set.
+uint32_t VirtueDealt();                       // the damage the player's hits do, percent
+uint32_t VirtueTaken();                       // the damage the player takes, percent
+// Fate (opt-in, the Journey page): ATHELAS_FATE=1. The launcher makes enemies tougher through ATHELAS_VIRTUES; here
+// every enemy counts twice towards the kill deeds, and Fate's own deeds are earned.
+bool Fate();
+// the deeds every game shares: the kill deeds (100 to 5,000) and Fate's two; a game adds them to its list
+void SharedDeeds(std::vector<Def>& v);
+// an enemy defeated by a player: the total, the count for the level being played ("kills@<id>"), the kill deeds
+void Defeated();
+// a level's run: Started with its deed id when it begins, Done when it's completed: a line in records.txt beside
+// achievements.txt (when, level, seconds, enemies defeated, Fate), the counters completed@<id> and
+// levels_completed, and on Fate fate@<id> and the deed fate_one; only for the level being played, once. FateDone:
+// completed on Fate before.
+void LevelStarted(const char* id);
+void LevelDone(const char* id);
+bool FateDone(const char* id);
+// Fellowship (opt-in, ATHELAS_FELLOWSHIP=1): in co-op, while both players are fighting, their hits do 10% more
+bool FellowshipOn();
 }  // namespace ach
 
 // Discord status (app/discord.cpp), started once the window is up
@@ -58,12 +78,14 @@ struct Settings {
     float lod_bias = 0.0f;                 // added to the game's mip level bias: below 0 picks sharper texture levels
     bool console_textures = false;         // 3D textures pick the detail level the console did at its own 480 lines
     uint32_t sharpening = 0;               // 0 to 100: contrast adaptive sharpening over the picture as shown
+    bool smaa = false;                     // SMAA over the frame (edges smoothed after drawing, on top of or instead of MSAA)
     bool smooth_2d = true;                 // unfiltered 2D pictures (menus, HUD) upscaled bicubic past 1.2x the console's lines
     bool show_fps = false;                 // [display] show_fps: the frames per second in the screen's top right corner
     uint32_t msaa = 0;                     // anti-aliasing samples: 0 off, 2, 4 or 8
     uint32_t upscaler = 0;                 // 0 off, 1 FSR (AMD, any card), 2 DLSS (NVIDIA RTX): drawn smaller, upscaled temporally
     uint32_t upscaler_quality = 1;         // 0 native (DLAA / FSR native AA), 1 quality, 2 balanced, 3 performance, 4 ultra performance
     bool hdr = false;                      // HDR output on an HDR screen (Windows HDR on), read at start
+    uint32_t renderer = 0;                 // 0 Direct3D 12, 1 Vulkan (in development; Direct3D 12 if it can't start), read at start
     uint32_t colour_look = 0;              // 0 original, 1 film, 2 vivid, 3 dark fantasy
     uint32_t look_strength = 100;          // 0 to 100, how much of the look
     // [input], as ROTK Fix's controller options; 0 deadzone and threshold leave it to the game, as on the console
@@ -133,7 +155,7 @@ std::filesystem::path TextureDir();  // --textures, or textures beside the exe: 
 std::filesystem::path SavesDir();        // --saves, or hdd beside the exe (hddN for --instance N above 1)
 std::filesystem::path ShaderCacheDir();  // --shader-cache, or shadercache beside the exe
 std::filesystem::path ScreenshotDir();   // --screenshots, or Screenshots beside the exe
-std::filesystem::path LogFolder();       // --log's folder, or logs beside the exe; crash dumps and F3 captures go by it
+std::filesystem::path LogFolder();       // --log's folder, or logs beside the exe; crash dumps and M captures go by it
 void LogSystem();    // the machine and the settings, at a run's start
 uint64_t OneCoreMask();  // the fastest processor core, as an affinity mask (for [system] one_core)
 void ApplyDisplay();  // any thread
@@ -219,6 +241,7 @@ struct GameInfo {
     // Start (a game whose menus take Start to go on, "press start" among them); with menu_start_with_a they press
     // both (a game whose menus go on with A but whose title screen takes only Start)
     void (*file_opened)(const char* name) = nullptr;  // each file the game opens (any thread), to follow its state
+    void (*file_read)(const char* name) = nullptr;    // each read from a file (any thread): a game's movie streaming
     // a file the game cannot play without (true): when it is missing the run ends with kExitNoGame, naming it, instead
     // of the game crashing on it (an incomplete copy of the game)
     bool (*required_file)(const char* name) = nullptr;

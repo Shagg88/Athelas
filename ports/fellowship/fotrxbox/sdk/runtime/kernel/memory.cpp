@@ -350,7 +350,9 @@ uint32_t AllocContiguous(uint32_t size, uint32_t lowest, uint32_t highest, uint3
     align = std::max<uint32_t>(align, kPage);
     uint32_t lo = kContiguousBase | (lowest & (kPhysicalSize - 1));
     uint32_t hi = highest >= kPhysicalSize - 1 ? kContiguousBase + kPhysicalSize - 1 : kContiguousBase | highest;
-    uint32_t a = g_contig.Alloc(size, align, lo, hi, false);
+    // top down, as the Xbox kernel does: low memory stays free for the callers that ask for it (The Third Age asks
+    // for pages below 16 MB at the first level, after 23 MB of bottom-up allocations had filled them)
+    uint32_t a = g_contig.Alloc(size, align, lo, hi, true);
     if (!a) {
         LOGE("memory: contiguous allocation of %X bytes failed (%X..%X align %X), %llu KB in use", size, lowest, highest, align,
              (unsigned long long)(g_contig.Used() >> 10));

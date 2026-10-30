@@ -51,8 +51,12 @@ std::vector<ach::Def> Achievements() {
     std::vector<ach::Def> v;
     for (const Region& r : kRegions) v.push_back({r.id, r.title, r.desc});
     v.push_back({kStory, "The Fellowship of the Ring", "Complete the story."});
+    ach::SharedDeeds(v);  // the kill deeds and Fate's
     return v;
 }
+
+// 0xBDB10, fotr_difficulty.cpp: a player's hit that took a character's health to 0
+void EnemyDefeated() { ach::Defeated(); }
 
 // each file the game opens
 void AchievementsFile(const char* name) {
@@ -72,6 +76,17 @@ void AchievementsFile(const char* name) {
             if (g_region == region) return;
             g_region = region;
         }
+        {   // records: the region before, completed by leaving it for this one (the next in the story)
+            static int last = -1;
+            if (last >= 0 && last == i - 1) {
+                ach::LevelDone(kRegions[last].id);
+                bool fate_all = true;
+                for (const Region& r : kRegions) fate_all = fate_all && ach::FateDone(r.id);
+                if (fate_all) ach::Unlock("fate_all");
+            }
+            last = i;
+            ach::LevelStarted(i < kCount ? kRegions[i].id : "region_river_anduin");
+        }
         for (int k = 0; k < i; k++)
             if (!ach::Has(kRegions[k].id)) {
                 LOGR("fotr: %s completed", kRegions[k].title);
@@ -85,6 +100,7 @@ void AchievementsFile(const char* name) {
             if (g_region != "river_anduin") return;
         }
         if (!ach::Has(kStory)) LOGR("fotr: the story completed");
+        ach::LevelDone("region_river_anduin");
         for (const Region& r : kRegions) ach::Unlock(r.id);
         ach::Unlock(kStory);
     }

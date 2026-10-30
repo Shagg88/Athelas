@@ -11,6 +11,7 @@
 #define DIR_ROTK_XBOX "ROTK-Xbox"
 #define DIR_TT_XBOX   "TT-Xbox"
 #define DIR_FOTR_XBOX "FOTR-Xbox"
+#define DIR_TA_XBOX   "TA-Xbox"
 #define ATHELAS_INI   "Athelas.ini"
 #include <string>
 #include <vector>

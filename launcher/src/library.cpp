@@ -13,6 +13,7 @@
 static const uint32_t TID_TT   = 0x45410010;   // The Two Towers
 static const uint32_t TID_ROTK = 0x4541003E;   // The Return of the King
 static const uint32_t TID_FOTR = 0x56550004;   // The Fellowship of the Ring ('VU' + a number)
+static const uint32_t TID_TA   = 0x4541005F;   // The Third Age
 
 const char *game_kind_name(GameKind k)
 {
@@ -21,6 +22,7 @@ const char *game_kind_name(GameKind k)
     case GK_ROTK_XBOX: return "The Return of the King  -  Xbox";
     case GK_TT_XBOX:   return "The Two Towers  -  Xbox";
     case GK_FOTR_XBOX: return "The Fellowship of the Ring  -  Xbox";
+    case GK_TA_XBOX:   return "The Third Age  -  Xbox";
     default:           return "Unknown game";
     }
 }
@@ -38,7 +40,7 @@ const char *game_region_name(const LibGame &g)
 
 static const char *kind_key(GameKind k)
 {
-    return k == GK_ROTK_PC ? "rotk-pc" : k == GK_ROTK_XBOX ? "rotk-xbox" : k == GK_TT_XBOX ? "tt-xbox" : k == GK_FOTR_XBOX ? "fotr-xbox" : "none";
+    return k == GK_ROTK_PC ? "rotk-pc" : k == GK_ROTK_XBOX ? "rotk-xbox" : k == GK_TT_XBOX ? "tt-xbox" : k == GK_FOTR_XBOX ? "fotr-xbox" : k == GK_TA_XBOX ? "ta-xbox" : "none";
 }
 static GameKind kind_from_key(const char *s)
 {
@@ -95,7 +97,7 @@ static bool xbe_title(Reader &r, unsigned long long off, uint32_t &tid, std::str
 
 static GameKind kind_from_tid(uint32_t tid)
 {
-    return tid == TID_TT ? GK_TT_XBOX : tid == TID_ROTK ? GK_ROTK_XBOX : tid == TID_FOTR ? GK_FOTR_XBOX : GK_NONE;
+    return tid == TID_TT ? GK_TT_XBOX : tid == TID_ROTK ? GK_ROTK_XBOX : tid == TID_FOTR ? GK_FOTR_XBOX : tid == TID_TA ? GK_TA_XBOX : GK_NONE;
 }
 
 // ---- Xbox disc images (XDVDFS) -----------------------------------------------

@@ -1,5 +1,10 @@
 // XAPI functions that talk to hardware: controller ports and the hard disk cache partition
 #include <chrono>
+#include <cstdlib>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
 
 #include "core/log.h"
 #include "core/input.h"
@@ -9,6 +14,56 @@
 using namespace kernel;
 
 namespace {
+// XBE_PAD_SCRIPT=<file>: test runs press the first controller's buttons from a script instead of the keyboard, one
+// press a line: "<seconds from start> <button> [held seconds]", buttons A B X Y BLACK WHITE LT RT START BACK UP DOWN
+// LEFT RIGHT (held 0.15 s unless given). The first controller then counts as connected.
+struct ScriptPress {
+    double at, until;
+    int analog;       // 0..7, or -1
+    uint16_t digital;
+};
+const std::vector<ScriptPress>& PadScript() {
+    static std::vector<ScriptPress> s = [] {
+        std::vector<ScriptPress> out;
+        const char* f = std::getenv("XBE_PAD_SCRIPT");
+        if (!f) return out;
+        std::ifstream in(f);
+        std::string line;
+        const char* names[] = {"A", "B", "X", "Y", "BLACK", "WHITE", "LT", "RT"};
+        while (std::getline(in, line)) {
+            std::istringstream ls(line);
+            double at, held = 0.15;
+            std::string b;
+            if (!(ls >> at >> b)) continue;
+            ls >> held;
+            ScriptPress p{at, at + held, -1, 0};
+            for (int i = 0; i < 8; i++)
+                if (b == names[i]) p.analog = i;
+            if (b == "UP") p.digital = 1;
+            if (b == "DOWN") p.digital = 2;
+            if (b == "LEFT") p.digital = 4;
+            if (b == "RIGHT") p.digital = 8;
+            if (b == "START") p.digital = 0x10;
+            if (b == "BACK") p.digital = 0x20;
+            if (p.analog >= 0 || p.digital) out.push_back(p);
+        }
+        LOGR("xapi: controller script %s, %zu presses", f, out.size());
+        return out;
+    }();
+    return s;
+}
+void ApplyPadScript(int port, input::Pad& p) {
+    if (port != 0 || PadScript().empty()) return;
+    static const auto t0 = std::chrono::steady_clock::now();
+    double t = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+    p.connected = true;
+    for (const ScriptPress& sp : PadScript()) {
+        if (t < sp.at || t >= sp.until) continue;
+        if (sp.analog >= 0) p.analog[sp.analog] = 255;
+        p.buttons |= sp.digital;
+    }
+}
+
 
 // XPP device type records: CurrentConnected, ChangeConnected, PreviousConnected
 constexpr uint32_t kGamepadType = SYM(XPP_GamepadType);
@@ -21,7 +76,7 @@ void UpdatePorts() {
     std::lock_guard<std::mutex> lock(g_ports_lock);
     uint32_t cur = 0;
     for (int p = 0; p < 4; p++)
-        if (input::Connected(p)) cur |= 1u << p;
+        if (input::Connected(p) || (p == 0 && !PadScript().empty())) cur |= 1u << p;
     uint32_t old = R32(kGamepadType + XDK_XPP_Current);
     if (cur != old) {
         W32(kGamepadType + XDK_XPP_Changed, R32(kGamepadType + XDK_XPP_Changed) | (cur ^ old));
@@ -93,6 +148,7 @@ HLE_STDCALL(XInputGetState, 2) {
         port = it->second.port;
     }
     input::Pad p = input::Poll(int(port));
+    ApplyPadScript(int(port), p);
     if (!p.connected) return 1167;  // ERROR_DEVICE_NOT_CONNECTED
     std::lock_guard<std::mutex> lock(g_ports_lock);
     Handle& h = g_handles[a[0]];

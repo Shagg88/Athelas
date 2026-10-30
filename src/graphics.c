@@ -164,6 +164,28 @@ typedef int (__stdcall *PFN_vkCreateInst)(const VkInstInfo_ *, const void *, VkI
 typedef void (__stdcall *PFN_vkDestroyInst)(VkInstance, const void *);
 typedef int (__stdcall *PFN_vkEnumDevs)(VkInstance, UINT *, VkPhysicalDevice *);
 typedef void (__stdcall *PFN_vkDevProps)(VkPhysicalDevice, void *);
+typedef int (__stdcall *PFN_vkEnumExts)(VkPhysicalDevice, const char *, UINT *, void *);   /* VkExtensionProperties: name[256], version */
+
+/* the extensions DXVK 3 needs beyond core Vulkan 1.4 (its wiki: depth clip, robustness2, transform feedback; the
+ * others it lists are core in 1.4); robustness2 may be listed under its newer KHR name */
+static int dxvk_extensions(PFN_vkEnumExts enumExts, VkPhysicalDevice dev, char *missing, size_t cap)
+{
+    static unsigned char props[600 * 260];
+    UINT n = 600;
+    missing[0] = 0;
+    if (!enumExts || enumExts(dev, NULL, &n, props) < 0) return 1;   /* can't tell: let DXVK decide */
+    int clip = 0, rob = 0, xfb = 0;
+    for (UINT i = 0; i < n; i++) {
+        const char *e = (const char *)props + (size_t)i * 260;
+        if (!strcmp(e, "VK_EXT_depth_clip_enable")) clip = 1;
+        if (!strcmp(e, "VK_EXT_robustness2") || !strcmp(e, "VK_KHR_robustness2")) rob = 1;
+        if (!strcmp(e, "VK_EXT_transform_feedback")) xfb = 1;
+    }
+    if (!clip) strncat(missing, " VK_EXT_depth_clip_enable", cap - strlen(missing) - 1);
+    if (!rob) strncat(missing, " VK_EXT_robustness2", cap - strlen(missing) - 1);
+    if (!xfb) strncat(missing, " VK_EXT_transform_feedback", cap - strlen(missing) - 1);
+    return clip && rob && xfb;
+}
 #define VK_API_(maj, min) (((UINT)(maj) << 22) | ((UINT)(min) << 12))
 
 static int vulkan_usable(void)
@@ -180,9 +202,11 @@ static int vulkan_usable(void)
     PFN_vkDestroyInst destroy = (PFN_vkDestroyInst)(void *)gipa(inst, "vkDestroyInstance");
     PFN_vkEnumDevs enumerate = (PFN_vkEnumDevs)(void *)gipa(inst, "vkEnumeratePhysicalDevices");
     PFN_vkDevProps props = (PFN_vkDevProps)(void *)gipa(inst, "vkGetPhysicalDeviceProperties");
+    PFN_vkEnumExts enumExts = (PFN_vkEnumExts)(void *)gipa(inst, "vkEnumerateDeviceExtensionProperties");
     VkPhysicalDevice devs[16];
     UINT n = 16, best = 0;
-    char name[257] = "";
+    char name[257] = "", missing[128] = "";
+    int extOk = 0;
     if (enumerate && props && enumerate(inst, &n, devs) >= 0) {
         static unsigned char buf[4096];   /* VkPhysicalDeviceProperties: apiVersion at 0, deviceName at 20 */
         for (UINT i = 0; i < n && i < 16; i++) {
@@ -190,7 +214,13 @@ static int vulkan_usable(void)
             memset(buf, 0, sizeof buf);
             props(devs[i], buf);
             memcpy(&api, buf, 4);
-            if (api > best) { best = api; memcpy(name, buf + 20, 256); name[256] = 0; }
+            char miss[128] = "";
+            int ok = api >= VK_API_(1, 4) && dxvk_extensions(enumExts, devs[i], miss, sizeof miss);
+            /* the best device: one DXVK can run on first, then the newest Vulkan */
+            if ((ok && !extOk) || (ok == extOk && api > best)) {
+                best = api; extOk = ok; memcpy(name, buf + 20, 256); name[256] = 0;
+                strcpy(missing, miss);
+            }
         }
     }
     if (destroy) destroy(inst, NULL);
@@ -200,6 +230,11 @@ static int vulkan_usable(void)
               name[0] ? name : "none", best >> 22, (best >> 12) & 0x3FF);
         return 0;
     }
+    if (!extOk) {
+        logf_("graphics: %s has Vulkan %u.%u but lacks what DXVK 3 needs:%s", name, best >> 22, (best >> 12) & 0x3FF, missing);
+        return 0;
+    }
+    logf_("graphics: Vulkan device for DXVK: %s (Vulkan %u.%u)", name, best >> 22, (best >> 12) & 0x3FF);
     return 1;
 }
 
@@ -1599,8 +1634,35 @@ static HRESULT WINAPI w_CheckDeviceMultiSampleType(IDirect3D8 *This, UINT a, D3D
 static HRESULT WINAPI w_CheckDepthStencilMatch(IDirect3D8 *This, UINT a, D3DDEVTYPE t, D3DFORMAT af, D3DFORMAT rf, D3DFORMAT df) { return IDirect3D8_CheckDepthStencilMatch(RD(This), AD(a), t, af, rf, df); }
 static HRESULT WINAPI w_GetDeviceCaps(IDirect3D8 *This, UINT a, D3DDEVTYPE t, D3DCAPS8 *c) { return IDirect3D8_GetDeviceCaps(RD(This), AD(a), t, c); }
 static HMONITOR WINAPI w_GetAdapterMonitor(IDirect3D8 *This, UINT a) { return IDirect3D8_GetAdapterMonitor(RD(This), AD(a)); }
+static UINT g_sdkVersion = 220;   /* what the game asked Direct3DCreate8 for */
+/* DXVK made its Direct3D object but no device (a driver that passed the Vulkan check yet can't run DXVK, or a
+ * display path DXVK doesn't handle here): the wrapped object is switched to the system's Direct3D 8 (Windows', or
+ * Wine's under Proton) and the device tried once more, so the game starts instead of a black screen. */
+static int switch_to_native(D3D8Wrap *w)
+{
+    if (!g_backendIsDxvk) return 0;
+    char sys[MAX_PATH];
+    GetSystemDirectoryA(sys, MAX_PATH);
+    strncat(sys, "\\d3d8.dll", MAX_PATH - strlen(sys) - 1);
+    HMODULE n = LoadLibraryA(sys);
+    Create8_t create = n ? (Create8_t)(void *)GetProcAddress(n, "Direct3DCreate8") : NULL;
+    IDirect3D8 *real = create ? create(g_sdkVersion) : NULL;
+    if (!real) { logf_("graphics: the system Direct3D 8 could not start either (%s)", sys); return 0; }
+    IDirect3D8_Release(w->real);
+    w->real = real;
+    g_backend = n; g_backendIsDxvk = 0;
+    g_modeReady = 0;   /* modes again from the new renderer */
+    find_screen_adapter(real);
+    logf_("graphics: DXVK could not create the game's device; switched to %s", sys);
+    return 1;
+}
+
 static HRESULT WINAPI w_CreateDevice(IDirect3D8 *This, UINT a, D3DDEVTYPE t, HWND focus, DWORD flags, D3DPRESENT_PARAMETERS *pp, IDirect3DDevice8 **dev)
 {
+    D3DPRESENT_PARAMETERS asked;
+    if (pp) asked = *pp;   /* as the game passed them, for a second try on another renderer */
+    int dispAsked = g_dispMode;
+    UINT outWAsked = g_outW, outHAsked = g_outH;
     a = AD(a);
     choose_mode(RD(This), a);
     g_realD3D = RD(This);
@@ -1618,6 +1680,29 @@ static HRESULT WINAPI w_CreateDevice(IDirect3D8 *This, UINT a, D3DDEVTYPE t, HWN
         setup_window(pp->hDeviceWindow, RD(This), a);
         fix_present_params(pp, RD(This), a, focus);
         hr = IDirect3D8_CreateDevice(RD(This), a, t, focus, flags, pp, dev);
+    }
+    if (FAILED(hr) && g_backendIsDxvk) {
+        logf_("graphics: CreateDevice failed on Vulkan (DXVK) (%#lx)", (unsigned long)hr);
+        if (switch_to_native((D3D8Wrap *)This)) {
+            g_dispMode = dispAsked;
+            g_outW = outWAsked; g_outH = outHAsked;
+            if (pp) *pp = asked;
+            choose_mode(RD(This), a);
+            g_realD3D = RD(This);
+            if (pp) {
+                setup_window(pp->hDeviceWindow ? pp->hDeviceWindow : focus, RD(This), a);
+                fix_present_params(pp, RD(This), a, focus);
+            }
+            hr = IDirect3D8_CreateDevice(RD(This), a, t, focus, flags, pp, dev);
+            if (FAILED(hr) && pp && g_dispMode == DM_FULLSCREEN) {
+                logf_("graphics: fullscreen device failed (%#lx), retrying borderless", (unsigned long)hr);
+                g_dispMode = DM_BORDERLESS;
+                if (g_deskW) { g_outW = g_deskW; g_outH = g_deskH; }
+                setup_window(pp->hDeviceWindow, RD(This), a);
+                fix_present_params(pp, RD(This), a, focus);
+                hr = IDirect3D8_CreateDevice(RD(This), a, t, focus, flags, pp, dev);
+            }
+        }
     }
     if (FAILED(hr)) { logf_("graphics: CreateDevice failed (%#lx)", (unsigned long)hr); return hr; }
     logf_("graphics: device created (behavior flags %#lx)", (unsigned long)flags);
@@ -1644,6 +1729,7 @@ __declspec(dllexport) IDirect3D8 *WINAPI RF_Direct3DCreate8(UINT sdk)
                              the renderer, so a mod that links d3d9.dll can't load Windows' copy before DXVK's) */
     Create8_t create = b ? (Create8_t)(void *)GetProcAddress(b, "Direct3DCreate8") : NULL;
     if (!create) { logf_("graphics: ERROR backend has no Direct3DCreate8"); return NULL; }
+    g_sdkVersion = sdk;
     IDirect3D8 *real = create(sdk);
     if (!real && g_backendIsDxvk) {
         /* DXVK loaded but could not start Vulkan (old driver, or a DXVK

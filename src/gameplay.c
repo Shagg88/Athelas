@@ -19,6 +19,7 @@
  *
  * All four are off (100, 100, 0, 0) by default. */
 #include "rotkfix.h"
+#include <stdio.h>
 
 static int g_damageTaken = 100, g_enemyDamage = 100, g_unlockAll = 0, g_allHeroes = 0;
 
@@ -30,6 +31,18 @@ void gameplay_load_settings(const char *ini)
     g_enemyDamage = clamp_pct(GetPrivateProfileIntA("Gameplay", "EnemyDamage", 100, ini));
     g_unlockAll = GetPrivateProfileIntA("Gameplay", "UnlockAll", 0, ini) != 0;
     g_allHeroes = GetPrivateProfileIntA("Gameplay", "AllHeroes", 0, ini) != 0;
+    {   /* Virtues (opt-in, the launcher's Journey page): ATHELAS_VIRTUES=<dealt>,<taken> percents, on top */
+        char v[32];
+        unsigned d = 100, t = 100;
+        if (GetEnvironmentVariableA("ATHELAS_VIRTUES", v, sizeof v) && sscanf(v, "%u,%u", &d, &t) == 2) {
+            if (d < 25) d = 25;
+            if (d > 300) d = 300;
+            if (t < 25) t = 25;
+            if (t > 300) t = 300;
+            g_enemyDamage = clamp_pct(g_enemyDamage * (int)d / 100);
+            g_damageTaken = clamp_pct(g_damageTaken * (int)t / 100);
+        }
+    }
 }
 
 #define ADDR_HIT    0x0040CF80u
@@ -198,6 +211,18 @@ static int __cdecl hook_hit_scaled(void *who, int amount, void *by)
         int player_dealing_hit = is_player((const BYTE *)by);
 
         int pct = player_taking_hit ? g_damageTaken : player_dealing_hit ? g_enemyDamage : 100;
+        /* Fellowship (opt-in, ATHELAS_FELLOWSHIP=1): in co-op, while both players have landed a hit in the last
+           5 seconds, their hits do 10% more */
+        static int fellowship = -1;
+        if (fellowship < 0) { char v[8]; fellowship = GetEnvironmentVariableA("ATHELAS_FELLOWSHIP", v, sizeof v) && v[0] == '1'; }
+        if (fellowship && player_dealing_hit && !player_taking_hit) {
+            static void *ids[2];
+            static DWORD at[2];
+            DWORD now = GetTickCount();
+            int slot = ids[0] == by ? 0 : ids[1] == by ? 1 : (now - at[0] > now - at[1] ? 0 : 1);
+            ids[slot] = by; at[slot] = now;
+            if (ids[0] && ids[1] && ids[0] != ids[1] && now - at[0] < 5000 && now - at[1] < 5000) pct = pct * 110 / 100;
+        }
         if (pct != 100) {
             static volatile LONG logged[2];
             int on_player = pct == g_damageTaken && player_taking_hit;

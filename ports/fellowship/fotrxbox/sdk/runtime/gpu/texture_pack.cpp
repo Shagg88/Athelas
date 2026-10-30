@@ -1,3 +1,4 @@
+#include <cmath>
 #include "gpu/texture_pack.h"
 
 #include <algorithm>
@@ -211,6 +212,72 @@ bool ReadPng(const std::filesystem::path& file, Image& img) {
 
 BuiltinTexture g_builtin = nullptr;
 BuiltinContents g_builtin_contents = nullptr;
+UpscaleTexture g_upscale = nullptr;
+
+void Upscale(const std::vector<uint8_t>& rgba, uint32_t w, uint32_t h, uint32_t k, std::vector<uint8_t>& out) {
+    // premultiplied, so clear texels' colour does not bleed into the edges
+    uint32_t W = w * k, H = h * k;
+    std::vector<float> src(size_t(w) * h * 4);
+    for (size_t i = 0; i < size_t(w) * h; i++) {
+        float a = rgba[i * 4 + 3] / 255.0f;
+        for (int c = 0; c < 3; c++) src[i * 4 + c] = rgba[i * 4 + c] / 255.0f * a;
+        src[i * 4 + 3] = a;
+    }
+    auto cubic = [](float x) {  // Catmull-Rom: sharp, little ringing
+        x = std::fabs(x);
+        if (x < 1) return 1.5f * x * x * x - 2.5f * x * x + 1;
+        if (x < 2) return -0.5f * x * x * x + 2.5f * x * x - 4 * x + 2;
+        return 0.0f;
+    };
+    auto pass = [&](const std::vector<float>& in, uint32_t iw, uint32_t ih, bool horiz, uint32_t on) {
+        uint32_t ow = horiz ? on : iw, oh = horiz ? ih : on, n = horiz ? iw : ih;
+        std::vector<float> o(size_t(ow) * oh * 4);
+        for (uint32_t d = 0; d < on; d++) {
+            float f = (d + 0.5f) * float(n) / float(on) - 0.5f;
+            int i0 = int(std::floor(f));
+            float wt[4], sum = 0;
+            for (int t = 0; t < 4; t++) sum += wt[t] = cubic(f - float(i0 - 1 + t));
+            for (int t = 0; t < 4; t++) wt[t] /= sum;
+            uint32_t lines = horiz ? ih : iw;
+            for (uint32_t l = 0; l < lines; l++) {
+                float acc[4] = {};
+                for (int t = 0; t < 4; t++) {
+                    int j = std::clamp(i0 - 1 + t, 0, int(n) - 1);
+                    size_t at = horiz ? (size_t(l) * iw + j) * 4 : (size_t(j) * iw + l) * 4;
+                    for (int c = 0; c < 4; c++) acc[c] += wt[t] * in[at + c];
+                }
+                size_t to = horiz ? (size_t(l) * ow + d) * 4 : (size_t(d) * ow + l) * 4;
+                for (int c = 0; c < 4; c++) o[to + c] = acc[c];
+            }
+        }
+        return o;
+    };
+    std::vector<float> big = pass(pass(src, w, h, true, W), W, h, false, H);
+    // unsharp mask: the difference from a blur about one source texel wide, added back
+    std::vector<float> blur = big;
+    int r = int(k);
+    for (int axis = 0; axis < 2; axis++) {
+        std::vector<float> t = blur;
+        for (uint32_t y = 0; y < H; y++)
+            for (uint32_t x = 0; x < W; x++) {
+                float acc[4] = {};
+                for (int o = -r; o <= r; o++) {
+                    int xx = axis ? int(x) : std::clamp(int(x) + o, 0, int(W) - 1);
+                    int yy = axis ? std::clamp(int(y) + o, 0, int(H) - 1) : int(y);
+                    for (int c = 0; c < 4; c++) acc[c] += t[(size_t(yy) * W + xx) * 4 + c];
+                }
+                for (int c = 0; c < 4; c++) blur[(size_t(y) * W + x) * 4 + c] = acc[c] / float(2 * r + 1);
+            }
+    }
+    out.resize(size_t(W) * H * 4);
+    for (size_t i = 0; i < size_t(W) * H; i++) {
+        float v[4];
+        for (int c = 0; c < 4; c++) v[c] = std::clamp(big[i * 4 + c] + 0.8f * (big[i * 4 + c] - blur[i * 4 + c]), 0.0f, 1.0f);
+        float a = v[3];
+        for (int c = 0; c < 3; c++) out[i * 4 + c] = uint8_t(std::clamp(a > 0 ? v[c] / a : 0.0f, 0.0f, 1.0f) * 255 + 0.5f);
+        out[i * 4 + 3] = uint8_t(a * 255 + 0.5f);
+    }
+}
 
 void MakeLevels(Image& img) {
     if (img.levels.empty() || (img.format != Format::RGBA8 && img.format != Format::BGRA8)) return;

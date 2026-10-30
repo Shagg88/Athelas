@@ -50,6 +50,12 @@ struct Contents {
 };
 using BuiltinContents = bool (*)(const Contents& tex, Image& out);
 extern BuiltinContents g_builtin_contents;
+// a game's pictures to redraw larger on the player's PC, by the pack hash (a title logo drawn far larger than the
+// console made it): true for one to redraw, at g_upscale_factor times its size, cubic with its edges sharpened
+using UpscaleTexture = bool (*)(uint64_t hash);
+extern UpscaleTexture g_upscale;
+// rgba (w x h, rows packed) redrawn k times larger, sharp: cubic, then an unsharp mask scaled to the new size
+void Upscale(const std::vector<uint8_t>& rgba, uint32_t w, uint32_t h, uint32_t k, std::vector<uint8_t>& out);
 // an RGBA8 or BGRA8 picture's mip levels below level 0, each made by halving
 void MakeLevels(Image& img);
 bool WritePng(const std::filesystem::path& file, uint32_t width, uint32_t height, const std::vector<uint8_t>& rgba);

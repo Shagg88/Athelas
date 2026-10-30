@@ -16,6 +16,8 @@
 #include "kernel/kernel.h"
 #include "kernel/memory.h"
 
+namespace tt { void EnemyDefeated(); }
+
 namespace tt {
 bool g_kill_points = false;  // settings.toml [gameplay] kill_points
 }
@@ -79,6 +81,7 @@ X86_FUNC(sub_0009DD90) {
 }
 
 X86_FUNC(sub_00099D40) {
+    tt::EnemyDefeated();  // deeds: enemies defeated
     if (!tt::g_kill_points) {
         __imp__sub_00099D40(ctx, base);
         return;

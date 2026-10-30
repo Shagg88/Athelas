@@ -8,7 +8,7 @@
 #include <vector>
 #include <stdint.h>
 
-enum GameKind { GK_NONE, GK_ROTK_PC, GK_ROTK_XBOX, GK_TT_XBOX, GK_FOTR_XBOX, GK_COUNT };
+enum GameKind { GK_NONE, GK_ROTK_PC, GK_ROTK_XBOX, GK_TT_XBOX, GK_FOTR_XBOX, GK_TA_XBOX, GK_COUNT };
 
 struct LibGame {
     GameKind kind = GK_NONE;

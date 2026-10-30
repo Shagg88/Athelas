@@ -148,15 +148,20 @@ static bool read_game_range(const std::string &game, const char *rel, unsigned l
 // The Fellowship of the Ring, first choice: the Shire theme, MSX_Hobbiton_Explore.wav in Scenes\Media\Music2.xpa
 // (the game's DirectMusic archive). Its index: per track a name, and 0x108 bytes after it the offset of the track's
 // RIFF WAVE (16-bit PCM). Only that track is read (the archive is 400 MB).
+static bool load_fotr_named(const std::string &game, const char *name, std::vector<int16_t> &pcm, int &channels, int &rate);
 static bool load_fotr_shire(const std::string &game, std::vector<int16_t> &pcm, int &channels, int &rate)
 {
-    static const char *rel = "Scenes\\Media\\Music2.xpa", *name = "MSX_Hobbiton_Explore.wav";
+    return load_fotr_named(game, "MSX_Hobbiton_Explore.wav", pcm, channels, rate);
+}
+static bool load_fotr_named(const std::string &game, const char *name, std::vector<int16_t> &pcm, int &channels, int &rate)
+{
+    static const char *rel = "Scenes\\Media\\Music2.xpa";
     std::vector<uint8_t> h;
-    if (!read_game_range(game, rel, 0, 0x10000, h)) return false;
+    if (!read_game_range(game, rel, 0, 0x40000, h)) return false;
     const uint8_t *hit = nullptr;
     size_t nl = strlen(name);
     for (size_t i = 0; i + nl + 0x10c <= h.size() && !hit; i++)
-        if (!memcmp(&h[i], name, nl + 1)) hit = &h[i];
+        if (!memcmp(&h[i], name, nl + 1) && (i == 0 || h[i - 1] < 0x20 || h[i - 1] >= 0x7F)) hit = &h[i];
     if (!hit) return false;
     uint32_t riff = rd32(hit + 0x108);
     std::vector<uint8_t> w;
@@ -171,7 +176,7 @@ static bool load_fotr_shire(const std::string &game, std::vector<int16_t> &pcm, 
         o += 8 + cl + (cl & 1);
     }
     if (!dataAt || tag != 1 || bits != 16 || channels < 1 || channels > 2 || rate < 8000) return false;
-    size_t cap = (size_t)rate * channels * 2 * 400;   // (it is 6 min 22 s; at most 400 s is kept)
+    size_t cap = (size_t)rate * channels * 2 * 600;   // (the Shire's is 6 min 22 s; at most 10 minutes is kept)
     std::vector<uint8_t> raw;
     if (!read_game_range(game, rel, riff + dataAt, std::min<size_t>(dataLen, cap), raw) || raw.size() < (size_t)rate * 4) return false;
     pcm.resize(raw.size() / 2);
@@ -279,7 +284,7 @@ bool music_init()
 
 // one reader, for the latest wanted track only: turning the carousel quickly (an arrow key held) asks for many, and
 // each read is tens of megabytes in a 32-bit process; it waits until the choice has stood a moment
-struct Job { MusicTrack t = MUSIC_NONE; std::string game; int gen = 0; };
+struct Job { MusicTrack t = MUSIC_NONE; std::string game, name; int gen = 0; };
 static Job g_job;                    // the latest request (under g_lock); gen 0: none
 static Track *decode(const Job &j)
 {
@@ -293,6 +298,7 @@ static Track *decode(const Job &j)
         pcm.clear(); ch = 2; rate = kRate;
         ok = j.t == MUSIC_TT ? load_tt(g, pcm, ch, rate)
            : j.t == MUSIC_FOTR ? (load_fotr_shire(g, pcm, ch, rate) || (pcm.clear(), ch = 2, rate = kRate, load_fotr(g, pcm, ch, rate)))
+           : j.t == MUSIC_FOTR_NAMED ? load_fotr_named(g, j.name.c_str(), pcm, ch, rate)
            : false;
         if (j.gen != SDL_GetAtomicInt(&g_gen)) return nullptr;   // (another box chosen meanwhile)
     }
@@ -339,10 +345,15 @@ static int SDLCALL reader(void *)
     return 0;
 }
 
-void music_play(MusicTrack t, const std::string &game)
+static std::string g_wantName;
+static void play(MusicTrack t, const std::string &game, const std::string &name);
+void music_play(MusicTrack t, const std::string &game) { play(t, game, std::string()); }
+void music_play_named(const std::string &game, const std::string &name) { play(MUSIC_FOTR_NAMED, game, name); }
+std::string music_now() { return g_want == MUSIC_FOTR_NAMED ? g_wantName : std::string(); }
+static void play(MusicTrack t, const std::string &game, const std::string &name)
 {
-    if (!g_stream || (t == g_want && game == g_wantGame)) return;
-    g_want = t; g_wantGame = game;
+    if (!g_stream || (t == g_want && game == g_wantGame && name == g_wantName)) return;
+    g_want = t; g_wantGame = game; g_wantName = name;
     int gen = SDL_AddAtomicInt(&g_gen, 1) + 1;
     SDL_LockMutex(g_lock);
     if (g_cur) {                                   // what plays fades out now; the new one fades in when it is read
@@ -350,7 +361,7 @@ void music_play(MusicTrack t, const std::string &game)
         g_old = g_cur; g_gainOld = g_gainCur;
         g_cur = nullptr; g_gainCur = 0;
     }
-    if (t != MUSIC_NONE && !game.empty()) { g_job.t = t; g_job.game = game; g_job.gen = gen; }
+    if (t != MUSIC_NONE && !game.empty()) { g_job.t = t; g_job.game = game; g_job.name = name; g_job.gen = gen; }
     else g_job.gen = 0;
     SDL_SignalCondition(g_wake);
     SDL_UnlockMutex(g_lock);
@@ -368,4 +379,27 @@ void music_shutdown()
     g_stream = nullptr;
     delete g_cur; delete g_old;
     g_cur = g_old = nullptr;
+}
+
+// the archive's index: each track's name ends ".wav"; the first copy of the game that has the archive
+std::vector<std::string> music_fotr_list(const std::string &game)
+{
+    std::vector<std::string> out;
+    for (size_t at = 0; out.empty() && at < game.size();) {
+        size_t nl = game.find('\n', at);
+        std::string g = game.substr(at, nl == std::string::npos ? std::string::npos : nl - at);
+        at = nl == std::string::npos ? game.size() : nl + 1;
+        std::vector<uint8_t> h;
+        if (!read_game_range(g, "Scenes\\Media\\Music2.xpa", 0, 0x40000, h)) continue;
+        for (size_t i = 4; i + 5 <= h.size(); i++) {
+            if (memcmp(&h[i], ".wav", 4) && memcmp(&h[i], ".WAV", 4)) continue;
+            if (h[i + 4]) continue;
+            size_t b = i;
+            while (b > 0 && h[b - 1] >= 0x20 && h[b - 1] < 0x7F && i - b < 120) b--;
+            if (i - b < 2) continue;
+            std::string n((const char *)&h[b], i + 4 - b);
+            if (std::find(out.begin(), out.end(), n) == out.end()) out.push_back(n);
+        }
+    }
+    return out;
 }

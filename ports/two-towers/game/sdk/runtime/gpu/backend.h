@@ -20,6 +20,8 @@ public:
     virtual ~Backend() = default;
     // the title's back buffer size, the output window may differ
     virtual bool Init(uint32_t width, uint32_t height) = 0;
+    // why Init returned false, for the log; null when it gave no reason
+    virtual const char* InitError() const { return nullptr; }
     // rects: count D3DRECTs (4 x int32), null for the whole viewport
     virtual void Clear(const State& s, uint32_t count, const uint8_t* rects, uint32_t flags, uint32_t color, float z,
                        uint32_t stencil) = 0;
@@ -59,6 +61,10 @@ private:
 };
 
 std::unique_ptr<Backend> CreateBackend();
+// the Direct3D 12 backend (gpu/d3d12.cpp); CreateBackend (gpu/backend.cpp) picks it
+std::unique_ptr<Backend> CreateD3D12Backend();
+// the Vulkan backend (gpu/vk.cpp), [graphics] renderer = 1; when its Init fails the caller takes Direct3D 12 instead
+std::unique_ptr<Backend> CreateVulkanBackend();
 // the same backend driven from a thread of its own: calls return once recorded
 std::unique_ptr<Backend> CreateThreadedBackend(std::unique_ptr<Backend> inner);
 
@@ -90,6 +96,12 @@ inline std::atomic<uint32_t> g_movie_shape{kMovieFit};
 inline std::atomic<float> g_movie_fit_bottom{0.0f};
 // set by a game: the widest kMovieFit goes on a wider screen, its films' own shape (16:9 unless set; ROTK's are 1.84:1)
 inline std::atomic<float> g_movie_fit_max{16.0f / 9.0f};
+// set by a game: how far kMovieFit zooms in past Fit (1: none), for films with bars wider than 16:9; the sides are
+// cut off
+inline std::atomic<float> g_movie_fit_zoom{1.0f};
+// set by a game: draw on a second core (1), on the game's own thread (0), or the build's choice (-1). Read once, when
+// the device is made (xdk/d3d8.cpp RenderThread).
+inline std::atomic<int> g_render_thread{-1};
 // kMovieFit's window top for a window that is `share` of the frame's height
 inline float MovieFitTop(float share) {
     float b = g_movie_fit_bottom;
@@ -102,6 +114,14 @@ inline std::atomic<bool> g_wide_targets{false};
 // set by a game: called with each draw's state before it is drawn (to look at what the game draws). Null for none.
 using DrawObserver = void (*)(const State& s);
 inline DrawObserver g_draw_observer = nullptr;
+// set by a game whose vertex programs carry their own projection: their 3D positions' x times this (4:3 / the frame's
+// shape for widescreen), 0 to leave them; fixed function projections go through g_projection_hook instead
+inline std::atomic<float> g_program_widen{0.0f};
+// set by the render thread for the draw it is giving the backend: nothing but the draw's own data (vertex streams,
+// indices) has changed since the draw before, no clear, copy or other command between them, so the backend may draw
+// it with the shaders, pipeline, textures and constants it chose for that draw (D3D12: the repeat path). Render
+// thread only; false without one.
+inline bool g_draw_same_state = false;
 // set by a game: alpha to coverage for cut-outs (leaves, grass, fences) when anti-aliasing is on
 inline std::atomic<bool> g_alpha_edges{false};
 // set by a game: fixed function fog distances scaled by this (a longer draw distance), density divided by it

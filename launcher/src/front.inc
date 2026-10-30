@@ -9,14 +9,15 @@
 // and Settings ask which (and can remember it). Nothing is shipped: art comes from the player's files or, when they
 // ask, from the public collection.
 
-enum { FR_FOTR, FR_TT, FR_ROTK, FR_COUNT };
-static const char *const k_frKey[FR_COUNT] = { "fotr", "tt", "rotk" };
-static const char *const k_frTitle[FR_COUNT] = { "The Fellowship of the Ring", "The Two Towers", "The Return of the King" };
+enum { FR_FOTR, FR_TT, FR_ROTK, FR_TA, FR_COUNT };
+static const char *const k_frKey[FR_COUNT] = { "fotr", "tt", "rotk", "ta" };
+static const char *const k_frTitle[FR_COUNT] = { "The Fellowship of the Ring", "The Two Towers", "The Return of the King", "The Third Age" };
 // libretro thumbnails' names (No-Intro's) for the US Xbox releases
 static const char *const k_frLibretro[FR_COUNT] = {
     "Lord of the Rings, The - The Fellowship of the Ring (USA)",
     "Lord of the Rings, The - The Two Towers (USA)",
-    "Lord of the Rings, The - The Return of the King (USA)" };
+    "Lord of the Rings, The - The Return of the King (USA)",
+    "Lord of the Rings, The - The Third Age (USA)" };
 
 struct FrontTex { SDL_Texture *tex = nullptr; int w = 0, h = 0; };
 struct Front {
@@ -66,6 +67,7 @@ static std::vector<int> fr_lib(const App &a, int e)
     };
     if (e == FR_FOTR) add(GK_FOTR_XBOX, false);
     else if (e == FR_TT) add(GK_TT_XBOX, false);
+    else if (e == FR_TA) add(GK_TA_XBOX, false);
     else { add(GK_ROTK_PC, true); add(GK_ROTK_XBOX, false); }
     return out;
 }
@@ -88,7 +90,7 @@ static std::string fr_music_copies(const App &a, int e, GameKind k)
     return s;
 }
 static bool fr_owned(const App &a, int e) { return !fr_lib(a, e).empty(); }
-static int fr_entry_of(GameKind k) { return k == GK_FOTR_XBOX ? FR_FOTR : k == GK_TT_XBOX ? FR_TT : FR_ROTK; }
+static int fr_entry_of(GameKind k) { return k == GK_FOTR_XBOX ? FR_FOTR : k == GK_TT_XBOX ? FR_TT : k == GK_TA_XBOX ? FR_TA : FR_ROTK; }
 
 // [Front] in Athelas.ini: the version The Return of the King plays (pc / xbox, empty: ask) and the box last chosen
 // read once and kept: the front screen asks every frame, and Athelas.ini may sit in a folder an antivirus scans or
@@ -206,7 +208,7 @@ static void front_art_poll(App &a, SDL_Renderer *ren)
             from = "rotk";
         } else {
             from = a.lib[li[0]].path;
-            if (e == FR_TT) tt_art_list(from, files); else fotr_art_list(from, files);
+            if (e == FR_TT) tt_art_list(from, files); else if (e == FR_FOTR) fotr_art_list(from, files);   // (no reader for The Third Age's art yet)
         }
         if (f.artAsked[e] && f.artFor[e] == from) continue;
         f.artAsked[e] = true;
@@ -530,7 +532,7 @@ static void front_play(App &a, int li)
 // A game's desktop shortcut (--play <key>): that game started as from its box; not found: the front screen says so
 static void shortcut_play(App &a, const std::string &key)
 {
-    GameKind k = key == "fotr" ? GK_FOTR_XBOX : key == "tt" ? GK_TT_XBOX : key == "rotk-xbox" ? GK_ROTK_XBOX : GK_ROTK_PC;
+    GameKind k = key == "fotr" ? GK_FOTR_XBOX : key == "ta" ? GK_TA_XBOX : key == "tt" ? GK_TT_XBOX : key == "rotk-xbox" ? GK_ROTK_XBOX : GK_ROTK_PC;
     for (size_t i = 0; i < a.lib.size(); i++)
         if (a.lib[i].kind == k) { front_play(a, (int)i); return; }
     set_message(a, std::string(game_kind_name(k)) + " isn't added to Athelas any more - add it again, then make a new shortcut.", true);
@@ -645,7 +647,7 @@ static void front_bg_group(const App &a, int &group, std::string &dir)
     int e = g_front.sel;
     std::vector<int> li = fr_lib(a, e);
     dir.clear();
-    if (li.empty()) { group = 3; return; }
+    if (li.empty() || e == FR_TA) { group = 3; return; }   // (no reader for The Third Age's art yet)
     group = e == FR_ROTK ? 0 : e == FR_TT ? 1 : 2;
     if (e != FR_ROTK) dir = a.lib[li[0]].path;
 }
@@ -696,6 +698,10 @@ static void draw_front(App &a, ImVec2 size, SDL_Renderer *ren)
         for (int dy = -1; dy <= 1; dy++)
             if (dx || dy) dl->AddText(F_TITLE, ts, ImVec2(tp.x + dx * S(1.5f), tp.y + dy * S(1.5f)), IM_COL32(0, 0, 0, 110), "Athelas");
     dl->AddText(F_TITLE, ts, tp, ImGui::GetColorU32(C_GOLD_H), "Athelas");
+    {   // the title chosen on the Journey page
+        std::string jt = ini_get("Journey", "Title", "");
+        if (!jt.empty()) dl->AddText(F_SMALL, F_SMALL->LegacySize, tp + ImVec2(S(2), ts + S(2)), ImGui::GetColorU32(C_DIM), jt.c_str());
+    }
 
     // turning: arrow keys, the D-pad or left stick, the mouse wheel, or a click on a box at the side
     int step = 0;
@@ -833,6 +839,17 @@ static void draw_front(App &a, ImVec2 size, SDL_Renderer *ren)
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("The game's own menu music, from your copy of the game (The Two Towers and Fellowship). M switches it.");
     }
+    {   // the Journey page: deeds, map, minstrel, virtues, lore (J)
+        ImGui::SetCursorPos(ImVec2(S(354), ly - S(6)));
+        if (orn_plate_button("Journey##jrn", ImVec2(S(120), S(32)), true) ||
+            (!modal && (ImGui::IsKeyPressed(ImGuiKey_J, false) || (padOn && ImGui::IsKeyPressed(ImGuiKey_GamepadBack, false))))) {
+            a.journey = true;
+            a.front = false;
+        }
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Your deeds and titles across the three games, a map of the road, the games' music, "
+                              "virtues and a lore book. J opens it.");
+    }
     bool msg = !a.message.empty() && ImGui::GetTime() - a.messageAt < (a.messageBad ? 30.0 : 6.0);
     std::string hint, hint2;
     if (msg) hint = a.message;
@@ -846,10 +863,10 @@ static void draw_front(App &a, ImVec2 size, SDL_Renderer *ren)
     ImVec2 hs = ImGui::CalcTextSize(hint.c_str());
     if (!msg && !hint2.empty()) {   // the fullscreen shortcut, on the line above
         ImVec2 h2 = ImGui::CalcTextSize(hint2.c_str());
-        ImGui::SetCursorPos(ImVec2(std::max(S(356), size.x - S(40) - h2.x), ly - S(22)));
+        ImGui::SetCursorPos(ImVec2(std::max(S(490), size.x - S(40) - h2.x), ly - S(22)));
         ImGui::TextColored(C_DIM, "%s", hint2.c_str());
     }
-    ImGui::SetCursorPos(ImVec2(std::max(S(356), size.x - S(40) - hs.x), ly));
+    ImGui::SetCursorPos(ImVec2(std::max(S(490), size.x - S(40) - hs.x), ly));
     ImGui::TextColored(msg ? (a.messageBad ? C_BAD : C_GOOD) : C_DIM, "%s", hint.c_str());
     ImGui::PopFont();
     ImGui::PopItemFlag();

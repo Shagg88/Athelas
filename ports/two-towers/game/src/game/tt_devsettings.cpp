@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 
+#include "app/app.h"
 #include "core/log.h"
 #include "kernel/kernel.h"
 #include "xdk/hle.h"
@@ -123,8 +124,9 @@ void Scale(const char* side, uint32_t percent) {
 namespace tt {
 // once a frame (tt_extras.cpp)
 void DevSettingsFrame() {
-    Scale("Good Guy", std::clamp(g_damage_taken, 10u, 500u));
-    Scale("Bad Guy", std::clamp(g_enemy_damage, 10u, 500u));
+    // (Virtues, opt-in: the launcher's bonus on top)
+    Scale("Good Guy", std::clamp(g_damage_taken * ach::VirtueTaken() / 100, 10u, 500u));
+    Scale("Bad Guy", std::clamp(g_enemy_damage * ach::VirtueDealt() / 100, 10u, 500u));
     static uint64_t frames = 0;
     frames++;
     if (Log() && frames % 600 == 0) {

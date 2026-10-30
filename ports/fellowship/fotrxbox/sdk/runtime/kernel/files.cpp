@@ -578,6 +578,7 @@ static uint32_t TimedRead(const Args& a, uint32_t pages) {
     uint32_t r = Transfer(a, false, pages);
     auto f = FileFromHandle(a[0]);
     CountRead(WorkNow() - t, a[6], f ? f->xbox : std::string());
+    if (f && app::kGame.file_read) app::kGame.file_read(f->xbox.c_str());
     return r;
 }
 

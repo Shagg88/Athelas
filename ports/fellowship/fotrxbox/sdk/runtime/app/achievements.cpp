@@ -155,6 +155,28 @@ bool Has(const char* id) {
     return g_unlocked.count(id) != 0;
 }
 
+namespace {
+void Virtues(uint32_t& dealt, uint32_t& taken) {
+    static uint32_t d = 100, t = 100;
+    static bool read = [] {
+        if (const char* v = std::getenv("ATHELAS_VIRTUES")) {
+            unsigned a = 100, b = 100;
+            if (std::sscanf(v, "%u,%u", &a, &b) == 2) {
+                d = std::clamp(a, 25u, 300u);    // virtues (a bonus) and Fate (tougher enemies) together
+                t = std::clamp(b, 25u, 300u);
+                LOGI("virtues: damage dealt %u%%, damage taken %u%%", d, t);
+            }
+        }
+        return true;
+    }();
+    (void)read;
+    dealt = d;
+    taken = t;
+}
+}  // namespace
+uint32_t VirtueDealt() { uint32_t d, t; Virtues(d, t); return d; }
+uint32_t VirtueTaken() { uint32_t d, t; Virtues(d, t); return t; }
+
 uint64_t Count(const char* name) {
     std::lock_guard lock(g_lock);
     Load();
@@ -232,6 +254,101 @@ void DrawList() {
         ImGui::TextDisabled("%s", d.desc);
         ImGui::Unindent();
     }
+}
+
+// ---- deeds every game shares, Fate, the records of level runs
+bool Fate() {
+    static const bool on = [] {
+        const char* e = std::getenv("ATHELAS_FATE");
+        bool f = e && *e == '1';
+        if (f) LOGI("fate: on (enemies count twice towards the kill deeds)");
+        return f;
+    }();
+    return on;
+}
+bool FellowshipOn() {
+    static const bool on = [] {
+        const char* e = std::getenv("ATHELAS_FELLOWSHIP");
+        return e && *e == '1';
+    }();
+    return on;
+}
+
+namespace {
+struct KillDeed { uint64_t n; const char *id, *title, *desc; };
+const KillDeed kKills[] = {
+    {100, "kills_100", "A Hundred Foes", "Defeat 100 enemies."},
+    {250, "kills_250", "Foe-hewer", "Defeat 250 enemies."},
+    {500, "kills_500", "Sword of the West", "Defeat 500 enemies."},
+    {1000, "kills_1000", "A Thousand Foes", "Defeat 1,000 enemies."},
+    {5000, "kills_5000", "Bane of the Enemy", "Defeat 5,000 enemies."},
+};
+std::mutex g_run_lock;
+std::string g_run;  // the level being played (its deed id), empty between levels
+std::chrono::steady_clock::time_point g_run_at;
+uint64_t g_run_kills = 0;
+}  // namespace
+
+void SharedDeeds(std::vector<Def>& v) {
+    for (const KillDeed& k : kKills) v.push_back({k.id, k.title, k.desc});
+    v.push_back({"fate_one", "Fated", "Complete a level on Fate."});
+    v.push_back({"fate_all", "Doom-sworn", "Complete every level on Fate."});
+}
+
+void Defeated() {
+    uint64_t by = Fate() ? 2 : 1;
+    uint64_t n = Add("enemies_defeated", by);
+    std::string run;
+    {
+        std::lock_guard lock(g_run_lock);
+        run = g_run;
+        g_run_kills += 1;
+    }
+    if (!run.empty()) Add(("kills@" + run).c_str(), 1);
+    for (const KillDeed& k : kKills)
+        if (n >= k.n) Unlock(k.id);
+}
+
+void LevelStarted(const char* id) {
+    std::lock_guard lock(g_run_lock);
+    if (g_run == id) return;  // (the same level's files again)
+    g_run = id;
+    g_run_at = std::chrono::steady_clock::now();
+    g_run_kills = 0;
+}
+
+bool FateDone(const char* id) { return Count((std::string("fate@") + id).c_str()) > 0; }
+
+void LevelDone(const char* id) {
+    long long secs = -1;
+    uint64_t kills = 0;
+    {
+        // only the level being played, once: a save loading (every level it holds "new") or a results screen
+        // opened again records nothing
+        std::lock_guard lock(g_run_lock);
+        if (g_run != id) return;
+        secs = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - g_run_at).count();
+        kills = g_run_kills;
+        g_run.clear();
+    }
+    Add((std::string("completed@") + id).c_str(), 1);
+    Add("levels_completed", 1);
+    if (Fate()) {
+        Add((std::string("fate@") + id).c_str(), 1);
+        Unlock("fate_one");
+    }
+    char when[32] = "";
+    std::time_t t = std::time(nullptr);
+    if (std::tm* lt = std::localtime(&t)) std::strftime(when, sizeof when, "%Y-%m-%d %H:%M", lt);
+    std::error_code ec;
+    std::filesystem::path f = File().parent_path() / "records.txt";
+    std::filesystem::create_directories(f.parent_path(), ec);
+    bool fresh = !std::filesystem::exists(f, ec);
+    std::ofstream o(f, std::ios::binary | std::ios::app);
+    if (!o) return;
+    if (fresh) o << "; Each level completed: when | level | seconds (-1: not timed) | enemies defeated | fate\r\n";
+    o << when << " | " << id << " | " << secs << " | " << kills << " | " << (Fate() ? 1 : 0) << "\r\n";
+    LOGR("record: %s in %llds, %llu enemies%s", id, secs, (unsigned long long)kills, Fate() ? " (Fate)" : "");
 }
 
 }  // namespace ach

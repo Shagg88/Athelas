@@ -105,6 +105,7 @@ struct DrawConstants {
     float tm[4][16];     // texture transforms
     float mat[5][4];     // material diffuse, ambient, specular, emissive, power
     float amb[4];        // D3DRS_AMBIENT
+    float widen[4];      // x: a vertex program's 3D (perspective) positions widened by it, 0 off (g_program_widen)
     float lt[8][7][4];   // per light: diffuse, specular, ambient, position range, direction falloff, attenuation, cos theta/2 phi/2
 };
 

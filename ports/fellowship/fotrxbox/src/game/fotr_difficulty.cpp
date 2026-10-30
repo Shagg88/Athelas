@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "app/app.h"
 #include "core/log.h"
 #include "cpu/x86_context.h"
 #include "cpu/x86_ops.h"
@@ -46,6 +47,7 @@ bool Log() {
 
 namespace fotr {
 uint32_t Player() { return g_player; }
+void EnemyDefeated();  // fotr_achievements.cpp
 }
 
 // the player's update
@@ -65,14 +67,16 @@ X86_FUNC(sub_000BDB10) {
     uint32_t from = msg ? ::kernel::R32(msg + 0x50) : 0;
     float damage = msg ? F(msg + 4) : 0;
     uint32_t pct = 100;
-    if (who && who == g_player) pct = fotr::g_damage_taken;
-    else if (from && from == g_player) pct = fotr::g_enemy_damage;
+    if (who && who == g_player) pct = fotr::g_damage_taken * ach::VirtueTaken() / 100;
+    else if (from && from == g_player) pct = fotr::g_enemy_damage * ach::VirtueDealt() / 100;
     if (pct > 500) pct = 500;
     if (pct < 10) pct = 10;
     float before = who ? F(who + 0x450) : 0;
     if (msg && pct != 100) SetF(msg + 4, damage * float(pct) / 100.0f);
     __imp__sub_000BDB10(ctx, base);
     if (msg && pct != 100) SetF(msg + 4, damage);
+    // deeds: a player's hit that took a character's health to 0
+    if (who && who != g_player && from && from == g_player && before > 0 && F(who + 0x450) <= 0) fotr::EnemyDefeated();
     if (Log())
         LOGI("fotr: hit %08X%s from %08X%s: %g x %u%%, health %g -> %g", who, who == g_player ? " (player)" : "", from,
              from == g_player ? " (player)" : "", damage, pct, before, who ? F(who + 0x450) : 0.0f);

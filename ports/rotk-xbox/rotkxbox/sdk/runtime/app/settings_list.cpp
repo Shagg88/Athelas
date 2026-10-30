@@ -57,6 +57,10 @@ std::vector<cfg::Desc> SettingsList() {
         {"graphics", "anti_aliasing", Type::Choice, "Anti-aliasing",
          "Smooths jagged edges (MSAA). Higher costs speed, most of all with a high render resolution.", nullptr,
          &s.msaa, nullptr, 0, 0, {"0", "2", "4", "8"}, nullptr, nullptr, {"Off", "2x", "4x", "8x"}},
+        {"graphics", "smaa", Type::Bool, "SMAA",
+         "Smooths jagged edges after the picture is drawn, including the outlines of leaves and grass that "
+         "anti-aliasing misses. Works with anti-aliasing on or off; costs very little.",
+         &s.smaa},
         {"graphics", "upscaler", Type::Choice, "Upscaler",
          "Draws the game smaller and rebuilds a sharp, smooth picture from several frames: faster, and it smooths jagged "
          "edges as well. FSR works on any graphics card (FSR 4 on the newest AMD ones); DLSS needs an NVIDIA RTX card. "
@@ -99,6 +103,10 @@ std::vector<cfg::Desc> SettingsList() {
          "For HDR screens with Windows HDR on: fire, sky and lights shine brighter. The game was made for normal "
          "screens, so this brightens what it drew rather than adding detail. On other screens the picture stays as it is.",
          &s.hdr},
+        {"graphics", "renderer", Type::Choice, "Renderer",
+         "Direct3D 12 is the tested renderer. Vulkan is still being made and doesn't draw the game yet; if it can't "
+         "start, Direct3D 12 is used. Takes effect at the next start.",
+         nullptr, &s.renderer, nullptr, 0, 0, {"0", "1"}, nullptr, nullptr, {"Direct3D 12", "Vulkan (in development)"}},
         {"graphics", "widescreen", Type::Bool, "Widescreen correction",
          "Shows more at the sides. Off keeps the original 4:3 picture, with bars at the sides.", &s.widescreen, nullptr,
          nullptr, 0, 0, {}, "widescreen"},

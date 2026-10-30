@@ -26,6 +26,7 @@
 #include <string>
 #include <thread>
 
+#include "app/app.h"
 #include "core/log.h"
 #include "kernel/kernel.h"
 #include "kernel/memory.h"
@@ -96,9 +97,10 @@ X86_FUNC(sub_00029530) {
     }
     LOGR("rotk: damage taken: easy %.2f-%.2f (co-op %.2f-%.2f), normal %.2f-%.2f (%.2f-%.2f), hard %.2f-%.2f (%.2f-%.2f)",
          v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], v[9], v[10], v[11]);
-    if (rotk::g_damage_percent == 100) return;
+    uint32_t pct = std::clamp(rotk::g_damage_percent * ach::VirtueTaken() / 100, 10u, 500u);   // (Virtues, Fate: on top)
+    if (pct == 100) return;
     for (int i = 0; i < 12; i++) {
-        float f = v[i] * float(rotk::g_damage_percent) / 100.0f;
+        float f = v[i] * float(pct) / 100.0f;
         uint32_t u;
         std::memcpy(&u, &f, 4);
         ::kernel::W32(0x17F550 + i * 4, u);
@@ -111,9 +113,22 @@ X86_FUNC(sub_00029530) {
 // characters (allies and enemies fight each other, most hits in a battle) are left as they are.
 X86_EXTERN_FUNC(__imp__sub_0002A1B0);
 X86_FUNC(sub_0002A1B0) {
-    uint32_t pct = rotk::g_enemy_damage_percent, who = ::kernel::R32(ctx.esp + 4), arg = ctx.esp + 8;
+    uint32_t pct = rotk::g_enemy_damage_percent * ach::VirtueDealt() / 100, who = ::kernel::R32(ctx.esp + 4), arg = ctx.esp + 8;
     uint32_t was = ::kernel::R32(arg), by = ::kernel::R32(ctx.esp + 12);
     auto player = [](uint32_t c) { return c >= 0x10000 && c < 0x4000000 && ::kernel::R16(c + 0x7A) == 0x63; };
+    // Fellowship (opt-in): in co-op, while both players have landed a hit in the last 5 seconds, +10%
+    if (ach::FellowshipOn() && player(by) && who && !player(who)) {
+        static uint32_t ids[2];
+        static std::chrono::steady_clock::time_point at[2];
+        auto now = std::chrono::steady_clock::now();
+        int slot = ids[0] == by ? 0 : ids[1] == by ? 1 : (now - at[0] > now - at[1] ? 0 : 1);
+        ids[slot] = by;
+        at[slot] = now;
+        if (ids[0] && ids[1] && ids[0] != ids[1] && now - at[0] < std::chrono::seconds(5) && now - at[1] < std::chrono::seconds(5)) {
+            pct = pct * 110 / 100;
+            LOG_FIRST(1, "rotk: fellowship bonus (both players fighting)");
+        }
+    }
     bool scaled = pct != 100 && who && int32_t(was) > 0 && player(by) && !player(who);
     if (scaled) {
         int64_t v = (int64_t(int32_t(was)) * pct + 50) / 100;

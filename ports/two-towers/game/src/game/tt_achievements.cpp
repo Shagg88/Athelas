@@ -45,11 +45,16 @@ const Level* Find(const std::string& code) {
 void Completed(const std::string& code) {
     if (code == "orth") {
         ach::Unlock("secret_mission");
+        ach::LevelDone("secret_mission");
         return;
     }
     const Level* l = Find(code);
     if (!l) return;
     ach::Unlock(l->id);
+    ach::LevelDone(l->id);  // its record (Journey page)
+    bool fate_all = true;
+    for (const Level& m : kLevels) fate_all = fate_all && ach::FateDone(m.id);
+    if (fate_all) ach::Unlock("fate_all");
     int done = 0;
     for (const Level& m : kLevels) done += ach::Has(m.id);
     if (done == kMain) ach::Unlock("every_level");
@@ -65,8 +70,12 @@ std::vector<ach::Def> Achievements() {
     }
     v.push_back({"every_level", "The Two Towers", "Complete every level of the story."});
     v.push_back({"secret_mission", "Tower of Orthanc", "Complete the secret mission."});
+    ach::SharedDeeds(v);  // the kill deeds and Fate's
     return v;
 }
+
+// 0x99D40, tt_killpoints.cpp: the game's killing blow
+void EnemyDefeated() { ach::Defeated(); }
 
 // tt_extras.cpp: each file the game opens, lower case
 void AchievementsFile(const std::string& n) {
@@ -77,6 +86,8 @@ void AchievementsFile(const std::string& n) {
         if (code.rfind("21orth", 0) == 0) code = "orth";
         std::lock_guard lock(g_lock);
         g_world = Find(code) || code == "orth" ? code : std::string();
+        if (const Level* l = Find(code)) ach::LevelStarted(l->id);
+        else if (code == "orth") ach::LevelStarted("secret_mission");
         return;
     }
     if (ends("\\ui\\endlvl.bff")) {

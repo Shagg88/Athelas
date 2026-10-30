@@ -34,6 +34,7 @@ struct Frame {
     ID3D12Resource* depth = nullptr;  // render size, R24G8_TYPELESS, in PIXEL_SHADER_RESOURCE state
     ID3D12Resource* motion = nullptr; // render size, R16G16_FLOAT, in PIXEL_SHADER_RESOURCE state
     ID3D12Resource* output = nullptr; // output size, UAV capable, in UNORDERED_ACCESS state
+    ID3D12Resource* reactive = nullptr; // render size, R8_UNORM: where 2D covers the picture (0..0.9), PIXEL_SHADER_RESOURCE
     uint32_t render_w = 0, render_h = 0, out_w = 0, out_h = 0;
     float jitter_x = 0, jitter_y = 0;  // pixels at the render size, as added to the projection (+2x/w, -2y/h)
     bool reset = false;                // the camera cut: history thrown away

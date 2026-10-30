@@ -1,12 +1,15 @@
 // Direct3D 8 (XDK 5849) entry points the title calls, implemented on the host renderer.
 // Resource creation, locking and the XG helpers stay recompiled: they only manage memory.
 #include <algorithm>
+#include "core/state_gen.h"
 #include <array>
 #include <bitset>
 #include <cstdlib>
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <cstdio>
+#include <string>
 #include <mutex>
 #include <map>
 #include <thread>
@@ -18,10 +21,37 @@
 #include "gpu/backend.h"
 #include "gpu/texture.h"
 #include "gpu/vertex.h"
+
+namespace gpu::vk {
+bool Probe();  // gpu/vk_probe.cpp
+}
 #include "kernel/kernel.h"
 #include "xdk/d3d8.h"
 #include "xdk/hle.h"
 #include "xdk/layout.h"
+
+// testing logs: LOGR, as Info lines don't reach a release build's log
+#define LOG_FIRST_R(n, ...)                                                      \
+    do {                                                                         \
+        static std::atomic<int> _c{0};                                           \
+        if (_c.fetch_add(1, std::memory_order_relaxed) < (n)) LOGR(__VA_ARGS__); \
+    } while (0)
+
+// testing: vertex logs for draws the frame captures don't show (pushed and UP vertices). Off unless XBE_CAPTURE_DIR
+// is set; the first few of each kind, plus every one between XBE_VTX_LOG_START and XBE_VTX_LOG_END seconds
+// (at most 600 lines)
+static bool VtxLog(std::atomic<int>& first, int n) {
+    if (diag::CaptureDir().empty()) return false;
+    static const double s = std::getenv("XBE_VTX_LOG_START") ? std::atof(std::getenv("XBE_VTX_LOG_START")) : -1;
+    static const double e = std::getenv("XBE_VTX_LOG_END") ? std::atof(std::getenv("XBE_VTX_LOG_END")) : -1;
+    static const auto t0 = std::chrono::steady_clock::now();
+    static std::atomic<int> windowed{0};
+    if (first.fetch_add(1) < n) return true;
+    double now = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+    return now >= s && now <= e && windowed.fetch_add(1) < 600;
+}
+
+
 
 using namespace kernel;
 
@@ -41,6 +71,17 @@ using namespace kernel;
 #ifndef SYM_D3DDevice_EndPush
 #define SYM_D3DDevice_EndPush FFFFFE01
 #define HAS_D3DDevice_EndPush 0
+#endif
+// The Third Age (LTCG): its inlined library code reads the current vertex shader object at a device field
+// (D3D_DeviceVertexShaderField, +0x794) that the console's CreateDevice points at a default shader
+// (D3D_DefaultVertexShader, 0x2397F0). The host's CreateDevice clears the device, so it sets the same pointer.
+#ifndef HAS_D3D_DefaultVertexShader
+#define HAS_D3D_DefaultVertexShader 0
+#define SYM_D3D_DefaultVertexShader 0
+#endif
+#ifndef HAS_D3D_DeviceVertexShaderField
+#define HAS_D3D_DeviceVertexShaderField 0
+#define SYM_D3D_DeviceVertexShaderField 0
 #endif
 #ifndef HAS_D3D_FvfShader
 #define HAS_D3D_FvfShader 0
@@ -63,10 +104,17 @@ namespace {
 #define XBE_RENDER_THREAD 1
 #endif
 // XBE_RENDER_THREAD=0 or 1 in the environment overrides the build's choice, to compare the two without a rebuild
-const bool kRenderThread = [] {
-    const char* e = std::getenv("XBE_RENDER_THREAD");
-    return e ? e[0] != '0' : bool(XBE_RENDER_THREAD);
-}();
+// then a game's setting (gpu::g_render_thread, [graphics] second_core: -1 not set), then the build's choice. Decided once,
+// when the device is made (the settings are read by then), and kept.
+bool RenderThread() {
+    static const bool on = [] {
+        const char* e = std::getenv("XBE_RENDER_THREAD");
+        if (e) return e[0] != '0';
+        int set = gpu::g_render_thread.load();
+        return set >= 0 ? set != 0 : bool(XBE_RENDER_THREAD);
+    }();
+    return on;
+}
 
 // D3D globals of this build
 constexpr uint32_t kDevice = SYM(D3D_Device);        // the static CDevice, g_pDevice points at it
@@ -204,11 +252,50 @@ struct DeviceLock {
     }
 };
 
+// the device's transforms as last taken (D3DTS 0-9: view, projection, texture 0-3, world 0-3), raw
+float g_dev_transforms[10][16];
+
+// a transform into the renderer's state: the projection through the widescreen hook
+void TakeTransform(uint32_t t, const void* m) {
+    if (static std::atomic<int> n{0}; VtxLog(n, 0)) {  // testing: which transform changes when, against the draws
+        const float* f = static_cast<const float*>(m);
+        LOGR("d3d: transform %u <- %g %g %g %g / %g %g %g %g / %g %g %g %g / %g %g %g %g%s", t, f[0], f[1], f[2], f[3], f[4],
+             f[5], f[6], f[7], f[8], f[9], f[10], f[11], f[12], f[13], f[14], f[15], g_walking ? " (walking)" : "");
+    }
+    std::memcpy(g_dev_transforms[t], m, 64);
+    uint32_t pc = t < 2 ? t + 2 : t < 6 ? t + 14 : t + 250;
+    std::memcpy(g_state.transforms[pc].data(), m, 64);
+    if (t == 1 && gpu::g_projection_hook) gpu::g_projection_hook(g_state.transforms[pc].data());
+}
+
+// a title's inlined SetTransform (The Third Age, LTCG: 0xCE06D, 0x1897B6 and more copy 16 dwords to the device
+// and set its dirty flags) changes the device's copy without the library call: what changed is taken here, when the
+// console would load it into the GPU (the library's flush). Taken at once instead, the fade it draws after Start
+// with its own pushed vertices used the 3D camera's projection it had just stored and became a box in the top left.
+void TakeTransformsNow() {
+    if constexpr (kDevTransforms != 0xFFFFFFFFu) {
+        std::lock_guard<std::recursive_mutex> lock{g_lock};
+        for (uint32_t t = 0; t < 10; t++) {
+            const void* m = HostPtr(kDevice + kDevTransforms + t * 64);
+            if (std::memcmp(m, g_dev_transforms[t], 64)) {
+                LOG_FIRST(1, "d3d: a transform the title set itself (inlined SetTransform), taken at the flush");
+                TakeTransform(t, m);
+            }
+        }
+    }
+}
+
 void SyncDeferred() {
     // what the title pushed itself since (constants its inlined SetVertexShaderConstant wrote, The Fellowship of the
     // Ring's movie quad's among them) comes before the draw
     if (!g_walking) Walk(Dev(kDevPush));
     // deferred states live in the title's memory, the inline SetRenderState and SetTextureStageState write them
+    // a title's inlined SetTransform: taken at library draws and at the title's own flush (TakeDeviceTransforms),
+    // not while its pushed vertices are walked. Job 076's log: The Third Age pushes each menu word right after
+    // storing an identity view and then stores its 3D camera's view again before the next library call; taken
+    // during the walk, the camera's view placed every word off its panel, so no menu had text. (0f76dd0 tried this
+    // before the setters walked first, 2f8a798, and the menu then broke for that other reason.)
+    if (!g_walking) TakeTransformsNow();
     for (uint32_t i = gpu::kRsDeferredFirst; i < gpu::kRsComplexFirst; i++) g_state.rs[i] = R32(kRenderState + i * 4);
     for (int s = 0; s < 4; s++)
         for (uint32_t i = 0; i < gpu::kTssBumpEnvMat00; i++) g_state.tss[s][i] = R32(kTextureState + (s * kStageStates + i) * 4);
@@ -306,6 +393,12 @@ void WaitVBlank(int max_ms) {
     g_blank_cv.wait_for(l, std::chrono::milliseconds(max_ms), [&] { return g_blank_seq != seen; });
 }
 std::recursive_mutex& Lock() { return g_lock; }
+// the title's own flush: the vertices it pushed before draw with what was flushed before, then what it stored since
+// is taken (each pushed primitive of The Third Age's follows a call of its flush override)
+void TakeDeviceTransforms() {
+    DeviceLock lock;
+    TakeTransformsNow();
+}
 
 }  // namespace d3d
 
@@ -332,9 +425,27 @@ HLE_STDCALL(Direct3D_CreateDevice, 6) {
     if (!h) h = 480;
     LOGI("d3d: CreateDevice %ux%u format %X buffers %u depth %u format %X interval %X flags %X", w, h, fmt, count,
          auto_depth, depth_fmt, interval, R32(pp + 0x28));
+    // XBE_VULKAN_PROBE: what this PC's Vulkan offers, in the log (the Vulkan backend is being written)
+    if (std::getenv("XBE_VULKAN_PROBE")) gpu::vk::Probe();
     std::memset(HostPtr(kDevice), 0, XDK_CDevice_Size);
     W32(kDevicePtr, kDevice);
+#if HAS_D3D_DefaultVertexShader && HAS_D3D_DeviceVertexShaderField
+    LOG_FIRST(1, "d3d: the device's vertex shader starts as the library's default (%08X at +%X)",
+              SYM(D3D_DefaultVertexShader), SYM(D3D_DeviceVertexShaderField));
+    W32(kDevice + SYM(D3D_DeviceVertexShaderField), SYM(D3D_DefaultVertexShader));
+#endif
     ScratchPush();
+    // the console's CreateDevice starts every transform as the identity (view, projection, texture 0-3, world 0-3):
+    // a title that draws untransformed vertices before it sets any (The Third Age's logo movie, FVF XYZ) relies on
+    // it. With zeros the movie's quad collapsed to a point and the film was black with its sound playing.
+    LOG_FIRST(1, "d3d: transforms start as the identity");
+    {
+        static const float kIdentity[16] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+        for (uint32_t t = 0; t < 10; t++) {
+            std::memcpy(HostPtr(kDevice + kDevTransforms + t * 64), kIdentity, 64);
+            TakeTransform(t, kIdentity);
+        }
+    }
 
     uint32_t color_fmt = gpu::LinearColorFormat(fmt);
     g_buffer_count = std::min<uint32_t>(count + 1, 3);
@@ -355,10 +466,18 @@ HLE_STDCALL(Direct3D_CreateDevice, 6) {
     if (own || R32(pp + 0x40)) LOGI("d3d: title surfaces: %u color buffers, depth %08X", own, R32(pp + 0x40));
     if (!g_backend) {
         g_backend = gpu::CreateBackend();
-        if (!g_backend->Init(w, h))
+        bool ok = g_backend->Init(w, h);
+        if (!ok && app::Get().renderer == 1) {
+            const char* why = g_backend->InitError();
+            LOGR("vulkan: not used, Direct3D 12 instead: %s", why ? why : "it could not start");
+            g_backend.reset();  // its window surface released before Direct3D 12 takes the window
+            g_backend = gpu::CreateD3D12Backend();
+            ok = g_backend->Init(w, h);
+        }
+        if (!ok)
             app::Fail(app::kExitNoD3D12, L"Your graphics card or driver doesn't support Direct3D 12, which this "
                                          L"game needs. Updating the graphics driver may help; the log has the details.");
-        if (kRenderThread) g_backend = gpu::CreateThreadedBackend(std::move(g_backend));
+        if (RenderThread()) g_backend = gpu::CreateThreadedBackend(std::move(g_backend));
     }
     g_state = gpu::State{};
     g_state.viewport = {0, 0, w, h, 0.0f, 1.0f};
@@ -437,6 +556,7 @@ HLE_WRAP(Lock2DSurface, 6) {
     }
 }
 HLE_STDCALL(D3DResource_BlockUntilNotBusy, 1) {
+    if (core::t_draw_thread) --core::g_state_gen;  // draw data or a query: not a change of draw state
     if (a[0] && g_backend) {
         DeviceLock lock;
         g_backend->WaitResource(a[0]);
@@ -445,6 +565,7 @@ HLE_STDCALL(D3DResource_BlockUntilNotBusy, 1) {
     return 0;
 }
 HLE_STDCALL(D3DResource_IsBusy, 1) {
+    if (core::t_draw_thread) --core::g_state_gen;  // draw data or a query: not a change of draw state
     DeviceLock lock;
     uint32_t res = a[0];
     if (!res) return 0;
@@ -666,6 +787,7 @@ HLE_STDCALL(D3DDevice_SetScissors, 3) {
 }
 
 HLE_STDCALL(D3DDevice_SetScreenSpaceOffset, 2) {
+    DeviceLock lock;  // the vertices the title pushed before this draw with the state they were pushed under
     g_state.ss_offset_x = ArgF(a, 0);
     g_state.ss_offset_y = ArgF(a, 1);
     UpdateViewportConstants();
@@ -675,12 +797,14 @@ HLE_STDCALL(D3DDevice_SetScreenSpaceOffset, 2) {
 // render states
 
 HLE_FASTCALL(D3DDevice_SetRenderState_Simple, 0) {
+    DeviceLock lock;  // the vertices the title pushed before this draw with the state they were pushed under
     uint32_t method = a[0] & 0x1FFC, value = a[1];
     g_state.simple[method >> 2] = value;
     return 0;
 }
 
 HLE_STDCALL(D3DDevice_SetRenderStateNotInline, 2) {
+    DeviceLock lock;  // the vertices the title pushed before this draw with the state they were pushed under
     uint32_t rs = a[0], v = a[1];
     if (rs < gpu::kRsDeferredFirst) {
         uint32_t method = R32(kSimpleEncode + rs * 4) & 0x1FFC;
@@ -728,23 +852,28 @@ COMPLEX_STATE(RopZRead, gpu::kRsRopZRead)
 COMPLEX_STATE(DoNotCullUncompressed, gpu::kRsDoNotCullUncompressed)
 
 HLE_STDCALL(D3DDevice_SetTextureState_TexCoordIndex, 2) {
+    DeviceLock lock;  // the vertices the title pushed before this draw with the state they were pushed under
     g_state.tss[a[0] & 3][gpu::kTssTexCoordIndex] = a[1];
     W32(kTextureState + ((a[0] & 3) * kStageStates + gpu::kTssTexCoordIndex) * 4, a[1]);
     return 0;
 }
 HLE_STDCALL(D3DDevice_SetTextureState_BumpEnv, 3) {
+    DeviceLock lock;  // the vertices the title pushed before this draw with the state they were pushed under
     if (a[1] >= gpu::kTssBumpEnvMat00 && a[1] <= gpu::kTssBumpEnvLOffset) g_state.tss[a[0] & 3][a[1]] = a[2];
     return 0;
 }
 HLE_STDCALL(D3DDevice_SetTextureState_BorderColor, 2) {
+    DeviceLock lock;  // the vertices the title pushed before this draw with the state they were pushed under
     g_state.tss[a[0] & 3][gpu::kTssBorderColor] = a[1];
     return 0;
 }
 HLE_STDCALL(D3DDevice_SetTextureState_ColorKeyColor, 2) {
+    DeviceLock lock;  // the vertices the title pushed before this draw with the state they were pushed under
     g_state.tss[a[0] & 3][gpu::kTssColorKeyColor] = a[1];
     return 0;
 }
 HLE_STDCALL(D3DDevice_SetTextureStageStateNotInline, 3) {
+    DeviceLock lock;  // the vertices the title pushed before this draw with the state they were pushed under
     uint32_t stage = a[0] & 3, type = a[1], v = a[2];
     if (type < gpu::kTssCount) {
         g_state.tss[stage][type] = v;
@@ -756,16 +885,26 @@ HLE_STDCALL(D3DDevice_SetTextureStageStateNotInline, 3) {
 // the XDK's transform types: view 0, projection 1, texture 2-5, world 6-9; the renderer keeps Direct3D 8's numbers
 // (view 2, projection 3, texture 16, world 256). The device copy is what GetTransform reads.
 HLE_STDCALL(D3DDevice_SetTransform, 2) {
+    DeviceLock lock;  // the vertices the title pushed before this draw with the state they were pushed under
     uint32_t t = a[0];
     if (t >= 10) return 0;
+    {   // the first of each kind, for bring-up logs
+        static bool seen[10];
+        if (!seen[t]) {
+            seen[t] = true;
+            float m[16];
+            std::memcpy(m, HostPtr(a[1]), 64);
+            LOGI("d3d: first SetTransform %u: %g %g %g %g / %g %g %g %g / %g %g %g %g / %g %g %g %g", t, m[0], m[1],
+                 m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9], m[10], m[11], m[12], m[13], m[14], m[15]);
+        }
+    }
     std::memcpy(HostPtr(kDevice + kDevTransforms + t * 64), HostPtr(a[1]), 64);
-    uint32_t pc = t < 2 ? t + 2 : t < 6 ? t + 14 : t + 250;
-    std::memcpy(g_state.transforms[pc].data(), HostPtr(a[1]), 64);
-    if (t == 1 && gpu::g_projection_hook) gpu::g_projection_hook(g_state.transforms[pc].data());
+    TakeTransform(t, HostPtr(a[1]));
     return 0;
 }
 
 HLE_STDCALL(D3DDevice_SetMaterial, 1) {
+    DeviceLock lock;  // the vertices the title pushed before this draw with the state they were pushed under
     std::memcpy(g_state.material.data(), HostPtr(a[0]), 17 * 4);
     return 0;
 }
@@ -830,6 +969,7 @@ HLE_FASTCALL(D3DDevice_SwitchTexture, 1) {
 }
 
 HLE_STDCALL(D3DDevice_SetStreamSource, 3) {
+    if (core::t_draw_thread) --core::g_state_gen;  // draw data or a query: not a change of draw state
     DeviceLock lock;
     uint32_t n = a[0] & 15, vb = a[1], stride = a[2];
     uint32_t old = R32(kStreams + n * kStreamSize + XDK_Stream_Buffer);
@@ -842,6 +982,7 @@ HLE_STDCALL(D3DDevice_SetStreamSource, 3) {
 }
 
 HLE_STDCALL(D3DDevice_SetIndices, 2) {
+    if (core::t_draw_thread) --core::g_state_gen;  // draw data or a query: not a change of draw state
     XDK_REQUIRE("d3d", XDK_DATA(D3D_IndexData));
     DeviceLock lock;
     uint32_t ib = a[0];
@@ -932,24 +1073,28 @@ HLE_STDCALL(D3DDevice_SetVertexShader, 1) {
 }
 
 HLE_FASTCALL(D3DDevice_SetVertexShaderConstant1Fast, 0) {
+    DeviceLock lock;  // the vertices the title pushed before this draw with the state they were pushed under
     uint32_t reg = a[0];
     if (reg < 192) std::memcpy(g_state.vsc[reg].data(), HostPtr(a[1]), 16);
     return 0;
 }
 
 HLE_FASTCALL(D3DDevice_SetVertexShaderConstant1, 0) {
+    DeviceLock lock;  // the vertices the title pushed before this draw with the state they were pushed under
     uint32_t reg = a[0];
     if (reg < 192) std::memcpy(g_state.vsc[reg].data(), HostPtr(a[1]), 16);
     return 0;
 }
 
 HLE_FASTCALL(D3DDevice_SetVertexShaderConstant4, 0) {
+    DeviceLock lock;  // the vertices the title pushed before this draw with the state they were pushed under
     uint32_t reg = a[0], src = a[1];
     for (uint32_t i = 0; i < 4 && reg + i < 192; i++) std::memcpy(g_state.vsc[reg + i].data(), HostPtr(src + i * 16), 16);
     return 0;
 }
 
 HLE_FASTCALL(D3DDevice_SetVertexShaderConstantNotInlineFast, 1) {
+    DeviceLock lock;  // the vertices the title pushed before this draw with the state they were pushed under
     uint32_t reg = a[0], src = a[1], dwords = a[2];
     for (uint32_t i = 0; i < dwords / 4 && reg + i < 192; i++) std::memcpy(g_state.vsc[reg + i].data(), HostPtr(src + i * 16), 16);
     return 0;
@@ -1139,18 +1284,35 @@ HLE_STDCALL(D3DDevice_GetVisibilityTestResult, 3) {
     return done ? 0 : kTestIncomplete;
 }
 
+// every draw goes to the backend through here: whether the state is the draw before's (gpu::g_draw_same_state, for
+// D3D12's repeat path), on this thread; the threaded renderer works that out itself
+uint64_t g_last_draw_gen = ~0ull;
+void BackendDraw(uint32_t prim, uint32_t start, uint32_t count, const uint8_t* indices) {
+    core::t_draw_thread = true;  // both ways: the threaded renderer sends only draw data while the count stands still
+    if (RenderThread()) {
+        g_backend->Draw(g_state, prim, start, count, indices);
+        return;
+    }
+    gpu::g_draw_same_state = core::g_state_gen == g_last_draw_gen;
+    g_backend->Draw(g_state, prim, start, count, indices);
+    gpu::g_draw_same_state = false;
+    g_last_draw_gen = core::g_state_gen;
+}
+
 HLE_STDCALL(D3DDevice_DrawVertices, 3) {
+    if (core::t_draw_thread) --core::g_state_gen;  // a draw: its own call is not a change
     DeviceLock lock;
     SyncDeferred();
-    if (g_backend) g_backend->Draw(g_state, a[0], a[1], a[2], nullptr);
+    if (g_backend) BackendDraw(a[0], a[1], a[2], nullptr);
     return 0;
 }
 
 HLE_STDCALL(D3DDevice_DrawIndexedVertices, 3) {
+    if (core::t_draw_thread) --core::g_state_gen;  // a draw: its own call is not a change
     DeviceLock lock;
     SyncDeferred();
     const uint8_t* indices = a[2] ? static_cast<const uint8_t*>(HostPtr(a[2])) : nullptr;
-    if (g_backend) g_backend->Draw(g_state, a[0], 0, a[1], indices);
+    if (g_backend) BackendDraw(a[0], 0, a[1], indices);
     return 0;
 }
 
@@ -1189,9 +1351,25 @@ void DrawUp(uint32_t prim, uint32_t count, const void* vertices, uint32_t stride
         return;
     }
     SyncDeferred();
+    if (!diag::CaptureDir().empty()) {  // testing only: vertices drawn from memory, which frame captures don't show
+        const float* f = static_cast<const float*>(vertices);
+        uint32_t nf = std::min<uint32_t>(stride / 4, 10);
+        std::string s;
+        char buf[32];
+        for (uint32_t v = 0; v < std::min<uint32_t>(count, 4); v++) {
+            s += " [";
+            for (uint32_t i = 0; i < nf; i++) {
+                std::snprintf(buf, sizeof(buf), " %g", f[v * stride / 4 + i]);
+                s += buf;
+            }
+            s += " ]";
+        }
+        if (static std::atomic<int> n1{0}; (g_state.vs_handle & 1) && VtxLog(n1, 32)) LOGR("d3d: up prim %u count %u stride %u handle %X%s", prim, count, stride, g_state.vs_handle, s.c_str());
+        else if (static std::atomic<int> n2{0}; VtxLog(n2, 16)) LOGR("d3d: up prim %u count %u stride %u fvf %X%s", prim, count, stride, g_state.vs_handle, s.c_str());
+    }
     auto stream = g_state.streams[0];
     g_state.streams[0] = {UpVertices(vertices, count * stride), stride};
-    g_backend->Draw(g_state, prim, 0, count, nullptr);
+    BackendDraw(prim, 0, count, nullptr);
     g_state.streams[0] = stream;
 }
 
@@ -1219,6 +1397,19 @@ std::vector<uint32_t> g_arr_inline;
 uint32_t g_vsc_load = 0;  // SET_TRANSFORM_CONSTANT_LOAD (0x1EA4): the constant the next 0x0B80 values fill, in dwords
 float g_im_attr[64];                    // 16 slots of x y z w
 std::vector<float> g_im_vertices;       // every slot per vertex
+
+// one immediate mode vertex as text: each register it wrote, four floats
+static std::string ImVertex(uint32_t v) {
+    std::string s;
+    char buf[96];
+    for (uint32_t r = 0; r < 16; r++)
+        if (g_im_mask >> r & 1) {
+            const float* f = &g_im_vertices[v * 64 + r * 4];
+            std::snprintf(buf, sizeof(buf), "r%u %g %g %g %g ", r, f[0], f[1], f[2], f[3]);
+            s += buf;
+        }
+    return s;
+}
 
 // draws the open primitive: the slots it wrote are FLOAT4 inputs of the bound program, or of the fixed pipeline
 void EndPrimitive() {
@@ -1251,6 +1442,10 @@ void EndPrimitive() {
     for (uint32_t v = 0; v < count; v++)
         for (uint32_t s = 0; s < 16; s++)
             if (g_im_mask >> s & 1) packed.insert(packed.end(), &g_im_vertices[v * 64 + s * 4], &g_im_vertices[v * 64 + s * 4] + 4);
+    if (!diag::CaptureDir().empty()) {  // testing only: the immediate mode vertices, which frame captures don't show
+        if (static std::atomic<int> n3{0}; VtxLog(n3, 48)) LOGR("d3d: immediate prim %u count %u handle %X mask %X | v0 %s | v1 %s | v2 %s", prim, count, handle,
+                  g_im_mask, ImVertex(0).c_str(), ImVertex(1 < count ? 1 : 0).c_str(), ImVertex(2 < count ? 2 : 0).c_str());
+    }
     g_state.vs = m.vs;
     g_state.vs_handle = handle | 1;
     DrawUp(prim, count, packed.data(), m.vs->stream_stride[0]);
@@ -1266,9 +1461,9 @@ void EndArrays() {
     SyncDeferred();
     if (!g_arr_indices.empty()) {
         // the backend draws 16-bit indices as an index buffer of the draw's own
-        g_backend->Draw(g_state, prim, 0, uint32_t(g_arr_indices.size()), reinterpret_cast<const uint8_t*>(g_arr_indices.data()));
+        BackendDraw(prim, 0, uint32_t(g_arr_indices.size()), reinterpret_cast<const uint8_t*>(g_arr_indices.data()));
     }
-    for (auto [start, count] : g_arr_ranges) g_backend->Draw(g_state, prim, start, count, nullptr);
+    for (auto [start, count] : g_arr_ranges) BackendDraw(prim, start, count, nullptr);
     if (!g_arr_inline.empty()) {
         // inline vertices carry every input the shader reads, packed in register order, whatever stream it names
         uint32_t bytes = uint32_t(g_arr_inline.size()) * 4;
@@ -1320,6 +1515,10 @@ void Walk(uint32_t end) {
         uint32_t head = R32(p), method = head & 0x1FFC, n = (head >> 18) & 0x7FF;
         p += 4;
         if ((head & 0xA0030003) || n * 4 > end - p) break;  // anything but a method header
+        // a method that sets state: not the draw data, its begin and end, or where constants load
+        if (method != 0x1818 && method != 0x1800 && method != 0x1808 && method != 0x1810 && method != 0x17FC &&
+            method != 0x1EA4)
+            ++core::g_state_gen;
         // runs moved in one copy, as the loop below would one value at a time (the walk was a fifth of the CPU time
         // in The Fellowship of the Ring, mostly inline vertices pushed value by value)
         const uint8_t* src = kernel::g_base + p;
@@ -1433,6 +1632,7 @@ void Walk(uint32_t end) {
 }  // namespace d3d
 
 HLE_STDCALL(D3DDevice_DrawVerticesUP, 4) {
+    if (core::t_draw_thread) --core::g_state_gen;  // a draw: its own call is not a change
     DeviceLock lock;
     DrawUp(a[0], a[1], HostPtr(a[2]), a[3]);
     return 0;
@@ -1441,6 +1641,7 @@ HLE_STDCALL(D3DDevice_DrawVerticesUP, 4) {
 // DrawIndexedVerticesUP(prim, index count, 16-bit indices, vertices, stride): the vertices the indices reach are
 // copied to the UP ring like DrawVerticesUP's, then drawn indexed (XDK 4928, The Two Towers)
 HLE_STDCALL(D3DDevice_DrawIndexedVerticesUP, 5) {
+    if (core::t_draw_thread) --core::g_state_gen;  // a draw: its own call is not a change
     DeviceLock lock;
     uint32_t count = a[1], stride = a[4];
     if (!g_backend || !count || !stride || !a[2] || !a[3]) return 0;
@@ -1454,7 +1655,7 @@ HLE_STDCALL(D3DDevice_DrawIndexedVerticesUP, 5) {
     SyncDeferred();
     auto stream = g_state.streams[0];
     g_state.streams[0] = {UpVertices(HostPtr(a[3]), (top + 1) * stride), stride};
-    g_backend->Draw(g_state, a[0], 0, count, reinterpret_cast<const uint8_t*>(idx));
+    BackendDraw(a[0], 0, count, reinterpret_cast<const uint8_t*>(idx));
     g_state.streams[0] = stream;
     return 0;
 }

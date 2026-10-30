@@ -1,0 +1,32 @@
+# Toolchain: llvm-mingw (github.com/mstorsjo/llvm-mingw) - clang, lld and the mingw-w64 headers and runtime, every part
+# of it free to redistribute, so Athelas can ship it and build the ports on the player's PC with no Visual Studio.
+# LLVM_MINGW: its folder (default C:/Athelas/tools/llvm-mingw); ATHELAS_ARCH: x86_64 (default) or aarch64.
+if(NOT LLVM_MINGW)
+    if(DEFINED ENV{LLVM_MINGW})
+        set(LLVM_MINGW $ENV{LLVM_MINGW})
+    else()
+        set(LLVM_MINGW C:/Athelas/tools/llvm-mingw)
+    endif()
+endif()
+if(NOT ATHELAS_ARCH)
+    set(ATHELAS_ARCH x86_64)
+endif()
+# x64 on an x64 Windows PC isn't cross-compiling (CMake then runs xbe_recomp by its target name); ARM64 is
+if(NOT (CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows" AND ATHELAS_ARCH STREQUAL "x86_64"))
+    set(CMAKE_SYSTEM_NAME Windows)
+    set(CMAKE_SYSTEM_PROCESSOR ${ATHELAS_ARCH})
+endif()
+if(CMAKE_HOST_WIN32)
+    set(_x .exe)
+endif()
+set(CMAKE_C_COMPILER ${LLVM_MINGW}/bin/${ATHELAS_ARCH}-w64-mingw32-clang${_x})
+set(CMAKE_CXX_COMPILER ${LLVM_MINGW}/bin/${ATHELAS_ARCH}-w64-mingw32-clang++${_x})
+set(CMAKE_RC_COMPILER ${LLVM_MINGW}/bin/${ATHELAS_ARCH}-w64-mingw32-windres${_x})
+set(CMAKE_AR ${LLVM_MINGW}/bin/llvm-ar${_x})
+set(CMAKE_RANLIB ${LLVM_MINGW}/bin/llvm-ranlib${_x})
+set(CMAKE_FIND_ROOT_PATH ${LLVM_MINGW}/${ATHELAS_ARCH}-w64-mingw32)
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+# everything inside the program: no libc++ / unwinder DLLs beside it
+set(CMAKE_EXE_LINKER_FLAGS_INIT "-static")

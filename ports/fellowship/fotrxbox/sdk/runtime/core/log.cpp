@@ -52,7 +52,9 @@ void Init(const std::string& dir, const std::string& prefix, bool append) {
 const std::string& Path() { return g_path; }
 
 void Write(Level lv, const char* fmt, ...) {
-    if (!kVerbose && lv < Level::Error) return;
+    // XBE_LOG_ALL set: a release build keeps its Info and Warn lines too (testing: the one-time notices, LOG_FIRST)
+    static const bool all = kVerbose || std::getenv("XBE_LOG_ALL") != nullptr;
+    if (!kVerbose && lv < (all ? Level::Info : Level::Error)) return;
     char msg[4096];
     va_list ap;
     va_start(ap, fmt);

@@ -91,5 +91,9 @@ bool OrthoExtent(const State& s, uint32_t start, uint32_t count, const uint8_t* 
 // false when there is nothing to draw
 // indices: the title's 16 bit indices, null for an unindexed draw
 bool Assemble(const State& s, uint32_t prim, uint32_t start, uint32_t count, const uint8_t* indices, Assembled& out);
+// set by the threaded renderer's render thread around a draw its prep thread assembled ahead: the backend takes it
+// (swaps it in) instead of assembling; ok is Assemble's answer
+inline thread_local Assembled* t_preassembled = nullptr;
+inline thread_local bool t_preassembled_ok = false;
 
 }  // namespace gpu

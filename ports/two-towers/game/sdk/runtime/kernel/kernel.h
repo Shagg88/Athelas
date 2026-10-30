@@ -221,6 +221,10 @@ bool DeleteSymbolicLink(const std::string& link);
 std::string QuerySymbolicLink(const std::string& link);
 std::string ResolvePath(const std::string& xbox_path, uint32_t root_handle);  // host path or empty
 bool ReadGameFile(const std::string& xbox_path, std::vector<uint8_t>& out);  // from a host folder or the disc image
+// A game file served from memory, read only, instead of the disc image or the folder: the provider is asked as each file
+// is opened, with its path as the game names it in lower case; null leaves the file as it is
+using FileData = std::shared_ptr<const std::vector<uint8_t>>;
+void SetFileProvider(FileData (*provider)(const std::string& xbox_path));
 
 // boot
 bool Boot(std::vector<uint8_t> xbe, const std::string& xbe_name, const std::string& game_dir, const std::string& data_dir);

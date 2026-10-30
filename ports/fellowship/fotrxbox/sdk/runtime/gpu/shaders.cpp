@@ -53,6 +53,7 @@ const char* kCommonTail = R"(    float4 spread[4];
     float4x4 tm[4];
     float4 mat[5];
     float4 amb;
+    float4 widen;
     float4 lt[56];
 };
 )";
@@ -226,6 +227,9 @@ const char* kVsEpilogue = R"(
     if (abs(p.x - (surf.x - 0.5)) < 1e-3) p.x = surf.x;
     if (abs(p.y - (surf.y - 0.5)) < 1e-3) p.y = surf.y;
     q.x = p.x * 2 / surf.x - 1;
+    // widescreen for a game whose vertex programs carry their own projection: 3D positions (w other than 1; 2D
+    // and full-screen passes have w 1) narrowed by 4:3 / the frame's shape about the middle (g_program_widen)
+    if (widen.x != 0 && abs(p.w - 1) > 1e-3) q.x *= widen.x;
     q.y = 1 - p.y * 2 / surf.y;
     q.z = p.z * surf.z;
     q.xyz *= p.w;
@@ -505,8 +509,10 @@ float4 spreadtap(Texture2D t, SamplerState s, float2 uv, float4 w, float m) {
 float alphatest(float a) {
     int f = (int)misc.y;
     // surf.w: alpha to coverage for a cut-out (alpha greater than the reference, no blending, anti-aliasing): the
-    // edge's alpha sharpened to a pixel wide ramp around the reference, which the samples cover in proportion
-    if (surf.w != 0) return saturate((a - misc.x / 255) / max(fwidth(a), 1e-4) + 0.5);
+    // edge's alpha sharpened to a pixel wide ramp just inside the reference, which the samples cover in proportion.
+    // Inside, not centred on it: texels past the cut are dark (their colour never shown under the alpha test), and a
+    // ramp reaching past the reference showed them as a dark halo round leaves (Shagg, job 110)
+    if (surf.w != 0) return saturate((a - misc.x / 255) / max(fwidth(a), 1e-4));
     int v = (int)round(a * 255), r = (int)misc.x;
     bool ok = f == 0 ? false : f == 1 ? v < r : f == 2 ? v == r : f == 3 ? v <= r : f == 4 ? v > r : f == 5 ? v != r : f == 6 ? v >= r : true;
     if (!ok) discard;
@@ -987,6 +993,8 @@ std::string MotionHlsl(std::string s, MotionKind kind) {
         }
         s.insert(e, prev);
         std::string jit = kind == kMotionProgram ? "    o.pos.xy += jit.xy * o.pos.w;\n" : "";
+        // a 2D draw (HUD, text, menus): marked for the upscaler's reactive mask (mvp.z is unused by the pixel shader)
+        if (kind == kMotionFlat) jit = "    o.mvp.z = 1e9;\n";
         Sub(s, "    o.pos = q;\n",
             "    o.pos = q;\n    {\n        float4 pp = mv_po;\n        pp.w = magclamp(pp.w);\n        float4 qp;\n"
             "        qp.x = pp.x * 2 / surf.x - 1;\n        qp.y = 1 - pp.y * 2 / surf.y;\n        qp.z = pp.z * surf.z;\n"
@@ -995,7 +1003,7 @@ std::string MotionHlsl(std::string s, MotionKind kind) {
     }
     // fixed function, transformed here (flat: a 2D draw in screen space, left still and unjittered)
     if (kind == kMotionFlat) {
-        Sub(s, "    o.pos = cp;\n", "    o.pos = cp;\n    o.mvc = cp;\n    o.mvp = cp;\n");
+        Sub(s, "    o.pos = cp;\n", "    o.pos = cp;\n    o.mvc = cp;\n    o.mvp = cp;\n    o.mvp.z = 1e9;\n");
         return s;
     }
     Sub(s, "    float4 cp = mul(ip, wvp);\n", "    float4 cp = mul(ip, wvp);\n    float4 mv_cp = mul(ip, wvp_prev);\n");
@@ -1006,7 +1014,7 @@ std::string MotionHlsl(std::string s, MotionKind kind) {
 std::string MotionPixelHlsl(std::string s) {
     AddMotionDecls(s);
     Sub(s, "float4 main(VOut i, bool front : SV_IsFrontFace) : SV_Target {",
-        "struct POut {\n    float4 c : SV_Target0;\n    float4 mv : SV_Target1;\n};\n"
+        "struct POut {\n    float4 c : SV_Target0;\n    float4 mv : SV_Target1;\n    float react : SV_Target2;\n};\n"
         "POut main(VOut i, bool front : SV_IsFrontFace) {");
     size_t r = s.rfind("return outc;\n}");
     if (r != std::string::npos)
@@ -1016,6 +1024,9 @@ std::string MotionPixelHlsl(std::string s) {
                   "    float2 cn = i.mvc.xy / i.mvc.w, pn = i.mvp.xy / max(i.mvp.w, 1e-6);\n"
                   "    po.mv.xy = i.mvp.w > 0 && i.mvc.w > 0 ? (pn - cn) * float2(0.5, -0.5) : 0;\n"
                   "    po.mv.z = 0;\n    po.mv.w = outc.a >= 0.5 ? 1 : 0;  // a blended cut-out writes it where mostly opaque\n"
+                  "    // reactive mask: where 2D (HUD, text) covers the picture the upscaler takes this frame's colour over its\n"
+                  "    // history (AMD's guidance: the alpha, capped at 0.9), so changing numbers and bars don't smear\n"
+                  "    po.react = i.mvp.z > 1e8 && jit.z > 0.5 ? min(outc.a, 0.9) : 0;\n"
                   "    return po;\n}");
     return s;
 }

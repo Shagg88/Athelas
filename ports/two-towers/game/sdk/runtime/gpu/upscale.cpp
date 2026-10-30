@@ -179,6 +179,8 @@ public:
         d.depth = ffxApiGetResourceDX12(f.depth, FFX_API_RESOURCE_STATE_PIXEL_COMPUTE_READ);
         d.motionVectors = ffxApiGetResourceDX12(f.motion, FFX_API_RESOURCE_STATE_PIXEL_COMPUTE_READ);
         d.output = ffxApiGetResourceDX12(f.output, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS);
+        // the HUD and text over the picture: taken from this frame, not smeared from the last (FSR's reactive mask)
+        if (f.reactive) d.reactive = ffxApiGetResourceDX12(f.reactive, FFX_API_RESOURCE_STATE_PIXEL_COMPUTE_READ);
         d.jitterOffset = {f.jitter_x, f.jitter_y};
         // motion is in UV units: FSR takes pixels
         d.motionVectorScale = {float(f.render_w), float(f.render_h)};
@@ -300,14 +302,17 @@ public:
         sl::Resource depth(sl::ResourceType::eTex2d, f.depth, nullptr, nullptr, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         sl::Resource mv(sl::ResourceType::eTex2d, f.motion, nullptr, nullptr, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         sl::Resource output(sl::ResourceType::eTex2d, f.output, nullptr, nullptr, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        sl::Resource react(sl::ResourceType::eTex2d, f.reactive, nullptr, nullptr, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        // the HUD and text over the picture: DLSS's "bias current colour" hint, so they're taken from this frame
         sl::ResourceTag tags[] = {
             sl::ResourceTag{&color, sl::kBufferTypeScalingInputColor, sl::ResourceLifecycle::eValidUntilEvaluate, &in},
             sl::ResourceTag{&depth, sl::kBufferTypeDepth, sl::ResourceLifecycle::eValidUntilEvaluate, &in},
             sl::ResourceTag{&mv, sl::kBufferTypeMotionVectors, sl::ResourceLifecycle::eValidUntilEvaluate, &in},
             sl::ResourceTag{&output, sl::kBufferTypeScalingOutputColor, sl::ResourceLifecycle::eValidUntilEvaluate, &out},
+            sl::ResourceTag{&react, sl::kBufferTypeBiasCurrentColorHint, sl::ResourceLifecycle::eValidUntilEvaluate, &in},
         };
         auto* cmd = reinterpret_cast<sl::CommandBuffer*>(f.cl);
-        if (slSetTagForFrame(*token, view_, tags, 4, cmd) != sl::Result::eOk) {
+        if (slSetTagForFrame(*token, view_, tags, f.reactive ? 5 : 4, cmd) != sl::Result::eOk) {
             static int logged = 0;
             if (logged++ < 3) LOGR("upscaler: DLSS did not take the frame's resources; the normal picture instead");
             return false;

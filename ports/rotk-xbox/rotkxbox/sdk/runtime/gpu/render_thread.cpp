@@ -8,6 +8,7 @@
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
+#include <cstddef>
 #include <windows.h>
 #if defined(__SSE4_1__)
 #include <smmintrin.h>
@@ -16,6 +17,7 @@
 #include <algorithm>
 #include <chrono>
 #include <condition_variable>
+#include <cstdlib>
 #include <cstring>
 #include <deque>
 #include <mutex>
@@ -26,7 +28,9 @@
 
 #include "core/diag.h"
 #include "core/log.h"
+#include "core/state_gen.h"
 #include "gpu/backend.h"
+#include "gpu/vertex.h"
 #include "kernel/kernel.h"
 #include "kernel/memory.h"
 
@@ -60,6 +64,10 @@ struct Batch {
     std::vector<uint8_t> bytes;
     std::vector<std::shared_ptr<VertexShader>> vs;
     std::vector<std::shared_ptr<PixelShader>> ps;
+    // the prep thread's work (XBE_PREP_THREAD=1; off by default): each draw's vertices assembled ahead, by command index
+    std::vector<Assembled> pre;
+    std::vector<uint8_t> pre_ok;
+    bool prepped = false;
 };
 
 // the plain data in State, around its shader pointers and the resource headers (sent as copies); of the transforms only
@@ -105,13 +113,22 @@ public:
     explicit Threaded(std::unique_ptr<Backend> inner) : inner_(std::move(inner)), ranges_(StateRanges()) {
         ring_ = mem::AllocSystem(kHeaderRing, 64);
         cur_ = NewBatch();
+        const char* e = std::getenv("XBE_PREP_THREAD");
+        prep_on_ = e && e[0] == '1';  // off by default: jobs 115-116 ran 30-50 fps in the heavy scene against 80 before it, and crashed
         std::thread([this] { Run(); }).detach();
+        if (prep_on_) std::thread([this] { Prep(); }).detach();
+        LOGR("render thread: %s", prep_on_ ? "with a prep thread (vertices assembled on a third core)" : "on its own");
     }
     ~Threaded() override {
         {
             std::lock_guard lock(m_);
             stop_ = true;
         }
+        {
+            std::lock_guard lock(pm_);
+            prep_stop_ = true;
+        }
+        pcv_.notify_all();
         cv_.notify_all();
         std::unique_lock lock(m_);
         // at exit the worker may be gone mid-batch: then the inner backend is left, not freed under it
@@ -120,9 +137,16 @@ public:
 
     bool Init(uint32_t width, uint32_t height) override { return inner_->Init(width, height); }
 
+    bool changed_ = true;  // render thread: anything but draw data since the last draw
+    uint64_t sent_gen_ = ~0ull;  // title thread: core::g_state_gen at the last draw's state
+    // XBE_FULL_STATE=1: the whole state compared at every draw, as before (to rule this out if a draw looks wrong)
+    const bool g_full_state = std::getenv("XBE_FULL_STATE") != nullptr;
+
     void Draw(const State& s, uint32_t prim, uint32_t start, uint32_t count, const uint8_t* indices) override {
         auto t = Clock::now();
-        SendState(s);
+        uint64_t gen = core::g_state_gen;
+        SendState(s, gen != sent_gen_ || g_full_state);
+        sent_gen_ = gen;
         Cmd c{Op::Draw};
         c.a = prim;
         c.b = start;
@@ -333,13 +357,22 @@ private:
     }
 
     // what changed since the last command, in 64 byte pieces
-    void SendState(const State& s) {
+    // whole false: no state call since the draw before (core::g_state_gen the same), so only the draw data and the
+    // resource headers can differ; the whole State's compare (render states, transforms, constants: kilobytes) is
+    // skipped. Job 108: that compare was most of the title thread's 13 ms a frame at 15,000 draws.
+    void SendState(const State& s, bool whole = true) {
         const uint8_t* now = reinterpret_cast<const uint8_t*>(&s);
         Cmd c{Op::State};
         size_t first = cur_->bytes.size();
-        for (const Range& r : ranges_)
-            for (size_t off = r.off, end = r.off + r.len; off < end; off += 64)
-                Delta(reinterpret_cast<const uint8_t*>(&sent_) + off, now + off, std::min<size_t>(64, end - off));
+        if (whole) {
+            for (const Range& r : ranges_)
+                for (size_t off = r.off, end = r.off + r.len; off < end; off += 64)
+                    Delta(reinterpret_cast<const uint8_t*>(&sent_) + off, now + off, std::min<size_t>(64, end - off));
+        } else {
+            Delta(&sent_.index_buffer, &s.index_buffer, sizeof(s.index_buffer));
+            Delta(&sent_.index_data, &s.index_data, sizeof(s.index_data));
+            Delta(&sent_.base_vertex, &s.base_vertex, sizeof(s.base_vertex));
+        }
         std::array<uint32_t, 4> textures;
         for (size_t i = 0; i < 4; i++) textures[i] = Header(s.textures[i]);
         Delta(&sent_.textures, &textures, sizeof(textures));
@@ -383,6 +416,15 @@ private:
 
     uint64_t Submit() {
         uint64_t id = cur_->id;
+        if (prep_on_) {
+            {
+                std::lock_guard lock(pm_);
+                prep_queue_.push_back(cur_);
+            }
+            pcv_.notify_one();
+            cur_ = NewBatch();
+            return id;
+        }
         {
             std::lock_guard lock(m_);
             queue_.push_back(cur_);
@@ -409,6 +451,67 @@ private:
         }
     }
 
+    // the prep thread: replays each batch's state as the render thread will, assembles every draw's vertices (reading
+    // the vertex memory a little earlier than the render thread would, still after the title's call), then hands the
+    // batch on. The render thread is left the Direct3D 12 calls. Job 111: the render thread was the frame's limit
+    // (15-17 ms a frame at 16,000-18,000 draws, the title thread waiting 7 ms for it).
+    void Prep() {
+        using SetDescription = HRESULT(WINAPI*)(HANDLE, PCWSTR);
+        if (auto set = reinterpret_cast<SetDescription>(
+                reinterpret_cast<void*>(GetProcAddress(GetModuleHandleW(L"kernel32.dll"), "SetThreadDescription"))))
+            set(GetCurrentThread(), L"render prep");
+        for (;;) {
+            Batch* b;
+            {
+                std::unique_lock lock(pm_);
+                pcv_.wait(lock, [&] { return prep_stop_ || !prep_queue_.empty(); });
+                if (prep_queue_.empty()) return;
+                b = prep_queue_.front();
+                prep_queue_.pop_front();
+            }
+            if (b->pre.size() < b->cmds.size()) b->pre.resize(b->cmds.size());
+            b->pre_ok.assign(b->cmds.size(), 0);
+            for (size_t i = 0; i < b->cmds.size(); i++) {
+                const Cmd& c = b->cmds[i];
+                const uint8_t* data = b->bytes.data() + c.data;
+                if (c.op == Op::State) {
+                    ApplyState(*b, c, prep_state_, nullptr);
+                } else if (c.op == Op::Draw) {
+                    b->pre_ok[i] = Assemble(prep_state_, c.a, c.b, c.c, c.d ? data : nullptr, b->pre[i]) ? 1 : 2;
+                }
+            }
+            b->prepped = true;
+            {
+                std::lock_guard lock(m_);
+                queue_.push_back(b);
+            }
+            cv_.notify_one();
+        }
+    }
+
+    // a State command's changes into st; changed (if given) set when more than draw data changed
+    static void ApplyState(const Batch& b, const Cmd& c, State& st, bool* changed) {
+        const uint8_t* data = b.bytes.data() + c.data;
+        uint8_t* s = reinterpret_cast<uint8_t*>(&st);
+        constexpr size_t kDataBegin = offsetof(State, streams);
+        constexpr size_t kDataEnd = offsetof(State, base_vertex) + sizeof(uint32_t);
+        for (const uint8_t* p = data; p < data + c.size;) {
+            uint32_t head[2];
+            std::memcpy(head, p, 8);
+            std::memcpy(s + head[0], p + 8, head[1]);
+            if (changed && (head[0] < kDataBegin || head[0] + head[1] > kDataEnd)) *changed = true;
+            p += 8 + head[1];
+        }
+        if (c.vs >= 0) {
+            st.vs = b.vs[size_t(c.vs)];
+            if (changed) *changed = true;
+        }
+        if (c.ps >= 0) {
+            st.ps = b.ps[size_t(c.ps)];
+            if (changed) *changed = true;
+        }
+    }
+
     void Run() {
         using SetDescription = HRESULT(WINAPI*)(HANDLE, PCWSTR);
         if (auto set = reinterpret_cast<SetDescription>(
@@ -423,7 +526,15 @@ private:
                 b = queue_.front();
                 queue_.pop_front();
             }
-            for (const Cmd& c : b->cmds) Execute(*b, c);
+            for (size_t i = 0; i < b->cmds.size(); i++) {
+                if (b->prepped && b->cmds[i].op == Op::Draw && b->pre_ok[i]) {
+                    t_preassembled = &b->pre[i];
+                    t_preassembled_ok = b->pre_ok[i] == 1;
+                }
+                Execute(*b, b->cmds[i]);
+                t_preassembled = nullptr;
+            }
+            b->prepped = false;
             uint64_t id = b->id;
             b->cmds.clear();
             b->bytes.clear();
@@ -443,20 +554,17 @@ private:
 
     void Execute(const Batch& b, const Cmd& c) {
         const uint8_t* data = b.bytes.data() + c.data;
+        if (c.op != Op::State && c.op != Op::Draw) changed_ = true;  // clears, copies, presents, read-backs...
         switch (c.op) {
-            case Op::State: {
-                uint8_t* s = reinterpret_cast<uint8_t*>(&state_);
-                for (const uint8_t* p = data; p < data + c.size;) {
-                    uint32_t head[2];
-                    std::memcpy(head, p, 8);
-                    std::memcpy(s + head[0], p + 8, head[1]);
-                    p += 8 + head[1];
-                }
-                if (c.vs >= 0) state_.vs = b.vs[size_t(c.vs)];
-                if (c.ps >= 0) state_.ps = b.ps[size_t(c.ps)];
+            case Op::State:
+                ApplyState(b, c, state_, &changed_);
                 break;
-            }
-            case Op::Draw: inner_->Draw(state_, c.a, c.b, c.c, c.d ? data : nullptr); break;
+            case Op::Draw:
+                g_draw_same_state = !changed_;
+                inner_->Draw(state_, c.a, c.b, c.c, c.d ? data : nullptr);
+                g_draw_same_state = false;
+                changed_ = false;
+                break;
             case Op::Clear: inner_->Clear(state_, c.a, c.size ? data : nullptr, c.b, c.c, c.f, c.d); break;
             case Op::Copy: inner_->Copy(c.s1, c.s2, c.a, c.b, c.c); break;
             case Op::Present: inner_->Present(c.s1); break;
@@ -507,6 +615,14 @@ private:
     std::vector<Batch*> free_;
     std::atomic<uint64_t> done_{0};
     bool stop_ = false, exited_ = false;
+
+    // the prep thread
+    bool prep_on_ = true;
+    State prep_state_;
+    std::mutex pm_;
+    std::condition_variable pcv_;
+    std::deque<Batch*> prep_queue_;
+    bool prep_stop_ = false;
 };
 
 }  // namespace

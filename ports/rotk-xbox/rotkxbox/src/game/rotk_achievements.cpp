@@ -87,6 +87,24 @@ void Check() {
     }
     for (const Level& l : kLevels)
         if (any & (1u << l.bit)) ach::Unlock(l.id);
+    // records: a level completed is a new bit for some hero (alone or co-op) since the last look. A level replayed
+    // with a hero who has already completed it sets no new bit, so it isn't recorded.
+    {
+        static bool seen = false;
+        static uint32_t was[9][2];
+        for (int h = 0; h < 9; h++)
+            for (int c = 0; c < 2; c++) {
+                uint32_t now = Done(h, c != 0) & kAllLevels;
+                uint32_t fresh = seen ? now & ~was[h][c] : 0;
+                was[h][c] = now;
+                for (const Level& l : kLevels)
+                    if (fresh & (1u << l.bit)) ach::LevelDone(l.id);
+            }
+        seen = true;
+        bool fate_all = true;
+        for (const Level& l : kLevels) fate_all = fate_all && ach::FateDone(l.id);
+        if (fate_all) ach::Unlock("fate_all");
+    }
     if (coop) ach::Unlock("coop");
     if ((any & kAllLevels) == kAllLevels) ach::Unlock("every_level");
     if (all_heroes_all == kAllLevels) ach::Unlock("every_level_every_hero");
@@ -112,19 +130,12 @@ std::vector<ach::Def> Achievements() {
     v.push_back({"hero_level_10", "Seasoned Hero", "Raise a hero to level 10."});
     v.push_back({"every_level", "The Return of the King", "Complete every level."});
     v.push_back({"every_level_every_hero", "Every Path Walked", "Complete every level with every hero."});
-    v.push_back({"kills_100", "A Hundred Foes", "Defeat 100 enemies."});
-    v.push_back({"kills_1000", "A Thousand Foes", "Defeat 1,000 enemies."});
-    v.push_back({"kills_10000", "The Host of Mordor", "Defeat 10,000 enemies."});
+    ach::SharedDeeds(v);  // the kill deeds and Fate's
     return v;
 }
 
 // 0x2A1B0, rotk_secrets.cpp: a player's hit that took an enemy's health to 0
-void EnemyDefeated() {
-    uint64_t n = ach::Add("enemies_defeated", 1);
-    if (n >= 100) ach::Unlock("kills_100");
-    if (n >= 1000) ach::Unlock("kills_1000");
-    if (n >= 10000) ach::Unlock("kills_10000");
-}
+void EnemyDefeated() { ach::Defeated(); }
 
 // GameInfo::file_opened, from rotk_controls.cpp's: the level and hero the Discord status shows, and the progress
 // checks, started with the first file
@@ -149,7 +160,10 @@ void AchievementsFile(const std::string& n) {
         else if (code.rfind("pal", 0) == 0) name = "A secret level";
         else
             for (const Level& l : kLevels)
-                if (code == l.code) name = l.name;
+                if (code == l.code) {
+                    name = l.name;
+                    ach::LevelStarted(l.id);  // its record (Journey page)
+                }
         if (code != "globscen") {
             std::lock_guard lock(g_lock);
             g_level = name;

@@ -159,9 +159,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     if (intptr_t result = 0; kGame.message && kGame.message(hwnd, msg, wp, lp, &result)) return result;
     switch (msg) {
         case WM_KEYDOWN:
-            // F3: a frame capture and a thread dump, for testing only (XBE_CAPTURE_DIR set, capture.bat): a player who
+            // M: a frame capture and a thread dump, for testing only (XBE_CAPTURE_DIR set, capture.bat): a player who
             // presses it by accident would otherwise find alarming "error:" lines in the log
-            if (wp == VK_F3 && !diag::CaptureDir().empty()) DumpThreads();
+            if (wp == 'M' && !(lp & (1 << 30)) && !diag::CaptureDir().empty()) DumpThreads();
             // \, the key above Enter on a US keyboard (VK_OEM_5): a screenshot, once a press
             if (wp == VK_OEM_5 && !(lp & (1 << 30))) gpu::g_screenshot = true;
             // F8: texture packs off and on, to compare; F7: a pair of screenshots, with and without them

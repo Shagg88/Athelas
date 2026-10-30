@@ -48,10 +48,18 @@ static const char *const k_heroIds[9] = { "hero_aragorn", "hero_legolas", "hero_
                                           "hero_frodo", "hero_pippin", "hero_merry", "hero_faramir" };
 
 typedef struct { const char *id; char title[48]; char desc[96]; } Def;
-#define DEF_COUNT (LEVEL_COUNT + 9 + 7)
+#define DEF_COUNT (LEVEL_COUNT + 9 + 4 + 7)
 static Def g_defs[DEF_COUNT];
 static char g_when[DEF_COUNT][24];    /* "" not earned */
 static unsigned long long g_kills;
+/* the other counters, as the Xbox ports keep them: kills@<level>, completed@<level>, levels_completed, fate@<level> */
+typedef struct { char name[48]; unsigned long long v; } Counter;
+static Counter g_counters[96];
+static int g_counterCount;
+static int g_fate;              /* ATHELAS_FATE=1 (the Journey page): enemies count twice, Fate's deeds */
+static char g_run[40];          /* the level being played (its deed id), "" between levels */
+static DWORD g_runAt;
+static unsigned long long g_runKills;
 static CRITICAL_SECTION g_cs;
 static int g_ready, g_notify = 1, g_discord;
 static char g_appId[40];
@@ -75,16 +83,21 @@ static void defs_init(void)
         lstrcpynA(g_defs[n].title, k_heroes[h], sizeof g_defs[n].title);
         snprintf(g_defs[n].desc, sizeof g_defs[n].desc, "Complete a level as %s%s", k_heroes[h], h >= 6 ? " (a hero you unlock)." : ".");
     }
-    static const struct { const char *id, *title, *desc; } more[7] = {
+    static const struct { const char *id, *title, *desc; } more[11] = {
         { "coop", "Side by Side", "Complete a level in co-op." },
         { "hero_level_10", "Seasoned Hero", "Raise a hero to level 10." },
         { "every_level", "The Return of the King", "Complete every level." },
         { "every_level_every_hero", "Every Path Walked", "Complete every level with every hero." },
+        /* the deeds the Xbox ports share (sdk app/achievements.cpp SharedDeeds) */
         { "kills_100", "A Hundred Foes", "Defeat 100 enemies." },
+        { "kills_250", "Foe-hewer", "Defeat 250 enemies." },
+        { "kills_500", "Sword of the West", "Defeat 500 enemies." },
         { "kills_1000", "A Thousand Foes", "Defeat 1,000 enemies." },
-        { "kills_10000", "The Host of Mordor", "Defeat 10,000 enemies." },
+        { "kills_5000", "Bane of the Enemy", "Defeat 5,000 enemies." },
+        { "fate_one", "Fated", "Complete a level on Fate." },
+        { "fate_all", "Doom-sworn", "Complete every level on Fate." },
     };
-    for (int i = 0; i < 7; i++, n++) {
+    for (int i = 0; i < 11; i++, n++) {
         g_defs[n].id = more[i].id;
         lstrcpynA(g_defs[n].title, more[i].title, sizeof g_defs[n].title);
         lstrcpynA(g_defs[n].desc, more[i].desc, sizeof g_defs[n].desc);
@@ -106,7 +119,9 @@ static void save(void)
     if (!f) return;
     fprintf(f, "; Achievements earned in this game (kept by ROTK Fix; Athelas shows them).\r\n[unlocked]\r\n");
     for (int i = 0; i < DEF_COUNT; i++) if (g_when[i][0]) fprintf(f, "%s = %s\r\n", g_defs[i].id, g_when[i]);
-    fprintf(f, "\r\n[counters]\r\nenemies_defeated = %llu\r\n\r\n[list]\r\n", g_kills);
+    fprintf(f, "\r\n[counters]\r\nenemies_defeated = %llu\r\n", g_kills);
+    for (int i = 0; i < g_counterCount; i++) fprintf(f, "%s = %llu\r\n", g_counters[i].name, g_counters[i].v);
+    fprintf(f, "\r\n[list]\r\n");
     for (int i = 0; i < DEF_COUNT; i++) fprintf(f, "%s = %s | %s\r\n", g_defs[i].id, g_defs[i].title, g_defs[i].desc);
     fclose(f);
     MoveFileExA(tmp, g_file, MOVEFILE_REPLACE_EXISTING);
@@ -133,6 +148,10 @@ static void load(void)
         while (*v == ' ') v++;
         if (!strcmp(sec, "[unlocked]")) { int i = def_index(k); if (i >= 0) lstrcpynA(g_when[i], v, sizeof g_when[i]); }
         else if (!strcmp(sec, "[counters]") && !strcmp(k, "enemies_defeated")) g_kills = _strtoui64(v, NULL, 10);
+        else if (!strcmp(sec, "[counters]") && g_counterCount < 96) {
+            lstrcpynA(g_counters[g_counterCount].name, k, sizeof g_counters[0].name);
+            g_counters[g_counterCount++].v = _strtoui64(v, NULL, 10);
+        }
     }
     fclose(f);
 }
@@ -199,17 +218,65 @@ void achieve_push_note(const char *title, const char *desc)
     achieve_push_note_custom("Notification", title, desc, 4500);
 }
 
+/* lock held: a counter by name, added to */
+static unsigned long long counter_add(const char *name, unsigned long long by)
+{
+    for (int i = 0; i < g_counterCount; i++)
+        if (!strcmp(g_counters[i].name, name)) return g_counters[i].v += by;
+    if (g_counterCount >= 96) return 0;
+    lstrcpynA(g_counters[g_counterCount].name, name, sizeof g_counters[0].name);
+    return g_counters[g_counterCount++].v = by;
+}
+static unsigned long long counter_get(const char *name)
+{
+    for (int i = 0; i < g_counterCount; i++) if (!strcmp(g_counters[i].name, name)) return g_counters[i].v;
+    return 0;
+}
+
 void achieve_enemy_defeated(void)
 {
     if (!g_ready) return;
     EnterCriticalSection(&g_cs);
-    unsigned long long n = ++g_kills;
+    unsigned long long n = g_kills += g_fate ? 2 : 1;
+    g_runKills++;
+    if (g_run[0]) { char k[64]; snprintf(k, sizeof k, "kills@%s", g_run); counter_add(k, 1); }
     static DWORD lastSave;
     if (GetTickCount() - lastSave > 10000) { lastSave = GetTickCount(); save(); }
     LeaveCriticalSection(&g_cs);
-    if (n >= 100) unlock("kills_100");
-    if (n >= 1000) unlock("kills_1000");
-    if (n >= 10000) unlock("kills_10000");
+    static const struct { unsigned n; const char *id; } tiers[] = {
+        { 100, "kills_100" }, { 250, "kills_250" }, { 500, "kills_500" }, { 1000, "kills_1000" }, { 5000, "kills_5000" } };
+    for (int i = 0; i < 5; i++) if (n >= tiers[i].n) unlock(tiers[i].id);
+}
+
+/* a level completed (a new bit for some hero): its record in records.txt beside achievements.txt, its counters */
+static void level_done(const char *id)
+{
+    char k[64], dir[MAX_PATH], path[MAX_PATH], when[24];
+    EnterCriticalSection(&g_cs);
+    /* only the level being played, once: a profile loading makes every level it holds look new */
+    if (strcmp(g_run, id)) { LeaveCriticalSection(&g_cs); return; }
+    long secs = (long)((GetTickCount() - g_runAt) / 1000);
+    unsigned long long kills = g_runKills;
+    g_run[0] = 0;
+    snprintf(k, sizeof k, "completed@%s", id); counter_add(k, 1);
+    counter_add("levels_completed", 1);
+    if (g_fate) { snprintf(k, sizeof k, "fate@%s", id); counter_add(k, 1); }
+    save();
+    LeaveCriticalSection(&g_cs);
+    if (g_fate) unlock("fate_one");
+    lstrcpynA(dir, g_file, sizeof dir);
+    char *sl = strrchr(dir, '\\');
+    if (sl) *sl = 0;
+    snprintf(path, sizeof path, "%s\\records.txt", dir);
+    time_t t = time(NULL);
+    strftime(when, sizeof when, "%Y-%m-%d %H:%M", localtime(&t));
+    int fresh = GetFileAttributesA(path) == INVALID_FILE_ATTRIBUTES;
+    FILE *f = fopen(path, "ab");
+    if (!f) return;
+    if (fresh) fprintf(f, "; Each level completed: when | level | seconds (-1: not timed) | enemies defeated | fate\r\n");
+    fprintf(f, "%s | %s | %ld | %llu | %d\r\n", when, id, secs, kills, g_fate);
+    fclose(f);
+    logf_("record: %s in %lds, %llu enemies%s", id, secs, kills, g_fate ? " (Fate)" : "");
 }
 
 static DWORD WINAPI progress_thread(LPVOID p)
@@ -233,6 +300,23 @@ static DWORD WINAPI progress_thread(LPVOID p)
             if (lv >= 10.0f && lv < 100.0f) unlock("hero_level_10");
         }
         for (int i = 0; i < LEVEL_COUNT; i++) if (any & (1u << k_levels[i].bit)) unlock(k_levels[i].id);
+        {   /* records: a new bit for a hero (alone or co-op) since the last look is a level completed */
+            static int seen;
+            static unsigned was[9][2];
+            for (int h = 0; h < 9; h++)
+                for (int c = 0; c < 2; c++) {
+                    unsigned now = *(const unsigned *)(slot + 0x244 + h * 0x3C + c * 4) & 0x1FFF;
+                    unsigned fresh = seen ? now & ~was[h][c] : 0;
+                    was[h][c] = now;
+                    for (int i = 0; i < LEVEL_COUNT; i++) if (fresh & (1u << k_levels[i].bit)) level_done(k_levels[i].id);
+                }
+            seen = 1;
+            int fateAll = 1;
+            EnterCriticalSection(&g_cs);
+            for (int i = 0; i < LEVEL_COUNT; i++) { char k[64]; snprintf(k, sizeof k, "fate@%s", k_levels[i].id); if (!counter_get(k)) fateAll = 0; }
+            LeaveCriticalSection(&g_cs);
+            if (fateAll) unlock("fate_all");
+        }
         if (coop) unlock("coop");
         if ((any & 0x1FFF) == 0x1FFF) unlock("every_level");
         if (all == 0x1FFF) unlock("every_level_every_hero");
@@ -264,7 +348,13 @@ void achieve_file(const char *n)
     else if (!strcmp(code, "pat02")) name = "Paths of the Dead";
     else if (!strcmp(code, "cir01")) name = "Cirith Ungol";
     else if (!strncmp(code, "pal", 3)) name = "A secret level";
-    else for (int i = 0; i < LEVEL_COUNT; i++) if (!strcmp(code, k_levels[i].code)) name = k_levels[i].name;
+    else for (int i = 0; i < LEVEL_COUNT; i++)
+        if (!strcmp(code, k_levels[i].code)) {
+            name = k_levels[i].name;
+            EnterCriticalSection(&g_cs);   /* its run, for the record */
+            if (strcmp(g_run, k_levels[i].id)) { lstrcpynA(g_run, k_levels[i].id, sizeof g_run); g_runAt = GetTickCount(); g_runKills = 0; }
+            LeaveCriticalSection(&g_cs);
+        }
     if (!name) return;
     EnterCriticalSection(&g_cs);
     lstrcpynA(g_level, name, sizeof g_level);
@@ -376,6 +466,11 @@ void achieve_start(void)
 {
     InitializeCriticalSection(&g_cs);
     defs_init();
+    {
+        char v[8];
+        g_fate = GetEnvironmentVariableA("ATHELAS_FATE", v, sizeof v) && v[0] == '1';
+        if (g_fate) logf_("fate: on (enemies count twice towards the kill deeds)");
+    }
     path_in_dir(g_file, "ROTKFix\\achievements.txt");
     load();
     g_ready = 1;

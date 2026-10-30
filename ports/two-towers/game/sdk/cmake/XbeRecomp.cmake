@@ -40,7 +40,15 @@ set(SDL_RENDER OFF CACHE BOOL "" FORCE)
 set(SDL_GPU OFF CACHE BOOL "" FORCE)
 set(SDL_CAMERA OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(SDL3 GIT_REPOSITORY https://github.com/libsdl-org/SDL.git GIT_TAG release-3.4.18 GIT_SHALLOW TRUE)
-FetchContent_MakeAvailable(zydis tomlplusplus imgui SDL3)
+# glslang, static, for the Vulkan backend's HLSL to SPIR-V at run time (runtime/gpu/spirv.cpp): its HLSL front end
+# alone, no optimizer (SPIRV-Tools), no tools or tests
+set(ENABLE_HLSL ON CACHE BOOL "" FORCE)
+foreach(opt ENABLE_OPT ENABLE_GLSLANG_BINARIES ENABLE_SPVREMAPPER ENABLE_CTEST GLSLANG_TESTS BUILD_EXTERNAL)
+    set(${opt} OFF CACHE BOOL "" FORCE)
+endforeach()
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(glslang GIT_REPOSITORY https://github.com/KhronosGroup/glslang.git GIT_TAG 15.4.0 GIT_SHALLOW TRUE)
+FetchContent_MakeAvailable(zydis tomlplusplus imgui SDL3 glslang)
 
 # Cross-compiling (an ARM64 build on an x64 PC): the tools must run on this machine, so they come from a build
 # for it, XBE_HOST_TOOLS = the folder holding its xbe_recomp and xbe_symbols
@@ -71,13 +79,18 @@ set(XBE_IMGUI_SOURCES
     ${imgui_SOURCE_DIR}/imgui_tables.cpp
     ${imgui_SOURCE_DIR}/imgui_widgets.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_dx12.cpp)
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_dx12.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp)
+# the Vulkan menu backend calls Vulkan through the functions gpu/vk_loader.cpp looks up (no vulkan-1.lib)
+set_source_files_properties(${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp PROPERTIES COMPILE_DEFINITIONS IMGUI_IMPL_VULKAN_NO_PROTOTYPES)
 
 # the in-game menu reads the controllers through SDL (app/overlay.cpp), not the backend's XInput
 set_source_files_properties(${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp PROPERTIES COMPILE_DEFINITIONS IMGUI_IMPL_WIN32_DISABLE_GAMEPAD)
 file(GLOB XBE_RUNTIME_SOURCES CONFIGURE_DEPENDS ${XBE_SDK_DIR}/runtime/*/*.cpp)
 # SDL's headers go to the input code alone (it is linked LINK_ONLY), so the generated sources' compile line stays the same
 set_source_files_properties(${XBE_SDK_DIR}/runtime/core/input.cpp PROPERTIES INCLUDE_DIRECTORIES "${sdl3_SOURCE_DIR}/include")
+# glslang's headers likewise go to spirv.cpp alone (the kit records only the include folders of the recompiled code)
+set_source_files_properties(${XBE_SDK_DIR}/runtime/gpu/spirv.cpp PROPERTIES INCLUDE_DIRECTORIES "${glslang_SOURCE_DIR}")
 
 # One executable per recompiled image: its code from config/<config> (partitions as that config sets them),
 # the SDK runtime, XBE_HOST_SOURCES shared by every image of the game, and src/<game_dir> hooks only this image has.
@@ -128,13 +141,26 @@ function(add_xbe_image target xbe config partitions game_dir)
     add_executable(${target} WIN32 ${XBE_RUNTIME_SOURCES} ${XBE_HOST_SOURCES} ${GAME_SOURCES} ${GEN_SOURCES} ${XBE_IMGUI_SOURCES} ${XBE_HASH} ${XBE_RC})
     add_dependencies(${target} recompile_${target})
     target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${XBE_SDK_DIR}/runtime ${GEN})
-    target_include_directories(${target} SYSTEM PRIVATE ${imgui_SOURCE_DIR})
+    target_include_directories(${target} SYSTEM PRIVATE ${imgui_SOURCE_DIR} ${XBE_SDK_DIR}/third_party/vulkan/include)
     target_compile_options(${target} PRIVATE -fno-strict-aliasing)
     target_compile_definitions(${target} PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS)
     if(XBE_VERSION)
         target_compile_definitions(${target} PRIVATE GAME_VERSION="${XBE_VERSION}")
     endif()
-    target_link_libraries(${target} PRIVATE tomlplusplus::tomlplusplus $<LINK_ONLY:SDL3::SDL3-static> d3d12 dxgi dxguid d3dcompiler xaudio2 ole32 windowscodecs dbghelp winmm dwmapi ws2_32)
+    # (mingw-w64, the llvm-mingw toolchain Athelas ships: XAudio 2.9's import library is xaudio2_9; #pragma comment(lib)
+# isn't read, so gdi32 and advapi32 are named)
+if(MINGW)
+    # mingw-w64 hides the Windows 10 calls (GetDpiForWindow, SetProcessDpiAwarenessContext) below this
+    target_compile_definitions(${target} PRIVATE _WIN32_WINNT=0x0A00 WINVER=0x0A00)
+    target_link_options(${target} PRIVATE -municode)   # it starts at wWinMain
+    set(xaudio xaudio2_9)
+    set(extra gdi32 advapi32)
+else()
+    set(xaudio xaudio2)
+    set(extra)
+endif()
+target_link_libraries(${target} PRIVATE tomlplusplus::tomlplusplus $<LINK_ONLY:SDL3::SDL3-static>
+        $<LINK_ONLY:glslang::glslang> $<LINK_ONLY:glslang::SPIRV> $<LINK_ONLY:glslang::glslang-default-resource-limits> d3d12 dxgi dxguid d3dcompiler ${xaudio} ole32 windowscodecs dbghelp winmm dwmapi ws2_32 ${extra})
     # lld keeps the recompiled weak functions overridable by the host ones
     target_link_options(${target} PRIVATE -fuse-ld=lld -g)
 endfunction()
