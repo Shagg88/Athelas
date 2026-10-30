@@ -137,13 +137,20 @@ static void free_picture(Picture &p)
 // (entries "\002tt:..." and "\002fx:...", see tt_art_list and fotr_art_list).
 static std::vector<ArtPic> g_art;
 static SDL_AtomicInt g_artState;       // 0 not started, 1 reading, 2 done
+static bool g_artFromPc = false;       // g_art came from the PC version (its 16 large pictures), not an Xbox copy's 4 small ones
 static std::vector<std::string> g_artDirs;   // ROTK copies to try, PC first
 
 static int SDLCALL art_worker(void *)
 {
     std::vector<ArtPic> pics;
-    for (const std::string &d : g_artDirs)
-        if (rotk_menu_art_load(d, pics)) break;
+    for (const std::string &d : g_artDirs) {
+        DWORD at = GetFileAttributesA(d.c_str());
+        bool folder = at != INVALID_FILE_ATTRIBUTES && (at & FILE_ATTRIBUTE_DIRECTORY);
+        if (rotk_menu_art_load(d, pics)) {
+            g_artFromPc = folder && GetFileAttributesA((d + "\\Data\\Game\\fro\\fro03.scw").c_str()) != INVALID_FILE_ATTRIBUTES;
+            break;
+        }
+    }
     // a different order each time the launcher opens
     for (size_t i = pics.size(); i > 1; i--) std::swap(pics[i - 1], pics[(size_t)SDL_rand((Sint32)i)]);
     g_art = std::move(pics);
@@ -370,11 +377,45 @@ static void backgrounds_rebuild(Backgrounds &b, int group, const std::string &la
     b.fresh = true;
     b.artIn = art_ready();
     b.index = -1;
-    if ((g_bgShow == BG_ART_AND_MINE || g_bgShow == BG_ART) && group == 0 && b.artIn)
+    if ((g_bgShow == BG_ART_AND_MINE || g_bgShow == BG_ART) && group == 0 && b.artIn && g_artFromPc)
         for (size_t i = 0; i < g_art.size(); i++) b.files.push_back("\001art:" + std::to_string(i));
+    if ((g_bgShow == BG_ART_AND_MINE || g_bgShow == BG_ART) && group == 0 && b.artIn && !g_artFromPc) {
+        // only an Xbox copy: its 4 menu pictures are small (512 x 512), so The Two Towers' gallery and Fellowship's
+        // sketches stand in, from whichever the player has (ttDir: "<TT>\n<FOTR>", see ta_mix_dirs); with neither,
+        // the 4 pictures after all
+        size_t first = b.files.size(), nl = ttDir.find('\n');
+        std::string tt = ttDir.substr(0, nl), fx = nl == std::string::npos ? std::string() : ttDir.substr(nl + 1);
+        if (!tt.empty()) tt_art_list(tt, b.files);
+        if (!fx.empty()) fotr_art_list(fx, b.files);
+        if (b.files.size() == first) for (size_t i = 0; i < g_art.size(); i++) b.files.push_back("\001art:" + std::to_string(i));
+        for (size_t i = b.files.size(); i > first + 1; i--)
+            std::swap(b.files[i - 1], b.files[first + (size_t)SDL_rand((Sint32)(i - first))]);
+    }
     if ((g_bgShow == BG_ART_AND_MINE || g_bgShow == BG_ART) && (group == 1 || group == 2) && !ttDir.empty()) {
         size_t first = b.files.size();
         if (group == 1) tt_art_list(ttDir, b.files); else fotr_art_list(ttDir, b.files);
+        for (size_t i = b.files.size(); i > first + 1; i--)     // a different order each time
+            std::swap(b.files[i - 1], b.files[first + (size_t)SDL_rand((Sint32)(i - first))]);
+    }
+    if ((g_bgShow == BG_ART_AND_MINE || g_bgShow == BG_ART) && group == 5) {
+        // every game for now: The Two Towers' gallery and Fellowship's sketches, shuffled together ("<TT>\n<FOTR>")
+        size_t first = b.files.size(), nl = ttDir.find('\n');
+        std::string tt = ttDir.substr(0, nl), fx = nl == std::string::npos ? std::string() : ttDir.substr(nl + 1);
+        if (!tt.empty()) tt_art_list(tt, b.files);
+        if (!fx.empty()) fotr_art_list(fx, b.files);
+        for (size_t i = b.files.size(); i > first + 1; i--)
+            std::swap(b.files[i - 1], b.files[first + (size_t)SDL_rand((Sint32)(i - first))]);
+    }
+    if ((g_bgShow == BG_ART_AND_MINE || g_bgShow == BG_ART) && group == 4) {
+        // The Third Age: stills of the films the player has watched, saved by the game (art\*.png in its folder),
+        // mixed with the other games' art from whichever the player has (ttDir: "<TT>\n<FOTR>", see ta_mix_dirs)
+        size_t first = b.files.size();
+        list_pictures(exe_dir() + "\\" DIR_TA_XBOX "\\art", b.files, 300);
+        size_t nl = ttDir.find('\n');
+        std::string tt = ttDir.substr(0, nl), fx = nl == std::string::npos ? std::string() : ttDir.substr(nl + 1);
+        if (!tt.empty()) tt_art_list(tt, b.files);
+        if (!fx.empty()) fotr_art_list(fx, b.files);
+        if (b.artIn && g_artFromPc) for (size_t i = 0; i < g_art.size(); i++) b.files.push_back("\001art:" + std::to_string(i));
         for (size_t i = b.files.size(); i > first + 1; i--)     // a different order each time
             std::swap(b.files[i - 1], b.files[first + (size_t)SDL_rand((Sint32)(i - first))]);
     }
@@ -5021,10 +5062,17 @@ static void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     }
     {
         GameKind k = a.cur >= 0 && a.cur < (int)a.lib.size() ? a.lib[a.cur].kind : GK_NONE;
-        int group = k == GK_TT_XBOX ? 1 : k == GK_FOTR_XBOX ? 2 : k == GK_TA_XBOX ? 3 : 0;   // (3: no reader for The Third Age's art yet)
-        std::string dir = group ? a.lib[a.cur].path : std::string();
+        int group = k == GK_TT_XBOX ? 1 : k == GK_FOTR_XBOX ? 2 : k == GK_TA_XBOX ? 4 : 0;   // (4: The Third Age: its film stills and the other games' art)
+        std::string dir = group == 4 || group == 0 ? ta_mix_dirs(a) : a.lib[a.cur].path;
         if (a.front) front_bg_group(a, group, dir);   // the game in front of the carousel
-        if (group != a.bg.group || (group == 0 && art_ready() && !a.bg.artIn) || (group >= 1 && group <= 2 && dir != a.bg.dir)) {
+        {   // for now every game's backgrounds are The Two Towers' gallery (39 film stills and 3 menu pictures) and
+            // Fellowship's sketches, the best art on the Xbox discs, from whichever of the two the player has (group 5);
+            // with neither, each game's own as before
+            std::string m = ta_mix_dirs(a);
+            if (m != "\n" && group != 3) { group = 5; dir = m; }
+        }
+        if (group != a.bg.group || (group == 0 && ((art_ready() && !a.bg.artIn) || dir != a.bg.dir)) || (group >= 1 && group <= 2 && dir != a.bg.dir) ||
+            (group == 4 && (dir != a.bg.dir || (art_ready() && !a.bg.artIn))) || (group == 5 && dir != a.bg.dir)) {
             backgrounds_rebuild(a.bg, group, exe_dir(), dir);
             a.bg.dir = dir;
         }

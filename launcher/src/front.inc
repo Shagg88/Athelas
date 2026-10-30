@@ -73,6 +73,18 @@ static std::vector<int> fr_lib(const App &a, int e)
 }
 // the copy of that kind a box plays: a supported (US) release first, when the player has several (a European disc
 // and the US one, say), else the first
+// The Third Age's backgrounds borrow the other Xbox games' art, from whichever the player has: "<TT>\n<FOTR>" (either
+// may be empty; The Return of the King's comes from g_art)
+static std::string ta_mix_dirs(const App &a)
+{
+    std::string tt, fx;
+    for (const LibGame &g : a.lib) {
+        if (g.kind == GK_TT_XBOX && tt.empty()) tt = g.path;
+        if (g.kind == GK_FOTR_XBOX && fx.empty()) fx = g.path;
+    }
+    return tt + "\n" + fx;
+}
+
 static int fr_first(const App &a, int e, GameKind k)
 {
     for (int i : fr_lib(a, e)) if (a.lib[i].kind == k && game_region_supported(a.lib[i])) return i;
@@ -208,7 +220,16 @@ static void front_art_poll(App &a, SDL_Renderer *ren)
             from = "rotk";
         } else {
             from = a.lib[li[0]].path;
-            if (e == FR_TT) tt_art_list(from, files); else if (e == FR_FOTR) fotr_art_list(from, files);   // (no reader for The Third Age's art yet)
+            if (e == FR_TT) tt_art_list(from, files); else if (e == FR_FOTR) fotr_art_list(from, files);
+            else if (e == FR_TA) {   // the film stills the game saved, else the other games' art
+                list_pictures(exe_dir() + "\\" DIR_TA_XBOX "\\art", files, 300);
+                if (files.empty()) {
+                    std::string m = ta_mix_dirs(a), tt = m.substr(0, m.find('\n')), fx = m.substr(m.find('\n') + 1);
+                    if (!tt.empty()) tt_art_list(tt, files);
+                    if (files.empty() && !fx.empty()) fotr_art_list(fx, files);
+                    if (files.empty() && art_ready() && !g_art.empty()) files.push_back("\001art:0");
+                }
+            }
         }
         if (f.artAsked[e] && f.artFor[e] == from) continue;
         f.artAsked[e] = true;
@@ -641,15 +662,16 @@ static void rotk_version_popup(App &a)
 }
 
 // the background behind the front screen: the art of the game in front (group as backgrounds_rebuild takes it: 0 The
-// Return of the King, 1 The Two Towers, 2 Fellowship, 3 none of the games' art)
+// Return of the King, 1 The Two Towers, 2 Fellowship, 3 none of the games' art, 4 The Third Age's film stills)
 static void front_bg_group(const App &a, int &group, std::string &dir)
 {
     int e = g_front.sel;
     std::vector<int> li = fr_lib(a, e);
     dir.clear();
-    if (li.empty() || e == FR_TA) { group = 3; return; }   // (no reader for The Third Age's art yet)
+    if (li.empty()) { group = 3; return; }
+    if (e == FR_TA) { group = 4; dir = ta_mix_dirs(a); return; }   // (see backgrounds_rebuild)
     group = e == FR_ROTK ? 0 : e == FR_TT ? 1 : 2;
-    if (e != FR_ROTK) dir = a.lib[li[0]].path;
+    dir = e == FR_ROTK ? ta_mix_dirs(a) : a.lib[li[0]].path;   // (Return of the King: the others' art stands in for an Xbox copy's)
 }
 
 static void draw_front(App &a, ImVec2 size, SDL_Renderer *ren)
@@ -677,9 +699,10 @@ static void draw_front(App &a, ImVec2 size, SDL_Renderer *ren)
         static int musicOn = -1;
         if (musicOn < 0) { musicOn = front_get("Music") != "0"; music_enable(musicOn != 0); }
         std::vector<int> li = fr_lib(a, f.sel);
-        int tt = fr_first(a, f.sel, GK_TT_XBOX), fx = fr_first(a, f.sel, GK_FOTR_XBOX);
+        int tt = fr_first(a, f.sel, GK_TT_XBOX), fx = fr_first(a, f.sel, GK_FOTR_XBOX), ta = fr_first(a, f.sel, GK_TA_XBOX);
         if (f.sel == FR_TT && tt >= 0) music_play(MUSIC_TT, fr_music_copies(a, f.sel, GK_TT_XBOX));
         else if (f.sel == FR_FOTR && fx >= 0) music_play(MUSIC_FOTR, fr_music_copies(a, f.sel, GK_FOTR_XBOX));
+        else if (f.sel == FR_TA && ta >= 0) music_play(MUSIC_TA, fr_music_copies(a, f.sel, GK_TA_XBOX));
         else music_play(MUSIC_NONE, std::string());
     }
 

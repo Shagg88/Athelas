@@ -11,6 +11,7 @@
 #include <atomic>
 #include <chrono>
 #include <cstring>
+#include <filesystem>
 #include <mutex>
 #include <string>
 
@@ -27,11 +28,16 @@ std::string g_scene;               // "e98c03", the last scene opened
 std::atomic<bool> g_front{false};  // the front end's scene group (e98c)
 std::atomic<int64_t> g_vid_read{0};  // steady clock, ms: the last read from a movie file
 constexpr int64_t kMovieGapMs = 5000;  // reads this far apart still count as one movie playing
+std::string g_vid_name;              // the movie being read (under g_lock)
+int64_t g_vid_started = 0;           // NowMs when it began (under g_lock)
+bool g_art_asked = false;            // its launcher background asked for (under g_lock)
 
 int64_t NowMs() {
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch())
         .count();
 }
+
+void ArtShot();
 
 // each draw: a movie is playing while its file is being read
 // (job 105: the old test, a .vid read in the last 5 s, kept the movie shape on for 5 s after a movie ended or was
@@ -45,6 +51,25 @@ void Observe(const gpu::State&) {
         gpu::g_movie = movie;
         LOGR("ta: movie %s", movie ? "playing" : "over");
     }
+    if (movie) ArtShot();
+}
+
+// the launcher's backgrounds for The Third Age (its box on the front screen): one still from each film the player
+// watches, from 2.5 s in (the first frame past the fade-in), saved as art\<movie>.png beside the program (gpu::g_art_shot cuts the film bars off and waits for a
+// frame that isn't a fade). The game's pictures stay on the player's PC; the logos are left out.
+void ArtShot() {
+    std::string name;
+    {
+        std::lock_guard lock(g_lock);
+        if (g_art_asked || g_vid_name.empty() || g_vid_name == "logo" || NowMs() - g_vid_started < 2500) return;
+        g_art_asked = true;
+        name = g_vid_name;
+    }
+    std::filesystem::path file = app::ExeDir() / "art" / (name + ".png");
+    std::error_code ec;
+    if (std::filesystem::exists(file, ec)) return;
+    std::lock_guard lock(gpu::g_art_shot_lock);
+    gpu::g_art_shot = file.string();
 }
 
 // lower case, the name between the last slash and the extension
@@ -90,6 +115,10 @@ void FileRead(const char* name) {
         gpu::g_movie_shape = gpu::kMovieFit;
         gpu::g_movie_fit_zoom = logo ? 1.0f : ta::g_movie_zoom / 100.0f;
         LOGR("ta: movie %s (fit, zoom %u%%)", SceneName(name).c_str(), logo ? 100u : ta::g_movie_zoom);
+        std::lock_guard lock(g_lock);
+        g_vid_name = SceneName(name);
+        g_vid_started = NowMs();
+        g_art_asked = false;
     }
     g_vid_read = NowMs();
 }

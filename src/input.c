@@ -1275,6 +1275,31 @@ static void __cdecl special_buttons(char *dst)   /* dst: after the '@' */
     if (a[0] && b[0]) ((Sprintf_t)ADDR_SPRINTF)(dst, "%s + %s", a, b);
     else ((Sprintf_t)ADDR_SPRINTF)(dst, "%s 7+8", ((const char *(__cdecl *)(int))ADDR_GAME_TEXT)(0xE5));
 }
+/* The Options screen's controls list names the special ability from its own text ("Buttons %d + %d", text 0x26,
+ * kWinFE_InptCfg_SpecAbGPadDscFmt) at 0x5063b0: sprintf(dst, text(0x26), 7, 8). With the virtual pad open, the
+ * controller column shows the two buttons the way it shows every other action's (#34). */
+#define ADDR_OPTIONS_SPECIAL 0x005063B0u
+static void __cdecl options_special(int unused, char *dst)
+{
+    (void)unused;
+    char a[32] = "", b[32] = "";
+    const char *n = g_vpadOpened ? pad_button_label(6) : NULL;
+    if (n) lstrcpynA(a, n, sizeof a);
+    n = g_vpadOpened ? pad_button_label(7) : NULL;
+    if (n) lstrcpynA(b, n, sizeof b);
+    if (a[0] && b[0]) ((Sprintf_t)ADDR_SPRINTF)(dst, "%s + %s", a, b);
+    else ((Sprintf_t)ADDR_SPRINTF)(dst, ((const char *(__cdecl *)(int))ADDR_GAME_TEXT)(0x26), 7, 8);
+}
+static int patch_options_special(void)
+{
+    /* push 8; push 7; push 0x26; call text; add esp,4; push eax; mov eax,[esp+14h]; push eax; call sprintf */
+    static const BYTE sig[] = { 0x6A, 0x08, 0x6A, 0x07, 0x6A, 0x26, 0xE8, 0x05, 0x74, 0xFF, 0xFF, 0x83, 0xC4, 0x04, 0x50,
+                                0x8B, 0x44, 0x24, 0x14, 0x50, 0xE8, 0x87, 0xB0, 0x00, 0x00 };
+    if (!readable((void *)ADDR_OPTIONS_SPECIAL, sizeof sig) || memcmp((void *)ADDR_OPTIONS_SPECIAL, sig, sizeof sig)) return 0;
+    BYTE j[5] = { 0xE9 };
+    *(LONG *)(j + 1) = (LONG)((DWORD_PTR)&options_special - (ADDR_OPTIONS_SPECIAL + 5));
+    return write_code((void *)ADDR_OPTIONS_SPECIAL, j, sizeof j);
+}
 static void patch_special_buttons(void)
 {
     /* push 0xe5; call text; push eax; push fmt; push buf; call sprintf; add esp,0x10; mov eax,buf */
@@ -1305,8 +1330,9 @@ static void patch_special_buttons(void)
         c[7] = 0x83; c[8] = 0xC4; c[9] = 0x04;           /* add esp,4 */
         if (write_code((void *)at, c, sizeof c)) n++;
     }
-    if (n == 3) logf_("gamepad: special ability buttons named for the controller");
-    else logf_("gamepad: special ability button text not recognised (%d of 3)", n);
+    n += patch_options_special();
+    if (n == 4) logf_("gamepad: special ability buttons named for the controller");
+    else logf_("gamepad: special ability button text not recognised (%d of 4)", n);
 }
 
 static void patch_menu_bits(void)

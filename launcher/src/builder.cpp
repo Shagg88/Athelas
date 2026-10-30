@@ -282,6 +282,12 @@ DWORD WINAPI build_thread(void *)
             if (sys && sys->b) { inc.push_back("-isystem"); inc.push_back(p); } else inc.push_back("-I" + p);
         }
     std::vector<std::string> defines = list("defines"), flags = list("flags"), flagsMap = list("flags_map");
+    // "@KIT@" in a flag: the kit's folder (the profile-guided build's -fprofile-instr-use=@KIT@/pgo/<exe>.profdata)
+    for (auto *fl : { &flags, &flagsMap })
+        for (auto &a : *fl) {
+            size_t at = a.find("@KIT@");
+            if (at != std::string::npos) a.replace(at, 5, fwd(kit));
+        }
     int cpu = (int)GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
     MEMORYSTATUSEX ms = { sizeof ms }; GlobalMemoryStatusEx(&ms);
     double freeGB = ms.ullAvailPhys / 1073741824.0;

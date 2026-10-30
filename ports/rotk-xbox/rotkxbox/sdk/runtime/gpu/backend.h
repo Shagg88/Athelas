@@ -1,6 +1,8 @@
 #pragma once
 #include <algorithm>
 #include <atomic>
+#include <string>
+#include <mutex>
 #include <cstdint>
 #include <memory>
 
@@ -83,6 +85,11 @@ inline std::atomic<bool> g_sharpen_off{false};
 inline std::atomic<bool> g_pack_off{false};
 // F7: a comparison pair of screenshots: this frame as it is, the next with texture packs the other way round (then back)
 inline std::atomic<bool> g_pack_pair{false};
+// a game's request (any thread): the movie picture now on, at its kept size with its black film bars cut off, written
+// as a PNG to this path (the launcher's backgrounds). Taken once at the next presented movie frame that isn't nearly
+// black; the path is then cleared. Empty: none. Direct3D 12 only.
+inline std::mutex g_art_shot_lock;
+inline std::string g_art_shot;
 // the game shows a full-screen movie (its frame fills the back buffer): presented by [graphics] movie_display,
 // movie_sharpening and cutscene_audio_delay instead of as a game frame
 inline std::atomic<bool> g_movie{false};

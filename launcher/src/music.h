@@ -3,13 +3,14 @@
 // copied or saved.
 //   The Two Towers (Xbox): its main menu's theme (INTBASE1) in SOUND\S_WB_INTRFACE.xwb, a wave bank of Xbox ADPCM
 //   The Fellowship of the Ring (Xbox): the title screen's music, the sound track of Movies\start_menu.xmv (PCM)
+//   The Third Age (Xbox): the front end's streamed music, Data\Game\e98c\e98c03.sas (Xbox ADPCM, chunked stereo)
 //   The Return of the King: not yet (its front-end music is packed in its own format)
 #pragma once
 #include <string>
 
 #include <vector>
 
-enum MusicTrack { MUSIC_NONE, MUSIC_TT, MUSIC_FOTR, MUSIC_FOTR_NAMED };
+enum MusicTrack { MUSIC_NONE, MUSIC_TT, MUSIC_FOTR, MUSIC_FOTR_NAMED, MUSIC_TA };
 
 bool music_init();                                    // opens the sound device (false: no sound, nothing plays)
 // what to play now: the track and the game it is read from (a folder or a disc image); the same again does nothing

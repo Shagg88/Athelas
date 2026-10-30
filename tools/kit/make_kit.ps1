@@ -124,6 +124,20 @@ $rules = Get-Content -LiteralPath (Get-ChildItem (Join-Path $bd 'CMakeFiles') -F
 $clang = ([regex]::Match($rules, "(?is)rule CXX_COMPILER__${exe}_unscanned_\w+\s+.*?command = \$\{LAUNCHER\}\$\{CODE_CHECK\}(\S+?\.exe)")).Groups[1].Value
 if (-not $clang) { throw 'the C++ compiler was not found in rules.ninja' }
 $clangVer = (& $clang --version | Select-Object -First 1)
+# profile-guided build: the profile the compile used goes in the kit (pgo\<exe>.profdata), its flag pointed there
+function PgoFlags([string]$all) {
+  $res = @()  # (not $out: PowerShell names ignore case, and Put reads the -Out folder)
+  foreach ($f in @($all -split '\s+' | Where-Object { $_ })) {
+    if ($f -match '^-fprofile-instr-use=(.+)$') {
+      $src = Unescape $matches[1]
+      if (-not (Test-Path -LiteralPath $src)) { throw "profile not found: $src" }
+      Put $src "pgo/$exe.profdata"
+      $f = "-fprofile-instr-use=@KIT@/pgo/$exe.profdata"
+    } elseif ($f -eq '-fprofile-instr-generate') { throw 'a PGO measuring build (XBE_PGO=GEN) is not for a kit' }
+    $res += $f
+  }
+  return ,$res
+}
 $kit = [ordered]@{
   format = 1
   exe = "$exe.exe"
@@ -134,8 +148,8 @@ $kit = [ordered]@{
   toolchain = $(if ($clang -match 'w64-mingw32') { 'llvm-mingw' } else { 'msvc' })
   msvc = $env:VCToolsVersion
   defines = @($comp.vars['DEFINES'] -split '\s+' | Where-Object { $_ })
-  flags = @($comp.vars['FLAGS'] -split '\s+' | Where-Object { $_ })
-  flags_map = @($compMap.vars['FLAGS'] -split '\s+' | Where-Object { $_ })
+  flags = PgoFlags $comp.vars['FLAGS']
+  flags_map = PgoFlags $compMap.vars['FLAGS']
   includes = $incOut
   link_flags = @(($link.vars['FLAGS'] -split '\s+') + ($link.vars['LINK_FLAGS'] -split '\s+') | Where-Object { $_ })
   objects = $objRel

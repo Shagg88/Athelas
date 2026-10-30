@@ -1432,9 +1432,24 @@ static HRESULT WINAPI draw_idx(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE pt, UINT 
  * only its alpha): letters are white, so they look the same either way, but the button pictures painted into the
  * font (icons.c) lose their symbol and show as plain white shapes: the combo list, the in-game hints and the shop
  * (#34). For such a draw the colour becomes texture x text colour, which leaves the white letters as they were. */
-static int font_colour_fix(IDirect3DDevice8 *dev, DWORD saved[3])
+/* Does this draw take a button picture? They sit below the letters in the font texture (icons.c), so their v is
+ * past 1; letters' never is. */
+static int draw_has_icons(UINT first, UINT count)
 {
-    if (!g_tex0 || !icons_is_font_texture(g_tex0) || !icons_font_is_white(g_tex0)) return 0;
+    TrackedVB *t = g_stream0 ? find_vb(g_stream0) : NULL;
+    UINT stride = g_stream0Stride ? g_stream0Stride : 24;
+    if (!t || g_curFVF != FVF_2D || count == 0 || stride < 24 || first > t->size / stride || count > t->size / stride - first) return 0;
+    for (UINT i = 0; i < count; i++)
+        if (((const float *)(t->shadow + (first + i) * stride))[5] > 1.0005f) return 1;
+    return 0;
+}
+static int font_colour_fix(IDirect3DDevice8 *dev, DWORD saved[3], UINT first, UINT count)
+{
+    if (!g_tex0 || !icons_is_font_texture(g_tex0)) return 0;
+    /* a font whose letters aren't white (an outline, a tint) keeps the text colour alone, except in a draw that has
+     * a button picture: the combo list and the shop draw with such a font (#34, 1.7.3) */
+    int white = icons_font_is_white(g_tex0);
+    if (!white && !draw_has_icons(first, count)) return 0;
     void **vt = *(void ***)dev;
     DWORD op = 0, a1 = 0, a2 = 0;
     ((GetTSS8_t)vt[62])(dev, 0, D3DTSS_COLOROP, &op);
@@ -1453,9 +1468,20 @@ static int font_colour_fix(IDirect3DDevice8 *dev, DWORD saved[3])
     int diffuseOnly = (op == D3DTOP_SELECTARG1 && a1 == D3DTA_DIFFUSE) || (op == D3DTOP_SELECTARG2 && a2 == D3DTA_DIFFUSE) ||
                       ((op == D3DTOP_MODULATE || op == D3DTOP_MODULATE2X) &&
                        ((a1 == (D3DTA_TEXTURE | rep) && a2 == D3DTA_DIFFUSE) || (a2 == (D3DTA_TEXTURE | rep) && a1 == D3DTA_DIFFUSE)));
+    /* texture x text colour x 2 (the combo list and the shop, #34): a bright text colour washes a button picture out
+     * (a PlayStation cross's blue comes out white), so a draw with a picture in it goes x 1 */
+    int doubled = op == D3DTOP_MODULATE2X && ((a1 == D3DTA_TEXTURE && a2 == D3DTA_DIFFUSE) || (a2 == D3DTA_TEXTURE && a1 == D3DTA_DIFFUSE));
+    if (doubled && draw_has_icons(first, count)) {
+        static int loggedX2;
+        if (!loggedX2++) logf_("graphics: button pictures in text drawn at double brightness keep their colours");
+        saved[0] = op; saved[1] = a1; saved[2] = a2;
+        ((SetTSS8_t)vt[63])(dev, 0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+        return 1;
+    }
     if (!diffuseOnly) return 0;
-    static int logged;
-    if (!logged++) logf_("graphics: text drawn in its colour alone: button pictures keep their colours");
+    static int logged, loggedCol;
+    if (white && !logged++) logf_("graphics: text drawn in its colour alone: button pictures keep their colours");
+    if (!white && !loggedCol++) logf_("graphics: button pictures in a coloured font's text keep their colours");
     saved[0] = op; saved[1] = a1; saved[2] = a2;
     ((SetTSS8_t)vt[63])(dev, 0, D3DTSS_COLOROP, op == D3DTOP_MODULATE2X ? D3DTOP_MODULATE2X : D3DTOP_MODULATE);
     ((SetTSS8_t)vt[63])(dev, 0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
@@ -1472,7 +1498,7 @@ static void font_colour_restore(IDirect3DDevice8 *dev, const DWORD saved[3])
 static HRESULT WINAPI hook_DrawPrimitive(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE pt, UINT start, UINT count)
 {
     DWORD sv[3];
-    int fix = font_colour_fix(dev, sv);
+    int fix = font_colour_fix(dev, sv, start, prim_verts(pt, count));
     HRESULT hr = draw_prim(dev, pt, start, count);
     if (fix) font_colour_restore(dev, sv);
     return hr;
@@ -1480,7 +1506,7 @@ static HRESULT WINAPI hook_DrawPrimitive(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE
 static HRESULT WINAPI hook_DrawIndexedPrimitive(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE pt, UINT mi, UINT nv, UINT si, UINT pc)
 {
     DWORD sv[3];
-    int fix = font_colour_fix(dev, sv);
+    int fix = font_colour_fix(dev, sv, g_baseVertex + mi, nv);
     HRESULT hr = draw_idx(dev, pt, mi, nv, si, pc);
     if (fix) font_colour_restore(dev, sv);
     return hr;

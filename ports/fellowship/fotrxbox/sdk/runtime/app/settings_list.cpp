@@ -104,8 +104,8 @@ std::vector<cfg::Desc> SettingsList() {
          "screens, so this brightens what it drew rather than adding detail. On other screens the picture stays as it is.",
          &s.hdr},
         {"graphics", "renderer", Type::Choice, "Renderer",
-         "Direct3D 12 is the tested renderer. Vulkan is still being made and doesn't draw the game yet; if it can't "
-         "start, Direct3D 12 is used. Takes effect at the next start.",
+         "Direct3D 12 is the tested renderer. Vulkan is still being made: it draws the game but is untested and lacks "
+         "anti-aliasing, HDR and the upscalers. If it can't start, Direct3D 12 is used. Takes effect at the next start.",
          nullptr, &s.renderer, nullptr, 0, 0, {"0", "1"}, nullptr, nullptr, {"Direct3D 12", "Vulkan (in development)"}},
         {"graphics", "widescreen", Type::Bool, "Widescreen correction",
          "Shows more at the sides. Off keeps the original 4:3 picture, with bars at the sides.", &s.widescreen, nullptr,

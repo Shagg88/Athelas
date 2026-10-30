@@ -197,6 +197,21 @@ bool TextPage(const gpu::pack::Contents& t, gpu::pack::Image& out) {
     uint32_t pitch = uint32_t(t.size / t.height);
     if (pitch < t.width) return false;
     auto t0 = std::chrono::steady_clock::now();
+    {   // a page rewritten on and on (a counter ticking, words scrolling) would be redrawn every frame, with a hitch
+        // each time: past 4 redraws in a second the page is left as the game drew it for the next 2 seconds
+        static std::mutex m;
+        static std::chrono::steady_clock::time_point window, rest_until;
+        static int in_window = 0;
+        std::lock_guard lock(m);
+        if (t0 < rest_until) return false;
+        if (t0 - window > std::chrono::seconds(1)) window = t0, in_window = 0;
+        if (++in_window > 4) {
+            rest_until = t0 + std::chrono::seconds(2);
+            static std::atomic<int> said{0};
+            if (!said++) LOGR("ta: sharp text: a text page changing every frame is left at its own size for a while");
+            return false;
+        }
+    }
     std::vector<float> c(size_t(t.width) * t.height);
     size_t lit = 0;
     for (uint32_t y = 0; y < t.height; y++)

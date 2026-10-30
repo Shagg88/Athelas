@@ -814,6 +814,7 @@ private:
     ID3D12Resource* Smaa(ID3D12Resource* src, D3D12_RESOURCE_STATES& st, DXGI_FORMAT fmt);
     D3D12_RESOURCE_STATES shown_state_ = D3D12_RESOURCE_STATE_COPY_SOURCE;
     MovieFrame* PickMovieFrame();
+    void ArtShot();  // gpu::g_art_shot
     uint32_t samples_ = 1;     // anti-aliasing samples, 1 off
     std::unordered_map<uint32_t, bool> ms_ok_;  // formats that take samples_
     Target* draw_rt_ = nullptr;  // the draw's targets, the bound ones go when a texture's copy is drawn
@@ -4485,6 +4486,65 @@ void D3D12Backend::KeepMovieFrame(Target& t) {
     movie_n_++;
 }
 
+// gpu::g_art_shot: the newest kept movie frame, its black bars cut off, as a PNG (skipped while the picture is nearly
+// black: a fade; the request then waits for a later frame)
+void D3D12Backend::ArtShot() {
+    std::string path;
+    {
+        std::lock_guard lock(g_art_shot_lock);
+        if (g_art_shot.empty() || !movie_n_) return;
+        path = g_art_shot;
+    }
+    MovieFrame& f = movie_ring_[(movie_n_ - 1) % kMovieFrames];
+    if (!f.res) return;
+    D3D12_RESOURCE_DESC rd = f.res->GetDesc();
+    uint32_t w = uint32_t(rd.Width), h = rd.Height;
+    Transition(f.res.Get(), f.state, D3D12_RESOURCE_STATE_COPY_SOURCE);
+    std::vector<uint8_t> px;
+    if (!ReadBack(f.res.Get(), w, h, px)) return;
+    auto lum = [&](uint32_t x, uint32_t y) {
+        const uint8_t* p = &px[(size_t(y) * w + x) * 4];
+        return (int(p[0]) + 2 * int(p[1]) + int(p[2])) / 4;  // BGRA
+    };
+    auto row_dark = [&](uint32_t y) {
+        int sum = 0;
+        for (uint32_t x = 0; x < w; x += 4) sum += lum(x, y);
+        return sum / int((w + 3) / 4) < 12;
+    };
+    auto col_dark = [&](uint32_t x, uint32_t y0, uint32_t y1) {
+        int sum = 0;
+        for (uint32_t y = y0; y < y1; y += 4) sum += lum(x, y);
+        return sum / int(std::max(1u, (y1 - y0 + 3) / 4)) < 12;
+    };
+    uint32_t y0 = 0, y1 = h, x0 = 0, x1 = w;
+    while (y0 < h && row_dark(y0)) y0++;
+    while (y1 > y0 && row_dark(y1 - 1)) y1--;
+    while (x0 < w && col_dark(x0, y0, y1)) x0++;
+    while (x1 > x0 && col_dark(x1 - 1, y0, y1)) x1--;
+    uint32_t cw = x1 > x0 ? x1 - x0 : 0, ch = y1 > y0 ? y1 - y0 : 0;
+    if (cw < w / 2 || ch < h / 3) return;  // nearly black: a later frame
+    long long total = 0;
+    for (uint32_t y = y0; y < y1; y += 2)
+        for (uint32_t x = x0; x < x1; x += 2) total += lum(x, y);
+    if (total / std::max(1LL, (long long)((cw + 1) / 2) * ((ch + 1) / 2)) < 40) return;  // too dark to be a picture
+    std::vector<uint8_t> out(size_t(cw) * ch * 4);
+    for (uint32_t y = 0; y < ch; y++)
+        for (uint32_t x = 0; x < cw; x++) {
+            const uint8_t* s = &px[(size_t(y + y0) * w + x + x0) * 4];
+            uint8_t* d = &out[(size_t(y) * cw + x) * 4];
+            d[0] = s[2]; d[1] = s[1]; d[2] = s[0]; d[3] = 255;
+        }
+    {
+        std::lock_guard lock(g_art_shot_lock);
+        if (g_art_shot != path) return;  // asked for another meanwhile
+        g_art_shot.clear();
+    }
+    std::error_code ec;
+    std::filesystem::create_directories(std::filesystem::path(path).parent_path(), ec);
+    pack::WritePngLater(path, cw, ch, std::move(out));
+    LOGR("art: %s (%ux%u)", path.c_str(), cw, ch);
+}
+
 // a movie frame as [graphics] movie_display shows it, sharpened at its own size; false when no movie is on
 // the movie frame to show: the newest one old enough, else the oldest kept (the picture waits for the late sound);
 // null when no movie is on
@@ -4817,7 +4877,10 @@ void D3D12Backend::Present(const Surface& front) {
         pair_step_ = 1;
         LOGR("texture pack: comparison pair (F7)");
     }
-    if (t && g_movie) KeepMovieFrame(*t);
+    if (t && g_movie) {
+        KeepMovieFrame(*t);
+        ArtShot();
+    }
     // brightness changed in the in-game menu: the ramp again, the identity one for a game that never set its own
     if (float b = app::Get().brightness; b != brightness_) {
         if (!ramp_set_ && brightness_ == 1.0f)

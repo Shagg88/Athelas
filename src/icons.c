@@ -245,7 +245,7 @@ static void __cdecl on_font_loaded(BYTE *font)
     g_ready = 1;
     for (int i = 0; i < MAX_FONT_TEX; i++)
         if (g_fontObj[i] == font) g_fontWhite[i] = letters_white(font);
-    dlogf_("icons: font %p (%dx%d, capital %dpx): %d px icons, letters %s", (void *)font, tw, th, sa->h, H,
+    logf_("icons: font %p (%dx%d, capital %dpx): %d px icons, letters %s", (void *)font, tw, th, sa->h, H,
            icons_font_is_white(*(void **)(font + 0x438)) ? "white" : "coloured");
 }
 

@@ -6,6 +6,8 @@
 #define NOMINMAX
 #endif
 #include <cstdlib>
+#include <cstdio>
+#include <cstring>
 #include <windows.h>
 #include <dbghelp.h>
 #include <shellapi.h>
@@ -362,7 +364,36 @@ void Print(const std::string& text) {
 
 }  // namespace
 
+#ifdef XBE_PGO_GEN
+// a PGO measuring build (XBE_PGO=GEN): the counts so far written every 20 s and at exit, over the same file (a
+// killed or crashed run keeps what it measured). LLVM_PROFILE_FILE chooses the file, else <exe>-<pid>.profraw.
+extern "C" int __llvm_profile_write_file(void);
+extern "C" void __llvm_profile_set_filename(const char*);
+namespace {
+void PgoStart() {
+    static char name[MAX_PATH];
+    if (!std::getenv("LLVM_PROFILE_FILE")) {
+        char exe[MAX_PATH];
+        GetModuleFileNameA(nullptr, exe, MAX_PATH);
+        char* dot = std::strrchr(exe, '.');
+        if (dot) *dot = 0;
+        std::snprintf(name, sizeof name, "%s-%lu.profraw", exe, GetCurrentProcessId());
+        __llvm_profile_set_filename(name);
+    }
+    std::thread([] {
+        for (;;) {
+            std::this_thread::sleep_for(std::chrono::seconds(20));
+            __llvm_profile_write_file();
+        }
+    }).detach();
+}
+}  // namespace
+#endif
+
 int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int) {
+#ifdef XBE_PGO_GEN
+    PgoStart();
+#endif
     // a launcher's questions, answered before anything else starts
     if (app::Args().version) {
         Print(std::string(app::kGame.version) + "\n");

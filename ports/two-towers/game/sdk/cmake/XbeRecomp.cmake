@@ -52,6 +52,7 @@ FetchContent_MakeAvailable(zydis tomlplusplus imgui SDL3 glslang)
 
 # Cross-compiling (an ARM64 build on an x64 PC): the tools must run on this machine, so they come from a build
 # for it, XBE_HOST_TOOLS = the folder holding its xbe_recomp and xbe_symbols
+set(XBE_PGO "" CACHE STRING "Profile-guided optimisation: GEN (a measuring build), OFF, or empty (use pgo/<target>.profdata when there)")
 set(XBE_HOST_TOOLS "" CACHE PATH "Folder with xbe_recomp and xbe_symbols built for this machine, when cross-compiling")
 if(XBE_HOST_TOOLS)
     foreach(tool xbe_recomp xbe_symbols)
@@ -163,4 +164,20 @@ target_link_libraries(${target} PRIVATE tomlplusplus::tomlplusplus $<LINK_ONLY:S
         $<LINK_ONLY:glslang::glslang> $<LINK_ONLY:glslang::SPIRV> $<LINK_ONLY:glslang::glslang-default-resource-limits> d3d12 dxgi dxguid d3dcompiler ${xaudio} ole32 windowscodecs dbghelp winmm dwmapi ws2_32 ${extra})
     # lld keeps the recompiled weak functions overridable by the host ones
     target_link_options(${target} PRIVATE -fuse-ld=lld -g)
+    # profile-guided optimisation (clang): XBE_PGO=GEN builds a measuring program (it writes <target>-<pid>.profraw,
+    # LLVM_PROFILE_FILE to choose); with pgo/<target>.profdata beside the port (llvm-profdata merge of those) and
+    # XBE_PGO not OFF/GEN, the build uses it. The kit carries the profile, so a player's build uses it too.
+    set(pgo_profile ${CMAKE_CURRENT_SOURCE_DIR}/pgo/${target}.profdata)
+    if(XBE_PGO STREQUAL "GEN")
+        target_compile_options(${target} PRIVATE -fprofile-instr-generate)
+        target_link_options(${target} PRIVATE -fprofile-instr-generate)
+        target_compile_definitions(${target} PRIVATE XBE_PGO_GEN=1)
+        message(STATUS "${target}: PGO measuring build")
+    elseif(NOT XBE_PGO STREQUAL "OFF" AND EXISTS ${pgo_profile} AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        target_compile_options(${target} PRIVATE -fprofile-instr-use=${pgo_profile} -Wno-profile-instr-unprofiled
+                               -Wno-profile-instr-out-of-date -Wno-profile-instr-missing -Wno-backend-plugin)
+        set_property(TARGET ${target} APPEND PROPERTY LINK_DEPENDS ${pgo_profile})
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${pgo_profile})
+        message(STATUS "${target}: PGO with ${pgo_profile}")
+    endif()
 endfunction()

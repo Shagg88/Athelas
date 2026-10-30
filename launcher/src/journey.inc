@@ -823,7 +823,8 @@ static std::string j_pretty(const std::string &file)
 
 static void j_minstrel(App &a)
 {
-    std::string fx = fr_music_copies(a, FR_FOTR, GK_FOTR_XBOX), tt = fr_music_copies(a, FR_TT, GK_TT_XBOX);
+    std::string fx = fr_music_copies(a, FR_FOTR, GK_FOTR_XBOX), tt = fr_music_copies(a, FR_TT, GK_TT_XBOX),
+                ta = fr_music_copies(a, FR_TA, GK_TA_XBOX);
     static std::vector<std::string> tracks;
     static std::string tracksFor = "-";
     if (tracksFor != fx) { tracksFor = fx; tracks = fx.empty() ? std::vector<std::string>() : music_fotr_list(fx); }
@@ -836,6 +837,9 @@ static void j_minstrel(App &a)
     section("The Two Towers");
     if (tt.empty()) ImGui::TextColored(C_DIM, "Add The Two Towers to hear its music.");
     else if (ImGui::Selectable("Main menu theme##ttmenu")) { music_enable(true); music_play(MUSIC_TT, tt); }
+    section("The Third Age");
+    if (ta.empty()) ImGui::TextColored(C_DIM, "Add The Third Age to hear its music.");
+    else if (ImGui::Selectable("Main menu theme##tamenu")) { music_enable(true); music_play(MUSIC_TA, ta); }
     section("The Fellowship of the Ring");
     if (fx.empty()) ImGui::TextColored(C_DIM, "Add The Fellowship of the Ring to hear its music.");
     else if (tracks.empty()) ImGui::TextColored(C_DIM, "Its music archive (Scenes\\Media\\Music2.xpa) couldn't be read from your copy.");

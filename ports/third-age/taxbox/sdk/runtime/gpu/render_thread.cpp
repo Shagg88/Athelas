@@ -130,6 +130,10 @@ public:
         }
         pcv_.notify_all();
         cv_.notify_all();
+        if (prep_on_) {  // the prep thread finishes the batch it holds before the renderer goes
+            std::unique_lock plock(pm_);
+            pcv_.wait_for(plock, std::chrono::milliseconds(500), [&] { return prep_exited_; });
+        }
         std::unique_lock lock(m_);
         // at exit the worker may be gone mid-batch: then the inner backend is left, not freed under it
         if (!done_cv_.wait_for(lock, std::chrono::milliseconds(500), [&] { return exited_; })) (void)inner_.release();
@@ -465,7 +469,11 @@ private:
             {
                 std::unique_lock lock(pm_);
                 pcv_.wait(lock, [&] { return prep_stop_ || !prep_queue_.empty(); });
-                if (prep_queue_.empty()) return;
+                if (prep_queue_.empty()) {
+                    prep_exited_ = true;
+                    pcv_.notify_all();
+                    return;
+                }
                 b = prep_queue_.front();
                 prep_queue_.pop_front();
             }
@@ -622,7 +630,7 @@ private:
     std::mutex pm_;
     std::condition_variable pcv_;
     std::deque<Batch*> prep_queue_;
-    bool prep_stop_ = false;
+    bool prep_stop_ = false, prep_exited_ = false;
 };
 
 }  // namespace

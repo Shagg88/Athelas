@@ -107,6 +107,35 @@ static bool load_tt(const std::string &game, std::vector<int16_t> &pcm, int &cha
     return !pcm.empty();
 }
 
+// The Third Age: the front end's streamed sound, Data\Game\e98c\e98c03.sas, is its menu music: 32 KB chunks, each a
+// 296-byte header (zeros) and 902 Xbox ADPCM blocks of one channel (mono, 36 bytes), the left and right channels'
+// chunks taking turns (found by which chunk carries on where the last one ended). 44.1 kHz, about 4 minutes.
+static bool load_ta(const std::string &game, std::vector<int16_t> &pcm, int &channels, int &rate)
+{
+    std::vector<uint8_t> d;
+    if (!read_game_file(game, "Data\\Game\\e98c\\e98c03.sas", d, 64u << 20)) return false;
+    const size_t kChunk = 32768, kHead = 296, kBlocks = 902, kSamples = kBlocks * 64;
+    size_t pairs = d.size() / (2 * kChunk);
+    if (!pairs) return false;
+    pcm.assign(pairs * kSamples * 2, 0);
+    std::vector<int16_t> one;
+    for (size_t k = 0; k < pairs * 2; k++) {
+        const uint8_t *c = &d[k * kChunk];
+        for (size_t i = 0; i < kHead; i++) if (c[i]) return false;        // not the layout expected
+        if (c[kHead + 2] > 88 || c[kHead + 3]) return false;
+        xbox_adpcm(c + kHead, kBlocks * 36, 1, one);
+        if (one.size() != kSamples) return false;
+        int16_t *o = &pcm[(k / 2) * kSamples * 2 + (k & 1)];
+        for (size_t i = 0; i < kSamples; i++) o[i * 2] = one[i];
+    }
+    size_t first = 0, n = pcm.size() / 2;                                 // the silence before the music
+    while (first < n && abs(pcm[first * 2]) < 64 && abs(pcm[first * 2 + 1]) < 64) first++;
+    if (first >= n) return false;
+    pcm.erase(pcm.begin(), pcm.begin() + first * 2);
+    channels = 2; rate = 44100;
+    return true;
+}
+
 // part of a game file (from its folder or inside its disc image): len bytes at off
 static bool read_game_range(const std::string &game, const char *rel, unsigned long long off, size_t len,
                             std::vector<uint8_t> &out, unsigned long long *fileSize = nullptr)
@@ -299,6 +328,7 @@ static Track *decode(const Job &j)
         ok = j.t == MUSIC_TT ? load_tt(g, pcm, ch, rate)
            : j.t == MUSIC_FOTR ? (load_fotr_shire(g, pcm, ch, rate) || (pcm.clear(), ch = 2, rate = kRate, load_fotr(g, pcm, ch, rate)))
            : j.t == MUSIC_FOTR_NAMED ? load_fotr_named(g, j.name.c_str(), pcm, ch, rate)
+           : j.t == MUSIC_TA ? load_ta(g, pcm, ch, rate)
            : false;
         if (j.gen != SDL_GetAtomicInt(&g_gen)) return nullptr;   // (another box chosen meanwhile)
     }
@@ -315,7 +345,7 @@ static Track *decode(const Job &j)
     }
     }
     if (const char *dump = getenv("ATHELAS_MUSIC_DUMP")) {   // testing: the decoded track, raw 44.1 kHz stereo
-        std::string fn = std::string(dump) + (j.t == MUSIC_TT ? "\\tt.raw" : "\\fotr.raw");
+        std::string fn = std::string(dump) + (j.t == MUSIC_TT ? "\\tt.raw" : j.t == MUSIC_TA ? "\\ta.raw" : "\\fotr.raw");
         if (FILE *f = fopen(fn.c_str(), "wb")) { fwrite(t->pcm.data(), 2, t->pcm.size(), f); fclose(f); }
     }
     return t;
