@@ -42,6 +42,8 @@ The analysis scripts in `tools\` need Python and `pip install capstone`.
 
 MIT, see [`LICENSE`](LICENSE). The SDK in `game/sdk` is under its own MIT licence, (c) 2026 TGP482 (`game/sdk/LICENSE`), and the libraries built into the exe are listed in `game/sdk/THIRD_PARTY.txt`.
 
+Using our code? You're welcome to. If you use The Two Towers port's code in your own project, please credit "Athelas by Shagg (The Two Towers port)" and link to https://github.com/Shagg88/Athelas in your readme or credits. (The MIT licence already asks you to keep the copyright notice in copies of the code.)
+
 ## Credits
 
 By Shagg, with Claude (Anthropic).

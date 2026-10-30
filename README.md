@@ -216,7 +216,11 @@ Every licence is in the [licenses](licenses) folder.
 
 ## Licences
 
-Athelas, ROTK Fix and the ports are MIT licensed, © 2026 Shagg (see `LICENSE`). Bundled components keep their own licences, all in `licenses/` and shipped in `ROTKFix\licenses`:
+Athelas, ROTK Fix and the ports are MIT licensed, © 2026 Shagg (see `LICENSE`).
+
+Using our code? You're welcome to. If you use Athelas's code in your own project, please credit "Athelas by Shagg" and link to https://github.com/Shagg88/Athelas in your readme or credits. (The MIT licence already asks you to keep the copyright notice in copies of the code.)
+
+Bundled components keep their own licences, all in `licenses/` and shipped in `ROTKFix\licenses`:
 
 - DXVK (zlib)
 - SDL3 (zlib)

@@ -43,6 +43,8 @@ The recompiled code (`rotkxbox\generated`) is made on your PC from your own `def
 
 MIT, see [`LICENSE`](LICENSE). The SDK in `rotkxbox/sdk` is under its own MIT licence, (c) 2026 TGP482 (`rotkxbox/sdk/LICENSE`), and the libraries built into the exe are listed in `rotkxbox/sdk/THIRD_PARTY.txt`.
 
+Using our code? You're welcome to. If you use The Return of the King port's code in your own project, please credit "Athelas by Shagg (The Return of the King port)" and link to https://github.com/Shagg88/Athelas in your readme or credits. (The MIT licence already asks you to keep the copyright notice in copies of the code.)
+
 ## Credits
 
 By Shagg, with Claude (Anthropic).
