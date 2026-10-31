@@ -19,11 +19,13 @@
 #include "app/app.h"
 #include "core/log.h"
 #include "gpu/backend.h"
+#include "gpu/vertex.h"
 #include "gpu/state.h"
 #include "gpu/texture.h"
-#include "gpu/vertex.h"
 #include "kernel/kernel.h"
 #include "xdk/hle.h"
+
+namespace tt { void FreeCamProjection(float fov, float aspect, float zn, float zf); }  // tt_freecam.cpp
 
 X86_EXTERN_FUNC(__imp__sub_0004E890);
 X86_FUNC(sub_0004E890) {
@@ -35,6 +37,11 @@ X86_FUNC(sub_0004E890) {
             aspect = app::FrameAspect();
             std::memcpy(::kernel::HostPtr(at), &aspect, 4);
         }
+    }
+    {
+        float f[4];  // fov, aspect, near, far
+        std::memcpy(f, ::kernel::HostPtr(ctx.esp + 4), sizeof f);
+        tt::FreeCamProjection(f[0], f[1], f[2], f[3]);
     }
     __imp__sub_0004E890(ctx, base);
 }
@@ -148,11 +155,14 @@ void HudPlace(float x0, float x1, float y0, float y1, float w, float f, float& a
             float h = w * 3 / 4;
             // wider than 16:9 (ultrawide): the menu as on a 16:9 screen, in the middle with bars at the sides, as
             // filling the width would stretch the art far more or cut off the menu's top and bottom
-            float wide = (16.0f / 9.0f) / app::FrameAspect();
+            // (Shagg, #35: menus widen with the screen up to 21:9 at most, black beyond)
+            float wide = std::min(app::FrameAspect(), 21.0f / 9.0f) / app::FrameAspect();
             a = (f == 1 ? wide : f) * kZoom;
             // the screen-wide shade over the panel stays within the 16:9 part (on 16:9 its enlarged edges are off
             // the screen)
             if (f == 1 && wide < 1 && x0 <= 1 && x1 >= w - 1) a = wide;
+            // the bars beside it black (the 3D behind a menu would show there)
+            if (wide < 0.999f) gpu::g_frame_sides = wide;
             b = w / 2 * (1 - a);
             c = kZoom;
             d = h / 2 * (1 - c);

@@ -3208,20 +3208,29 @@ static bool release_untested(const char *dir, const LibGame &g)
 {
     return !game_region_us(g) || std::find(g_untested.begin(), g_untested.end(), std::string(dir)) != g_untested.end();
 }
-static void confirm_works(App &a, const char *dir, const char *game, const LibGame &g)
+// "It worked" / "It didn't work" on an untested version's page: a pre-filled GitHub issue with the copy's details
+// (Athelas sends nothing itself; the player submits the page). "It worked" also remembers the copy, so Play stops asking.
+static void report_version(App &a, const char *dir, const char *game, const LibGame &g, bool worked)
 {
     const std::string &h = xbe_sha_of(g);
     if (h.empty()) { set_message(a, "The game's default.xbe couldn't be read - nothing was changed.", true); return; }
-    WritePrivateProfileStringA("WorksRelease", dir, h.c_str(), ports_ini().c_str());
-    g_works[dir] = h;
-    std::string title = std::string("Version works: ") + game + " - " + game_region_name(g) + " copy " + h.substr(0, 12);
-    std::string body = std::string("This version runs for me in Athelas ") + LAUNCHER_VERSION + ".\n\nGame: " + game +
-                       "\nRegion: " + game_region_name(g) + "\nTitle ID: " + [&] { char b[16]; snprintf(b, sizeof b, "%08X", (unsigned)g.titleId); return std::string(b); }() +
+    if (worked) {
+        WritePrivateProfileStringA("WorksRelease", dir, h.c_str(), ports_ini().c_str());
+        g_works[dir] = h;
+    }
+    std::string title = std::string(worked ? "Version works: " : "Version doesn't work: ") + game + " - " +
+                        game_region_name(g) + " copy " + h.substr(0, 12);
+    std::string body = std::string(worked ? "This version runs for me" : "This version doesn't run for me") + " in Athelas " +
+                       LAUNCHER_VERSION + ".\n\nGame: " + game + "\nRegion: " + game_region_name(g) + "\nTitle ID: " +
+                       [&] { char b[16]; snprintf(b, sizeof b, "%08X", (unsigned)g.titleId); return std::string(b); }() +
                        "\nTitle: " + g.title + "\nCopy: " + (g.iso ? "disc image" : "extracted files") + "\ndefault.xbe SHA-1: " + h +
-                       "\n\nWhere it came from (region, disc revision, Platinum Hits...), and anything that didn't work:\n";
+                       (worked ? "\n\nWhere it came from (region, disc revision, Platinum Hits...), and anything that didn't work:\n"
+                               : "\n\nWhat happened (didn't start, crashed, a level that broke...). Please drag the game's log in too "
+                                 "(the Report a problem button on the game's page collects it):\n");
     ShellExecuteA(NULL, "open", ("https://github.com/Shagg88/Athelas/issues/new?labels=version&title=" + url_encode(title) +
                                  "&body=" + url_encode(body)).c_str(), NULL, NULL, SW_SHOWNORMAL);
-    set_message(a, "Thanks - this version won't be questioned again. A GitHub page opened with its details: submit it to let us know.", false);
+    set_message(a, worked ? "Thanks - this version won't be questioned again. A GitHub page opened with its details: submit it to let us know."
+                          : "Thanks - a GitHub page opened with this version's details: submit it to let us know.", false);
 }
 
 // ---- A problem report: every log and settings file Athelas knows of and a description of the PC in one zip
@@ -3437,9 +3446,9 @@ static void port_finished(App &a, DWORD code)
             { SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT | SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 0, "Cancel" },
             { 0, 1, "Start anyway" },
         };
-        std::string text = "This copy of " + a.runningGame + " is an untested version (the port was made from the US "
-                           "release). It may work, but you may experience problems.\n\nStart it anyway? If it plays well, "
-                           "press \"This version works\" on the game's page afterwards to let us know.";
+        std::string text = "This copy of " + a.runningGame + " is an untested and unsupported version (the port was made "
+                           "from the US release). Proceed with caution: it may not start, or may have problems.\n\nStart it "
+                           "anyway? Afterwards, press \"It worked\" or \"It didn't work\" on the game's page to let us know.";
         SDL_MessageBoxData box = { SDL_MESSAGEBOX_WARNING, NULL, "Athelas", text.c_str(), 2, buttons, NULL };
         int pressed = 0;
         if (SDL_ShowMessageBox(&box, &pressed) && pressed == 1) {
@@ -4933,8 +4942,12 @@ static void draw_other_game(App &a)
             if (release_confirmed(dir, g))
                 ImGui::TextColored(C_DIM, "An untested version (%s copy) you said works.", game_region_name(g));
             else {
-                ImGui::TextColored(C_WARN, "An untested version (%s copy): it may work, but you may experience problems.", game_region_name(g));
-                if (ImGui::Button("This version works")) confirm_works(a, dir, game_kind_name(g.kind), g);
+                ImGui::TextColored(C_WARN, "This is an untested and unsupported version (%s copy). Proceed with caution: it "
+                                   "may not start, or may have problems.", game_region_name(g));
+                ImGui::TextUnformatted("Did it work? Let us know:");
+                if (ImGui::Button("It worked")) report_version(a, dir, game_kind_name(g.kind), g, true);
+                ImGui::SameLine();
+                if (ImGui::Button("It didn't work")) report_version(a, dir, game_kind_name(g.kind), g, false);
             }
             ImGui::Spacing();
         }

@@ -3384,6 +3384,18 @@ void D3D12Backend::UploadConstants(const State& s, const DrawShaders& sh, const 
     FillFogConstants(s, sh.prog, c);
     FillCombinerConstants(s, c);
     c.widen[0] = sh.prog ? g_program_widen.load() : 0.0f;
+    if (g_orbit_on.load()) {
+        c.orbit[0][0] = 1.0f;
+        c.orbit[0][1] = g_orbit_yaw.load();
+        c.orbit[0][2] = g_orbit_pitch.load();
+        c.orbit[0][3] = g_orbit_pivot.load();
+        c.orbit[1][0] = g_orbit_p11.load();
+        c.orbit[1][1] = g_orbit_p22.load();
+        c.orbit[1][2] = g_orbit_a.load();
+        c.orbit[1][3] = g_orbit_b.load();
+    } else {
+        c.orbit[0][0] = 0.0f;
+    }
     if (ext_) {
         // a backend extension may change the vertex constants: given a copy of its own, uploaded fresh
         if (vs_same) {

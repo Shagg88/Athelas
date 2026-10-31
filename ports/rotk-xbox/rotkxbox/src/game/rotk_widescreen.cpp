@@ -27,6 +27,7 @@
 
 #include "app/app.h"
 #include "core/log.h"
+#include "gpu/common.h"
 #include "gpu/backend.h"
 #include "gpu/state.h"
 #include "gpu/texture.h"
@@ -224,7 +225,8 @@ bool Place2D(const gpu::State& s, float x0, float x1, float y0, float y1, float&
         // ultrawide screen
         if (x0 <= -0.98f && x1 >= 0.98f) return false;
         if (!ultra) return false;
-        a = wide;
+        // in a menu, the shape of the menu's pictures (up to 21:9), so highlight bars stay with them (review, 1.7.6)
+        a = g_groups.menu_frame == now ? std::min(frame, 21.0f / 9.0f) / frame : wide;
         b = 0;
         return true;
     }
@@ -242,17 +244,25 @@ bool Place2D(const gpu::State& s, float x0, float x1, float y0, float y1, float&
     if (!spans && (x0 <= -0.98f || x1 >= 0.98f) && edge_y && band && (x1 - x0) >= 0.8f) return false;  // in pieces
     // a full-screen menu picture: held at 16:9 on an ultrawide screen, where the menus' 3D scenes, drawn behind it,
     // would show beside it, so the sides are painted black
+    // (Shagg, #35: menus widen with the screen up to 21:9 at most, black beyond; play fills the whole width)
+    float menu = ultra ? std::min(frame, 21.0f / 9.0f) / frame : 1.0f;
+    // in play (not the front end) a full-screen picture is an effect over the world (Southern Gate's and the
+    // Courtyard's, GitHub #38): it keeps the whole width, and the sides aren't painted black (they flashed on and off
+    // with it)
+    // (only one blended over the world: an opaque full-screen picture in a level, such as the loading screen, is
+    // still a menu picture)
+    if (spans && tall && !rotk::InMenus() && gpu::SimpleState(s, gpu::kMBlendEnable) != 0) return false;
     if (spans && tall) {
         g_groups.menu_frame = now;
         if (!ultra) return false;
-        a = wide;
+        a = menu;
         b = 0;
-        gpu::g_frame_sides = wide;
+        gpu::g_frame_sides = menu;
         return true;
     }
     if (!rotk::g_hud_edges || g_groups.menu_frame == now) {  // menus, or the HUD without hud_edges
         if (!ultra) return false;
-        a = wide;
+        a = g_groups.menu_frame == now ? menu : wide;
         b = 0;
         return true;
     }

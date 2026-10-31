@@ -1432,15 +1432,18 @@ static HRESULT WINAPI draw_idx(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE pt, UINT 
  * only its alpha): letters are white, so they look the same either way, but the button pictures painted into the
  * font (icons.c) lose their symbol and show as plain white shapes: the combo list, the in-game hints and the shop
  * (#34). For such a draw the colour becomes texture x text colour, which leaves the white letters as they were. */
-/* Does this draw take a button picture? They sit below the letters in the font texture (icons.c), so their v is
- * past 1; letters' never is. */
+/* Does this draw take a button picture? They sit below the letters in the font texture (icons.c): past the v where
+ * the font's letters end (icons_letters_v_end: th / ph as the game scales it), not past 1 as 1.7.4 assumed, which
+ * never happened (#34, brig-dev: the check never fired) */
 static int draw_has_icons(UINT first, UINT count)
 {
     TrackedVB *t = g_stream0 ? find_vb(g_stream0) : NULL;
     UINT stride = g_stream0Stride ? g_stream0Stride : 24;
+    float vEnd = icons_letters_v_end(g_tex0);
+    if (vEnd <= 0.0f) return 0;
     if (!t || g_curFVF != FVF_2D || count == 0 || stride < 24 || first > t->size / stride || count > t->size / stride - first) return 0;
     for (UINT i = 0; i < count; i++)
-        if (((const float *)(t->shadow + (first + i) * stride))[5] > 1.0005f) return 1;
+        if (((const float *)(t->shadow + (first + i) * stride))[5] > vEnd) return 1;
     return 0;
 }
 static int font_colour_fix(IDirect3DDevice8 *dev, DWORD saved[3], UINT first, UINT count)

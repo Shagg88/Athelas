@@ -89,10 +89,9 @@ void ApplyCameraSettings();
 void InitWidescreen() {
     gpu::g_projection_hook = Projection;
     gpu::g_wide_targets = true;  // drawn at the screen's own width, not stretched sideways
-    // 16:9 at most: the game's 2D is stretched to the frame, and wider than 16:9 text would be more than twice as wide
-    // as it is tall (ROTK holds its menus at 16:9 inside a wider frame; this game has no such placement yet)
-    app::g_max_frame_aspect = 16.0f / 9.0f;
-    LOGR("ta: widescreen %s", app::Widescreen() ? "on (16:9)" : "off (4:3)");
+    // ultrawide screens get their full width (GitHub #35): the 2D is held at 16:9 in the middle (ta_hud.cpp Place2D)
+    app::g_max_frame_aspect = 32.0f / 9.0f;
+    LOGR("ta: widescreen %s", app::Widescreen() ? (app::FrameAspect() > 16.0f / 9.0f + 0.01f ? "on (ultrawide)" : "on (16:9)") : "off (4:3)");
     ApplyCameraSettings();
 }
 

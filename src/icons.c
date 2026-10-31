@@ -174,6 +174,19 @@ static int letters_white(BYTE *font)
     ((Unlock_t)vt[17])(tex, 0);
     return seen > 0 && dark * 50 < seen;   /* (a few edge texels may be off-white) */
 }
+/* v (as drawn) where a font's letters end: the text draw (0x49cc50) multiplies the glyph's v by font +0x448, the used
+ * height over the texture's power-of-two height (th / ph), so letters reach th / ph and the button pictures below
+ * them (from y = th + 1) lie between that and 1; 0 = not a font (#34, brig-dev's analysis) */
+float icons_letters_v_end(const void *tex)
+{
+    if (!tex) return 0.0f;
+    for (int i = 0; i < MAX_FONT_TEX; i++)
+        if (g_fontTex[i] == tex && g_fontObj[i] && readable(g_fontObj[i], 0x444)) {
+            int th = *(short *)(g_fontObj[i] + 0x41a), ph = *(int *)(g_fontObj[i] + 0x440);
+            return th > 0 && ph > th ? (th + 0.5f) / (float)ph : 0.0f;
+        }
+    return 0.0f;
+}
 int icons_font_is_white(const void *tex)
 {
     if (!tex) return 0;

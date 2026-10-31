@@ -190,7 +190,7 @@ private:
     VkShaderModule ShaderModule(uint64_t key, const std::string& hlsl, spirv::Stage stage, const char* entry = "main");
     void BindTexture(const State& s, int i, Target* rt, Target* ds, StageBind& sb, TexInfo& info);
     VkImageView GuestTexture(const State& s, int stage, const TextureDesc& d, const FormatInfo& fi);
-    void UploadTexture(Tex& tx, const uint8_t* p, const uint32_t* colours);
+    bool UploadTexture(Tex& tx, const uint8_t* p, const uint32_t* colours);  // false: not all of it (tried again)
     VkSampler StageSampler(const State& s, int i, const TexInfo& info, bool target);
     VkPipeline Pipeline(const PipeKey& k);
 
@@ -222,11 +222,14 @@ private:
         uint8_t* upload_cpu = nullptr;
         VkDeviceSize used = 0;
         VkDescriptorPool sets = VK_NULL_HANDLE;
+        uint32_t sets_used = 0;      // taken from `sets` since its reset
         std::vector<Image> garbage;  // destroyed when the slot comes round again
     };
     static constexpr VkDeviceSize kUploadSize = 64ull << 20;
     static constexpr VkDeviceSize kUploadReserve = 16ull << 20;
-    static constexpr uint32_t kSetsPerFrame = 8192;
+    // (The Third Age draws ~13,600 times a frame: 8192 ran out and the rest of the frame was dropped, textures
+    // "randomly dropping out"; a full pool now finishes the frame's work and starts over, as a full upload ring does)
+    static constexpr uint32_t kSetsPerFrame = 32768;
     Frame frames_[kFrames];
     uint32_t frame_ = 0;
     bool lost_ = false;
@@ -830,6 +833,7 @@ VkCommandBuffer VkBackend::Cmd() {
     // the slot's last use is done: its ring, descriptor sets and retired images are free again
     f.used = 0;
     if (f.sets) vkResetDescriptorPool(device_, f.sets, 0);
+    f.sets_used = 0;
     for (Image& im : f.garbage) DestroyImage(im);
     f.garbage.clear();
     VkCommandBufferBeginInfo bi{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
@@ -1519,14 +1523,13 @@ VkImageView VkBackend::GuestTexture(const State& s, int stage, const TextureDesc
         bool font_cache = (d.format == 0x19 || d.format == 0x1F) && total <= (1u << 20);
         uint64_t sig = (font_cache ? Hash(p, total, total) : MemSig(d.data, total)) ^ DirtyEpoch(d.data) ^ pal_hash;
         if (sig != tx.sig || !same) {
-            tx.sig = sig;
-            UploadTexture(tx, p, pal_va ? colours : nullptr);
+            tx.sig = UploadTexture(tx, p, pal_va ? colours : nullptr) ? sig : 0;  // a failed one is tried again
         }
     }
     return tx.img.view;
 }
 
-void VkBackend::UploadTexture(Tex& tx, const uint8_t* p, const uint32_t* colours) {
+bool VkBackend::UploadTexture(Tex& tx, const uint8_t* p, const uint32_t* colours) {
     const TextureDesc& d = tx.d;
     const FormatInfo& fi = Format(d.format);
     VkImageSubresourceRange all{VK_IMAGE_ASPECT_COLOR_BIT, 0, tx.levels, 0, d.cube ? 6u : 1u};
@@ -1548,7 +1551,8 @@ void VkBackend::UploadTexture(Tex& tx, const uint8_t* p, const uint32_t* colours
             if (!Upload(bytes, 16, true, off, cpu)) {
                 LOG_FIRST(4, "vulkan: a texture level of %llu bytes did not fit the upload ring",
                           (unsigned long long)bytes);
-                return;
+                Barrier(tx.img.image, all, tx.img.layout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                return false;
             }
             size_t src_rows = pitch ? px.size() / pitch / ld : 0;
             for (uint32_t z = 0; z < ld; z++)
@@ -1568,6 +1572,7 @@ void VkBackend::UploadTexture(Tex& tx, const uint8_t* p, const uint32_t* colours
         }
     }
     Barrier(tx.img.image, all, tx.img.layout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    return true;
 }
 
 // D3DTEXF: 1 point, 2 linear, 3 anisotropic
@@ -1736,7 +1741,9 @@ void VkBackend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t cou
         return;
     }
     // room for the draw's constants and vertices: a full ring is finished and started over first
-    if (Cmd() && frames_[frame_].used > kUploadSize - kUploadReserve) Submit(true);
+    // (and a descriptor set pool about to run out the same way)
+    if (Cmd() && (frames_[frame_].used > kUploadSize - kUploadReserve || frames_[frame_].sets_used + 1 >= kSetsPerFrame))
+        Submit(true);
 
     Target* rt = EnsureTarget(s.rt, false);
     Target* ds = s.rs[kRsZEnable] || s.rs[kRsStencilEnable] ? EnsureTarget(s.zs, true) : nullptr;
@@ -1853,6 +1860,18 @@ void VkBackend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t cou
     FillFogConstants(s, sh.prog, c);
     FillCombinerConstants(s, c);
     c.widen[0] = sh.prog ? g_program_widen.load() : 0.0f;
+    if (g_orbit_on.load()) {
+        c.orbit[0][0] = 1.0f;
+        c.orbit[0][1] = g_orbit_yaw.load();
+        c.orbit[0][2] = g_orbit_pitch.load();
+        c.orbit[0][3] = g_orbit_pivot.load();
+        c.orbit[1][0] = g_orbit_p11.load();
+        c.orbit[1][1] = g_orbit_p22.load();
+        c.orbit[1][2] = g_orbit_a.load();
+        c.orbit[1][3] = g_orbit_b.load();
+    } else {
+        c.orbit[0][0] = 0.0f;
+    }
     for (int i = 0; i < 4; i++) {
         if (s.textures[size_t(i)]) {
             c.texsize[i][0] = float(sb[i].width);
@@ -1917,6 +1936,7 @@ void VkBackend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t cou
         LOG_FIRST(2, "vulkan: the frame ran out of descriptor sets (more than %u draws)", kSetsPerFrame);
         return;
     }
+    f.sets_used++;
     VkDescriptorBufferInfo bufs[2] = {{f.upload, vc_off, sizeof(s.vsc)}, {f.upload, dc_off, sizeof(DrawConstants)}};
     VkDescriptorImageInfo imgs[4], smps[4];
     for (int i = 0; i < 4; i++) {

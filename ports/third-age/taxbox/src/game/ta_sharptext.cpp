@@ -212,27 +212,95 @@ bool TextPage(const gpu::pack::Contents& t, gpu::pack::Image& out) {
             return false;
         }
     }
-    std::vector<float> c(size_t(t.width) * t.height);
+    // GitHub #37: redrawing the whole 512x512 page took ~40 ms on the game thread, a stutter every few seconds while
+    // a counter or a line of words changed. The last page and its redrawn levels are kept: only the part that changed
+    // (with a margin the filters reach across) is redrawn, and only that part of each smaller level made again.
+    struct Kept {
+        uint32_t w = 0, h = 0;
+        std::vector<uint8_t> in;                    // the page as the game wrote it
+        std::vector<std::vector<uint8_t>> levels;   // its redrawn levels, BGRA
+    };
+    static Kept kept;
+    static std::mutex kept_m;
+    std::lock_guard kept_lock(kept_m);
+    const uint32_t w = t.width, h = t.height, W = w * kScale, H = h * kScale;
+    std::vector<uint8_t> cur(size_t(w) * h);
     size_t lit = 0;
-    for (uint32_t y = 0; y < t.height; y++)
-        for (uint32_t x = 0; x < t.width; x++) {
+    for (uint32_t y = 0; y < h; y++)
+        for (uint32_t x = 0; x < w; x++) {
             uint8_t v = t.data[size_t(y) * pitch + x];
-            c[size_t(y) * t.width + x] = v / 255.0f;
+            cur[size_t(y) * w + x] = v;
             lit += v != 0;
         }
     if (!lit) return false;  // an empty page: as it is
-    std::vector<float> cov = Sharpen(c, int(t.width), int(t.height));
-    uint32_t W = t.width * kScale, H = t.height * kScale;
+    // what changed since the last page (all of it for a new one)
+    int bx0 = 0, by0 = 0, bx1 = int(w), by1 = int(h);
+    bool whole = kept.w != w || kept.h != h || kept.levels.empty();
+    if (!whole) {
+        bx0 = int(w), by0 = int(h), bx1 = 0, by1 = 0;
+        for (uint32_t y = 0; y < h; y++)
+            for (uint32_t x = 0; x < w; x++)
+                if (cur[size_t(y) * w + x] != kept.in[size_t(y) * w + x]) {
+                    bx0 = std::min(bx0, int(x)), by0 = std::min(by0, int(y));
+                    bx1 = std::max(bx1, int(x) + 1), by1 = std::max(by1, int(y) + 1);
+                }
+    }
+    bool same = !whole && bx1 <= bx0;
+    if (!same) {
+        // drawn with a margin of 8 source pixels (the cubic, the blur and the outline reach about 4), kept 4 around
+        // the change
+        const int cx0 = whole ? 0 : std::max(0, bx0 - 4), cy0 = whole ? 0 : std::max(0, by0 - 4);
+        const int cx1 = whole ? int(w) : std::min(int(w), bx1 + 4), cy1 = whole ? int(h) : std::min(int(h), by1 + 4);
+        const int sx0 = whole ? 0 : std::max(0, bx0 - 8), sy0 = whole ? 0 : std::max(0, by0 - 8);
+        const int sx1 = whole ? int(w) : std::min(int(w), bx1 + 8), sy1 = whole ? int(h) : std::min(int(h), by1 + 8);
+        const int sw = sx1 - sx0, sh = sy1 - sy0;
+        std::vector<float> c(size_t(sw) * sh);
+        for (int y = 0; y < sh; y++)
+            for (int x = 0; x < sw; x++) c[size_t(y) * sw + x] = cur[size_t(sy0 + y) * w + size_t(sx0 + x)] / 255.0f;
+        std::vector<float> cov = Sharpen(c, sw, sh);
+        if (whole) {
+            kept.levels.clear();
+            for (uint32_t lw = W, lh = H;; lw = std::max(1u, lw / 2), lh = std::max(1u, lh / 2)) {
+                kept.levels.emplace_back(size_t(lw) * lh * 4, uint8_t(255));
+                if (lw == 1 && lh == 1) break;
+            }
+        }
+        // the base level's part, white with the coverage as alpha
+        const int SW = sw * kScale;
+        std::vector<uint8_t>& base = kept.levels[0];
+        Rows((cy1 - cy0) * kScale, [&](int r) {
+            int Y = cy0 * kScale + r;
+            for (int X = cx0 * kScale; X < cx1 * kScale; X++) {
+                float v = cov[size_t(Y - sy0 * kScale) * SW + size_t(X - sx0 * kScale)];
+                base[(size_t(Y) * W + X) * 4 + 3] = uint8_t(std::clamp(v * 255.0f + 0.5f, 0.0f, 255.0f));
+            }
+        });
+        // each smaller level: the average of 2x2, over the part that changed
+        int rx0 = cx0 * kScale, ry0 = cy0 * kScale, rx1 = cx1 * kScale, ry1 = cy1 * kScale;
+        uint32_t lw = W, lh = H;
+        for (size_t l = 1; l < kept.levels.size(); l++) {
+            uint32_t nw = std::max(1u, lw / 2), nh = std::max(1u, lh / 2);
+            rx0 /= 2, ry0 /= 2, rx1 = std::min(int(nw), (rx1 + 1) / 2), ry1 = std::min(int(nh), (ry1 + 1) / 2);
+            const std::vector<uint8_t>& up = kept.levels[l - 1];
+            std::vector<uint8_t>& dn = kept.levels[l];
+            for (int y = ry0; y < ry1; y++)
+                for (int x = rx0; x < rx1; x++) {
+                    uint32_t ux = std::min(uint32_t(x) * 2, lw - 1), uy = std::min(uint32_t(y) * 2, lh - 1);
+                    uint32_t ux1 = std::min(ux + 1, lw - 1), uy1 = std::min(uy + 1, lh - 1);
+                    int a = up[(size_t(uy) * lw + ux) * 4 + 3] + up[(size_t(uy) * lw + ux1) * 4 + 3] +
+                            up[(size_t(uy1) * lw + ux) * 4 + 3] + up[(size_t(uy1) * lw + ux1) * 4 + 3];
+                    dn[(size_t(y) * nw + x) * 4 + 3] = uint8_t((a + 2) / 4);
+                }
+            lw = nw, lh = nh;
+        }
+        kept.w = w, kept.h = h;
+        kept.in = std::move(cur);
+    }
     out = {};
     out.width = W;
     out.height = H;
     out.format = gpu::pack::Format::BGRA8;
-    std::vector<uint8_t>& px = out.levels.emplace_back(size_t(W) * H * 4);
-    for (size_t i = 0; i < size_t(W) * H; i++) {
-        px[i * 4] = px[i * 4 + 1] = px[i * 4 + 2] = 255;
-        px[i * 4 + 3] = uint8_t(std::clamp(cov[i] * 255.0f + 0.5f, 0.0f, 255.0f));
-    }
-    gpu::pack::MakeLevels(out);
+    out.levels = kept.levels;
     static std::atomic<int> logged{0};
     if (logged++ < 8)
         LOGR("ta: sharp text: a %ux%u text page redrawn at %ux%u in %.1f ms", t.width, t.height, W, H,

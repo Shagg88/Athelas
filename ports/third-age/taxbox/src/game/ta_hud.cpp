@@ -58,7 +58,13 @@ void MakeGroups() {
 }
 
 bool Place2D(const gpu::State& s, float x0, float x1, float y0, float y1, float& a, float& b) {
-    if (!ta::g_hud_edges || !app::Widescreen() || ta::InMenus() || gpu::g_movie.load()) return false;
+    if (!app::Widescreen() || gpu::g_movie.load()) return false;
+    // an ultrawide screen (wider than 16:9, GitHub #35): the 3D fills it, the 2D (menus, text, HUD) is held at 16:9 in
+    // the middle, as ROTK's port does, or text would be stretched to more than twice its width
+    float frame = app::FrameAspect();
+    bool ultra = frame > 16.0f / 9.0f + 0.01f;
+    bool edges = ta::g_hud_edges && !ta::InMenus();
+    if (!edges && !ultra) return false;
     uint32_t w, h;
     gpu::SurfaceSize(s.rt, w, h);
     if (w != 640 || h != 480) return false;  // the screen, not a texture the game draws into
@@ -67,15 +73,28 @@ bool Place2D(const gpu::State& s, float x0, float x1, float y0, float y1, float&
         g_groups.frame = now;
         MakeGroups();
     }
-    gpu::TextureDesc d;
-    if (!s.textures[0] || !gpu::Describe(s.textures[0], d)) return false;  // untextured: fades, flat overlays
-    if (d.width >= 640 && d.height >= 480) return false;                    // a copy of the screen
     bool spans = x0 <= -0.98f && x1 >= 0.98f, tall = y0 <= -0.98f && y1 >= 0.98f;
+    gpu::TextureDesc d;
+    if (!s.textures[0] || !gpu::Describe(s.textures[0], d)) {  // untextured: fades, flat overlays
+        if (!ultra || spans) return false;
+        if (edges && !ta::InMenus()) return false;  // hud_edges in play: as before (review, 1.7.6)
+        // the same shape as the textured pieces they sit behind: menus up to 21:9, the HUD 16:9
+        a = (ta::InMenus() ? std::min(frame, 21.0f / 9.0f) : 16.0f / 9.0f) / frame;
+        b = 0;
+        return true;
+    }
+    if (d.width >= 640 && d.height >= 480) return false;                    // a copy of the screen
     bool edge_y = y0 <= -0.98f || y1 >= 0.98f;
     bool band = (y1 - y0) < 0.5f && edge_y;
     if (spans && (tall || band)) return false;
     if (!spans && (x0 <= -0.98f || x1 >= 0.98f) && edge_y && band && (x1 - x0) >= 0.8f) return false;
-    a = (4.0f / 3.0f) / app::FrameAspect();
+    if (!edges) {  // ultrawide without hud_edges: the HUD as on a 16:9 screen, centred; menus up to 21:9 (#35)
+        a = (ta::InMenus() ? std::min(frame, 21.0f / 9.0f) : 16.0f / 9.0f) / frame;
+        b = 0;
+        if (ta::InMenus() && a < 0.999f) gpu::g_frame_sides = a;  // black beyond it
+        return true;
+    }
+    a = (4.0f / 3.0f) / frame;
     g_groups.drawn.push_back({x0, x1, y0, y1});
     float cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
     int side = 2;

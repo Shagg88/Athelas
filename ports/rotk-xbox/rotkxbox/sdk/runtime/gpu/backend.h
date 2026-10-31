@@ -124,6 +124,13 @@ inline DrawObserver g_draw_observer = nullptr;
 // set by a game whose vertex programs carry their own projection: their 3D positions' x times this (4:3 / the frame's
 // shape for widescreen), 0 to leave them; fixed function projections go through g_projection_hook instead
 inline std::atomic<float> g_program_widen{0.0f};
+// set by a game: a free camera test (The Two Towers, TT_FREECAM). The 3D is turned in the vertex shader: each 3D
+// position back into the camera's view space (p11, p22: the projection's _11 and _22), turned by yaw and pitch
+// (radians) about a point pivot units in front of the camera (0: the camera itself), and projected again; depth as
+// a + b / z (reversed depth). Off while g_orbit_on is false.
+inline std::atomic<bool> g_orbit_on{false};
+inline std::atomic<float> g_orbit_yaw{0.0f}, g_orbit_pitch{0.0f}, g_orbit_pivot{0.0f};
+inline std::atomic<float> g_orbit_p11{1.0f}, g_orbit_p22{1.0f}, g_orbit_a{0.0f}, g_orbit_b{0.0f};
 // set by the render thread for the draw it is giving the backend: nothing but the draw's own data (vertex streams,
 // indices) has changed since the draw before, no clear, copy or other command between them, so the backend may draw
 // it with the shaders, pipeline, textures and constants it chose for that draw (D3D12: the repeat path). Render

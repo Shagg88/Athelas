@@ -163,9 +163,16 @@ void Color(uint32_t argb, float* o) {
 // bytes per row of a 32 bit surface in guest memory, rounded to 64
 uint32_t GuestPitch(uint32_t width) { return (width * 4 + 63) & ~63u; }
 
+// the widest a movie is ever shown: 21:9. On a wider screen (32:9) a film gets black bars at the sides rather than
+// being zoomed or stretched across it (Shagg)
+constexpr float kMovieMaxAspect = 21.0f / 9.0f;
+
 // kMovieFit's shape: the screen's (app::FrameAspect), from 16:9 up to g_movie_fit_max (a game whose films are wider
-// than 16:9 raises it to their own shape)
-float MovieFitAspect() { return std::clamp(app::FrameAspect(), 16.0f / 9.0f, std::max(g_movie_fit_max.load(), 16.0f / 9.0f)); }
+// than 16:9 raises it to their own shape), never past kMovieMaxAspect
+float MovieFitAspect() {
+    float widest = std::min(std::max(g_movie_fit_max.load(), 16.0f / 9.0f), kMovieMaxAspect);
+    return std::clamp(app::FrameAspect(), 16.0f / 9.0f, widest);
+}
 
 // where movie_display puts a movie: the part of its frame shown (uv: left, top, width, height) and that part's shape
 // on screen; stretch: the whole screen instead. Zoom (3) fills the screen's width with a 4:3 movie, its top and
@@ -190,7 +197,7 @@ MoviePlace PlaceMovie(uint32_t display, uint32_t shape) {
     } else if (display == 0 && shape == kMovieWide) {
         p.aspect = 16.0f / 9.0f;  // a widescreen film squeezed into the 4:3 frame: the whole frame, unsqueezed
     } else if (display == 3) {
-        p.aspect = std::max(app::FrameAspect(), 4.0f / 3.0f);  // the screen's shape, the frame's middle
+        p.aspect = std::clamp(app::FrameAspect(), 4.0f / 3.0f, kMovieMaxAspect);  // the screen's shape, the frame's middle
         p.uv[3] = (4.0f / 3.0f) / p.aspect;
         p.uv[1] = 0.5f - p.uv[3] / 2;
     } else if (display == 1) {

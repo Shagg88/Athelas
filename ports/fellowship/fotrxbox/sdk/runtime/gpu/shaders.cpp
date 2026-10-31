@@ -54,6 +54,7 @@ const char* kCommonTail = R"(    float4 spread[4];
     float4 mat[5];
     float4 amb;
     float4 widen;
+    float4 orbit[2];
     float4 lt[56];
 };
 )";
@@ -220,16 +221,33 @@ std::string VsInputs(uint16_t regs, uint64_t decode) {
 const char* kVsEpilogue = R"(
     VOut o;
     precise float4 p = oPos;
+    // a 2D or full-screen pass writes w exactly 1; a 3D one only by chance (GitHub #37)
+    bool is2d = oPos.w == 1;
     p.w = magclamp(p.w);
     precise float4 q;
     // full screen passes drawn half a pixel up-left for the console's integer pixel centers stop half a pixel short
     // of the far edges on D3D12's, which upscaled leaves the last host columns and rows undrawn
     if (abs(p.x - (surf.x - 0.5)) < 1e-3) p.x = surf.x;
     if (abs(p.y - (surf.y - 0.5)) < 1e-3) p.y = surf.y;
+    // free camera test (g_orbit_*): a 3D position back into view space, turned about the pivot, projected again
+    if (orbit[0].x != 0 && !is2d && p.w > 1e-4) {
+        float3 v = float3((p.x * 2 / surf.x - 1) * p.w / orbit[1].x, (1 - p.y * 2 / surf.y) * p.w / orbit[1].y, p.w);
+        float cy = cos(orbit[0].y), sy = sin(orbit[0].y), cp = cos(orbit[0].z), sp = sin(orbit[0].z);
+        float z0 = v.z - orbit[0].w;
+        float x1 = cy * v.x + sy * z0, z1 = -sy * v.x + cy * z0;
+        float y2 = cp * v.y - sp * z1, z2 = sp * v.y + cp * z1 + orbit[0].w;
+        float zz = abs(z2) < 1e-4 ? -1e-4 : z2;
+        p.x = (x1 * orbit[1].x / zz + 1) * surf.x / 2;
+        p.y = (1 - y2 * orbit[1].y / zz) * surf.y / 2;
+        p.z = (orbit[1].z + orbit[1].w / zz) / surf.z;
+        p.w = zz;  // behind the camera: negative, clipped
+    }
     q.x = p.x * 2 / surf.x - 1;
-    // widescreen for a game whose vertex programs carry their own projection: 3D positions (w other than 1; 2D
-    // and full-screen passes have w 1) narrowed by 4:3 / the frame's shape about the middle (g_program_widen)
-    if (widen.x != 0 && abs(p.w - 1) > 1e-3) q.x *= widen.x;
+    // widescreen for a game whose vertex programs carry their own projection: 3D positions narrowed by 4:3 / the
+    // frame's shape about the middle (g_program_widen); 2D and full-screen passes (w exactly 1) left. The test was
+    // |w - 1| > 0.001: the vertices of a 3D model whose depth fell in that band were left wide while the rest
+    // narrowed, so characters burst into spikes in The Third Age's cutscenes (GitHub #37)
+    if (widen.x != 0 && !is2d) q.x *= widen.x;
     q.y = 1 - p.y * 2 / surf.y;
     q.z = p.z * surf.z;
     q.xyz *= p.w;
@@ -816,7 +834,11 @@ std::string FixedVertexHlsl(uint16_t regs, bool pretransformed, uint64_t decode,
         s += "    }\n";
     }
     s += "    oFog = " + v(5, "float4(0,0,0,0)") + ";\n";
-    if (pretransformed) return s + kVsEpilogue;
+    if (pretransformed) {  // screen space already (the HUD, menus): never turned by the free camera test
+        std::string e = kVsEpilogue;
+        e.replace(e.find("orbit[0].x != 0"), 15, "false");
+        return s + e;
+    }
     s += R"(
     VOut o;
     // like the pretransformed ones, target sized passes end half a console pixel short of the far edges

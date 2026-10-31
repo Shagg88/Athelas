@@ -19,6 +19,8 @@ void InitMovieShape();             // src/game/ta_movies.cpp
 extern bool g_skip_logos, g_skip_all_videos, g_sharp_text, g_unlock_all, g_invulnerable, g_infinite_ap;
 extern uint32_t g_damage_percent, g_enemy_damage_percent;  // src/game/ta_gameplay.cpp
 void InitSharpText();
+extern uint32_t g_button_pictures;  // src/game/ta_prompts.cpp
+void InitPrompts();
 void InitHud();                    // src/game/ta_hud.cpp
 extern bool g_hud_edges;              // src/game/ta_sharptext.cpp
 extern bool g_safe_area;            // src/game/ta_widescreen.cpp           // src/game/ta_movies.cpp
@@ -37,6 +39,7 @@ void Init() {
     InitMovies();
     InitMovieShape();
     InitSharpText();
+    InitPrompts();
     InitHud();
     gpu::g_render_thread = g_second_core ? 1 : 0;
 }
@@ -93,6 +96,11 @@ const app::GameInfo app::kGame = {
                 {"graphics", "sharp_text", cfg::Type::Bool, "Sharper text",
                  "The game's letters redrawn at four times their size with crisp edges, for large screens.",
                  &ta::g_sharp_text},
+                {"graphics", "button_pictures", cfg::Type::Choice, "Button pictures",
+                 "Which controller's buttons the game's menus and battle commands show. Auto follows the controller "
+                 "you play with.",
+                 nullptr, &ta::g_button_pictures, nullptr, 0, 0, {"auto", "xbox", "playstation", "nintendo", "keyboard"},
+                 nullptr, nullptr, {"Auto", "Xbox", "PlayStation", "Nintendo", "Keyboard keys"}},
                 {"graphics", "second_core", cfg::Type::Bool, "Draw on a second core",
                  "Faster: the drawing runs on a processor core of its own, beside the game. Turn off if characters "
                  "show a ghost image or the picture flickers. Takes effect at the next start.",

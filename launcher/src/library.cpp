@@ -29,10 +29,13 @@ const char *game_kind_name(GameKind k)
 const char *game_kind_short(GameKind k) { return k == GK_ROTK_PC ? "PC" : k == GK_NONE ? "" : "Xbox"; }
 bool game_kind_playable(GameKind k) { return k == GK_ROTK_PC; }   // the Xbox ports are not ready yet
 
-// The ports are built from the US discs. Since 1.7.5 (Shagg, as COGBox does) other releases can be played too: the
-// game's page says they are untested and offers "This version works", which tells us on GitHub.
+// The ports are built from the US discs' code. Other regions' discs (PAL, Japanese) hold different code, which a
+// program recompiled from the US code is expected not to run (GitHub #36: "entry does not match the recompiled
+// entry"). Since 1.7.6 they can still be started (Shagg: warn, don't refuse): the page says the version is untested
+// and unsupported, and "It worked" / "It didn't work" tell us what happened.
 bool game_region_us(const LibGame &g) { return g.kind == GK_ROTK_PC || (g.regions & 1); }
-bool game_region_supported(const LibGame &g) { return g.kind != GK_NONE; }
+// every region can be started (Shagg, 31 Oct: warn, don't refuse); other regions' pages say untested and unsupported
+bool game_region_supported(const LibGame &) { return true; }
 const char *game_region_name(const LibGame &g)
 {
     uint32_t r = g.regions & 7;
