@@ -38,7 +38,8 @@ void FOTR_LogoEnded(X86Context& ctx, uint8_t* base) {
 // them by the movie settings (gpu::g_movie: movie_display, movie_sharpening, cutscene_audio_delay), at 4:3 or with
 // the film's middle filling the width, rather than as a game frame (stretched to 16:9 with widescreen on).
 // Which movie it is comes from the file opened (GameInfo::file_opened): the story films (movies\English\fmv_*) are
-// letterboxed in the 4:3 frame, so "fit" shows their middle 16:9; the logos and the rest are 4:3 pictures, shown 4:3.
+// letterboxed in the 4:3 frame, so "fit" shows their middle 16:9; the logos and the rest are 4:3 pictures, which "fit"
+// now fills the width with as well (their top and bottom cut off; Shagg wanted no side bars).
 // start_menu.xmv is the title screen's moving background with the menu drawn over it: the game's picture.
 
 namespace fotr {
@@ -81,7 +82,9 @@ void Watch(const gpu::State& s) {
         }).detach();
     });
     g_drawn = NowMs();
-    gpu::g_movie_shape = g_kind == 2 ? gpu::kMovieFit : gpu::kMovie43;
+    // (Shagg, 30 Oct: no bars at the sides of the intro logos either: they fill the width too, their top and bottom
+    // cut off, the logos sitting in the middle of the picture; movie_display 4:3 still shows them whole)
+    gpu::g_movie_shape = gpu::kMovieFit;
     gpu::g_movie = true;
 }
 const int kWatch = (gpu::g_draw_observer = Watch, 0);

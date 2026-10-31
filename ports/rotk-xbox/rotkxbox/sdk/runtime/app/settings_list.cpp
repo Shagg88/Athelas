@@ -57,7 +57,7 @@ std::vector<cfg::Desc> SettingsList() {
         {"graphics", "anti_aliasing", Type::Choice, "Anti-aliasing",
          "Smooths jagged edges (MSAA). Higher costs speed, most of all with a high render resolution.", nullptr,
          &s.msaa, nullptr, 0, 0, {"0", "2", "4", "8"}, nullptr, nullptr, {"Off", "2x", "4x", "8x"}},
-        {"graphics", "smaa", Type::Bool, "SMAA",
+        {"graphics", "smaa", Type::Bool, "SMAA (recommended)",
          "Smooths jagged edges after the picture is drawn, including the outlines of leaves and grass that "
          "anti-aliasing misses. Works with anti-aliasing on or off; costs very little.",
          &s.smaa},
@@ -65,12 +65,16 @@ std::vector<cfg::Desc> SettingsList() {
          "Draws the game smaller and rebuilds a sharp, smooth picture from several frames: faster, and it smooths jagged "
          "edges as well. FSR works on any graphics card (FSR 4 on the newest AMD ones); DLSS needs an NVIDIA RTX card. "
          "Replaces Render resolution and Anti-aliasing while on. DLSS takes effect at the next start.",
-         nullptr, &s.upscaler, nullptr, 0, 0, {"0", "1", "2"}, nullptr, nullptr, {"Off", "AMD FSR", "NVIDIA DLSS"}},
+         nullptr, &s.upscaler, nullptr, 0, 0, {"0", "1", "2"}, nullptr, nullptr, {"Off", "AMD FSR (experimental)", "NVIDIA DLSS (experimental)"}},
         {"graphics", "upscaler_quality", Type::Choice, "Upscaler quality",
          "How much smaller the game is drawn for the upscaler. Native draws it at full size and only smooths it (DLAA "
          "with DLSS); Quality is the best balance; Performance and Ultra performance are fastest but softer.",
          nullptr, &s.upscaler_quality, nullptr, 0, 0, {"0", "1", "2", "3", "4"}, nullptr, nullptr,
          {"Native", "Quality", "Balanced", "Performance", "Ultra performance"}},
+        {"graphics", "frame_generation", Type::Bool, "Frame generation (experimental)",
+         "With the AMD FSR upscaler: shows a made-up frame between each two the game draws, so 3D scenes move more "
+         "smoothly (on any graphics card). Adds a little delay to the controls. Takes effect at the next start.",
+         &s.frame_generation},
         {"graphics", "anisotropic_filtering", Type::Choice, "Texture filtering",
          "Anisotropic filtering: keeps ground and walls sharp at a distance.", nullptr, &s.aniso, nullptr, 0, 0,
          {"0", "2", "4", "8", "16"}, "anisotropic_filtering", nullptr, {"Off", "2x", "4x", "8x", "16x"}},
@@ -106,7 +110,7 @@ std::vector<cfg::Desc> SettingsList() {
         {"graphics", "renderer", Type::Choice, "Renderer",
          "Direct3D 12 is the tested renderer. Vulkan is still being made: it draws the game but is untested and lacks "
          "anti-aliasing, HDR and the upscalers. If it can't start, Direct3D 12 is used. Takes effect at the next start.",
-         nullptr, &s.renderer, nullptr, 0, 0, {"0", "1"}, nullptr, nullptr, {"Direct3D 12", "Vulkan (in development)"}},
+         nullptr, &s.renderer, nullptr, 0, 0, {"0", "1"}, nullptr, nullptr, {"Direct3D 12", kGame.vulkan_label ? kGame.vulkan_label : "Vulkan (in development)"}},
         {"graphics", "widescreen", Type::Bool, "Widescreen correction",
          "Shows more at the sides. Off keeps the original 4:3 picture, with bars at the sides.", &s.widescreen, nullptr,
          nullptr, 0, 0, {}, "widescreen"},

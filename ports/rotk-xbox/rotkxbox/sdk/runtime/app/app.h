@@ -84,6 +84,7 @@ struct Settings {
     uint32_t msaa = 0;                     // anti-aliasing samples: 0 off, 2, 4 or 8
     uint32_t upscaler = 0;                 // 0 off, 1 FSR (AMD, any card), 2 DLSS (NVIDIA RTX): drawn smaller, upscaled temporally
     uint32_t upscaler_quality = 1;         // 0 native (DLAA / FSR native AA), 1 quality, 2 balanced, 3 performance, 4 ultra performance
+    bool frame_generation = false;         // AMD FSR frame generation (with the FSR upscaler): a made-up frame between each two drawn, read at start
     bool hdr = false;                      // HDR output on an HDR screen (Windows HDR on), read at start
     uint32_t renderer = 0;                 // 0 Direct3D 12, 1 Vulkan (in development; Direct3D 12 if it can't start), read at start
     uint32_t colour_look = 0;              // 0 original, 1 film, 2 vivid, 3 dark fantasy
@@ -258,6 +259,8 @@ struct GameInfo {
     const char* discord_app_id = nullptr;
     std::string (*activity)() = nullptr;        // "Helm's Deep"
     std::string (*activity_state)() = nullptr;  // "As Gandalf", "Co-op"
+    // [graphics] renderer: the Vulkan choice's name in this game (nullptr: "Vulkan (in development)")
+    const char* vulkan_label = nullptr;
 };
 extern const GameInfo kGame;
 

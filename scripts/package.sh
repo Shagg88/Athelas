@@ -15,8 +15,8 @@
 #   KITS_ARM_DIR, TOOLS_ARM = the ARM64 zip's kits (<folder>-arm64) and build tools (-Target aarch64)
 #   SEED_DIR  = shader seeds recorded from every level (tt|rx|fx|ta.shaders and .pipelines): each port's folder gets
 #               shaders.seed and pipelines.seed, compiled in the background at a first start (no first-play stutter)
-#   UP_DIR    = the upscalers' files for the Xbox ports, one shared copy in upscalers\: AMD FSR SDK 2.3
-#               (amd_fidelityfx_loader_dx12.dll, amd_fidelityfx_upscaler_dx12.dll) and NVIDIA Streamline 2.14 with
+#   UP_DIR    = the upscalers' files for the Xbox ports, one shared copy in upscalers\: AMD FSR SDK 2.4
+#               (amd_fidelityfx_loader_dx12.dll, amd_fidelityfx_upscaler_dx12.dll, amd_fidelityfx_framegeneration_dx12.dll) and NVIDIA Streamline 2.14 with
 #               DLSS (sl.interposer.dll, sl.common.dll, sl.dlss.dll, nvngx_dlss.dll), their licences and README.txt.
 #               x64 only: left out of the ARM64 zip
 #   TT_ARM, RX_ARM = the ports' ARM64 builds (TwoTowers-arm64.exe, ROTKXbox-arm64.exe): with both, a second zip,
@@ -81,9 +81,9 @@ if [ -n "$TA_DIR" ]; then mkdir -p "$OUT/TA-Xbox"; cp -r "$TA_DIR"/. "$OUT/TA-Xb
 if [ -n "$KITS_DIR" ]; then mkdir -p "$OUT/kits"; cp -r "$KITS_DIR"/. "$OUT/kits/"; fi
 # the build tools those kits are built with (TOOLS_X64: make_toolchain.ps1 -Target x86_64), in tools\llvm-mingw
 if [ -n "$TOOLS_X64" ]; then mkdir -p "$OUT/tools/llvm-mingw"; cp -r "$TOOLS_X64"/. "$OUT/tools/llvm-mingw/"; cp "$TOOLS_X64"/licenses/* "$OUT/licenses/" 2>/dev/null || true; fi
-# no program made from a game may be in the zip: the ports' own .exe files, an .xbe, an .iso, recompiled code
-bad=$(cd "$OUT" && find . \( -iname 'TwoTowers*.exe' -o -iname 'ROTKXbox*.exe' -o -iname 'FOTRXbox*.exe' -o -iname 'TAXbox*.exe' \
-      -o -iname '*.xbe' -o -iname '*.iso' -o -iname 'x86_recomp*' -o -iname 'x86_func_mapping*' \) -print)
+# no game file may be in the zip: an .xbe, an .iso, recompiled source
+# (since 1.7.5 the ports' programs ship again, Shagg's call; the game's files and recompiled source still never do)
+bad=$(cd "$OUT" && find . \( -iname '*.xbe' -o -iname '*.iso' -o -iname 'x86_recomp*' -o -iname 'x86_func_mapping*' \) -print)
 if [ -n "$bad" ]; then echo "STOPPED: these are made from a game and can't ship:"; echo "$bad"; exit 1; fi
 if [ -n "$SEED_DIR" ]; then
     for p in TT-Xbox:tt ROTK-Xbox:rx FOTR-Xbox:fx TA-Xbox:ta; do
@@ -94,7 +94,7 @@ if [ -n "$SEED_DIR" ]; then
 fi
 if [ -n "$UP_DIR" ]; then
     mkdir -p "$OUT/upscalers"
-    for f in amd_fidelityfx_loader_dx12.dll amd_fidelityfx_upscaler_dx12.dll sl.interposer.dll sl.common.dll sl.dlss.dll \
+    for f in amd_fidelityfx_loader_dx12.dll amd_fidelityfx_upscaler_dx12.dll amd_fidelityfx_framegeneration_dx12.dll sl.interposer.dll sl.common.dll sl.dlss.dll \
              nvngx_dlss.dll AMD-FSR-LICENSE.md NVIDIA-DLSS-LICENSE.txt NVIDIA-Streamline-LICENSE.txt README.txt; do
         cp "$UP_DIR/$f" "$OUT/upscalers/"
     done

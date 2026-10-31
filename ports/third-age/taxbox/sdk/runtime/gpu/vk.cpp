@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <cstring>
 #include <string>
 #include <unordered_map>
@@ -2329,6 +2330,19 @@ void VkBackend::BlitToScreen(VkCommandBuffer cb, Target* front, uint32_t index) 
 
 void VkBackend::Present(const Surface& front) {
     if (lost_ || !device_) return;
+    {
+        // the frame rate every 5 seconds in the log, as the Direct3D 12 renderer writes it (side-by-side tests)
+        static auto fps_t = std::chrono::steady_clock::now();
+        static uint64_t fps_n = 0;
+        fps_n++;
+        auto now = std::chrono::steady_clock::now();
+        double el = std::chrono::duration<double, std::milli>(now - fps_t).count();
+        if (el >= 5000.0) {
+            LOGR("fps: %.1f (%.2f ms a frame, the last 5 s; vulkan)", fps_n * 1000.0 / el, el / double(fps_n));
+            fps_t = now;
+            fps_n = 0;
+        }
+    }
     // the window resized, minimised or v-sync changed in the menu: a new swapchain
     if (!swap_ || vsync_ != app::Get().vsync) {
         Submit(true);

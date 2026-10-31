@@ -139,4 +139,5 @@ const app::GameInfo app::kGame = {
     .achievements = ta::Achievements(),  // areas, the kill deeds and Fate (ta_achievements.cpp)
     .discord_app_id = TAX_DISCORD_APP_ID,
     .activity = ta::Activity,  // "Eregion"
+    .vulkan_label = "Vulkan (experimental)",  // textures drop out at times here (job 159)
 };

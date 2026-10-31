@@ -2,7 +2,7 @@
 filling the picture; fotr_prompts.cpp makes the game's 32x32 button pictures from them), for
 PlayStation and Nintendo controllers, and writes them as PNG bytes into src/game/fotr_prompts_data.h. The same
 discs as The Return of the King's and The Two Towers' ports. Original artwork: no console maker's art is copied. The PlayStation face
-buttons are dark discs with plain light line symbols (no console maker's colours); Nintendo's are dark discs with white letters, labelled by
+buttons are dark discs with their symbols in their usual colours (blue cross, red circle, pink square, green triangle); Nintendo's are dark discs with white letters, labelled by
 position (the bottom button reads B, the right A, the left Y, the top X).
 Letters: Liberation Sans Bold (SIL Open Font License 1.1), rendered into the pictures.
 usage: python3 tools/mkprompts.py src/game/fotr_prompts_data.h [preview.png]"""
@@ -10,7 +10,7 @@ import io, sys
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 FONT = '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf'
-N = 128                 # the picture's size: twice the game's 64x64 texture
+N = 256                 # the picture's size: 4x the game's 64x64 texture (8x the 32x32 ones)
 SS = 4                  # drawn at 4x, then reduced
 DISC = 1.0              # the disc's diameter, as a share of the picture (it fills it)
 
@@ -79,14 +79,16 @@ def shape(kind, colour):
     return f
 
 DARK = (64, 64, 72)
-LIGHT = (236, 236, 240, 255)  # plain symbols: the console maker's colours are its trade dress (as ROTK Fix)
+LIGHT = (236, 236, 240, 255)
+# the PlayStation symbols in their usual colours, the same as ROTK Fix's button pictures (src/icons.c k_faceColour)
+CROSS, CIRCLE, SQUARE, TRIANGLE = (102, 153, 255, 255), (238, 85, 85, 255), (221, 119, 204, 255), (68, 204, 170, 255)
 PICTURES = {
     # Xbox button the game shows -> (style, picture)
     'playstation': {
-        'A': disc(DARK, shape('cross', LIGHT)),
-        'B': disc(DARK, shape('circle', LIGHT)),
-        'X': disc(DARK, shape('square', LIGHT)),
-        'Y': disc(DARK, shape('triangle', LIGHT)),
+        'A': disc(DARK, shape('cross', CROSS)),
+        'B': disc(DARK, shape('circle', CIRCLE)),
+        'X': disc(DARK, shape('square', SQUARE)),
+        'Y': disc(DARK, shape('triangle', TRIANGLE)),
         'WHITE': disc(DARK, word('L1')), 'BLACK': disc(DARK, word('R1')),
         'LT': disc(DARK, word('L2')), 'RT': disc(DARK, word('R2')),
         'START': disc(DARK, word('OPTIONS')), 'BACK': disc(DARK, word('SHARE')),

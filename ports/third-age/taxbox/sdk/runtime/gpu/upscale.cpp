@@ -1,6 +1,7 @@
 // FSR and DLSS behind gpu::up (upscale.h). Both are loaded from DLLs beside the game at run time:
-//   FSR:  amd_fidelityfx_loader_dx12.dll + amd_fidelityfx_upscaler_dx12.dll (AMD FSR SDK 2.3: FSR 4.1 where the card
-//         and driver have it, FSR 3.1 otherwise; the loader picks)
+//   FSR:  amd_fidelityfx_loader_dx12.dll + amd_fidelityfx_upscaler_dx12.dll (AMD FSR SDK 2.4: FSR 4.1 where the card
+//         and driver have it, FSR 3.1 otherwise; the loader picks), amd_fidelityfx_framegeneration_dx12.dll for
+//         frame generation
 //   DLSS: sl.interposer.dll, sl.common.dll, sl.dlss.dll, nvngx_dlss.dll (NVIDIA Streamline 2.14, DLSS 4.5), used with
 //         manual hooking: only the sl* calls go through Streamline, the renderer keeps its own device and queue
 #include "gpu/upscale.h"
@@ -18,6 +19,8 @@
 #include "../../third_party/ffx/ffx_api_loader.h"
 #include "../../third_party/ffx/ffx_upscale.h"
 #include "../../third_party/ffx/dx12/ffx_api_dx12.h"
+#include "../../third_party/ffx/ffx_framegeneration.h"
+#include "../../third_party/ffx/dx12/ffx_api_framegeneration_dx12.h"
 
 #include "../../third_party/streamline/sl.h"
 #include "../../third_party/streamline/sl_consts.h"
@@ -88,6 +91,33 @@ void FfxMessage(uint32_t type, const wchar_t* message) {
     else LOGI("FSR: %s", buf);
 }
 
+bool LoadFfx(std::string& why) {
+    if (!g_ffx_fn.CreateContext) {
+        auto loader = Beside(L"amd_fidelityfx_loader_dx12.dll");
+        if (!Exists(loader) || !Exists(Beside(L"amd_fidelityfx_upscaler_dx12.dll"))) {
+            why = "the FSR files (amd_fidelityfx_loader_dx12.dll, amd_fidelityfx_upscaler_dx12.dll) are not beside the game";
+            return false;
+        }
+        if (!g_ffx) g_ffx = LoadLibraryW(loader.c_str());
+        if (!g_ffx) {
+            why = "amd_fidelityfx_loader_dx12.dll could not be loaded";
+            return false;
+        }
+        // (ffx_api_loader.h's ffxLoadFunctions only fills these in where _WINDOWS is defined)
+        g_ffx_fn.CreateContext = reinterpret_cast<PfnFfxCreateContext>(GetProcAddress(g_ffx, "ffxCreateContext"));
+        g_ffx_fn.DestroyContext = reinterpret_cast<PfnFfxDestroyContext>(GetProcAddress(g_ffx, "ffxDestroyContext"));
+        g_ffx_fn.Configure = reinterpret_cast<PfnFfxConfigure>(GetProcAddress(g_ffx, "ffxConfigure"));
+        g_ffx_fn.Query = reinterpret_cast<PfnFfxQuery>(GetProcAddress(g_ffx, "ffxQuery"));
+        g_ffx_fn.Dispatch = reinterpret_cast<PfnFfxDispatch>(GetProcAddress(g_ffx, "ffxDispatch"));
+        if (!g_ffx_fn.CreateContext || !g_ffx_fn.Dispatch || !g_ffx_fn.Query || !g_ffx_fn.DestroyContext || !g_ffx_fn.Configure) {
+            why = "amd_fidelityfx_loader_dx12.dll lacks the FSR functions";
+            g_ffx_fn = {};
+            return false;
+        }
+    }
+    return true;
+}
+
 class Fsr final : public Upscaler {
 public:
     ~Fsr() override {
@@ -97,29 +127,7 @@ public:
     std::string Describe() const override { return version_; }
 
     bool Create(ID3D12Device* dev, uint32_t ow, uint32_t oh, uint32_t rw, uint32_t rh, bool hdr, std::string& why) {
-        if (!g_ffx) {
-            auto loader = Beside(L"amd_fidelityfx_loader_dx12.dll");
-            if (!Exists(loader) || !Exists(Beside(L"amd_fidelityfx_upscaler_dx12.dll"))) {
-                why = "the FSR files (amd_fidelityfx_loader_dx12.dll, amd_fidelityfx_upscaler_dx12.dll) are not beside the game";
-                return false;
-            }
-            g_ffx = LoadLibraryW(loader.c_str());
-            if (!g_ffx) {
-                why = "amd_fidelityfx_loader_dx12.dll could not be loaded";
-                return false;
-            }
-            // (ffx_api_loader.h's ffxLoadFunctions only fills these in where _WINDOWS is defined)
-            g_ffx_fn.CreateContext = reinterpret_cast<PfnFfxCreateContext>(GetProcAddress(g_ffx, "ffxCreateContext"));
-            g_ffx_fn.DestroyContext = reinterpret_cast<PfnFfxDestroyContext>(GetProcAddress(g_ffx, "ffxDestroyContext"));
-            g_ffx_fn.Configure = reinterpret_cast<PfnFfxConfigure>(GetProcAddress(g_ffx, "ffxConfigure"));
-            g_ffx_fn.Query = reinterpret_cast<PfnFfxQuery>(GetProcAddress(g_ffx, "ffxQuery"));
-            g_ffx_fn.Dispatch = reinterpret_cast<PfnFfxDispatch>(GetProcAddress(g_ffx, "ffxDispatch"));
-            if (!g_ffx_fn.CreateContext || !g_ffx_fn.Dispatch || !g_ffx_fn.Query || !g_ffx_fn.DestroyContext) {
-                why = "amd_fidelityfx_loader_dx12.dll lacks the FSR functions";
-                g_ffx_fn = {};
-                return false;
-            }
-        }
+        if (!LoadFfx(why)) return false;
         ffxCreateBackendDX12Desc backend{};
         backend.header.type = FFX_API_CREATE_CONTEXT_DESC_TYPE_BACKEND_DX12;
         backend.device = dev;
@@ -454,6 +462,178 @@ std::unique_ptr<Upscaler> Create(Kind k, Quality q, ID3D12Device* dev, ID3D12Com
     }
     why = "off";
     return nullptr;
+}
+
+// ------------------------------------------------------------------------------------- FSR frame generation
+
+namespace {
+
+ffxContext g_fg_swap = nullptr;  // FSR's swap chain (made at start)
+ffxContext g_fg = nullptr;       // frame generation, made at the first 3D frame (again when the sizes change)
+IDXGISwapChain4* g_fg_chain = nullptr;
+uint32_t g_fg_key[6] = {};       // render w, h, screen w, h, hdr, format: made for these
+uint64_t g_fg_frame = 0;         // FSR's frame number: one more at each prepared frame, else its history starts over
+bool g_fg_on = false;            // generation on at the last configure
+bool g_fg_failed = false;
+
+ffxReturnCode_t FgDispatch(ffxDispatchDescFrameGeneration* params, void* user) {
+    return g_ffx_fn.Dispatch(reinterpret_cast<ffxContext*>(user), &params->header);
+}
+
+bool FgConfigure(bool on, const FgFrame* f) {
+    ffxConfigureDescFrameGeneration c{};
+    c.header.type = FFX_API_CONFIGURE_DESC_TYPE_FRAMEGENERATION;
+    c.swapChain = g_fg_chain;
+    c.presentCallback = nullptr;  // FSR copies the frame to the screen itself
+    c.frameGenerationCallback = FgDispatch;
+    c.frameGenerationCallbackUserContext = &g_fg;
+    c.frameGenerationEnabled = on;
+    c.allowAsyncWorkloads = false;
+    c.flags = std::getenv("XBE_FG_DEBUG") ? FFX_FRAMEGENERATION_FLAG_DRAW_DEBUG_TEAR_LINES | FFX_FRAMEGENERATION_FLAG_DRAW_DEBUG_PACING_LINES : 0;
+    c.onlyPresentGenerated = false;
+    if (f) c.generationRect = {int32_t(f->vx), int32_t(f->vy), int32_t(f->vw), int32_t(f->vh)};
+    c.frameID = g_fg_frame;
+    if (g_ffx_fn.Configure(&g_fg, &c.header) != FFX_API_RETURN_OK) return false;
+    g_fg_on = on;
+    return true;
+}
+
+// FSR's own present queue may still be making a frame with the context: waited for first (review, 1.7.5)
+void FgWaitPresents() {
+    if (!g_fg_swap) return;
+    ffxDispatchDescFrameGenerationSwapChainWaitForPresentsDX12 w{};
+    w.header.type = FFX_API_DISPATCH_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_WAIT_FOR_PRESENTS_DX12;
+    g_ffx_fn.Dispatch(&g_fg_swap, &w.header);
+}
+
+void FgDestroy() {
+    if (g_fg) {
+        if (g_fg_on) FgConfigure(false, nullptr);
+        FgWaitPresents();
+        g_ffx_fn.DestroyContext(&g_fg, nullptr);
+    }
+    g_fg = nullptr;
+    g_fg_on = false;
+}
+
+}  // namespace
+
+bool FgCreateSwapChain(HWND hwnd, DXGI_SWAP_CHAIN_DESC1& desc, IDXGIFactory* factory, ID3D12CommandQueue* queue,
+                       IDXGISwapChain4** out, std::string& why) {
+    const app::Settings& st = app::Get();
+    if (!st.frame_generation) {
+        why = "off";
+        return false;
+    }
+#if defined(_M_ARM64) || defined(__aarch64__)
+    why = "frame generation is not made for Windows on ARM";
+    return false;
+#endif
+    if (st.upscaler != kFsr) {
+        why = "frame generation works with the AMD FSR upscaler: choose it under Upscaler";
+        return false;
+    }
+    if (!Exists(Beside(L"amd_fidelityfx_framegeneration_dx12.dll"))) {
+        why = "amd_fidelityfx_framegeneration_dx12.dll is not beside the game";
+        return false;
+    }
+    if (!LoadFfx(why)) return false;
+    ffxCreateContextDescFrameGenerationSwapChainForHwndDX12 d{};
+    d.header.type = FFX_API_CREATE_CONTEXT_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_FOR_HWND_DX12;
+    d.swapchain = out;
+    d.hwnd = hwnd;
+    d.desc = &desc;
+    d.fullscreenDesc = nullptr;
+    d.dxgiFactory = factory;
+    d.gameQueue = queue;
+    ffxReturnCode_t r = g_ffx_fn.CreateContext(&g_fg_swap, &d.header, nullptr);
+    if (r != FFX_API_RETURN_OK || !*out) {
+        why = "FSR's swap chain could not be made (error " + std::to_string(r) + ")";
+        g_fg_swap = nullptr;
+        return false;
+    }
+    g_fg_chain = *out;
+    return true;
+}
+
+bool FgActive() { return g_fg_swap != nullptr; }
+
+bool FgPrepare(ID3D12Device* dev, const FgFrame& f) {
+    if (!g_fg_swap || g_fg_failed) return false;
+    uint32_t key[6] = {f.render_w, f.render_h, f.bb_w, f.bb_h, f.hdr ? 1u : 0u, uint32_t(f.bb_fmt)};
+    if (!g_fg || std::memcmp(key, g_fg_key, sizeof key) != 0) {
+        FgDestroy();  // (the caller has the GPU idle when the sizes change: a new swap chain size or render size)
+        ffxCreateBackendDX12Desc backend{};
+        backend.header.type = FFX_API_CREATE_CONTEXT_DESC_TYPE_BACKEND_DX12;
+        backend.device = dev;
+        ffxCreateContextDescFrameGeneration cd{};
+        cd.header.type = FFX_API_CREATE_CONTEXT_DESC_TYPE_FRAMEGENERATION;
+        cd.header.pNext = &backend.header;
+        cd.flags = f.hdr ? FFX_FRAMEGENERATION_ENABLE_HIGH_DYNAMIC_RANGE : 0;
+        cd.displaySize = {f.bb_w, f.bb_h};
+        cd.maxRenderSize = {f.render_w, f.render_h};
+        cd.backBufferFormat = ffxApiGetSurfaceFormatDX12(f.bb_fmt);
+        ffxReturnCode_t r = g_ffx_fn.CreateContext(&g_fg, &cd.header, nullptr);
+        if (r != FFX_API_RETURN_OK) {
+            LOGR("frame generation: FSR's could not start (error %u); frames shown as drawn", unsigned(r));
+            g_fg = nullptr;
+            g_fg_failed = true;
+            return false;
+        }
+        std::memcpy(g_fg_key, key, sizeof key);
+        std::string v = "FSR frame generation";
+        ffxQueryGetProviderVersion pv{};
+        pv.header.type = FFX_API_QUERY_DESC_TYPE_GET_PROVIDER_VERSION;
+        if (g_ffx_fn.Query(&g_fg, &pv.header) == FFX_API_RETURN_OK && pv.versionName) v += std::string(" ") + pv.versionName;
+        LOGR("frame generation: %s, %ux%u drawn, %ux%u shown", v.c_str(), f.render_w, f.render_h, f.bb_w, f.bb_h);
+    }
+    g_fg_frame++;
+    if (!FgConfigure(true, &f)) {
+        static int logged = 0;
+        if (logged++ < 3) LOGR("frame generation: FSR did not take its settings");
+        return false;
+    }
+    ffxDispatchDescFrameGenerationPrepareV2 d{};
+    d.header.type = FFX_API_DISPATCH_DESC_TYPE_FRAMEGENERATION_PREPARE_V2;
+    d.frameID = g_fg_frame;
+    d.commandList = f.cl;
+    d.renderSize = {f.render_w, f.render_h};
+    d.jitterOffset = {f.jitter_x, f.jitter_y};
+    d.motionVectorScale = {float(f.render_w), float(f.render_h)};  // UV units, as the upscaler takes them
+    d.frameTimeDelta = f.dt_ms;
+    d.reset = f.reset;
+    d.cameraNear = 0.1f;
+    d.cameraFar = 1000.0f;
+    d.cameraFovAngleVertical = 1.0f;
+    d.viewSpaceToMetersFactor = 1.0f;
+    d.depth = ffxApiGetResourceDX12(f.depth, FFX_API_RESOURCE_STATE_PIXEL_COMPUTE_READ);
+    d.motionVectors = ffxApiGetResourceDX12(f.motion, FFX_API_RESOURCE_STATE_PIXEL_COMPUTE_READ);
+    d.cameraUp[1] = 1.0f;
+    d.cameraRight[0] = 1.0f;
+    d.cameraForward[2] = 1.0f;
+    ffxReturnCode_t r = g_ffx_fn.Dispatch(&g_fg, &d.header);
+    if (r != FFX_API_RETURN_OK) {
+        static int logged = 0;
+        if (logged++ < 3) LOGR("frame generation: FSR did not run (%u)", unsigned(r));
+        FgConfigure(false, nullptr);
+        return false;
+    }
+    return true;
+}
+
+void FgPause() {
+    if (g_fg && g_fg_on) FgConfigure(false, nullptr);
+}
+
+void FgShutdown() {
+    FgDestroy();
+    FgWaitPresents();
+}
+
+void FgReleaseSwapChain() {
+    if (g_fg_swap) g_ffx_fn.DestroyContext(&g_fg_swap, nullptr);
+    g_fg_swap = nullptr;
+    g_fg_chain = nullptr;
 }
 
 }  // namespace gpu::up

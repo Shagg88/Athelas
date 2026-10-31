@@ -996,6 +996,11 @@ Smooths jagged edges (MSAA). Higher costs speed, most of all with a high render 
 Upscaler = Upscaler
 Draws the game smaller and rebuilds a sharp, smooth picture from several frames: faster, and it smooths jagged edges as well. FSR works on any graphics card (FSR 4 on the newest AMD ones); DLSS needs an NVIDIA RTX card. Replaces Render resolution and Anti-aliasing while on. DLSS takes effect at the next start. = Rend le jeu en plus petit et reconstruit une image nette et lisse à partir de plusieurs images : plus rapide, et lisse aussi les bords crénelés. FSR fonctionne sur toutes les cartes graphiques (FSR 4 sur les AMD les plus récentes) ; DLSS nécessite une carte NVIDIA RTX. Remplace Résolution de rendu et Anticrénelage lorsqu'il est actif. DLSS prend effet au prochain démarrage.
 AMD FSR = AMD FSR
+Vulkan (experimental) = Vulkan (expérimental)
+NVIDIA DLSS (experimental) = NVIDIA DLSS (expérimental)
+SMAA (recommended) = SMAA (recommandé)
+AMD FSR (experimental) = AMD FSR (expérimental)
+Frame generation (experimental) = Génération d’images (expérimental)
 NVIDIA DLSS = NVIDIA DLSS
 Upscaler quality = Qualité de l'upscaler
 How much smaller the game is drawn for the upscaler. Native draws it at full size and only smooths it (DLAA with DLSS); Quality is the best balance; Performance and Ultra performance are fastest but softer. = À quel point le jeu est rendu en plus petit pour l'upscaler. Natif le rend en taille réelle et le lisse seulement (DLAA avec DLSS) ; Qualité offre le meilleur équilibre ; Performance et Ultra performance sont les plus rapides mais plus flous.
@@ -1149,3 +1154,5 @@ L2 + R2: fullscreen = L2 + R2: plein écran
 ZL + ZR: fullscreen = ZL + ZR: plein écran
 F11: fullscreen = F11: plein écran
 Made by Shagg = Créé par Shagg
+Downloading  %d%% = Téléchargement  %d%%
+Installing  %d%% = Installation  %d%%

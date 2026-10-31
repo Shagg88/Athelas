@@ -996,6 +996,11 @@ Smooths jagged edges (MSAA). Higher costs speed, most of all with a high render 
 Upscaler = Escalador
 Draws the game smaller and rebuilds a sharp, smooth picture from several frames: faster, and it smooths jagged edges as well. FSR works on any graphics card (FSR 4 on the newest AMD ones); DLSS needs an NVIDIA RTX card. Replaces Render resolution and Anti-aliasing while on. DLSS takes effect at the next start. = Dibuja el juego más pequeño y reconstruye una imagen nítida y suave a partir de varios fotogramas: más rápido, y además suaviza los bordes dentados. FSR funciona en cualquier tarjeta gráfica (FSR 4 en las AMD más recientes); DLSS necesita una tarjeta NVIDIA RTX. Sustituye a Resolución de renderizado y Antialiasing mientras está activado. DLSS se aplica en el siguiente inicio.
 AMD FSR = AMD FSR
+Vulkan (experimental) = Vulkan (experimental)
+NVIDIA DLSS (experimental) = NVIDIA DLSS (experimental)
+SMAA (recommended) = SMAA (recomendado)
+AMD FSR (experimental) = AMD FSR (experimental)
+Frame generation (experimental) = Generación de fotogramas (experimental)
 NVIDIA DLSS = NVIDIA DLSS
 Upscaler quality = Calidad del escalador
 How much smaller the game is drawn for the upscaler. Native draws it at full size and only smooths it (DLAA with DLSS); Quality is the best balance; Performance and Ultra performance are fastest but softer. = Cuánto más pequeño se dibuja el juego para el escalador. Nativa lo dibuja a tamaño completo y solo lo suaviza (DLAA con DLSS); Calidad es el mejor equilibrio; Rendimiento y Ultrarrendimiento son los más rápidos pero más borrosos.
@@ -1150,3 +1155,5 @@ L2 + R2: fullscreen = L2 + R2: pantalla completa
 ZL + ZR: fullscreen = ZL + ZR: pantalla completa
 F11: fullscreen = F11: pantalla completa
 Made by Shagg = Creado por Shagg
+Downloading  %d%% = Descargando  %d%%
+Installing  %d%% = Instalando  %d%%

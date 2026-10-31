@@ -196,6 +196,19 @@ DWORD WINAPI build_thread(void *)
     std::string work = target + "\\build";
     SHCreateDirectoryExA(NULL, work.c_str(), NULL);
     logf("Building %s (%s) from %s", j.game.c_str(), j.exe.c_str(), j.g.path.c_str());
+    // a folder with letters past plain ASCII (é, ü, a user name in another alphabet): the recompiler reads its settings
+    // file as UTF-8 and this program writes the Windows code page, so the paths it is given are the short (8.3) ones
+    auto ascii_path = [](std::string &p) {
+        bool plain = true;
+        for (unsigned char c : p) if (c >= 0x80) plain = false;
+        if (plain) return;
+        char sh[MAX_PATH];
+        DWORD n = GetShortPathNameA(p.c_str(), sh, MAX_PATH);
+        if (n && n < MAX_PATH) { logf("path with special letters: %s used as %s", p.c_str(), sh); p = sh; }
+        else logf("path with special letters and no short name: %s", p.c_str());
+    };
+    ascii_path(work);
+    ascii_path(kit);
 
     // ---- the kit
     std::string kitText;
@@ -254,7 +267,18 @@ DWORD WINAPI build_thread(void *)
         if (!p) return fail("Athelas couldn't start its recompiler. Your antivirus may have blocked it.");
         int rc = wait_exit(p);
         log_file_tail(work + "\\recomp.log", 4);
-        if (rc != 0) return fail("Athelas couldn't read this copy of the game. Is it the US release?", ("recompiler exit " + std::to_string(rc)).c_str());
+        if (rc != 0) {
+            // the recompiler's last line says why: shown, not a guess about the release (the region was checked before)
+            std::string why, s;
+            if (read_file(work + "\\recomp.log", s)) {
+                size_t e = s.find_last_not_of("\r\n");
+                if (e != std::string::npos) { size_t b = s.find_last_of("\n", e); why = s.substr(b == std::string::npos ? 0 : b + 1, e - (b == std::string::npos ? 0 : b + 1) + 1); }
+            }
+            char code[32]; snprintf(code, sizeof code, "0x%08X", (unsigned)rc);
+            return fail("Athelas's recompiler stopped (" + std::string(code) + (why.empty() ? "" : ": " + why) +
+                        "). Try moving the Athelas folder to a short plain path such as C:\\Athelas, and check your antivirus didn't block it.",
+                        ("recompiler exit " + std::to_string(rc)).c_str());
+        }
         DeleteFileA((work + "\\default.xbe").c_str());
         write_file(work + "\\generated.stamp", stamp);
     } else logf("recompiled code from an earlier try kept");
@@ -460,3 +484,49 @@ void builder_cancel() { InterlockedExchange(&g_cancel, 1); }
 bool builder_busy() { return g_busy != 0; }
 BuildStatus builder_status() { lock(); BuildStatus s = g_st; unlock(); return s; }
 void builder_clear() { if (builder_busy()) return; lock(); g_st = BuildStatus(); unlock(); }
+
+// 1.7.5: the Xbox games ship ready to play again, so 1.7.3/1.7.4's build kits, build tools and each game's build
+// folder (recompiled code, objects: hundreds of MB) are left over. Removed once every game they were for has its
+// program; anything else in the folder is left alone.
+void builder_cleanup_old()
+{
+    std::string root = exe_dir();
+    if (!exists(root + "\\kits") && !exists(root + "\\tools\\llvm-mingw")) return;
+    static const char *const ports[][2] = { { "TT-Xbox", "TwoTowers" }, { "ROTK-Xbox", "ROTKXbox" },
+                                            { "FOTR-Xbox", "FOTRXbox" }, { "TA-Xbox", "TAXbox" } };
+    for (auto &p : ports)
+        if ((exists(root + "\\kits\\" + p[0]) || exists(root + "\\kits\\" + p[0] + "-arm64")) &&
+            !exists(root + "\\" + p[0] + "\\" + p[1] + ".exe")) return;  // still needed
+    for (auto &p : ports) {
+        // the stamps of programs built here from a kit (review: an ARM64 PC kept preferring a 1.7.4 build with one)
+        std::string e = root + "\\" + p[0] + "\\" + p[1];
+        DeleteFileA((e + ".exe.build").c_str());
+        DeleteFileA((e + "-arm64.exe.build").c_str());
+    }
+    for (auto &p : ports) {
+        std::string b = root + "\\" + p[0] + "\\build";
+        if (exists(b + "\\generated") || exists(b + "\\obj") || exists(b + "\\generated.stamp")) remove_tree(b);
+    }
+    remove_tree(root + "\\kits");
+    remove_tree(root + "\\tools\\llvm-mingw");
+    RemoveDirectoryA((root + "\\tools").c_str());  // only when nothing else is in it
+}
+
+// The game's default.xbe as SHA-1 hex ("" if unreadable): how an untested release the player says works is remembered
+// and reported (GitHub)
+#include <bcrypt.h>
+std::string xbe_sha1(const LibGame &g)
+{
+    std::string xbe;
+    if (!read_xbe(g, xbe)) return "";
+    BCRYPT_ALG_HANDLE alg = NULL; BCRYPT_HASH_HANDLE h = NULL; unsigned char d[20]; std::string r;
+    if (BCryptOpenAlgorithmProvider(&alg, BCRYPT_SHA1_ALGORITHM, NULL, 0) != 0) return "";
+    if (BCryptCreateHash(alg, &h, NULL, 0, NULL, 0, 0) == 0 && BCryptHashData(h, (PUCHAR)xbe.data(), (ULONG)xbe.size(), 0) == 0 &&
+        BCryptFinishHash(h, d, 20, 0) == 0) {
+        static const char *x = "0123456789abcdef";
+        for (unsigned char c : d) { r += x[c >> 4]; r += x[c & 15]; }
+    }
+    if (h) BCryptDestroyHash(h);
+    BCryptCloseAlgorithmProvider(alg, 0);
+    return r;
+}

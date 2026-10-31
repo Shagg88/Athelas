@@ -56,7 +56,7 @@ const Known kKnown[] = {
     {0x73a802aade5d5690ull, 64, "X", 5 / 64.0f, 7 / 64.0f, 51 / 64.0f},
     {0x1ff51bff42dd7ff7ull, 64, "Y", 5 / 64.0f, 7 / 64.0f, 51 / 64.0f},
 };
-constexpr uint32_t kOut = 128;  // the pictures given: 128x128 (2x or 4x the game's)
+constexpr uint32_t kOut = 256;  // the pictures given: 256x256 (4x or 8x the game's)
 
 // a picture made for a full square (the disc filling it) put where the game's disc is in its texture: scaled into
 // that box with a box filter, transparent around it

@@ -2945,6 +2945,7 @@ static int g_ttWho = 0;                // App::ttWho, for the functions without 
 static const TomlPortId &tp() { return k_tomlPorts[g_ttWho]; }
 static int tp_of(GameKind k) { return k == GK_FOTR_XBOX ? 1 : k == GK_ROTK_XBOX ? 2 : k == GK_TA_XBOX ? 3 : 0; }
 static bool tp_kind(GameKind k) { return k == GK_TT_XBOX || k == GK_FOTR_XBOX || k == GK_ROTK_XBOX || k == GK_TA_XBOX; }
+static bool release_confirmed(const char *dir, const LibGame &g);   // (below, with "This version works")
 // The tt fields hold this port's state from here on: the one there is parked in its place, this one taken out of its
 static void tp_use(App &a, int who)
 {
@@ -3129,6 +3130,8 @@ static void tt_play(App &a, const LibGame &g)
                        "\\shadercache\" --screenshots \"" + shots + "\" --no-dialogs";
     // The Return of the King: the PC version's folder, whose Data its Sharper text reads (beside its ROTKFix.ini)
     if (tp().kind == GK_ROTK_XBOX && !a.dir.empty()) args += " --ini \"" + a.dir + "\\ROTKFix.ini\"";
+    // an untested release the player said works: no question at start
+    if (release_confirmed(tp().dir, g)) args += " --any-release";
     std::string err;
     HANDLE h = port_start(a.tt.exe, args, err);
     if (!h) { set_message(a, err, true); return; }
@@ -3173,6 +3176,52 @@ static std::string url_encode(const std::string &s)
         else { char b[4]; snprintf(b, sizeof b, "%%%02X", c); o += b; }
     }
     return o;
+}
+
+// 1.7.5 (Shagg, as COGBox does): a release of a game the ports weren't made from (another region or revision) can be
+// played. The game's page says it is untested; "This version works" remembers its default.xbe by SHA-1 in
+// Athelas.ini [WorksRelease] (no more question at Play: it starts with --any-release) and opens a pre-filled GitHub
+// issue, so the developer can add it as known to work. Nothing is sent by Athelas itself.
+static std::map<std::string, std::string> g_xbeSha;   // game path -> its default.xbe's SHA-1 (read once)
+static std::vector<std::string> g_untested;           // port folders whose last start said "another release" (exit 3)
+static const std::string &xbe_sha_of(const LibGame &g)
+{
+    auto it = g_xbeSha.find(g.path);
+    if (it == g_xbeSha.end()) it = g_xbeSha.emplace(g.path, xbe_sha1(g)).first;
+    return it->second;
+}
+static std::map<std::string, std::string> g_works;    // [WorksRelease] read once per folder (not every frame)
+static std::string works_get(const char *dir)
+{
+    auto it = g_works.find(dir);
+    if (it != g_works.end()) return it->second;
+    char v[64] = {};
+    GetPrivateProfileStringA("WorksRelease", dir, "", v, sizeof v, ports_ini().c_str());
+    return g_works[dir] = v;
+}
+static bool release_confirmed(const char *dir, const LibGame &g)
+{
+    std::string w = works_get(dir);
+    return !w.empty() && w == xbe_sha_of(g);
+}
+static bool release_untested(const char *dir, const LibGame &g)
+{
+    return !game_region_us(g) || std::find(g_untested.begin(), g_untested.end(), std::string(dir)) != g_untested.end();
+}
+static void confirm_works(App &a, const char *dir, const char *game, const LibGame &g)
+{
+    const std::string &h = xbe_sha_of(g);
+    if (h.empty()) { set_message(a, "The game's default.xbe couldn't be read - nothing was changed.", true); return; }
+    WritePrivateProfileStringA("WorksRelease", dir, h.c_str(), ports_ini().c_str());
+    g_works[dir] = h;
+    std::string title = std::string("Version works: ") + game + " - " + game_region_name(g) + " copy " + h.substr(0, 12);
+    std::string body = std::string("This version runs for me in Athelas ") + LAUNCHER_VERSION + ".\n\nGame: " + game +
+                       "\nRegion: " + game_region_name(g) + "\nTitle ID: " + [&] { char b[16]; snprintf(b, sizeof b, "%08X", (unsigned)g.titleId); return std::string(b); }() +
+                       "\nTitle: " + g.title + "\nCopy: " + (g.iso ? "disc image" : "extracted files") + "\ndefault.xbe SHA-1: " + h +
+                       "\n\nWhere it came from (region, disc revision, Platinum Hits...), and anything that didn't work:\n";
+    ShellExecuteA(NULL, "open", ("https://github.com/Shagg88/Athelas/issues/new?labels=version&title=" + url_encode(title) +
+                                 "&body=" + url_encode(body)).c_str(), NULL, NULL, SW_SHOWNORMAL);
+    set_message(a, "Thanks - this version won't be questioned again. A GitHub page opened with its details: submit it to let us know.", false);
 }
 
 // ---- A problem report: every log and settings file Athelas knows of and a description of the PC in one zip
@@ -3379,6 +3428,8 @@ static void port_finished(App &a, DWORD code)
     a.running = NULL;
     session_save(logs_dir(), a.session, code, code == 0 ? "closed normally" : m);
     if (code == 0) { a.quit = true; return; }       // played and quit: close, as after ROTK
+    if (code == 3 && std::find(g_untested.begin(), g_untested.end(), std::string(tp().dir)) == g_untested.end())
+        g_untested.push_back(tp().dir);
     if (code == 3 && a.runningArgs.find("--any-release") == std::string::npos) {
         // another release of the game (another revision, or a modified copy): the player decides, as the port asks
         // when started on its own
@@ -3386,9 +3437,9 @@ static void port_finished(App &a, DWORD code)
             { SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT | SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 0, "Cancel" },
             { 0, 1, "Start anyway" },
         };
-        std::string text = "This copy of " + a.runningGame + " isn't the release the port was made from (the US "
-                           "release). Other releases may well work, but they haven't been tested and could crash.\n\n"
-                           "Start it anyway?";
+        std::string text = "This copy of " + a.runningGame + " is an untested version (the port was made from the US "
+                           "release). It may work, but you may experience problems.\n\nStart it anyway? If it plays well, "
+                           "press \"This version works\" on the game's page afterwards to let us know.";
         SDL_MessageBoxData box = { SDL_MESSAGEBOX_WARNING, NULL, "Athelas", text.c_str(), 2, buttons, NULL };
         int pressed = 0;
         if (SDL_ShowMessageBox(&box, &pressed) && pressed == 1) {
@@ -4877,10 +4928,15 @@ static void draw_other_game(App &a)
         row_end();
         ImGui::Spacing();
         ImGui::PushTextWrapPos(0);
-        if (!game_region_supported(g)) {
-            ImGui::TextColored(C_WARN, "This is a %s copy. Only the US version is supported for now.", game_region_name(g));
-            ImGui::PopTextWrapPos();
-            return;
+        if (tp_kind(g.kind) && release_untested(k_tomlPorts[tp_of(g.kind)].dir, g)) {
+            const char *dir = k_tomlPorts[tp_of(g.kind)].dir;
+            if (release_confirmed(dir, g))
+                ImGui::TextColored(C_DIM, "An untested version (%s copy) you said works.", game_region_name(g));
+            else {
+                ImGui::TextColored(C_WARN, "An untested version (%s copy): it may work, but you may experience problems.", game_region_name(g));
+                if (ImGui::Button("This version works")) confirm_works(a, dir, game_kind_name(g.kind), g);
+            }
+            ImGui::Spacing();
         }
         if (tp_kind(g.kind)) { ImGui::PopTextWrapPos(); draw_tt(a, g); return; }
         ImGui::TextColored(C_WARN, "Recognised, but not playable from here yet.");
@@ -5032,7 +5088,8 @@ static void update_button(App &a, ImVec2 size, float sy)
         int ust = update_install_state(&uprog, nullptr);
         if (!nv.empty() || ust == 1 || ust == 2) {
             char lbl[64];
-            if (ust == 1 || ust == 2) snprintf(lbl, sizeof lbl, "Updating  %d%%##hdrupd", (int)(uprog * 100 + 0.5f));
+            if (ust == 1 || ust == 2)   // two steps, each 0 to 100%: the download, then the files put in place
+                snprintf(lbl, sizeof lbl, ust == 1 ? "Downloading  %d%%##hdrupd" : "Installing  %d%%##hdrupd", (int)(uprog * 100 + 0.5f));
             else snprintf(lbl, sizeof lbl, "Update to %s##hdrupd", nv.c_str());
             ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
             float bw = std::max(S(150), ImGui::CalcTextSize(lbl, nullptr, true).x + S(28));
@@ -5621,6 +5678,7 @@ static void draw_window_buttons(App &a, ImVec2 size)
     ImGui::End();
 }
 
+static DWORD WINAPI cleanup_thread(LPVOID) { builder_cleanup_old(); return 0; }
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
 {
     if (cmdLine && strstr(cmdLine, "--vkprobe")) return gpu_probe_main();   // the background graphics check (gpu.cpp)
@@ -5638,6 +5696,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
         BuildPhase ph = builder_status().phase;
         return ph == BP_DONE ? (builder_needed(folder.c_str(), exe.c_str(), g) ? 6 : 0) : ph == BP_CANCELLED ? 2 : 1;
     }
+    // 1.7.3/1.7.4's build kits and tools, not needed since 1.7.5: removed in the background (thousands of files)
+    CloseHandle(CreateThread(NULL, 0, cleanup_thread, NULL, 0, NULL));
     if (!(cmdLine && strstr(cmdLine, "--install-to "))) gpu_probe_start();
     // "--install-to <dir>" (with administrator rights): put ROTK Fix into a protected game
     // folder, then carry on as the launcher for that game. "--pc <dir>": show that PC game.

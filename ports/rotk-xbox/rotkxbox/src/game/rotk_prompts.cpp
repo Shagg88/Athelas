@@ -53,7 +53,7 @@ const Known kKnown[] = {
 #ifdef _WIN32
 // the key a button's job is on, as a key cap: a dark rounded square with a light edge and the key's short name
 // ("Q", "Ctrl", "LMB"), drawn here (Windows' Arial Bold through GDI) at the size of the port's other pictures
-// (128x128, the cap in the top left 43/64 where the Xbox disc is)
+// (256x256, 4x the game's; the cap in the top left 43/64 where the Xbox disc is)
 bool KeyCap(const char* button, gpu::pack::Image& out) {
     keys::Action a = keys::kCount;
     static const struct { const char* b; keys::Action a; } kMap[] = {
@@ -65,7 +65,7 @@ bool KeyCap(const char* button, gpu::pack::Image& out) {
     std::string key = keys::FirstKey(a);
     if (key.empty()) return false;
     const char* text = keys::ShortName(key.c_str());
-    constexpr int N = 128, D = N * 43 / 64;
+    constexpr int N = 256, D = N * 43 / 64;
     BITMAPINFO bi{};
     bi.bmiHeader.biSize = sizeof(bi.bmiHeader);
     bi.bmiHeader.biWidth = N;

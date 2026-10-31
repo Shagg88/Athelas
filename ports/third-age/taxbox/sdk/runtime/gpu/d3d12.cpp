@@ -100,6 +100,7 @@ struct Perf {
     double d_obs = 0, d_early = 0, d_ortho = 0;  // inside d_pre: the observer, capture/depth copy, 2D placement
     double d_pre = 0, d_vs = 0, d_tex = 0, d_ps = 0, d_pipe = 0;  // before the targets; the shaders' parts
     uint64_t repeats = 0;  // draws that went the repeat path
+    uint64_t merged = 0, merged_calls = 0;  // draws merged into runs (FlushBatch), and the draw calls they took
     uint64_t rep_state = 0, rep_first = 0, rep_recorded = 0, rep_layout = 0;  // and why the others didn't
     uint64_t same_pso = 0, same_views = 0, same_vsc = 0, same_dc = 0, pretransformed = 0, programs = 0;
     uint64_t flushes = 0;
@@ -431,7 +432,10 @@ public:
     bool Queries() const override { return !query_failed_; }
 
     ID3D12Device* Device() override { return dev_.Get(); }
-    ID3D12GraphicsCommandList* List() override { return cl_.Get(); }
+    ID3D12GraphicsCommandList* List() override {
+        FlushBatch();
+        return cl_.Get();
+    }
     void Release(ComPtr<ID3D12Resource> r) override { CurrentFrame().garbage.push_back(std::move(r)); }
     D3D12_CPU_DESCRIPTOR_HANDLE View(const Target& t) override { return Cpu(rtv_heap_.Get(), t.view, rtv_inc_); }
     void Unbind() override { bound_rt_ = bound_ds_ = nullptr; }
@@ -612,6 +616,21 @@ private:
     void SetBlendFactorStencilRef(const State& s);
     void DrawGeometry(const Assembled& a);
     void UploadVertexBuffers(const Assembled& a);
+    // draws merged: a run of repeat-path draws (the same state one after another, the most of a frame in The Third
+    // Age: thousands of tiny draws) is gathered here and drawn as one draw call; anything else that records to the
+    // command list first draws what is gathered (FlushBatch)
+    struct Batch {
+        bool on = false;
+        D3D_PRIMITIVE_TOPOLOGY topo{};
+        uint32_t nbuf = 0;
+        uint32_t strides[16] = {};
+        std::vector<uint8_t> vb[16];
+        std::vector<uint32_t> idx;
+        uint32_t verts = 0, draws = 0;
+    } batch_;
+    bool Batchable(const Assembled& a) const;
+    void BatchGeometry(const Assembled& a);
+    void FlushBatch();
     // shaders by source hash: Compile returns the bytecode and sets hash
     ID3DBlob* Compile(const std::string& src, const char* entry, const char* profile, uint64_t& hash);
     // Blit's pipeline
@@ -840,6 +859,7 @@ private:
     bool Upscale(Target& t, uint32_t ow, uint32_t oh, D3D12_CPU_DESCRIPTOR_HANDLE rh);  // true: up_out_ holds the frame
     void NextJitter(const Target& t, uint32_t ow);
     ComPtr<ID3D12Resource> up_out_;
+    bool fg_ready_ = false;  // frame generation readied for this frame (up::FgPrepare)
     D3D12_RESOURCE_STATES up_out_state_ = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
     struct Motion {
         ComPtr<ID3D12Resource> res;
@@ -1045,12 +1065,23 @@ bool D3D12Backend::CreateSwapChain(HWND hwnd) {
     sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
     sd.Flags = tearing_ ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
     ComPtr<IDXGISwapChain1> sc1;
-    if (FAILED(factory_->CreateSwapChainForHwnd(queue_.Get(), hwnd, &sd, nullptr, nullptr, &sc1))) {
+    // [graphics] frame_generation: FSR's swap chain, which shows a made-up frame between each two drawn ones
+    {
+        std::string why;
+        IDXGISwapChain4* fg = nullptr;
+        if (up::FgCreateSwapChain(hwnd, sd, factory_.Get(), queue_.Get(), &fg, why)) {
+            sc1.Attach(fg);
+            LOGR("frame generation: on (AMD FSR); one made-up frame between each two drawn ones in 3D scenes");
+        } else if (why != "off") {
+            LOGR("frame generation: not available: %s", why.c_str());
+        }
+    }
+    if (!sc1 && FAILED(factory_->CreateSwapChainForHwnd(queue_.Get(), hwnd, &sd, nullptr, nullptr, &sc1))) {
         LOGE("d3d12: no swap chain");
         return false;
     }
     factory_->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER);
-    {
+    if (!up::FgActive()) {
         // DLSS (manual hooking): Streamline's own bookkeeping runs on the swap chain's Present
         IDXGISwapChain1* raw = sc1.Detach();
         up::UpgradeSwapChain(reinterpret_cast<IDXGISwapChain**>(&raw));
@@ -1215,6 +1246,7 @@ void D3D12Backend::Begin() {
 }
 
 void D3D12Backend::Submit(bool wait) {
+    FlushBatch();
     if (query_active_ >= 0) cl_->EndQuery(query_heap_.Get(), D3D12_QUERY_TYPE_OCCLUSION, UINT(query_active_));
     std::vector<ID3D12CommandList*> lists;
     HRESULT hc;
@@ -1355,6 +1387,7 @@ bool D3D12Backend::EnsureQueries() {
 }
 
 void D3D12Backend::BeginQuery() {
+    FlushBatch();
     if (!EnsureQueries()) return;
     if (query_active_ >= 0) cl_->EndQuery(query_heap_.Get(), D3D12_QUERY_TYPE_OCCLUSION, UINT(query_active_));  // left unnamed
     query_active_ = query_next_;
@@ -1363,6 +1396,7 @@ void D3D12Backend::BeginQuery() {
 }
 
 void D3D12Backend::EndQuery(uint32_t index) {
+    FlushBatch();
     if (query_active_ < 0) return;
     UINT e = UINT(query_active_);
     cl_->EndQuery(query_heap_.Get(), D3D12_QUERY_TYPE_OCCLUSION, e);
@@ -1381,6 +1415,7 @@ void D3D12Backend::EndQuery(uint32_t index) {
 }
 
 bool D3D12Backend::QueryResult(uint32_t index, uint32_t& pixels) {
+    FlushBatch();
     if (!query_map_) return false;
     uint64_t done = fence_->GetCompletedValue();
     std::lock_guard lock(query_lock_);
@@ -1492,6 +1527,7 @@ uint32_t D3D12Backend::AllocSrvSlots(uint32_t n) {
 }
 
 void D3D12Backend::Transition(ID3D12Resource* r, D3D12_RESOURCE_STATES& cur, D3D12_RESOURCE_STATES want) {
+    FlushBatch();
     if (cur == want) return;
     D3D12_RESOURCE_BARRIER b{};
     b.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -1962,6 +1998,7 @@ bool D3D12Backend::DepthCopyCheck(const State& s) {
     Target& src = si->second;
     ID3D12PipelineState* pso = EnsureDepthCopyPipeline();
     if (!pso) return false;
+    FlushBatch();
     DrawDepthCopy(src, dst, pso);
     return true;
 }
@@ -2348,6 +2385,7 @@ void D3D12Backend::Pass(const char* hlsl, const char* entry, DXGI_FORMAT rtv, D3
 
 // a copy of the target to read while drawing to it
 ID3D12Resource* D3D12Backend::Feedback(Target& t) {
+    FlushBatch();
     ReadyRes(t);
     if (!t.fb) {
         D3D12_HEAP_PROPERTIES hp{D3D12_HEAP_TYPE_DEFAULT};
@@ -2617,6 +2655,16 @@ void D3D12Backend::WarmUp(std::vector<PsoKey> keys) {
 D3D12Backend::~D3D12Backend() {
     warm_stop_ = true;
     if (warm_.joinable()) warm_.join();
+    // FSR's frame generation and swap chain go first, the GPU idle
+    // (review: FSR's presents waited for, the frame-generation context destroyed, then the game's own references to
+    // FSR's swap chain released before FSR's swap chain context goes, as AMD's samples do)
+    if (up::FgActive()) {
+        if (cl_.Get()) Flush();
+        up::FgShutdown();
+        for (auto& b : bb_) b.Reset();
+        swap_.Reset();
+        up::FgReleaseSwapChain();
+    }
     if (pso_list_) std::fclose(pso_list_);
 }
 
@@ -3385,10 +3433,17 @@ void D3D12Backend::UploadConstants(const State& s, const DrawShaders& sh, const 
                     break;
                 }
             }
-            uint32_t idx = uint32_t(cur_draws_.size());
-            cur_draws_.emplace_back();
-            std::memcpy(cur_draws_.back().vsc.data(), s.vsc.data(), sizeof(s.vsc));
-            std::memcpy(cur_draws_.back().wvp, c.wvp, sizeof(c.wvp));
+            // kept for the next frame: a draw whose constants are the last kept one's shares its entry (most do)
+            uint32_t idx;
+            if (!cur_draws_.empty() && std::memcmp(cur_draws_.back().wvp, c.wvp, sizeof(c.wvp)) == 0 &&
+                std::memcmp(cur_draws_.back().vsc.data(), s.vsc.data(), sizeof(s.vsc)) == 0) {
+                idx = uint32_t(cur_draws_.size() - 1);
+            } else {
+                idx = uint32_t(cur_draws_.size());
+                cur_draws_.emplace_back();
+                std::memcpy(cur_draws_.back().vsc.data(), s.vsc.data(), sizeof(s.vsc));
+                std::memcpy(cur_draws_.back().wvp, c.wvp, sizeof(c.wvp));
+            }
             for (uint64_t key : mv_keys_) cur_index_.emplace(key, idx);
         }
         std::memcpy(m->cprev, pd ? pd->vsc.data() : s.vsc.data(), sizeof(m->cprev));
@@ -3636,6 +3691,91 @@ void D3D12Backend::DrawGeometry(const Assembled& a) {
     }
 }
 
+// a draw that can join a merged run: a list (not a strip), its streams all holding the same number of vertices
+bool D3D12Backend::Batchable(const Assembled& a) const {
+    if (a.strip || !a.buffer_count || a.buffer_count > 16) return false;
+    D3D_PRIMITIVE_TOPOLOGY t = PrimitiveTopology(a);
+    if (t != D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST && t != D3D_PRIMITIVE_TOPOLOGY_LINELIST &&
+        t != D3D_PRIMITIVE_TOPOLOGY_POINTLIST)
+        return false;
+    uint32_t n = 0;
+    for (uint32_t i = 0; i < a.buffer_count; i++) {
+        const VertexBuffer& b = a.buffers[i];
+        if (!b.stride || b.bytes % b.stride) return false;
+        uint32_t c = b.bytes / b.stride;
+        if (i == 0) n = c;
+        else if (c != n) return false;
+    }
+    return n > 0 && n <= 65536;
+}
+
+void D3D12Backend::BatchGeometry(const Assembled& a) {
+    // off unless XBE_MERGE=1: job 154 showed flicker in The Third Age with it (cause not found yet)
+    static const bool merge = [] { const char* e = std::getenv("XBE_MERGE"); return e && *e == '1'; }();
+    if (!merge || !Batchable(a)) {
+        FlushBatch();
+        DrawGeometry(a);
+        return;
+    }
+    D3D_PRIMITIVE_TOPOLOGY topo = PrimitiveTopology(a);
+    bool same = batch_.on && batch_.topo == topo && batch_.nbuf == a.buffer_count;
+    for (uint32_t i = 0; same && i < a.buffer_count; i++) same = batch_.strides[i] == a.buffers[i].stride;
+    if (!same || batch_.verts > (1u << 20) || batch_.idx.size() > (1u << 21)) {
+        FlushBatch();
+        batch_.on = true;
+        batch_.topo = topo;
+        batch_.nbuf = a.buffer_count;
+        for (uint32_t i = 0; i < a.buffer_count; i++) batch_.strides[i] = a.buffers[i].stride;
+    }
+    uint32_t first = batch_.verts, n = a.buffers[0].bytes / a.buffers[0].stride;
+    for (uint32_t i = 0; i < a.buffer_count; i++) {
+        const VertexBuffer& b = a.buffers[i];
+        batch_.vb[i].insert(batch_.vb[i].end(), b.src, b.src + b.bytes);
+    }
+    if (a.index_count) {
+        int64_t add = int64_t(first) + a.base_vertex;
+        if (a.index16) {
+            const uint16_t* ix = static_cast<const uint16_t*>(a.index_src);
+            for (uint32_t i = 0; i < a.index_count; i++) batch_.idx.push_back(uint32_t(int64_t(ix[i]) + add));
+        } else {
+            const uint32_t* ix = static_cast<const uint32_t*>(a.index_src);
+            for (uint32_t i = 0; i < a.index_count; i++) batch_.idx.push_back(uint32_t(int64_t(ix[i]) + add));
+        }
+    } else {
+        for (uint32_t i = 0; i < a.draw_count; i++) batch_.idx.push_back(first + i);
+    }
+    batch_.verts += n;
+    batch_.draws++;
+}
+
+void D3D12Backend::FlushBatch() {
+    if (!batch_.on) return;
+    batch_.on = false;
+    if (!batch_.idx.empty()) {
+        D3D12_VERTEX_BUFFER_VIEW vbv[16];
+        for (uint32_t i = 0; i < batch_.nbuf; i++) {
+            uint32_t bytes = uint32_t(batch_.vb[i].size());
+            Alloc vb = Upload(bytes, 16);
+            std::memcpy(vb.cpu, batch_.vb[i].data(), bytes);
+            vbv[i] = {vb.gpu, bytes, batch_.strides[i]};
+        }
+        cl_->IASetVertexBuffers(0, batch_.nbuf, vbv);
+        cl_->IASetPrimitiveTopology(batch_.topo);
+        dyn_.topo = batch_.topo;
+        uint32_t ibytes = uint32_t(batch_.idx.size() * 4);
+        Alloc ib = Upload(ibytes, 4);
+        std::memcpy(ib.cpu, batch_.idx.data(), ibytes);
+        D3D12_INDEX_BUFFER_VIEW ibv{ib.gpu, ibytes, DXGI_FORMAT_R32_UINT};
+        cl_->IASetIndexBuffer(&ibv);
+        cl_->DrawIndexedInstanced(uint32_t(batch_.idx.size()), 1, 0, 0, 0);
+        g_perf.merged += batch_.draws;
+        g_perf.merged_calls++;
+    }
+    for (uint32_t i = 0; i < batch_.nbuf; i++) batch_.vb[i].clear();
+    batch_.idx.clear();
+    batch_.verts = batch_.draws = 0;
+}
+
 // calls the extension's EndDraw on every return from Draw once made
 struct DrawEnd {
     Extension* e;
@@ -3670,6 +3810,7 @@ void D3D12Backend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t 
     if (g_draw_observer) g_draw_observer(s);
     PerfClock::time_point t_obs = DrawClock::now();
     g_perf.d_obs += ms(tp, t_obs);
+    if (cap_ || ext_) FlushBatch();  // (a capture or an extension records between draws)
     if (cap_) CapStep(s.rt);
     if (DepthCopy(s)) return;
     g_perf.d_early += ms(t_obs, DrawClock::now());
@@ -3704,19 +3845,25 @@ void D3D12Backend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t 
     else if (!rep_.ok || rep_.frame != frame_) g_perf.rep_first++;
     else if (rep_.dyn_gen != dyn_.gen || rep_.res_gen != res_gen_ || !dyn_.valid) g_perf.rep_recorded++;
     else if (place_a_ != rep_.place_a || place_b_ != rep_.place_b || !SameLayout(a, quad_now)) g_perf.rep_layout++;
-    if (g_draw_same_state && rep_.ok && !ext_ && !cap_ && !bound_mv_ && dyn_.valid && rep_.frame == frame_ &&
+    // (also while an upscaler takes motion: a draw in the same state as the one before it is the same object's next
+    // piece, so the motion constants bound for that draw serve it as they are; this path is most of a frame's draws in
+    // The Third Age, and without it FSR and DLSS ran 4x slower there)
+    // (a test: XBE_UP_NO_REPEAT=1 keeps an upscaled frame's draws off it, as before 147899e)
+    static const bool no_rep_up = [] { const char* e = std::getenv("XBE_UP_NO_REPEAT"); return e && *e == '1'; }();
+    if (g_draw_same_state && rep_.ok && !ext_ && !cap_ && dyn_.valid && rep_.frame == frame_ && !(no_rep_up && bound_mv_) &&
         rep_.dyn_gen == dyn_.gen && rep_.res_gen == res_gen_ && place_a_ == rep_.place_a && place_b_ == rep_.place_b &&
         SameLayout(a, quad_now)) {
         g_perf.repeats++;
         if (!BindTargets(s)) return;
         if (res_gen_ == rep_.res_gen) {
-            DrawGeometry(a);
+            BatchGeometry(a);
             g_perf.d_geo += std::chrono::duration<double, std::milli>(DrawClock::now() - t0).count();
             return;
         }
         // the targets moved (a barrier): the whole way after all
     }
     rep_.ok = false;
+    FlushBatch();  // the draws gathered so far, before this one's state is set
     if (!BindTargets(s)) return;
     if (ext_ && ext_->Bound(*this, s, bound_rt_, bound_ds_, a.pretransformed) && !BindTargets(s)) return;
 
@@ -3805,8 +3952,8 @@ void D3D12Backend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t 
 
     PerfClock::time_point t4 = DrawClock::now();
     g_perf.d_views += std::chrono::duration<double, std::milli>(t4 - t3).count();
-    // geometry
-    DrawGeometry(a);
+    // geometry: starts a run the next draws in the same state may join
+    BatchGeometry(a);
     g_perf.d_geo += std::chrono::duration<double, std::milli>(DrawClock::now() - t4).count();
     rep_.ok = true;
     rep_.frame = frame_;
@@ -3896,6 +4043,7 @@ void D3D12Backend::ClearTarget(Target& t, const State& s, const ClearArgs& c, st
 
 void D3D12Backend::Clear(const State& s, uint32_t count, const uint8_t* rects, uint32_t flags, uint32_t color, float z,
                          uint32_t stencil) {
+    FlushBatch();
     PerfScope perf_clear{g_perf.clear};
     if (cap_) {
         CapStep(s.rt);
@@ -4064,6 +4212,7 @@ void D3D12Backend::CopyByRegion(const Target& src_t, ID3D12Resource* src_res, D3
 
 void D3D12Backend::Copy(const Surface& src, const Surface& dst, uint32_t count, uint32_t src_rects,
                         uint32_t dst_points) {
+    FlushBatch();
     PerfScope perf_copy{g_perf.copy};
     Target* src_t = FindTarget(src, false);
     if (cap_) {
@@ -4800,6 +4949,9 @@ void LogPerf() {
              "something recorded between %.0f%%, other vertex layout or 2D placement %.0f%%",
              100.0 * p.repeats / dn, 100.0 * p.rep_state / dn, 100.0 * p.rep_first / dn, 100.0 * p.rep_recorded / dn,
              100.0 * p.rep_layout / dn);
+        LOGR("perf: merged runs: %.0f%% of draws drawn %.1f to a draw call (%.0f draw calls a frame instead of %.0f)",
+             100.0 * p.merged / dn, p.merged_calls ? double(p.merged) / p.merged_calls : 0.0, p.merged_calls / n,
+             p.merged / n);
         LOGR("perf: draws like the one before: pipeline %.0f%%, texture views %.0f%%, vertex constants %.0f%%, draw "
              "constants %.0f%% | screen-space %.0f%%, vertex programs %.0f%%",
              100.0 * p.same_pso / dn, 100.0 * p.same_views / dn, 100.0 * p.same_vsc / dn, 100.0 * p.same_dc / dn,
@@ -4847,6 +4999,7 @@ static bool AutoCaptureDue() {
 }
 
 void D3D12Backend::Present(const Surface& front) {
+    FlushBatch();
     PerfScope perf_present{g_perf.present};
     if (cap_) {
         FinishCapture(front);
@@ -4894,6 +5047,9 @@ void D3D12Backend::Present(const Surface& front) {
     uint32_t bi = swap_->GetCurrentBackBufferIndex();
     DrawFrame(t, bi);
     Submit(false);
+    // nothing to make a frame from (menus, films): FSR shows this one as it is
+    if (up::FgActive() && !fg_ready_) up::FgPause();
+    fg_ready_ = false;
     bool vsync = app::Get().vsync;
     auto perf_swap = PerfClock::now();
     HRESULT hr = swap_->Present(vsync ? 1 : 0, !vsync && tearing_ ? DXGI_PRESENT_ALLOW_TEARING : 0);
@@ -4920,7 +5076,7 @@ void D3D12Backend::Present(const Surface& front) {
     // most of the frame unmatched a frame later: a cut (or a new place), the history goes
     if (mv_draws_ >= 16 && mv_found_ * 3 < mv_draws_) up_reset_ = true;
     if (UpOn() && presents_ % 600 == 300)
-        LOGI("upscaler: frame %llu, %u draws with motion, %u matched a frame back, shown %08X", (unsigned long long)presents_,
+        LOGR("upscaler: frame %llu, %u draws with motion, %u matched a frame back, shown %08X", (unsigned long long)presents_,
              mv_draws_, mv_found_, t ? t->data : 0);
     if (!cur_draws_.empty()) {
         prev_index_.swap(cur_index_);
@@ -5104,6 +5260,28 @@ bool D3D12Backend::Upscale(Target& t, uint32_t ow, uint32_t oh, D3D12_CPU_DESCRI
     up_t_ = now;
     f.hdr = hdr;
     bool ok = up_->Evaluate(f);
+    // [graphics] frame_generation: readied from the same depth and motion (the frame is shown in the middle of the screen)
+    if (ok && up::FgActive()) {
+        up::FgFrame g;
+        g.cl = cl_.Get();
+        g.depth = f.depth;
+        g.motion = f.motion;
+        g.render_w = t.w;
+        g.render_h = t.h;
+        g.bb_w = bb_w_;
+        g.bb_h = bb_h_;
+        g.vw = std::min(ow, bb_w_);
+        g.vh = std::min(oh, bb_h_);
+        g.vx = (bb_w_ - g.vw) / 2;
+        g.vy = (bb_h_ - g.vh) / 2;
+        g.jitter_x = f.jitter_x;
+        g.jitter_y = f.jitter_y;
+        g.dt_ms = f.dt_ms;
+        g.reset = f.reset;
+        g.hdr = hdr_;
+        g.bb_fmt = bb_fmt_;
+        fg_ready_ = up::FgPrepare(dev_.Get(), g);
+    }
     // the upscalers leave their own root signature and heaps bound
     ID3D12DescriptorHeap* heaps[] = {srv_heap_.Get(), smp_heap_.Get()};
     cl_->SetDescriptorHeaps(2, heaps);
@@ -5169,6 +5347,7 @@ bool D3D12Backend::TargetStale(uint32_t data) const {
 
 // the CPU reads a surface the GPU drew: bring the pixels back
 void D3D12Backend::Sync(uint32_t data, uint32_t) {
+    FlushBatch();
     auto it = targets_.find(TargetMapKey(data, false));
     if (it == targets_.end() || !it->second.drawn || TargetStale(data)) return;
     PerfScope perf_sync{g_perf.sync};
@@ -5195,11 +5374,13 @@ void D3D12Backend::Sync(uint32_t data, uint32_t) {
 // A NOOVERWRITE lock: the console reads whatever the GPU has finished, so a surface locked every frame gets the newest
 // finished copy (a frame or two old) and the CPU never waits on the GPU; one locked now and then still waits in Sync
 void D3D12Backend::SyncLate(uint32_t data) {
+    FlushBatch();
     if (!DeliverLate(data)) Sync(data, 0);
     RecordLate(data);
 }
 
 bool D3D12Backend::DeliverLate(uint32_t data) {
+    FlushBatch();
     std::lock_guard lock(late_lock_);
     auto it = late_.find(data);
     if (it == late_.end()) return false;
@@ -5287,6 +5468,7 @@ void D3D12Backend::RecordLateCopy(Late& l, uint32_t slot, ID3D12Resource* src) {
 }
 
 void D3D12Backend::RecordLate(uint32_t data) {
+    FlushBatch();
     auto it = targets_.find(TargetMapKey(data, false));
     if (it == targets_.end() || TargetStale(data)) return;
     Target& t = it->second;
@@ -5426,6 +5608,7 @@ void D3D12Backend::CapStep(const Surface& rt) {
 }
 
 void D3D12Backend::Capture(Target& t, const char* tag, float mul) {
+    FlushBatch();
     if (!cap_) return;
     ReadyRes(t);
     char name[32];
@@ -5434,6 +5617,7 @@ void D3D12Backend::Capture(Target& t, const char* tag, float mul) {
 }
 
 void D3D12Backend::SetGamma(const uint8_t* ramp) {
+    FlushBatch();
     std::memcpy(ramp_, ramp, sizeof(ramp_));
     ramp_set_ = true;
     ramp_dirty_ = true;

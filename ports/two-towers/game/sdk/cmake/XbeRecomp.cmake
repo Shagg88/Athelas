@@ -173,7 +173,9 @@ target_link_libraries(${target} PRIVATE tomlplusplus::tomlplusplus $<LINK_ONLY:S
         target_link_options(${target} PRIVATE -fprofile-instr-generate)
         target_compile_definitions(${target} PRIVATE XBE_PGO_GEN=1)
         message(STATUS "${target}: PGO measuring build")
-    elseif(NOT XBE_PGO STREQUAL "OFF" AND EXISTS ${pgo_profile} AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # (only the llvm-mingw builds, ATHELAS_ARCH set: the profiles are written by its clang 23, which Visual Studio's
+    # older clang can't read - job 162)
+    elseif(NOT XBE_PGO STREQUAL "OFF" AND EXISTS ${pgo_profile} AND CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND ATHELAS_ARCH STREQUAL "x86_64")
         target_compile_options(${target} PRIVATE -fprofile-instr-use=${pgo_profile} -Wno-profile-instr-unprofiled
                                -Wno-profile-instr-out-of-date -Wno-profile-instr-missing -Wno-backend-plugin)
         set_property(TARGET ${target} APPEND PROPERTY LINK_DEPENDS ${pgo_profile})

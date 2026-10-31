@@ -27,6 +27,10 @@ std::string out_name(const char *folder, const char *exe);
 bool builder_needed(const char *folder, const char *exe, const LibGame &g);
 // Starts building in the background (one build at a time); false if one is already running
 bool builder_start(const char *folder, const char *exe, const char *game, const LibGame &g, const std::string &logPath);
+// 1.7.5: removes the leftover build kits, tools and build folders once every game has its program (builder.cpp)
+void builder_cleanup_old();
+// the game's default.xbe as SHA-1 hex ("" if it can't be read)
+std::string xbe_sha1(const LibGame &g);
 void builder_cancel();
 BuildStatus builder_status();
 bool builder_busy();

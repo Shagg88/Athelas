@@ -96,11 +96,11 @@ This Font Software is licensed under the SIL Open Font License, Version 1.1. The
 https://openfontlicense.org and in the release's licenses folder (LiberationSans-OFL.txt).
 
 
-AMD FidelityFX / FSR SDK 2.3 API headers (https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK), the FSR
+AMD FidelityFX / FSR SDK 2.4 API headers (https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK), the FSR
 upscaler's interface (third_party/ffx)
 
 Copyright (C) 2026 Advanced Micro Devices, Inc. MIT licence, as written at the top of each header. The FSR DLLs
-themselves (amd_fidelityfx_loader_dx12.dll, amd_fidelityfx_upscaler_dx12.dll) are not in this repository; the
+themselves (amd_fidelityfx_loader_dx12.dll, amd_fidelityfx_upscaler_dx12.dll, amd_fidelityfx_framegeneration_dx12.dll) are not in this repository; the
 release ships them under AMD's own licence (licenses\AMD-FSR-LICENSE.md).
 
 

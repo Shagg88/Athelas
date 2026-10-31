@@ -996,6 +996,11 @@ Smooths jagged edges (MSAA). Higher costs speed, most of all with a high render 
 Upscaler = 超分辨率
 Draws the game smaller and rebuilds a sharp, smooth picture from several frames: faster, and it smooths jagged edges as well. FSR works on any graphics card (FSR 4 on the newest AMD ones); DLSS needs an NVIDIA RTX card. Replaces Render resolution and Anti-aliasing while on. DLSS takes effect at the next start. = 以较小尺寸绘制游戏，再从多帧中重建清晰平滑的画面：更快，同时也能平滑锯齿。FSR 适用于任何显卡（最新 AMD 显卡支持 FSR 4）；DLSS 需要 NVIDIA RTX 显卡。开启时取代渲染分辨率和抗锯齿。DLSS 在下次启动时生效。
 AMD FSR = AMD FSR
+Vulkan (experimental) = Vulkan (实验性)
+NVIDIA DLSS (experimental) = NVIDIA DLSS (实验性)
+SMAA (recommended) = SMAA (推荐)
+AMD FSR (experimental) = AMD FSR (实验性)
+Frame generation (experimental) = 帧生成 (实验性)
 NVIDIA DLSS = NVIDIA DLSS
 Upscaler quality = 超分辨率质量
 How much smaller the game is drawn for the upscaler. Native draws it at full size and only smooths it (DLAA with DLSS); Quality is the best balance; Performance and Ultra performance are fastest but softer. = 为超分辨率缩小绘制的程度。原生：全尺寸绘制，仅做平滑（DLSS 下为 DLAA）；质量：最佳平衡；性能和极致性能最快但更模糊。
@@ -1149,3 +1154,5 @@ L2 + R2: fullscreen = L2 + R2: 全屏
 ZL + ZR: fullscreen = ZL + ZR: 全屏
 F11: fullscreen = F11: 全屏
 Made by Shagg = 由 Shagg 制作
+Downloading  %d%% = 正在下载  %d%%
+Installing  %d%% = 正在安装  %d%%

@@ -29,9 +29,10 @@ const char *game_kind_name(GameKind k)
 const char *game_kind_short(GameKind k) { return k == GK_ROTK_PC ? "PC" : k == GK_NONE ? "" : "Xbox"; }
 bool game_kind_playable(GameKind k) { return k == GK_ROTK_PC; }   // the Xbox ports are not ready yet
 
-// The ports are built from the US discs. A copy whose region flags include North
-// America is a US copy; others are recognised but not supported yet.
-bool game_region_supported(const LibGame &g) { return g.kind == GK_ROTK_PC || (g.regions & 1); }
+// The ports are built from the US discs. Since 1.7.5 (Shagg, as COGBox does) other releases can be played too: the
+// game's page says they are untested and offers "This version works", which tells us on GitHub.
+bool game_region_us(const LibGame &g) { return g.kind == GK_ROTK_PC || (g.regions & 1); }
+bool game_region_supported(const LibGame &g) { return g.kind != GK_NONE; }
 const char *game_region_name(const LibGame &g)
 {
     uint32_t r = g.regions & 7;
