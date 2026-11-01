@@ -1,6 +1,6 @@
 # Athelas
 
-I'm Shagg and I created this project with the help of Claude (Anthropic). This is a free, unofficial launcher for three Lord of the Rings games, so you can play
+I'm Shagg and I created this project with the help of Claude (Anthropic). This is a free, unofficial launcher for four Lord of the Rings games, so you can play
 your own copies on a modern Windows PC from one place.  Tolkien created an amazing world that deserves to be lived and experienced in every way possible. I used to play this with my siblings 
 and friends for hours on end, day after day and it's an absolute shame they're not distributable today, so that's why I'm here. (Athelas is kingsfoil, the healing herb).  
 After the release of the War in the North "remaster" I decided to really take on this project. This is my first ever project of this magnitude so I expect there to be a few bugs.  
@@ -11,8 +11,9 @@ packs are supported but I have not done any of those.  I'll be open to accepting
 - **The Return of the King (Xbox)**, through a native PC port
 - **The Two Towers (Xbox)**, through a native PC port
 - **The Fellowship of the Ring (Xbox)**, through a native PC port (new in 1.4)
+- **The Third Age (Xbox)**, through a native PC port (new in 1.7.3)
 
-Download it from [Releases](../../releases): one zip with the launcher, ROTK Fix and all three ports.
+Download it from [Releases](../../releases): one zip with the launcher, ROTK Fix and all four ports.
 
 Since 1.6 Athelas opens on your games as boxes on a carousel, with their original box art if you'd like it (see README.txt).
 
@@ -63,6 +64,7 @@ drawn landscape instead. All game and film artwork belongs to its owners.*
 | `ports/two-towers/` | The Two Towers PC port ([its README](ports/two-towers/README.md)) |
 | `ports/rotk-xbox/` | The Return of the King Xbox PC port ([its README](ports/rotk-xbox/README.md)) |
 | `ports/fellowship/` | The Fellowship of the Ring Xbox PC port ([its README](ports/fellowship/README.md)) |
+| `ports/third-age/` | The Third Age Xbox PC port ([its README](ports/third-age/README.md)) |
 | `dist-files/README.txt` | The README that comes in the download, with every setting |
 | `docs/` | Release notes and engine notes |
 | `scripts/` | Packaging the release zip |
@@ -91,7 +93,7 @@ drawn landscape instead. All game and film artwork belongs to its owners.*
 - **The Return of the King (PC):** a Vulkan 1.4 graphics driver is recommended. Without one, the game runs
   through Windows' Direct3D 8 with the DXVK-only options (sharpening, colour looks, texture filtering)
   turned off. The launcher's About tab shows which renderer you'll get.
-- **The Two Towers, The Return of the King and The Fellowship of the Ring (Xbox):** a DirectX 12 graphics card.
+- **The Two Towers, The Return of the King, The Fellowship of the Ring and The Third Age (Xbox):** a DirectX 12 graphics card.
 
 ## The Two Towers (Xbox)
 
@@ -131,6 +133,17 @@ Played through its PC port, `FOTRXbox.exe`, started from the launcher (since 1.4
 - A chapter select (a new game can start at the beginning of any chapter) and the developers' unused Combat Test
   arenas, switched on from Bilbo's room in Rivendell.
 - Problem reports: `FOTR-Xbox\fotrx.log`, plus the newest `.dmp` in `FOTR-Xbox\CrashDumps` after a crash.
+
+## The Third Age (Xbox)
+
+Played through its PC port, `TAXbox.exe`, started from the launcher (newest of the four, still being polished).
+
+- Supported: the US Xbox release, as a disc image (`.iso`) or the extracted files. Other releases start with a
+  warning that they are untested and unsupported (European and Japanese copies are not expected to run yet).
+- 60 fps, widescreen and ultrawide (up to 32:9), field of view, draw distance, sharper text, button pictures
+  (PlayStation, Nintendo or keyboard), difficulty sliders and achievements.
+- Vulkan is marked experimental in this game; DirectX 12 is the default.
+- Problem reports: `TA-Xbox\ta.log`, plus the newest `.dmp` in `TA-Xbox\CrashDumps` after a crash.
 
 ## Steam Deck and Linux
 
