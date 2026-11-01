@@ -8,12 +8,14 @@
 // ---------------------------------------------------------------------------
 // Running the program
 
-int run_capture(const std::string &exe, const std::string &args, std::string &out, DWORD timeoutMs)
+RunResult run_capture(const std::string &exe, const std::string &args, std::string &out, DWORD timeoutMs)
 {
+    RunResult r;
+    r.status = RUN_NOT_STARTED;
     out.clear();
     SECURITY_ATTRIBUTES sa = { sizeof sa, NULL, TRUE };
     HANDLE rd = NULL, wr = NULL;
-    if (!CreatePipe(&rd, &wr, &sa, 0)) return -1;
+    if (!CreatePipe(&rd, &wr, &sa, 0)) return r;
     SetHandleInformation(rd, HANDLE_FLAG_INHERIT, 0);
     STARTUPINFOA si; memset(&si, 0, sizeof si); si.cb = sizeof si;
     si.dwFlags = STARTF_USESTDHANDLES;
@@ -24,7 +26,7 @@ int run_capture(const std::string &exe, const std::string &args, std::string &ou
     std::string dir = exe.substr(0, exe.find_last_of("\\/"));
     BOOL ok = CreateProcessA(exe.c_str(), &cmd[0], NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, dir.c_str(), &si, &pi);
     CloseHandle(wr);
-    if (!ok) { CloseHandle(rd); return -1; }
+    if (!ok) { CloseHandle(rd); return r; }
     DWORD start = GetTickCount();
     char buf[4096];
     for (;;) {
@@ -39,12 +41,19 @@ int run_capture(const std::string &exe, const std::string &args, std::string &ou
             while (PeekNamedPipe(rd, NULL, 0, NULL, &avail, NULL) && avail && ReadFile(rd, buf, sizeof buf, &n, NULL) && n) out.append(buf, n);
             break;
         }
-        if (GetTickCount() - start > timeoutMs) { TerminateProcess(pi.hProcess, 1); WaitForSingleObject(pi.hProcess, 1000); break; }
+        if (GetTickCount() - start > timeoutMs) {
+            TerminateProcess(pi.hProcess, 1); WaitForSingleObject(pi.hProcess, 1000);
+            CloseHandle(pi.hThread); CloseHandle(pi.hProcess); CloseHandle(rd);
+            r.status = RUN_TIMED_OUT;
+            return r;
+        }
     }
     DWORD code = (DWORD)-1;
     GetExitCodeProcess(pi.hProcess, &code);
     CloseHandle(pi.hThread); CloseHandle(pi.hProcess); CloseHandle(rd);
-    return (int)code;
+    r.status = RUN_EXITED;
+    r.code = code;
+    return r;
 }
 
 // ---------------------------------------------------------------------------
@@ -82,16 +91,64 @@ std::string toml_unquote(const std::string &v)
     return v;
 }
 
-bool port_query(Port &p)
+std::string exit_code_text(const RunResult &rc)
+{
+    if (rc.status == RUN_TIMED_OUT) return "timed out: no answer in time";
+    if (rc.status == RUN_NOT_STARTED) return "it couldn't be started";
+    unsigned u = (unsigned)rc.code;
+    if (u < 0x10000) return "exit " + std::to_string(u);
+    char b[32]; snprintf(b, sizeof b, "exit 0x%08X", u);
+    const char *why = nullptr;
+    switch (u) {
+    case 0xC0000135: why = "a DLL it needs is missing"; break;
+    case 0xC0000139: why = "a function it needs is missing from a DLL (an older Windows or Wine?)"; break;
+    case 0xC0000142: why = "a DLL it needs failed to start"; break;
+    case 0xC0000005: why = "it crashed (access violation)"; break;
+    case 0xC000001D: why = "it crashed (an instruction this processor doesn't have)"; break;
+    case 0xC00000FD: why = "it crashed (stack overflow)"; break;
+    case 0xC0000409: why = "it crashed (stack buffer overrun)"; break;
+    case 0xC000007B: why = "a program or DLL for the wrong architecture (32/64-bit, x64/ARM)"; break;
+    case 0xC0000017: why = "out of memory"; break;
+    case 0xC000013A: why = "it was closed (Ctrl+C)"; break;
+    }
+    return why ? std::string(b) + ": " + why : std::string(b);
+}
+
+namespace {
+// Runs one query, up to 'tries' times (the first start of a large program can be slow, e.g. under Wine while it
+// sets up; --version gets a second try, and once it has answered the program has started at least once); everything is written to the log when there is one.
+RunResult query_run(const std::string &exe, const char *arg, std::string &out, FILE *log, int tries, DWORD ms)
+{
+    RunResult rc;
+    for (int attempt = 1; attempt <= tries; attempt++) {
+        DWORD t0 = GetTickCount();
+        rc = run_capture(exe, arg, out, ms);
+        if (log) {
+            fprintf(log, "%s (try %d): %s after %.1f s, %u bytes printed\n", arg, attempt, rc.ok() ? "exit 0" : exit_code_text(rc).c_str(),
+                    (GetTickCount() - t0) / 1000.0, (unsigned)out.size());
+            if (!rc.ok() || out.size() < 4096) fprintf(log, "----\n%s\n----\n", out.c_str());
+            fflush(log);
+        }
+        if (rc.ok() || rc.status == RUN_NOT_STARTED) break;
+    }
+    return rc;
+}
+}
+
+bool port_query(Port &p, const std::string &logPath)
 {
     p.version.clear(); p.settings.clear(); p.presets.clear(); p.err.clear();
+    FILE *log = logPath.empty() ? nullptr : fopen(logPath.c_str(), "w");
+    struct Closer { FILE *f; ~Closer() { if (f) fclose(f); } } closer{ log };
+    if (log) fprintf(log, "Asking %s\n", p.exe.c_str());
     std::string out;
-    int rc = run_capture(p.exe, "--version", out, 15000);
-    if (rc != 0) { p.err = "The port didn't answer (--version, exit " + std::to_string(rc) + ")."; return false; }
+    // one try each, so a port that never answers holds the launcher's window up at most 75 s (review)
+    RunResult rc = query_run(p.exe, "--version", out, log, 1, 45000);
+    if (!rc.ok()) { p.err = "The port didn't answer (--version, " + exit_code_text(rc) + ")."; return false; }
     while (!out.empty() && (out.back() == '\n' || out.back() == '\r' || out.back() == ' ')) out.pop_back();
     p.version = out;
-    rc = run_capture(p.exe, "--describe-settings", out, 15000);
-    if (rc != 0) { p.err = "The port didn't list its settings (exit " + std::to_string(rc) + ")."; return false; }
+    rc = query_run(p.exe, "--describe-settings", out, log, 1, 30000);
+    if (!rc.ok()) { p.err = "The port didn't list its settings (" + exit_code_text(rc) + ")."; return false; }
     size_t at = out.find('{');
     if (at == std::string::npos) { p.err = "The port's settings list couldn't be read."; return false; }
     JParse jp{ out.data() + at, out.data() + out.size() };

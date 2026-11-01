@@ -2,7 +2,7 @@
 
 How it fits together (2026-10-30):
 
-- **SDK** (`sdk/cmake/XbeRecomp.cmake`, all four copies): `-DXBE_PGO=GEN` makes a measuring build
+- **SDK** (`sdk/cmake/XbeRecomp.cmake`, the one shared SDK at the repository root): `-DXBE_PGO=GEN` makes a measuring build
   (`-fprofile-instr-generate`, `XBE_PGO_GEN`). `runtime/app/main.cpp` then writes the counts every 20 s and at exit
   to `LLVM_PROFILE_FILE`, else `<exe>-<pid>.profraw` (a killed run keeps what it measured). Without `XBE_PGO`, a
   port's `pgo/<target>.profdata` is compiled in (`-fprofile-instr-use`, mismatch warnings off): the mingw, mingw-arm64

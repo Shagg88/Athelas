@@ -20,7 +20,7 @@ What the port does, its keys and settings are in [`rotkxbox/README.md`](rotkxbox
 | Path | What it is |
 |---|---|
 | `rotkxbox/` | The port: its build, its own game code (`src/`) and the recompiler's config for this game (`config/`). Build here. |
-| `rotkxbox/sdk/` | The copy of XboxXBE-Recomp the port is built with: the recompiler, the runtime and its changes for this game. |
+| `../../sdk/` | The SDK the port is built with, shared by all four Xbox ports (at the repository root): XboxXBE-Recomp, the recompiler, the runtime and our changes. |
 | `sdk_5558/` | The Return of the King's SDK changes as patches over the Two Towers port's SDK (the newest is current), and the hand-proven XDK addresses (`manual.toml`). |
 | `sdk_4928/` | The Two Towers port's SDK patches over upstream XboxXBE-Recomp, the base the patches above sit on. |
 | `notes/` | Development notes: `rotkx-01` to `rotkx-11` for this port, in order, and `01` to `08` from the Two Towers port. |
@@ -41,7 +41,7 @@ The recompiled code (`rotkxbox\generated`) is made on your PC from your own `def
 
 ## Licence
 
-MIT, see [`LICENSE`](LICENSE). The SDK in `rotkxbox/sdk` is under its own MIT licence, (c) 2026 TGP482 (`rotkxbox/sdk/LICENSE`), and the libraries built into the exe are listed in `rotkxbox/sdk/THIRD_PARTY.txt`.
+MIT, see [`LICENSE`](LICENSE). The shared SDK in `sdk/` at the repository root is under its own MIT licence, (c) 2026 TGP482 (`sdk/LICENSE`), and the libraries built into the exe are listed in `sdk/THIRD_PARTY.txt`.
 
 Using our code? You're welcome to. If you use The Return of the King port's code in your own project, please credit "Athelas by Shagg (The Return of the King port)" and link to https://github.com/Shagg88/Athelas in your readme or credits. (The MIT licence already asks you to keep the copyright notice in copies of the code.)
 

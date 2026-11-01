@@ -86,10 +86,10 @@ static DWORD WINAPI probe_thread(LPVOID)
     GetModuleFileNameA(NULL, self, MAX_PATH);
     std::string out;
     GpuInfo r;
-    int rc = run_capture(self, "--vkprobe", out, 15000);
+    RunResult rc = run_capture(self, "--vkprobe", out, 15000);
     unsigned api = 0, type = 0;
     char name[300] = "";
-    if (rc == 0 && sscanf(out.c_str(), "%u %u %299[^\r\n]", &api, &type, name) >= 2) {
+    if (rc.ok() && sscanf(out.c_str(), "%u %u %299[^\r\n]", &api, &type, name) >= 2) {
         r.api = api; r.integrated = type == 1 || type == 4; r.software = type == 4; r.name = name;   // 4 = software (CPU): weak too
         r.state = api >= k_needed ? GPU_VULKAN_OK : GPU_VULKAN_TOO_OLD;
     } else {

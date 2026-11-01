@@ -22,7 +22,6 @@ struct LibGame {
 const char *game_kind_name(GameKind k);       // "The Return of the King - PC" ...
 const char *game_kind_short(GameKind k);      // "PC", "Xbox"
 bool game_kind_playable(GameKind k);          // false while its port isn't ready
-bool game_region_supported(const LibGame &g); // every copy can be started (other regions with a warning, 1.7.6)
 bool game_region_us(const LibGame &g);        // the US release the ports are made from (or the PC game)
 const char *game_region_name(const LibGame &g);
 

@@ -6,8 +6,13 @@ project(game LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# the SDK: sdk/ here, two folders up inside the SDK's templates, a checkout beside this repository, else downloaded
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/sdk/cmake/XbeRecomp.cmake)
+# the SDK: the one shared sdk/ at the repository root (ports/<port>/<project>/ -> ../../../sdk) comes first, so a
+# stale per-port sdk/ left over from before it was shared can never win; then sdk/ here, two folders up inside the
+# SDK's templates, a checkout beside this repository, else downloaded
+get_filename_component(XBE_SHARED_SDK "${CMAKE_CURRENT_LIST_DIR}/../../../sdk" ABSOLUTE)
+if(EXISTS ${XBE_SHARED_SDK}/cmake/XbeRecomp.cmake)
+    set(SDK ${XBE_SHARED_SDK})
+elseif(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/sdk/cmake/XbeRecomp.cmake)
     set(SDK ${CMAKE_CURRENT_SOURCE_DIR}/sdk)
 elseif(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/XbeRecomp.cmake)
     set(SDK ${CMAKE_CURRENT_SOURCE_DIR}/../..)

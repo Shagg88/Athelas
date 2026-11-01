@@ -20,7 +20,7 @@ What the port does, its keys and settings are in [`game/README.md`](game/README.
 | Path | What it is |
 |---|---|
 | `game/` | The port: its build, its own game code (`src/`) and the recompiler's config for this game (`config/`). Build here. |
-| `game/sdk/` | The copy of XboxXBE-Recomp the port is built with: the recompiler, the runtime and its changes for this game. |
+| `../../sdk/` | The SDK the port is built with, shared by all four Xbox ports (at the repository root): XboxXBE-Recomp, the recompiler, the runtime and our changes. |
 | `sdk_4928/` | Those SDK changes as patches over upstream XboxXBE-Recomp, and the hand-proven XDK addresses (`manual.toml`). |
 | `notes/` | Development notes, in order: the xbe analysis, the plan, bring-up and the first Windows runs. |
 | `launcher-handoff/` | The interface between the port and the Athelas launcher: how the launcher starts it and passes its settings. |
@@ -40,7 +40,7 @@ The analysis scripts in `tools\` need Python and `pip install capstone`.
 
 ## Licence
 
-MIT, see [`LICENSE`](LICENSE). The SDK in `game/sdk` is under its own MIT licence, (c) 2026 TGP482 (`game/sdk/LICENSE`), and the libraries built into the exe are listed in `game/sdk/THIRD_PARTY.txt`.
+MIT, see [`LICENSE`](LICENSE). The shared SDK in `sdk/` at the repository root is under its own MIT licence, (c) 2026 TGP482 (`sdk/LICENSE`), and the libraries built into the exe are listed in `sdk/THIRD_PARTY.txt`.
 
 Using our code? You're welcome to. If you use The Two Towers port's code in your own project, please credit "Athelas by Shagg (The Two Towers port)" and link to https://github.com/Shagg88/Athelas in your readme or credits. (The MIT licence already asks you to keep the copyright notice in copies of the code.)
 

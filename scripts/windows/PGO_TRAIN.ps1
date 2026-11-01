@@ -33,6 +33,8 @@ New-Item -ItemType Directory -Force "$d\pgo" | Out-Null
 llvm-profdata merge -o "$d\pgo\$Exe.profdata" (Get-ChildItem $p -Filter *.profraw).FullName 2>&1
 llvm-profdata show "$d\pgo\$Exe.profdata" 2>&1 | Select-Object -Last 4
 "== 3. build with the profile"
+$cc = "$d\out\build\mingw\CMakeCache.txt"   # (a build folder from before the shared sdk\ points at a toolchain that is gone)
+if ((Test-Path $cc) -and ($t0 = (Select-String -Path $cc -Pattern '^CMAKE_TOOLCHAIN_FILE[^=]*=(.*)$').Matches) -and -not (Test-Path $t0[0].Groups[1].Value)) { Remove-Item "$d\out\build\mingw" -Recurse -Force }
 Push-Location $d; cmake --preset mingw 2>&1 | Select-String 'PGO'
 $t = Get-Date; cmake --build out\build\mingw --target $Exe 2>&1 | Select-String ' error|FAILED|undefined|profile' | Select-Object -First 10; "exit $LASTEXITCODE in $([int]((Get-Date)-$t).TotalMinutes) min"; Pop-Location
 "== 4. compare (same route, 150 s each)"

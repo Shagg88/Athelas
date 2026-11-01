@@ -323,3 +323,16 @@ call = "TA_FontMade"
 at = 0x001EAD68
 call = "TA_EvilUnlocked"
 on_true = 0x001EAD96
+
+[[hook]]                   # the file reader calls a finished read's callback (GitHub #40: noted for crash reports,
+at = 0x000DB586            # ta_readdone.cpp TA_ReadDone)
+call = "TA_ReadDone"
+
+[[hook]]
+at = 0x000DB59D
+call = "TA_ReadDone"
+
+[[hook]]                   # the streamed sound's block reader 0x100E00 about to read [[0x291210]+4]: a block that
+at = 0x00100E40            # finished after its stream was stopped (slot emptied) is dropped (GitHub #40,
+call = "TA_StreamReadDone" # ta_readdone.cpp)
+on_true = 0x00100F09

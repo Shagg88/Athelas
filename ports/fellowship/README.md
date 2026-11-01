@@ -18,7 +18,7 @@ The port is part of **Athelas**, a launcher for three Lord of the Rings games. P
 | Path | What it is |
 |---|---|
 | `fotrxbox/` | The port: its build, its own game code (`src/`) and the recompiler's config for this game (`config/`). Build here. |
-| `fotrxbox/sdk/` | The copy of XboxXBE-Recomp the port is built with, shared with the other two ports. |
+| `../../sdk/` | The SDK the port is built with, shared by all four Xbox ports (at the repository root): XboxXBE-Recomp, the recompiler, the runtime and our changes. |
 | `fotrxbox/lang/` | The game's text in nine languages, our own translations (no English game text is included). |
 | `fotrxbox/fonts/` | Open fonts (SIL Open Font License) with the Polish and Russian letters the game's fonts lack. |
 | `xdk_4831/` | The hand-proven XDK addresses for this game (`manual.toml`). |
@@ -35,7 +35,7 @@ The recompiled code (`fotrxbox\generated`) is made on your PC from your own `Def
 
 ## Licence
 
-MIT, see [`LICENSE`](LICENSE). The SDK in `fotrxbox/sdk` is under its own MIT licence, (c) 2026 TGP482 (`fotrxbox/sdk/LICENSE`), and the libraries built into the exe are listed in `fotrxbox/sdk/THIRD_PARTY.txt`. The fonts in `fotrxbox/fonts` are under the SIL Open Font License (their licence files are beside them).
+MIT, see [`LICENSE`](LICENSE). The shared SDK in `sdk/` at the repository root is under its own MIT licence, (c) 2026 TGP482 (`sdk/LICENSE`), and the libraries built into the exe are listed in `sdk/THIRD_PARTY.txt`. The fonts in `fotrxbox/fonts` are under the SIL Open Font License (their licence files are beside them).
 
 Using our code? You're welcome to. If you use The Fellowship of the Ring port's code in your own project, please credit "Athelas by Shagg (The Fellowship of the Ring port)" and link to https://github.com/Shagg88/Athelas in your readme or credits. (The MIT licence already asks you to keep the copyright notice in copies of the code.)
 

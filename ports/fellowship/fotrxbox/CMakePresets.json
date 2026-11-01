@@ -69,7 +69,7 @@
             "displayName": "Release with llvm-mingw (x86_64): what Athelas ships the kit for",
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/out/build/mingw",
-            "toolchainFile": "${sourceDir}/sdk/cmake/llvm-mingw.cmake",
+            "toolchainFile": "${sourceDir}/../../../sdk/cmake/llvm-mingw.cmake",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "ATHELAS_ARCH": "x86_64",
@@ -83,7 +83,7 @@
             "displayName": "Release with llvm-mingw (aarch64): what Athelas ships the kit for",
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/out/build/mingw-arm64",
-            "toolchainFile": "${sourceDir}/sdk/cmake/llvm-mingw.cmake",
+            "toolchainFile": "${sourceDir}/../../../sdk/cmake/llvm-mingw.cmake",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "ATHELAS_ARCH": "aarch64",

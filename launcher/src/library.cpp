@@ -34,8 +34,6 @@ bool game_kind_playable(GameKind k) { return k == GK_ROTK_PC; }   // the Xbox po
 // entry"). Since 1.7.6 they can still be started (Shagg: warn, don't refuse): the page says the version is untested
 // and unsupported, and "It worked" / "It didn't work" tell us what happened.
 bool game_region_us(const LibGame &g) { return g.kind == GK_ROTK_PC || (g.regions & 1); }
-// every region can be started (Shagg, 31 Oct: warn, don't refuse); other regions' pages say untested and unsupported
-bool game_region_supported(const LibGame &) { return true; }
 const char *game_region_name(const LibGame &g)
 {
     uint32_t r = g.regions & 7;

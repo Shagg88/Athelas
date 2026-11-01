@@ -80,7 +80,7 @@ X86_FUNC(sub_000DFFE0) {
 // Test builds: TT_FIXED_FPS=<n> makes each step exactly 1/n s (the clock's TSC read is a virtual count), so the
 // headless harness plays the game as it would run at n frames a second, whatever its own speed.
 namespace {
-constexpr uint32_t kStep = 0x4B8BC0, kStepMs = 0x4B8BB8, kSum = 0x4B8BBC, kSumMs = 0x4B8BB4;
+constexpr uint32_t kStep = 0x4B8BC0, kSum = 0x4B8BBC, kSumMs = 0x4B8BB4;
 constexpr uint32_t kFixedMode = 0x4B8B80;
 constexpr uint32_t kPlaySum = 0x4B8B9C, kPlaySumMs = 0x4B8B94, kAllSum = 0x4B8BAC, kAllSumMs = 0x4B8BA4;
 double g_sum = 0;

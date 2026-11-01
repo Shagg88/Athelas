@@ -21,6 +21,7 @@
 #include "cpu/x86_ops.h"
 #include "kernel/kernel.h"
 #include "kernel/memory.h"
+#include "xdk/d3d8.h"
 #include "xdk/hle.h"
 
 namespace rotk {
@@ -48,14 +49,18 @@ bool ROTK_FrameWait(X86Context& ctx, uint8_t* base) {
 // 0xBF1A0, called by the frame end at 0xD03FB: unbinds the four texture stages, counts the frame ([0x1E2F04]) and
 // tail-jumps to BlockUntilVerticalBlank. Unlocked, the frame end's call does the same without the wait; the other
 // callers (loading screens) keep it.
+// At 30 fps (locked) the frame end's call waits for the next real blank here: the SDK's BlockUntilVerticalBlank only
+// sleeps 16 ms, so after the frame end's own wait for a blank the frames came 1 or 2 blanks apart at random (about
+// 34 fps, uneven; the game's speed was right, as it counts blanks). Now 2 blanks a frame, a steady 30 as on the Xbox.
 X86_EXTERN_FUNC(__imp__sub_000BF1A0);
 X86_FUNC(sub_000BF1A0) {
-    if (!rotk::g_unlocked || R32(ctx.esp) != 0xD0400) {
+    if (R32(ctx.esp) != 0xD0400) {
         __imp__sub_000BF1A0(ctx, base);
         return;
     }
     for (uint32_t stage = 0; stage < 4; stage++) ::kernel::CallGuest(ctx, 0x12D630, {stage, 0});  // SetTexture(stage, null)
     W32(0x1E2F04, R32(0x1E2F04) + 1);
+    if (!rotk::g_unlocked) d3d::WaitVBlank(40);  // at most 40 ms: a pause has no blanks
     ::kernel::Return(ctx, ctx.eax, 0);
 }
 
@@ -71,10 +76,10 @@ X86_FUNC(sub_0009EB20) {
         __imp__sub_0009EB20(ctx, base);
         return;
     }
-    using clock = std::chrono::steady_clock;
-    static clock::time_point last = clock::now();
-    clock::time_point now = clock::now();
-    float dt = std::chrono::duration<float>(now - last).count();
+    // the guest clock: fast forward (F9 held) already counted in it, pauses left out, so a frame across a press is right
+    static int64_t last = ::kernel::GuestNs();
+    int64_t now = ::kernel::GuestNs();
+    float dt = float(now - last) * 1e-9f;
     last = now;
     if (dt > 0.1f) dt = 0.1f;  // a load or a stall: at most a tenth of a second, as ROTK PC clamps it (0x3DCCCCCD)
 #ifndef _WIN32

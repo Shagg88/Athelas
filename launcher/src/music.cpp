@@ -238,7 +238,7 @@ static bool load_fotr(const std::string &game, std::vector<int16_t> &pcm, int &c
         uint64_t at = (uint64_t)p + vsize;
         if (at >= d.size()) break;
         a0 = (uint32_t)std::min<uint64_t>(a0, d.size() - at);   // the last packet can run past the end of the file
-        audio.insert(audio.end(), d.begin() + at, d.begin() + at + a0);
+        audio.insert(audio.end(), d.begin() + (ptrdiff_t)at, d.begin() + (ptrdiff_t)(at + a0));   // (at < d.size(): checked above)
         if ((uint64_t)pos + next > d.size()) break;
         pos += next;
         next = nsize;

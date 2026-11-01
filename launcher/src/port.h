@@ -32,9 +32,20 @@ struct Port {
     std::string err;                   // why it couldn't be read
 };
 
-// Runs 'exe args', capturing stdout, waiting at most timeoutMs. Returns the exit code, or -1.
-int run_capture(const std::string &exe, const std::string &args, std::string &out, DWORD timeoutMs);
-bool port_query(Port &p);              // fills version and settings from the program
+// How a run ended. The status is kept apart from the exit code, so any exit code (0xFFFFFFFF too) is just a code.
+enum RunStatus { RUN_EXITED, RUN_NOT_STARTED, RUN_TIMED_OUT };
+struct RunResult {
+    RunStatus status = RUN_EXITED;
+    DWORD code = 0;   // the exit code, when status is RUN_EXITED
+    bool ok() const { return status == RUN_EXITED && code == 0; }
+};
+// Runs 'exe args', capturing stdout, waiting at most timeoutMs. A program still running after timeoutMs is stopped.
+RunResult run_capture(const std::string &exe, const std::string &args, std::string &out, DWORD timeoutMs);
+// How a run ended in plain words: "timed out", "exit 3", "exit 0xC0000135: a DLL it needs is missing"
+std::string exit_code_text(const RunResult &rc);
+// Fills version and settings from the program. logPath: when not "", what was run, how it ended and everything
+// the program printed is written there (so a problem report shows why a port didn't answer).
+bool port_query(Port &p, const std::string &logPath = std::string());
 
 bool settings_file_load(const std::string &path, PortSettingsFile &f);
 bool settings_file_save(const std::string &path, const PortSettingsFile &f);

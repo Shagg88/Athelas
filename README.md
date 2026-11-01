@@ -106,7 +106,9 @@ Played through its PC port, `TwoTowers.exe`, started from the launcher.
 - The game's own files are only read, never changed.
 - Sharper text: the game's fonts redrawn at four times their size, crisp at high resolutions.
 - Keys: `F10` settings menu, `\` screenshot, `F1` hide the HUD, `[` sharpening off/on, `]` next colour look,
-  `F8` texture packs off/on, `F7` a pair of screenshots with and without texture packs.
+  `F8` texture packs off/on, `F7` a pair of screenshots with and without texture packs, `F9` (held) fast forward.
+  The keys work the same in all four Xbox ports. Fast forward runs the game 3 times as fast while `F9` is held, with
+  the sound off; the speed (2 to 8) is on the launcher's Gameplay tab.
 - Problem reports: the log (`TT-Xbox\tt.log` next to the launcher), plus the newest `.dmp` in
   `TT-Xbox\CrashDumps` after a crash.
 
@@ -159,8 +161,10 @@ covers their DirectX 12. The Two Towers has been reported working on a real Stea
 
 The Deck's controls work as an Xbox controller in Athelas and in every game. The Balanced preset at 60 fps suits the
 Deck. DLSS needs an NVIDIA card, so on the Deck leave the upscaler off or try FSR (it hasn't been tried on a Deck yet; if
-it can't start, the game shows its normal picture). Other Linux PCs work the same way
-through Steam, or through any Proton or Wine launcher with DXVK and VKD3D-Proton. More details are in README.txt.
+it can't start, the game shows its normal picture). On other Linux PCs, adding it to Steam with Proton the same way is
+the route to try first. Plain Wine (or a Wine launcher) hasn't been tested and needs DXVK and VKD3D-Proton installed in
+its prefix; if the launcher says a port "didn't answer", the reason and what the port printed are in `port-query.log`
+in that port's folder beside the launcher (include it in a report). More details are in README.txt.
 
 ## Reporting a problem
 

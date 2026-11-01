@@ -19,10 +19,10 @@ for the player to install.
   blocking Sync/Fence). Queries, late sync, MSAA, HDR, upscalers off.
 - Phase 2: in-game parity (Copy, feedback copies, queries, async readbacks, warm-up, captures, texture packs,
   extension hooks). Phase 3: MSAA, alpha to coverage, render scale, HDR scRGB. Phase 4: FSR 3.1 Vulkan (FSR 4
-  and DLSS stay D3D12-only). Phase 5: copy the SDK to all four ports.
+  and DLSS stay D3D12-only). Phase 5: (none: the SDK is one shared `sdk/` at the repository root since 2026-11-01).
 - Setting: [graphics] renderer = 0 Direct3D 12 / 1 Vulkan (restart).
 - Risks: glslang HLSL gaps, pipeline stutter (VkPipelineCache + warm-up), D24S8 missing on AMD (D32S8
-  fallback), four SDK copies in sync.
+  fallback).
 
 - 2026-10-29: glslang (HLSL front end) compiled all 21 captured TA shaders and the 7 pass shaders in d3d12.cpp
   to SPIR-V unchanged (glslangValidator -D -V --hlsl-iomap --sib 8 --ssb 16). Headers + loader + probe added.

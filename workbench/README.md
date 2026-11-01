@@ -1,7 +1,7 @@
 # Workbench
 
 Claude's test and research scripts, kept with the code they test. They ran on Linux against the headless test
-builds of the ports (`ports/*/…/sdk/harness`): level sweeps (`sweep_*.sh`, `rx_sweep.sh`, `tt_sweep*.sh`), menu and
+builds of the ports (`sdk/harness`, the shared SDK at the repository root): level sweeps (`sweep_*.sh`, `rx_sweep.sh`, `tt_sweep*.sh`), menu and
 controller walks, texture dumps and packs (`build_pack.py`, `addpack.py`, `tex*.py`), shader seeds (`seed/`), the AI
 texture upscale pipeline (`aiup/`), the translation tools (`i18n/`), profiling (`prof/`) and one-off investigations
 (`heroes*`, `retarget/`, `csel/`, `gt/`, `gand/`).

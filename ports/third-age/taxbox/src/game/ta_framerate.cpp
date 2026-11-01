@@ -73,10 +73,10 @@ X86_FUNC(sub_0011F640) {
         __imp__sub_0011F640(ctx, base);
         return;
     }
-    using clock = std::chrono::steady_clock;
-    static clock::time_point last = clock::now();
-    clock::time_point now = clock::now();
-    float dt = std::chrono::duration<float>(now - last).count();
+    // the guest clock: fast forward (F9 held) already counted in it, pauses left out, so a frame across a press is right
+    static int64_t last = ::kernel::GuestNs();
+    int64_t now = ::kernel::GuestNs();
+    float dt = float(now - last) * 1e-9f;
     last = now;
     if (dt > 0.1f) dt = 0.1f;  // a load or a stall: at most a tenth of a second, as the game clamps it
     if (dt < 0.0f) dt = 0.0f;

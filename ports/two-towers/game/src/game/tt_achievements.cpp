@@ -108,15 +108,6 @@ void AchievementsFile(const std::string& n) {
     }
 }
 
-// the level was completed the way the game meant it (its achievement); code as the
-// game names its world, any case
-bool LevelCompleted(std::string code) {
-    for (char& c : code) c = char(std::tolower(static_cast<unsigned char>(c)));
-    if (code.rfind("21orth", 0) == 0) return ach::Has("secret_mission");
-    const Level* l = Find(code);
-    return l && ach::Has(l->id);
-}
-
 std::string Activity() {
     std::lock_guard lock(g_lock);
     if (g_world == "orth") return "Tower of Orthanc";

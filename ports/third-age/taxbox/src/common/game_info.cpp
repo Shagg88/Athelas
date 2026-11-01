@@ -14,7 +14,6 @@ void FileRead(const char* name);    // src/game/ta_state.cpp: movies streaming
 std::string Activity();             // src/game/ta_state.cpp: the area, for the Discord status
 std::vector<ach::Def> Achievements();  // src/game/ta_achievements.cpp
 void InitMovies();                  // src/game/ta_state.cpp
-void InitMovieOptions();
 void InitMovieShape();             // src/game/ta_movies.cpp
 extern bool g_skip_logos, g_skip_all_videos, g_sharp_text, g_unlock_all, g_invulnerable, g_infinite_ap;
 extern uint32_t g_damage_percent, g_enemy_damage_percent;  // src/game/ta_gameplay.cpp

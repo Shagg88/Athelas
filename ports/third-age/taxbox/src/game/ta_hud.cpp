@@ -1,8 +1,8 @@
 // The Third Age: [graphics] hud_edges, as Return of the King's port has it (same engine family, same placement).
 //
 // The game draws its 2D (HUD, text, menus) through an orthographic projection (0x1896A0, from the matrix at
-// 0x2704F0), which the SDK reports to gpu::g_ortho_place with each draw's extent. Without hud_edges the 2D is
-// stretched with the 16:9 frame, as now. With hud_edges, in play, HUD pieces keep their 4:3 shape and each group of
+// 0x2704F0), which the SDK reports to gpu::g_ortho_place with each draw's extent. Without hud_edges the menus are
+// stretched with the 16:9 frame, and the HUD in play keeps its 4:3 shape in the middle (GitHub #37). With hud_edges, in play, HUD pieces keep their 4:3 shape and each group of
 // pieces near a side moves out to that edge; groups in the middle stay centred. Pieces are grouped by touching boxes
 // of the frame before (the HUD barely moves between frames), as ROTK does. Left alone: the front end, movies, fades
 // and other draws across the whole screen, copies of the screen, and wide bands.
@@ -64,7 +64,9 @@ bool Place2D(const gpu::State& s, float x0, float x1, float y0, float y1, float&
     float frame = app::FrameAspect();
     bool ultra = frame > 16.0f / 9.0f + 0.01f;
     bool edges = ta::g_hud_edges && !ta::InMenus();
-    if (!edges && !ultra) return false;
+    // a 16:9 screen without hud_edges: the menus stretch with the frame as before; the HUD in play keeps its 4:3
+    // shape, centred (GitHub #37: it was stretched sideways)
+    if (!edges && !ultra && ta::InMenus()) return false;
     uint32_t w, h;
     gpu::SurfaceSize(s.rt, w, h);
     if (w != 640 || h != 480) return false;  // the screen, not a texture the game draws into
@@ -76,10 +78,10 @@ bool Place2D(const gpu::State& s, float x0, float x1, float y0, float y1, float&
     bool spans = x0 <= -0.98f && x1 >= 0.98f, tall = y0 <= -0.98f && y1 >= 0.98f;
     gpu::TextureDesc d;
     if (!s.textures[0] || !gpu::Describe(s.textures[0], d)) {  // untextured: fades, flat overlays
-        if (!ultra || spans) return false;
+        if (spans) return false;
         if (edges && !ta::InMenus()) return false;  // hud_edges in play: as before (review, 1.7.6)
-        // the same shape as the textured pieces they sit behind: menus up to 21:9, the HUD 16:9
-        a = (ta::InMenus() ? std::min(frame, 21.0f / 9.0f) : 16.0f / 9.0f) / frame;
+        // the same shape as the textured pieces they sit behind: menus up to 21:9, the HUD 4:3 (#37)
+        a = (ta::InMenus() ? std::min(frame, 21.0f / 9.0f) : 4.0f / 3.0f) / frame;
         b = 0;
         return true;
     }
@@ -88,8 +90,11 @@ bool Place2D(const gpu::State& s, float x0, float x1, float y0, float y1, float&
     bool band = (y1 - y0) < 0.5f && edge_y;
     if (spans && (tall || band)) return false;
     if (!spans && (x0 <= -0.98f || x1 >= 0.98f) && edge_y && band && (x1 - x0) >= 0.8f) return false;
-    if (!edges) {  // ultrawide without hud_edges: the HUD as on a 16:9 screen, centred; menus up to 21:9 (#35)
-        a = (ta::InMenus() ? std::min(frame, 21.0f / 9.0f) : 16.0f / 9.0f) / frame;
+    // a 16:9 screen in play: a piece across the whole width (a dialog or subtitle backdrop, a bar) keeps the width, as
+    // before #37's change (review)
+    if (!edges && !ultra && spans) return false;
+    if (!edges) {  // without hud_edges: the HUD keeps its 4:3 shape, centred (#37); menus up to 21:9 (#35)
+        a = (ta::InMenus() ? std::min(frame, 21.0f / 9.0f) : 4.0f / 3.0f) / frame;
         b = 0;
         if (ta::InMenus() && a < 0.999f) gpu::g_frame_sides = a;  // black beyond it
         return true;

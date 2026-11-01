@@ -22,7 +22,9 @@ Branches: `main` is the project. `archive/<port>/<branch>` are the ports' old si
 GitHub's public repository as last pushed (1.5.1). Tags: `1.0` … `1.6.1` are Athelas releases; `tt-*`, `rotkx-*`,
 `fotr-*` are the ports' own.
 
-Each port keeps its own copy of the shared SDK (`ports/*/…/sdk`); they are kept identical by hand.
+The SDK (XboxXBE-Recomp plus our changes) is one shared copy at the repository root, `sdk/`, used by all four ports:
+each port's CMakeLists.txt and CMakePresets.json find it as `../../../sdk` (until 1.7.x each port carried its own
+identical copy at `ports/*/…/sdk`).
 
 Private and never published: `ports/*/HANDOFF.md`, the ports' `notes/`, `workbench/`. The public repository on GitHub
 is a separate snapshot without them.

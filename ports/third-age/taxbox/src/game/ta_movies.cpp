@@ -1,13 +1,8 @@
 // The Third Age (Xbox): [graphics] skip_logos. The opening logos are one movie, D:\Data\Movies\logo\logo.vid (EA, New Line
-// and the others, about 34 seconds), which a button press doesn't end. With skip_logos on, the game is given that file
-// cut down to its first frame (SDK kernel::SetFileProvider: served from memory, the file on disk untouched), so the
-// game's own player ends it at once and goes on to the title screen as after the full movie.
-//
-// The .vid format (byte-reversed four-letter tags, each chunk's size after its tag, little-endian): VID1 (32 bytes),
-// HEAD (64 bytes: "VIDH", then the size, a 1, the picture size 0x01C00200 = 512 x 448, the frame count at byte 0x14 of
-// its payload, 0x3FE = 1022 for logo.vid, and the frame rate 30000 / 1001), then one FRAM chunk per frame.
-// STATUS: the one-frame file is not used (test 095: the game stayed on a black screen, waiting for the movie's
-// sound). The skips are done as the game's own A-button skip instead: see sub_001CB9F0 at the end.
+// and the others, about 34 seconds), which a button press doesn't end. With skip_logos on, it is
+// skipped as the game's own A-button skip: see sub_001CB9F0 at the end. (Serving logo.vid cut down to one frame, through
+// kernel::SetFileProvider, was tried and dropped: test 095, the game stayed on a black screen waiting for the movie's
+// sound.)
 #include <cstdint>
 #include <atomic>
 #include <cstring>
@@ -27,48 +22,7 @@ std::atomic<uint32_t> g_movie_slot{0};  // the slot the movie player's frame ste
 uint32_t g_movie_zoom = 115;     // [graphics] movie_zoom: the story films zoomed past Fit, their black bars cut down
 }
 
-namespace {
-uint32_t Le32(const std::vector<uint8_t>& d, size_t at) {
-    uint32_t v = 0;
-    if (at + 4 <= d.size()) std::memcpy(&v, &d[at], 4);
-    return v;
-}
-bool Tag(const std::vector<uint8_t>& d, size_t at, const char* reversed) {
-    return at + 4 <= d.size() && std::memcmp(&d[at], reversed, 4) == 0;
-}
-
-// the movie with only its first frame; null when the file isn't laid out as expected (then it plays as it is)
-kernel::FileData FirstFrameOnly(const std::string& path) {
-    std::vector<uint8_t> d;
-    if (!kernel::ReadGameFile(path, d)) return nullptr;
-    size_t vid1 = 0, head = Le32(d, 4);
-    if (!Tag(d, vid1, "1DIV") || !Tag(d, head, "DAEH")) return nullptr;
-    size_t fram = head + Le32(d, head + 4);
-    if (!Tag(d, fram, "MARF")) return nullptr;
-    size_t end = fram + Le32(d, fram + 4);
-    if (end > d.size() || end <= fram) return nullptr;
-    constexpr size_t kFrameCount = 8 + 0x14;  // HEAD chunk: tag and size, then the frame count at payload byte 0x14
-    uint32_t frames = Le32(d, head + kFrameCount);
-    if (frames < 2 || frames > 100000) return nullptr;
-    d.resize(end);
-    uint32_t one = 1;
-    std::memcpy(&d[head + kFrameCount], &one, 4);
-    LOGR("ta: opening logos skipped (logo.vid served with 1 of its %u frames)", frames);
-    return std::make_shared<const std::vector<uint8_t>>(std::move(d));
-}
-
-// SDK file provider: asked at each file the game opens, the path lower case
-kernel::FileData Provide(const std::string& path) {
-    if (!ta::g_skip_logos) return nullptr;
-    static const std::string kLogo = "\\movies\\logo\\logo.vid";
-    if (path.size() < kLogo.size() || path.compare(path.size() - kLogo.size(), kLogo.size(), kLogo) != 0) return nullptr;
-    return FirstFrameOnly(path);
-}
-}  // namespace
-
 namespace ta {
-// GameInfo::init (ta::Init): after the settings load
-void InitMovieOptions() { kernel::SetFileProvider(Provide); }
 // GameInfo::init: every movie fills the screen's width at any screen shape (no bars at the sides); the top and bottom
 // are cut instead
 void InitMovieShape() { gpu::g_movie_fit_max = 4.0f; }

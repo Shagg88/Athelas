@@ -87,20 +87,18 @@ bool ReadIni(const std::filesystem::path& file, Ini& ini) {
     return true;
 }
 
-// the value after a command line option ("--ini"), or empty
+#ifdef _WIN32
+// the value after a command line option ("--ini"), or empty (its callers are Windows only)
 std::filesystem::path Argument(const wchar_t* name) {
     std::filesystem::path p;
-#ifdef _WIN32
     int n = 0;
     wchar_t** v = CommandLineToArgvW(GetCommandLineW(), &n);
     for (int i = 1; v && i + 1 < n; i++)
         if (std::wstring(v[i]) == name) p = v[i + 1];
     if (v) LocalFree(v);
-#else
-    (void)name;
-#endif
     return p;
 }
+#endif
 
 // the PC game's ROTKFix.ini, for its Data folder: --ini (an older launcher), else that of the PC game Athelas knows
 std::filesystem::path PcIni() {

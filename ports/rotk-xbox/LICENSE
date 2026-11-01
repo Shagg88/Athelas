@@ -21,9 +21,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ---------------------------------------------------------------------------
-The XboxXBE-Recomp SDK in the rotkxbox/sdk folder is under its own MIT licence
-(rotkxbox/sdk/LICENSE, Copyright (c) 2026 TGP482), and the third-party libraries it
-uses are listed with their licences in rotkxbox/sdk/THIRD_PARTY.txt.
+The XboxXBE-Recomp SDK in the sdk folder at the repository root is under its own MIT licence
+(sdk/LICENSE, Copyright (c) 2026 TGP482), and the third-party libraries it
+uses are listed with their licences in sdk/THIRD_PARTY.txt.
 
 This repository contains no game code or data. The C++ the recompiler
 generates from the game, and the game's files, stay on the player's own PC.

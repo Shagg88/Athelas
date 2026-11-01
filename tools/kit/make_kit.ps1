@@ -22,6 +22,8 @@ param(
 # (an ARM64 kit: -BuildDir out\build\release-arm64. Its recompiler is the x64 build's, which Windows on ARM runs.)
 $ErrorActionPreference = 'Stop'
 $Port = (Resolve-Path $Port).Path.TrimEnd('\')
+# the one shared SDK at the repository root (ports\<port>\<project> -> ..\..\..\sdk)
+$Sdk = (Resolve-Path (Join-Path $Port '..\..\..\sdk')).Path.TrimEnd('\')
 $bd = (Resolve-Path (Join-Path $Port $BuildDir)).Path.TrimEnd('\')
 $ninja = Get-Content -LiteralPath (Join-Path $bd 'build.ninja') -Raw
 # the game's program: the executable whose link takes the recompiled code (not xbe_recomp / xbe_symbols)
@@ -96,7 +98,7 @@ function Includes($vars) {
   for ($k = 0; $k -lt $t.Count; $k++) {
     if ($t[$k] -eq '-isystem') { $k++; $p = Fwd $t[$k]; $s = $true } elseif ($t[$k] -like '-I*') { $p = Fwd $t[$k].Substring(2); $s = $false } else { continue }
     $kind = if ($p -match '/generated/') { 'gen' } elseif ($p -match '/imgui-src$') { 'imgui' } elseif ($p -match '/tomlplusplus-src/include$') { 'toml' } elseif ($p -match '/sdk/third_party/vulkan/include$') { 'vulkan' }
-            elseif ($p -eq ((Fwd $Port) + '/src')) { 'src' } elseif ($p -eq ((Fwd $Port) + '/sdk/runtime')) { 'runtime' } else { throw "unknown include folder $p" }
+            elseif ($p -eq ((Fwd $Port) + '/src')) { 'src' } elseif ($p -eq ((Fwd $Sdk) + '/runtime')) { 'runtime' } else { throw "unknown include folder $p" }
     $r += [ordered]@{ kind = $kind; sys = $s; from = $p }
   }
   return $r
@@ -116,7 +118,7 @@ $recomp = Join-Path $bd 'xbe_recomp.exe'
 if (-not (Test-Path $recomp)) { $recomp = Join-Path $Port 'out\build\release\xbe_recomp.exe' }
 Put $recomp 'bin/xbe_recomp.exe'
 Get-ChildItem -LiteralPath (Join-Path $Port 'config') -Filter *.toml | ForEach-Object { Put $_.FullName "config/$($_.Name)" }
-$xdk = Join-Path $Port 'sdk\xdk'
+$xdk = Join-Path $Sdk 'xdk'
 Get-ChildItem -LiteralPath $xdk -Recurse -File -Filter *.toml | ForEach-Object { Put $_.FullName ('xdk/' + $_.FullName.Substring($xdk.Length + 1)) }
 
 # the compiler the build used: the player's PC uses this exact version

@@ -126,7 +126,7 @@ bool rotk_menu_art_load(const std::string &gameDir, std::vector<ArtPic> &out)
     while (o + 16 <= n) {
         if (memcmp(d + o, "COHS", 4)) { o += 4; continue; }
         size_t sz = rd32(d + o + 4);
-        if (sz > n - o) break;
+        if (sz > n - o || o + 20 > n) break;   // (the sub-chunk's tag is read below: never past the view)
         const uint8_t *sub = d + o + 16;
         if (!memcmp(sub, "RDHS", 4) && o + 28 <= n) {
             if (cur) take_textures(res, out);
@@ -135,8 +135,8 @@ bool rotk_menu_art_load(const std::string &gameDir, std::vector<ArtPic> &out)
         } else if (cur && !memcmp(sub, "TADS", 4) && sz > 0x40) {
             res.insert(res.end(), d + o + 0x40, d + o + sz);
         } else if (cur && !memcmp(sub, "tadR", 4) && sz > 0x44) {
-            size_t len = rd32(d + o + 0x40);
-            if (len > (64u << 20) || !unpack(d + o + 0x44, sz - 0x44, len, res)) { cur = false; res.clear(); }
+            size_t plen = rd32(d + o + 0x40);
+            if (plen > (64u << 20) || !unpack(d + o + 0x44, sz - 0x44, plen, res)) { cur = false; res.clear(); }
         }
         o += sz >= 16 ? sz : 16;
     }

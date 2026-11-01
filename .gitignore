@@ -1,6 +1,7 @@
 # build output
 build/
 launcher/build/
+launcher/build64/
 dist/
 deps/
 __pycache__/

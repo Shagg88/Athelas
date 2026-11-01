@@ -87,7 +87,6 @@ static std::string ta_mix_dirs(const App &a)
 
 static int fr_first(const App &a, int e, GameKind k)
 {
-    for (int i : fr_lib(a, e)) if (a.lib[i].kind == k && game_region_supported(a.lib[i])) return i;
     for (int i : fr_lib(a, e)) if (a.lib[i].kind == k) return i;
     return -1;
 }
@@ -127,7 +126,7 @@ static void front_put(const char *key, const std::string &v) { ini_put("Front", 
 
 // play time: [PlayTime] (seconds) and [LastPlayed] (Unix time) in Athelas.ini, per version (fotr, tt, rotk-xbox,
 // rotk-pc). The launcher times each game: it waits, hidden, while it plays (the PC game too, since 1.7).
-static void play_time_add(const std::string &key, unsigned long long secs)
+void play_time_add(const std::string &key, unsigned long long secs)
 {
     unsigned long long had = strtoull(ini_get("PlayTime", key.c_str(), "0").c_str(), nullptr, 10);
     if (secs < 20) return;   // (a start that ended at once is no play, and no "last played")
@@ -534,7 +533,7 @@ static void front_play(App &a, int li)
         a.cur = li;
         tp_use(a, tp_of(g.kind));
         if (!a.ttLooked) tt_find(a);
-        if (!game_region_supported(g) || !tt_ready(a)) { open_settings(a, li); return; }
+        if (!tt_ready(a)) { open_settings(a, li); return; }
         if (!a.ttLoaded) tt_load_settings(a);
         tt_play(a, a.lib[li]);
         return;
@@ -551,7 +550,7 @@ static void front_play(App &a, int li)
 }
 
 // A game's desktop shortcut (--play <key>): that game started as from its box; not found: the front screen says so
-static void shortcut_play(App &a, const std::string &key)
+void shortcut_play(App &a, const std::string &key)
 {
     GameKind k = key == "fotr" ? GK_FOTR_XBOX : key == "ta" ? GK_TA_XBOX : key == "tt" ? GK_TT_XBOX : key == "rotk-xbox" ? GK_ROTK_XBOX : GK_ROTK_PC;
     for (size_t i = 0; i < a.lib.size(); i++)
@@ -594,7 +593,7 @@ static void add_game_buttons(App &a, int e, float x, float y)
 }
 
 // a folder or disc image dropped on the window: added to the games, and the carousel turns to it
-static void front_drop(App &a, const char *utf8)
+void front_drop(App &a, const char *utf8)
 {
     if (!utf8 || !*utf8) return;
     wchar_t w[MAX_PATH * 2];
@@ -685,7 +684,7 @@ static void draw_front(App &a, ImVec2 size, SDL_Renderer *ren)
         for (int e = 0; e < FR_COUNT && pick < 0; e++) if (fr_owned(a, e)) pick = e;
         if (const char *t = getenv("ATHELAS_FRONT_SEL")) pick = atoi(t) % FR_COUNT;   // testing
         f.sel = pick < 0 ? FR_ROTK : pick;
-        f.pos = (float)f.sel;
+        f.pos = -1;   // (placed among the boxes shown, below)
     }
     if (!f.coversLooked) front_load_covers(ren);
     if (SDL_GetAtomicInt(&g_artDl) == 2) {
@@ -733,15 +732,24 @@ static void draw_front(App &a, ImVec2 size, SDL_Renderer *ren)
         if (ImGui::IsKeyPressed(ImGuiKey_RightArrow) || (padOn && (ImGui::IsKeyPressed(ImGuiKey_GamepadDpadRight) || ImGui::IsKeyPressed(ImGuiKey_GamepadLStickRight)))) step = 1;
         if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) && io.MouseWheel != 0) step = io.MouseWheel > 0 ? -1 : 1;
     }
-    if (step) { f.sel = (f.sel + step + FR_COUNT) % FR_COUNT; f.turnedAt = ImGui::GetTime(); g_frBtn = 0; }
+    // only the games the player has are on the carousel (Shagg: no empty boxes); with none yet, all four, so one can
+    // be added. f.sel is the game, f.pos a place among the boxes shown
+    std::vector<int> vis;
+    for (int e2 = 0; e2 < FR_COUNT; e2++) if (fr_owned(a, e2)) vis.push_back(e2);
+    if (vis.empty()) for (int e2 = 0; e2 < FR_COUNT; e2++) vis.push_back(e2);
+    const int N = (int)vis.size();
+    auto slot_of = [&](int e2) { for (int i = 0; i < N; i++) if (vis[(size_t)i] == e2) return i; return -1; };
+    if (slot_of(f.sel) < 0) { f.sel = vis[0]; f.pos = 0; f.turnedAt = ImGui::GetTime(); }
+    if (f.pos < 0 || f.pos >= (float)N) f.pos = (float)slot_of(f.sel);
+    if (step) { f.sel = vis[(size_t)((slot_of(f.sel) + step + N) % N)]; f.turnedAt = ImGui::GetTime(); g_frBtn = 0; }
     // ease towards it the short way round
-    float target = (float)f.sel, diff = target - f.pos;
-    while (diff > FR_COUNT * 0.5f) diff -= FR_COUNT;
-    while (diff < -FR_COUNT * 0.5f) diff += FR_COUNT;
+    float target = (float)slot_of(f.sel), diff = target - f.pos;
+    while (diff > N * 0.5f) diff -= (float)N;
+    while (diff < -N * 0.5f) diff += (float)N;
     f.pos += diff * std::min(1.0f, io.DeltaTime * 9.0f);
     if (fabsf(diff) < 0.001f) f.pos = target;
-    while (f.pos < 0) f.pos += FR_COUNT;
-    while (f.pos >= FR_COUNT) f.pos -= FR_COUNT;
+    while (f.pos < 0) f.pos += (float)N;
+    while (f.pos >= (float)N) f.pos -= (float)N;
 
     // the boxes, the farthest first
     // (the box, its name, version and buttons between the title and the bottom line)
@@ -749,17 +757,18 @@ static void draw_front(App &a, ImVec2 size, SDL_Renderer *ren)
     ImVec2 c = ImGui::GetWindowPos() + ImVec2(size.x * 0.5f, S(60) + H * 0.5f);
     float spread = std::min(size.x * 0.31f, H * 0.92f);
     struct B { int e; float d; };
-    B order[FR_COUNT];
-    for (int e = 0; e < FR_COUNT; e++) {
-        float d = e - f.pos;
-        while (d > FR_COUNT * 0.5f) d -= FR_COUNT;
-        while (d < -FR_COUNT * 0.5f) d += FR_COUNT;
-        order[e] = { e, d };
+    std::vector<B> order((size_t)N);
+    for (int i = 0; i < N; i++) {
+        float d = (float)i - f.pos;
+        while (d > N * 0.5f) d -= (float)N;
+        while (d < -N * 0.5f) d += (float)N;
+        order[(size_t)i] = { vis[(size_t)i], d };
     }
-    std::sort(order, order + FR_COUNT, [](const B &x, const B &y) { return fabsf(x.d) > fabsf(y.d); });
+    std::sort(order.begin(), order.end(), [](const B &x, const B &y) { return fabsf(x.d) > fabsf(y.d); });
     ImRect *hit = f.hit;
     ImVec2 mouse = io.MousePos;
-    for (const B &b : order) {
+    for (int k = 0; k < N; k++) {
+        const B &b = order[(size_t)k];
         float ad = fabsf(b.d);
         float x = c.x + (b.d > 0 ? 1 : -1) * spread * (std::min(ad, 1.0f) + 0.55f * std::max(0.0f, ad - 1.0f));
         bool front = ad < 0.5f;
@@ -769,8 +778,8 @@ static void draw_front(App &a, ImVec2 size, SDL_Renderer *ren)
     // clicks: the box in front plays (or offers to add the game), one at the side turns the carousel to it
     bool clickPlay = false;
     if (!modal && ImGui::IsWindowHovered() && ImGui::IsMouseClicked(0)) {
-        for (int k = FR_COUNT - 1; k >= 0; k--) {
-            const B &b = order[k];          // nearest first
+        for (int k = N - 1; k >= 0; k--) {
+            const B &b = order[(size_t)k];  // nearest first
             if (!hit[b.e].Contains(mouse)) continue;
             if (b.e == f.sel) clickPlay = true; else { f.sel = b.e; f.turnedAt = ImGui::GetTime(); }
             break;
@@ -888,6 +897,12 @@ static void draw_front(App &a, ImVec2 size, SDL_Renderer *ren)
         ImVec2 h2 = ImGui::CalcTextSize(hint2.c_str());
         ImGui::SetCursorPos(ImVec2(std::max(S(490), size.x - S(40) - h2.x), ly - S(22)));
         ImGui::TextColored(C_DIM, "%s", hint2.c_str());
+    }
+    if (!msg) {   // how to add a game: only the games the player has are on the carousel
+        const char *add = "Add a game: drag its folder or disc image onto this window";
+        ImVec2 as = ImGui::CalcTextSize(add);
+        ImGui::SetCursorPos(ImVec2(std::max(S(490), size.x - S(40) - as.x), ly - S(hint2.empty() ? 22 : 44)));
+        ImGui::TextColored(C_DIM, "%s", add);
     }
     ImGui::SetCursorPos(ImVec2(std::max(S(490), size.x - S(40) - hs.x), ly));
     ImGui::TextColored(msg ? (a.messageBad ? C_BAD : C_GOOD) : C_DIM, "%s", hint.c_str());

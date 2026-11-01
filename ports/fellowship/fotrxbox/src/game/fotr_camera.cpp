@@ -207,7 +207,8 @@ void WideHud(const gpu::State& cs) {
         if (!once) {
             once = true;
             std::string t;
-            for (uint32_t v : s.vs->program) { char b[12]; std::snprintf(b, sizeof b, "0x%08X, ", v); t += b; }
+            // b[16]: "0x%08X, " needs 13 with its terminator; 12 cut the trailing space off every word
+            for (uint32_t v : s.vs->program) { char b[16]; std::snprintf(b, sizeof b, "0x%08X, ", v); t += b; }
             LOGI("fotr: vertex program %X: %s", s.vs_handle, t.c_str());
         }
     }

@@ -577,7 +577,7 @@ static SDL_Texture *j_map_texture(App &a)
                 float keep = lum < 35 ? 0 : lum < 60 ? (lum - 35) / 25 : 1;   // the black burn
                 float al = std::max(0.0f, std::min(1.0f, edge)) * keep * 0.92f;
                 // its ink and its light on our parchment: each pixel against the piece's own colour, a little stronger
-                auto rel = [](float v, float m) { float q = v / std::max(1.0f, m); return q < 1 ? 1.0f + (q - 1.0f) * 1.3f : 1.0f + (q - 1.0f) * 0.45f; };
+                auto rel = [](float val, float m) { float q = val / std::max(1.0f, m); return q < 1 ? 1.0f + (q - 1.0f) * 1.3f : 1.0f + (q - 1.0f) * 0.45f; };
                 float cr = r * rel(c[0], pics[i].mr), cg = g * rel(c[1], pics[i].mg), cb = b * rel(c[2], pics[i].mb);
                 r = r + (cr - r) * al; g = g + (cg - g) * al; b = b + (cb - b) * al;
             }

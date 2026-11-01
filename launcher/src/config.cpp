@@ -427,7 +427,7 @@ bool load_settings(const std::string &dir, Settings &s)
                 int def = pl ? s.padMap[0][a] : k_padActionDefault[a];
                 std::string v = gets(ini, pl ? "GamepadButtons2" : "GamepadButtons", k_padActionKey[a], k_padPhysId[def]);
                 s.padMap[pl][a] = def;
-                for (int p = 0; p < PAD_PHYS_COUNT; p++) if (!_stricmp(v.c_str(), k_padPhysId[p])) s.padMap[pl][a] = p;
+                for (int ph = 0; ph < PAD_PHYS_COUNT; ph++) if (!_stricmp(v.c_str(), k_padPhysId[ph])) s.padMap[pl][a] = ph;
             }
     }
     s.skipAllVideos = geti(ini, "Video", "AllowSkippingAllVideos", 1) != 0;
@@ -1407,9 +1407,10 @@ bool install_to(const std::string &src, const std::string &dst, std::string &err
     std::string probe = dst + "\\rotkfix-write-test.tmp";
     HANDLE h = CreateFileA(probe.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE, NULL);
     if (h == INVALID_HANDLE_VALUE) {
-        accessDenied = GetLastError() == ERROR_ACCESS_DENIED;
+        DWORD e = GetLastError();
+        accessDenied = e == ERROR_ACCESS_DENIED;
         err = accessDenied ? "Windows needs administrator permission to change that folder."
-                           : "Could not write to that folder (error " + std::to_string(GetLastError()) + ").";
+                           : "Could not write to that folder (error " + std::to_string(e) + ").";
         return false;
     }
     CloseHandle(h);
@@ -1439,8 +1440,8 @@ bool install_to(const std::string &src, const std::string &dst, std::string &err
     {
         std::string from = src + "\\ROTKFix\\mods", to = dst + "\\ROTKFix\\mods";
         WIN32_FIND_DATAA fd;
-        HANDLE h = FindFirstFileA((from + "\\*").c_str(), &fd);
-        if (h != INVALID_HANDLE_VALUE) {
+        HANDLE fh = FindFirstFileA((from + "\\*").c_str(), &fd);
+        if (fh != INVALID_HANDLE_VALUE) {
             CreateDirectoryA((dst + "\\ROTKFix").c_str(), NULL);
             CreateDirectoryA(to.c_str(), NULL);
             do {
@@ -1448,9 +1449,9 @@ bool install_to(const std::string &src, const std::string &dst, std::string &err
                 std::string n = fd.cFileName, f = from + "\\" + n, t = to + "\\" + n;
                 bool ini = n.size() > 4 && !_stricmp(n.c_str() + n.size() - 4, ".ini");
                 if (ini && file_exists(t)) continue;
-                if (!CopyFileA(f.c_str(), t.c_str(), FALSE)) { FindClose(h); err = "Could not copy ROTKFix\\mods\\" + n + "."; return false; }
-            } while (FindNextFileA(h, &fd));
-            FindClose(h);
+                if (!CopyFileA(f.c_str(), t.c_str(), FALSE)) { FindClose(fh); err = "Could not copy ROTKFix\\mods\\" + n + "."; return false; }
+            } while (FindNextFileA(fh, &fd));
+            FindClose(fh);
         }
     }
     return true;
