@@ -473,6 +473,12 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int) {
         LOGR("system: the game's threads on one core (mask %llX)", (unsigned long long)m);
     }
     if (!kernel::Boot(std::move(game.xbe), IMAGE_XBE, game.dir.string(), app::SavesDir().string())) {
+        // another version of the game (started anyway after the launcher's warning): say so in plain words, with the
+        // exit code the launcher shows in the player's language, not the log's addresses (a Reddit report, 1 Nov)
+        if (kernel::g_boot_wrong_release)
+            app::Fail(app::kExitWrongRelease,
+                      L"This copy of the game is a different version from the US release this port was made from, so it "
+                      L"can't start. Only the US version is supported for now (Athelas' language packs work on top of it).");
         MessageBoxW(app::g_hwnd, L"The game failed to start, see the log in the logs folder.", app::kGame.short_title,
                     MB_ICONERROR);
         return 1;

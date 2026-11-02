@@ -232,6 +232,8 @@ void SetFileProvider(FileData (*provider)(const std::string& xbox_path));
 
 // boot
 bool Boot(std::vector<uint8_t> xbe, const std::string& xbe_name, const std::string& game_dir, const std::string& data_dir);
+// Boot failed because the xbe is another build of the game than the one recompiled (another region or printing)
+extern bool g_boot_wrong_release;
 [[noreturn]] void Shutdown(int code);
 // the executable recompiled from an Xbox image path (D:\\default.xbe), null when there is none
 const char* ImageExe(std::string xbe_path);

@@ -52,6 +52,39 @@ namespace gpu {
 namespace {
 bool Drawn2D(const State& s);  // below
 
+// d3d12.dll is loaded when the renderer starts, not imported: a Wine prefix with only DXVK (no vkd3d) has no
+// d3d12.dll, and an import of it stopped the exe before main (STATUS_DLL_NOT_FOUND, even --version). Without it
+// Direct3D 12 just doesn't start and the game draws with Vulkan. (mingw's import library also takes
+// D3D12CreateDevice and D3D12GetDebugInterface by ordinal, which not every d3d12.dll exports; by name they are found.)
+struct D3D12Dll {
+    decltype(&::D3D12CreateDevice) create_device = nullptr;
+    decltype(&::D3D12GetDebugInterface) get_debug_interface = nullptr;
+    decltype(&::D3D12SerializeRootSignature) serialize_root_signature = nullptr;
+};
+
+const D3D12Dll& D3D12Functions() {
+    static const D3D12Dll dll = [] {
+        D3D12Dll d;
+        HMODULE m = LoadLibraryW(L"d3d12.dll");
+        if (!m) {
+            LOGR("d3d12: d3d12.dll not found (error %lu), Direct3D 12 unavailable", GetLastError());
+            return d;
+        }
+        d.create_device = reinterpret_cast<decltype(&::D3D12CreateDevice)>(
+            reinterpret_cast<void*>(GetProcAddress(m, "D3D12CreateDevice")));
+        d.get_debug_interface = reinterpret_cast<decltype(&::D3D12GetDebugInterface)>(
+            reinterpret_cast<void*>(GetProcAddress(m, "D3D12GetDebugInterface")));
+        d.serialize_root_signature = reinterpret_cast<decltype(&::D3D12SerializeRootSignature)>(
+            reinterpret_cast<void*>(GetProcAddress(m, "D3D12SerializeRootSignature")));
+        if (!d.create_device || !d.serialize_root_signature) {
+            LOGR("d3d12: d3d12.dll lacks D3D12CreateDevice or D3D12SerializeRootSignature, Direct3D 12 unavailable");
+            d.create_device = nullptr;
+        }
+        return d;
+    }();
+    return dll;
+}
+
 constexpr int kFrames = 3;
 constexpr uint64_t kStaleFrames = 8;  // frames a target may go unused and still be read back
 constexpr uint64_t kUploadSize = 64ull << 20;
@@ -973,13 +1006,18 @@ bool D3D12Backend::Init(uint32_t width, uint32_t height) {
 }
 
 bool D3D12Backend::CreateDevice() {
-    if (GetEnvironmentVariableW(L"XBE_D3D12_DEBUG", nullptr, 0)) {
+    const D3D12Dll& dll = D3D12Functions();
+    if (!dll.create_device) return false;
+    // (named as the d3d12.h functions, which they stand in for: the calls below are unchanged)
+    const auto D3D12CreateDevice = dll.create_device;
+    const auto D3D12GetDebugInterface = dll.get_debug_interface;
+    if (D3D12GetDebugInterface && GetEnvironmentVariableW(L"XBE_D3D12_DEBUG", nullptr, 0)) {
         ComPtr<ID3D12Debug> dbg;
         if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&dbg)))) dbg->EnableDebugLayer();
     }
     // XBE_DRED=1: Device Removed Extended Data, so a lost device's log says which command list stopped and any GPU
     // page fault (a small cost, so only when asked: XBE_DRED=1 in the environment before starting the game)
-    if (GetEnvironmentVariableW(L"XBE_DRED", nullptr, 0)) {
+    if (D3D12GetDebugInterface && GetEnvironmentVariableW(L"XBE_DRED", nullptr, 0)) {
         ComPtr<ID3D12DeviceRemovedExtendedDataSettings> dred;
         if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&dred)))) {
             dred->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
@@ -1186,7 +1224,7 @@ bool D3D12Backend::CreateRootSignature() {
     rsd.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
     ComPtr<ID3DBlob> rs;
     ComPtr<ID3DBlob> err;
-    if (FAILED(D3D12SerializeRootSignature(&rsd, D3D_ROOT_SIGNATURE_VERSION_1, &rs, &err))) return false;
+    if (FAILED(D3D12Functions().serialize_root_signature(&rsd, D3D_ROOT_SIGNATURE_VERSION_1, &rs, &err))) return false;
     dev_->CreateRootSignature(0, rs->GetBufferPointer(), rs->GetBufferSize(), IID_PPV_ARGS(&root_));
     return true;
 }

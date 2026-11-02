@@ -476,6 +476,13 @@ HLE_STDCALL(Direct3D_CreateDevice, 6) {
             g_backend.reset();  // its window surface released before Direct3D 12 takes the window
             g_backend = gpu::CreateD3D12Backend();
             ok = g_backend->Init(w, h);
+        } else if (!ok) {
+            // Direct3D 12 couldn't start (no d3d12.dll, as under Wine with DXVK alone, or no capable driver):
+            // Vulkan before giving up
+            LOGR("d3d12: not used, Vulkan instead");
+            g_backend.reset();
+            g_backend = gpu::CreateVulkanBackend();
+            ok = g_backend->Init(w, h);
         }
         if (!ok)
             app::Fail(app::kExitNoD3D12, L"Your graphics card or driver doesn't support Direct3D 12, which this "

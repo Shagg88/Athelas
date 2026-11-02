@@ -409,10 +409,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
             if (e.type == SDL_EVENT_WINDOW_RESIZED || e.type == SDL_EVENT_WINDOW_MAXIMIZED || e.type == SDL_EVENT_WINDOW_RESTORED)
                 window_remember(win);
             if (e.type == SDL_EVENT_DROP_FILE && !a.running) front_drop(a, e.drop.data);   // a game dropped on the window
-            if (e.type == SDL_EVENT_GAMEPAD_ADDED || e.type == SDL_EVENT_GAMEPAD_REMOVED) refresh_controllers(a);
+            if ((e.type == SDL_EVENT_GAMEPAD_ADDED || e.type == SDL_EVENT_GAMEPAD_REMOVED) && !a.running) refresh_controllers(a);
             capture_event(a, e);
         }
         music_pause(a.running != NULL);
+        {   // while a game plays, the launcher lets go of the controllers and comes back for them after: on a Steam
+            // Deck (Proton, Steam Input) a launcher still holding them could keep them from the game (a report on
+            // Reddit, 1 Nov: controllers not seen in the games since 1.5, when the launcher began staying open)
+            static bool held = true;
+            if (a.running && held) {
+                for (SDL_Gamepad *g : a.pads) SDL_CloseGamepad(g);
+                a.pads.clear();
+                SDL_QuitSubSystem(SDL_INIT_GAMEPAD);   // (the devices themselves too, not only the gamepads opened)
+                held = false;
+            } else if (!a.running && !held) {
+                SDL_InitSubSystem(SDL_INIT_GAMEPAD);
+                refresh_controllers(a);
+                held = true;
+            }
+        }
         if (a.running) {   // a port is playing: wait, hidden, for it to close
             if (WaitForSingleObject(a.running, 100) == WAIT_OBJECT_0) {
                 DWORD code = 0;

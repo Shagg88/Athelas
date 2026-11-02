@@ -273,6 +273,7 @@ static HMODULE load_backend(void)
 /* Chosen mode                                                          */
 
 static UINT g_modeW, g_modeH, g_modeRefresh;   /* the size the game draws at (its only display mode) */
+const UINT *graphics_mode_height_ptr(void) { return &g_modeH; }
 static UINT g_outW, g_outH;                    /* the size shown: a window's size, or the screen's in borderless */
 static UINT g_deskW, g_deskH, g_deskHz;        /* the desktop's own mode */
 static D3DFORMAT g_deskFormat = D3DFMT_X8R8G8B8;
@@ -454,16 +455,43 @@ static Reset_t     g_realReset;
 static IDirect3D8 *g_realD3D;
 static UINT        g_adapter;
 
+/* The present parameters last given to the real device (after our changes). */
+static D3DPRESENT_PARAMETERS g_appliedPP;
+static int                   g_haveAppliedPP;
+
 static void forget_device_state(void);
-static HRESULT WINAPI hook_Reset(IDirect3DDevice8 *dev, D3DPRESENT_PARAMETERS *pp)
+static HRESULT WINAPI hook_Reset(IDirect3DDevice8 *dev, D3DPRESENT_PARAMETERS *gamePP)
 {
-    if (pp) {
+    /* The game passes its own global settings block (0x5c231c) and reads it
+     * back later: its Windowed field (0x5c2338) decides whether the game moves
+     * and resizes its window itself, whether it sends its brightness ramp, and
+     * how its Video options pick the next mode. Changing that block in place
+     * made the game believe it was windowed: every Video option change then
+     * resized the window to 1024x768 and back (flicker), the options fell to
+     * 1024 wide / 16-bit, and the game kept windowed-only behaviour into the
+     * levels. So the corrections go into a copy; the game's block stays as the
+     * game wrote it. */
+    D3DPRESENT_PARAMETERS ours, *pp = NULL;
+    if (gamePP) {
+        ours = *gamePP;
+        pp = &ours;
         setup_window(pp->hDeviceWindow ? pp->hDeviceWindow : g_window, g_realD3D, g_adapter);
         fix_present_params(pp, g_realD3D, g_adapter, g_window);
     }
     forget_device_state();
+    /* A Video option that our settings override (e.g. 16/32-bit colour while
+     * borderless) gives exactly the same device as before. The game releases
+     * and recreates its video-memory buffers around Reset itself, which works
+     * the same without a real Reset, so skip it when the device is healthy:
+     * no swapchain rebuild, no black flash. */
+    if (pp && g_haveAppliedPP && !memcmp(pp, &g_appliedPP, sizeof *pp)
+        && IDirect3DDevice8_TestCooperativeLevel(dev) == D3D_OK) {
+        logf_("graphics: Reset with unchanged settings skipped");
+        return D3D_OK;
+    }
     HRESULT hr = g_realReset(dev, pp);
-    if (FAILED(hr)) logf_("graphics: Reset failed (%#lx)", (unsigned long)hr);
+    if (FAILED(hr)) { logf_("graphics: Reset failed (%#lx)", (unsigned long)hr); g_haveAppliedPP = 0; }
+    else if (pp) { g_appliedPP = *pp; g_haveAppliedPP = 1; }
     return hr;
 }
 
@@ -521,6 +549,14 @@ static HRESULT WINAPI hook_SetRS(IDirect3DDevice8 *dev, D3DRENDERSTATETYPE s, DW
     case D3DRS_FOGSTART:        g_fogStart = dw2f(v); g_fogSeen |= 1; return g_realSetRS(dev, s, fog_scaled(s, v));
     case D3DRS_FOGEND:          g_fogEnd = dw2f(v); g_fogSeen |= 2; return g_realSetRS(dev, s, fog_scaled(s, v));
     case D3DRS_FOGDENSITY:      g_fogDensity = dw2f(v); g_fogSeen |= 4; return g_realSetRS(dev, s, fog_scaled(s, v));
+    case D3DRS_MULTISAMPLEANTIALIAS:
+        /* After creating the device and after each Video option change the game
+         * sets this to match its own anti-aliasing option, which is off when our
+         * MSAA setting is used. Off, DXVK draws every edge with one sample, so
+         * there was no anti-aliasing until something reset the device (which
+         * restores the default, on): the loading ring at start-up stayed jagged. */
+        if (g_msaa) v = TRUE;
+        break;
     default: break;
     }
     return g_realSetRS(dev, s, v);
@@ -1515,6 +1551,30 @@ static HRESULT WINAPI hook_DrawIndexedPrimitive(IDirect3DDevice8 *dev, D3DPRIMIT
     return hr;
 }
 
+/* The game sets the Windows cursor (normally none: it draws its own pointer)
+ * only when its window handles WM_SETCURSOR, which Windows sends when the
+ * mouse moves. While the game loads it handles no messages, so a mouse that
+ * has not moved over the window since it appeared still shows the Windows
+ * arrow, which Windows turns into the spinning "starting" cursor while the
+ * game is busy. So each frame, with the mouse over the game's picture, apply
+ * the game's own cursor choice (its function at 0x4a5160) ahead of time. */
+#define GAME_CURSOR_FN 0x4a5160
+static void keep_game_cursor(void)
+{
+    static const BYTE sig[] = { 0xA0, 0x72, 0x23, 0x5C, 0x00, 0x8B, 0x0D, 0x74, 0x23, 0x5C, 0x00,
+                                0xF6, 0xD8, 0x1B, 0xC0, 0x23, 0xC1, 0xC3 };
+    static int ok = -1;
+    if (ok < 0) ok = readable((void *)GAME_CURSOR_FN, sizeof sig) && !memcmp((void *)GAME_CURSOR_FN, sig, sizeof sig);
+    if (!ok || !g_window || GetForegroundWindow() != g_window) return;
+    POINT pt;
+    RECT rc;
+    if (!GetCursorPos(&pt) || WindowFromPoint(pt) != g_window) return;
+    ScreenToClient(g_window, &pt);
+    if (!GetClientRect(g_window, &rc) || !PtInRect(&rc, pt)) return;   /* not over a title bar or border */
+    HCURSOR c = ((HCURSOR (__cdecl *)(void))GAME_CURSOR_FN)();
+    if (GetCursor() != c) SetCursor(c);
+}
+
 /* Menu screens with little or no 3D leave the side bars untouched, so stale
  * images from earlier screens show there. Paint them black before showing. */
 static HRESULT WINAPI hook_Present(IDirect3DDevice8 *dev, const RECT *a, const RECT *b, HWND w, const RGNDATA *r)
@@ -1553,6 +1613,7 @@ static HRESULT WINAPI hook_Present(IDirect3DDevice8 *dev, const RECT *a, const R
               (unsigned long)g_fogEnable, (unsigned long)g_fogTable, (unsigned long)g_fogVertex,
               (unsigned long)g_fogRange, g_fogStart, g_fogEnd, g_fogDensity, (unsigned long)g_fogColor);
     }
+    keep_game_cursor();
     g_draws3D = 0;
     g_copyDrawn = 0;
     limiter_present_backstop();
@@ -1688,8 +1749,12 @@ static int switch_to_native(D3D8Wrap *w)
 
 static HRESULT WINAPI w_CreateDevice(IDirect3D8 *This, UINT a, D3DDEVTYPE t, HWND focus, DWORD flags, D3DPRESENT_PARAMETERS *pp, IDirect3DDevice8 **dev)
 {
-    D3DPRESENT_PARAMETERS asked;
-    if (pp) asked = *pp;   /* as the game passed them, for a second try on another renderer */
+    D3DPRESENT_PARAMETERS asked, ours;
+    if (pp) {
+        asked = *pp;   /* as the game passed them, for a second try on another renderer */
+        ours = *pp;    /* corrections go into a copy: the game reads its own block back (see hook_Reset) */
+        pp = &ours;
+    }
     int dispAsked = g_dispMode;
     UINT outWAsked = g_outW, outHAsked = g_outH;
     a = AD(a);
@@ -1735,6 +1800,8 @@ static HRESULT WINAPI w_CreateDevice(IDirect3D8 *This, UINT a, D3DDEVTYPE t, HWN
     }
     if (FAILED(hr)) { logf_("graphics: CreateDevice failed (%#lx)", (unsigned long)hr); return hr; }
     logf_("graphics: device created (behavior flags %#lx)", (unsigned long)flags);
+    g_haveAppliedPP = 0;
+    if (pp) { g_appliedPP = *pp; g_haveAppliedPP = 1; }
     forget_device_state();
     g_moviePS = 0; g_hud2xPS = 0; g_moviePSFailed = 0;        /* shaders belong to the old device */
     hook_device(*dev);

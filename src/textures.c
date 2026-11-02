@@ -2,9 +2,9 @@
  * ROTK Fix - texture dump and replacement
  *
  * Every game texture is recognised by a fingerprint of its contents (size,
- * format and pixels of the full-size level): when dumping, as the game loads
- * it (so loading a level saves all of that level's textures); otherwise the
- * first time the game binds it for drawing.
+ * format and pixels of the full-size level), taken as the game loads it (so
+ * loading a level saves all of that level's textures, and replacements are
+ * made during the loading screen rather than in the middle of play).
  *
  *  - Dump ([Textures] Dump=1): each new texture is saved once as
  *      ROTKFix\textures\dump\<w>x<h>_<fingerprint>.png
@@ -14,6 +14,13 @@
  *    whose name ends in the same 16-digit fingerprint is drawn instead of
  *    that texture. Any size; mipmaps are made from it. Names may carry a
  *    prefix, e.g. "hud_health_256x64_0123456789abcdef.png".
+ *    A DDS file of the same name (.dds, next to or instead of the PNG) is
+ *    used first: DXT1, DXT3, DXT5 or A8R8G8B8, with its own mipmaps. It is
+ *    copied to the graphics card as it is, with no decoding, so it loads
+ *    several times faster than a PNG. If the card cannot use its format,
+ *    the PNG is used.
+ *    Replacements whose game texture is freed (level change, menu) are kept
+ *    for a while (up to 96 MB), so going back does not make them again.
  *
  * Skipped: render targets and screen copies, textures the game rewrites
  * (movie frames: changed more than 3 times), text (font textures), and
@@ -62,7 +69,8 @@ void textures_load_settings(const char *ini)
 }
 
 /* ---- replacement files: fingerprint -> path ---- */
-typedef struct { unsigned long long hash; char *path; } Repl;
+/* path is the file name without ".png"/".dds"; png/dds say which exist */
+typedef struct { unsigned long long hash; char *path; BYTE png, dds; } Repl;
 static Repl *g_repl;
 static int g_nrepl, g_caprepl;
 
@@ -81,7 +89,8 @@ static void scan_dir(const char *dir, int depth)
         snprintf(full, sizeof full, "%s\\%s", dir, fd.cFileName);
         if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) { if (depth < 6) scan_dir(full, depth + 1); continue; }
         size_t n = strlen(fd.cFileName);
-        if (n < 20 || _stricmp(fd.cFileName + n - 4, ".png")) continue;
+        int isdds = n >= 20 && !_stricmp(fd.cFileName + n - 4, ".dds");
+        if (n < 20 || (!isdds && _stricmp(fd.cFileName + n - 4, ".png"))) continue;
         const char *hx = fd.cFileName + n - 4 - 16;
         unsigned long long v = 0; int ok = 1;
         for (int i = 0; i < 16 && ok; i++) { int d = hexval(hx[i]); if (d < 0) ok = 0; else v = v << 4 | (unsigned)d; }
@@ -93,6 +102,8 @@ static void scan_dir(const char *dir, int depth)
             g_repl = r; g_caprepl = cap;
         }
         g_repl[g_nrepl].hash = v;
+        g_repl[g_nrepl].png = (BYTE)!isdds; g_repl[g_nrepl].dds = (BYTE)isdds;
+        full[strlen(full) - 4] = 0;
         g_repl[g_nrepl].path = _strdup(full);
         if (g_repl[g_nrepl].path) g_nrepl++;
     } while (FindNextFileA(h, &fd));
@@ -101,14 +112,30 @@ static void scan_dir(const char *dir, int depth)
 static int cmp_repl(const void *a, const void *b)
 {
     unsigned long long x = ((const Repl *)a)->hash, y = ((const Repl *)b)->hash;
-    return (x > y) - (x < y);
+    if (x != y) return (x > y) - (x < y);
+    return _stricmp(((const Repl *)a)->path, ((const Repl *)b)->path);
 }
-static const char *find_repl(unsigned long long h)
+/* After sorting: a PNG and a DDS of the same name become one entry. Two
+ * different names with the same fingerprint: the first (by name) is used. */
+static void merge_repl(void)
+{
+    int o = 0;
+    for (int i = 0; i < g_nrepl; i++) {
+        if (o && g_repl[o - 1].hash == g_repl[i].hash) {
+            if (!_stricmp(g_repl[o - 1].path, g_repl[i].path)) { g_repl[o - 1].png |= g_repl[i].png; g_repl[o - 1].dds |= g_repl[i].dds; }
+            free(g_repl[i].path);
+            continue;
+        }
+        g_repl[o++] = g_repl[i];
+    }
+    g_nrepl = o;
+}
+static const Repl *find_repl(unsigned long long h)
 {
     int lo = 0, hi = g_nrepl - 1;
     while (lo <= hi) {
         int mid = (lo + hi) / 2;
-        if (g_repl[mid].hash == h) return g_repl[mid].path;
+        if (g_repl[mid].hash == h) return &g_repl[mid];
         if (g_repl[mid].hash < h) lo = mid + 1; else hi = mid - 1;
     }
     return NULL;
@@ -116,7 +143,7 @@ static const char *find_repl(unsigned long long h)
 
 /* ---- per-texture records (open addressing, keyed by texture pointer) ---- */
 enum { ST_NEW, ST_HASHED, ST_DONE, ST_SKIP };   /* HASHED: fingerprinted at load, replacement not looked up yet */
-typedef struct { void *tex; IDirect3DTexture8 *repl; unsigned long long hash; WORD w, h; BYTE state, unlocks; } Rec;
+typedef struct { void *tex; IDirect3DTexture8 *repl; unsigned long long hash; WORD w, h; BYTE state, unlocks, managed; } Rec;
 #define TAB_BITS 15
 #define TAB_SIZE (1u << TAB_BITS)
 static Rec g_tab[TAB_SIZE];
@@ -299,7 +326,9 @@ static void queue_dump(BYTE *rgba, UINT w, UINT h, unsigned long long hash)
 }
 
 /* ---- replacement textures ---- */
-static IDirect3DTexture8 *make_replacement(IDirect3DDevice8 *dev, const char *path)
+static IDirect3DDevice8 *g_dev;          /* the device replacements (and the cache) belong to */
+
+static IDirect3DTexture8 *make_png(IDirect3DDevice8 *dev, const char *path)
 {
     int w, h, n;
     BYTE *img = stbi_load(path, &w, &h, &n, 4);
@@ -343,9 +372,182 @@ static IDirect3DTexture8 *make_replacement(IDirect3DDevice8 *dev, const char *pa
     return t;
 }
 
+/* Can the card use format f for an ordinary texture? Asked once per format
+ * (per device). Real D3D8 cards and DXVK all take DXT1/3/5 and A8R8G8B8,
+ * but a pack should not turn into black squares on one that does not. */
+static int format_ok(IDirect3DDevice8 *dev, D3DFORMAT f)
+{
+    static IDirect3DDevice8 *askedDev;
+    static DWORD asked[8]; static BYTE answer[8]; static int nasked;
+    if (askedDev != dev) { askedDev = dev; nasked = 0; }
+    for (int i = 0; i < nasked; i++) if (asked[i] == (DWORD)f) return answer[i];
+    int ok = 0;
+    IDirect3D8 *d3d = NULL;
+    D3DDEVICE_CREATION_PARAMETERS cp;
+    D3DDISPLAYMODE dm;
+    if (SUCCEEDED(IDirect3DDevice8_GetDirect3D(dev, &d3d)) && d3d) {
+        if (SUCCEEDED(IDirect3DDevice8_GetCreationParameters(dev, &cp)) &&
+            SUCCEEDED(IDirect3D8_GetAdapterDisplayMode(d3d, cp.AdapterOrdinal, &dm)))
+            ok = SUCCEEDED(IDirect3D8_CheckDeviceFormat(d3d, cp.AdapterOrdinal, cp.DeviceType, dm.Format, 0, D3DRTYPE_TEXTURE, f));
+        IDirect3D8_Release(d3d);
+    }
+    if (nasked < 8) { asked[nasked] = (DWORD)f; answer[nasked] = (BYTE)ok; nasked++; }
+    if (!ok) logf_("textures: the graphics card cannot use DDS format %#lx; the PNG is used instead", (unsigned long)f);
+    return ok;
+}
+
+/* A DDS file already holds the picture the way the card stores it, mipmaps
+ * included, so each level is copied straight in. NULL (and the PNG is tried)
+ * if the file is not one of the formats below or the card cannot use it. */
+static DWORD rd32(const BYTE *p) { return (DWORD)p[0] | (DWORD)p[1] << 8 | (DWORD)p[2] << 16 | (DWORD)p[3] << 24; }
+static IDirect3DTexture8 *make_dds(IDirect3DDevice8 *dev, const char *path)
+{
+    FILE *f = fopen(path, "rb");
+    if (!f) { logf_("textures: could not read %s", path); return NULL; }
+    fseek(f, 0, SEEK_END);
+    long size = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    BYTE *buf = size > 128 && size < (64L << 20) ? (BYTE *)malloc((size_t)size) : NULL;
+    int got = buf && fread(buf, 1, (size_t)size, f) == (size_t)size;
+    fclose(f);
+    if (!got) { free(buf); logf_("textures: could not read %s", path); return NULL; }
+
+    /* header: "DDS ", then 124 bytes; the pixel format block starts at 76 */
+    const char *why = NULL;
+    UINT w = rd32(buf + 16), h = rd32(buf + 12), mips = rd32(buf + 28);
+    DWORD pfFlags = rd32(buf + 80), fourcc = rd32(buf + 84);
+    D3DFORMAT fmt = D3DFMT_UNKNOWN;
+    int blk = 0;
+    if (memcmp(buf, "DDS ", 4) || rd32(buf + 4) != 124) why = "not a DDS file";
+    else if (rd32(buf + 112) & 0x200) why = "cube maps are not used";              /* DDSCAPS2_CUBEMAP */
+    else if (pfFlags & 4) {                                                         /* DDPF_FOURCC */
+        if (fourcc == FOURCC('D','X','T','1')) blk = 8;
+        else if (fourcc == FOURCC('D','X','T','3') || fourcc == FOURCC('D','X','T','5')) blk = 16;
+        else why = "unsupported format (use DXT1, DXT3, DXT5 or A8R8G8B8)";
+        fmt = (D3DFORMAT)fourcc;
+    } else if ((pfFlags & 0x40) && (pfFlags & 1) && rd32(buf + 88) == 32 &&         /* DDPF_RGB | DDPF_ALPHAPIXELS */
+               rd32(buf + 92) == 0xff0000 && rd32(buf + 96) == 0xff00 && rd32(buf + 100) == 0xff && rd32(buf + 104) == 0xff000000u)
+        fmt = D3DFMT_A8R8G8B8;
+    else why = "unsupported format (use DXT1, DXT3, DXT5 or A8R8G8B8)";
+    if (!why && (w < 1 || h < 1 || w > 4096 || h > 4096)) why = "bad size";
+    /* DXT textures are made of 4x4 blocks; cards want the full size to be whole blocks */
+    if (!why && blk && ((w & 3) || (h & 3))) why = "DXT size must be a multiple of 4";
+    if (why) { free(buf); logf_("textures: %s: %s; trying the PNG", path, why); return NULL; }
+    if (!format_ok(dev, fmt)) { free(buf); return NULL; }
+
+    /* levels: as many as the file says (DDSD_MIPMAPCOUNT), no more than a full chain */
+    UINT full = 1;
+    for (UINT m = w > h ? w : h; m > 1; m >>= 1) full++;
+    UINT levels = (rd32(buf + 8) & 0x20000) && mips ? mips : 1;
+    if (levels > full) levels = full;
+    /* a short file: keep the levels it really holds */
+    size_t off = 128, need = off;
+    UINT have = 0;
+    for (UINT lv = 0, lw = w, lh = h; lv < levels; lv++) {
+        size_t bytes = blk ? (size_t)((lw + 3) / 4) * ((lh + 3) / 4) * blk : (size_t)lw * lh * 4;
+        if (need + bytes > (size_t)size) break;
+        need += bytes; have++;
+        lw = lw > 1 ? lw / 2 : 1; lh = lh > 1 ? lh / 2 : 1;
+    }
+    if (!have) { free(buf); logf_("textures: %s is cut short; trying the PNG", path); return NULL; }
+    levels = have;
+
+    IDirect3DTexture8 *t = NULL;
+    if (FAILED(g_createTex(dev, w, h, levels, 0, fmt, D3DPOOL_MANAGED, &t)) || !t) {
+        free(buf);
+        logf_("textures: could not create a %ux%u texture for %s; trying the PNG", w, h, path);
+        return NULL;
+    }
+    for (UINT lv = 0, lw = w, lh = h; lv < levels; lv++) {
+        UINT rows = blk ? (lh + 3) / 4 : lh;
+        size_t rowBytes = blk ? (size_t)((lw + 3) / 4) * blk : (size_t)lw * 4;
+        D3DLOCKED_RECT lr;
+        if (SUCCEEDED(g_realLock(t, lv, &lr, NULL, 0)) && lr.pBits) {
+            for (UINT y = 0; y < rows; y++) memcpy((BYTE *)lr.pBits + (size_t)y * lr.Pitch, buf + off + y * rowBytes, rowBytes);
+            g_realUnlock(t, lv);
+        }
+        off += rowBytes * rows;
+        lw = lw > 1 ? lw / 2 : 1; lh = lh > 1 ? lh / 2 : 1;
+    }
+    free(buf);
+    return t;
+}
+
+static void release_tex(IDirect3DTexture8 *t) { ((Rel_t)(*(void ***)t)[2])((IUnknown *)t); }
+
+/* ---- replacements kept after their game texture is freed ----
+ * The game frees and reloads its textures on every level change and menu
+ * visit. Keeping the most recently freed replacements (by fingerprint) means
+ * coming back to a place does not read and build them again. The game runs
+ * in 32 bits, and a managed texture also keeps a copy in the game's own
+ * memory, so the total is capped well below what would hurt. */
+#define CACHE_MAX   256
+#define CACHE_BYTES (96u << 20)
+typedef struct { unsigned long long hash; IDirect3DTexture8 *tex; DWORD bytes, used; } Cached;
+static Cached g_cache[CACHE_MAX];
+static int g_ncache;
+static DWORD g_cacheBytes, g_cacheTick;
+
+static DWORD tex_bytes(IDirect3DTexture8 *t)
+{
+    D3DSURFACE_DESC d;
+    if (FAILED(((GetLevelDesc_t)(*(void ***)t)[14])(t, 0, &d))) return 1u << 20;
+    return d.Size + d.Size / 3;   /* the mipmaps add about a third */
+}
+static void cache_drop(int i)
+{
+    release_tex(g_cache[i].tex);
+    g_cacheBytes -= g_cache[i].bytes;
+    g_cache[i] = g_cache[--g_ncache];
+}
+static void cache_flush(void) { while (g_ncache) cache_drop(g_ncache - 1); }
+static void cache_put(unsigned long long hash, IDirect3DTexture8 *t)
+{
+    DWORD bytes = tex_bytes(t);
+    if (bytes > CACHE_BYTES / 4) { release_tex(t); return; }   /* one huge picture would push out everything else */
+    while (g_ncache && (g_ncache == CACHE_MAX || g_cacheBytes + bytes > CACHE_BYTES)) {
+        int old = 0;   /* the one unused the longest goes first */
+        for (int i = 1; i < g_ncache; i++) if (g_cache[i].used - g_cacheTick < g_cache[old].used - g_cacheTick) old = i;
+        cache_drop(old);
+    }
+    g_cache[g_ncache].hash = hash; g_cache[g_ncache].tex = t;
+    g_cache[g_ncache].bytes = bytes; g_cache[g_ncache].used = ++g_cacheTick;
+    g_ncache++;
+    g_cacheBytes += bytes;
+}
+static IDirect3DTexture8 *cache_take(unsigned long long hash)
+{
+    for (int i = 0; i < g_ncache; i++)
+        if (g_cache[i].hash == hash) {
+            IDirect3DTexture8 *t = g_cache[i].tex;
+            g_cacheBytes -= g_cache[i].bytes;
+            g_cache[i] = g_cache[--g_ncache];
+            return t;
+        }
+    return NULL;
+}
+
+/* The replacement for fingerprint r->hash: kept from before, the DDS file,
+ * or the PNG file, in that order. */
+static void make_replacement(Rec *r, IDirect3DDevice8 *dev)
+{
+    const Repl *e = g_nrepl ? find_repl(r->hash) : NULL;
+    if (!e) return;
+    r->repl = cache_take(r->hash);
+    int fromDds = 0;
+    if (!r->repl) {
+        char file[MAX_PATH];
+        if (e->dds) { snprintf(file, sizeof file, "%s.dds", e->path); r->repl = make_dds(dev, file); fromDds = r->repl != NULL; }
+        if (!r->repl && e->png) { snprintf(file, sizeof file, "%s.png", e->path); r->repl = make_png(dev, file); }
+    }
+    static int logged;
+    if (r->repl && logged++ < 20) logf_("textures: replaced %ux%u_%016llx%s", r->w, r->h, r->hash, fromDds ? " (DDS)" : "");
+}
+
+/* the game texture's contents changed or it was freed: keep its replacement for later */
 static void drop_replacement(Rec *r)
 {
-    if (r->repl) { IDirect3DTexture8 *t = r->repl; r->repl = NULL; ((Rel_t)(*(void ***)t)[2])((IUnknown *)t); }
+    if (r->repl) { IDirect3DTexture8 *t = r->repl; r->repl = NULL; cache_put(r->hash, t); }
 }
 
 /* ---- hooks ---- */
@@ -354,11 +556,17 @@ static HRESULT WINAPI hook_TexUnlock(IDirect3DTexture8 *t, UINT level)
 {
     HRESULT hr = g_realUnlock(t, level);
     Rec *r = level == 0 ? rec_find(t) : NULL;
-    if (!r && level == 0 && g_dump) {
-        /* dumping: save each texture as the game loads it (the full-size
-         * level is filled first), so loading a level saves all of it */
+    if (!r && level == 0) {
+        /* the first time the game fills a texture: fingerprint it now, as
+         * the level loads. Dumping saves it; with a pack, its replacement is
+         * made now too, during the loading screen, instead of stalling play
+         * the first time it is drawn. Only for managed textures, the ones
+         * the game draws with (its other textures are just staging copies). */
         r = rec_add(t);
-        if (r) examine(r, t);
+        if (r && examine(r, t) && g_nrepl && r->managed && g_dev && g_createTex) {
+            make_replacement(r, g_dev);
+            r->state = ST_DONE;
+        }
         return hr;
     }
     if (r && r->state != ST_SKIP) {
@@ -390,7 +598,10 @@ static void start(void)
         scan_dir(g_replDir, 0);
         if (g_nrepl) {
             qsort(g_repl, g_nrepl, sizeof *g_repl, cmp_repl);
-            logf_("textures: %d replacement picture(s) in ROTKFix\\textures\\replace", g_nrepl);
+            merge_repl();
+            int ndds = 0;
+            for (int i = 0; i < g_nrepl; i++) ndds += g_repl[i].dds;
+            logf_("textures: %d replacement picture(s) in ROTKFix\\textures\\replace (%d as DDS)", g_nrepl, ndds);
         }
     }
     if (g_dump) {
@@ -408,9 +619,10 @@ static void start(void)
 /* graphics.c: a texture was created (hook the shared texture vtable once) */
 void textures_on_create(void *dev, void *create, void *tex)
 {
-    (void)dev;
     if (!g_started) start();
     if (!g_dump && !g_nrepl) return;
+    /* kept replacements belong to the device that made them */
+    if (g_dev != (IDirect3DDevice8 *)dev) { cache_flush(); g_dev = (IDirect3DDevice8 *)dev; }
     g_createTex = (CreateTex_t)create;
     void **vt = *(void ***)tex;
     g_realLock = (TexLock_t)vt[16];
@@ -444,6 +656,7 @@ static int examine(Rec *r, IDirect3DTexture8 *tx)
         for (; i < rowBytes; i++) h = (h ^ p[i]) * 1099511628211ull;
     }
     r->hash = h;
+    r->managed = d.Pool == D3DPOOL_MANAGED;
     r->w = (WORD)d.Width; r->h = (WORD)d.Height;
     BYTE *rgba = g_dump ? to_rgba((const BYTE *)lr.pBits, lr.Pitch, d.Width, d.Height, d.Format) : NULL;
     g_realUnlock(tx, 0);
@@ -458,6 +671,9 @@ void *textures_bind(void *dev, void *t, int skip)
 {
     if (!t || (!g_dump && !g_nrepl) || !g_realUnlock || !g_createTex) return t;
     Rec *r = rec_find(t);
+    /* a replacement made at load time for what turns out to be text or a
+     * screen copy: those are never replaced */
+    if (r && skip && r->repl) drop_replacement(r);
     if (r && r->state == ST_DONE) return r->repl ? (void *)r->repl : t;
     if (r && r->state == ST_SKIP) return t;
     if (!r) {
@@ -467,12 +683,7 @@ void *textures_bind(void *dev, void *t, int skip)
     }
     if (r->state == ST_NEW && !examine(r, (IDirect3DTexture8 *)t)) return t;
     r->state = ST_DONE;
-    const char *path = (g_nrepl && !skip) ? find_repl(r->hash) : NULL;
-    if (path) {
-        r->repl = make_replacement((IDirect3DDevice8 *)dev, path);
-        static int logged;
-        if (r->repl && logged++ < 20) logf_("textures: replaced %ux%u_%016llx", r->w, r->h, r->hash);
-    }
+    if (!skip) make_replacement(r, (IDirect3DDevice8 *)dev);
     return r->repl ? (void *)r->repl : t;
 }
 
@@ -499,6 +710,7 @@ void textures_on_release(void *t)
     Rec *r = rec_find(t);
     if (!r) return;
     IDirect3DTexture8 *repl = r->repl;
+    unsigned long long hash = r->hash;
     rec_remove(r);
-    if (repl) ((Rel_t)(*(void ***)repl)[2])((IUnknown *)repl);
+    if (repl) cache_put(hash, repl);
 }

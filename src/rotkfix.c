@@ -985,6 +985,25 @@ int movie_fit(void) { return g_movieFit; }
  * from the player's own copy). The game's files are never changed. */
 static char g_moviePath[MAX_PATH];
 
+/* SkipOpeningLogos: the game's skip check (0x50c6f0) takes the press from
+ * its input queue first and only then checks that the movie is far enough
+ * in (a position above 29, read through 0x4a1e50) - an early press is used
+ * up for nothing, so the single press sent 400 ms in could be lost. Enter
+ * is now pressed every 250 ms while the logos are on screen, from 1.5 s in
+ * (plus CutsceneAudioDelay), and stops as soon as another movie
+ * starts (so it can't skip the next one) or after 60 s. */
+static volatile int   g_logoSkip;
+static volatile DWORD g_logoSkipStart;
+static int logo_skip_ready(void)
+{
+    if (!g_logoSkip) return -1;
+    DWORD t = GetTickCount() - g_logoSkipStart;
+    if (t > 60000) { g_logoSkip = 0; return -1; }
+    if (t < 1500u + (DWORD)g_audioDelayMs) return 0;
+    if (!graphics_enabled()) { g_logoSkip = 0; return 1; }   /* can't see the movie: one press only */
+    return graphics_movie_playing() ? 1 : 0;                 /* never into the menu after the logos */
+}
+
 static const char *__cdecl on_movie_start(const char *path)
 {
     char name[64] = "";
@@ -1005,8 +1024,12 @@ static const char *__cdecl on_movie_start(const char *path)
     logf_("video: playing %s -> %s", name[0] ? name : "(unknown)", fitName[g_movieFit]);
     g_movieHold = g_audioDelayMs / 1000.0f;
     if (g_skipLogos && !strncmp(name, "logos", 5)) {
-        input_inject_key_press(0x1C /* DIK_RETURN */, 400);
+        g_logoSkipStart = GetTickCount();
+        g_logoSkip = 1;
+        input_inject_key_presses(0x1C /* DIK_RETURN */, logo_skip_ready);
         logf_("video: skipping the opening logos (SkipOpeningLogos=1)");
+    } else {
+        g_logoSkip = 0;   /* any other movie: never skip it by mistake */
     }
     if (g_movieOverrides && name[0] && !strchr(name, ':') && !strstr(name, "..")) {
         char rel[MAX_PATH], full[MAX_PATH];
@@ -1117,12 +1140,20 @@ static void patch_dev_buttons(void)
 
 static void patch_video_skipping(void)
 {
-    if (!g_skipAllVideos) { logf_("video: AllowSkippingAllVideos=0, keeping the game's rules"); return; }
+    if (!g_skipAllVideos && !g_skipLogos) { logf_("video: AllowSkippingAllVideos=0, keeping the game's rules"); return; }
     DWORD *t = (DWORD *)ADDR_MOVIE_TABLE;
     if (!readable(t, 8 * 32)) { logf_("video: movie table not readable"); return; }
     /* sanity check: first entry must be "LOGOS" with type 0..2 */
     const char *first = (const char *)t[0];
     if (!readable(first, 6) || memcmp(first, "LOGOS", 6) != 0) { logf_("video: movie table not recognised, not patching"); return; }
+    if (!g_skipAllVideos) {
+        /* SkipOpeningLogos needs the logos to be skippable (the game makes
+         * them never skippable); every other movie keeps the game's rules */
+        DWORD one = 1;
+        if (t[1] != 1 && t[1] <= 2) write_code(&t[1], &one, 4);
+        logf_("video: AllowSkippingAllVideos=0, keeping the game's rules (the opening logos made skippable for SkipOpeningLogos)");
+        return;
+    }
     int changed = 0, i;
     for (i = 0; i < 32; i++) {
         DWORD type = t[i * 2 + 1];
@@ -1140,6 +1171,25 @@ static void patch_video_skipping(void)
  *   lea eax,[edx+edx*2] ; shr eax,2 ; cmp eax,ebx ; jne skip
  * Removing the jne lets widescreen modes through. */
 #define ADDR_43_CHECK 0x004A443Au
+
+/* The Video options list keeps only widths and names each mode
+ * "%0dx%0d" with the height worked out as width*3/4 (0x50900c:
+ *   lea edx,[edi+edi*2] ; shr edx,2), so 1920x1080 showed as 1920x1440.
+ * The game is only ever offered one mode (graphics.c), so the label reads
+ * that mode's real height instead: mov edx,[g_modeH]. Same 6 bytes. */
+#define ADDR_MODE_LABEL 0x0050900Cu
+static void patch_mode_label(void)
+{
+    static const unsigned char sig[6] = { 0x8D, 0x14, 0x7F, 0xC1, 0xEA, 0x02 };
+    if (!readable((void *)ADDR_MODE_LABEL, 6) || memcmp((void *)ADDR_MODE_LABEL, sig, 6) != 0) {
+        logf_("graphics: resolution label code not found, not patching");
+        return;
+    }
+    unsigned char mov[6] = { 0x8B, 0x15 };
+    *(DWORD *)(mov + 2) = (DWORD)(DWORD_PTR)graphics_mode_height_ptr();
+    if (write_code((void *)ADDR_MODE_LABEL, mov, 6))
+        logf_("graphics: resolution list shows the real height");
+}
 static void patch_mode_filter(void)
 {
     static const unsigned char sig[10] = { 0x8D, 0x04, 0x52, 0xC1, 0xE8, 0x02, 0x3B, 0xC3, 0x75, 0x7E };
@@ -1151,6 +1201,7 @@ static void patch_mode_filter(void)
     static const unsigned char nops[2] = { 0x90, 0x90 };
     if (write_code((void *)(ADDR_43_CHECK + 8), nops, 2))
         logf_("graphics: removed the game's 4:3-only display mode filter");
+    patch_mode_label();
 }
 
 /* The game rebuilds its DirectInput devices on every screen change and
@@ -1337,6 +1388,15 @@ BOOL WINAPI DllMain(HINSTANCE inst, DWORD reason, LPVOID reserved)
                 SetAware_t old = (SetAware_t)(void *)GetProcAddress(u, "SetProcessDPIAware");
                 g_dpiAware = old && old();
             }
+        }
+        /* Loading a level the game handles no window messages for a while. After a few seconds Windows
+         * would swap the window for a frozen "ghost" copy with a busy cursor (and "Not Responding"); the
+         * game always comes back, so turn that off. */
+        {
+            typedef void (WINAPI *NoGhost_t)(void);
+            HMODULE u = GetModuleHandleA("user32.dll");
+            NoGhost_t ng = u ? (NoGhost_t)(void *)GetProcAddress(u, "DisableProcessWindowsGhosting") : NULL;
+            if (ng) ng();
         }
         if (g_logEnabled) {
             char lp[MAX_PATH]; path_in_dir(lp, "ROTKFix.log");

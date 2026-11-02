@@ -73,6 +73,8 @@ void SetSavedDataAddress(uint32_t surface) { g_saved_data = surface; }
 const xbe::Image* g_image = nullptr;
 static xbe::Image g_xbe;
 
+bool g_boot_wrong_release = false;
+
 bool Boot(std::vector<uint8_t> xbe, const std::string& xbe_name, const std::string& game_dir, const std::string& data_dir) {
     if (!mem::Init()) return false;
     g_base = mem::Base();
@@ -87,6 +89,7 @@ bool Boot(std::vector<uint8_t> xbe, const std::string& xbe_name, const std::stri
     if (img.entry != X86EntryPoint) {
         LOGE("boot: %s entry %08X does not match the recompiled entry %08X, wrong executable", xbe_name.c_str(), img.entry,
              X86EntryPoint);
+        g_boot_wrong_release = true;   // (the caller tells the player in plain words: another version of the game)
         return false;
     }
     LOGI("boot: title %08X, entry %08X, %zu sections", img.title_id, img.entry, img.sections.size());

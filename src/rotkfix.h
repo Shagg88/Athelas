@@ -32,6 +32,7 @@ void    graphics_load_settings(const char *ini);
 int     graphics_enabled(void);
 int     graphics_is_windowed(void);
 int     graphics_movie_playing(void);   /* a movie frame was drawn in the last 150 ms */
+const UINT *graphics_mode_height_ptr(void);   /* the height of the game's only display mode */
 
 /* post.c */
 void    post_load_settings(const char *ini);
@@ -89,7 +90,7 @@ void    textures_on_release(void *tex);
 void    input_load_settings(const char *ini);
 void    input_register_hotkey(int dik);
 int     input_keyboard_seen(void);
-void    input_inject_key_press(DWORD dik, DWORD delayMs);
+void    input_inject_key_presses(DWORD dik, int (*ready)(void));   /* ready: 1 press now, 0 wait, -1 stop */
 int     input_take_key_presses(int dik);   /* DirectInput key code, e.g. 0x43 = F9 */
 void    input_simulate_key_press(int dik);
 int     input_is_key_down(int dik);

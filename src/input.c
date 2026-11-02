@@ -869,20 +869,30 @@ static void key_event(DWORD dik, int down)
 
 int input_keyboard_seen(void) { return g_kbd != NULL; }
 
-/* One synthetic key press (down, then up on the next read), sent to the game
- * through its own keyboard reads - used to skip the opening logos. */
+/* Synthetic key presses (down, then up on the next read), sent to the game
+ * through its own keyboard reads - used to skip the opening logos. ready()
+ * says when: 1 = press now, 0 = not yet, -1 = stop. After each press it is
+ * asked again (with a short gap), because the game ignores a press that
+ * comes too early in a movie, and a single early press was simply lost. */
 static volatile DWORD g_injDik, g_injDue;
 static volatile int   g_injState;          /* 0 idle, 1 waiting, 2 down sent */
-void input_inject_key_press(DWORD dik, DWORD delayMs)
+static int (*volatile g_injReady)(void);
+void input_inject_key_presses(DWORD dik, int (*ready)(void))
 {
     g_injDik = dik;
-    g_injDue = GetTickCount() + delayMs;
-    g_injState = 1;
+    g_injReady = ready;
+    g_injDue = GetTickCount();
+    g_injState = ready ? 1 : 0;
 }
 static int inj_step(void)                  /* 1 = report key down now, 0 = nothing, -1 = report key up */
 {
-    if (g_injState == 1 && (LONG)(GetTickCount() - g_injDue) >= 0) { g_injState = 2; return 1; }
-    if (g_injState == 2) { g_injState = 0; return -1; }
+    if (g_injState == 1 && (LONG)(GetTickCount() - g_injDue) >= 0) {
+        int r = g_injReady ? g_injReady() : -1;
+        if (r < 0) { g_injState = 0; return 0; }
+        if (r > 0) { g_injState = 2; return 1; }
+        return 0;
+    }
+    if (g_injState == 2) { g_injState = 1; g_injDue = GetTickCount() + 250; return -1; }
     return 0;
 }
 
