@@ -28,4 +28,4 @@ kept.
 
 ## Checksums (SHA-256)
 
-- Athelas-1.7.9.zip: `CHECKSUM`
+- Athelas-1.7.9.zip: `01545366b5607606d512dee609f772fe7383c6c8eef76d57460a495a8df79ced`
