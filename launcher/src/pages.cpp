@@ -209,7 +209,7 @@ void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
         front_art_poll(a, ren);
         if (a.cur >= 0) {
             int e = fr_entry_of(a.lib[a.cur].kind);
-            const FrontTex &ct = g_front.cover[e].tex ? g_front.cover[e] : g_front.art[e];
+            const FrontTex &ct = fr_face(a, e);
             float bh = S(92), bw = bh * 0.70f;
             ImDrawList *hd = ImGui::GetWindowDrawList();
             ImVec2 p0 = ImGui::GetWindowPos() + ImVec2(x, y), p1 = p0 + ImVec2(bw, bh);

@@ -913,6 +913,34 @@ int input_is_key_down(int dik)
     return g_keyDown[dik] != 0;
 }
 
+/* Movie skipping (#49):
+ * - a key or mouse button already down when a movie starts is hidden from
+ *   the game until it is released, so one click or press skips one movie
+ *   (a click held across the next movie's start skipped every level movie
+ *   in a row);
+ * - while a movie plays, Space and W/A/S/D count as Enter (the game skips
+ *   movies with Enter only). */
+static IDirectInputDevice8A *volatile g_mouse;
+static volatile LONG g_movieSeq;
+static LONG  g_movieSeqSeen;
+static BYTE  g_keyHeld[256];          /* down when the movie started: hidden until up */
+static BYTE  g_btnHeld[8];
+static BYTE  g_btnDown[8];
+static BYTE  g_keyAsEnter[256];       /* went down as Enter during a movie: goes up as Enter too */
+void input_movie_started(void) { InterlockedIncrement(&g_movieSeq); }
+static void movie_seq_check(void)
+{
+    LONG q = g_movieSeq;
+    if (q == g_movieSeqSeen) return;
+    g_movieSeqSeen = q;
+    memcpy(g_keyHeld, g_keyDown, sizeof g_keyHeld);
+    memcpy(g_btnHeld, g_btnDown, sizeof g_btnHeld);
+}
+static int movie_key(DWORD dik)
+{
+    return dik == 0x39 /* Space */ || dik == 0x11 /* W */ || dik == 0x1E /* A */ || dik == 0x1F /* S */ || dik == 0x20 /* D */;
+}
+
 static HRESULT WINAPI kb_GetDeviceState(IDirectInputDevice8A *This, DWORD cb, LPVOID data)
 {
     HRESULT hr = g_realKbGetState(This, cb, data);
@@ -921,10 +949,16 @@ static HRESULT WINAPI kb_GetDeviceState(IDirectInputDevice8A *This, DWORD cb, LP
     }
     if (SUCCEEDED(hr) && This == g_kbd && data && cb >= 256) {
         BYTE *b = (BYTE *)data;
+        movie_seq_check();
+        int movie = graphics_movie_playing(), toEnter = 0;
         for (int k = 0; k < 256; k++) {
             if (b[k] & 0x80 || g_keyDown[k]) key_event((DWORD)k, b[k] & 0x80);
             if (is_hotkey((DWORD)k)) b[k] = 0;
+            if (!(b[k] & 0x80)) g_keyHeld[k] = 0;
+            else if (g_keyHeld[k] && !(g_injState && (DWORD)k == g_injDik)) b[k] = 0;
+            if (movie && (b[k] & 0x80) && movie_key((DWORD)k)) { toEnter = 1; b[k] = 0; }
         }
+        if (toEnter) b[0x1C] = 0x80;
     }
     return hr;
 }
@@ -934,11 +968,21 @@ static HRESULT WINAPI kb_GetDeviceData(IDirectInputDevice8A *This, DWORD cbObj, 
     DWORD cap = n ? *n : 0;
     HRESULT hr = g_realKbGetData(This, cbObj, rg, n, fl);
     if (SUCCEEDED(hr) && This == g_kbd && rg && n && cbObj >= sizeof(DIDEVICEOBJECTDATA_DX3)) {
+        movie_seq_check();
         DWORD out = 0;
         for (DWORD i = 0; i < *n; i++) {
             DIDEVICEOBJECTDATA *e = (DIDEVICEOBJECTDATA *)((BYTE *)rg + i * cbObj);
             if (!(fl & DIGDD_PEEK)) key_event(e->dwOfs, e->dwData & 0x80);
             if (is_hotkey(e->dwOfs)) continue;                 /* hide from the game */
+            if (e->dwOfs <= 255 && g_keyHeld[e->dwOfs]) {      /* down since before this movie */
+                if (!(e->dwData & 0x80) && !(fl & DIGDD_PEEK)) g_keyHeld[e->dwOfs] = 0;
+                continue;
+            }
+            if (e->dwOfs <= 255 && movie_key(e->dwOfs)) {
+                int dn = (e->dwData & 0x80) != 0;
+                if (dn && graphics_movie_playing()) { if (!(fl & DIGDD_PEEK)) g_keyAsEnter[e->dwOfs] = 1; e->dwOfs = 0x1C; }
+                else if (!dn && g_keyAsEnter[e->dwOfs]) { if (!(fl & DIGDD_PEEK)) g_keyAsEnter[e->dwOfs] = 0; e->dwOfs = 0x1C; }
+            }
             if (out != i) memmove((BYTE *)rg + out * cbObj, e, cbObj);
             out++;
         }
@@ -977,7 +1021,6 @@ static void hook_keyboard(IDirectInputDevice8A *d)
  * is in front). */
 typedef HRESULT (WINAPI *SetCoop_t)(IDirectInputDevice8A *, HWND, DWORD);
 static SetCoop_t g_realSetCoop;
-static IDirectInputDevice8A *volatile g_mouse;
 static HRESULT WINAPI ms_SetCooperativeLevel(IDirectInputDevice8A *This, HWND w, DWORD f)
 {
     if (This == g_mouse && graphics_is_windowed() && (f & DISCL_EXCLUSIVE)) {
@@ -985,15 +1028,84 @@ static HRESULT WINAPI ms_SetCooperativeLevel(IDirectInputDevice8A *This, HWND w,
         if (!logged++) logf_("mouse: windowed mode - sharing the mouse so the Windows cursor can leave the game");
         f = (f & ~(DWORD)DISCL_EXCLUSIVE) | DISCL_NONEXCLUSIVE;
     }
+    if (This == g_kbd && (f & (DISCL_EXCLUSIVE | DISCL_NOWINKEY))) {
+        /* The game takes the keyboard exclusively with the Windows key off,
+         * so Win, Win+Shift+S, Game Bar and ShareX hotkeys do nothing in
+         * game. A shared keyboard gives the game the same keys while it is
+         * in front (#49). */
+        static int logged;
+        if (!logged++) logf_("keyboard: sharing the keyboard so the Windows key and system hotkeys work (game asked 0x%lx)", (unsigned long)f);
+        f = (f & ~(DWORD)(DISCL_EXCLUSIVE | DISCL_NOWINKEY)) | DISCL_NONEXCLUSIVE;
+    }
     return g_realSetCoop(This, w, f);
 }
-static void hook_mouse(IDirectInputDevice8A *d)
+static void hook_setcoop(IDirectInputDevice8A *d)
 {
     void **vt = *(void ***)d;
     DWORD old;
     VirtualProtect(&vt[13], sizeof(void *), PAGE_EXECUTE_READWRITE, &old);
     if (vt[13] != (void *)ms_SetCooperativeLevel) { g_realSetCoop = (SetCoop_t)vt[13]; vt[13] = (void *)ms_SetCooperativeLevel; }
     VirtualProtect(&vt[13], sizeof(void *), old, &old);
+}
+/* The mouse's reads: buttons down when a movie started are hidden until
+ * released (see movie_seq_check). Chained with the keyboard's hooks when
+ * both devices share one vtable; each acts on its own device only. */
+static KbGetState_t g_realMsGetState;
+static KbGetData_t  g_realMsGetData;
+static HRESULT WINAPI ms_GetDeviceState(IDirectInputDevice8A *This, DWORD cb, LPVOID data)
+{
+    HRESULT hr = g_realMsGetState(This, cb, data);
+    if (SUCCEEDED(hr) && This && This == g_mouse && This != g_kbd && data && cb >= 16) {
+        movie_seq_check();
+        BYTE *bt = (BYTE *)data + 12;
+        int nb = cb >= 20 ? 8 : 4;
+        for (int i = 0; i < nb; i++) {
+            g_btnDown[i] = (bt[i] & 0x80) != 0;
+            if (!g_btnDown[i]) g_btnHeld[i] = 0;
+            else if (g_btnHeld[i]) bt[i] = 0;
+        }
+    }
+    return hr;
+}
+static HRESULT WINAPI ms_GetDeviceData(IDirectInputDevice8A *This, DWORD cbObj, LPDIDEVICEOBJECTDATA rg, LPDWORD n, DWORD fl)
+{
+    HRESULT hr = g_realMsGetData(This, cbObj, rg, n, fl);
+    if (SUCCEEDED(hr) && This && This == g_mouse && This != g_kbd && rg && n && cbObj >= sizeof(DIDEVICEOBJECTDATA_DX3)) {
+        movie_seq_check();
+        DWORD out = 0;
+        for (DWORD i = 0; i < *n; i++) {
+            DIDEVICEOBJECTDATA *e = (DIDEVICEOBJECTDATA *)((BYTE *)rg + i * cbObj);
+            if (e->dwOfs >= 12 && e->dwOfs < 20) {
+                DWORD bi = e->dwOfs - 12;
+                int dn = (e->dwData & 0x80) != 0;
+                if (!(fl & DIGDD_PEEK)) g_btnDown[bi] = (BYTE)dn;
+                if (g_btnHeld[bi]) {
+                    if (!dn && !(fl & DIGDD_PEEK)) g_btnHeld[bi] = 0;
+                    continue;
+                }
+            }
+            if (out != i) memmove((BYTE *)rg + out * cbObj, e, cbObj);
+            out++;
+        }
+        *n = out;
+    }
+    return hr;
+}
+
+static void hook_mouse(IDirectInputDevice8A *d)
+{
+    void **vt = *(void ***)d;
+    DWORD old;
+    VirtualProtect(&vt[9], 2 * sizeof(void *), PAGE_EXECUTE_READWRITE, &old);
+    /* keyboard's hook already there (a shared vtable): go in behind it */
+    if (vt[9] == (void *)kb_GetDeviceState) {
+        if (g_realKbGetState != ms_GetDeviceState) { g_realMsGetState = g_realKbGetState; g_realKbGetState = ms_GetDeviceState; }
+    } else if (vt[9] != (void *)ms_GetDeviceState) { g_realMsGetState = (KbGetState_t)vt[9]; vt[9] = (void *)ms_GetDeviceState; }
+    if (vt[10] == (void *)kb_GetDeviceData) {
+        if (g_realKbGetData != ms_GetDeviceData) { g_realMsGetData = g_realKbGetData; g_realKbGetData = ms_GetDeviceData; }
+    } else if (vt[10] != (void *)ms_GetDeviceData) { g_realMsGetData = (KbGetData_t)vt[10]; vt[10] = (void *)ms_GetDeviceData; }
+    VirtualProtect(&vt[9], 2 * sizeof(void *), old, &old);
+    hook_setcoop(d);
     g_mouse = d;
 }
 
@@ -1008,7 +1120,7 @@ static HRESULT WINAPI di_CreateDevice(IDirectInput8A *This, REFGUID g, LPDIRECTI
         return *dev ? DI_OK : DIERR_OUTOFMEMORY;
     }
     HRESULT hr = IDirectInput8_CreateDevice(REAL(This), g, dev, u);
-    if (SUCCEEDED(hr) && g && dev && *dev && IsEqualGUID(g, &GUID_SysKeyboard)) hook_keyboard(*dev);
+    if (SUCCEEDED(hr) && g && dev && *dev && IsEqualGUID(g, &GUID_SysKeyboard)) { hook_keyboard(*dev); hook_setcoop(*dev); }
     if (SUCCEEDED(hr) && g && dev && *dev && IsEqualGUID(g, &GUID_SysMouse)) hook_mouse(*dev);
     return hr;
 }

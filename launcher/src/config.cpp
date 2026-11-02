@@ -480,7 +480,7 @@ bool load_settings(const std::string &dir, Settings &s)
         s.charDetailHigh = geti(r, "Video", "LowResTexture", 0) == 0;
         s.sfx = clampi(geti(r, "Video", "SfxMode", 2), 0, 2);
         s.altCameras = geti(r, "Video", "AlternateCameras", 0) != 0;
-        s.subtitles = geti(r, "GamePlay", "Subtitles", 2) != 0;
+        s.subtitles = geti(r, "GamePlay", "Subtitles", 1) != 0;   // (1 on; 2, "by language", read as on and written back as 1)
         s.volMusic = clampi(geti(r, "Audio", "Volume_Music", 100), 0, 100);
         s.volVoice = clampi(geti(r, "Audio", "Volume_Voice", 100), 0, 100);
         s.volSfx = clampi(geti(r, "Audio", "Volume_Sfx", 100), 0, 100);
@@ -859,7 +859,11 @@ bool save_settings(const std::string &dir, const Settings &s, std::string &err, 
     ok &= puti(r, "Video", "SfxMode", s.sfx);
     ok &= puti(r, "Video", "AlternateCameras", s.altCameras);
     ok &= puti(r, "Video", "Enable32Bit", 1);
-    ok &= puti(r, "GamePlay", "Subtitles", s.subtitles ? 2 : 0);
+    {   // Subtitles: 1 on, 0 off (2 is "by language": none in English, #49). Written only when the launcher's box
+        // differs from what the game saved (or the file has that 2), so a choice made in the game's own menu stays.
+        int cur = geti(r, "GamePlay", "Subtitles", -1);
+        if (cur < 0 || cur == 2 || (cur != 0) != s.subtitles) ok &= puti(r, "GamePlay", "Subtitles", s.subtitles ? 1 : 0);
+    }
     ok &= puti(r, "Audio", "Volume_Music", s.volMusic);
     ok &= puti(r, "Audio", "Volume_Voice", s.volVoice);
     ok &= puti(r, "Audio", "Volume_Sfx", s.volSfx);

@@ -90,6 +90,7 @@ void    textures_on_release(void *tex);
 void    input_load_settings(const char *ini);
 void    input_register_hotkey(int dik);
 int     input_keyboard_seen(void);
+void    input_movie_started(void);   /* keys/buttons down now are hidden until released */
 void    input_inject_key_presses(DWORD dik, int (*ready)(void));   /* ready: 1 press now, 0 wait, -1 stop */
 int     input_take_key_presses(int dik);   /* DirectInput key code, e.g. 0x43 = F9 */
 void    input_simulate_key_press(int dik);

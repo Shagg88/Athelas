@@ -989,23 +989,43 @@ static char g_moviePath[MAX_PATH];
  * its input queue first and only then checks that the movie is far enough
  * in (a position above 29, read through 0x4a1e50) - an early press is used
  * up for nothing, so the single press sent 400 ms in could be lost. Enter
- * is now pressed every 250 ms while the logos are on screen, from 1.5 s in
+ * is now pressed every 250 ms while the logos are on screen, from 0.2 s in
  * (plus CutsceneAudioDelay), and stops as soon as another movie
  * starts (so it can't skip the next one) or after 60 s. */
 static volatile int   g_logoSkip;
 static volatile DWORD g_logoSkipStart;
+
+/* The skip check also needs a counter (0x4a1e50) above 29 - "cmp eax,0x1d"
+ * at 0x50c775 - which kept the EA logo (and the start of its voice) on screen
+ * for a while after the first press. While the logos play the limit is
+ * lowered to -128 (always passed); any other movie gets 29 back. */
+#define ADDR_SKIP_MIN 0x50c775u
+static int g_skipMinOk = -1;
+static void logo_skip_min(int logos)
+{
+    static const BYTE sig[4] = { 0x83, 0xF8, 0x1D, 0x7E };
+    if (g_skipMinOk < 0) {
+        BYTE *a = (BYTE *)ADDR_SKIP_MIN;
+        g_skipMinOk = readable(a, 4) && !memcmp(a, sig, 3) && a[3] == 0x7E;
+        if (!g_skipMinOk) logf_("video: logo skip limit not recognised; left as it is");
+    }
+    if (!g_skipMinOk) return;
+    BYTE v = logos ? 0x80 : 0x1D;
+    if (*(volatile BYTE *)(ADDR_SKIP_MIN + 2) != v) write_code((void *)(ADDR_SKIP_MIN + 2), &v, 1);
+}
 static int logo_skip_ready(void)
 {
     if (!g_logoSkip) return -1;
     DWORD t = GetTickCount() - g_logoSkipStart;
     if (t > 60000) { g_logoSkip = 0; return -1; }
-    if (t < 1500u + (DWORD)g_audioDelayMs) return 0;
+    if (t < 200u + (DWORD)g_audioDelayMs) return 0;
     if (!graphics_enabled()) { g_logoSkip = 0; return 1; }   /* can't see the movie: one press only */
     return graphics_movie_playing() ? 1 : 0;                 /* never into the menu after the logos */
 }
 
 static const char *__cdecl on_movie_start(const char *path)
 {
+    input_movie_started();
     char name[64] = "";
     if (path && !IsBadStringPtrA(path, 260)) {
         const char *b = path;
@@ -1026,10 +1046,12 @@ static const char *__cdecl on_movie_start(const char *path)
     if (g_skipLogos && !strncmp(name, "logos", 5)) {
         g_logoSkipStart = GetTickCount();
         g_logoSkip = 1;
+        logo_skip_min(1);
         input_inject_key_presses(0x1C /* DIK_RETURN */, logo_skip_ready);
         logf_("video: skipping the opening logos (SkipOpeningLogos=1)");
     } else {
         g_logoSkip = 0;   /* any other movie: never skip it by mistake */
+        if (g_skipLogos) logo_skip_min(0);
     }
     if (g_movieOverrides && name[0] && !strchr(name, ':') && !strstr(name, "..")) {
         char rel[MAX_PATH], full[MAX_PATH];

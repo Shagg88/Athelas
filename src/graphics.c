@@ -1616,6 +1616,17 @@ static HRESULT WINAPI hook_Present(IDirect3DDevice8 *dev, const RECT *a, const R
     keep_game_cursor();
     g_draws3D = 0;
     g_copyDrawn = 0;
+    /* Minimized (Ctrl+Alt+Del, Win+D...): the picture can't be seen, and
+     * presenting anyway made the taskbar preview / secure desktop flicker
+     * with stale frames until the window came back (#49). The frame is
+     * dropped and the game slowed to ~60 loops a second meanwhile. */
+    HWND win = w ? w : g_window;
+    if (win && IsIconic(win)) {
+        static int logged;
+        if (!logged++) logf_("graphics: window minimized - not presenting until it is restored");
+        Sleep(16);
+        return D3D_OK;
+    }
     limiter_present_backstop();
     LARGE_INTEGER p0, p1;
     QueryPerformanceCounter(&p0);

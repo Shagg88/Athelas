@@ -119,7 +119,7 @@ static const char k_defaultRotkIni[] =
     "LEFT_ANALOG_Y = JOYSTICK(JSPOSY),0\r\n"
     "[GamePlay]\r\n"
     "Difficulty=0\r\n"
-    "Subtitles=2\r\n"
+    "Subtitles=1\r\n"
     "Player1Indicator=0\r\n"
     "Player2Indicator=0\r\n"
     "[Video]\r\n"

@@ -252,8 +252,14 @@ static int level_completed(int level)
 
 static int __cdecl hook_heroes(int hero, int level, int coop)
 {
-    int r = g_realHeroes(hero, level, coop);
-    if (level == 0 && hero == 2) return 0;   /* Gimli at Helm's Deep */
+    /* Helm's Deep is the tutorial with a fixed hero (its script and voice are
+     * Gandalf's): with UnlockAll the unlock switch answered 2 ("offered") for
+     * every hero there, so Sam could be played with Gandalf's voice (#49).
+     * There the game's own rules are asked instead: the code after the
+     * unlock shortcut (ADDR_HEROES + 15, where its je lands). */
+    int r = level == 0 ? ((Heroes_t)(DWORD_PTR)(ADDR_HEROES + 15u))(hero, level, coop)
+                       : g_realHeroes(hero, level, coop);
+    if (level == 0) return hero == 2 ? 0 : r;   /* never Gimli at Helm's Deep */
     if (r != 2 && g_allHeroes && hero >= 0 && hero < 9 && level > 0 && !(coop && level >= 9) && level_completed(level)) {
         static volatile LONG logged;
         if (InterlockedIncrement(&logged) <= 20) logf_("gameplay: hero %d offered for level %d (AllHeroes; the game said %d)", hero, level, r);

@@ -101,6 +101,17 @@ static std::string fr_music_copies(const App &a, int e, GameKind k)
     return s;
 }
 static bool fr_owned(const App &a, int e) { return !fr_lib(a, e).empty(); }
+// the box art a box shows, or null for a cover made from the game's own art. libretro's collection has The Return of
+// the King's Xbox box only (no PC set): with only the PC version, that box would be the wrong game's, so the PC box is
+// made from the PC game's own art instead (or the player's own scan, covers\rotk.png)
+static const FrontTex *fr_cover(const App &a, int e)
+{
+    if (!g_front.cover[e].tex) return nullptr;
+    if (e == FR_ROTK && g_front.coverFrom[e] == 2 && fr_first(a, e, GK_ROTK_PC) >= 0 && fr_first(a, e, GK_ROTK_XBOX) < 0)
+        return nullptr;
+    return &g_front.cover[e];
+}
+static const FrontTex &fr_face(const App &a, int e) { const FrontTex *c = fr_cover(a, e); return c ? *c : g_front.art[e]; }
 static int fr_entry_of(GameKind k) { return k == GK_FOTR_XBOX ? FR_FOTR : k == GK_TT_XBOX ? FR_TT : k == GK_TA_XBOX ? FR_TA : FR_ROTK; }
 
 // [Front] in Athelas.ini: the version The Return of the King plays (pc / xbox, empty: ask) and the box last chosen
@@ -171,6 +182,56 @@ static std::string play_line(int e)
     return out;
 }
 
+// box art from libretro is small (320 x 448, the largest the collection has): drawn a box's height tall that is
+// nearly twice its size, and the renderer's bilinear filter blurs it. It is enlarged once here, with a Catmull-Rom
+// (bicubic) filter in premultiplied alpha (the scans have transparent rounded corners), so it stays sharp.
+static unsigned char *upscale_cubic(const unsigned char *src, int w, int h, int k)
+{
+    int W = w * k, H = h * k;
+    std::vector<float> pm((size_t)w * h * 4), mid((size_t)W * h * 4);
+    for (size_t i = 0; i < (size_t)w * h; i++) {
+        float al = src[i * 4 + 3] / 255.0f;
+        for (int c = 0; c < 3; c++) pm[i * 4 + c] = src[i * 4 + c] * al;
+        pm[i * 4 + 3] = (float)src[i * 4 + 3];
+    }
+    auto wt = [](float t, float *o) {   // Catmull-Rom weights for the four taps around t (0..1)
+        float t2 = t * t, t3 = t2 * t;
+        o[0] = 0.5f * (-t3 + 2 * t2 - t); o[1] = 0.5f * (3 * t3 - 5 * t2 + 2);
+        o[2] = 0.5f * (-3 * t3 + 4 * t2 + t); o[3] = 0.5f * (t3 - t2);
+    };
+    for (int y = 0; y < h; y++)
+        for (int X = 0; X < W; X++) {
+            float sx = (X + 0.5f) / k - 0.5f, fl = floorf(sx), q[4];
+            wt(sx - fl, q);
+            for (int c = 0; c < 4; c++) {
+                float v = 0;
+                for (int t = 0; t < 4; t++) {
+                    int xx = std::max(0, std::min(w - 1, (int)fl - 1 + t));
+                    v += q[t] * pm[((size_t)y * w + xx) * 4 + c];
+                }
+                mid[((size_t)y * W + X) * 4 + c] = v;
+            }
+        }
+    unsigned char *out = (unsigned char *)malloc((size_t)W * H * 4);
+    if (!out) return nullptr;
+    for (int Y = 0; Y < H; Y++) {
+        float sy = (Y + 0.5f) / k - 0.5f, fl = floorf(sy), q[4];
+        wt(sy - fl, q);
+        for (int X = 0; X < W; X++) {
+            float v[4] = {};
+            for (int t = 0; t < 4; t++) {
+                int yy = std::max(0, std::min(h - 1, (int)fl - 1 + t));
+                for (int c = 0; c < 4; c++) v[c] += q[t] * mid[((size_t)yy * W + X) * 4 + c];
+            }
+            unsigned char *o = out + ((size_t)Y * W + X) * 4;
+            float al = std::max(0.0f, std::min(255.0f, v[3]));
+            for (int c = 0; c < 3; c++) o[c] = (unsigned char)(al > 0.5f ? std::max(0.0f, std::min(255.0f, v[c] / (al / 255.0f))) + 0.5f : 0);
+            o[3] = (unsigned char)(al + 0.5f);
+        }
+    }
+    return out;
+}
+
 static void front_load_covers(SDL_Renderer *ren)
 {
     g_front.coversLooked = true;
@@ -183,6 +244,10 @@ static void front_load_covers(SDL_Renderer *ren)
             int w, h, c;
             unsigned char *px = stbi_load(tries[i].c_str(), &w, &h, &c, 4);
             if (!px) continue;
+            if (w < 700 && h < 1000) {   // small (libretro's): enlarged with a sharper filter than the renderer's
+                int k = w < 350 ? 3 : 2;
+                if (unsigned char *big = upscale_cubic(px, w, h, k)) { stbi_image_free(px); px = big; w *= k; h *= k; }
+            }
             g_front.cover[e].tex = make_texture(ren, px, w, h);
             g_front.cover[e].w = w; g_front.cover[e].h = h;
             g_front.coverFrom[e] = i < 3 ? 1 : 2;
@@ -208,7 +273,7 @@ static void front_art_poll(App &a, SDL_Renderer *ren)
             delete j;
             continue;
         }
-        if (f.cover[e].tex) continue;              // not needed
+        if (fr_cover(a, e)) continue;              // not needed
         std::vector<int> li = fr_lib(a, e);
         if (li.empty()) continue;
         std::vector<std::string> files;
@@ -361,19 +426,24 @@ static ImRect draw_box(ImDrawList *dl, const App &a, int e, float d, ImVec2 c, f
     alpha = std::max(0.0f, alpha);
     bool owned = fr_owned(a, e);
     if (!owned) { light *= 0.55f; alpha *= 0.7f; }
-    float h = H * scale, w = h * 0.70f, hw = w * 0.5f, hh = h * 0.5f, depth = h * 0.05f;
+    // box art is drawn whole at its own shape (never cropped): the case takes the cover's aspect
+    float aspect = 0.70f;
+    const FrontTex *cov = fr_cover(a, e);
+    if (cov && cov->h > 0) aspect = std::max(0.55f, std::min(0.85f, (float)cov->w / cov->h));
+    float h = H * scale, w = h * aspect, hw = w * 0.5f, hh = h * 0.5f, depth = h * 0.05f;
     BoxProj P{ c.x, c.y + (1 - scale) * H * 0.18f, cosf(yaw), sinf(yaw), H * 3.2f };
     // the PC box (the PC version's own scan) is a plain black case; the Xbox ones have their green band
     bool pcCase = e == FR_ROTK && g_front.coverFrom[e] == 1 && fr_first(a, e, GK_ROTK_XBOX) < 0;
     // a scanned cover has its own top band; a made one gets the case's green band
-    float band = pcCase || g_front.cover[e].tex ? 0.0f : h * 0.085f;
-    float edge = g_front.cover[e].tex ? 0.0f : h * 0.012f;   // box art fills the case: no dark rim round it
+    float band = pcCase || cov ? 0.0f : h * 0.085f;
+    float edge = cov ? 0.0f : h * 0.012f;   // box art fills the case: no dark rim round it
 
     // the floor's reflection, fading downwards
-    const FrontTex &ct = g_front.cover[e].tex ? g_front.cover[e] : g_front.art[e];
+    const FrontTex &ct = fr_face(a, e);
     float coverX0 = -hw + edge, coverX1 = hw - edge, coverY0 = -hh + band + edge, coverY1 = hh - edge;
     ImVec2 uv0, uv1;
-    if (ct.tex) crop_uv(ct.w, ct.h, coverX1 - coverX0, coverY1 - coverY0, uv0, uv1);
+    if (ct.tex && cov) { uv0 = ImVec2(0, 0); uv1 = ImVec2(1, 1); }   // (the whole cover)
+    else if (ct.tex) crop_uv(ct.w, ct.h, coverX1 - coverX0, coverY1 - coverY0, uv0, uv1);
     if (ct.tex && alpha > 0.05f) {
         float rh = h * 0.06f, gap = h * 0.012f, vspan = (uv1.y - uv0.y) * rh / (coverY1 - coverY0);
         box_image(dl, ct.tex, P, coverX0, hh + gap, coverX1, hh + gap + rh, ImVec2(uv0.x, uv1.y), ImVec2(uv1.x, uv1.y - vspan),
@@ -383,8 +453,8 @@ static ImRect draw_box(ImDrawList *dl, const App &a, int e, float d, ImVec2 c, f
     if (fabsf(yaw) > 0.02f) {
         float sx = yaw > 0 ? -hw : hw;
         ImU32 sc = shade(pcCase ? 22 : 30, pcCase ? 22 : 34, pcCase ? 24 : 28, light * 0.8f, alpha);
-        if (g_front.cover[e].tex) {   // box art: the spine is the cover's own edge, a little darker (no black side)
-            const FrontTex &cv = g_front.cover[e];
+        if (cov) {   // box art: the spine is the cover's own edge, a little darker (no black side)
+            const FrontTex &cv = *cov;
             float ex = yaw > 0 ? 0.0f : 1.0f, ew = 0.02f * (yaw > 0 ? 1 : -1);
             ImU32 sh = shade(255, 255, 255, light * 0.6f, alpha);
             dl->AddImageQuad((ImTextureID)(intptr_t)cv.tex, P.at(sx, -hh, 0), P.at(sx, -hh, depth), P.at(sx, hh, depth), P.at(sx, hh, 0),
@@ -403,7 +473,7 @@ static ImRect draw_box(ImDrawList *dl, const App &a, int e, float d, ImVec2 c, f
     }
     // the cover
     ImU32 cw = shade(255, 255, 255, light, alpha);
-    if (g_front.cover[e].tex) {
+    if (cov) {
         box_image(dl, ct.tex, P, coverX0, coverY0, coverX1, coverY1, uv0, uv1, cw, cw);
     } else {
         // made from the game's art: the picture, darker towards the title, and the names on it (in front only)
@@ -469,7 +539,7 @@ static void draw_transition(App &a, ImVec2 size)
     ImDrawList *dl = ImGui::GetForegroundDrawList();
     ImVec2 wp = ImGui::GetMainViewport()->Pos;
     dl->AddRectFilled(wp, wp + size, IM_COL32(6, 8, 6, (int)(245 * dark)));
-    const FrontTex &ct = g_front.cover[g_trans.e].tex ? g_front.cover[g_trans.e] : g_front.art[g_trans.e];
+    const FrontTex &ct = fr_face(a, g_trans.e);
     if (!ct.tex || g_trans.box.GetWidth() < 4) return;
     float k = smooth(t);
     float grow = g_trans.toPage ? 1 + 0.8f * k : 1.8f - 0.8f * k;
@@ -844,6 +914,13 @@ static void draw_front(App &a, ImVec2 size, SDL_Renderer *ren)
         float w = e == FR_ROTK ? S(594) : S(412);
         add_game_buttons(a, e, (size.x - w) * 0.5f, by + (playH - btnH) * 0.5f);
     }
+    // how to add a game, centred under the buttons where it can't be missed or run off a narrow window: since 1.7.8
+    // only the games the player has are on the carousel, so with one game added the others aren't shown at all
+    if (N < FR_COUNT || !owned) {
+        const char *add = "Add a game: drag its folder or disc image onto this window";
+        centred_text(dl, F_SMALL, S(15), ImGui::GetWindowPos().x + size.x * 0.5f, by + playH + S(4), size.x - S(80),
+                     IM_COL32(168, 152, 124, (int)(220 * settle)), add);
+    }
 
     // the bottom line: box art, and the controls or a message
     float ly = size.y - S(52);
@@ -855,13 +932,18 @@ static void draw_front(App &a, ImVec2 size, SDL_Renderer *ren)
         if (orn_plate_button(lbl, ImVec2(S(170), S(32)), st != 1) || (padOn && !modal && ImGui::IsKeyPressed(ImGuiKey_GamepadFaceUp, false)))
             art_download_start();
         if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("Downloads the original Xbox box art of the three games from RetroArch's collection\n"
+            ImGui::SetTooltip("Downloads the original Xbox box art of the games from RetroArch's collection\n"
                               "(libretro thumbnails, on GitHub) into the covers folder beside Athelas.\n"
-                              "Your own scans there (fotr.png, tt.png, rotk.png) are used first.");
+                              "Your own scans there (fotr.png, tt.png, rotk.png, ta.png) are used first. There is no PC box in\n"
+                              "the collection: with only the PC Return of the King, its box is made from the game's own art.");
     }
     {   // Music on / off, remembered
         bool on = front_get("Music") != "0";
-        const char *lbl = on ? "Music: on##mus" : "Music: off##mus";
+        // the music is read from the Xbox games' files only (The Return of the King's, PC or Xbox, isn't read): with
+        // none of those the button says so instead of a silent "on" (#49)
+        bool any = fr_first(a, FR_TT, GK_TT_XBOX) >= 0 || fr_first(a, FR_FOTR, GK_FOTR_XBOX) >= 0 || fr_first(a, FR_TA, GK_TA_XBOX) >= 0;
+        bool here = f.sel != FR_ROTK && fr_owned(a, f.sel);
+        const char *lbl = !any ? "Music: none##mus" : on ? "Music: on##mus" : "Music: off##mus";
         ImGui::SetCursorPos(ImVec2(S(222), ly - S(6)));
         if (orn_plate_button(lbl, ImVec2(S(120), S(32)), true) || (!modal && ImGui::IsKeyPressed(ImGuiKey_M, false))) {
             on = !on;
@@ -869,7 +951,11 @@ static void draw_front(App &a, ImVec2 size, SDL_Renderer *ren)
             music_enable(on);
         }
         if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("The game's own menu music, from your copy of the game (The Two Towers and Fellowship). M switches it.");
+            ImGui::SetTooltip("%s", !any ? "The menu music comes from your copies of The Two Towers, Fellowship and The Third Age\n"
+                                           "(Xbox). The Return of the King's music can't be played here yet, so there is none to play."
+                               : here ? "The game's own menu music, from your copy of the game. M switches it."
+                                      : "The menu music comes from your copies of The Two Towers, Fellowship and The Third Age;\n"
+                                        "The Return of the King has none here. M switches it.");
     }
     {   // the Journey page: deeds, map, minstrel, virtues, lore (J)
         ImGui::SetCursorPos(ImVec2(S(354), ly - S(6)));
@@ -897,12 +983,6 @@ static void draw_front(App &a, ImVec2 size, SDL_Renderer *ren)
         ImVec2 h2 = ImGui::CalcTextSize(hint2.c_str());
         ImGui::SetCursorPos(ImVec2(std::max(S(490), size.x - S(40) - h2.x), ly - S(22)));
         ImGui::TextColored(C_DIM, "%s", hint2.c_str());
-    }
-    if (!msg) {   // how to add a game: only the games the player has are on the carousel
-        const char *add = "Add a game: drag its folder or disc image onto this window";
-        ImVec2 as = ImGui::CalcTextSize(add);
-        ImGui::SetCursorPos(ImVec2(std::max(S(490), size.x - S(40) - as.x), ly - S(hint2.empty() ? 22 : 44)));
-        ImGui::TextColored(C_DIM, "%s", add);
     }
     ImGui::SetCursorPos(ImVec2(std::max(S(490), size.x - S(40) - hs.x), ly));
     ImGui::TextColored(msg ? (a.messageBad ? C_BAD : C_GOOD) : C_DIM, "%s", hint.c_str());
