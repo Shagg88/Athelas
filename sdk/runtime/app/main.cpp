@@ -14,6 +14,7 @@
 #include <timeapi.h>
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <csignal>
 #include <cwchar>
@@ -317,17 +318,40 @@ void OpenGameWindow(bool apply) { SendMessageW(g_hwnd, kOpenWindow, apply, 0); }
 
 bool FastForward() { return kernel::Speed() > 1; }
 
+namespace {
+std::atomic<bool> g_ff_on{false};        // fast forward turned on (F9 in toggle mode, or the controller's combination)
+std::atomic<uint32_t> g_game_speed{1};   // SetGameSpeed
+}  // namespace
+
+void ToggleFastForward() {
+    bool on = !g_ff_on.load();
+    g_ff_on = on;
+    LOGR("fast forward: %s", on ? "on" : "off");
+}
+
+void SetGameSpeed(uint32_t times) { g_game_speed = std::max(1u, std::min(8u, times)); }
+
 void Pace() {
     using clock = std::chrono::steady_clock;
     static clock::time_point next = clock::now();
-    // fast forward: F9 held in the game window while it isn't paused; the guest's clocks run faster
-    // (kernel::SetSpeed) and the frame limit, the vertical blanks and V-Sync let that many more frames through
+    // fast forward: F9 held in the game window while it isn't paused (or, with [system] fast_forward_toggle, pressed
+    // once to turn it on and again to turn it off); the guest's clocks run faster (kernel::SetSpeed) and the frame
+    // limit, the vertical blanks and V-Sync let that many more frames through
+    bool f9 = Focused() && (GetAsyncKeyState(VK_F9) & 0x8000);
+    static bool f9_was = false;
+    if (Get().fast_forward_toggle && f9 && !f9_was && !Paused()) ToggleFastForward();
+    f9_was = f9;
+    bool ff = g_ff_on.load() || (!Get().fast_forward_toggle && f9);
     uint32_t times = 1;
-    if (Focused() && !Paused() && (GetAsyncKeyState(VK_F9) & 0x8000)) times = std::max(2u, std::min(8u, Get().fast_forward_speed));
+    if (!Paused()) {
+        if (ff) times = std::max(2u, std::min(8u, Get().fast_forward_speed));
+        // the game's own speed-up (its battles) when fast forward isn't faster
+        times = std::max(times, g_game_speed.load());
+    }
     static bool told = false;
-    if (times > 1 && !told) {
+    if (ff && times > 1 && !told) {
         told = true;
-        LOGR("fast forward: F9 held, %ux (sound off while held)", times);
+        LOGR("fast forward: %ux (sound off while it runs)", times);
     }
     kernel::SetSpeed(times);
     uint32_t cap = Get().fps_cap * times;

@@ -87,6 +87,7 @@ std::string SceneName(const char* path) {
 namespace ta {
 extern uint32_t g_movie_zoom;  // ta_movies.cpp
 void AchievementsScene(const std::string& scene);  // ta_achievements.cpp
+void BattleScene();                                 // ta_battle.cpp: a new scene ends a battle
 // GameInfo::file_opened (any thread)
 void FileOpened(const char* name) {
     size_t n = std::strlen(name);
@@ -101,6 +102,7 @@ void FileOpened(const char* name) {
     }
     g_front = front;
     LOGR("ta: scene %s%s", scene.c_str(), front ? " (front end)" : "");
+    BattleScene();
     if (!front) AchievementsScene(scene);
 }
 

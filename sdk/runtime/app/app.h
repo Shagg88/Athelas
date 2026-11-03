@@ -121,6 +121,7 @@ struct Settings {
     std::string discord_app_id;            // [discord] app_id: another Discord application than the game's own
     bool one_core = false;                 // [system] one_core: the game's threads take turns on one core, as on the Xbox
     uint32_t fast_forward_speed = 3;       // [system] fast_forward_speed: 2 to 8, how fast the game runs while F9 is held
+    bool fast_forward_toggle = false;      // [system] fast_forward_toggle: F9 turns fast forward on and off instead of being held
 };
 
 Settings& Get();
@@ -292,6 +293,12 @@ bool Held();   // the game is waiting in Hold now: its sound stands still too
 // F9 held (in the game window, not paused): the game runs [system] fast_forward_speed times as fast, without sound
 // (kernel::SetSpeed); read once a frame by Pace
 bool FastForward();
+// fast forward on or off without holding a key: F9 with [system] fast_forward_toggle, and always the controller's
+// Back + right stick click (OverlayPad); any thread
+void ToggleFastForward();
+// a game's own speed-up for some of its scenes (The Third Age's [gameplay] battle_speed in its battles): 1 is off.
+// Pace runs the game at the larger of it and fast forward, never while paused; any thread
+void SetGameSpeed(uint32_t times);
 // the title's thread at Swap, while Paused: the guest's clocks stop, present shows the last picture again with the
 // menu over it, about 60 times a second, until the pause ends
 void Hold(const std::function<void()>& present);

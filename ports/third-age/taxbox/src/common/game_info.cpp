@@ -17,6 +17,7 @@ void InitMovies();                  // src/game/ta_state.cpp
 void InitMovieShape();             // src/game/ta_movies.cpp
 extern bool g_skip_logos, g_skip_all_videos, g_sharp_text, g_unlock_all, g_invulnerable, g_infinite_ap;
 extern uint32_t g_damage_percent, g_enemy_damage_percent;  // src/game/ta_gameplay.cpp
+extern uint32_t g_battle_speed;                            // src/game/ta_battle.cpp
 void InitSharpText();
 extern uint32_t g_button_pictures;  // src/game/ta_prompts.cpp
 void InitPrompts();
@@ -112,6 +113,11 @@ const app::GameInfo app::kGame = {
                 {"gameplay", "enemy_damage", cfg::Type::Int, "Damage enemies take",
                  "How hard your party's hits are on enemies, as a share of the game's own (100). Higher is easier.",
                  nullptr, &ta::g_enemy_damage_percent, nullptr, 10, 500},
+                {"gameplay", "battle_speed", cfg::Type::Choice, "Battle speed",
+                 "Speeds the game up during battles only; exploring, menus and movies stay at normal speed. The sound "
+                 "is off while it's sped up.",
+                 nullptr, &ta::g_battle_speed, nullptr, 0, 0, {"1", "2", "3", "4"},
+                 nullptr, nullptr, {"Off (original)", "2x", "3x", "4x"}},
                 {"gameplay", "unlock_all", cfg::Type::Bool, "Unlock Evil Mode",
                  "Evil Mode can be started from any save. Your saved progress isn't changed: turning it off again "
                  "shows only what you've earned.",
@@ -138,7 +144,7 @@ const app::GameInfo app::kGame = {
     .button_actions = {"Select", "Back", "", "", "", "", "", ""},
     .init = ta::Init,  // after the settings load: widescreen and frame rate
     .loaded = ta::Loaded,  // image in memory: TA_LEVEL (testing)
-    .live_settings = {"graphics.fov", "graphics.draw_distance", "graphics.alpha_edges"},
+    .live_settings = {"graphics.fov", "graphics.draw_distance", "graphics.alpha_edges", "gameplay.battle_speed"},
     .setting_changed = ta::SettingChanged,  // draw distance and smooth edges take effect at once
     .file_opened = ta::FileOpened,  // the scene, from the .scx the game opens
     .file_read = ta::FileRead,      // a movie playing, from its .vid being read

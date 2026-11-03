@@ -193,17 +193,19 @@ void tab_display(App &a)
         : "The game was made for 60. Higher rates were tested and play at normal speed.\n"
           "In fullscreen the screen switches to the matching refresh rate. In borderless and windowed, "
           "rates that divide evenly into your screen's refresh rate are the smoothest.");
-    static const int ratesPc[] = { 60, 90, 120, 144, 165, 180, 240 };
+    static const int ratesPc[] = { 30, 60, 90, 120, 144, 165, 180, 240 };   // (30: for an event that won't trigger, #49)
     static const int ratesXbox[] = { 30, 60, 90, 120, 144, 165, 180, 240 };
     const int original = g_xboxPage ? 30 : 60;
     std::vector<int> rates = g_xboxPage ? std::vector<int>(std::begin(ratesXbox), std::end(ratesXbox))
                                         : std::vector<int>(std::begin(ratesPc), std::end(ratesPc));
     char c[64];
-    snprintf(c, sizeof c, "%d fps%s", s.targetFps, s.targetFps == original ? "  (original)" : "");
+    // 30 on the PC page: a player got past a stuck scripted event only at 30 (#49), so it is offered as a fallback
+    auto label = [&](int r) { return r == original ? "  (original)" : (!g_xboxPage && r == 30) ? "  (if an event won't trigger)" : ""; };
+    snprintf(c, sizeof c, "%d fps%s", s.targetFps, label(s.targetFps));
     if (ImGui::BeginCombo("##fps", c)) {
         for (int r : rates) {
             if (s.vsync && r > maxHz) continue;
-            snprintf(c, sizeof c, "%d fps%s", r, r == original ? "  (original)" : "");
+            snprintf(c, sizeof c, "%d fps%s", r, label(r));
             if (ImGui::Selectable(c, s.targetFps == r)) s.targetFps = r;
         }
         if (std::find(rates.begin(), rates.end(), maxHz) == rates.end() && maxHz > 60) {

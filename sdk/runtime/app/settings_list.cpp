@@ -188,6 +188,10 @@ std::vector<cfg::Desc> SettingsList() {
                  "How many times faster the game runs while you hold F9 (in the game window). The sound is off while "
                  "it's held. Nothing changes unless you press it.",
                  nullptr, &s.fast_forward_speed, nullptr, 2, 8});
+    l.push_back({"system", "fast_forward_toggle", Type::Bool, "Fast forward on/off with F9",
+                 "F9 turns fast forward on with one press and off with the next, instead of being held. On a "
+                 "controller, Back + right stick click always turns it on and off.",
+                 &s.fast_forward_toggle});
     if (!kGame.achievements.empty())
         l.push_back({"achievements", "notify", Type::Bool, "Achievement notes",
                      "A note in the corner of the screen when you earn an achievement. The list is on the in-game "

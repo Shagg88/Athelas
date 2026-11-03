@@ -17,6 +17,7 @@
 #include <atomic>
 #include <chrono>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -46,6 +47,7 @@ std::atomic<bool> g_dirty{false};
 std::atomic<uint16_t> g_mask_buttons[4];
 std::atomic<uint8_t> g_mask_analog[4];
 std::atomic<bool> g_combo[4];
+std::atomic<bool> g_ff_combo[4];  // Back + right stick click held: fast forward toggled once per press
 ImFont* g_font = nullptr;
 constexpr float kFontPixels = 48.0f;  // the atlas size; drawn smaller with UiScale
 
@@ -91,7 +93,7 @@ constexpr const char* kLive[] = {
     "graphics.colour_look", "graphics.look_strength", "graphics.brightness", "graphics.movie_display",
     "graphics.movie_sharpening", "graphics.cutscene_audio_delay", "input.vibration", "input.stick_deadzone",
     "input.trigger_threshold", "window.pause_unfocused", "window.mute_unfocused", "window.background_input", "keyboard.mouse_aim", "keyboard.mouse_sensitivity", "keyboard.mouse_invert_y", "keyboard.mouse_menus", "keyboard.enabled",
-    "keyboard.player", "achievements.notify", "discord.enabled"};
+    "keyboard.player", "achievements.notify", "discord.enabled", "system.fast_forward_speed", "system.fast_forward_toggle"};
 
 bool IsLive(const cfg::Desc& d) {
     std::string k = std::string(d.section) + "." + d.key;
@@ -299,6 +301,15 @@ void OverlayPad(int port, input::Pad& p) {
         g_mask_buttons[port] = uint16_t(g_mask_buttons[port] | 0xC0);
     }
     if (!both) g_combo[port] = false;
+    // Back + right stick click: fast forward on or off, for controller players (Steam Deck) who have no F9 to hold.
+    // Neither game uses this pair together (ROTK has Back and the right stick click each on its own, the others leave
+    // the right stick click unused), and both buttons are kept from the game until let go so the press does nothing in it
+    bool ff = (p.buttons & 0xA0) == 0xA0 && !(p.buttons & 0x40);
+    if (ff && !g_open && !g_ff_combo[port].exchange(true)) {
+        ToggleFastForward();
+        g_mask_buttons[port] = uint16_t(g_mask_buttons[port] | 0xA0);
+    }
+    if (!ff) g_ff_combo[port] = false;
     if (g_open) {
         bool c = p.connected;
         p = input::Pad{};
@@ -431,6 +442,15 @@ void DrawOverlay(double) {
         float f = ImGui::GetFontSize() * UiScale();
         ImGui::GetForegroundDrawList()->AddText(nullptr, f, ImVec2(v->Pos.x + f, v->Pos.y + f * 0.8f), IM_COL32(255, 220, 90, 230),
                                                 "Texture packs off (F8)");
+    }
+    if (uint32_t times = kernel::Speed(); times > 1 && !g_open) {  // sped up (fast forward, a game's battle speed)
+        const ImGuiViewport* v = ImGui::GetMainViewport();
+        float f = ImGui::GetFontSize() * UiScale();
+        char text[16];
+        std::snprintf(text, sizeof text, ">> %ux", times);
+        float w = ImGui::GetFont()->CalcTextSizeA(f, 1e9f, 0.0f, text).x;
+        ImGui::GetForegroundDrawList()->AddText(nullptr, f, ImVec2(v->Pos.x + v->Size.x - w - f, v->Pos.y + f * 0.8f),
+                                                IM_COL32(255, 220, 90, 230), text);
     }
     DrawSubtitles(UiScale());
     if (!g_open) {

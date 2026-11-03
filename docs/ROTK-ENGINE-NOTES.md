@@ -90,6 +90,13 @@ From the ROTK Fix chat, for the ROTK Xbox recompilation. Everything here comes f
   60 fps option should only need the cap or vsync interval changed.
 - Small stalls worth removing: a `Sleep(50)` in input teardown (`0x4b13f0`, called on screen
   changes and movie starts), and a `Sleep(50)` while paused or inactive (`0x4bf002`).
+- Frame-rate audit (#49, a scripted trigger once missed at 60 fps): the constants 30.0
+  (`0x5374c8`) and 1/30 (`0x543df8`) are only used as `delta * 30` (per-30-Hz-frame units scaled
+  by the real delta, e.g. `0x449c20`, `0x474d4e`, `0x4cfec8`), and `0x44b1ae` divides by the
+  delta. No integer frame counter tied to 30 Hz was found, so nothing was changed. Not proven
+  safe either: script waits and trigger tests were not traced. For players who hit it,
+  `[Frame] TargetFPS = 30` in ROTKFix.ini is accepted (20 to 240); the PC launcher page lists
+  60 and up only.
 
 ## 3. Camera, field of view and widescreen
 
@@ -229,6 +236,22 @@ It may be simpler to give ROTK Xbox its own packs, and only share where hashes h
   EnableSimpleShadows, AlternateCameras, LowResTexture and SfxMode.
 - **Debug leftovers:** developer menu buttons (hidden by `0x4f6f90`), a Codes screen, and a debug
   command that triggers rumble. The Xbox build may still have more of these.
+
+## 7a. Save file and hero rules (PC)
+
+- `rotkgame1.sav` is 0x5f9c bytes: a 0x24-byte header (`+0` CRC of the next 0x20 bytes, `+4`
+  size 0x5f9c, `+8` version 10, `+0xc` slot size 0x98c, `+0x10` 1, `+0x14` CRC of the slots;
+  the CRC is `0x4bf500`, polynomial 0x04c11db7), then 10 slots of 0x98c bytes: a used flag and
+  a copy of the 0x988-byte profile (`0x5bc180`, written by `0x4bfa40`, loaded by `0x47f4f0`).
+- In a profile, hero h (0 Aragorn ... 8 Faramir) is at +0x244 + h * 0x3c: +0 levels done
+  alone, +4 in co-op (a bit a level, 0 Helm's Deep ... 12 Crack of Doom), +0x18 the hero level.
+  The hero chosen for a level is not stored there.
+- The hero question `0x482530(hero, level, coop)`: the developer byte `0x8e5780` (set only by a
+  script command, `0x480f7a`) offers everyone; Frodo, Pippin, Merry and Faramir (5 to 8) are
+  offered everywhere once their secret bit in `0x8e1d5c` is set (that includes Helm's Deep);
+  after the Crack of Doom only Gandalf is offered at Helm's Deep; otherwise a jump table per
+  hero (`0x482728`): Sam (4) only ever gets levels 9 to 11. The game never offers Sam at
+  Helm's Deep.
 
 ## 8. PC versions, for reference
 

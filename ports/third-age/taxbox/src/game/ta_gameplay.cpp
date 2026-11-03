@@ -24,6 +24,8 @@ bool g_infinite_ap = false;             // [cheats] infinite_ap
 
 namespace ta {
 void EnemyDefeated();  // ta_achievements.cpp
+void BattleBlow(uint32_t target, bool party, uint32_t source, bool by_party, bool kill);  // ta_battle.cpp
+void BattleAp();                                                                          // ta_battle.cpp
 }
 
 namespace {
@@ -48,6 +50,8 @@ X86_FUNC(sub_001F4E30) {
     int32_t change = int32_t(ctx.ecx);
     if (change < 0) {
         bool party = InParty(ctx.edx);
+        // [gameplay] battle_speed: blows tell when a battle is on (read before invulnerable clears the kill byte)
+        ta::BattleBlow(ctx.edx, party, ctx.eax, InParty(ctx.eax), ::kernel::G<uint8_t>(ctx.esp + 4) != 0);
         if (party && ta::g_invulnerable) {
             ctx.ecx = 0;
             ::kernel::G<uint8_t>(ctx.esp + 4) = 0;  // no "kill" either
@@ -68,6 +72,7 @@ X86_FUNC(sub_001F4E30) {
 
 X86_EXTERN_FUNC(__imp__sub_001EEC40);
 X86_FUNC(sub_001EEC40) {
+    if (int32_t(ctx.edi) < 0 && InParty(ctx.esi)) ta::BattleAp();  // [gameplay] battle_speed: still fighting
     if (ta::g_infinite_ap && int32_t(ctx.edi) < 0 && InParty(ctx.esi)) {
         uint32_t saved = ctx.edi;
         ctx.edi = 0;

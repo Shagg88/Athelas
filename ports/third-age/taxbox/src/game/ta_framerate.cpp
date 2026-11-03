@@ -41,11 +41,13 @@ using kernel::W32;
 // [[hook]] 0x1C0A70: the frame end's wait for a vertical blank; true skips to 0x1C0A81
 namespace ta {
 extern std::atomic<uint32_t> g_frame_no;  // ta_hud.cpp
+void BattleTick();  // ta_battle.cpp
 }
 bool TA_FrameWait(X86Context& ctx, uint8_t* base) {
     (void)ctx;
     (void)base;
     ta::g_frame_no.fetch_add(1);
+    ta::BattleTick();  // [gameplay] battle_speed (ta_battle.cpp)
     return ta::g_unlocked;
 }
 

@@ -363,11 +363,12 @@ static bool tt_hidden(const PortSetting &ps)
 }
 
 // The tab a setting is shown on: its section's, except the frame rate, which is on Display as in ROTK's
-// (and the hints' button pictures, which are on Controls, and the fast forward speed, on Gameplay)
+// (and the hints' button pictures, which are on Controls, and the fast forward settings, on Gameplay)
 static int tt_tab_of_setting(const PortSetting &ps)
 {
     if (ps.section == "graphics" && ps.key == "button_pictures") return 2;
-    if (ps.section == "system" && ps.key == "fast_forward_speed") return 5;   // with the other ways to play (Gameplay)
+    if (ps.section == "system" && (ps.key == "fast_forward_speed" || ps.key == "fast_forward_toggle"))
+        return 5;   // with the other ways to play (Gameplay)
     return ps.section == "graphics" && ps.key == "fps" ? 0 : tt_tab_of(ps.section);
 }
 
