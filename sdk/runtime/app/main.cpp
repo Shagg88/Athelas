@@ -339,6 +339,11 @@ void Pace() {
     // limit, the vertical blanks and V-Sync let that many more frames through
     bool f9 = Focused() && (GetAsyncKeyState(VK_F9) & 0x8000);
     static bool f9_was = false;
+    // toggle mode switched off from the menu while fast forward was on: off with it, or it would stay on with no F9
+    // press left to end it (review of 1.8.0)
+    static bool toggle_was = Get().fast_forward_toggle;
+    if (toggle_was && !Get().fast_forward_toggle && g_ff_on.load()) ToggleFastForward();
+    toggle_was = Get().fast_forward_toggle;
     if (Get().fast_forward_toggle && f9 && !f9_was && !Paused()) ToggleFastForward();
     f9_was = f9;
     bool ff = g_ff_on.load() || (!Get().fast_forward_toggle && f9);
