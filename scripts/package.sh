@@ -59,6 +59,8 @@ if [ -d mods ]; then
             elif [ -f "$mod_dir/README.txt" ]; then
                 cp "$mod_dir/README.txt" "$FIX/ROTKFix/mods/${mod_name}-README.txt"
             fi
+            # a mod's own licence ships with its DLL (ROTKPlus is MIT: its notice must go with the binary)
+            [ -f "$mod_dir/LICENSE" ] && cp "$mod_dir/LICENSE" "$FIX/ROTKFix/licenses/${mod_name}-LICENSE.txt"
         fi
     done
 fi
