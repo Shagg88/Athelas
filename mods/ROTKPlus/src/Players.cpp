@@ -945,7 +945,8 @@ void PlayersVictoryKey()
 
 // The level's name in the game's own words: the game's text for its code, with what is not a letter at its ends and
 // any control character taken away. Three codes are not keys of the game's texts (03/11/2026: the Pelennor and the two
-// Palantir had empty rows), so those have a name of ours; any other code with no usable text shows the code. What the
+// Palantir had empty rows; 04/11/2026: the game answered "pel02_ITA" and "pal01_ITA", the key and its language, for a
+// text it does not have), so those have a name of ours; any other code with no usable text shows the code. What the
 // game answered is written to the log once per session, to see what it gives.
 static std::string LevelName(int i)
 {
@@ -963,7 +964,8 @@ static std::string LevelName(int i)
         bool letter = false;
         for (unsigned char c : t) letter |= (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c >= 0xC0;
         const char* code = kLevels[i];
-        if (!letter || t == code)
+        const std::string missing = std::string(code) + "_";   // "pel02_ITA": the key back, with the language
+        if (!letter || t == code || t.compare(0, missing.size(), missing) == 0)
             t = !strcmp(code, "pel02") ? Txt(T_LEVEL_PEL) : !strcmp(code, "pal01") ? Txt(T_LEVEL_PAL1)
               : !strcmp(code, "pal02") ? Txt(T_LEVEL_PAL2) : std::string(code);
         names[i] = t;
