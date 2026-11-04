@@ -30,7 +30,12 @@ void remove_tree(const std::string &dir)
             std::string n = fd.cFileName;
             if (n == "." || n == "..") continue;
             std::string p = dir + "\\" + n;
-            if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) remove_tree(p); else { SetFileAttributesA(p.c_str(), FILE_ATTRIBUTE_NORMAL); DeleteFileA(p.c_str()); }
+            // a junction or folder link is removed itself, never walked: its target can be outside this folder
+            // (review, 4 Nov: else cleaning an old build could empty a folder the link points at)
+            if (fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+                if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) RemoveDirectoryA(p.c_str()); else DeleteFileA(p.c_str());
+            } else if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) remove_tree(p);
+            else { SetFileAttributesA(p.c_str(), FILE_ATTRIBUTE_NORMAL); DeleteFileA(p.c_str()); }
         } while (FindNextFileA(h, &fd));
         FindClose(h);
     }

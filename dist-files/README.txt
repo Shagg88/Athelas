@@ -2,8 +2,8 @@ Athelas
 =======
 By Shagg, with Claude (Anthropic).
 
-An unofficial, free fan project that lets you play your own copies of three
-Lord of the Rings games, in four versions, on a modern PC, all from one
+An unofficial, free fan project that lets you play your own copies of four
+Lord of the Rings games, in five versions, on a modern PC, all from one
 launcher, Athelas (Athelas.exe - named after kingsfoil, the healing herb):
 
 - The Return of the King (PC, 2003), through ROTK Fix: any screen size and
@@ -13,6 +13,7 @@ launcher, Athelas (Athelas.exe - named after kingsfoil, the healing herb):
 - The Two Towers (Xbox), through its native PC port, TwoTowers.exe.
 - The Fellowship of the Ring (Xbox), through its native PC port,
   FOTRXbox.exe (new in 1.4, a first version).
+- The Third Age (Xbox), through its native PC port, TAXbox.exe (early).
 
 Not affiliated with or endorsed by Electronic Arts, New Line Cinema, Warner
 Bros. or the Tolkien Estate. No game files are included: you need your own

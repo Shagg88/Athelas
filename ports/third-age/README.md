@@ -11,5 +11,5 @@ Rules, as for the other ports:
 - The US release only for now (title 4541005F); other releases get a warning with "Start anyway".
 - Faithful by default: every enhancement is opt-in and the Original preset plays as the console did.
 
-Status: being set up. `taxbox/` is the port (CMake, build scripts, the shared SDK is `sdk/` at the repository root); `notes/` keeps one note
+Status: playable, early (in the launcher since 1.7). `taxbox/` is the port (CMake, build scripts, the shared SDK is `sdk/` at the repository root); `notes/` keeps one note
 per problem found.

@@ -40,4 +40,4 @@ jobs:
         if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/Athelas-$VER.zip dist/Athelas-$VER.zip.sha256 --draft --title "Athelas $VER" --notes-file dist-files/README.txt
+        run: gh release create "$GITHUB_REF_NAME" dist/Athelas-$VER.zip dist/Athelas-$VER.zip.sha256 --draft --title "Athelas $VER" --notes-file "$(test -f docs/release-notes-$VER.md && echo docs/release-notes-$VER.md || echo dist-files/README.txt)"

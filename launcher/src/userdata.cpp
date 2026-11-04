@@ -17,19 +17,31 @@ static std::string now_stamp(bool seconds)
     return b;
 }
 
-static void list_files(const std::string &root, const std::string &rel, std::vector<std::string> &out)
+// every file under root (paths relative to it); false when a folder in it couldn't be read, its name in *unread, so a
+// backup never says it holds everything when it doesn't. Links (junctions) are not followed: their target is
+// outside the saves (review, 4 Nov).
+static bool list_files(const std::string &root, const std::string &rel, std::vector<std::string> &out,
+                       std::string *unread = nullptr)
 {
     WIN32_FIND_DATAA fd;
     std::string base = rel.empty() ? root : root + "\\" + rel;
     HANDLE h = FindFirstFileA((base + "\\*").c_str(), &fd);
-    if (h == INVALID_HANDLE_VALUE) return;
+    if (h == INVALID_HANDLE_VALUE) {
+        DWORD e = GetLastError();
+        if (e == ERROR_FILE_NOT_FOUND || (e == ERROR_PATH_NOT_FOUND && rel.empty())) return true;   // empty / no saves yet
+        if (unread && unread->empty()) *unread = rel.empty() ? root : rel;
+        return false;
+    }
+    bool ok = true;
     do {
         if (!strcmp(fd.cFileName, ".") || !strcmp(fd.cFileName, "..")) continue;
+        if (fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) continue;
         std::string r = rel.empty() ? fd.cFileName : rel + "\\" + fd.cFileName;
-        if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) list_files(root, r, out);
+        if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ok = list_files(root, r, out, unread) && ok;
         else out.push_back(r);
     } while (FindNextFileA(h, &fd));
     FindClose(h);
+    return ok;
 }
 
 bool folder_has_files(const std::string &dir)
@@ -70,7 +82,8 @@ bool backup_folder(const std::string &dir, const std::string &zipPath, int &file
 {
     files = 0;
     std::vector<std::string> list;
-    list_files(dir, "", list);
+    std::string unread;
+    if (!list_files(dir, "", list, &unread)) { err = "The backup wasn't made: " + unread + " couldn't be read (is the game still running?)"; return false; }
     if (list.empty()) { err = "There are no saves in " + dir + " yet."; return false; }
     if (GetFileAttributesA(zipPath.c_str()) != INVALID_FILE_ATTRIBUTES) { err = zipPath + " is already there."; return false; }
     // written beside it under another name, and given its own name only once it has been read back (an earlier
