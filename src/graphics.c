@@ -1020,6 +1020,23 @@ static int sharpen_draw(IDirect3DDevice8 *dev, int pct, D3DPRIMITIVETYPE pt, int
     /* HUD pictures: their texture blend (set by hud_sharpen_ok) decides the shader */
     return sharpen_draw_x(dev, pct, g_hudX2, pt, idx, a, b, c4, d);
 }
+static UINT prim_verts(D3DPRIMITIVETYPE pt, UINT n);
+/* Do this 2D draw's texture coordinates leave 0..1 (a tiled or scrolling picture)? From our copy of its vertices
+ * (FVF 0x142: position, rhw-less xyz, colour, one uv at byte 16); unknown buffers count as inside. */
+static int uv_leaves_unit(D3DPRIMITIVETYPE pt, int idx, UINT a, UINT b)
+{
+    if (g_curFVF != FVF_2D || !g_stream0) return 0;
+    TrackedVB *t = find_vb(g_stream0);
+    UINT stride = g_stream0Stride ? g_stream0Stride : 24;
+    if (!t || stride < 24) return 0;
+    UINT first = idx ? g_baseVertex + a : a, count = idx ? b : prim_verts(pt, b);
+    if (!count || first > t->size / stride || count > t->size / stride - first) return 0;
+    for (UINT i = 0; i < count; i++) {
+        const float *uv = (const float *)(t->shadow + (first + i) * stride + 16);
+        if (uv[0] < -0.01f || uv[0] > 1.01f || uv[1] < -0.01f || uv[1] > 1.01f) return 1;
+    }
+    return 0;
+}
 static int sharpen_draw_x(IDirect3DDevice8 *dev, int pct, int x2, D3DPRIMITIVETYPE pt, int idx, UINT a, UINT b, UINT c4, UINT d)
 {
     void *tex = g_tex0Bound ? g_tex0Bound : g_tex0;
@@ -1043,14 +1060,25 @@ static int sharpen_draw_x(IDirect3DDevice8 *dev, int pct, int x2, D3DPRIMITIVETY
         if (sN) ((GetTex8_t)vt[60])(dev, sN, &oldTex[sN]);
         for (int k = 0; k < 4; k++) ((GetTSS8_t)vt[62])(dev, sN, st[k], &oldTSS[sN][k]);
     }
+    /* clamp the texture's edges (the 5-tap sharpen would pull in the opposite edge), but not for a draw whose
+     * coordinates leave 0..1: it tiles or scrolls the picture on purpose (the Perfect Mode ring's moving glow and
+     * its blinking hole), and clamping drew it smeared and off-centre (GitHub #57) */
+    int keepWrap = uv_leaves_unit(pt, idx, a, b);
     float dx = 1.0f / w, dy = 1.0f / h, amt = pct / 100.0f;
     float c[6][4] = { { dx, 0, 0, 0 }, { -dx, 0, 0, 0 }, { 0, dy, 0, 0 }, { 0, -dy, 0, 0 },
                       { -0.25f, -0.25f, -0.25f, -0.25f }, { amt, amt, amt, 0 } };
     ((SetPSConst8_t)vt[91])(dev, 0, c, 6);
     for (int sN = 0; sN < 5; sN++) {
         if (sN) g_realSetTexture(dev, sN, (IDirect3DBaseTexture8 *)tex);
-        ((SetTSS8_t)vt[63])(dev, sN, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
-        ((SetTSS8_t)vt[63])(dev, sN, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
+        if (keepWrap) {   /* stages 1-4 sample the same picture the same way as stage 0 */
+            if (sN) {
+                ((SetTSS8_t)vt[63])(dev, sN, D3DTSS_ADDRESSU, oldTSS[0][0]);
+                ((SetTSS8_t)vt[63])(dev, sN, D3DTSS_ADDRESSV, oldTSS[0][1]);
+            }
+        } else {
+            ((SetTSS8_t)vt[63])(dev, sN, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
+            ((SetTSS8_t)vt[63])(dev, sN, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
+        }
         ((SetTSS8_t)vt[63])(dev, sN, D3DTSS_MAGFILTER, D3DTEXF_LINEAR);
         ((SetTSS8_t)vt[63])(dev, sN, D3DTSS_MINFILTER, D3DTEXF_LINEAR);
     }
@@ -1534,19 +1562,82 @@ static void font_colour_restore(IDirect3DDevice8 *dev, const DWORD saved[3])
     ((SetTSS8_t)vt[63])(dev, 0, D3DTSS_COLORARG1, saved[1]);
     ((SetTSS8_t)vt[63])(dev, 0, D3DTSS_COLORARG2, saved[2]);
 }
+/* Text outlines (#61, Shagg 1.8.2 test: "it could be less pronounced"): the game draws a black copy of the text
+ * around the letters, then the letters. At today's resolutions that ring is a solid band several pixels wide. A text
+ * draw in a font texture whose vertex colours are all black is such a copy: it's drawn at 60% so the band softens
+ * (where copies overlap it stays dark, its edge fades). Only when stage 1 is unused; else the draw is left alone. */
+typedef HRESULT (WINAPI *SetRS8_t)(IDirect3DDevice8 *, D3DRENDERSTATETYPE, DWORD);
+static int text_is_black(UINT first, UINT count)
+{
+    TrackedVB *t = g_stream0 ? find_vb(g_stream0) : NULL;
+    UINT stride = g_stream0Stride ? g_stream0Stride : 24;
+    if (!g_tex0 || !icons_is_font_texture(g_tex0)) return 0;
+    if (!t || g_curFVF != FVF_2D || count == 0 || stride < 24 || first > t->size / stride || count > t->size / stride - first) return 0;
+    for (UINT i = 0; i < count; i++)
+        if (*(const DWORD *)(t->shadow + (first + i) * stride + 12) & 0x00FFFFFF) return 0;
+    return 1;
+}
+static int outline_soften(IDirect3DDevice8 *dev, DWORD saved[6], UINT first, UINT count)
+{
+    if (!text_is_black(first, count)) return 0;
+    void **vt = *(void ***)dev;
+    DWORD op1 = 0;
+    ((GetTSS8_t)vt[62])(dev, 1, D3DTSS_COLOROP, &op1);
+    if (op1 != D3DTOP_DISABLE) return 0;
+    /* stage 0 reading the texture factor (a fade through it): left alone, or the outline would lose the fade (review) */
+    static const D3DTEXTURESTAGESTATETYPE args[] = { D3DTSS_COLORARG1, D3DTSS_COLORARG2, D3DTSS_ALPHAARG1, D3DTSS_ALPHAARG2 };
+    for (int i = 0; i < 4; i++) {
+        DWORD v = 0;
+        ((GetTSS8_t)vt[62])(dev, 0, args[i], &v);
+        if ((v & D3DTA_SELECTMASK) == D3DTA_TFACTOR) return 0;
+    }
+    ((GetTSS8_t)vt[62])(dev, 1, D3DTSS_ALPHAOP, &saved[0]);
+    ((GetTSS8_t)vt[62])(dev, 1, D3DTSS_ALPHAARG1, &saved[1]);
+    ((GetTSS8_t)vt[62])(dev, 1, D3DTSS_ALPHAARG2, &saved[2]);
+    ((GetTSS8_t)vt[62])(dev, 1, D3DTSS_COLORARG1, &saved[3]);
+    ((GetRS8_t)vt[51])(dev, D3DRS_TEXTUREFACTOR, &saved[4]);
+    ((GetTSS8_t)vt[62])(dev, 2, D3DTSS_COLOROP, &saved[5]);
+    static int logged;
+    if (!logged++) logf_("graphics: text outlines drawn at 60%%");
+    ((SetTSS8_t)vt[63])(dev, 1, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
+    ((SetTSS8_t)vt[63])(dev, 1, D3DTSS_COLORARG1, D3DTA_CURRENT);
+    ((SetTSS8_t)vt[63])(dev, 1, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+    ((SetTSS8_t)vt[63])(dev, 1, D3DTSS_ALPHAARG1, D3DTA_CURRENT);
+    ((SetTSS8_t)vt[63])(dev, 1, D3DTSS_ALPHAARG2, D3DTA_TFACTOR);
+    ((SetTSS8_t)vt[63])(dev, 2, D3DTSS_COLOROP, D3DTOP_DISABLE);
+    ((SetRS8_t)vt[50])(dev, D3DRS_TEXTUREFACTOR, 0x99FFFFFF);
+    return 1;
+}
+static void outline_restore(IDirect3DDevice8 *dev, const DWORD saved[6])
+{
+    void **vt = *(void ***)dev;
+    ((SetTSS8_t)vt[63])(dev, 2, D3DTSS_COLOROP, saved[5]);
+    ((SetRS8_t)vt[50])(dev, D3DRS_TEXTUREFACTOR, saved[4]);
+    ((SetTSS8_t)vt[63])(dev, 1, D3DTSS_COLORARG1, saved[3]);
+    ((SetTSS8_t)vt[63])(dev, 1, D3DTSS_ALPHAARG2, saved[2]);
+    ((SetTSS8_t)vt[63])(dev, 1, D3DTSS_ALPHAARG1, saved[1]);
+    ((SetTSS8_t)vt[63])(dev, 1, D3DTSS_ALPHAOP, saved[0]);
+    ((SetTSS8_t)vt[63])(dev, 1, D3DTSS_COLOROP, D3DTOP_DISABLE);
+}
 static HRESULT WINAPI hook_DrawPrimitive(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE pt, UINT start, UINT count)
 {
     DWORD sv[3];
+    DWORD so[6];
     int fix = font_colour_fix(dev, sv, start, prim_verts(pt, count));
+    int ol = outline_soften(dev, so, start, prim_verts(pt, count));
     HRESULT hr = draw_prim(dev, pt, start, count);
+    if (ol) outline_restore(dev, so);
     if (fix) font_colour_restore(dev, sv);
     return hr;
 }
 static HRESULT WINAPI hook_DrawIndexedPrimitive(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE pt, UINT mi, UINT nv, UINT si, UINT pc)
 {
     DWORD sv[3];
+    DWORD so[6];
     int fix = font_colour_fix(dev, sv, g_baseVertex + mi, nv);
+    int ol = outline_soften(dev, so, g_baseVertex + mi, nv);
     HRESULT hr = draw_idx(dev, pt, mi, nv, si, pc);
+    if (ol) outline_restore(dev, so);
     if (fix) font_colour_restore(dev, sv);
     return hr;
 }
@@ -1577,6 +1668,50 @@ static void keep_game_cursor(void)
 
 /* Menu screens with little or no 3D leave the side bars untouched, so stale
  * images from earlier screens show there. Paint them black before showing. */
+/* Borderless: the Windows key's Start menu (or a click on the taskbar) took the focus, but the game's window still
+ * covered the whole screen above the taskbar and kept drawing, so it looked stuck and the taskbar couldn't be clicked
+ * (GitHub #60). As a fullscreen game does, it goes to the taskbar then; a click on its button brings it back. Only for
+ * Windows' own shell (Start, the taskbar, the search box): another program in front (a second screen, an overlay)
+ * leaves it as it is. */
+/* the process that owns a window: only the Start menu's and Search's own windows count for the CoreWindow classes,
+ * which Alt+Tab, Task View, the snipping overlay (Win+Shift+S) and the emoji panel use too (review) */
+static int window_is_start_menu(HWND w)
+{
+    DWORD pid = 0;
+    GetWindowThreadProcessId(w, &pid);
+    HANDLE h = pid ? OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid) : NULL;
+    if (!h) return 0;
+    char path[MAX_PATH] = ""; DWORD n = sizeof path;
+    int yes = 0;
+    if (QueryFullProcessImageNameA(h, 0, path, &n)) {
+        const char *b = strrchr(path, '\\'); b = b ? b + 1 : path;
+        yes = !_stricmp(b, "StartMenuExperienceHost.exe") || !_stricmp(b, "SearchHost.exe") || !_stricmp(b, "SearchApp.exe");
+    }
+    CloseHandle(h);
+    return yes;
+}
+static void borderless_yield_to_shell(HWND win)
+{
+    /* only when the focus goes from the game to the shell: not at startup, when Windows may not have given the new
+     * window the focus yet and the taskbar or Start menu is still in front (review) */
+    static HWND wasFront;
+    if (!win || g_dispMode != DM_BORDERLESS || IsIconic(win)) { wasFront = NULL; return; }
+    HWND fg = GetForegroundWindow();
+    if (fg == win) { wasFront = win; return; }
+    if (!fg || wasFront != win) return;
+    wasFront = NULL;
+    char cls[64] = "";
+    GetClassNameA(fg, cls, sizeof cls);
+    int shell = !strcmp(cls, "Shell_TrayWnd") || !strcmp(cls, "Shell_SecondaryTrayWnd") ||
+                ((!strcmp(cls, "Windows.UI.Core.CoreWindow") || !strcmp(cls, "XamlExplorerHostIslandWindow")) && window_is_start_menu(fg));
+    if (!shell) return;
+    /* the shell on the game's own screen only */
+    if (MonitorFromWindow(fg, MONITOR_DEFAULTTONEAREST) != MonitorFromWindow(win, MONITOR_DEFAULTTONEAREST)) return;
+    static int logged;
+    if (!logged++) logf_("graphics: Start menu or taskbar in front - borderless window minimized (#60)");
+    ShowWindow(win, SW_MINIMIZE);
+}
+
 static HRESULT WINAPI hook_Present(IDirect3DDevice8 *dev, const RECT *a, const RECT *b, HWND w, const RGNDATA *r)
 {
     g_presentNo++;
@@ -1621,6 +1756,7 @@ static HRESULT WINAPI hook_Present(IDirect3DDevice8 *dev, const RECT *a, const R
      * with stale frames until the window came back (#49). The frame is
      * dropped and the game slowed to ~60 loops a second meanwhile. */
     HWND win = w ? w : g_window;
+    borderless_yield_to_shell(win);
     if (win && IsIconic(win)) {
         static int logged;
         if (!logged++) logf_("graphics: window minimized - not presenting until it is restored");

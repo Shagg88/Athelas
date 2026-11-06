@@ -6,8 +6,9 @@ on:
     branches: [main]
     tags: ['v*']
   pull_request:
+# read-only by default; only the tag-only publish job below may write (review, 5 Nov)
 permissions:
-  contents: write
+  contents: read
 env:
   SDL_VERSION: 3.4.18
   DXVK_VERSION: "3.1.1"
@@ -36,8 +37,22 @@ jobs:
         with:
           name: Athelas-${{ env.VER }}
           path: dist/Athelas-${{ env.VER }}.zip*
-      - name: Publish release
-        if: github.ref_type == 'tag'
+  publish:
+    if: github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Athelas-*        # the build job's zip (named without the tag's "v")
+          merge-multiple: true
+          path: dist
+      - name: Publish release (draft)
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/Athelas-$VER.zip dist/Athelas-$VER.zip.sha256 --draft --title "Athelas $VER" --notes-file "$(test -f docs/release-notes-$VER.md && echo docs/release-notes-$VER.md || echo dist-files/README.txt)"
+        run: |
+          VER=${GITHUB_REF_NAME#v}
+          gh release create "$GITHUB_REF_NAME" dist/Athelas-$VER.zip dist/Athelas-$VER.zip.sha256 --draft --title "Athelas $VER" --notes-file "$(test -f docs/release-notes-$VER.md && echo docs/release-notes-$VER.md || echo dist-files/README.txt)"

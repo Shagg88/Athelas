@@ -124,6 +124,7 @@ static void update_button(App &a, ImVec2 size, float sy)
 
 void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
 {
+    games_apply_pending(a);   // Show / Remove from the games list, between frames
     // change background every 15 s
     // Background pictures: the game art comes from the player's Return of the King (PC)
     // (or, without the PC version, from an extracted Xbox copy: fewer and smaller pictures)
@@ -369,6 +370,29 @@ void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     ImGui::EndChild();
     ImGui::PopStyleColor();
     orn_panel_frame(ImGui::GetWindowDrawList(), panelA, panelB);
+    // Down on a page's last control: ImGui finds nothing below it inside the panel and stays there, so with a
+    // controller or the keyboard the Library, Save and Play buttons couldn't be reached (owner's report, 5 Nov). When a
+    // Down press leaves the cursor where it was, it goes to Save; Up from there goes back into the page.
+    static ImGuiID downFrom = 0, saveId = 0, libId = 0;   // Save, or Library when Save can't be pressed
+    static int downAge = 0;
+    static float downScroll = 0;   // the page's scroll at the press: a press that only scrolled the page isn't the end
+    {
+        ImGuiContext &gc = *GImGui;
+        bool free = !ImGui::IsAnyItemActive() && !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel);
+        if (downFrom && ++downAge >= 2) {
+            ImGuiID to = saveId ? saveId : libId;
+            bool scrolled = gc.NavWindow && gc.NavWindow->Scroll.y != downScroll;
+            if (free && !scrolled && gc.NavId == downFrom && to && downFrom != saveId && downFrom != libId) {
+                ImGui::SetFocusID(to, ImGui::GetCurrentWindow());
+                ImGui::SetNavCursorVisible(true);
+            }
+            downFrom = 0;
+        }
+        // (any owner: ImGui's navigation owns these keys, so a plain IsKeyPressed never sees them)
+        auto pressed = [](ImGuiKey k) { return ImGui::IsKeyPressed(k, ImGuiInputFlags_Repeat, ImGuiKeyOwner_Any); };
+        bool down = pressed(ImGuiKey_DownArrow) || pressed(ImGuiKey_GamepadDpadDown) || pressed(ImGuiKey_GamepadLStickDown);
+        if (down && free && gc.NavId && !downFrom) { downFrom = gc.NavId; downAge = 0; downScroll = gc.NavWindow ? gc.NavWindow->Scroll.y : 0; }
+    }
 
     // ---- bottom bar: summary on the left, buttons on the right
     float by = size.y - barH - S(16);
@@ -475,10 +499,13 @@ void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     if (orn_plate_button("\xe2\x80\xb9  Library", ImVec2(S(130), btnH), true) ||
         (padFree && ImGui::IsKeyPressed(ImGuiKey_GamepadFaceUp, false)))
         back_to_front(a);
+    libId = ImGui::GetItemID();
     bx -= saveW + S(12);
     ImGui::SetCursorPos(ImVec2(bx, by + (playH - btnH) * 0.5f));
     bool saveOk = ttShown || !(!own || !g.exeFound || g_fixRemoved);
-    if (orn_plate_button("Save", ImVec2(saveW, btnH), saveOk) || (padSave && saveOk)) {
+    bool saveHit = orn_plate_button("Save", ImVec2(saveW, btnH), saveOk);
+    saveId = saveOk ? ImGui::GetItemID() : 0;
+    if (saveHit || (padSave && saveOk)) {
         if (ttShown) tt_save(a); else save(a);
     }
 

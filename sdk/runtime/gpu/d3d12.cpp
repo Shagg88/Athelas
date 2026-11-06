@@ -5332,6 +5332,10 @@ bool D3D12Backend::Upscale(Target& t, uint32_t ow, uint32_t oh, D3D12_CPU_DESCRI
     f.out_h = oh;
     f.jitter_x = jit_px_[0];
     f.jitter_y = jit_px_[1];
+    // a frame drawn only in screen space (a title screen, a menu: no draw took the jitter, they're drawn still) is
+    // told no jitter, or the upscaler moves the still picture back by it each frame: it shook (GitHub #54, FSR at
+    // native size on the title screen; "0 draws with motion" in the reporter's log)
+    if (mv_draws_ == 0) f.jitter_x = f.jitter_y = 0;
     // a test: XBE_UP_JITTER_SIGN=-x, -y or -xy flips what the upscaler is told (the drawn jitter stays)
     if (const char* e = std::getenv("XBE_UP_JITTER_SIGN")) {
         if (std::strchr(e, 'x')) f.jitter_x = -f.jitter_x;

@@ -27,24 +27,42 @@ std::atomic<bool> g_front_end{true};
 // menu shown after the prologue and on leaving a level (ui\mainmenu.bff), as the last menu file opened (#8). On the
 // others, the between-level screen (ui\endlvl.bff, its Yes/No pop-ups, #17), saving, options and upgrades, A is A.
 std::atomic<bool> g_title{true};
+// a level other than the prologue was just won (ui\endlvl.bff): the main menu file that opens next is the map with
+// its "Do you want to save your game?" Yes/No, not the title, so A doesn't press Start there (GitHub #56: Start took
+// Yes whatever was chosen). After the prologue the title does come (#8), and A still passes it.
+bool g_won_level = false;
+bool g_in_prologue = false;
 void AchievementsFile(const std::string& lower_name);  // tt_achievements.cpp
 void GandalfWorld(const std::string& lower_name);      // tt_gandalf.cpp
+void FrameRateWorld(const std::string& lower_name);   // tt_framerate.cpp
 void FileOpened(const char* name) {
     std::string n = name;
     for (char& c : n) c = char(std::tolower(static_cast<unsigned char>(c)));
     AchievementsFile(n);
     GandalfWorld(n);
+    FrameRateWorld(n);
     auto ends = [&](const char* e) { size_t k = std::strlen(e); return n.size() >= k && n.compare(n.size() - k, k, e) == 0; };
     bool was = g_front_end;
     if (n.find("\\ui\\") != std::string::npos && ends(".bff")) {
-        g_title = n.find("\\ui\\startup.bff") != std::string::npos || n.find("\\ui\\mainmenu.bff") != std::string::npos;
+        if (n.find("\\ui\\endlvl.bff") != std::string::npos) g_won_level = !g_in_prologue;
+        bool main_menu = n.find("\\ui\\mainmenu.bff") != std::string::npos;
+        g_title = n.find("\\ui\\startup.bff") != std::string::npos || (main_menu && !g_won_level);
+        if (main_menu && g_won_level) {
+            g_won_level = false;
+            LOGI("tt: main menu after a level: A doesn't press Start (#56)");
+        }
         LOGI("tt: menu file %s", name);
     }
-    if (n.find("\\worlds\\") != std::string::npos && (ends(".bfa") || ends(".bfl") || ends(".bfg") || ends(".bfi")))
+    if (n.find("\\worlds\\") != std::string::npos && (ends(".bfa") || ends(".bfl") || ends(".bfg") || ends(".bfi"))) {
         g_front_end = g_title = false;
+        g_in_prologue = n.find("\\worlds\\00isul1") != std::string::npos;
+        g_won_level = false;
+    }
     else if (n.find("\\ui\\") != std::string::npos && ends(".bff") && n.find("\\ui\\load") == std::string::npos &&
-             n.find("\\ui\\options") == std::string::npos && n.find("\\ui\\upg") == std::string::npos)
+             n.find("\\ui\\options") == std::string::npos && n.find("\\ui\\upg") == std::string::npos) {
         g_front_end = true;
+        FrameRateWorld("");   // back in the menus: Breached Wall's 30 fps lock (#68) off (review, 5 Nov)
+    }
     if (was != g_front_end) LOGI("tt: %s (%s)", g_front_end ? "front end" : "in a level", name);
 }
 bool InMenus() { return g_front_end.load(); }

@@ -67,8 +67,6 @@ const app::GameInfo app::kGame = {
                 {"graphics", "draw_distance", cfg::Type::Int, "Draw distance",
                  "How far the camera sees, as a share of the game's own (100); the fog moves out with it.",
                  nullptr, &rotk::g_draw_percent, nullptr, 50, 800, {}},
-                {"graphics", "alpha_edges", cfg::Type::Bool, "Smooth leaf edges",
-                 "With anti-aliasing on, smooths the edges of leaves, grass and fences.", &rotk::g_alpha_edges},
                 {"graphics", "hud_edges", cfg::Type::Bool, "HUD at the screen edges",
                  "With widescreen on, the HUD keeps its shape and the health bar and counters sit at the edges of the "
                  "wide picture. Off, the HUD is stretched to fill it, as on PC.",

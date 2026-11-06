@@ -105,8 +105,6 @@ const app::GameInfo app::kGame = {
                  "Faster: the drawing runs on a processor core of its own, beside the game. Turn off if characters "
                  "show a ghost image or the picture flickers. Takes effect at the next start.",
                  &ta::g_second_core},
-                {"graphics", "alpha_edges", cfg::Type::Bool, "Smooth leaf edges",
-                 "With anti-aliasing on, smooths the edges of leaves, grass and fences.", &ta::g_alpha_edges},
                 {"gameplay", "damage_taken", cfg::Type::Int, "Damage you take",
                  "How hard enemies hit your party, as a share of the game's own (100). Lower is easier.",
                  nullptr, &ta::g_damage_percent, nullptr, 10, 500},
@@ -144,7 +142,7 @@ const app::GameInfo app::kGame = {
     .button_actions = {"Select", "Back", "", "", "", "", "", ""},
     .init = ta::Init,  // after the settings load: widescreen and frame rate
     .loaded = ta::Loaded,  // image in memory: TA_LEVEL (testing)
-    .live_settings = {"graphics.fov", "graphics.draw_distance", "graphics.alpha_edges", "gameplay.battle_speed"},
+    .live_settings = {"graphics.fov", "graphics.draw_distance", "gameplay.battle_speed"},
     .setting_changed = ta::SettingChanged,  // draw distance and smooth edges take effect at once
     .file_opened = ta::FileOpened,  // the scene, from the .scx the game opens
     .file_read = ta::FileRead,      // a movie playing, from its .vid being read

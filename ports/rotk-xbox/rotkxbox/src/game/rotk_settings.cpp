@@ -212,7 +212,6 @@ bool ApplyIni(const std::filesystem::path& file) {
     r.Bool("Graphics", "WidescreenFix", s.widescreen);
     r.Int("Graphics", "FieldOfView", g_fov_percent, 70, 150);
     r.Int("Graphics", "DrawDistance", g_draw_percent, 50, 800);
-    r.Bool("Graphics", "AlphaEdgeSmoothing", g_alpha_edges);
     r.Bool("Graphics", "HUDEdges", g_hud_edges);       // the Xbox port's own keys, for now
     r.Bool("System", "OneCore", s.one_core);          // Windows on ARM: the guest's threads on one core
     r.Word("Language", "Subtitles", g_subtitles, {"off", "de", "fr", "es", "it", "pt", "pl", "nl", "sv", "ru"});

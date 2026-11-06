@@ -28,6 +28,22 @@
 
 namespace tt {
 uint32_t g_fps_mode = 30;  // settings.toml [graphics] fps: frames a second
+// Helm's Deep: Breached Wall (18hole1) at the original 30: above it the catapult near the end breaks the guarded
+// door far faster (GitHub #68: lost every time at 144 Hz, easy at 30). Its timing isn't found yet, so the level
+// plays at 30, as on the Xbox, whatever the setting; every other level keeps it.
+std::atomic<bool> g_level_at_30{false};
+uint32_t FpsMode() { return g_level_at_30 ? 30u : g_fps_mode; }
+void FrameRateWorld(const std::string& name) {
+    size_t w = name.find("\\worlds\\");
+    if (w == std::string::npos && !name.empty()) return;   // (empty: the menus, tt_extras.cpp)
+    bool at30 = w != std::string::npos && name.find("18hole1", w) != std::string::npos;
+    // another world file while in Breached Wall (a shared one) doesn't take the lock off: only the menus do, which
+    // every way out of a level passes (endlvl, the pause menu's quit) (review)
+    if (!at30 && w != std::string::npos && g_level_at_30.load()) return;
+    if (at30 != g_level_at_30.exchange(at30) && g_fps_mode > 30)
+        LOGR("tt: %s", at30 ? "Breached Wall plays at 30 fps (its catapult is too fast above that, GitHub #68)"
+                            : "frame rate back to the setting");
+}
 std::atomic<int> g_movie_playing{0};  // tt_movies.cpp: inside the movie player
 }
 
@@ -41,9 +57,22 @@ void SetCap(uint8_t on) { *static_cast<uint8_t*>(::kernel::HostPtr(kCap30)) = on
 namespace tt {
 // before each frame wait (tt_extras.cpp): above 60, skip the vertical blank wait, not during a movie
 void FrameRateFrame() {
-    uint32_t fps = std::clamp(g_fps_mode, 30u, 1000u);
+    // leaving Breached Wall (#68): the game's 30 fps cap forced on there is taken off again (review, 5 Nov: the
+    // game's own cap setter isn't called at every level start, so the next level stayed at 30)
+    static bool was30 = false;
+    if (was30 && !g_level_at_30 && g_fps_mode > 30) SetCap(0);
+    was30 = g_level_at_30;
+    uint32_t fps = std::clamp(FpsMode(), 30u, 1000u);
     app::Get().fps_cap = fps > 60 ? fps : 0;  // 30 and 60: the game's own vertical blank wait
-    if (fps <= 60) return;
+    if (fps <= 60) {
+        // back from above 60 (Breached Wall, #68): the vertical blank wait on again, and in that level the game's own
+        // 30 fps cap, as the cap setter is only called at some points
+        if (g_fps_mode > 60 && ::kernel::R32(kIssueMode) != 0) ::kernel::W32(kIssueMode, 0);
+        if (g_level_at_30 && g_fps_mode > 30 && !g_movie_playing &&
+            *static_cast<uint8_t*>(::kernel::HostPtr(kCap30)) == 0)
+            SetCap(1);
+        return;
+    }
     uint32_t want = g_movie_playing ? 0 : 1;
     if (::kernel::R32(kIssueMode) != want) ::kernel::W32(kIssueMode, want);
     static bool logged = false;
@@ -64,7 +93,7 @@ X86_FUNC(sub_000E03B0) {
 // (bool cap)
 X86_EXTERN_FUNC(__imp__sub_000DFFE0);
 X86_FUNC(sub_000DFFE0) {
-    if (tt::g_fps_mode > 30 && ::kernel::R32(ctx.esp) != kMovieCall) ::kernel::W32(ctx.esp + 4, 0);
+    if (tt::FpsMode() > 30 && ::kernel::R32(ctx.esp) != kMovieCall) ::kernel::W32(ctx.esp + 4, 0);
     __imp__sub_000DFFE0(ctx, base);
 }
 
@@ -201,7 +230,7 @@ X86_FUNC(sub_000E3540) {
     // the fixed step (0x4B8B80 on: the Slo-Mo code, 0xE3530) gives every frame [0x1C3594] = 6 ms, 0.18 of the
     // console's 30 fps frame. Above 30 fps a fixed step a frame plays faster the more frames there are (1.44 times
     // real speed at 240), so there it is 0.18 of the real step instead: the same slow motion at any frame rate.
-    if (::kernel::R32(kFixedMode) && tt::g_fps_mode > 30 && !kFixedFps) {
+    if (::kernel::R32(kFixedMode) && tt::FpsMode() > 30 && !kFixedFps) {
         float step = F(kStep) * 0.18f, step_ms = step * 1000.0f;
         for (uint32_t a : {0x4B8BA0u, 0x4B8BB0u}) ::kernel::W32(a, Bits(step));
         for (uint32_t a : {0x4B8B98u, 0x4B8BA8u}) ::kernel::W32(a, Bits(step_ms));

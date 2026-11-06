@@ -99,19 +99,14 @@ static bool make_report(App &a, std::string title)
 // On each About page
 void report_section(App &a)
 {
-    section("Report a problem");
-    ImGui::PushTextWrapPos(0);
-    ImGui::TextUnformatted("Something wrong? This puts the logs, the settings and a description of this PC into one zip, "
-                           "then opens a new report on GitHub with the details filled in. Write what happened and drag "
-                           "the zip in.");
-    ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
-    ImGui::TextColored(C_DIM, "Athelas doesn't send anything itself: you see the report and choose what to post. Your "
-                              "Windows user name is taken out of the files; the folders your games are in stay.");
-    ImGui::PopFont();
-    ImGui::PopTextWrapPos();
-    if (ImGui::Button("Make a problem report")) {
+    section("Problems");
+    if (ImGui::Button("Report a problem")) {
         if (!make_report(a, "")) set_message(a, g_reportErr, true);
     }
+    tip("Puts the logs, the settings and a description of this PC into one zip and opens a new report on GitHub. "
+        "Nothing is sent by itself; your Windows user name is taken out.");
+    ImGui::SameLine();
+    if (ImGui::Button("Open the issues on GitHub")) ShellExecuteA(NULL, "open", "https://github.com/Shagg88/Athelas/issues", NULL, NULL, SW_SHOWNORMAL);
     if (!g_reportZip.empty() && g_reportErr.empty()) {
         ImGui::SameLine();
         if (ImGui::Button("Show the zip")) ShellExecuteA(NULL, "open", "explorer.exe", ("/select,\"" + g_reportZip + "\"").c_str(), NULL, SW_SHOWNORMAL);

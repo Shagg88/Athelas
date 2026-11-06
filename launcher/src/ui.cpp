@@ -145,6 +145,21 @@ bool gold_button(const char *label, ImVec2 size, ImFont *font)
     return orn_arch_button(label, size, font, true);
 }
 
+// A hover / controller-cursor explanation for the last item (as COGBox's ui_tip): the text stays off the page
+void tip(const char *t)
+{
+    if (!t || !*t) return;
+    if (!ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort | ImGuiHoveredFlags_AllowWhenDisabled) && !nav_cursor_in_last_item()) return;
+    if (ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel)) return;
+    ImGui::BeginTooltip();
+    ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
+    ImGui::PushTextWrapPos(S(380));
+    ImGui::TextUnformatted(t);
+    ImGui::PopTextWrapPos();
+    ImGui::PopFont();
+    ImGui::EndTooltip();
+}
+
 void set_message(App &a, const std::string &m, bool bad) { a.message = m; a.messageBad = bad; a.messageAt = ImGui::GetTime(); }
 
 void status_dot(bool ok, bool warn, const char *label, const char *tip)

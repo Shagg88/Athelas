@@ -50,7 +50,7 @@ void update_popup(App &a)
 void update_section(App &a)
 {
     (void)a;
-    section("Updates");
+    section("Athelas");
     std::string v = update_newer();
     float prog = 0;
     std::string err;
@@ -80,17 +80,10 @@ void update_section(App &a)
         ImGui::SameLine();
         if (ImGui::Button("Open the download page")) ShellExecuteA(NULL, "open", update_page(), NULL, NULL, SW_SHOWNORMAL);
     } else {
-        ImGui::TextColored(C_DIM, "Athelas " LAUNCHER_VERSION ". A newer version shows here, and under the settings, "
-                                  "when one is out.");
+        // (update_checked: GitHub answered, or couldn't be reached - as COGBox says it)
+        if (!updates_on()) status_dot(true, true, "Athelas " LAUNCHER_VERSION " - checking for updates is off", nullptr);
+        else if (!update_checked()) status_dot(false, true, "Athelas " LAUNCHER_VERSION " - checking for updates...", nullptr);
+        else status_dot(true, false, "Athelas " LAUNCHER_VERSION " - the latest (or GitHub couldn't be reached)", nullptr);
     }
     ImGui::PopTextWrapPos();
-    bool on = updates_on();
-    row_begin("Look for new versions", "When the launcher starts, it asks GitHub for the number of the newest Athelas "
-                                       "release. Nothing about you or your games is sent. Updates are only downloaded "
-                                       "when you press Update now.");
-    if (ImGui::Checkbox("##updates", &on)) {
-        WritePrivateProfileStringA("Updates", "Check", on ? "1" : "0", ports_ini().c_str());
-        if (on) update_check_start(LAUNCHER_VERSION);
-    }
-    row_end();
 }

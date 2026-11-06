@@ -237,6 +237,13 @@ static void data_mods_section(App &a, const std::string &dir, const std::string 
         }
     }
     if (running) ImGui::EndDisabled();
+    tip("A mod's .zip: a data mod (files laid out like the game's Data folder) or a code mod (.dll).");
+    ImGui::SameLine();
+    if (ImGui::Button("Mods folder")) {
+        SHCreateDirectoryExA(NULL, dir.c_str(), NULL);
+        ShellExecuteA(NULL, "open", dir.c_str(), NULL, NULL, SW_SHOWNORMAL);
+    }
+    tip(("Drop a mod's files in " + dir + "; Athelas sees new ones by itself.").c_str());
     ImGui::SetNextWindowSize(ImVec2(S(580), 0));
     if (ImGui::BeginPopupModal("Add a code mod?", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove)) {
         ImGui::PushTextWrapPos(0);
@@ -262,11 +269,6 @@ static void data_mods_section(App &a, const std::string &dir, const std::string 
 
     std::vector<std::string> v = data_mods_ordered(dir, ini);
     if (v.empty()) return;
-    section("Data mods");
-    ImGui::PushTextWrapPos(0);
-    ImGui::TextColored(C_DIM, "Ticked mods are used top to bottom - where two change the same file, the lower one wins. "
-                              "Your game's own files aren't changed. Changes apply the next time the game starts.");
-    ImGui::PopTextWrapPos();
     bool changed = false;
     for (size_t i = 0; i < v.size(); i++) {
         ImGui::PushID((int)i + 9000);
@@ -279,6 +281,8 @@ static void data_mods_section(App &a, const std::string &dir, const std::string 
         GetPrivateProfileStringA("Mod", "Name", v[i].c_str(), nm, sizeof nm, mi.c_str());
         GetPrivateProfileStringA("Mod", "Version", "", ver, sizeof ver, mi.c_str());
         ImGui::TextColored(on ? C_GOLD_H : C_DIM, "%d. %s%s%s", (int)i + 1, nm, ver[0] ? "  " : "", ver);
+        tip("Ticked mods are used top to bottom - where two change the same file, the lower one wins. "
+            "Your game's own files aren't changed. Changes apply the next time the game starts.");
         ImGui::SameLine();
         if (i > 0 && ImGui::SmallButton("Up")) { std::swap(v[i], v[i - 1]); changed = true; }
         if (i > 0) ImGui::SameLine();
@@ -301,13 +305,12 @@ static void data_mods_section(App &a, const std::string &dir, const std::string 
         if (changed) break;
     }
     if (changed) data_mods_store(v, ini);
-    ImGui::Dummy(ImVec2(0, S(6)));
-    section("Code mods");
 }
 
 void tab_mods(App &a)
 {
-    section("Mods & Plugins");
+    pc_texture_packs(a);
+    section("Mods");
 
     std::string primaryDir = a.dir + "\\ROTKFix\\mods";
     std::string fallbackDir = pc_fix_source() + "\\ROTKFix\\mods";
@@ -348,33 +351,9 @@ void tab_mods(App &a)
     int activeCount = 0;
     for (auto &m : s_mods) if (m.enabled) activeCount++;
 
-    ImGui::PushTextWrapPos(0);
-    ImGui::TextColored(C_DIM, "Athelas supports external code mods (.dll) and asset replacements loaded dynamically without "
-                              "altering original game discs or archives. Below you can toggle each mod and inspect its properties.");
-    ImGui::PopTextWrapPos();
-    ImGui::Dummy(ImVec2(0, S(4)));
 
-    // Actions
-    if (ImGui::Button("Open Mods Folder")) {
-        SHCreateDirectoryExA(NULL, activeDir.c_str(), NULL);
-        ShellExecuteA(NULL, "open", activeDir.c_str(), NULL, NULL, SW_SHOWNORMAL);
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Refresh")) {
-        s_forceScan = true;
-    }
-    ImGui::SameLine(0, S(16));
-    static char s_modSearch[64] = "";
-    ImGui::SetNextItemWidth(std::max(S(120), ImGui::GetContentRegionAvail().x - S(70)));
-    ImGui::InputTextWithHint("##modsearch", "Search mods...", s_modSearch, sizeof(s_modSearch));
-    if (s_modSearch[0] != '\0') {
-        ImGui::SameLine();
-        if (ImGui::SmallButton("Clear")) {
-            s_modSearch[0] = '\0';
-        }
-    }
-    ImGui::TextColored(C_GOLD, "%d mod%s found  |  %d active", (int)s_mods.size(), s_mods.size() == 1 ? "" : "s", activeCount);
     data_mods_section(a, primaryDir, rotkFixIni, s_forceScan);
+    static const char *s_modSearch = "";
 
     ImGui::Dummy(ImVec2(0, S(8)));
 
@@ -383,7 +362,7 @@ void tab_mods(App &a)
         ImGui::TextColored(C_DIM, "No mods found in:");
         ImGui::TextColored(C_TEXT, "  %s", activeDir.c_str());
         ImGui::Spacing();
-        ImGui::TextColored(C_DIM, "To install a mod, drop its .dll and .ini files into that folder and press Refresh.");
+        ImGui::TextColored(C_DIM, "To install a mod, drop its .dll and .ini files into that folder.");
         ImGui::PopTextWrapPos();
         return;
     }
@@ -404,58 +383,21 @@ void tab_mods(App &a)
         bool comp = m.supportsGame(curGameKey);
 
         ImGui::PushID((int)i);
-        ImGui::BeginGroup();
-
-        if (ImGui::Checkbox("##en", &m.enabled)) {
-            save_mod_state(m, rotkFixIni);
-        }
+        // one line, as COGBox's Mods tab: tick, name, version, author; the rest in its tooltip
+        if (ImGui::Checkbox("##en", &m.enabled)) save_mod_state(m, rotkFixIni);
         ImGui::SameLine();
-        ImGui::PushFont(F_TAB, F_TAB->LegacySize);
-        ImGui::TextColored(m.enabled ? C_GOLD_H : C_DIM, "%s", m.name.c_str());
-        ImGui::PopFont();
-
-        ImGui::SameLine();
-        if (m.enabled) {
-            ImGui::TextColored(C_GOOD, "[Active]");
-        } else {
-            ImGui::TextColored(C_DIM, "[Disabled]");
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextColored(m.enabled ? C_GOLD_H : C_TEXT, "%s  %s%s%s%s", m.name.c_str(), m.version.c_str(),
+                           m.author.empty() ? "" : "  -  ", m.author.c_str(), comp ? "" : "  (for another game)");
+        {
+            std::string t = m.description;
+            if (!m.hotkeys.empty()) t += "\n\nControls: " + m.hotkeys;
+            std::string gl;
+            for (const auto &g : m.games) gl += (gl.empty() ? "" : ", ") + std::string(game_key_title(g));
+            if (!gl.empty()) t += "\n\nFor: " + gl;
+            t += "\nFile: " + m.dllName + ". Changes apply the next time the game starts.";
+            tip(t.c_str());
         }
-
-        ImGui::Indent(S(28));
-        ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
-        ImGui::TextColored(C_DIM, "v%s  |  Author: %s  |  Category: %s  |  Binary: %s",
-                           m.version.c_str(), m.author.c_str(), m.category.c_str(), m.dllName.c_str());
-        ImGui::PopFont();
-
-        ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
-        ImGui::TextColored(C_GOLD, "Supported Games:");
-        for (const auto &g : m.games) {
-            ImGui::SameLine();
-            bool curMatch = (_stricmp(g.c_str(), curGameKey.c_str()) == 0 || !_stricmp(g.c_str(), "all"));
-            ImGui::TextColored(curMatch ? C_GOOD : C_DIM, "[ %s%s ]", game_key_title(g), curMatch ? " (Current)" : "");
-        }
-        if (!comp) {
-            ImGui::SameLine();
-            ImGui::TextColored(C_WARN, "(Requires other LOTR game)");
-        }
-        ImGui::PopFont();
-
-        ImGui::PushTextWrapPos(0);
-        ImGui::TextColored(C_TEXT, "%s", m.description.c_str());
-        if (!m.hotkeys.empty()) {
-            ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
-            ImGui::TextColored(C_GOLD_H, "Controls / Hotkeys: %s", m.hotkeys.c_str());
-            ImGui::PopFont();
-        }
-        ImGui::PopTextWrapPos();
-
-        ImGui::Unindent(S(28));
-        ImGui::EndGroup();
-
-        ImGui::Dummy(ImVec2(0, S(6)));
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0, S(6)));
-
         ImGui::PopID();
     }
 

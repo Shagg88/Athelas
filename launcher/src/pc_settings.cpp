@@ -257,6 +257,31 @@ static float hfov_deg(const App &a, int pct)
     return 2.0f * atanf(tanf(v * 0.5f) * aspect) * 180.0f / 3.14159265f;
 }
 
+// Texture packs: on the Mods tab (Shagg, 6 Nov)
+void pc_texture_packs(App &a)
+{
+    Settings &s = a.s;
+    section("Texture packs");
+    row_begin("Use texture packs", "Shows sharper or remade pictures from texture packs. A pack goes in its own folder inside "
+                                   "ROTKFix\\textures\\replace; remove the folder to go back to the original pictures.");
+    ImGui::Checkbox("##texrepl", &s.texReplace);
+    row_end();
+    row_begin("Save game textures", "For making texture packs: every picture the game uses is saved as a PNG in "
+                                    "ROTKFix\\textures\\dump as you play. Levels load a little slower the first time. "
+                                    "Turn it off when you have what you need.");
+    ImGui::Checkbox("##texdump", &s.texDump);
+    row_end();
+    row_begin("Textures folder", "Opens ROTKFix\\textures, where the replace and dump folders are.");
+    if (ImGui::Button("Open folder")) {
+        std::string t = a.dir + "\\ROTKFix\\textures";
+        CreateDirectoryA(t.c_str(), NULL);
+        CreateDirectoryA((t + "\\replace").c_str(), NULL);
+        ShellExecuteA(NULL, "open", t.c_str(), NULL, NULL, SW_SHOWNORMAL);
+    }
+    row_end();
+
+}
+
 void tab_graphics(App &a)
 {
     Settings &s = a.s;
@@ -411,25 +436,6 @@ void tab_graphics(App &a)
     ImGui::Checkbox("##altcam", &s.altCameras);
     row_end();
     ImGui::EndDisabled();
-
-    section("Texture packs");
-    row_begin("Use texture packs", "Shows sharper or remade pictures from texture packs. A pack goes in its own folder inside "
-                                   "ROTKFix\\textures\\replace; remove the folder to go back to the original pictures.");
-    ImGui::Checkbox("##texrepl", &s.texReplace);
-    row_end();
-    row_begin("Save game textures", "For making texture packs: every picture the game uses is saved as a PNG in "
-                                    "ROTKFix\\textures\\dump as you play. Levels load a little slower the first time. "
-                                    "Turn it off when you have what you need.");
-    ImGui::Checkbox("##texdump", &s.texDump);
-    row_end();
-    row_begin("Textures folder", "Opens ROTKFix\\textures, where the replace and dump folders are.");
-    if (ImGui::Button("Open folder")) {
-        std::string t = a.dir + "\\ROTKFix\\textures";
-        CreateDirectoryA(t.c_str(), NULL);
-        CreateDirectoryA((t + "\\replace").c_str(), NULL);
-        ShellExecuteA(NULL, "open", t.c_str(), NULL, NULL, SW_SHOWNORMAL);
-    }
-    row_end();
 
     section("Movies");
     // Zoom (the 4:3 movies fill the width too, their top and bottom cut off) is the Xbox port's; ROTK Fix has the three
@@ -1123,8 +1129,8 @@ void tab_gameplay(App &a)
 
 void tab_about(App &a)
 {
-    games_section(a);
-    section("Setup");
+    update_section(a);
+    section("Your copy");
     const GameInfo &g = a.game;
     status_dot(g.exeFound && g.versionOk, g.exeFound, g.exeFound ? g.versionText.c_str() : "rotk.exe not found - choose your game folder on the About tab", nullptr);
     {   // the ROTK Fix in the game folder, and the one this Athelas folder installs from: both its own version
@@ -1153,11 +1159,7 @@ void tab_about(App &a)
     }
     status_dot(g.hasSdl, false, "Controller support (SDL3)", nullptr);
     status_dot(g.rotkIniExists, true, g.rotkIniExists ? "Game settings file found" : "Game settings file will be created", g.rotkIniPath.c_str());
-    ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
-    ImGui::TextColored(C_DIM, "Game folder: %s", a.dir.c_str());
-    ImGui::PopFont();
-    if (ImGui::Button("Open game folder")) ShellExecuteA(NULL, "open", a.dir.c_str(), NULL, NULL, SW_SHOWNORMAL);
-    saves_section(a, "The Return of the King", a.game.rotkIniDir, "");
+    saves_section(a, "The Return of the King", a.game.rotkIniDir, "", a.dir);
 
     if (g.discProtected) {
         section("Original disc version");
@@ -1173,47 +1175,17 @@ void tab_about(App &a)
             ShellExecuteA(NULL, "open", "https://github.com/RibShark/SafeDiscShim/releases", NULL, NULL, SW_SHOWNORMAL);
     }
 
-    section("ROTK Fix");
-    ImGui::PushTextWrapPos(0);
-    ImGui::TextUnformatted("Athelas is an unofficial, free fan launcher. With ROTK Fix it lets owners of The Lord of the Rings: The Return of the King "
-                           "(PC, 2003) play their own copy on modern PCs with modern display, graphics and controller support, and it starts "
-                           "the PC ports of their own Xbox copies too.");
-    ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
-    ImGui::TextColored(C_DIM, "Not affiliated with or endorsed by Electronic Arts, Vivendi Universal Games, New Line Cinema, Warner Bros. or the Tolkien Estate. "
-                              "No game files are included; you need your own copy of the game. Background art is read from your own copy.");
-    ImGui::PopFont();
-    section("Open-source components");
-    static const char *lic[][2] = {
-        { "DXVK", "Vulkan renderer - zlib licence" },
-        { "SDL3", "Controllers and this window - zlib licence" },
-        { "Dear ImGui", "Launcher interface - MIT licence" },
-        { "stb_image, stb_image_write", "Pictures and screenshots - public domain / MIT" },
-        { "DSOAL, OpenAL Soft", "3D sound and EAX reverb - LGPL" },
-        { "Uncial Antiqua, Cinzel", "Fonts - SIL Open Font License" },
-        { "EB Garamond", "Fonts - SIL Open Font License" },
-        { "Liberation Sans", "Button pictures - SIL Open Font License" },
-        { "XboxXBE-Recomp", "Recompiler runtime in the Xbox ports - MIT licence, (c) 2026 TGP482" },
-        { "toml++", "Settings files in the Xbox ports - MIT licence" },
-        { "miniz", "Unpacking updates - MIT licence" } };
-    for (auto &l : lic) { ImGui::TextColored(C_GOLD, "%s", l[0]); ImGui::SameLine(S(230)); ImGui::TextUnformatted(l[1]); }
-    ImGui::PopTextWrapPos();
-    ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
-    ImGui::TextColored(C_DIM, "Launcher version " LAUNCHER_VERSION "  -  made by Shagg, with Claude (Anthropic)");
-    ImGui::PopFont();
     report_section(a);
-    update_section(a);
+    about_credits(a);
 
-    section("Remove ROTK Fix");
-    ImGui::PushTextWrapPos(0);
-    ImGui::TextUnformatted("Takes ROTK Fix out of the game folder and puts the game's own controller and settings files back. "
-                           "Your saved games, screenshots, achievements and texture packs are kept.");
-    ImGui::PopTextWrapPos();
+    ImGui::Dummy(ImVec2(0, S(6)));
     ImGui::PushStyleColor(ImGuiCol_Button, rgb(90, 36, 28));
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, rgb(120, 46, 34));
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, rgb(230, 186, 170));
     ImGui::PushStyleColor(ImGuiCol_Text, rgb(250, 228, 214));
     if (ImGui::Button("Remove ROTK Fix...")) ImGui::OpenPopup("Remove ROTK Fix?");
     ImGui::PopStyleColor(4);
+    tip("Takes ROTK Fix out of the game folder and puts the game's own files back. Saves, screenshots, achievements and texture packs are kept.");
 
     ImGui::SetNextWindowSize(ImVec2(S(520), 0));
     if (ImGui::BeginPopupModal("Remove ROTK Fix?", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove)) {

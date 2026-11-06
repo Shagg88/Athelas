@@ -10,6 +10,54 @@
 // ask, from the public collection.
 
 enum { FR_FOTR, FR_TT, FR_ROTK, FR_TA, FR_COUNT };
+// What's new: WHATS-NEW.txt beside Athelas.exe (made from docs/release-notes-*.md when a release is packed), shown as
+// it is: headings (#) in gold, **bold** markers taken out
+static bool numbered(const std::string &l, size_t i)   // "12. " or "3) ": a numbered list item
+{
+    size_t j = i;
+    while (j < l.size() && isdigit((unsigned char)l[j])) j++;
+    return j > i && j + 1 < l.size() && (l[j] == '.' || l[j] == ')') && l[j + 1] == ' ';
+}
+static void whats_new_popup(App &)
+{
+    ImGui::SetNextWindowSize(ImVec2(S(640), S(520)), ImGuiCond_Appearing);
+    if (!ImGui::BeginPopupModal("What's new##wnp", nullptr, ImGuiWindowFlags_NoSavedSettings)) return;
+    static std::vector<std::string> lines;
+    static bool loaded = false;
+    if (!loaded) {
+        loaded = true;
+        FILE *f = fopen((exe_dir() + "\\WHATS-NEW.txt").c_str(), "rb");
+        if (f) {
+            char buf[2048];
+            while (fgets(buf, sizeof buf, f)) {
+                std::string l = buf;
+                while (!l.empty() && (l.back() == '\n' || l.back() == '\r')) l.pop_back();
+                for (size_t p; (p = l.find("**")) != std::string::npos;) l.erase(p, 2);
+                // a line the notes wrapped by hand goes back onto the one before (ImGui wraps it to the window)
+                size_t lead = l.find_first_not_of(' ');
+                bool cont = lead != std::string::npos && !lines.empty() && !lines.back().empty() && lines.back()[0] != '#' &&
+                            l[lead] != '-' && l[lead] != '#' && l[lead] != '*' && l[lead] != '|' && !numbered(l, lead);
+                if (cont) lines.back() += " " + l.substr(lead);
+                else lines.push_back(l);
+            }
+            fclose(f);
+        }
+    }
+    ImGui::BeginChild("wntext", ImVec2(0, -S(48)), ImGuiChildFlags_None);
+    ImGui::PushTextWrapPos(0);
+    if (lines.empty()) ImGui::TextColored(C_DIM, "The release notes aren't in this Athelas folder (WHATS-NEW.txt).");
+    for (auto &l : lines) {
+        if (l.rfind("### ", 0) == 0) ImGui::TextColored(C_GOLD_H, "%s", l.c_str() + 4);
+        else if (l.rfind("# ", 0) == 0) { ImGui::Dummy(ImVec2(0, S(6))); ImGui::TextColored(C_GOLD_H, "%s", l.c_str() + 2); }
+        else if (l.rfind("## ", 0) == 0) ImGui::TextColored(C_GOLD_H, "%s", l.c_str() + 3);
+        else ImGui::TextUnformatted(l.c_str());
+    }
+    ImGui::PopTextWrapPos();
+    ImGui::EndChild();
+    if (orn_plate_button("Close##wnc", ImVec2(S(110), S(36)), true) || dialog_back()) ImGui::CloseCurrentPopup();
+    ImGui::EndPopup();
+}
+
 static const char *const k_frKey[FR_COUNT] = { "fotr", "tt", "rotk", "ta" };
 static const char *const k_frTitle[FR_COUNT] = { "The Fellowship of the Ring", "The Two Towers", "The Return of the King", "The Third Age" };
 // libretro thumbnails' names (No-Intro's) for the US Xbox releases
@@ -968,6 +1016,17 @@ static void draw_front(App &a, ImVec2 size, SDL_Renderer *ren)
             ImGui::SetTooltip("Your deeds and titles across the three games, a map of the road, the games' music, "
                               "virtues and a lore book. J opens it.");
     }
+    {   // Exit (owner's request, 5 Nov): closes Athelas the same way as the window's close button; a game already
+        // started keeps running (it doesn't need the launcher)
+        ImGui::SetCursorPos(ImVec2(S(486), ly - S(6)));
+        if (orn_plate_button("Exit##exit", ImVec2(S(80), S(32)), true)) a.quit = true;
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Closes Athelas. A game you started keeps running.");
+    }
+    {   // What's new (GitHub #51): the release notes the download carries (WHATS-NEW.txt, newest first)
+        ImGui::SetCursorPos(ImVec2(S(578), ly - S(6)));
+        if (orn_plate_button("What's new##wn", ImVec2(S(112), S(32)), true)) ImGui::OpenPopup("What's new##wnp");
+        whats_new_popup(a);
+    }
     bool msg = !a.message.empty() && ImGui::GetTime() - a.messageAt < (a.messageBad ? 30.0 : 6.0);
     std::string hint, hint2;
     if (msg) hint = a.message;
@@ -981,10 +1040,10 @@ static void draw_front(App &a, ImVec2 size, SDL_Renderer *ren)
     ImVec2 hs = ImGui::CalcTextSize(hint.c_str());
     if (!msg && !hint2.empty()) {   // the fullscreen shortcut, on the line above
         ImVec2 h2 = ImGui::CalcTextSize(hint2.c_str());
-        ImGui::SetCursorPos(ImVec2(std::max(S(490), size.x - S(40) - h2.x), ly - S(22)));
+        ImGui::SetCursorPos(ImVec2(std::max(S(700), size.x - S(24) - h2.x), ly - S(22)));
         ImGui::TextColored(C_DIM, "%s", hint2.c_str());
     }
-    ImGui::SetCursorPos(ImVec2(std::max(S(490), size.x - S(40) - hs.x), ly));
+    ImGui::SetCursorPos(ImVec2(std::max(S(700), size.x - S(24) - hs.x), ly));
     ImGui::TextColored(msg ? (a.messageBad ? C_BAD : C_GOOD) : C_DIM, "%s", hint.c_str());
     ImGui::PopFont();
     ImGui::PopItemFlag();

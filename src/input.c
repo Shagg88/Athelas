@@ -208,9 +208,12 @@ static void pad_update(void)
         for (int p = 0; p < want; p++) if (g_pads[p] && p_SDL_GetGamepadID(g_pads[p]) == ids[i]) used = 1;
         if (used) continue;
         if (p_SDL_GetGamepadFromID && p_SDL_GetGamepadFromID(ids[i])) {   /* open elsewhere in the game */
-            static SDL_JoystickID logged;
-            if (logged != ids[i]) {
-                logged = ids[i];
+            static SDL_JoystickID logged[4];   /* one line per controller (two mod players' pads took turns) */
+            int seen = 0;
+            for (int k = 0; k < 4; k++) if (logged[k] == ids[i]) seen = 1;
+            if (!seen) {
+                for (int k = 3; k > 0; k--) logged[k] = logged[k - 1];
+                logged[0] = ids[i];
                 logf_("gamepad: a connected controller is in use by another part of the game, not taken");
             }
             continue;

@@ -190,7 +190,10 @@ bool orn_arch_button(const char *label, ImVec2 size, ImFont *font, bool enabled)
     ImVec2 p = ImGui::GetCursorScreenPos();
     ImGui::BeginDisabled(!enabled);
     bool pressed = ImGui::InvisibleButton(label, size);
-    bool hov = enabled && ImGui::IsItemHovered(), act = enabled && ImGui::IsItemActive();
+    // the controller's / keyboard's cursor on it lights it as the mouse does: an InvisibleButton draws no cursor of
+    // its own, so Library, Save and Play showed nothing when reached with a controller (5 Nov)
+    bool hov = enabled && (ImGui::IsItemHovered() || (ImGui::IsItemFocused() && GImGui->NavCursorVisible)),
+         act = enabled && ImGui::IsItemActive();
     ImGui::EndDisabled();
     ImDrawList *dl = ImGui::GetWindowDrawList();
     float archH = size.y * 0.24f;
@@ -235,7 +238,10 @@ bool orn_plate_button(const char *label, ImVec2 size, bool enabled)
     ImVec2 p = ImGui::GetCursorScreenPos();
     ImGui::BeginDisabled(!enabled);
     bool pressed = ImGui::InvisibleButton(label, size);
-    bool hov = enabled && ImGui::IsItemHovered(), act = enabled && ImGui::IsItemActive();
+    // the controller's / keyboard's cursor on it lights it as the mouse does: an InvisibleButton draws no cursor of
+    // its own, so Library, Save and Play showed nothing when reached with a controller (5 Nov)
+    bool hov = enabled && (ImGui::IsItemHovered() || (ImGui::IsItemFocused() && GImGui->NavCursorVisible)),
+         act = enabled && ImGui::IsItemActive();
     ImGui::EndDisabled();
     ImDrawList *dl = ImGui::GetWindowDrawList();
     ImU32 fill = !enabled ? col(30, 28, 26, 220) : act ? col(70, 62, 46, 235) : hov ? col(54, 48, 38, 235) : col(28, 26, 24, 225);

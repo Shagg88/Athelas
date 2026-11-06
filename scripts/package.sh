@@ -51,7 +51,7 @@ if [ -d mods ]; then
                 echo "Building mod: $mod_name..."
                 (cd "$mod_dir" && sh build.sh)
             fi
-            for f in "$mod_dir"/*.dll "$mod_dir"/*.ini; do
+            for f in "$mod_dir"/*.dll "$mod_dir"/*.ini "$mod_dir"/*.ini.example; do
                 [ -f "$f" ] && cp "$f" "$FIX/ROTKFix/mods/"
             done
             if [ -f "$mod_dir/README.md" ]; then
@@ -65,6 +65,10 @@ if [ -d mods ]; then
     done
 fi
 cp launcher/build/Athelas.exe dist-files/README.txt "$OUT/"
+# What's new (GitHub #51): every release's notes, newest first, without their checksum lists, read by the launcher
+for f in $(ls docs/release-notes-*.md | sed 's/.*release-notes-//; s/\.md$//' | sort -t. -k1,1nr -k2,2nr -k3,3nr); do
+    sed '/^## Checksums/,$d' "docs/release-notes-$f.md"; printf '\n'
+done > "$OUT/WHATS-NEW.txt"
 # the launcher's translations (lang\<code>.txt, read by Athelas.exe)
 mkdir -p "$OUT/lang"; cp launcher/lang/*.txt "$OUT/lang/"
 cp "$SDL_DIR/i686-w64-mingw32/bin/SDL3.dll" "$OUT/"

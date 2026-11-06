@@ -189,6 +189,7 @@ bool dialog_back();
 bool gold_button(const char *label, ImVec2 size, ImFont *font);
 void set_message(App &a, const std::string &m, bool bad);
 void status_dot(bool ok, bool warn, const char *label, const char *tip);
+void tip(const char *t);
 int pad_tab_step(const App &a);
 void pad_tab_focus();
 float tabs_begin(const char *const *labels, int n, int sel);
@@ -259,10 +260,13 @@ void update_section(App &a);
 
 // mods.cpp
 void tab_mods(App &a);
+void pc_texture_packs(App &a);
+void about_credits(App &a);
+void games_apply_pending(App &a);   // About: one line, the licences and launcher options behind buttons
 
 // saves.cpp
 std::string logs_dir();
-void saves_section(App &a, const std::string &game, const std::string &saves, const std::string &shaders);
+void saves_section(App &a, const std::string &game, const std::string &saves, const std::string &shaders, const std::string &gameDir = "");
 
 // ports.cpp
 std::string port_data_dir(const char *dir, const char *oldDir);

@@ -47,12 +47,11 @@ static bool make_shortcut(const std::wstring &lnk, const std::wstring &args = L"
     return ok;
 }
 
+static const char *k_pinTip = "To pin one to the taskbar or Start, right-click the shortcut and choose Pin "
+                               "(Windows doesn't let programs do that themselves).";
+
 void shortcuts_section(App &a)
 {
-    section("Shortcuts");
-    ImGui::PushTextWrapPos(0);
-    ImGui::TextColored(C_DIM, "Start Athelas from the desktop or the Start menu.");
-    ImGui::PopTextWrapPos();
     for (int k = 0; k < 2; k++) {
         bool desktop = k == 0;
         std::wstring lnk = shortcut_path(desktop);
@@ -68,6 +67,7 @@ void shortcuts_section(App &a)
             else set_message(a, "The shortcut couldn't be made.", true);
         }
         ImGui::EndDisabled();
+        tip(k_pinTip);
         ImGui::PopID();
     }
     // one for each game too (as COGBox has): it opens Athelas and starts that game, with its settings and fixes
@@ -89,10 +89,7 @@ void shortcuts_section(App &a)
                 set_message(a, "A " + name + " shortcut is on your desktop.", false);
             else set_message(a, "The shortcut couldn't be made.", true);
         }
+        tip(k_pinTip);
         ImGui::PopID();
     }
-    ImGui::PushTextWrapPos(0);
-    ImGui::TextColored(C_DIM, "To pin one to the taskbar or Start, right-click the shortcut and choose Pin "
-                              "(Windows doesn't let programs do that themselves).");
-    ImGui::PopTextWrapPos();
 }

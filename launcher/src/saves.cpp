@@ -9,16 +9,15 @@ static void show_file(const std::string &f) { ShellExecuteA(NULL, "open", "explo
 
 // On each game's About page (as COGBox has it): the saves backed up to a zip on the desktop and put back from one,
 // the folders, and for the Xbox ports their saved shaders cleared (set aside, not deleted)
-void saves_section(App &a, const std::string &game, const std::string &saves, const std::string &shaders)
+void saves_section(App &a, const std::string &game, const std::string &saves, const std::string &shaders, const std::string &gameDir)
 {
-    section("Your saves");
-    ImGui::PushTextWrapPos(0);
-    ImGui::TextUnformatted("Back up saves puts a copy of this game's saves in a zip on your desktop. Restore saves puts one "
-                           "back - your current saves are backed up first, beside it, so nothing is lost.");
-    ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
-    ImGui::TextColored(C_DIM, "Saves: %s", saves.empty() ? "(not found)" : saves.c_str());
-    ImGui::PopFont();
-    ImGui::PopTextWrapPos();
+    section("Folders");
+    if (!gameDir.empty()) {
+        if (ImGui::Button("Game folder")) ShellExecuteA(NULL, "open", gameDir.c_str(), NULL, NULL, SW_SHOWNORMAL);
+        tip(gameDir.c_str());
+        ImGui::SameLine();
+    }
+    std::string where = "Saves: " + (saves.empty() ? std::string("(not found)") : saves);
     bool busy = a.running != NULL || saves.empty();
     if (busy) ImGui::BeginDisabled();
     if (ImGui::Button("Back up saves")) {
@@ -33,6 +32,7 @@ void saves_section(App &a, const std::string &game, const std::string &saves, co
             } else set_message(a, "The saves couldn't be backed up: " + err, true);
         }
     }
+    tip(("A copy of this game's saves in a zip on your desktop.\n" + where).c_str());
     ImGui::SameLine();
     static std::string pickZip, pickFor;
     if (ImGui::Button("Restore saves...")) {
@@ -42,10 +42,13 @@ void saves_section(App &a, const std::string &game, const std::string &saves, co
             ImGui::OpenPopup("Restore saves?");
         }
     }
+    tip("Puts a backup back. Your current saves are backed up first, so nothing is lost.");
     ImGui::SameLine();
-    if (ImGui::Button("Open saves folder")) open_folder(saves);
+    if (ImGui::Button("Saves")) open_folder(saves);
+    tip(where.c_str());
     if (busy) ImGui::EndDisabled();
-    if (ImGui::Button("Open logs")) {
+    ImGui::SameLine();
+    if (ImGui::Button("Logs")) {
         std::string n = session_newest(logs_dir());
         if (n.empty()) open_folder(logs_dir()); else show_file(n);
     }

@@ -8,6 +8,7 @@
 
 #include "core/log.h"
 #include "core/input.h"
+#include "gpu/backend.h"
 #include "xdk/hle.h"
 #include "xdk/layout.h"
 
@@ -16,13 +17,15 @@ using namespace kernel;
 namespace {
 // XBE_PAD_SCRIPT=<file>: test runs press the first controller's buttons from a script instead of the keyboard, one
 // press a line: "<seconds from start> <button> [held seconds]", buttons A B X Y BLACK WHITE LT RT START BACK UP DOWN
-// LEFT RIGHT, and the left stick pushed fully: LX+ LX- LY+ LY- (held 0.15 s unless given). The first controller then
+// LEFT RIGHT, SHOT (a screenshot), and the left stick pushed fully: LX+ LX- LY+ LY- (held 0.15 s unless given). The first controller then
 // counts as connected.
 struct ScriptPress {
     double at, until;
     int analog;       // 0..7, or -1
     uint16_t digital;
     int lx = 0, ly = 0;  // -1, 0 or 1: the left stick
+    bool shot = false;   // "SHOT": a screenshot at that moment (test runs)
+    mutable bool done = false;
 };
 const std::vector<ScriptPress>& PadScript() {
     static std::vector<ScriptPress> s = [] {
@@ -51,7 +54,8 @@ const std::vector<ScriptPress>& PadScript() {
             if (b == "LX-") p.lx = -1;
             if (b == "LY+") p.ly = 1;
             if (b == "LY-") p.ly = -1;
-            if (p.analog >= 0 || p.digital || p.lx || p.ly) out.push_back(p);
+            if (b == "SHOT") p.shot = true;
+            if (p.analog >= 0 || p.digital || p.lx || p.ly || p.shot) out.push_back(p);
         }
         LOGR("xapi: controller script %s, %zu presses", f, out.size());
         return out;
@@ -64,6 +68,10 @@ void ApplyPadScript(int port, input::Pad& p) {
     double t = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
     p.connected = true;
     for (const ScriptPress& sp : PadScript()) {
+        if (sp.shot) {
+            if (t >= sp.at && !sp.done) { sp.done = true; gpu::g_screenshot = true; }
+            continue;
+        }
         if (t < sp.at || t >= sp.until) continue;
         if (sp.analog >= 0) p.analog[sp.analog] = 255;
         p.buttons |= sp.digital;

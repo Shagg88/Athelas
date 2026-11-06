@@ -81,8 +81,6 @@ const app::GameInfo app::kGame = {
                  "How wide the camera sees, as a share of the game's own (100). Wider shows more of the battle but "
                  "makes characters look further away.",
                  nullptr, &tt::g_fov_percent, nullptr, 70, 150, {}, "fov_percent"},
-                {"graphics", "alpha_edges", cfg::Type::Bool, "Smooth leaf edges",
-                 "With anti-aliasing on, smooths the edges of leaves, grass and fences.", &tt::g_alpha_edges},
                 {"graphics", "sharp_text", cfg::Type::Bool, "Sharper text",
                  "The game's text (menus, hints, subtitles, the scores) redrawn at four times its size, so it stays "
                  "sharp at high resolutions. Read at start.",

@@ -615,6 +615,16 @@ static void tt_tab_graphics(App &a)
     std::vector<std::string> done;   // section.key shown here; anything else goes under "More"
     auto mark = [&](const char *sec, const char *key) { done.push_back(std::string(sec) + "." + key); };
 
+    // the graphics API first (owner's request, 5 Nov: it was last, under "More"); it takes effect at the next start
+    if (const PortSetting *r = tt_setting(a, "graphics", "renderer")) {
+        if (!tt_hidden(*r)) {
+            section("Renderer");
+            tt_setting_row(a, *r);
+            ImGui::TextColored(C_DIM, "Direct3D 12 or Vulkan. Takes effect the next time the game starts.");
+        }
+        mark("graphics", "renderer");
+    }
+
     if (!a.tt.presets.empty()) {
         section("Quality");
         std::string help;
@@ -680,13 +690,7 @@ static void tt_tab_graphics(App &a)
             ImGui::EndCombo();
         }
         row_end();
-        // smooth leaf edges: alpha to coverage, which only works with anti-aliasing on
-        if (const PortSetting *pe = tt_setting(a, "graphics", "alpha_edges")) {
-            mark("graphics", "alpha_edges");
-            ImGui::BeginDisabled(cur == "0");
-            tt_setting_row(a, *pe);
-            ImGui::EndDisabled();
-        }
+        mark("graphics", "alpha_edges");   // (removed from the games, 5 Nov: an old settings file may still list it)
         break;
     }
     if (const PortSetting *ps = tt_setting(a, "graphics", "anisotropic_filtering")) {
@@ -826,33 +830,7 @@ static void tt_tab_graphics(App &a)
         tt_setting_row(a, *ps);
     }
 
-    const PortSetting *prep = tt_setting(a, "textures", "replace"), *pdump = tt_setting(a, "textures", "dump");
-    if (prep || pdump) {
-        section("Texture packs");
-        std::string dir = tt_data_dir() + "\\textures";
-        if (prep) {
-            mark("textures", "replace");
-            bool v = tt_val(a, *prep) == "true";
-            std::string h = std::string("Shows sharper or remade pictures from texture packs. A pack goes in its own folder inside ") +
-                            tp().dir + "\\textures\\replace; remove the folder to go back to the original pictures.";
-            row_begin("Use texture packs", h.c_str());
-            if (ImGui::Checkbox("##tttexrepl", &v)) a.ttFile.set(prep->section, prep->key, v ? "true" : "false");
-            row_end();
-        }
-        if (pdump) {
-            mark("textures", "dump");
-            bool v = tt_val(a, *pdump) == "true";
-            std::string h = std::string("For making texture packs: every picture the game uses is saved as a PNG in ") + tp().dir +
-                            "\\textures\\dump as you play. Levels load a little slower the first time. Turn it off when you have what you need.";
-            row_begin("Save game textures", h.c_str());
-            if (ImGui::Checkbox("##tttexdump", &v)) a.ttFile.set(pdump->section, pdump->key, v ? "true" : "false");
-            row_end();
-        }
-        std::string h = std::string("Opens ") + tp().dir + "\\textures, where the replace and dump folders are.";
-        row_begin("Textures folder", h.c_str());
-        if (ImGui::Button("Open folder##tttex")) tt_open_textures();
-        row_end();
-    }
+    mark("textures", "replace"); mark("textures", "dump");   // on the Mods tab
 
     // Movies, in ROTK's order: Movie display, Sharper cutscenes, Skip any video, Skip opening logos, Cutscene sound delay
     {
@@ -1200,66 +1178,97 @@ static void tt_settings_on_tab(App &a, int tab)
     if (sec == "textures" && ImGui::Button("Open texture folder")) tt_open_textures();
 }
 
+// Mods: texture packs (the Xbox games' mods), on their own tab (Shagg, 6 Nov: About was too cluttered)
+static void tt_tab_mods(App &a)
+{
+    const PortSetting *prep = tt_setting(a, "textures", "replace"), *pdump = tt_setting(a, "textures", "dump");
+    if (prep || pdump) {
+        section("Texture packs");
+        std::string dir = tt_data_dir() + "\\textures";
+        if (prep) {
+            bool v = tt_val(a, *prep) == "true";
+            std::string h = std::string("Shows sharper or remade pictures from texture packs. A pack goes in its own folder inside ") +
+                            tp().dir + "\\textures\\replace; remove the folder to go back to the original pictures.";
+            row_begin("Use texture packs", h.c_str());
+            if (ImGui::Checkbox("##tttexrepl", &v)) a.ttFile.set(prep->section, prep->key, v ? "true" : "false");
+            row_end();
+        }
+        if (pdump) {
+            bool v = tt_val(a, *pdump) == "true";
+            std::string h = std::string("For making texture packs: every picture the game uses is saved as a PNG in ") + tp().dir +
+                            "\\textures\\dump as you play. Levels load a little slower the first time. Turn it off when you have what you need.";
+            row_begin("Save game textures", h.c_str());
+            if (ImGui::Checkbox("##tttexdump", &v)) a.ttFile.set(pdump->section, pdump->key, v ? "true" : "false");
+            row_end();
+        }
+        std::string h = std::string("Opens ") + tp().dir + "\\textures, where the replace and dump folders are.";
+        row_begin("Textures folder", h.c_str());
+        if (ImGui::Button("Open folder##tttex")) tt_open_textures();
+        row_end();
+    }
+
+}
+
 static void tt_about(App &a)
 {
     const LibGame &g = a.lib[a.cur];
-    section(game_kind_name(g.kind));
-    row_begin("Location", nullptr);
-    ImGui::PushTextWrapPos(0); ImGui::TextUnformatted(g.path.c_str()); ImGui::PopTextWrapPos();
-    row_end();
-    row_begin("Version", nullptr);
-    ImGui::Text("Xbox, %s copy, %s", game_region_name(g), g.iso ? "disc image" : "extracted files");
-    if (g.titleId) { ImGui::SameLine(); ImGui::TextColored(C_DIM, "(title ID %08X)", (unsigned)g.titleId); }
-    row_end();
-    section("Port");
-    ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
-    ImGui::PushTextWrapPos(0);
+    update_section(a);
+    section("Your copy");
     {
+        std::string c = std::string("Xbox, ") + game_region_name(g) + " copy, " + (g.iso ? "disc image" : "extracted files");
+        status_dot(true, false, c.c_str(), g.path.c_str());
         std::string arch = exe_machine(a.tt.exe);
-        ImGui::TextColored(C_DIM, "%s%s  -  %s", a.tt.version.c_str(), arch.empty() ? "" : (" (" + arch + " build)").c_str(),
-                           a.tt.exe.c_str());
+        std::string p = "Port " + a.tt.version + (arch.empty() ? "" : " (" + arch + ")");
+        status_dot(!a.tt.exe.empty(), false, p.c_str(), a.tt.exe.c_str());
     }
-    ImGui::TextColored(C_DIM, "Settings, texture packs and the log: %s", tt_data_dir().c_str());
-    ImGui::PopTextWrapPos();
-    ImGui::PopFont();
-    if (ImGui::Button("Open settings folder")) {
+    if (ImGui::Button("Settings folder")) {
         SHCreateDirectoryExA(NULL, tt_data_dir().c_str(), NULL);
         ShellExecuteA(NULL, "open", tt_data_dir().c_str(), NULL, NULL, SW_SHOWNORMAL);
     }
+    tip(("Settings, texture packs and the log: " + tt_data_dir()).c_str());
     ImGui::SameLine();
-    if (ImGui::Button("Open screenshots")) {
+    if (ImGui::Button("Screenshots")) {
         std::string d = exe_dir() + "\\Screenshots";
         SHCreateDirectoryExA(NULL, d.c_str(), NULL);
         ShellExecuteA(NULL, "open", d.c_str(), NULL, NULL, SW_SHOWNORMAL);
     }
     ImGui::SameLine();
-    if (ImGui::Button("Reset to defaults")) {
-        a.ttFile = PortSettingsFile();
-        tt_save(a);
-        set_message(a, std::string(tp().game) + " settings are back to their defaults", false);
+    if (ImGui::Button("Reset to defaults...")) ImGui::OpenPopup("Reset to defaults?");
+    if (ImGui::BeginPopupModal("Reset to defaults?", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) {
+        ImGui::TextUnformatted("Put every setting of this game back to its default? Your saves are not touched.");
+        if (ImGui::Button("Reset", ImVec2(S(150), 0))) {
+            a.ttFile = PortSettingsFile();
+            tt_save(a);
+            set_message(a, std::string(tp().game) + " settings are back to their defaults", false);
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(S(150), 0)) || dialog_back()) ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
     }
     saves_section(a, tp().game, tt_data_dir() + "\\saves", tt_data_dir() + "\\shadercache");
-    games_section(a);
     report_section(a);
+    about_credits(a);
 }
 
 // The Two Towers' page when its port is ready: tabs like ROTK's
 void tt_tabs(App &a, const LibGame &)
 {
-    // tab ids: 0 Display, 1 Graphics, 2 Controls, 3 Audio, 4 Network, 5 Gameplay; shown in ROTK's order
-    // with Gameplay after Controls, then About (6)
-    static const char *wide[] = { "  Display  ", "  Graphics  ", "  Controls  ", "  Audio  ", "  Network  ", "  Gameplay  ", "  About  " };
-    static const char *tight[] = { "Display", "Graphics", "Controls", "Audio", "Network", "Gameplay", "About" };
-    static const int order[] = { 0, 1, 2, 5, 3, 4, 6 };
-    bool has[7] = {};
+    // tab ids: 0 Display, 1 Graphics, 2 Controls, 3 Audio, 4 Network, 5 Gameplay; shown in the PC game's order
+    // (Display, Graphics, Controls, Audio, Gameplay), then Network and About (6): the same places in every game (5 Nov)
+    static const char *wide[] = { "  Display  ", "  Graphics  ", "  Controls  ", "  Audio  ", "  Network  ", "  Gameplay  ", "  About  ", "  Mods  " };
+    static const char *tight[] = { "Display", "Graphics", "Controls", "Audio", "Network", "Gameplay", "About", "Mods" };
+    static const int order[] = { 0, 1, 2, 3, 5, 4, 7, 6 };   // Mods before About, as the PC game's tabs
+    bool has[8] = {};
     for (auto &ps : a.tt.settings) if (!tt_hidden(ps)) has[tt_tab_of_setting(ps)] = true;
     has[1] = true;   // the preset lives there
     has[6] = true;
+    has[7] = tt_setting(a, "textures", "replace") || tt_setting(a, "textures", "dump");
     int count = 0;
     for (bool h : has) count += h;
     (void)wide;
-    static const char *ids[] = { "###display", "###graphics", "###controls", "###audio", "###network", "###gameplay", "###about" };
-    const char *shownNames[7]; int shownN = 0;
+    static const char *ids[] = { "###display", "###graphics", "###controls", "###audio", "###network", "###gameplay", "###about", "###mods" };
+    const char *shownNames[8]; int shownN = 0;
     for (int t : order) if (has[t]) shownNames[shownN++] = tight[t];
     static int ttSel = 0;
     ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
@@ -1279,7 +1288,7 @@ void tt_tabs(App &a, const LibGame &)
                 ImGui::PopFont();
                 ImGui::BeginChild("tttab", ImVec2(0, 0), ImGuiChildFlags_NavFlattened, ImGuiWindowFlags_NoBackground);
                 if (t == 0) tt_tab_display(a); else if (t == 1) tt_tab_graphics(a); else if (t == 2) tt_tab_controls(a);
-                else if (t == 5) tt_tab_gameplay(a); else if (t < 5) tt_settings_on_tab(a, t); else tt_about(a);
+                else if (t == 5) tt_tab_gameplay(a); else if (t < 5) tt_settings_on_tab(a, t); else if (t == 7) tt_tab_mods(a); else tt_about(a);
                 if (getenv("ROTKFIX_SCROLL_END")) ImGui::SetScrollY(ImGui::GetScrollMaxY());   // testing
                 else if (const char *sy = getenv("ROTKFIX_SCROLL_Y")) ImGui::SetScrollY(std::min((float)atof(sy) * g_scale, ImGui::GetScrollMaxY()));   // testing
                 ImGui::Dummy(ImVec2(0, S(6)));

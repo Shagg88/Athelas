@@ -17,6 +17,7 @@
 //
 // The vertex programs (characters) carry their own 4:3 projection in their constants, which the hook doesn't see: their
 // 3D positions are narrowed by the same factor in the shader (gpu::g_program_widen). Each new camera is logged once.
+#include <cstdlib>
 #include <atomic>
 #include <cmath>
 #include <cstring>
@@ -32,7 +33,7 @@
 namespace ta {
 uint32_t g_fov_percent = 100;   // [graphics] fov
 uint32_t g_draw_percent = 100;  // [graphics] draw_distance
-bool g_alpha_edges = true;      // [graphics] alpha_edges (acts only with anti-aliasing on)
+bool g_alpha_edges = false;     // was [graphics] alpha_edges; removed 5 Nov (Shagg: not needed; suspected in #64/#66)
 }  // namespace ta
 
 namespace {
@@ -98,7 +99,10 @@ void InitWidescreen() {
 // at start and when the in-game menu changes one (GameInfo::setting_changed)
 void ApplyCameraSettings() {
     gpu::g_fog_scale = float(g_draw_percent) / 100.0f;
-    gpu::g_alpha_edges = g_alpha_edges;
+    // test runs only: TA_ALPHA_EDGES=1 turns the removed option back on, to compare (#64/#66)
+    static const bool test_on = std::getenv("TA_ALPHA_EDGES") != nullptr;
+    gpu::g_alpha_edges = g_alpha_edges || test_on;
+    if (test_on) LOGR("ta: TA_ALPHA_EDGES: smooth cut-out edges on (test)");
     if (g_draw_percent != 100) LOGR("ta: draw distance %u%%", g_draw_percent);
     if (g_alpha_edges) LOGR("ta: smooth cut-out edges with anti-aliasing");
 }
