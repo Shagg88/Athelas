@@ -119,6 +119,38 @@ static float Axis(SDL_Gamepad* pad, int a)
     return v < 0 ? v / 32768.0f : v / 32767.0f;
 }
 
+// The shoulder buttons of every open controller (ROTK Fix's two and ours), for the pages of the main menu
+// (Players.cpp): on SteamOS the game's input records had no shoulder buttons in the menus (test of
+// 04/11/2026). A button counts when it goes down; each controller is remembered by its SDL id.
+int PadsShoulder(bool& sdl)
+{
+    sdl = false;
+    if (!pGetGamepads && !LoadSdl()) return 0;
+    struct Seen { SDL_JoystickID id; uint8_t held; };
+    static Seen was[8];
+    Seen now[8] = {};
+    int n = 0, dir = 0, kept = 0;
+    SDL_JoystickID* ids = pGetGamepads(&n);
+    if (!ids) return 0;
+    sdl = true;
+    for (int i = 0; i < n && kept < 8; ++i) {
+        SDL_Gamepad* p = pFromId(ids[i]);
+        if (!p) continue;
+        uint8_t held = 0;
+        if (pGetButton(p, BT_LSHOULDER) || Axis(p, AX_LT) > 0.5f) held |= 1;
+        if (pGetButton(p, BT_RSHOULDER) || Axis(p, AX_RT) > 0.5f) held |= 2;
+        uint8_t before = 0;
+        for (const Seen& s : was) if (s.id == ids[i]) before = s.held;
+        const uint8_t down = held & ~before;
+        if (down & 1) dir = -1;
+        else if (down & 2) dir = 1;
+        now[kept++] = Seen{ ids[i], held };
+    }
+    pFree(ids);
+    memcpy(was, now, sizeof was);
+    return dir;
+}
+
 static void UpdatePad(int slot)
 {
     FindPad(slot);

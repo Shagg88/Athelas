@@ -179,6 +179,7 @@ static int __cdecl LoadPackages(PackageList* list)
 {
     g_hero[2] = g_hero[3] = -1;
     HudNewLevel();
+    AudioNewLevel();
     // game levels only: the list contains the char_ packages of the two players (the menu, which is also a level
     // loaded this way, does not: Gimli once ended up in it when returning to the menu after co-op)
     int chars = 0;
