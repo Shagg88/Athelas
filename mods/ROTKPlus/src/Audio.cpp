@@ -26,7 +26,14 @@
 
 static bool g_on;
 static int  g_lines;
-static const int kMaxLines = 3000;
+static const int kMaxLines = 3000;   // a level (test of 04/11/2026: a session's versus games used them all before the
+                                     // Black Gate's boss)
+
+void AudioNewLevel()
+{
+    if (g_on && g_lines >= kMaxLines) Log("audio: the log starts again for the new level");
+    g_lines = 0;
+}
 
 // + the factors of its voices' volume. 0x466E60 computes gain = 0x99D6A0[group] (0 if the group's bit is set in the
 // mask 0x99D69C) x the entry's +0x60, the group being +3 of the sound definition at +0x30, and calls the entry's volume
@@ -203,7 +210,9 @@ static void LogEffectVoices()
 // pause / stop / play vo ..." handlers at 0x45DB30..0x45DFB0 call it, and so does the game's code). Fourth test of
 // 30/10/2026: the stream of kind 0 plays at volume 0 from the start, the music heard is a stream of kind 2 at priority
 // 90; what decides those volumes is still unknown. Written, with the caller, for every command but the plain plays of
-// sound effects (1 and 9, very frequent).
+// sound effects (1 and 9, very frequent), which are written only when a level script asks for them (the "audio: play"
+// handler 0x45DB30, caller 0x45DB6C): they are the numbers [PvP] Cheer_<level> needs (Pvp.cpp), such as the crowd of the
+// Black Gate.
 static NAKED void AudioCmdOrig()   // sub esp,8; push ebx; mov ebx,[esp+10h]
 {
     ASM_BEGIN
@@ -223,10 +232,12 @@ static void __cdecl AudioCmd(uint32_t emitter, int cmd, int n, float a, float b,
     static uint32_t lastEmitter; static int lastCmd = -1, lastN; static float lastA, lastB, lastC;
     const bool same = cmd == lastCmd && (emitter & 0xFF) == lastEmitter && n == lastN && a == lastA && b == lastB && c == lastC;
     lastEmitter = emitter & 0xFF; lastCmd = cmd; lastN = n; lastA = a; lastB = b; lastC = c;
-    if (cmd != 1 && cmd != 9 && !same && g_lines < kMaxLines) {
+    const uintptr_t from = (uintptr_t)_ReturnAddress();
+    const bool script = from >= 0x45DB30 && from < 0x45E000;   // the level scripts' audio handlers
+    if (((cmd != 1 && cmd != 9) || script) && !same && g_lines < kMaxLines) {
         ++g_lines;
-        Log("audio: command %d emitter %d n %d (%.2f %.2f %.2f) from %08X", cmd, (int)(emitter & 0xFF), n, a, b, c,
-            (unsigned)(uintptr_t)_ReturnAddress());
+        Log("audio: command %d emitter %d n %d (%.2f %.2f %.2f) from %08X%s", cmd, (int)(emitter & 0xFF), n, a, b, c,
+            (unsigned)from, script ? " (level script)" : "");
     }
     GameFn((AudioCmdFn)&AudioCmdOrig)(emitter, cmd, n, a, b, c);
 }

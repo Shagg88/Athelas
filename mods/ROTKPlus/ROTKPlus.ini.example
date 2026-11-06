@@ -1,0 +1,145 @@
+; ROTKPlus.ini - settings of ROTKPlus (game folder, next to rotk.exe)
+; Without this file the mod is OFF.
+
+[Coop]
+; 1 = third and fourth player in co-op games (and the Versus entry in the main menu); 0 = the mod does nothing
+Enabled=1
+; players of the co-op: 2, 3 or 4. It is chosen in the main menu (Co-op: left/right) and saved here
+Players=3
+; hero of the third player when it was not chosen in the selection screen:
+; auto, aragorn, legolas, gimli, gandalf, sam, frodo, pippin, merry, faramir
+; (if it is already taken, the first free one among Gimli, Legolas, Aragorn, Gandalf is used)
+Hero=auto
+; input slot of the third player: 2 = its own (it does nothing without a controller), 0 = copies player 1
+Input=2
+; 1 = the extra players use the first controllers that ROTK Fix leaves free; 0 = keyboard only
+Pad=1
+; 1 = an extra player without a controller moves with player 1's keyboard keys (normally nobody wants this: one person
+; would drive several characters); 0 = it stands still
+KeyboardFallback=0
+; for testing: pick the third player's controller by part of its name (e.g. DualSense); empty = first free one
+PadName=
+; HUD boxes of the extra players: 1 = shown. HudX/HudY move them relative to player 2's box, in fractions of the
+; screen (negative Y = up; -0.72 puts them at the top). The third player's box is at the top right, the fourth's at the
+; top left
+Hud=1
+HudX=0
+HudY=-0.72
+; 1 = room for the sound banks of every hero (the game has 7 places; with 4 players the music and other sounds went
+; silent until a cutscene). 0 only to compare with the game's own behaviour
+SoundBanks=1
+
+[PvP]
+; 1 = the "Versus" entry in the main menu (confirm it and the players can hit each other)
+Enabled=1
+; the Versus entry's choice, made in the main menu (left/right: 2, 3, 4 players, 2 vs 2, then the same with the heroes
+; only) and saved here: players (2, 3 or 4), Teams=1 for 2 vs 2 (four players), Enemies=0 for the heroes only (the
+; characters of the enemy side are not created; the allies are)
+Players=2
+Teams=0
+Enemies=1
+; lives per player: whoever loses them stays on the ground; the last one (or the last team) standing wins and the level
+; closes
+Lives=2
+; the two players of team 1 in 2 vs 2, as digits: 12 = players 1 and 2 against 3 and 4; 13 or 14 for the other pairs
+Team1=12
+; the victory: 0 = the last one standing (Lives), 1 = timed: no lives, the most knock-downs of opponents in Time minutes
+Rule=0
+Time=3
+; rounds: 1 = a single game, 3 or 5 = a tournament at the best of that many rounds, with a Cup for the winner
+Rounds=1
+; timed games: the seconds a player stays on the ground before getting up (1-10; 10 is the game's own)
+TimedRespawn=5
+; 1 = after a Versus game straight to the map (the game's score, co-op statistics, shop and save screens say nothing
+; about it, and with four players they are ten); 0 = the game's screens
+SkipScoreScreens=1
+; BossScene: 1 = with the heroes only at the Black Gate the boss still comes for its opening scene (Frodo's mithril)
+; and goes away when the fight begins; 0 = no boss at all (only its voice is heard)
+BossScene=1
+; LastGame: 1 = after a versus game (with SkipScoreScreens=1) the Last game is shown over the map until confirm or
+; back; 0 = just the map
+LastGame=1
+; SuddenDeath: 1 = a timed round tied when the time is up goes on until the next knock-down puts one side ahead (two
+; minutes at most, then a draw); 0 = a draw at once
+SuddenDeath=1
+; 1 = in a Versus game the map offers only the arenas: the Southern Gate, the Courtyard of Minas Tirith and the Black
+; Gate (open even if not unlocked yet). 0 = every level, as in co-op
+ArenasOnly=1
+; Sounds of the level for the Versus game, from the log of [Diag] AudioLog=1 (the lines "audio: command ..."): each is
+; "command emitter n a b c", several separated by ';' (one at random). Cheer_<level> when a player hits another one (at
+; most every CheerEvery milliseconds; a knock-down always), Music_<level> at the start. The level codes: min02 (Southern
+; Gate), min04 (Courtyard), bla01 (Black Gate). Nothing is played without them.
+; Commands joined by '+' are played together. The Black Gate has its own built in (the soldiers around the arena, the
+; ten emitters the level's script uses when Aragorn hits its boss); a line here takes its place:
+;Cheer_bla01=1 0 2 5 255 0+1 1 2 5 255 0+1 2 2 5 255 0+1 3 2 5 255 0+1 12 2 5 255 0+1 13 2 5 255 0
+CheerEvery=1500
+
+[Players]
+; 1 = the "Fellowship" entry in the main menu ("Compagnia" in Italian): a name for each player and statistics per name (kills, assists, deaths, levels,
+; Versus games...), added up over the sessions in ROTKPlus_players.ini (game folder). 0 = no entry, nothing is counted
+Enabled=1
+; 1 = "Who is playing?" after Single, Co-op or Versus: each place gets its name (last line-up proposed, Guest = no
+; statistics). 0 = the names set in the Fellowship page are used
+AskWhoPlays=1
+; 1 = one "Multiplayer" entry in place of Co-op and Versus, with a page for the mode (campaign, everybody against
+; everybody, teams), the players, the enemies, the lives, the teams and who plays. 0 = the two entries, each with its
+; choice on left/right. Needs AskWhoPlays=1. The page keeps its mode in [Multiplayer] Mode (0 campaign, 1 everybody
+; against everybody, 2 teams), the rest in [Coop] Players and [PvP]
+MultiplayerPage=1
+; size of the texts of the Fellowship page (1 = as the menu's entries) and of the statistics table
+TextScale=0.8
+TableScale=0.6
+; the dark see-through rectangle behind the pages, for reading on the bright picture: 0 = none, 1 = black
+Shade=0.55
+; names above the players' heads in place of the letters g1-g4 (1, the default; 0 = the letters), and above the HUD
+; boxes (0, the default; 1 = shown); their size
+HeadNames=1
+HudNames=0
+NameScale=0.8
+; summary of the level at the top of the score screen (0, the default: only in the "Last game" page): 1 = shown, its
+; size and height (fraction of the screen from the top)
+ScoreSummary=0
+SummaryScale=0.8
+SummaryY=0.02
+; the portraits in front of the heroes and the kinds of enemy: 1 = made from the game's own portraits the first time
+; the game shows them (files in ROTKPlus_icons, game folder; an icon already there is never replaced); 0 = not made
+CaptureIcons=1
+
+[General]
+; language of the mod's own texts: auto (recognised from the game), en, it, fr, de, es, or a code of your own that
+; has a section in ROTKPlus.lang.ini
+Language=auto
+; texts drawn in one go instead of a letter at a time (the game's way, slow under DXVK: the mod's pages fell to
+; 40-55 fps): 1 = the mod's texts (the default), 2 = also every text of the game (menus, HUD), 0 = as the game does
+FastText=1
+
+[Diag]
+; for testing only: F9 in a level ends it with a victory (to look at the end-of-level screens without playing)
+VictoryKey=0
+; for testing only: 1 = the game's audio streams (music, spoken lines) in the log: which ones play and which are
+; stopped to make room for others (to study sounds that go silent)
+AudioLog=0
+; for testing only: 1 = in a versus game with the heroes only the Black Gate's boss is created all the same (and fights),
+; and the log gets the bones of its model and of the heroes, then its state every second
+BossBones=0
+
+[Debug]
+; for testing only: 1 = players 2, 3 and 4 are driven by the keyboard, so the co-op can be tried without any controller
+; (player 1 uses the game's own keyboard and mouse). Keys: see the top of src/Sim.cpp
+SimPads=0
+
+[Log]
+; Every start of the game writes a new log, ROTKPlus_logs\ROTKPlus_<date>_<time>.log, and leaves the earlier ones alone.
+; ROTKPlus.log in the game folder is a copy of the latest session. Attach the log of the session you are reporting.
+; Detail: 0 = only the events (the default); 1 = also a detailed trace of every level (a snapshot of the players every
+; 60 s, the game's statistics at the start and end of levels, every kill, hit, pick-up, the level's script calls and
+; effects): turn it on when you report a problem with the statistics
+Detail=0
+; Keep: how many session logs to keep; 0 = never delete (an hour of play is usually well under 100 KB)
+Keep=0
+; StatsBackups: at every start, if ROTKPlus_players.ini changed since its last copy, a copy of it with the date and time
+; in ROTKPlus_logs; the newest N are kept (0 = no copies)
+StatsBackups=10
+; CopyRotkFixLog: 1 = when the game closes, a copy of ROTK Fix's own log (which it overwrites at every start) next to
+; the session's log, with the same date and time; 0 = no copy
+CopyRotkFixLog=1

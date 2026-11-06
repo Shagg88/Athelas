@@ -31,6 +31,8 @@ static float* const    kOriginY     = (float*)0x8E2F44;
 extern uint32_t g_players[8];            // Coop.cpp
 extern volatile int g_spawningP3;        // Coop.cpp: 0x47EF80 answers the extra player's hero (1 third, 2 fourth)
 bool PvpIsOut(uint32_t c);               // Pvp.cpp
+static float LineWidth(const uint8_t* tpl, const char* s, float scale);   // (with the versus game's texts)
+static bool  OverBox(float x, float y);   // (with the names above the heads)
 
 static int ActivePlayers()
 {
@@ -241,7 +243,11 @@ static uint8_t* TextSource()
     if (uint8_t* root = *(uint8_t**)kHudB; root != g_textRoot) { g_textRoot = root; g_textSrc = FindText(root, 0); }
     return g_textSrc;
 }
-void HudNewLevel() { g_textRoot = nullptr; g_textSrc = nullptr; }
+static char g_killsWord[48];   // the game's word under the boxes ("uccisioni"), looked up again in every level
+static uint32_t g_enemyHud;   // (IsLevelExtra, below)
+static int      g_nBossHud = -1;   // the boss's ring: its elements (IsLevelExtra, below), -1 = not looked for yet
+static int      g_bossHudTries;
+void HudNewLevel() { g_textRoot = nullptr; g_textSrc = nullptr; g_killsWord[0] = 0; g_enemyHud = 0; g_nBossHud = -1; g_bossHudTries = 0; }
 
 // a copy of that text element (0xB0 bytes) for Players.cpp's level summary on the score screen, where the HUD is gone:
 // it holds no pointers the drawing follows (font index, colours, scale, box), so the copy stays good after the level
@@ -435,6 +441,7 @@ static void DrawExtraMark(uint8_t* src, int slot)
     *(const char**)(g_caption + 0x8C) = hasName ? named[slot - 2] : four ? "@g4" : "@g3";
     *(float*)(g_caption + 0x40) = left;
     *(float*)(g_caption + 0x44) = top;
+    if (hasName && OverBox(left + LineWidth(g_caption, named[slot - 2] + 1, 1.0f) * 0.5f, top + 0.015f)) return;
     GameFn(&DrawElementOrig)((uint32_t)(uintptr_t)g_caption);
 }
 
@@ -485,6 +492,7 @@ static void DrawMark(uint32_t e)
     }
     const float left = *(const float*)(src + 0x40), top = *(const float*)(src + 0x44);
     const float hgt = ((float(__cdecl*)(uint8_t*))0x4F9FB0)(src);
+    const bool onBox = OverBox(left + LineWidth(text, PlayerName(slot).c_str(), PlayersNameScale()) * 0.5f, top + 0.015f);
     memcpy(g_markP, src, 0xA0);
     *(uint32_t*)(g_markP + 4) = 0;
     *(float*)(g_markP + 0x44) = top + hgt * kMarkCut;
@@ -494,7 +502,7 @@ static void DrawMark(uint32_t e)
     uv[1] = kMarkCut;
     GameFn(&DrawElementOrig)((uint32_t)(uintptr_t)g_markP);
     uv[1] = v0;
-    DrawNameAt(PlayerName(slot), left, top, false);
+    if (!onBox) DrawNameAt(PlayerName(slot), left, top, false);   // (the arrow stays)
 }
 
 static void DrawHudNames()
@@ -507,39 +515,459 @@ static void DrawHudNames()
     if (g_players[3] && PlayerHasName(3)) DrawNameAt(PlayerName(3), 0.165f + g_hudDx, y + g_hudDy, true);
 }
 
-// --- big text in the middle of the screen (winner of the versus mode, Pvp.cpp) --------------------------------------
+// --- big text in the middle of the screen (winner and teams of the versus mode, Pvp.cpp) ---------------------------
 // Like the "g3" caption: a copy of the "kills" text element of player 2's block (type 0x82, 0xB0 bytes), literal text,
 // position in fractions of the screen and a larger scale (+0x68/+0x6C). Drawn right after player 2's block (it always
-// exists in co-op), until it expires.
+// exists in co-op), until it expires. Its time starts at the first drawing: the teams' banner of 04/11/2026 was asked
+// for during the level's opening cutscene, without the HUD, and ran out before anybody could see it.
 static char    g_bannerText[96];
+static DWORD   g_bannerMs;      // how long, still to start (0 = no banner waiting)
+static DWORD   g_bannerAsked;   // when it was asked for: one not drawn within a minute is dropped
 static DWORD   g_bannerUntil;
 static uint8_t g_banner[0x200];
+
+static bool    g_bannerCup;     // a cup above it (the winner of a tournament, Players.cpp draws it)
 
 void HudBanner(const char* text, DWORD ms)
 {
     strncpy_s(g_bannerText, text, _TRUNCATE);
-    g_bannerUntil = GetTickCount() + ms;
-    if (!g_bannerUntil) g_bannerUntil = 1;
+    g_bannerMs = ms ? ms : 1;
+    g_bannerAsked = GetTickCount();
+    g_bannerUntil = 0;
+    g_bannerCup = false;
+}
+
+void HudBannerCup(const char* text, DWORD ms)
+{
+    HudBanner(text, ms);
+    g_bannerCup = true;
+}
+
+// a banner is waiting to be drawn or on the screen (Pvp.cpp shows the two teams one after the other)
+bool HudBannerBusy()
+{
+    if (g_bannerMs && GetTickCount() - g_bannerAsked > 60000) g_bannerMs = 0;
+    if (g_bannerMs) return true;
+    return g_bannerUntil && (int)(GetTickCount() - g_bannerUntil) < 0;
 }
 
 static void DrawBanner()
 {
+    if (g_bannerMs && GetTickCount() - g_bannerAsked > 60000) g_bannerMs = 0;
+    if (g_bannerMs) {
+        Log("hud: banner on the screen for %u ms, %u ms after it was asked (\"%s\")", (unsigned)g_bannerMs,
+            (unsigned)(GetTickCount() - g_bannerAsked), g_bannerText[0] == '@' ? g_bannerText + 1 : g_bannerText);
+        g_bannerUntil = GetTickCount() + g_bannerMs;
+        if (!g_bannerUntil) g_bannerUntil = 1;
+        g_bannerMs = 0;
+    }
     if (!g_bannerUntil || (int)(GetTickCount() - g_bannerUntil) >= 0) { g_bannerUntil = 0; return; }
     uint8_t* text = TextSource();
-    if (!text) return;
+    if (!text) {
+        static DWORD logged;
+        if (logged != g_bannerUntil) { logged = g_bannerUntil; Log("hud: banner not drawn: no text element to copy"); }
+        return;
+    }
     memcpy(g_banner, text, 0xB0);
     *(uint32_t*)(g_banner + 4) = 0;
     *(uint16_t*)(g_banner + 0x74) = 1;
     *(float*)(g_banner + 0x88) = 0.0f;
     *(const char**)(g_banner + 0x8C) = g_bannerText;
-    *(float*)(g_banner + 0x40) = 0.18f;
+    // measured and centred, at most 86% of the screen wide (test of 04/11/2026: it began at a fixed point, 0.18, and
+    // "Team of the Sun: Alex and Robin" went out on the right)
+    float scale = 1.6f;
+    *(float*)(g_banner + 0x68) = scale;
+    *(float*)(g_banner + 0x6C) = scale;
+    float w = LineWidth(g_banner, g_bannerText[0] == '@' ? g_bannerText + 1 : g_bannerText, 1.0f);
+    if (w > 0.86f) {
+        const float f = 0.86f / w < 0.45f ? 0.45f : 0.86f / w;
+        scale *= f; w *= f;
+        *(float*)(g_banner + 0x68) = scale;
+        *(float*)(g_banner + 0x6C) = scale;
+    }
+    *(float*)(g_banner + 0x40) = 0.5f - w * 0.5f;
     *(float*)(g_banner + 0x44) = 0.42f;
-    *(float*)(g_banner + 0x68) = 1.8f;
-    *(float*)(g_banner + 0x6C) = 1.8f;
     const float ox = *kOriginX, oy = *kOriginY;
     *kOriginX = 0.0f; *kOriginY = 0.0f;
     GameFn(&DrawElementOrig)((uint32_t)(uintptr_t)g_banner);
     *kOriginX = ox; *kOriginY = oy;
+    if (g_bannerCup) PlayersDrawCup(0.5f, 0.2f, 0.19f);
+}
+
+// --- the versus game's texts (Pvp.cpp) ------------------------------------------------------------------------------
+// Copies of the same text element as the banner. Test of 04/11/2026: a status line and the messages under the top boxes
+// covered the names above the heads and each other. Now: the clock of a timed game, the teams' totals and the round of
+// a tournament in the gap between the top boxes (or at the top, with fewer boxes there); the feed ("Alex downs Robin",
+// the last two messages, 3 s each) at the bottom, above the boxes, the newest lowest; each player's lives or points in
+// its box, in place of the game's kills (DrawBoxText). A text's colour is +0x78 red, +0x80 green, +0x7C blue, 0.5 the
+// font's own (see Players.cpp, Put).
+struct HudPart { char text[48]; int tone; };   // tone: 0 as it is, 1 gold (the Sun), 2 pale blue (the Moon), 3 dim
+static HudPart g_feed[3];
+static DWORD   g_feedUntil[3];
+static HudPart g_status[10];
+static int     g_nStatus;
+static char    g_clock[16];
+static char    g_roundText[32];
+static char    g_boxText[4][48];   // each player's box: "2 lives", "3 points", "out" ("" = the game's own text)
+static bool    g_boxAppend[4];     // after the game's text ("4 kills, 2 lives"), with the level's enemies
+static int     g_boxTone[4];       // its colour (the team's in 2 vs 2)
+static const float kTone[4][3] = { { 0, 0, 0 }, { 0.5f, 0.43f, 0.25f }, { 0.35f, 0.41f, 0.5f }, { 0.31f, 0.31f, 0.31f } };
+static uint8_t g_line[0x200];
+static DWORD   g_hudDrawnAt;      // the last time the HUD was drawn (the game's opening cutscene hides it)
+
+DWORD HudDrawnAt() { return g_hudDrawnAt; }
+
+void HudFeed(const char* text, int tone)
+{
+    for (int i = 2; i > 0; --i) { g_feed[i] = g_feed[i - 1]; g_feedUntil[i] = g_feedUntil[i - 1]; }
+    strncpy_s(g_feed[0].text, text, _TRUNCATE);
+    g_feed[0].tone = tone;
+    g_feedUntil[0] = (GetTickCount() + 3000) | 1;
+}
+
+void HudRound(const char* text) { strncpy_s(g_roundText, text ? text : "", _TRUNCATE); }
+
+void HudBoxText(int slot, const char* text, bool append, int tone)
+{
+    if (slot < 0 || slot > 3) return;
+    strncpy_s(g_boxText[slot], text ? text : "", _TRUNCATE);
+    g_boxAppend[slot] = append;
+    g_boxTone[slot] = tone;
+}
+
+void HudFeedClear() { for (DWORD& t : g_feedUntil) t = 0; }
+
+void HudStatus(int n, const char* const* texts, const int* tones)
+{
+    g_nStatus = 0;
+    for (int i = 0; i < n && i < 10; ++i) {
+        strncpy_s(g_status[i].text, texts[i], _TRUNCATE);
+        g_status[i].tone = tones[i];
+        ++g_nStatus;
+    }
+}
+
+void HudClock(const char* text) { strncpy_s(g_clock, text ? text : "", _TRUNCATE); }
+
+// the width of a text drawn with this element at this scale (as Players.cpp measures its pages' texts: 0x4DF010 the
+// font, 0x4DF1D0 the scale, 0x4DF200 the width; the text manager's font and scale are put back)
+static float LineWidth(const uint8_t* tpl, const char* s, float scale)
+{
+    uint8_t* mgr = *(uint8_t* const*)0x56D628;
+    if (!mgr || !tpl || !*s) return 0.0f;
+    float sx = *(const float*)(tpl + 0x68), sy = *(const float*)(tpl + 0x6C), k = *(const float*)(tpl + 0x9C);
+    if (sx == 0.0f) sx = 1.0f;
+    if (sy == 0.0f) sy = 1.0f;
+    if (k == 0.0f) k = 1.0f;
+    const float gx = *(const float*)0x8E2F7C, gy = *(const float*)0x8E2F80;
+    const int fontWas = *(const int*)(mgr + 0xF0);
+    const float sxWas = *(const float*)(mgr + 0xCC), syWas = *(const float*)(mgr + 0xD0);
+    float w = 0.0f;
+    if (!Guard([&] {
+            if (((int(__cdecl*)(int))0x4DF010)(*(const int16_t*)(tpl + 0x90))) {
+                ((void(__cdecl*)(float, float))0x4DF1D0)(gx * gx * sx * scale * k, gy * gy * sy * scale * k);
+                w = ((float(__cdecl*)(const char*))0x4DF200)(s);
+            }
+        }))
+        w = 0.0f;
+    *(int*)(mgr + 0xF0) = fontWas;
+    *(float*)(mgr + 0xCC) = sxWas;
+    *(float*)(mgr + 0xD0) = syWas;
+    if (w > 2.0f) w /= 512.0f;
+    if (w <= 0.0f) w = 0.0115f * scale * (float)strlen(s);
+    return w;
+}
+
+// one text at x (left edge), y, scale times the element's, in a tone
+static void DrawLine(const char* s, float x, float y, float scale, int tone)
+{
+    uint8_t* src = TextSource();
+    if (!src || !*s) return;
+    static char buf[64];
+    _snprintf_s(buf, sizeof buf, _TRUNCATE, "@%s", s);
+    memcpy(g_line, src, 0xB0);
+    *(uint32_t*)(g_line + 4) = 0;
+    *(uint16_t*)(g_line + 0x74) = 1;
+    *(float*)(g_line + 0x88) = 0.0f;
+    *(const char**)(g_line + 0x8C) = buf;
+    *(float*)(g_line + 0x40) = x;
+    *(float*)(g_line + 0x44) = y;
+    *(float*)(g_line + 0x68) = (*(float*)(src + 0x68) ? *(float*)(src + 0x68) : 1.0f) * scale;
+    *(float*)(g_line + 0x6C) = (*(float*)(src + 0x6C) ? *(float*)(src + 0x6C) : 1.0f) * scale;
+    if (tone > 0 && tone < 4) {
+        *(float*)(g_line + 0x78) = kTone[tone][0];   // red
+        *(float*)(g_line + 0x80) = kTone[tone][1];   // green
+        *(float*)(g_line + 0x7C) = kTone[tone][2];   // blue
+    }
+    const float ox = *kOriginX, oy = *kOriginY;
+    *kOriginX = 0.0f; *kOriginY = 0.0f;
+    GameFn(&DrawElementOrig)((uint32_t)(uintptr_t)g_line);
+    *kOriginX = ox; *kOriginY = oy;
+}
+
+// the free space at the top: its middle and width. Four players: between the two top boxes, at the height of the
+// clock from player 4's ring (0.48) to player 3's level (0.60), lower down to player 3's weapon (0.535) (screenshots of
+// 04/11/2026); three: left of player 3's box; two, or the boxes in a row at the bottom: the whole top
+static void TopGap(float& cx, float& maxW)
+{
+    cx = 0.5f; maxW = 0.5f;
+    if (g_row) return;
+    if (g_players[3]) { cx = 0.54f + g_hudDx; maxW = 0.115f; }
+    else if (g_players[2]) { cx = 0.42f + g_hudDx; maxW = 0.2f; }
+}
+
+// a line of parts centred at cx, smaller (down to 60%) if wider than maxW
+static void DrawParts(const HudPart* parts, int n, float cx, float y, float scale, float gap, float maxW)
+{
+    uint8_t* src = TextSource();
+    if (!src || n <= 0) return;
+    float w = 0.0f, pw[10];
+    if (n > 10) n = 10;
+    for (int pass = 0; pass < 2; ++pass) {
+        w = gap * (float)(n - 1);
+        for (int i = 0; i < n; ++i) { pw[i] = LineWidth(src, parts[i].text, scale); w += pw[i]; }
+        if (w <= maxW) break;
+        const float f = maxW / w < 0.6f ? 0.6f : maxW / w;
+        scale *= f; gap *= f;
+    }
+    float x = cx - w * 0.5f;
+    for (int i = 0; i < n; ++i) { DrawLine(parts[i].text, x, y, scale, parts[i].tone); x += pw[i] + gap; }
+}
+
+// one line at the clock's height: the clock of a timed game between the two teams' totals ("3  1:58  0", the Sun's
+// gold, the Moon's blue), or the totals alone ("3 - 2", the lives left); the round of a tournament under it, small
+static void DrawVersusLines()
+{
+    if (!TextSource()) return;
+    const DWORD now = GetTickCount();
+    float cx, maxW;
+    TopGap(cx, maxW);
+    HudPart top[3];
+    int n = 0;
+    if (g_nStatus >= 2) top[n++] = g_status[0];
+    if (g_clock[0]) { strncpy_s(top[n].text, g_clock, _TRUNCATE); top[n++].tone = 0; }
+    else if (g_nStatus >= 2) { strncpy_s(top[n].text, "-", _TRUNCATE); top[n++].tone = 3; }
+    if (g_nStatus >= 2) top[n++] = g_status[1];
+    if (n) DrawParts(top, n, cx, 0.085f, 1.25f, 0.014f, maxW);
+    if (g_roundText[0]) {
+        HudPart r;
+        strncpy_s(r.text, g_roundText, _TRUNCATE);
+        r.tone = 3;
+        DrawParts(&r, 1, cx, n ? 0.137f : 0.09f, 0.7f, 0.0f, maxW);
+    }
+    float fy = 0.785f;
+    for (int i = 0, shown = 0; i < 3; ++i) {
+        if (!g_feedUntil[i] || (int)(now - g_feedUntil[i]) >= 0) { g_feedUntil[i] = 0; continue; }
+        if (shown++ == 2) continue;
+        DrawParts(&g_feed[i], 1, 0.5f, fy, 0.8f, 0.0f, 0.6f);
+        fy -= 0.04f;
+    }
+}
+
+// --- the boxes in a versus game -------------------------------------------------------------------------------------
+// The kills under each box are two elements of the block: the number, "coopkillsnum" (+0x34 of its pointers: 0x4ECD00
+// writes the kills into its +0x88), and the word, "coopkills" (+0x38: its text is the key "kills", which the game
+// translates when it draws it; test of 04/11/2026 on SteamOS, log "the kills' text of the boxes is \"kills\"").
+// With the heroes only the number is not drawn and the word becomes the player's lives or points ("2 lives"); with the
+// enemies the number stays and the word becomes "kills, 2 lives" in the game's language. For player 1's and 4's box
+// they are the elements of block A, for player 2's and 3's of block B (g_hudSlot during the extra players' boxes).
+static int BoxSlotOf(uint32_t e, bool& number)
+{
+    const uint32_t* a = (const uint32_t*)kHudA;
+    const uint32_t* b = (const uint32_t*)kHudB;
+    number = false;
+    if (!e) return -1;
+    if (e == a[13] || e == a[14]) { number = e == a[13]; return g_hudSlot == 3 ? 3 : 0; }
+    if (e == b[13] || e == b[14]) { number = e == b[13]; return g_hudSlot == 2 ? 2 : 1; }
+    return -1;
+}
+
+static bool DrawBoxText(uint32_t e)
+{
+    uint8_t* el = (uint8_t*)(uintptr_t)e;
+    bool number = false;
+    const int slot = BoxSlotOf(e, number);
+    if (slot < 0 || !g_boxText[slot][0]) return false;
+    if (number) return !g_boxAppend[slot];   // heroes only: the number of kills is not drawn
+    const char* game = *(const char**)(el + 0x8C);
+    if (!g_killsWord[0]) {   // the word as the game shows it
+        std::string w = game && !IsBadStringPtrA(game, 64) ? (game[0] == '@' ? std::string(game + 1) : LangGameText(game)) : std::string();
+        strncpy_s(g_killsWord, w.empty() ? "kills" : w.c_str(), _TRUNCATE);
+        static bool logged;
+        if (!logged) { logged = true; Log("hud: the word of the kills under the boxes is \"%s\" (\"%s\")", g_killsWord, game ? game : ""); }
+    }
+    static char buf[2][112];
+    char* b = buf[slot & 1];
+    if (g_boxAppend[slot]) _snprintf_s(b, sizeof buf[0], _TRUNCATE, "@%s, %s", g_killsWord, g_boxText[slot]);
+    else _snprintf_s(b, sizeof buf[0], _TRUNCATE, "@%s", g_boxText[slot]);
+    *(const char**)(el + 0x8C) = b;
+    float col[3] = { *(float*)(el + 0x78), *(float*)(el + 0x80), *(float*)(el + 0x7C) };
+    const int tone = g_boxTone[slot];
+    if (tone > 0 && tone < 4) { *(float*)(el + 0x78) = kTone[tone][0]; *(float*)(el + 0x80) = kTone[tone][1]; *(float*)(el + 0x7C) = kTone[tone][2]; }
+    GameFn(&DrawElementOrig)(e);
+    *(float*)(el + 0x78) = col[0]; *(float*)(el + 0x80) = col[1]; *(float*)(el + 0x7C) = col[2];
+    *(const char**)(el + 0x8C) = game;
+    return true;
+}
+
+// a versus game: the level's own extras are not drawn. The co-op's shared lives (Pvp.cpp keeps them above zero, the
+// number meant nothing): the icon "cooplife" (0x8E28F4) and the number "respawncount" (0x8E28E0, 0x4ECD00 writes the
+// lives into its +0x88). The allies' HUD at the top right, "followera", "followerb", "followerc" (0x8E290C, 0x8E2934,
+// 0x8E295C, 0x4EC390...: a portrait in a ring and the ally's life, "47/200" at the Courtyard), over player 3's box.
+// With the heroes only also "enemyhud", the template of the enemies' bars (it was taken for the boss's ring at the top
+// right in the test of 04/11/2026; the ring is below, IsBossHud), found by name as 0x4EB4C0 does (0x4ED940(0, "enemyhud")),
+// once a second in a level until it is there. (The coloured bars above the enemies are another thing: 0x4EBE90 ->
+// 0x4EB6D0, the 8 slots at 0x8E2120, drawn in the world.)
+static DWORD    g_enemyHudLook;
+
+// The boss's ring at the top right (the Black Gate's, test of 05/11/2026 with the boss created: "underring", "thealth"
+// (its life), the portraits of the bosses ("mouth" shown, "troll", "nazgul"... hidden) and seven pieces without a text,
+// each drawn on its own; "enemyhud" is something else). With the heroes only the element holding "underring" and
+// everything under it are not drawn. The elements: the table at *0x8DCF1C (size at +4, from +8 entries of 12 bytes: name,
+// ?, element; 0x58585858 at the end, as 0x4ED6D0) and the children at +4 (count, then the elements, as 0x4ED860).
+static uint32_t g_bossHud[96];
+static DWORD    g_bossHudLook;   // (levels without it: looked for once a second, 30 times, g_bossHudTries)
+
+static const char* ElemText(uint32_t e)
+{
+    const char* t = *(const char* const*)(e + 0x8C);
+    return t && !IsBadStringPtrA(t, 32) ? t : nullptr;
+}
+
+static int ElemKids(uint32_t e, const uint32_t** kids)
+{
+    const int* a = *(const int* const*)(e + 4);
+    if (!a || IsBadReadPtr(a, 4) || a[0] <= 0 || a[0] > 256 || IsBadReadPtr(a, 4 + a[0] * 4)) return 0;
+    *kids = (const uint32_t*)(a + 1);
+    return a[0];
+}
+
+static uint32_t ParentOfText(uint32_t e, const char* text, int depth, int& budget)
+{
+    const uint32_t* k = nullptr;
+    const int n = ElemKids(e, &k);
+    for (int i = 0; i < n && budget > 0; ++i, --budget) {
+        const uint32_t c = k[i];
+        if (!c || IsBadReadPtr((const void*)(uintptr_t)c, 0x90)) continue;
+        const char* t = ElemText(c);
+        if (t && !_stricmp(t, text)) return e;
+        if (depth < 6) if (const uint32_t p = ParentOfText(c, text, depth + 1, budget)) return p;
+    }
+    return 0;
+}
+
+static void CollectUnder(uint32_t e, int depth, int& n)
+{
+    if (n >= (int)(sizeof g_bossHud / sizeof g_bossHud[0])) return;
+    g_bossHud[n++] = e;
+    const uint32_t* k = nullptr;
+    const int c = depth < 6 ? ElemKids(e, &k) : 0;
+    for (int i = 0; i < c; ++i) if (k[i] && !IsBadReadPtr((const void*)(uintptr_t)k[i], 0x90)) CollectUnder(k[i], depth + 1, n);
+}
+
+static void FindBossHud()
+{
+    const uint8_t* tab = *(const uint8_t* const*)0x8DCF1C;
+    if (!tab) return;
+    const int size = *(const int*)(tab + 4);
+    int budget = 20000;
+    uint32_t parent = 0;
+    for (const uint8_t* p = tab + 8; p + 12 <= tab + size && !parent; p += 12) {
+        if (*(const uint32_t*)p == 0x58585858 || *(const uint32_t*)(p + 4) == 0x58585858) break;
+        const uint32_t e = *(const uint32_t*)(p + 8);
+        if (!e || IsBadReadPtr((const void*)(uintptr_t)e, 0x90)) continue;
+        parent = ParentOfText(e, "underring", 0, budget);
+    }
+    if (!parent) return;
+    int n = 0;
+    CollectUnder(parent, 0, n);
+    const uint32_t a = *(const uint32_t*)kHudA, b = *(const uint32_t*)kHudB;
+    for (int i = 0; i < n; ++i)
+        if (g_bossHud[i] == a || g_bossHud[i] == b) {   // the players' boxes under it: too much, only the ring's own elements
+            Log("hud: the boss's ring: the element holding \"underring\" (%08X) holds the players' boxes too, only its texts hidden", parent);
+            g_nBossHud = 0;
+            return;
+        }
+    const char* name = nullptr;
+    Guard([&] { name = ((const char*(__cdecl*)(uint32_t))0x4ED810)(parent); });
+    Log("hud: the boss's ring (\"%s\", %08X, %d elements) hidden with the heroes only", name && !IsBadStringPtrA(name, 32) ? name : "?",
+        parent, n);
+    g_nBossHud = n;
+}
+
+static bool IsBossHud(uint32_t e)
+{
+    if (g_nBossHud <= 0) {
+        const DWORD now = GetTickCount();
+        if (g_nBossHud < 0 && *(const int*)0x562AC0 == 0 && now - g_bossHudLook > 1000) {
+            g_bossHudLook = now;
+            Guard([&] { FindBossHud(); });
+            if (g_nBossHud < 0 && ++g_bossHudTries >= 30) g_nBossHud = 0;
+        }
+        if (g_nBossHud <= 0) {   // not found (or too big): its texts only
+            const char* t = ElemText(e);
+            return t && (!_stricmp(t, "underring") || !_stricmp(t, "thealth") || !_stricmp(t, "mouth"));
+        }
+    }
+    for (int i = 0; i < g_nBossHud; ++i) if (g_bossHud[i] == e) return true;
+    return false;
+}
+
+static bool IsLevelExtra(uint32_t e)
+{
+    if (!PvpInGame()) return false;
+    static const uintptr_t kExtras[] = { 0x8E28F4, 0x8E28E0, 0x8E290C, 0x8E2934, 0x8E295C };
+    for (uintptr_t a : kExtras) if (e == *(const uint32_t*)a) return true;
+    if (!PvpHeroesOnlyGame()) return false;
+    const DWORD now = GetTickCount();
+    if (!g_enemyHud && *(const int*)0x562AC0 == 0 && now - g_enemyHudLook > 1000) {
+        g_enemyHudLook = now;
+        Guard([&] { g_enemyHud = ((uint32_t(__cdecl*)(uint32_t, const char*))0x4ED940)(0, "enemyhud"); });
+        if (g_enemyHud) Log("hud: the level's enemy bar (enemyhud) at %08X, hidden with the heroes only", g_enemyHud);
+    }
+    if (g_enemyHud && e == g_enemyHud) return true;
+    bool boss = false;
+    Guard([&] { boss = IsBossHud(e); });
+    return boss;
+}
+
+// a player down: its box is drawn only while it is up. The game hides player 2's box during the respawn and writes the
+// countdown in its place; for the extra players the box kept the values of whoever was drawn before them in the same
+// block (screenshots of 04/11/2026: Gandalf with Legolas's experience), so it is not drawn and the countdown goes in its
+// place too (DrawExtraCountdown). An eliminated player (versus) has no box at all: "out" in its place (DrawOutLabels).
+static bool ExtraBoxShown(int slot)
+{
+    uint8_t* p = (uint8_t*)g_players[slot];
+    if (!p || g_row) return true;
+    if (PvpIsOut((uint32_t)(uintptr_t)p)) return false;
+    int st = -1;
+    Guard([&] { st = ((int(__cdecl*)(const void*))0x42F570)(p); });
+    return st != 0x28;
+}
+
+static void DrawOutLabels()
+{
+    if (g_row) return;
+    static const float x[4] = { 0.165f, 0.675f, 0.675f, 0.165f };
+    for (int s = 0; s < 4; ++s) {
+        if (!g_players[s] || !g_boxText[s][0] || !PvpIsOut(g_players[s])) continue;
+        const float dx = s >= 2 ? g_hudDx : 0.0f, dy = s >= 2 ? g_hudDy : 0.0f;
+        DrawLine(g_boxText[s], x[s] + dx, 0.835f + dy, 1.0f, 3);
+    }
+}
+
+// the HUD boxes on the screen (the names above the heads are not drawn over them): players 1 and 2 at the bottom, the
+// extra players' boxes moved by HudX/HudY (or every box in the row at the bottom)
+static bool OverBox(float x, float y)
+{
+    if (g_row) return g_players[2] && y > 0.86f;
+    const float x0[2] = { 0.03f, 0.53f }, x1[2] = { 0.49f, 0.99f };   // player 1's box, player 2's
+    if (y > 0.80f && y < 0.98f && ((x > x0[0] && x < x1[0]) || (x > x0[1] && x < x1[1]))) return true;
+    if (y > 0.80f + g_hudDy && y < 0.98f + g_hudDy) {
+        if (g_players[2] && x > x0[1] + g_hudDx && x < x1[1] + g_hudDx) return true;
+        if (g_players[3] && x > x0[0] + g_hudDx && x < x1[0] + g_hudDx) return true;
+    }
+    return false;
 }
 
 static void DrawElementHud(uint32_t e)
@@ -550,17 +978,25 @@ static void DrawElementHud(uint32_t e)
         if (g_players[3] && *(const uint32_t*)0x8E2904) DrawExtraMark((uint8_t*)(uintptr_t)*(const uint32_t*)0x8E2904, 3);   // arrow of "1p" (orange)
         return;
     }
-    const bool row = g_row && g_players[2] && !g_drawingExtra && !g_extraHudDepth && e &&
-                     (e == *(const uint32_t*)kHudA || e == *(const uint32_t*)kHudB);
-    if (row) DrawBlockScaled((uint8_t*)(uintptr_t)e, e == *(const uint32_t*)kHudA ? 0.0f : 1.0f / (float)ActivePlayers(), &DrawPlain);
+    if (e && !g_extraHudDepth && IsLevelExtra(e)) return;
+    if (DrawBoxText(e)) return;
+    const bool rootA = e && e == *(const uint32_t*)kHudA, rootB = e && e == *(const uint32_t*)kHudB;
+    // player 1's or 2's box with that player eliminated (versus): not drawn
+    const bool outBox = !g_row && !g_drawingExtra && !g_extraHudDepth && (rootA || rootB) && PvpIsOut(g_players[rootA ? 0 : 1]);
+    const bool row = g_row && g_players[2] && !g_drawingExtra && !g_extraHudDepth && (rootA || rootB);
+    if (outBox) {}
+    else if (row) DrawBlockScaled((uint8_t*)(uintptr_t)e, rootA ? 0.0f : 1.0f / (float)ActivePlayers(), &DrawPlain);
     else DrawMark(e);   // any element; the marks of players 1 and 2 with their names
-    if (!e || g_drawingExtra || e != *(const uint32_t*)kHudB) return;
-    if (!g_extraHudDepth) { DrawBanner(); DrawHudNames(); }
+    if (!e || g_drawingExtra || !rootB) return;
+    if (!g_extraHudDepth) { g_hudDrawnAt = GetTickCount() | 1; DrawBanner(); DrawVersusLines(); DrawHudNames(); DrawOutLabels(); }
     if (!g_players[2] || !g_players[1] || g_extraHudDepth) return;   // also with the extra players dead or waiting
     g_drawingExtra = true;
-    DrawExtraHud(e, 2);
+    if (ExtraBoxShown(2)) DrawExtraHud(e, 2);
     DrawExtraCountdown(2);
-    if (g_players[3] && *(const uint32_t*)kHudA) { DrawExtraHud(*(const uint32_t*)kHudA, 3); DrawExtraCountdown(3); }
+    if (g_players[3] && *(const uint32_t*)kHudA) {
+        if (ExtraBoxShown(3)) DrawExtraHud(*(const uint32_t*)kHudA, 3);
+        DrawExtraCountdown(3);
+    }
     g_drawingExtra = false;
 }
 

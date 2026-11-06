@@ -4,7 +4,7 @@
 // Who is playing. Confirming Single, Co-op or Versus first asks who takes each place ("Who is playing?", below): the
 // statistics are per name, and a person is not always the same player number.
 //
-// Names. The main menu gets a "Fellowship" entry (the game's hidden PlayTrailer entry, made visible like Versus, see
+// Names. The main menu gets a "Fellowship" entry (a hidden entry of the game made visible, Online or PlayTrailer, see
 // Screens.cpp). Confirming it opens a page drawn by the mod over the menu's background: the menu's entries are hidden
 // and our own texts are drawn with copies of a menu label (type 0x82, so the menu's font), after the screen's root is
 // drawn (0x4F6690 draws *0x8E2F68 and then *0x8E2F74 through 0x4FD590, hooked in Hud.cpp). Pages: the four players
@@ -40,6 +40,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <ctype.h>
 #include <string>
 #include <vector>
 #include <map>
@@ -55,6 +56,7 @@ static bool  g_enabled;
 static bool  g_headNames = true, g_hudNames = false;
 static bool  g_sumOn;            // [Players] ScoreSummary: the level summary on the score screen
 static bool  g_askWho = true;     // [Players] AskWhoPlays: "Who is playing?" before every game
+static bool  g_multiPage = true;  // [Players] MultiplayerPage: one "Multiplayer" entry and its page (needs AskWhoPlays)
 static float g_nameScale = 0.8f, g_sumScale = 0.8f, g_sumY = 0.02f;
 
 static const char* const kHeroNames[9] = { "Aragorn", "Legolas", "Gimli", "Gandalf", "Sam", "Frodo", "Pippin", "Merry", "Faramir" };
@@ -69,7 +71,8 @@ static int ScreenMode() { return *(const int*)0x562AC0; }
 enum Txt {
     T_MENU, T_TITLE, T_STATS, T_BACK, T_EDIT, T_EDIT_HELP, T_SPACE, T_DELETE, T_DONE, T_STATS_TITLE, T_STATS_HELP, T_NONE,
     S_LEVELS, S_WINS, S_TIME, S_KILLS, S_RANGED, S_FINISH, S_SOLO, S_MULTI, S_ASSISTS, S_DEATHS, S_PERFECT, S_EXCELLENT, S_GOOD, S_FAIR, S_EXP,
-    S_HERO, S_PVP_GAMES, S_PVP_WINS, S_PVP_KILLS, S_PVP_FALLS, F_ORC, F_URUK, F_URUKHAI, F_BERSERKER, F_DEAD, F_EAST, F_SPIDER,
+    S_HERO, S_PVP_GAMES, S_PVP_WINS, S_PVP_KILLS, S_PVP_FALLS, S_PVP_ELIMS, S_PVP_ROUNDS, S_PVP_ROUND_WINS,
+    S_PVP_TOURNEYS, S_PVP_CUPS, S_PVP_TEAM, S_PVP_TIMED, S_PVP_BEST_TIMED, F_ORC, F_URUK, F_URUKHAI, F_BERSERKER, F_DEAD, F_EAST, F_SPIDER,
     F_TROLL, F_MUMAK, F_GOLLUM, F_SHELOB, F_GORBAG, F_KINGDEAD, F_OTHER, C_HEWER, C_JUDGMENT, C_BALROG, C_DARK, C_CLEAVER, C_LIGHTNING, C_HAMMER, C_SWIFT, C_BANE,
     C_RISING, S_SPEAR, S_PARRY_HITS, S_PARRY_ARROWS, S_LADDERS, P_HEAL30, P_HEAL60, P_ARROWS, P_EXP,
     S_LEVELS_WON, F_NAZGUL, F_MOUTH, V_SOLDIERS, V_SHIELD, V_ARCHERS, V_CAPTAINS, S_BURNED,
@@ -81,7 +84,11 @@ enum Txt {
     T_ASK_REMOVE, T_ASK_MERGE, T_YES, T_NO, T_PICK, T_RENAME_TITLE, T_DETAIL, T_DETAIL_COLS, T_DETAIL_HELP, T_LAST_NONE,
     T_LAST_COOP, T_LAST_LOST, T_LAST_PVP, T_SUM_LINE, T_SUM_PVP_LINE, T_SUM_BEST, T_SUM_TITLE, R_KILLS, R_PERFECT,
     R_ASSISTS, R_PVP_FAST, R_TOT_KILLS, R_TOT_WINS, R_PVP_WINS, T_LIST_HELP, T_NO_NAMES, T_WHO_TITLE, T_WHO_START,
-    T_WHO_GUEST, T_WHO_NEW, T_WHO_HELP, T_WHO_EDIT, T_CHOOSE, T_THOUSANDS, T_HERO0, T_COUNT = T_HERO0 + 9
+    T_WHO_GUEST, T_WHO_NEW, T_WHO_HELP, T_WHO_EDIT, T_MP_TITLE, T_MP_GAME, T_MP_MODE, T_MP_CAMPAIGN, T_MP_FFA, T_MP_TEAMS,
+    T_MP_PLAYERS, T_MP_ENEMIES, T_MP_ENEMIES_ON, T_MP_HEROES, T_MP_LIVES, T_MP_SPLIT, T_MP_SPLIT_VAL, T_MP_SUN, T_MP_MOON,
+    T_MP_TEAMS_HEAD, T_MP_NOTE_MAP, T_MP_NOTE_ARENA, T_MP_HELP, T_MP_RULE, T_MP_RULE_LAST, T_MP_RULE_TIME, T_MP_TIME,
+    T_MP_MINUTES, T_MP_ROUNDS, T_MP_SINGLE, T_MP_BEST, S_KICKS, S_SPEED_HITS, S_FIERCE_HITS, S_SHIELDS, T_CARD_DOWNS,
+    T_SUM_BEST_PVP, T_LAST_ENEMIES, S_VS_DOWNS, T_TO_MAP, T_CHOOSE, T_THOUSANDS, T_HERO0, T_COUNT = T_HERO0 + 9
 };
 struct TxtDef { const char* key; const char* en; const char* it; const char* fr; const char* de; const char* es; };
 static const TxtDef kTxt[] = {
@@ -128,6 +135,18 @@ static const TxtDef kTxt[] = {
     { "StatPvpKills", "Versus: opponents down", "Sfida: avversari abbattuti", "Defi : adversaires a terre",
       "Duell: Gegner besiegt", "Desafio: rivales derribados" },
     { "StatPvpFalls", "Versus: own falls", "Sfida: cadute", "Defi : chutes", "Duell: eigene Niederlagen", "Desafio: caidas" },
+    { "StatPvpElims", "Versus: opponents eliminated", "Sfida: avversari eliminati", "Defi : adversaires elimines",
+      "Duell: Gegner ausgeschaltet", "Desafio: rivales eliminados" },
+    { "StatPvpRounds", "Rounds played", "Round giocati", "Manches jouees", "Runden gespielt", "Rondas jugadas" },
+    { "StatPvpRoundWins", "Rounds won", "Round vinti", "Manches gagnees", "Runden gewonnen", "Rondas ganadas" },
+    { "StatPvpTourneys", "Tournaments played", "Tornei giocati", "Tournois joues", "Turniere gespielt", "Torneos jugados" },
+    { "StatPvpCups", "Cups won", "Coppe vinte", "Coupes gagnees", "Pokale gewonnen", "Copas ganadas" },
+    { "StatPvpTeam", "Team games won", "Sfide a squadre vinte", "Defis par equipes gagnes", "Teamduelle gewonnen",
+      "Desafios por equipos ganados" },
+    { "StatPvpTimed", "Timed games won", "Sfide a tempo vinte", "Defis au temps gagnes", "Duelle auf Zeit gewonnen",
+      "Desafios a tiempo ganados" },
+    { "StatPvpBestTimed", "Most knock-downs in a timed game", "Record di abbattuti a tempo", "Record de mises a terre au temps",
+      "Rekord Niederschlaege auf Zeit", "Record de derribos a tiempo" },
     { "FoeOrcs", "Orcs", "Orchetti", "Orques", "Orks", "Orcos" },
     { "FoeUruks", "Uruks", "Uruk", "Uruks", "Uruks", "Uruks" },
     { "FoeUrukHai", "Uruk-hai", "Uruk-hai", "Uruk-hai", "Uruk-hai", "Uruk-hai" },
@@ -240,8 +259,8 @@ static const TxtDef kTxt[] = {
       "Meiste Rekorde: {name} ({n})", "Mas records: {name} ({n})" },
     { "LastCols", "Kills  Assists  Deaths", "Uccisioni  Assist  Morti", "Tues  Assist.  Morts", "Besiegt  Assists  Tode",
       "Bajas  Asist.  Muertes" },
-    { "LastPvpCols", "Knocked down  Falls", "Abbattuti  Cadute", "A terre  Chutes", "Besiegt  Niederlagen",
-      "Derribados  Caidas" },
+    { "LastPvpCols", "Knocked down  Falls  Rounds won", "Abbattuti  Cadute  Round vinti", "A terre  Chutes  Manches",
+      "Besiegt  Niederlagen  Runden", "Derribados  Caidas  Rondas" },
     { "LastTotal", "Total", "Totale", "Total", "Gesamt", "Total" },
     { "PlayersBackHelp", "Back: return", "Indietro: esci", "Retour : quitter", "Zurueck: verlassen", "Volver: salir" },
     { "PlayersConfirmHelp", "Left/right: choose   Confirm: select   Back: return",
@@ -327,6 +346,58 @@ static const TxtDef kTxt[] = {
       "Izquierda/derecha: nombre   Confirmar: empezar   Volver: cancelar" },
     { "WhoEdit", "New name for {player}", "Nuovo nome per {player}", "Nouveau nom pour {player}", "Neuer Name fuer {player}",
       "Nuevo nombre para {player}" },
+    { "MultiTitle", "Multiplayer", "Multigiocatore", "Multijoueur", "Mehrspieler", "Multijugador" },
+    { "MultiGame", "The game", "La partita", "La partie", "Das Spiel", "La partida" },
+    { "MultiMode", "Mode", "Modalita'", "Mode", "Modus", "Modo" },
+    { "MultiCampaign", "Campaign", "Campagna", "Campagne", "Kampagne", "Historia" },
+    { "MultiFfa", "Everybody against everybody", "Tutti contro tutti", "Tous contre tous", "Jeder gegen jeden", "Todos contra todos" },
+    { "MultiTeams", "Teams", "A squadre", "Par equipes", "Teams", "Por equipos" },
+    { "MultiPlayers", "Players", "Giocatori", "Joueurs", "Spieler", "Jugadores" },
+    { "MultiEnemies", "Enemies", "Nemici", "Ennemis", "Gegner", "Enemigos" },
+    { "MultiEnemiesOn", "Yes", "Si'", "Oui", "Ja", "Si" },
+    { "MultiHeroesOnly", "Heroes only", "Solo eroi", "Heros seuls", "Nur Helden", "Solo heroes" },
+    { "MultiLives", "Lives", "Vite", "Vies", "Leben", "Vidas" },
+    { "MultiSplit", "Teams", "Squadre", "Equipes", "Teams", "Equipos" },
+    { "MultiSplitValue", "{a} and {b} against {c} and {d}", "{a} e {b} contro {c} e {d}", "{a} et {b} contre {c} et {d}",
+      "{a} und {b} gegen {c} und {d}", "{a} y {b} contra {c} y {d}" },
+    { "MultiSun", "Sun", "Sole", "Soleil", "Sonne", "Sol" },      // a place's team, short (the full names: Lang.cpp)
+    { "MultiMoon", "Moon", "Luna", "Lune", "Mond", "Luna" },
+    { "MultiTeamsHead", "The teams", "Le squadre", "Les equipes", "Die Teams", "Los equipos" },
+    { "MultiMapNote", "The level is chosen on the map", "Il livello si sceglie sulla mappa", "Le niveau se choisit sur la carte",
+      "Das Level wird auf der Karte gewaehlt", "El nivel se elige en el mapa" },
+    { "MultiArenaNote", "The arena is chosen on the map", "L'arena si sceglie sulla mappa", "L'arene se choisit sur la carte",
+      "Die Arena wird auf der Karte gewaehlt", "La arena se elige en el mapa" },
+    { "MultiHelp", "Up/down: entry   Left/right: change   Shoulders or Tab: other box   Confirm: start   Back: menu",
+      "Su/giu': voce   Sinistra/destra: cambia   Dorsali o Tab: altro riquadro   Conferma: inizia   Indietro: menu",
+      "Haut/bas : choix   Gauche/droite : changer   Gachettes ou Tab : autre cadre   Valider : commencer   Retour : menu",
+      "Hoch/runter: Eintrag   Links/rechts: aendern   Schultertasten oder Tab: anderer Kasten   Bestaetigen: Start   Zurueck: Menue",
+      "Arriba/abajo: opcion   Izquierda/derecha: cambiar   Gatillos o Tab: otro cuadro   Confirmar: empezar   Volver: menu" },
+    { "MultiRule", "Victory", "Vittoria", "Victoire", "Sieg", "Victoria" },
+    { "MultiRuleLast", "Last one standing", "Ultimo in piedi", "Dernier debout", "Letzter steht", "Ultimo en pie" },
+    { "MultiRuleTime", "Timed", "A tempo", "Au temps", "Auf Zeit", "A tiempo" },
+    { "MultiTime", "Time", "Tempo", "Temps", "Zeit", "Tiempo" },
+    { "MultiMinutes", "{n} minutes", "{n} minuti", "{n} minutes", "{n} Minuten", "{n} minutos" },
+    { "MultiRounds", "Tournament", "Torneo", "Tournoi", "Turnier", "Torneo" },
+    { "MultiSingle", "Single game", "Partita singola", "Partie unique", "Einzelspiel", "Partida unica" },
+    { "MultiBestOf", "Best of {n}", "Al meglio di {n}", "Au meilleur des {n}", "Best of {n}", "Al mejor de {n}" },
+    // the kicks (04/11/2026): the physical attack, a kick or a shove, counted when thrown and when it hits someone
+    { "StatKicks", "Kicks (landed / thrown)", "Calci (a segno / tirati)", "Coups de pied (touches / donnes)",
+      "Tritte (Treffer / gesamt)", "Patadas (acertadas / dadas)" },
+    // the attacks that hit an opponent (an enemy, or another player in a versus game), one per swing, and the enemies'
+    // shields broken (05/11/2026)
+    { "StatSpeedHits", "Speed attacks that hit", "Attacchi veloci a segno", "Attaques rapides reussies",
+      "Schnelle Angriffe getroffen", "Ataques rapidos acertados" },
+    { "StatFierceHits", "Fierce attacks that hit", "Attacchi feroci a segno", "Attaques puissantes reussies",
+      "Wuchtige Angriffe getroffen", "Ataques fieros acertados" },
+    { "StatShields", "Shields broken", "Scudi frantumati", "Boucliers brises", "Schilde zerschlagen", "Escudos rotos" },
+    { "CardDowns", "Opponents down", "Avversari abbattuti", "Adversaires a terre", "Gegner besiegt", "Rivales derribados" },
+    { "PlayersSumBestPvp", "Most knock-downs: {name}", "Piu' abbattuti: {name}", "Le plus de mises a terre : {name}",
+      "Meiste Niederschlaege: {name}", "Mas derribos: {name}" },
+    { "LastWithEnemies", "with the enemies", "con i nemici", "avec les ennemis", "mit den Gegnern", "con los enemigos" },
+    // who knocked down whom (the Comparison's Versus tab: the column's player downed {name} so many times), and the Last
+    // game shown on the map after a versus game (05/11/2026)
+    { "StatVsDowns", "Downed {name}", "Ha abbattuto {name}", "A mis a terre {name}", "{name} besiegt", "Derribo a {name}" },
+    { "PlayersToMap", "Back to the map", "Torna alla mappa", "Retour a la carte", "Zurueck zur Karte", "Volver al mapa" },
     { "PlayersChoose", "choose your hero", "scegli l'eroe", "choisissez votre heros", "waehle deinen Helden", "elige tu heroe" },
     { "PlayersThousands", ",", ".", " ", ".", "." },   // between the thousands of a number (an ini can't hold a lone space)
     { "HeroAragorn", "Aragorn", "Aragorn", "Aragorn", "Aragorn", "Aragorn" },
@@ -438,6 +509,17 @@ static void WriteVals(const std::string& name, const Vals& v)
 
 static int Get(const Vals& v, const std::string& key) { const auto it = v.find(key); return it == v.end() ? 0 : it->second; }
 static std::string HeroKey(int h, const char* what) { return "Hero" + std::to_string(h) + what; }
+// a player's knock-downs of another one: "PvpDown.<name>", the name in small letters (the ini's names are one person
+// whatever the capitals) and without what an ini key cannot hold
+static std::string DownsKey(const std::string& name)
+{
+    std::string k = "PvpDown.";
+    for (char ch : name) {
+        const unsigned char u = (unsigned char)ch;
+        k.push_back(u < 0x20 || ch == '=' || ch == ';' || ch == '[' || ch == ']' ? '_' : u < 0x80 ? (char)tolower(u) : ch);
+    }
+    return k;
+}
 
 // a + b: counters add up, records keep the best (Best* the largest, Fastest* the smallest above zero)
 static void MergeVals(Vals& into, const Vals& add)
@@ -609,6 +691,25 @@ static void ReplaceName(const std::string& from, const std::string& to)
     RenameInLineups(from, to);
 }
 
+// the other players' knock-downs of "from" become knock-downs of "to" (a rename or a merge), or go ("to" empty: deleted)
+static void MoveDownKeys(const std::string& from, const std::string& to)
+{
+    const std::string kf = DownsKey(from), kt = to.empty() ? std::string() : DownsKey(to);
+    for (const std::string& n : StatNames()) {
+        Vals v = ReadVals(n);
+        bool changed = false;
+        const auto it = v.find(kf);
+        if (it != v.end()) {
+            const int c = it->second;
+            v.erase(it);
+            if (!kt.empty() && !SameName(n, to)) v[kt] += c;
+            changed = true;
+        }
+        if (!kt.empty() && SameName(n, to) && v.erase(kt)) changed = true;   // (from's own knock-downs of to: itself now)
+        if (changed) WriteVals(n, v);
+    }
+}
+
 // adds the statistics of "from" to those of "to" and removes "from" (also used for renaming onto an existing name)
 static void MergeNames(const std::string& from, std::string to)
 {
@@ -629,6 +730,7 @@ static void MergeNames(const std::string& from, std::string to)
     if (!into.empty()) WriteVals(to, into);   // two names without statistics: no empty section (a row of zeros)
     DeleteSection(Section(from));
     ReplaceName(from, to);
+    MoveDownKeys(from, to);
     Log("players: \"%s\" merged into \"%s\"", from.c_str(), to.c_str());
 }
 
@@ -643,6 +745,7 @@ static void RemoveName(const std::string& name)
 {
     DeleteSection(Section(name));
     ReplaceName(name, "");
+    MoveDownKeys(name, "");
     Log("players: \"%s\" deleted with its statistics", name.c_str());
 }
 
@@ -658,17 +761,25 @@ static std::vector<std::string> AllNames()
 // --- statistics: collection --------------------------------------------------------------------------------------
 struct Live {
     bool present; int hero, kills, assists, deaths, pvpKills, pvpFalls, ranged, finish, multi, bestMulti; DWORD lastKill;
+    int pvpElims, rounds, roundWins;              // versus: opponents eliminated, rounds played and won
     int spear, parryHits, parryArrows, pick[9];   // spear kills, hits parried, things picked up by type (1-8)
     int ladders;                                  // ladders pushed down near the player
     int burned;                                   // enemies the player set on fire
     DWORD lastSpear;                              // when the player last threw a spear (state 0x44)
+    int kicks, kicksHit, pvpKicks;                // kicks thrown (state 0x1E), landed, landed on an opponent (versus)
+    DWORD lastKickHit;                            // when a kick of the player last hit someone
+    int speedHits, fierceHits, shields;           // speed and fierce attacks that hit an opponent, shields broken
+    DWORD swingHit;                               // the state entry (g_stateSince) of the last swing counted
+    int downs[4];                                 // versus: the knock-downs of each other player
 };
 static Live  g_live[4];
 static bool  g_inLevel;      // a game level is in progress (from the package loading to leaving mode 0)
 static bool  g_seenPlay;     // mode 0 (playing) was reached since the loading
 static bool  g_levelPvp;     // it is a versus game
 static bool  g_levelSolo;    // it is a single-player game (Single in the main menu)
-static int   g_pvpWinner = -2;   // -2 versus not over, -1 draw, otherwise the winner's slot
+static int   g_pvpWinner = -2;   // -2 versus not over, -1 draw, 99 a team won, otherwise the winner's slot
+static unsigned g_pvpWinners;    // the winners' slots as bits (one player, or a team)
+static bool     g_pvpTeamGame, g_pvpTimedGame, g_pvpTourney;   // what kind of versus game it was
 static DWORD g_levelStart;
 struct HitInfo { DWORD at[4]; };
 static std::unordered_map<uint32_t, HitInfo> g_hits;   // enemy -> when each player last hit it
@@ -826,10 +937,16 @@ static void OnHit(uint32_t victim, uint32_t attacker, int after, int amount, int
     const DWORD now = GetTickCount();
     const int v = PlayerSlot(victim);
     if (v >= 0) {   // a player hit by another player (versus mode)
-        if (v != a && g_levelPvp && after < 1) {
+        // a knock-down is the hit that takes the life from above zero to zero or below (a hit on someone already down
+        // is not one more: it would count twice in the statistics and in the points of a timed game)
+        const bool down = before > 0 && after < 1;
+        if (v != a && g_levelPvp && down) {
             ++g_live[a].pvpKills;
+            ++g_live[a].downs[v];
             Log("players: %s knocks down %s", PlayerName(a).c_str(), PlayerName(v).c_str());
         }
+        // the feed, the points of a timed game, the crowd (Pvp.cpp)
+        if (v != a && g_levelPvp && amount > 0) PvpOnPlayerHit(a, v, down);
         return;
     }
     if (g_hits.size() > 4096) {   // safety: forget enemies not hit for a minute
@@ -886,6 +1003,99 @@ static char __cdecl Damage(uint32_t victim, int amount, uint32_t attacker)
     if (g_enabled && g_inLevel && victim && attacker && before > 0)
         OnHit(victim, attacker, SafeLife(victim), amount, before, kind);
     return r;
+}
+
+// --- kicks (04/11/2026) -------------------------------------------------------------------------------------------
+// The physical attack (state 0x1E "phys") is a melee hit of kind 6 without damage (log of 04/11/2026: Faramir's 14
+// kicks, 9 of them "hit by ... kind 6, damage 0" on another player), so the damage hook never sees it. 0x4185C0 sends
+// every melee hit, to enemies and players alike, with 0x401780(victim, 0x259, data {attacker, kind, damage, ...},
+// &result, attacker) at 0x418758: that call is replaced. A hit of kind 6 by a player is a kick that landed, once a kick
+// (the same player's hits within 0.4 s are one kick on several targets); on another player, a kick to an opponent.
+// The same call also tells the speed and fierce attacks that hit (05/11/2026): the hit has landed when the victim's
+// handler leaves the result at 1 (0x418729 sets it; a shield that stops the blow clears it, 0x41C4A0 "shieldhit"), the
+// victim is an enemy or, in a versus game, another player, and the attacker is in a speed attack (states 0x08-0x0D) or
+// a fierce one (0x0E, 0x0F, 0x10, 0x1D): one per swing (per entry of the state, g_stateSince), whatever it hits.
+typedef uint32_t(__cdecl* SendEventFn)(uint32_t, int, int*, char*, uint32_t);
+static DWORD g_stateSince[4];          // when each player entered its current state (NoteCombos)
+static int   CharStateOf(uint32_t c);  // (further down, with the combos)
+static void  NoteCombos();
+
+// a character of the enemy side: bit 27 of +0x8C (a character) without bit 0 of +0x5E8 (the heroes' side), as the
+// shields' handler 0x41C4A0 tells the sides apart
+static bool IsEnemyChar(uint32_t c)
+{
+    bool e = false;
+    Guard([&] { e = *(const int16_t*)(c + 0x7A) != 99 && (*(const uint32_t*)(c + 0x8C) >> 27 & 1) && !(*(const uint8_t*)(c + 0x5E8) & 1); });
+    return e;
+}
+
+static uint32_t __cdecl MeleeHit(uint32_t victim, int ev, int* data, char* result, uint32_t attacker)
+{
+    const uint32_t r = GameFn((SendEventFn)0x401780)(victim, ev, data, result, attacker);
+    if (g_enabled && g_inLevel && ev == 0x259 && data && attacker)
+        Guard([&] {
+            const int a = PlayerSlot(attacker);
+            if (a < 0 || (result && !*result)) return;   // not a player's, or stopped
+            const int v = PlayerSlot(victim);
+            if (v == a || (v >= 0 && !g_levelPvp) || (v < 0 && !IsEnemyChar(victim))) return;   // not an opponent
+            Live& l = g_live[a];
+            const DWORD now = GetTickCount();
+            if (data[1] == 6) {   // a kick
+                if (!l.lastKickHit || now - l.lastKickHit > 400) ++l.kicksHit;
+                l.lastKickHit = now | 1;
+                if (v >= 0) ++l.pvpKicks;
+                return;
+            }
+            NoteCombos();   // (the state may have changed since the frame began)
+            const int st = CharStateOf(attacker);
+            const bool speed = st >= 0x08 && st <= 0x0D, fierce = st == 0x0E || st == 0x0F || st == 0x10 || st == 0x1D;
+            if ((!speed && !fierce) || l.swingHit == g_stateSince[a]) return;
+            l.swingHit = g_stateSince[a];
+            ++(speed ? l.speedHits : l.fierceHits);
+        });
+    return r;
+}
+
+// --- shields broken (05/11/2026) ---------------------------------------------------------------------------------
+// The hit handlers of the enemies with a shield (0x41C4A0 orcs, 0x421720 the others; both with an EBP frame, the event
+// at [ebp+0xC]) keep the shield's strength at +0x808: the hit that takes it to zero hides the shield in the model
+// ("01SHIELD") and starts the effect "orcshieldbreak", 0x401650 at 0x41C941 and 0x4016B0 at 0x421A0C. Those two calls go
+// through a stub that first credits the break to the hit's attacker (the event's data {attacker, kind, ...}: a player, or
+// the owner of its arrow or spear), whatever the attack (fierce, special, the last blow of a combo).
+static void __cdecl NoteShieldBreak(uint32_t ev) ASM_NAME(NoteShieldBreak);
+static void __cdecl NoteShieldBreak(uint32_t ev)
+{
+    if (!g_enabled || !g_inLevel || !ev) return;
+    Guard([&] {
+        if (*(const int*)(ev + 8) != 0x259) return;
+        const uint32_t* data = *(const uint32_t* const*)(ev + 0xC);
+        const int a = data ? AttackerSlot(data[0]) : -1;
+        if (a < 0) return;
+        ++g_live[a].shields;
+        if (TraceOk()) Log("players: player %d breaks a shield (kind %X)", a + 1, data[1]);
+    });
+}
+
+static NAKED void ShieldBreakA()   // in place of "call 0x401650" at 0x41C941
+{
+    ASM_BEGIN
+    ASM(push dword ptr [ebp + 0xC])
+    ASM(call NoteShieldBreak)
+    ASM(add  esp, 4)
+    ASM(push 0x401650)
+    ASM(ret)
+    ASM_END
+}
+
+static NAKED void ShieldBreakB()   // in place of "call 0x4016B0" at 0x421A0C
+{
+    ASM_BEGIN
+    ASM(push dword ptr [ebp + 0xC])
+    ASM(call NoteShieldBreak)
+    ASM(add  esp, 4)
+    ASM(push 0x4016B0)
+    ASM(ret)
+    ASM_END
 }
 
 // at 0x404D12 and 0x404D5B EDI is the hit's data: noted, then the call goes on to Damage with the same stack
@@ -1271,13 +1481,49 @@ void PlayersOnFall(uint32_t c)
     if (g_levelPvp) ++g_live[s].pvpFalls; else ++g_live[s].deaths;
 }
 
-// from Pvp.cpp when a versus game ends: winner's slot, -1 = draw
-void PlayersPvpEnd(int winner) { if (g_inLevel && g_levelPvp) g_pvpWinner = winner; }
+// from Pvp.cpp when a versus game ends: the winners' slots as bits (0 = a draw), the kind of game (counted when the
+// level is left) and how it ended, with its teams (the Last game)
+static PvpResult g_pvpRes;
+static int       g_pvpTeam[4] = { -1, -1, -1, -1 };
+
+void PlayersPvpOver(const PvpResult& r)
+{
+    if (!g_inLevel || !g_levelPvp) return;
+    g_pvpWinner = r.winners ? 99 : -1;
+    g_pvpWinners = r.winners;
+    g_pvpTeamGame = r.teams;
+    g_pvpTimedGame = r.timed;
+    g_pvpTourney = r.rounds > 1;
+    g_pvpRes = r;
+    for (int s = 0; s < 4; ++s) g_pvpTeam[s] = PvpTeamOf(s);
+}
+
+// from Pvp.cpp at the end of every round of a tournament (test of 04/11/2026: a single game counted as a round, the
+// same number as the games): who played it, who won it
+void PlayersPvpRound(unsigned winners)
+{
+    if (!g_enabled || !g_inLevel || !g_levelPvp) return;
+    for (int s = 0; s < 4; ++s) {
+        if (!g_live[s].present) continue;
+        ++g_live[s].rounds;
+        if (winners >> s & 1) ++g_live[s].roundWins;
+    }
+}
+
+// from Pvp.cpp: a player knocked down an opponent on its last life
+void PlayersPvpElim(int attacker)
+{
+    if (g_enabled && g_inLevel && g_levelPvp && attacker >= 0 && attacker < 4) ++g_live[attacker].pvpElims;
+}
 
 // --- end-of-level summary ("Last game") ------------------------------------------------------------------------
-struct SumRow { std::string name; int hero, k, a, d; };
+// a row: name, hero, kills (knock-downs in a versus game), assists, deaths (falls); a versus game's team (-1 none), won,
+// rounds won (a tournament), kicks to opponents
+struct SumRow { std::string name; int hero, k, a, d, team = -1; bool win = false; int rounds = 0, kicks = 0; };
 static std::vector<SumRow> g_sum;
 static std::string g_sumLevel;   // the level's code
+static std::string g_sumMode, g_sumResult;   // a versus game: what kind ("Teams, heroes only, ...") and how it ended
+static bool g_sumTourney;
 static int  g_sumKind;      // 0 none, 1 level won, 2 level left, 3 versus game
 static bool g_sumShow;      // draw it on the score screen that follows
 static uint8_t g_sumTpl[0xB0];   // the HUD's text element, copied while the level is played (Hud.cpp)
@@ -1289,10 +1535,15 @@ static void SaveSummary()
     p.emplace_back("Kind", std::to_string(g_sumKind));
     p.emplace_back("Level", g_sumLevel);
     p.emplace_back("Count", std::to_string(g_sum.size()));
+    if (!g_sumMode.empty()) p.emplace_back("Mode", g_sumMode);
+    if (!g_sumResult.empty()) p.emplace_back("Result", g_sumResult);
+    if (g_sumTourney) p.emplace_back("Tournament", "1");
     for (size_t i = 0; i < g_sum.size(); ++i) {
         const SumRow& r = g_sum[i];
         p.emplace_back("R" + std::to_string(i), r.name + "|" + std::to_string(r.hero) + "|" + std::to_string(r.k) + "|" +
-                                                std::to_string(r.a) + "|" + std::to_string(r.d));
+                                                std::to_string(r.a) + "|" + std::to_string(r.d) + "|" + std::to_string(r.team) +
+                                                "|" + (r.win ? "1" : "0") + "|" + std::to_string(r.rounds) + "|" +
+                                                std::to_string(r.kicks));
     }
     WritePairs("LastGame", p);
 }
@@ -1302,18 +1553,25 @@ static void LoadSummary()
     g_sum.clear();
     g_sumKind = 0;
     g_sumLevel.clear();
+    g_sumMode.clear();
+    g_sumResult.clear();
+    g_sumTourney = false;
     for (const auto& kv : ReadPairs("LastGame")) {
         if (kv.first == "Kind") g_sumKind = atoi(kv.second.c_str());
         else if (kv.first == "Level") g_sumLevel = kv.second;
-        else if (kv.first.size() > 1 && kv.first[0] == 'R') {
+        else if (kv.first == "Mode") g_sumMode = kv.second;
+        else if (kv.first == "Result") g_sumResult = kv.second;
+        else if (kv.first == "Tournament") g_sumTourney = kv.second == "1";
+        else if (kv.first.size() > 1 && kv.first[0] == 'R' && isdigit((unsigned char)kv.first[1])) {
             SumRow r{ "", -1, 0, 0, 0 };
-            char buf[128];
+            char buf[160];
             strncpy_s(buf, kv.second.c_str(), _TRUNCATE);
             char* ctx = nullptr;
-            const char* f[5] = {};
-            for (int i = 0; i < 5; ++i) f[i] = strtok_s(i ? nullptr : buf, "|", &ctx);
+            const char* f[9] = {};
+            for (int i = 0; i < 9; ++i) f[i] = strtok_s(i ? nullptr : buf, "|", &ctx);
             if (!f[4]) continue;
             r.name = f[0]; r.hero = atoi(f[1]); r.k = atoi(f[2]); r.a = atoi(f[3]); r.d = atoi(f[4]);
+            if (f[8]) { r.team = atoi(f[5]); r.win = atoi(f[6]) != 0; r.rounds = atoi(f[7]); r.kicks = atoi(f[8]); }   // (since 1.4.0)
             g_sum.push_back(r);
         }
     }
@@ -1399,8 +1657,10 @@ static void NoteCombos()
         const uint32_t c = g_players[s];
         const int st = c ? CharStateOf(c) : -1;
         if (st != g_lastState[s]) {
+            g_stateSince[s] = GetTickCount() | 1;
             if (st >= 0) ++g_states[s][st];
             if (st == 0x44) g_live[s].lastSpear = GetTickCount() | 1;   // spear_throw
+            if (st == 0x1E) ++g_live[s].kicks;   // phys: the physical attack (Aragorn's kick, a shove with the staff...)
             // a blow parried: the guard's reactions parry_rear, parry_sweep, parry_left (2), parry_right (2); parry_0,
             // parry_1 and parry_alt are the guard itself (logs of 02/11/2026: they come before LINK_1, the banes)
             if (st >= 0x22 && st <= 0x27) ++g_live[s].parryHits;
@@ -1466,7 +1726,11 @@ void PlayersLevelStart(const char* level)
     // the versus mode stays "on" until Co-op is confirmed again: only a co-op game is a versus game
     g_levelPvp = PvpActive() && *(const int*)0x562A98 == 1;
     g_levelSolo = *(const int*)0x562A98 != 1;   // the co-op flag: Single leaves it at 0
+    g_pvpWinners = 0;
+    g_pvpTeamGame = g_pvpTimedGame = g_pvpTourney = false;
     g_pvpWinner = -2;
+    g_pvpRes = PvpResult();
+    for (int& t : g_pvpTeam) t = -1;
     g_levelStart = GetTickCount();
     g_killsLogged = 0;
     g_rangedLogged = 0;
@@ -1517,6 +1781,13 @@ void PlayersLevelLeave(bool won)
         // the ladders: "ladder kill on" (NoteLadder); the siege engines are not counted (NoteTag)
         add("Ladders", l.ladders);
         add("Burned", l.burned);
+        add("Kicks", l.kicks);
+        add("KicksHit", l.kicksHit);
+        add("SpeedHits", l.speedHits);
+        add("FierceHits", l.fierceHits);
+        add("ShieldsBroken", l.shields);
+        Log("players: %s, kicks %d (landed %d, on opponents %d), speed attacks that hit %d, fierce %d, shields broken %d",
+            name.c_str(), l.kicks, l.kicksHit, l.pvpKicks, l.speedHits, l.fierceHits, l.shields);
         std::string picks;
         for (int t = 1; t <= 8; ++t)
             if (l.pick[t]) { add("Pick" + std::to_string(t), l.pick[t]); picks += " " + std::to_string(t) + "x" + std::to_string(l.pick[t]); }
@@ -1555,15 +1826,26 @@ void PlayersLevelLeave(bool won)
         add("Deaths", l.deaths);          add(HeroKey(h, "Deaths"), l.deaths);
         if (g_levelPvp) {
             if (g_pvpWinner != -2) {
+                const bool winner = (g_pvpWinners >> s & 1) != 0;
                 add("PvpGames", 1);
-                if (g_pvpWinner == s) {
+                if (winner) {
                     add("PvpWins", 1);
-                    const int fast = Get(v, "FastestPvpWin");
-                    if (secs > 0 && (fast == 0 || secs < fast)) v["FastestPvpWin"] = secs;
+                    const int fast = Get(v, "FastestPvpWin");   // (a game of one round with lives)
+                    if (!g_pvpTourney && !g_pvpTimedGame && secs > 0 && (fast == 0 || secs < fast)) v["FastestPvpWin"] = secs;
                 }
+                if (g_pvpTourney) { add("PvpTourneys", 1); if (winner) add("PvpCups", 1); }
+                if (g_pvpTeamGame) { add("PvpTeamGames", 1); if (winner) add("PvpTeamWins", 1); }
+                if (g_pvpTimedGame) { add("PvpTimedGames", 1); if (winner) add("PvpTimedWins", 1); best("BestTimedKills", l.pvpKills); }
             }
             add("PvpKills", l.pvpKills);   add(HeroKey(h, "PvpKills"), l.pvpKills);
             add("PvpFalls", l.pvpFalls);   add(HeroKey(h, "PvpFalls"), l.pvpFalls);
+            add("PvpElims", l.pvpElims);
+            add("PvpRounds", l.rounds);
+            add("PvpRoundWins", l.roundWins);
+            add("PvpKicks", l.pvpKicks);
+            for (int o = 0; o < 4; ++o)   // who downed whom: only another player with a name (a guest has no statistics)
+                if (o != s && l.downs[o] > 0 && PlayerHasName(o) && !SameName(PlayerName(o), name))
+                    add(DownsKey(PlayerName(o)), l.downs[o]);
         } else {
             add("Levels", 1);
             best("BestKills", l.kills);
@@ -1579,7 +1861,14 @@ void PlayersLevelLeave(bool won)
             }
         }
         if (keep) WriteVals(name, v);
-        rows.push_back(SumRow{ name, h, g_levelPvp ? l.pvpKills : l.kills, l.assists, g_levelPvp ? l.pvpFalls : l.deaths });
+        SumRow row{ name, h, g_levelPvp ? l.pvpKills : l.kills, l.assists, g_levelPvp ? l.pvpFalls : l.deaths };
+        if (g_levelPvp) {
+            row.team = g_pvpTeam[s];
+            row.win = (g_pvpWinners >> s & 1) != 0;
+            row.rounds = l.roundWins;
+            row.kicks = l.pvpKicks;
+        }
+        rows.push_back(row);
         Log("players: %s (%s) %s after %d s: kills %d (killing moves %d), assists %d, deaths %d, versus knock-downs %d, falls %d%s",
             name.c_str(), kHeroNames[h], g_levelPvp ? "versus game" : won ? "level won" : "level left",
             secs, l.kills, l.finish, l.assists, l.deaths, l.pvpKills, l.pvpFalls, keep ? "" : " (no name: not saved)");
@@ -1589,6 +1878,19 @@ void PlayersLevelLeave(bool won)
         g_sum = rows;
         g_sumKind = g_levelPvp ? 3 : won ? 1 : 2;
         g_sumLevel = g_levelCode;
+        g_sumMode.clear();
+        g_sumResult.clear();
+        g_sumTourney = false;
+        if (g_levelPvp && g_pvpWinner != -2) {   // "Teams, heroes only, timed 2 minutes, best of 3"
+            const PvpResult& r = g_pvpRes;
+            std::string m = Txt(r.teams ? T_MP_TEAMS : T_MP_FFA) + ", " + Txt(r.heroesOnly ? T_MP_HEROES : T_LAST_ENEMIES) + ", ";
+            if (r.timed) m += Txt(T_MP_RULE_TIME) + " " + Replace(Txt(T_MP_MINUTES), "{n}", std::to_string(r.minutes));
+            else m += Txt(T_MP_RULE_LAST) + " " + LangText(r.lives == 1 ? 24 : 25, r.lives);
+            if (r.rounds > 1) m += ", " + Replace(Txt(T_MP_BEST), "{n}", std::to_string(r.rounds));
+            g_sumMode = m;
+            g_sumResult = r.text;
+            g_sumTourney = r.rounds > 1;
+        }
         SaveSummary();
         g_sumShow = won;   // the score screen comes only after a victory (a versus game ends with one too)
     }
@@ -1598,8 +1900,15 @@ void PlayersLevelLeave(bool won)
 enum Page { P_CLOSED, P_MAIN, P_EDIT, P_STATS, P_DETAIL, P_RECORDS, P_LAST, P_MANAGE, P_ACTION, P_PICK, P_CONFIRM, P_LINEUP,
             P_CARD };
 static Page g_page = P_CLOSED;
+static void GlintFrame(int mode);     // the menu's glint on the pages (below, with the drawing)
 enum { ROW_STATS = 4, ROW_CARDS, ROW_RECORDS, ROW_LAST, ROW_MANAGE, ROW_BACK, MAIN_ROWS };
 static Page g_cardBack = P_STATS;     // where Back goes from a player's card (the statistics or this page)
+static bool  g_recap;                 // the Last game over the map after a versus game, until confirm or back
+// its button, over the map's own "F1 Help" (test of 05/11/2026: under the button, "F1 Help" and a help line that said
+// the same as the button)
+static const float kRecapBw = 0.26f, kRecapY = 0.875f, kRecapBx = 0.37f;
+static DWORD g_recapAt;
+static bool  g_recapDrawn;            // (the first time it is drawn, in the log)
 static bool g_slotNew[4];             // the place shows "New name..." (confirm opens the editor; nothing changes before)
 static int  g_row;                    // P_MAIN row
 static int  g_editSlot;               // the editor: 0..3 a player's name, -1 renaming g_actName, kEditAdd a new name
@@ -1613,6 +1922,13 @@ static int  g_lineupN;
 static int  g_lineupRow;
 static bool g_lineupDone;             // Start was confirmed: Screens.cpp runs the menu entry's own confirmation
 static int  g_lineupLogged;
+// the Multiplayer page (Who is playing? with the game's mode and rules on the left; below, "Multiplayer")
+enum { MP_CAMPAIGN, MP_FFA, MP_TEAMS };
+enum { MR_MODE = 10, MR_PLAYERS, MR_SPLIT, MR_ENEMIES, MR_RULE, MR_LIVES, MR_TIME, MR_ROUNDS, MR_START = 20, MR_BACK };   // its rows (0..3 the places)
+static bool g_multi;                  // the line-up page is the Multiplayer page
+static int  g_mpMode, g_mpCoopN = 3, g_mpFfaN = 2, g_mpLives = 2, g_mpSplit;
+static bool g_mpEnemies = true, g_mpTimed;
+static int  g_mpMinutes = 3, g_mpRounds = 1;
 static char g_edit[kMaxName + 1];
 static int  g_gridR, g_gridC;         // on-screen letters
 struct Totals { std::string name; Vals v; };
@@ -1745,6 +2061,30 @@ static std::string KnownSpelling(const std::vector<std::string>& all, const std:
     return "";
 }
 
+// rows from..n-1 of a line-up of n players get the last line-up's names for them (with none yet, those of the
+// Fellowship page), and a controller of player 3 or 4 that remembers a name proposes it in its own row
+static void FillLineup(int from, int n)
+{
+    const std::vector<std::string> all = AllNames();
+    char ini[MAX_PATH], sec[16], key[8], buf[64];
+    PlayersIni(ini, sizeof ini);
+    sprintf_s(sec, "Lineup%d", n);
+    for (int r = from; r < n; ++r) g_lineup[r].clear();   // (what they held before must not look taken)
+    for (int r = from; r < n; ++r) {
+        sprintf_s(key, "P%d", r + 1);
+        GetPrivateProfileStringA(sec, key, "\x02", buf, sizeof buf, ini);
+        const std::string v = KnownSpelling(all, strcmp(buf, "\x02") ? buf : g_name[r]);
+        g_lineup[r] = !v.empty() && !LineupTaken(r, v) ? v : "";
+    }
+    for (int r = (std::max)(2, from); r < n; ++r) {
+        const std::string pad = PadKeyOfSlot(r);
+        if (pad.empty()) continue;
+        GetPrivateProfileStringA("PadNames", pad.c_str(), "", buf, sizeof buf, ini);
+        const std::string v = KnownSpelling(all, buf);
+        if (!v.empty() && !LineupTaken(r, v)) g_lineup[r] = v;
+    }
+}
+
 bool PlayersOpenLineup(int n)
 {
     if (!g_enabled || !g_askWho || n < 1 || n > 4) return false;
@@ -1752,27 +2092,10 @@ bool PlayersOpenLineup(int n)
     LoadTable();   // the favourite heroes' portraits and the preview (DrawLineup)
     g_txtReady = false;
     g_typedAt = GetTickCount();   // the second confirm of the click that chose the entry is dropped
-    const std::vector<std::string> all = AllNames();
-    char ini[MAX_PATH], sec[16], key[8], buf[64];
-    PlayersIni(ini, sizeof ini);
-    sprintf_s(sec, "Lineup%d", n);
     for (std::string& r : g_lineup) r.clear();
     g_lineupN = n;
-    for (int r = 0; r < n; ++r) {
-        sprintf_s(key, "P%d", r + 1);
-        GetPrivateProfileStringA(sec, key, "\x02", buf, sizeof buf, ini);
-        // no line-up yet for this number of players: the names given in the Players page
-        const std::string v = KnownSpelling(all, strcmp(buf, "\x02") ? buf : g_name[r]);
-        g_lineup[r] = !v.empty() && !LineupTaken(r, v) ? v : "";
-    }
-    // the controller of player 3 or 4 that remembers a name proposes it in its own row
-    for (int r = 2; r < n; ++r) {
-        const std::string pad = PadKeyOfSlot(r);
-        if (pad.empty()) continue;
-        GetPrivateProfileStringA("PadNames", pad.c_str(), "", buf, sizeof buf, ini);
-        const std::string v = KnownSpelling(all, buf);
-        if (!v.empty() && !LineupTaken(r, v)) g_lineup[r] = v;
-    }
+    FillLineup(0, n);
+    g_multi = false;
     g_lineupRow = n;   // on Start
     g_lineupDone = false;
     g_lineupLogged = 0;
@@ -1780,6 +2103,173 @@ bool PlayersOpenLineup(int n)
     Log("players: who is playing? (%d) proposed: %s / %s / %s / %s", n, g_lineup[0].c_str(), g_lineup[1].c_str(),
         g_lineup[2].c_str(), g_lineup[3].c_str());
     return true;
+}
+
+// --- Multiplayer: the game's mode, its rules and who plays, on one page (04/11/2026) ----------------------------------
+// With [Players] MultiplayerPage=1 (default) the main menu's Co-op entry becomes "Multiplayer" and the Versus entry is
+// not shown (Screens.cpp): confirming it opens this page instead of Who is playing?. On the left the game: the mode
+// (campaign, everybody against everybody, teams), the players (2 to 4; four in teams), the pairs of the teams, the
+// enemies (or the heroes only) and the lives; under them the teams, or where the level is chosen. On the right who
+// plays: the places of Who is playing? (each with its team in a 2 vs 2); under the two boxes Start and Back. Up/down go
+// through the rows of one box and on to Start and Back (test of 04/11/2026: one long list across the two boxes was
+// awkward), the shoulder buttons, Tab and Page Up / Page Down go to the other box, left/right change the selected row,
+// confirm starts the game from any row (but a "New name..." place, which opens the editor); the other controllers change
+// their own place.
+// The choices stay in ROTKPlus.ini ([Multiplayer] Mode, [Coop] Players; the versus ones Pvp.cpp writes, PvpConfigure);
+// Start hands them to Screens.cpp (PlayersMultiChoice), which runs the Co-op entry's own confirmation.
+static const int kSplitTeam1[3] = { 12, 13, 14 };   // the two players of team 1 ([PvP] Team1)
+
+static int MpPlayers() { return g_mpMode == MP_TEAMS ? 4 : g_mpMode == MP_FFA ? g_mpFfaN : g_mpCoopN; }
+
+static int MpTeamOf(int slot)
+{
+    const int t1 = kSplitTeam1[g_mpSplit];
+    return slot == t1 / 10 - 1 || slot == t1 % 10 - 1 ? 0 : 1;
+}
+
+// the rows of a box: 0 the game's, 1 who plays (the places)
+static void MpRows(int box, std::vector<int>& rows)
+{
+    rows.clear();
+    if (box == 1) { for (int r = 0; r < g_lineupN; ++r) rows.push_back(r); return; }
+    rows.push_back(MR_MODE);
+    rows.push_back(g_mpMode == MP_TEAMS ? MR_SPLIT : MR_PLAYERS);
+    if (g_mpMode != MP_CAMPAIGN) {
+        rows.push_back(MR_ENEMIES);
+        rows.push_back(MR_RULE);
+        rows.push_back(g_mpTimed ? MR_TIME : MR_LIVES);
+        rows.push_back(MR_ROUNDS);
+    }
+}
+
+static int g_mpBox;   // the box the cursor is in, or the last one before Start and Back
+
+static int MpBoxOf(int id) { return id < 4 ? 1 : id < MR_START ? 0 : -1; }   // -1 Start, Back
+
+// the shoulder buttons, Tab, Page Up / Page Down: the other box, on the row at the same height (or its last one)
+static void MpSwitchBox()
+{
+    const int from = MpBoxOf(g_lineupRow);
+    std::vector<int> cur, other;
+    MpRows(from < 0 ? g_mpBox : from, cur);
+    g_mpBox = (from < 0 ? g_mpBox : from) ^ 1;
+    MpRows(g_mpBox, other);
+    int at = 0;
+    for (int i = 0; i < (int)cur.size(); ++i) if (cur[i] == g_lineupRow) at = i;
+    if (!other.empty()) g_lineupRow = other[(std::min)(at, (int)other.size() - 1)];
+    MenuIdleReset();
+}
+
+// the places follow the number of players; a new one gets the last line-up's name for it, if not taken
+static void SetLineupN(int n)
+{
+    if (n == g_lineupN) return;
+    const int old = g_lineupN;
+    g_lineupN = n;
+    if (n > old) FillLineup(old, n);
+}
+
+static int Wrap(int v, int lo, int hi) { return v > hi ? lo : v < lo ? hi : v; }
+
+static void MpStep(int id, int dir)
+{
+    switch (id) {
+    case MR_MODE: g_mpMode = Wrap(g_mpMode + dir, MP_CAMPAIGN, MP_TEAMS); break;
+    case MR_PLAYERS: {
+        int& n = g_mpMode == MP_FFA ? g_mpFfaN : g_mpCoopN;
+        n = Wrap(n + dir, 2, 4);
+        break;
+    }
+    case MR_SPLIT: g_mpSplit = Wrap(g_mpSplit + dir, 0, 2); break;
+    case MR_ENEMIES: g_mpEnemies = !g_mpEnemies; break;
+    case MR_LIVES: g_mpLives = Wrap(g_mpLives + dir, 1, 5); break;
+    case MR_RULE: g_mpTimed = !g_mpTimed; break;
+    case MR_TIME: g_mpMinutes = g_mpMinutes == 2 ? (dir > 0 ? 3 : 5) : g_mpMinutes == 3 ? (dir > 0 ? 5 : 2) : (dir > 0 ? 2 : 3); break;
+    case MR_ROUNDS: g_mpRounds = g_mpRounds == 1 ? (dir > 0 ? 3 : 5) : g_mpRounds == 3 ? (dir > 0 ? 5 : 1) : (dir > 0 ? 1 : 3); break;
+    default: return;
+    }
+    SetLineupN(MpPlayers());
+}
+
+static void MpLoad()
+{
+    g_mpMode = Wrap(IniInt("Multiplayer", "Mode", MP_CAMPAIGN), MP_CAMPAIGN, MP_TEAMS);
+    const int coop = IniInt("Coop", "Players", 3), ffa = IniInt("PvP", "Players", 2), lives = IniInt("PvP", "Lives", 2);
+    g_mpCoopN = coop < 2 || coop > 4 ? 3 : coop;
+    g_mpFfaN = ffa < 2 || ffa > 4 ? 2 : ffa;
+    g_mpLives = lives < 1 || lives > 5 ? 2 : lives;
+    g_mpEnemies = IniInt("PvP", "Enemies", 1) != 0;
+    g_mpTimed = IniInt("PvP", "Rule", 0) == 1;
+    const int minutes = IniInt("PvP", "Time", 3), rounds = IniInt("PvP", "Rounds", 1);
+    g_mpMinutes = minutes == 2 || minutes == 5 ? minutes : 3;
+    g_mpRounds = rounds == 3 || rounds == 5 ? rounds : 1;
+    const int t1 = IniInt("PvP", "Team1", 12);
+    g_mpSplit = t1 == 13 ? 1 : t1 == 14 ? 2 : 0;
+}
+
+bool PlayersMultiEnabled() { return g_enabled && g_askWho && g_multiPage; }
+std::string PlayersMultiLabel() { return Txt(T_MP_TITLE); }
+
+bool PlayersOpenMulti()
+{
+    if (!PlayersMultiEnabled()) return false;
+    MpLoad();
+    if (!PlayersOpenLineup(MpPlayers())) return false;
+    g_multi = true;
+    g_lineupRow = MR_START;
+    g_mpBox = 0;
+    Log("players: multiplayer page, mode %d, %d players, enemies %d, lives %d, team 1 = %d", g_mpMode, MpPlayers(),
+        g_mpEnemies, g_mpLives, kSplitTeam1[g_mpSplit]);
+    return true;
+}
+
+// after Start on the Multiplayer page: what Screens.cpp starts
+bool PlayersMultiChoice(MultiChoice& m)
+{
+    if (!g_multi) return false;
+    m.players = MpPlayers();
+    m.versus = g_mpMode != MP_CAMPAIGN;
+    m.teams = g_mpMode == MP_TEAMS;
+    m.enemies = g_mpEnemies;
+    m.timed = g_mpTimed;
+    m.lives = g_mpLives;
+    m.minutes = g_mpMinutes;
+    m.rounds = g_mpRounds;
+    m.team1 = kSplitTeam1[g_mpSplit];
+    return true;
+}
+
+static void LineupCycle(int row, int dir);
+static void BeginEditLineup(int row);
+static void LineupStart();
+
+static void MultiAction(int action, int slot)
+{
+    if (slot >= 1 && slot <= 3) {   // another player's controller: only its own place
+        if (slot < g_lineupN && (action == 4 || action == 5)) LineupCycle(slot, action == 4 ? 1 : -1);
+        return;
+    }
+    const int id = g_lineupRow, box = MpBoxOf(id);
+    if (box >= 0) g_mpBox = box;
+    if (action == 0 || action == 2) {
+        // one box and Start, Back as a loop: down from its last row to Start, up from its first row to Back
+        std::vector<int> rows;
+        MpRows(g_mpBox, rows);
+        rows.push_back(MR_START);
+        rows.push_back(MR_BACK);
+        int at = -1;
+        for (int i = 0; i < (int)rows.size(); ++i) if (rows[i] == id) at = i;
+        const int n = (int)rows.size();
+        g_lineupRow = at < 0 ? rows[0] : rows[(at + (action == 0 ? n - 1 : 1)) % n];
+    } else if (action == 4 || action == 5) {
+        if (box < 0) g_lineupRow = id == MR_START ? MR_BACK : MR_START;   // Start and Back side by side
+        else if (id < 4) LineupCycle(id, action == 4 ? 1 : -1);
+        else MpStep(id, action == 4 ? 1 : -1);
+    } else if (action == 7) {
+        if (id < 4 && g_lineup[id] == kNewName) BeginEditLineup(id);
+        else if (id == MR_BACK) Close();
+        else LineupStart();   // from any row: the help line says so
+    } else if (action == 8) Close();
 }
 
 static void LineupCycle(int row, int dir)
@@ -1843,6 +2333,13 @@ static void LineupStart()
     Log("players: who is playing (%d): %s / %s / %s / %s", g_lineupN, PlayerName(0).c_str(),
         g_lineupN > 1 ? PlayerName(1).c_str() : "-", g_lineupN > 2 ? PlayerName(2).c_str() : "-",
         g_lineupN > 3 ? PlayerName(3).c_str() : "-");
+    if (g_multi) {   // the Multiplayer page's own choices (the versus ones: Pvp.cpp, PvpConfigure)
+        IniWriteInt("Multiplayer", "Mode", g_mpMode);
+        IniWriteInt("Coop", "Players", g_mpCoopN);
+        Log("players: multiplayer: mode %d, %d players, enemies %d, %s, %d round(s), team 1 = %d", g_mpMode, MpPlayers(),
+            g_mpEnemies, g_mpTimed ? (std::to_string(g_mpMinutes) + " minutes").c_str() : (std::to_string(g_mpLives) + " lives").c_str(),
+            g_mpRounds, kSplitTeam1[g_mpSplit]);
+    }
     g_lineupDone = true;
     Close();
 }
@@ -1862,6 +2359,7 @@ static void LineupAction(int action, int slot)
         ++g_lineupLogged;
         Log("players: who is playing? action %d from slot %d", action, slot);
     }
+    if (g_multi) { MultiAction(action, slot); return; }
     if (slot >= 1 && slot <= 3) {   // another player's controller: only its own row
         if (slot < g_lineupN && (action == 4 || action == 5)) LineupCycle(slot, action == 4 ? 1 : -1);
         return;
@@ -2310,8 +2808,18 @@ static void MouseFrame()
 // buttons now at +0x40, the bit of each id at 0x99CB60): the left shoulders (ids 8 and 9: LT and LB of an Xbox-style pad)
 // go back, the right ones (10 and 11: RB and RT) forward. The buttons seen are kept here, because this runs more than
 // once a frame.
+// On SteamOS (test of 04/11/2026) those records had no shoulder buttons in the menus: they are read from SDL,
+// on every open controller (Pads.cpp, PadsShoulder), and the records only without SDL.
 static void ShoulderPlayers()
 {
+    bool sdl = false;
+    const int dir = PadsShoulder(sdl);
+    if (sdl) {
+        if (!dir) return;
+        if (g_page == P_LINEUP && g_multi) MpSwitchBox();
+        else if (g_page == P_STATS) PlayerStep(dir);
+        return;
+    }
     static uint16_t was[4];
     const uint16_t* bit = (const uint16_t*)0x99CB60;
     const uint16_t back = bit[8] | bit[9], next = bit[10] | bit[11];
@@ -2319,6 +2827,8 @@ static void ShoulderPlayers()
         const uint16_t now = *(const uint16_t*)(0x99CBA0 + p * 0x58 + 0x40);
         const uint16_t pressed = now & ~was[p];
         was[p] = now;
+        // the Multiplayer page: player 1's shoulder buttons go to the other box
+        if (g_page == P_LINEUP && g_multi && p == 0 && (pressed & (back | next))) { MpSwitchBox(); continue; }
         if (g_page != P_STATS) continue;
         if (pressed & back) PlayerStep(-1);
         else if (pressed & next) PlayerStep(1);
@@ -2330,6 +2840,11 @@ void PlayersFrame()
 {
     if (!g_enabled) return;
     const int mode = ScreenMode();
+    // the Last game over the map must be seen to take the menu's actions: not drawn in 1.5 s, it closes (the map as before)
+    if (g_recap && !g_recapDrawn && GetTickCount() - g_recapAt > 1500) {
+        Log("players: the Last game was NOT drawn over the map within 1.5 s: closed, the map as it is");
+        PlayersCloseRecap();
+    }
     {
         static bool wasIn;
         IconsFrame(g_inLevel && !wasIn);   // the portraits taken while playing (Icons.cpp)
@@ -2361,6 +2876,11 @@ void PlayersFrame()
             PlayerStep(vk == VK_PRIOR ? -1 : 1);   // Page Up / Page Down: the player from the keyboard
             continue;
         }
+        if (pressed && g_page == P_LINEUP && g_multi && mode == 17 && GameHasFocus() &&
+            (vk == VK_TAB || vk == VK_PRIOR || vk == VK_NEXT)) {
+            MpSwitchBox();   // the Multiplayer page: the other box
+            continue;
+        }
         if (!pressed || !editing) continue;
         MenuIdleReset();   // typing a name is using the menu too
         if (vk == VK_RETURN) { g_typedAt = GetTickCount(); EndEdit(true); return; }
@@ -2370,11 +2890,14 @@ void PlayersFrame()
         if (const char c = KeyChar(vk)) { g_typedAt = GetTickCount(); AddChar(c); }
     }
     if (mode == 17) { MouseFrame(); ShoulderPlayers(); }
+    GlintFrame(mode);
     // the menu was left (the demo after a minute without the menu's own actions, as in the game; holding it back left
     // the menu without its background after the demo, test of 30/10/2026): the page closes
-    if (g_page != P_CLOSED && mode != 17) {
+    // (not the Last game over the map after a versus game: it lives on the map, test of 05/11/2026: closed here at once)
+    if (g_page != P_CLOSED && mode != 17 && !(g_recap && mode == 4)) {
         Log("players: page closed by the game (screen mode %d)", mode);
         g_page = P_CLOSED;
+        g_recap = false;
     }
     // The game's mouse gives the pointer to the entry pressed until the button is released (0x570474; while it is set,
     // every other entry ignores the pointer, 0x4FFE80). A click on Fellowship opened the page and hid the entries before
@@ -2396,7 +2919,7 @@ void PlayersFrame()
 // handed to 0x4E94D0 in that order, alpha last). The styles keep the menu's two colours and only darken them, so the
 // order of the colour channels does not matter. The game's own measure gives the width of a text (TextWidth): numbers
 // are right-aligned in their column, and what does not fit is made smaller, then cut.
-enum Style { ST_VALUE, ST_LABEL, ST_HEAD, ST_SEL, ST_TITLE, ST_HELP };
+enum Style { ST_VALUE, ST_LABEL, ST_HEAD, ST_SEL, ST_TITLE, ST_HELP, ST_MOON };   // ST_MOON: silver-blue (the Moon's team)
 static uint8_t g_txt[0x200];
 static char    g_txtBuf[192];
 
@@ -2422,10 +2945,22 @@ static void TextWith(uint8_t* tpl, const std::string& s, float x, float y, float
     DrawGameElement(g_txt);
 }
 
+// The labels exist only on the main menu: copies of them (0xB0 bytes: font index, colours, scale, box; no pointer the
+// drawing follows, as HudTextTemplate's) are kept for the Last game drawn over the map after a versus game (g_recap)
+static uint8_t g_tplCopy[2][0xB0];
+static bool    g_tplCopied[2];
+
 static uint8_t* StyleTemplate(int style)
 {
-    uint8_t* tpl = MenuTextTemplate(style == ST_SEL || style == ST_HEAD || style == ST_TITLE);
-    return tpl ? tpl : MenuTextTemplate(false);
+    const int hi = style == ST_SEL || style == ST_HEAD || style == ST_TITLE ? 1 : 0;
+    uint8_t* tpl = MenuTextTemplate(hi != 0);
+    if (!tpl) tpl = MenuTextTemplate(false);
+    if (tpl) {
+        if (uint8_t* t = MenuTextTemplate(hi != 0); t && !IsBadReadPtr(t, 0xB0)) { memcpy(g_tplCopy[hi], t, 0xB0); g_tplCopied[hi] = true; }
+        return tpl;
+    }
+    if (!g_recap) return nullptr;
+    return g_tplCopied[hi] ? g_tplCopy[hi] : g_tplCopied[0] ? g_tplCopy[0] : nullptr;
 }
 
 // Width of a text in the units of the elements' x. 0x4DF010(font) and 0x4DF1D0(scale x, y) set what 0x4E94D0 sets
@@ -2488,12 +3023,32 @@ static void Put(const std::string& text, float x, float y, float scale, int styl
     if (align == 1) x -= w;
     else if (align == 2) x -= w * 0.5f;
     PrepareText(tpl, s, x, y, scale);
-    static const float kShade[] = { 1.0f, 0.82f, 0.85f, 1.0f, 1.0f, 0.62f };   // by Style
+    // Labels, headings and help lines dimmer. The menu label's colour is 0.8 0.8 0.8 (log of 04/11/2026) and 0.5 is the
+    // font's own colour: anything above it is drawn as bright as 0.5, so multiplying 0.8 by these factors changed
+    // nothing (the pages looked the same from 30/10 to 04/11/2026). From 0.5, then.
+    static const float kShade[] = { 1.0f, 0.82f, 0.85f, 1.0f, 1.0f, 0.62f, 1.0f };   // by Style
     if (kShade[style] != 1.0f)
         for (int off : { 0x78, 0x7C, 0x80 }) {
             float& c = *(float*)(g_txt + off);
-            if (c >= 0.0f && c <= 1.01f) c *= kShade[style];
+            if (c >= 0.0f && c <= 1.01f) c = (std::min)(c, 0.5f) * kShade[style];
         }
+    // The Moon's pale blue. A text's colour is +0x78 red, +0x80 green, +0x7C blue (0x4FB800 passes them to 0x4E94D0 in
+    // that order), and 0.5 is the font's own colour, as for the HUD's images: a first version multiplied the menu
+    // label's values (0.8) and the Moon stayed white (test of 04/11/2026). So at most 0.5, red and green lower than blue
+    // (the second test: pale blue); the label's own values go to the log once.
+    if (style == ST_MOON) {
+        static bool logged;
+        if (!logged) {
+            logged = true;
+            Log("players: colour of the menu label: %.3f %.3f %.3f %.3f (+0x78 +0x7C +0x80 +0x84)", *(const float*)(g_txt + 0x78),
+                *(const float*)(g_txt + 0x7C), *(const float*)(g_txt + 0x80), *(const float*)(g_txt + 0x84));
+        }
+        static const struct { int off; float k; } kMoon[3] = { { 0x78, 0.70f }, { 0x80, 0.82f }, { 0x7C, 1.0f } };
+        for (const auto& m : kMoon) {
+            float& c = *(float*)(g_txt + m.off);
+            c = (c >= 0.0f && c < 0.5f ? c : 0.5f) * m.k;
+        }
+    }
     DrawGameElement(g_txt);
 }
 
@@ -2513,7 +3068,7 @@ static void TitleArrows(const std::string& s)
     AddHit(xl - 0.02f, 0.05f, xl + 0.05f, 0.14f, H_LEFT, 0);
     AddHit(xr - 0.02f, 0.05f, xr + 0.05f, 0.14f, H_RIGHT, 0);
 }
-static void Help(const std::string& s, float y = 0.93f) { Put(s, 0.5f, y, g_tableScale * 0.85f, ST_HELP, 2, 0.94f); }
+static void Help(const std::string& text, float y = 0.93f);   // the help line (with the rectangles, below)
 
 // A dark see-through rectangle behind the page (test of 30/10/2026: the texts were hard to read on the bright sky of the
 // menu's picture). The game's own "drkblk" images (0x4FA360) cover the screen with a black quad: the states 0x569C18
@@ -2563,6 +3118,149 @@ static void Arrow(float x, float y, float h, bool right, int style)
 static void DarkRect(float x0, float y0, float x1, float y1, float alpha, float grey = 0.0f)
 {
     ColorRect(x0, y0, x1, y1, alpha, grey, grey, grey);
+}
+
+// A gold cup, cx its middle, top its top, h its height (fractions of the screen): bowl, handles, stem with a knot, foot
+// and base as quads (Quad, as the pages' rectangles), drawn above the banner of a tournament's winner (Hud.cpp). First
+// the whole cup a little larger in dark bronze (its outline), then the gold: the bowl's left half lit, the right half in
+// shade, a light stripe on the left, a darker inside (test of 04/11/2026: one flat gold looked like a sticker).
+void PlayersDrawCup(float cx, float top, float h)
+{
+    const float k = 9.0f / 16.0f, w = h * k;   // as wide as tall on the screen
+    struct Col { float r, g, b; };
+    const Col lit = { 1.0f, 0.84f, 0.40f }, shade = { 0.80f, 0.60f, 0.22f }, deep = { 0.55f, 0.38f, 0.12f },
+              shine = { 1.0f, 0.96f, 0.72f }, edge = { 0.28f, 0.17f, 0.05f };
+    float m = 0.0f;   // the outline's margin, in heights (its width in widths)
+    auto quad = [&](float x0, float y0, float x1, float y1, float x2, float y2, float x3, float y3, const Col& c) {
+        // a strip: 0 1 2, 1 2 3 (0 and 2 on the left, 1 and 3 on the right), widened by the margin
+        const float mx = m * h * k, my = m * h;
+        const float xs[4] = { x0 - mx, x1 + mx, x2 - mx, x3 + mx }, ys[4] = { y0 - my, y1 - my, y2 + my, y3 + my };
+        Quad(xs, ys, 1.0f, c.r, c.g, c.b);
+    };
+    auto rect = [&](float x0, float y0, float x1, float y1, const Col& c) { quad(x0, y0, x1, y0, x0, y1, x1, y1, c); };
+    const float bt = top, bb = top + h * 0.48f;   // the bowl
+    for (int pass = 0; pass < 2; ++pass) {
+        const bool outline = pass == 0;
+        m = outline ? 0.025f : 0.0f;
+        auto c = [&](const Col& x) -> const Col& { return outline ? edge : x; };
+        // the bowl: two halves
+        quad(cx - w * 0.46f, bt, cx, bt, cx - w * 0.22f, bb, cx, bb, c(lit));
+        quad(cx, bt, cx + w * 0.46f, bt, cx, bb, cx + w * 0.22f, bb, c(shade));
+        for (int side = -1; side <= 1; side += 2) {   // the handles: a bar out, down, and back in
+            const Col& hc = side < 0 ? lit : shade;
+            const float x0 = cx + side * w * 0.44f, x1 = cx + side * w * 0.62f;
+            rect((std::min)(x0, x1), bt + h * 0.06f, (std::max)(x0, x1), bt + h * 0.10f, c(hc));
+            const float xa = cx + side * w * 0.58f, xb = cx + side * w * 0.62f;
+            rect((std::min)(xa, xb), bt + h * 0.06f, (std::max)(xa, xb), bt + h * 0.30f, c(hc));
+            const float xc = cx + side * w * 0.30f;
+            rect((std::min)(xc, xb), bt + h * 0.26f, (std::max)(xc, xb), bt + h * 0.30f, c(hc));
+        }
+        rect(cx - w * 0.05f, bb, cx + w * 0.05f, top + h * 0.78f, c(shade));                // the stem
+        rect(cx - w * 0.10f, top + h * 0.58f, cx + w * 0.10f, top + h * 0.64f, c(lit));     // its knot
+        quad(cx - w * 0.16f, top + h * 0.78f, cx + w * 0.16f, top + h * 0.78f, cx - w * 0.30f, top + h * 0.92f, cx + w * 0.30f,
+             top + h * 0.92f, c(lit));                                                       // the foot
+        rect(cx - w * 0.34f, top + h * 0.92f, cx + w * 0.34f, top + h * 0.97f, c(shade));   // the base
+    }
+    m = 0.0f;
+    // the inside, the rim, the light on the left
+    quad(cx - w * 0.34f, bt + h * 0.05f, cx + w * 0.34f, bt + h * 0.05f, cx - w * 0.16f, bb - h * 0.08f, cx + w * 0.16f,
+         bb - h * 0.08f, deep);
+    rect(cx - w * 0.46f, bt, cx + w * 0.46f, bt + h * 0.045f, lit);
+    quad(cx - w * 0.36f, bt + h * 0.07f, cx - w * 0.30f, bt + h * 0.07f, cx - w * 0.20f, bb - h * 0.04f, cx - w * 0.15f,
+         bb - h * 0.04f, shine);
+}
+
+// The help line at the bottom of a page (layout chosen on 04/11/2026): each "key: action" of the text (the pieces are
+// separated by three spaces) becomes the key in a dark box with a thin gold edge, followed by the action; up/down and
+// left/right are drawn as the pages' own arrows, and confirm and back are left out (every page has them, and the text
+// ran together: test of 04/11/2026). A piece in another form, or a key not recognised (ROTKPlus.lang.ini), goes in the
+// box as written. Smaller if the line is wider than the screen.
+enum HelpKey { HK_TEXT, HK_UPDOWN, HK_LEFTRIGHT, HK_SKIP };
+
+static HelpKey HelpKind(std::string k)
+{
+    for (char& c : k) c = (char)tolower((unsigned char)c);
+    static const char* const ud[] = { "up/down", "su/giu'", "su/giu", "haut/bas", "hoch/runter", "arriba/abajo" };
+    static const char* const lr[] = { "left/right", "sinistra/destra", "gauche/droite", "links/rechts", "izquierda/derecha" };
+    static const char* const skip[] = { "confirm", "conferma", "valider", "bestaetigen", "confirmar",
+                                        "back", "indietro", "retour", "zurueck", "volver" };
+    for (const char* w : ud) if (k == w) return HK_UPDOWN;
+    for (const char* w : lr) if (k == w) return HK_LEFTRIGHT;
+    for (const char* w : skip) if (k == w) return HK_SKIP;
+    return HK_TEXT;
+}
+
+// a gold triangle pointing up or down, w wide and h high, its box's top left at x, y (the corners in the order of
+// Arrow's, so that no culling hides it; the strip's second triangle is empty)
+static void ArrowV(float x, float y, float w, float h, bool down)
+{
+    const float xm = x + w * 0.5f;
+    const float xu[4] = { xm, x + w, x, x }, yu[4] = { y, y + h, y + h, y + h };   // tip, base right, base left
+    const float xd[4] = { x, x + w, xm, xm }, yd[4] = { y, y, y + h, y + h };      // base left, base right, tip
+    Quad(down ? xd : xu, down ? yd : yu, 1.0f, 1.0f, 0.86f, 0.5f);
+}
+
+static std::string Trimmed(std::string t)
+{
+    while (!t.empty() && t.front() == ' ') t.erase(0, 1);
+    while (!t.empty() && t.back() == ' ') t.pop_back();
+    return t;
+}
+
+static void Help(const std::string& text, float y)
+{
+    struct Item { HelpKey kind; std::string key, action; float kw, aw; };
+    std::vector<Item> items;
+    for (size_t at = 0; at < text.size();) {
+        const size_t end = text.find("   ", at);
+        const std::string piece = Trimmed(text.substr(at, end == std::string::npos ? std::string::npos : end - at));
+        at = end == std::string::npos ? text.size() : end + 3;
+        if (piece.empty()) continue;
+        const size_t colon = piece.find(':');
+        Item it{ HK_TEXT, piece, "", 0.0f, 0.0f };
+        if (colon != std::string::npos) {
+            it.key = Trimmed(piece.substr(0, colon));
+            it.action = Trimmed(piece.substr(colon + 1));
+            it.kind = HelpKind(it.key);
+        }
+        if (it.kind != HK_SKIP) items.push_back(it);
+    }
+    if (items.empty()) return;
+    const float pad = 0.008f, gapIn = 0.008f, gapOut = 0.03f, lrW = 0.0125f, udW = 0.014f;
+    float ts = g_tableScale * 0.85f;
+    auto measure = [&](float sc) {
+        float total = gapOut * (float)(items.size() - 1);
+        for (Item& it : items) {
+            it.kw = it.kind == HK_TEXT ? TextWidth(ST_SEL, it.key, sc) : it.kind == HK_LEFTRIGHT ? lrW * 2 + 0.006f : udW * 2 + 0.006f;
+            it.aw = it.action.empty() ? 0.0f : TextWidth(ST_LABEL, it.action, sc);
+            total += pad * 2 + it.kw + (it.aw > 0.0f ? gapIn + it.aw : 0.0f);
+        }
+        return total;
+    };
+    float total = measure(ts);
+    if (total > 0.92f) { ts *= (std::max)(0.7f, 0.92f / total); total = measure(ts); }
+    float x = 0.5f - total * 0.5f;
+    const float top = y - 0.006f, bottom = y + 0.036f, ex = 0.0012f, ey = 0.002f;
+    for (const Item& it : items) {
+        const float x1 = x + pad * 2 + it.kw;
+        DarkRect(x, top, x1, bottom, 0.85f, 0.03f);
+        ColorRect(x, top, x1, top + ey, 0.8f, 0.72f, 0.6f, 0.36f);          // the gold edge
+        ColorRect(x, bottom - ey, x1, bottom, 0.8f, 0.72f, 0.6f, 0.36f);
+        ColorRect(x, top, x + ex, bottom, 0.8f, 0.72f, 0.6f, 0.36f);
+        ColorRect(x1 - ex, top, x1, bottom, 0.8f, 0.72f, 0.6f, 0.36f);
+        const float cx = x + pad;
+        if (it.kind == HK_TEXT) Put(it.key, cx, y, ts, ST_SEL);
+        else if (it.kind == HK_LEFTRIGHT) {
+            Arrow(cx, y + 0.002f, 0.026f, false, ST_SEL);
+            Arrow(cx + lrW + 0.006f, y + 0.002f, 0.026f, true, ST_SEL);
+        } else {
+            ArrowV(cx, y + 0.004f, udW, 0.022f, false);
+            ArrowV(cx + udW + 0.006f, y + 0.004f, udW, 0.022f, true);
+        }
+        x = x1;
+        if (it.aw > 0.0f) { Put(it.action, x + gapIn, y, ts, ST_LABEL); x += gapIn + it.aw; }
+        x += gapOut;
+    }
 }
 
 // --- icons next to the rows (test of 01/11/2026: the enemies' portraits beside their names) ------------------------
@@ -2741,12 +3439,12 @@ static void Heading(const std::string& t, float x, float y, float right)
 // two arrows (a guest and "New name..." dimmed). The arrows can be clicked (left/right on the place), the rest selects it.
 // value: a name, "" (guest) or kNewName.
 static void DrawPlace(int idx, float x, float y, float rowH, float right, bool sel, const std::string& label,
-                      const std::string& value)
+                      const std::string& value, float labelW = 0.222f)
 {
     const float ts = g_scale * 0.85f, k = 9.0f / 16.0f;
     const bool named = RealName(value);
-    Put(label, x, y, ts, sel ? ST_SEL : ST_VALUE, 0, 0.215f);
-    const float px = x + 0.222f;
+    Put(label, x, y, ts, sel ? ST_SEL : ST_VALUE, 0, labelW - 0.007f);
+    const float px = x + labelW;
     if (void* icon = named ? HeroIcon(FavouriteOf(value)) : nullptr) DrawIcon(icon, px, y - 0.003f, px + 0.044f * k, y + 0.041f);
     const std::string shown = value == kNewName ? Txt(T_WHO_NEW) : named ? value : Txt(T_WHO_GUEST);
     const float ah = 0.03f, aw = ah * 0.48f, ax = px + 0.033f, nx = ax + aw + 0.008f;
@@ -2876,10 +3574,117 @@ static void DrawMain()
     Help(Txt(T_MAIN_HELP));
 }
 
+// a place's name for the teams' lines: the name, or "Player N"
+static std::string PlaceName(int r)
+{
+    return RealName(g_lineup[r]) ? g_lineup[r] : g_playerLabel[r];
+}
+
+// The Multiplayer page, layout "one table" (chosen on 04/11/2026): two dark boxes side by side, the game on the left
+// (each rule a row with its value between two arrows) and who plays on the right (the places); the box with the cursor
+// a little darker; Start and Back side by side under the boxes. The teams are the Sun's (gold) and the Moon's
+// (silver-blue).
+static void DrawMulti()
+{
+    std::vector<int> rows;
+    MpRows(0, rows);
+    // up to seven rows on the left (a tournament with teams): a little closer then, and the boxes as tall as the longer
+    const float s = g_scale, ts = s * 0.85f, vs = s * 0.75f, rowH = rows.size() > 5 ? 0.052f : 0.06f;
+    const float lx = 0.05f, lr = 0.47f, rx = 0.53f, rr = 0.95f, top = 0.165f;
+    const float leftEnd = top + 0.075f + rowH * (float)rows.size() + (g_mpMode == MP_TEAMS ? 0.175f : 0.07f);
+    const float rightEnd = top + 0.075f + rowH * (float)g_lineupN + 0.03f;
+    const float bottom = (std::min)(0.80f, (std::max)(0.665f, (std::max)(leftEnd, rightEnd)));
+    const int box = MpBoxOf(g_lineupRow);
+    Put(Txt(T_MP_TITLE), 0.06f, 0.075f, s * 1.2f, ST_TITLE);   // (Txt also loads g_playerLabel)
+    DarkRect(lx, top, lr, bottom, g_shade * (box == 0 ? 1.3f : 0.85f));
+    DarkRect(rx, top, rr, bottom, g_shade * (box == 1 ? 1.3f : 0.85f));
+    // the game
+    Heading(Txt(T_MP_GAME), lx + 0.02f, top + 0.02f, lr - 0.02f);
+    float y = top + 0.075f;
+    for (int id : rows) {
+        const bool sel = g_lineupRow == id;
+        int label = T_MP_MODE;
+        std::string value;
+        switch (id) {
+        case MR_MODE: value = Txt(g_mpMode == MP_CAMPAIGN ? T_MP_CAMPAIGN : g_mpMode == MP_FFA ? T_MP_FFA : T_MP_TEAMS); break;
+        case MR_PLAYERS: label = T_MP_PLAYERS; value = std::to_string(MpPlayers()); break;
+        case MR_SPLIT: {
+            label = T_MP_SPLIT;
+            int a[2] = { 0, 0 }, b[2] = { 0, 0 }, na = 0, nb = 0;
+            for (int k = 0; k < 4; ++k) {
+                if (MpTeamOf(k) == 0 && na < 2) a[na++] = k + 1;
+                else if (MpTeamOf(k) == 1 && nb < 2) b[nb++] = k + 1;
+            }
+            value = Replace(Replace(Replace(Replace(Txt(T_MP_SPLIT_VAL), "{a}", std::to_string(a[0])), "{b}", std::to_string(a[1])),
+                                    "{c}", std::to_string(b[0])), "{d}", std::to_string(b[1]));
+            break;
+        }
+        case MR_ENEMIES: label = T_MP_ENEMIES; value = Txt(g_mpEnemies ? T_MP_ENEMIES_ON : T_MP_HEROES); break;
+        case MR_LIVES: label = T_MP_LIVES; value = std::to_string(g_mpLives); break;
+        case MR_RULE: label = T_MP_RULE; value = Txt(g_mpTimed ? T_MP_RULE_TIME : T_MP_RULE_LAST); break;
+        case MR_TIME: label = T_MP_TIME; value = Replace(Txt(T_MP_MINUTES), "{n}", std::to_string(g_mpMinutes)); break;
+        case MR_ROUNDS:
+            label = T_MP_ROUNDS;
+            value = g_mpRounds == 1 ? Txt(T_MP_SINGLE) : Replace(Txt(T_MP_BEST), "{n}", std::to_string(g_mpRounds));
+            break;
+        }
+        if (sel) SelBox(lx + 0.015f, y, lr - 0.015f, rowH);
+        Put(Txt(label), lx + 0.03f, y, vs, sel ? ST_SEL : ST_VALUE, 0, 0.125f);
+        const float ax = lx + 0.165f, ah = 0.03f, aw = ah * 0.48f, nx = ax + aw + 0.008f;
+        const float maxW = lr - 0.03f - aw - 0.008f - nx, nw = (std::min)(TextWidth(ST_VALUE, value, vs), maxW);
+        Arrow(ax, y + 0.006f, ah, false, sel ? ST_SEL : ST_VALUE);
+        Put(value, nx, y, vs, sel ? ST_SEL : ST_VALUE, 0, maxW);
+        Arrow(nx + nw + 0.008f, y + 0.006f, ah, true, sel ? ST_SEL : ST_VALUE);
+        AddHit(ax - 0.012f, y - 0.006f, ax + aw + 0.006f, y + rowH - 0.006f, H_LEFT, id);   // (before the row: found first)
+        AddHit(nx + nw + 0.002f, y - 0.006f, nx + nw + 0.03f, y + rowH - 0.006f, H_RIGHT, id);
+        AddHit(lx, y - 0.006f, lr, y + rowH - 0.006f, H_SELECT, id);
+        y += rowH;
+    }
+    // under the rules: the two teams, or where the level is chosen
+    y += 0.03f;
+    if (g_mpMode == MP_TEAMS) {
+        Heading(Txt(T_MP_TEAMS_HEAD), lx + 0.02f, y, lr - 0.02f);
+        for (int t = 0; t < 2; ++t) {
+            std::string names;
+            for (int k = 0; k < 4; ++k)
+                if (MpTeamOf(k) == t) names = names.empty() ? PlaceName(k) : LangText(10, 0, PlaceName(k).c_str(), names.c_str());
+            Put(LangText(9, 0, names.c_str(), LangText(11 + t).c_str()), lx + 0.03f, y + 0.045f + t * 0.05f,
+                g_tableScale * 0.85f, t == 0 ? ST_SEL : ST_MOON, 0, lr - lx - 0.05f);
+        }
+    } else Put(Txt(g_mpMode == MP_FFA ? T_MP_NOTE_ARENA : T_MP_NOTE_MAP), lx + 0.03f, y, g_tableScale * 0.8f, ST_HELP, 0,
+               lr - lx - 0.05f);
+    // who plays
+    Heading(Txt(T_SEC_WHO), rx + 0.02f, top + 0.02f, rr - 0.02f);
+    y = top + 0.075f;
+    const float tagW = g_mpMode == MP_TEAMS ? 0.08f : 0.0f;
+    for (int r = 0; r < g_lineupN; ++r, y += rowH) {
+        const bool sel = g_lineupRow == r;
+        if (sel) SelBox(rx + 0.015f, y, rr - 0.015f, rowH);
+        DrawPlace(r, rx + 0.03f, y, rowH, rr - 0.02f - tagW, sel, std::to_string(r + 1), g_lineup[r], 0.035f);
+        if (tagW > 0.0f)
+            Put(Txt(MpTeamOf(r) == 0 ? T_MP_SUN : T_MP_MOON), rr - 0.03f, y + 0.006f, g_tableScale * 0.8f,
+                MpTeamOf(r) == 0 ? ST_SEL : ST_MOON, 1, tagW);
+    }
+    // Start and Back, side by side under the boxes
+    const float bs = ts * 1.1f, gap = 0.12f, by = bottom + 0.035f;
+    const float w0 = TextWidth(ST_SEL, Txt(T_WHO_START), bs), w1 = TextWidth(ST_VALUE, Txt(T_BACK), bs);
+    const float x0 = 0.5f - (w0 + gap + w1) * 0.5f, x1 = x0 + w0 + gap;
+    for (int e = 0; e < 2; ++e) {
+        const int id = e ? MR_BACK : MR_START;
+        const float x = e ? x1 : x0, w = e ? w1 : w0;
+        const bool sel = g_lineupRow == id;
+        if (sel) SelBox(x - 0.025f, by, x + w + 0.025f, rowH + 0.01f);
+        AddHit(x - 0.025f, by - 0.006f, x + w + 0.025f, by + rowH, H_SELECT, id);
+        Put(Txt(e ? T_BACK : T_WHO_START), x, by, bs, sel ? ST_SEL : ST_VALUE);
+    }
+    Help(Txt(T_MP_HELP));
+}
+
 // Who is playing? in the same style (02/11/2026): the places of the game about to start, then Start and Back; on the
 // right the selected player (or, on Start, the whole line-up); the help line at the bottom.
 static void DrawLineup()
 {
+    if (g_multi) { DrawMulti(); return; }
     const float s = g_scale, ts = s * 0.85f, x0 = 0.10f, ex = 0.125f, rowH = 0.06f, right = 0.575f;
     Put(Txt(T_WHO_TITLE), x0, 0.09f, s * 1.2f, ST_TITLE);   // (Txt also loads g_playerLabel)
     for (int r = 0; r < g_lineupN; ++r) {
@@ -2970,6 +3775,7 @@ static const struct { int row; int types[5]; } kFoeKinds[] = {
 // bar (210 of life): at the Black Gate the "0/6" of the objective went up with the kills of 0x24 and 0x28 (02/11/2026).
 // The Uruk-hai of Saruman have one type with and without a shield (0x29).
 enum { ROW_FOE = 4000 };
+enum { ROW_VS = 5000 };   // the Versus tab's rows ROW_VS + i: the knock-downs of the i-th player shown
 static const struct { int people; int label; int types[2]; } kFoeSubs[] = {
     { F_ORC, V_SOLDIERS, { 0x03, 0x23 } }, { F_ORC, V_ARCHERS, { 0x1A } },
     { F_URUK, V_SOLDIERS, { 0x15 } }, { F_URUK, V_SHIELD, { 0x25 } }, { F_URUK, V_ARCHERS, { 0x26 } },
@@ -3045,6 +3851,14 @@ static std::string StatValue(const Vals& v, int row)
     case S_PVP_WINS: return Num(Get(v, "PvpWins"));
     case S_PVP_KILLS: return Num(Get(v, "PvpKills"));
     case S_PVP_FALLS: return Num(Get(v, "PvpFalls"));
+    case S_PVP_ELIMS: return Num(Get(v, "PvpElims"));
+    case S_PVP_ROUNDS: return Num(Get(v, "PvpRounds"));
+    case S_PVP_ROUND_WINS: return Num(Get(v, "PvpRoundWins"));
+    case S_PVP_TOURNEYS: return Num(Get(v, "PvpTourneys"));
+    case S_PVP_CUPS: return Num(Get(v, "PvpCups"));
+    case S_PVP_TEAM: return Num(Get(v, "PvpTeamWins")) + " / " + Num(Get(v, "PvpTeamGames"));
+    case S_PVP_TIMED: return Num(Get(v, "PvpTimedWins")) + " / " + Num(Get(v, "PvpTimedGames"));
+    case S_PVP_BEST_TIMED: return Num(Get(v, "BestTimedKills"));
     case F_ORC: case F_URUK: case F_URUKHAI: case F_BERSERKER: case F_DEAD: case F_EAST: case F_SPIDER: case F_TROLL:
     case F_MUMAK: case F_GOLLUM: case F_SHELOB: case F_GORBAG: case F_KINGDEAD: case F_NAZGUL: case F_MOUTH: case F_OTHER:
         return Num(FoeKills(v, row));
@@ -3057,6 +3871,10 @@ static std::string StatValue(const Vals& v, int row)
     case P_HEAL30: return Num(Get(v, "Pick1"));
     case P_HEAL60: return Num(Get(v, "Pick2"));
     case S_BURNED: return Num(Get(v, "Burned"));
+    case S_KICKS: return Num(Get(v, "KicksHit")) + " / " + Num(Get(v, "Kicks"));
+    case S_SPEED_HITS: return Num(Get(v, "SpeedHits"));
+    case S_FIERCE_HITS: return Num(Get(v, "FierceHits"));
+    case S_SHIELDS: return Num(Get(v, "ShieldsBroken"));
     case P_ARROWS: return Num(Get(v, "Pick4") + Get(v, "Pick5") + Get(v, "Pick6") + Get(v, "Pick8"));
     case P_EXP: return Num(Get(v, "Pick7"));
     case C_HEWER: case C_JUDGMENT: case C_BALROG: case C_DARK: case C_CLEAVER: case C_LIGHTNING: case C_HAMMER:
@@ -3079,13 +3897,15 @@ static const std::vector<int> kTabRows[TAB_COUNT] = {
     { S_LEVELS_WON, ROW_LEVEL + 0, ROW_LEVEL + 1, ROW_LEVEL + 2, ROW_LEVEL + 3, ROW_LEVEL + 4, ROW_LEVEL + 5, ROW_LEVEL + 6,
       ROW_LEVEL + 7, ROW_LEVEL + 8, ROW_LEVEL + 9, ROW_LEVEL + 10, ROW_LEVEL + 11, ROW_LEVEL + 12, ROW_LEVEL + 13,
       ROW_LEVEL + 14 },
-    { S_KILLS, S_RANGED, S_SPEAR, S_FINISH, S_SOLO, S_MULTI, S_ASSISTS, S_DEATHS, -1, S_PARRY_HITS, S_LADDERS, S_BURNED },
+    { S_KILLS, S_RANGED, S_SPEAR, S_FINISH, S_SOLO, S_MULTI, S_ASSISTS, S_DEATHS, -1, S_SPEED_HITS, S_FIERCE_HITS, S_KICKS,
+      S_SHIELDS, S_PARRY_HITS, -1, S_LADDERS, S_BURNED },
     { F_ORC, ROW_FOE + 0, ROW_FOE + 1, F_URUK, ROW_FOE + 2, ROW_FOE + 3, ROW_FOE + 4, ROW_FOE + 5, F_URUKHAI, ROW_FOE + 6,
       ROW_FOE + 7, F_BERSERKER, F_DEAD, ROW_FOE + 8, ROW_FOE + 9, ROW_FOE + 10, ROW_FOE + 11, F_EAST, ROW_FOE + 12,
       ROW_FOE + 13, ROW_FOE + 14, F_SPIDER, F_TROLL, F_MUMAK, F_NAZGUL, F_OTHER },
     { F_GOLLUM, F_SHELOB, F_GORBAG, F_KINGDEAD, F_MOUTH, -1, C_HEWER, C_JUDGMENT, C_BALROG, C_DARK, C_CLEAVER, C_LIGHTNING,
       C_HAMMER, C_SWIFT, C_RISING, C_BANE },
-    { S_PVP_GAMES, S_PVP_WINS, S_PVP_KILLS, S_PVP_FALLS },
+    { S_PVP_GAMES, S_PVP_WINS, S_PVP_KILLS, S_PVP_FALLS, S_PVP_ELIMS, -1, S_PVP_ROUNDS, S_PVP_ROUND_WINS, S_PVP_TOURNEYS,
+      S_PVP_CUPS, -1, S_PVP_TEAM, S_PVP_TIMED, S_PVP_BEST_TIMED },
 };
 
 // the parts of a row above ("di cui..." under the kills, the kinds under a people): further in and a little smaller
@@ -3117,7 +3937,11 @@ static void DrawStats()
         }
     }
     if (g_table.empty()) { Put(Txt(T_NONE), 0.5f, 0.30f, s, ST_LABEL, 2); Help(Txt(T_STATS_HELP)); return; }
-    const std::vector<int>& rows = kTabRows[(std::max)(0, (std::min)(g_statsTab, TAB_COUNT - 1))];
+    const int first = g_statsSel / 4 * 4, shown = (std::min)(4, (int)g_table.size() - first);
+    // the Versus tab ends with who downed whom: a row for each player shown ("Downed Alex"), in each column how many
+    // times that column's player did it (05/11/2026)
+    std::vector<int> rows = kTabRows[(std::max)(0, (std::min)(g_statsTab, TAB_COUNT - 1))];
+    if (g_statsTab == 5 && shown > 1) { rows.push_back(-1); for (int i = 0; i < shown; ++i) rows.push_back(ROW_VS + i); }
     // the rows of the kinds of enemy have a portrait in front: their labels start after it, all of them, so that the
     // names stay in a column (test of 01/11/2026: icons out of the dark panel, names not aligned). The labels' column
     // does not count the levels' names: "Minas Tirith - sommita' delle mura" made it 0.42 and left the players' columns
@@ -3137,7 +3961,8 @@ static void DrawStats()
     auto withIcon = [](int r) { return (r >= F_ORC && r <= F_OTHER) || r == F_NAZGUL || r == F_MOUTH; };
     auto isSub = [](int r) { return IsFoeSub(r) || KillPart(r); };
     auto indent = [&](int r) { return IsFoeSub(r) ? iconIndent + 0.025f : KillPart(r) || IsLevelRow(r) ? 0.025f : withIcon(r) ? iconIndent : 0.0f; };
-    auto RowLabel = [](int r) {
+    auto RowLabel = [&](int r) {
+        if (r >= ROW_VS) return Replace(Txt(S_VS_DOWNS), "{name}", g_table[first + r - ROW_VS].name);
         return IsLevelRow(r) ? LevelName(r - ROW_LEVEL) : IsFoeSub(r) ? std::string(Txt(kFoeSubs[r - ROW_FOE].label))
                                                                      : std::string(Txt(r));
     };
@@ -3149,7 +3974,6 @@ static void DrawStats()
     const float x0 = 0.05f, maxLabel = (std::min)(labelW, 0.42f);
     const float labelScale = labelW > maxLabel ? s * (std::max)(0.6f, maxLabel / labelW) : s;
     const float colsL = x0 + maxLabel + 0.03f, colW = (0.95f - colsL) / 4.0f;
-    const int first = g_statsSel / 4 * 4, shown = (std::min)(4, (int)g_table.size() - first);
     for (int i = 0; i < shown; ++i) {
         AddHit(colsL + i * colW, 0.13f, colsL + (i + 1) * colW, 0.86f, H_PICK, first + i);
         Put(g_table[first + i].name, colsL + (i + 1) * colW - 0.01f, 0.145f, s, first + i == g_statsSel ? ST_SEL : ST_HEAD, 1,
@@ -3182,7 +4006,9 @@ static void DrawStats()
         if (void* icon = withIcon(r) ? IconTexture(kTxt[r].key) : nullptr)
             DrawIcon(icon, x0, y - 0.004f, x0 + iconW, y - 0.004f + iconH);
         for (int i = 0; i < shown; ++i) {
-            const std::string val = StatValue(g_table[first + i].v, r);
+            const std::string val = r < ROW_VS ? StatValue(g_table[first + i].v, r)
+                                  : first + i == first + r - ROW_VS ? std::string("-")
+                                  : Num(Get(g_table[first + i].v, DownsKey(g_table[first + r - ROW_VS].name)));
             const float right = colsL + (i + 1) * colW - 0.01f;
             // the favourite hero: the portrait before the name, both inside the column (the name gets smaller if needed:
             // test of 01/11/2026, "legolas" ran into the next column's portrait)
@@ -3309,6 +4135,18 @@ static void DrawCard()
         if (Get(v, std::string("Won_") + kLevels[i]) > 0) ColorRect(x, 0.785f, x + mw, 0.815f, 1.0f, 0.86f, 0.72f, 0.40f);
         else DarkRect(x, 0.785f, x + mw, 0.815f, g_shade * 1.2f);
     }
+    // under everything, a band (04/11/2026): the versus games (won of played, Cups, opponents knocked down), each its
+    // label and its number (the kicks are in the Fights tab only, 05/11/2026)
+    const float by = 0.845f, bw3 = (rx + rw - lx) / 3.0f;
+    DarkRect(lx - 0.004f, by - 0.006f, rx + rw + 0.004f, by + 0.05f, g_shade * 0.6f);
+    const std::pair<int, std::string> band[3] = {
+        { S_PVP_WINS, Num(Get(v, "PvpWins")) + " / " + Num(Get(v, "PvpGames")) }, { S_PVP_CUPS, Num(Get(v, "PvpCups")) },
+        { T_CARD_DOWNS, Num(Get(v, "PvpKills")) } };
+    for (int i = 0; i < 3; ++i) {
+        const float x = lx + i * bw3;
+        Put(Txt(band[i].first), x + 0.008f, by + 0.008f, s * 0.8f, ST_LABEL, 0, bw3 - 0.11f);
+        Put(band[i].second, x + bw3 - 0.02f, by + 0.004f, s * 0.95f, ST_SEL, 1, 0.08f);
+    }
     Help(Txt(T_CARD_HELP));
 }
 
@@ -3391,7 +4229,9 @@ static void DrawRecords()
     Title(Txt(T_RECORDS));
     AddHit(0.0f, 0.0f, 1.0f, 1.0f, H_SELECT, 0);   // a click goes back
     const float x0 = 0.05f, x1 = 0.95f, g = 0.02f, h = 0.2f, mid = 0.5f;
-    const float w3 = (x1 - x0 - 2 * g) / 3.0f, w2 = (mid - g * 0.5f - x0 - g) / 2.0f;
+    int inLevel = 0;   // the boxes of the first row (in a level) share its width
+    for (const RecordDef& r : kRecords) inLevel += r.group == 0;
+    const float w3 = (x1 - x0 - (inLevel - 1) * g) / (float)(inLevel > 0 ? inLevel : 1), w2 = (mid - g * 0.5f - x0 - g) / 2.0f;
     Heading(Txt(T_REC_LEVEL), x0, 0.165f, x1);
     Heading(Txt(T_REC_TOTAL), x0, 0.455f, mid - g * 0.5f);
     Heading(Txt(TB_PVP), mid + g * 0.5f, 0.455f, x1);
@@ -3428,16 +4268,28 @@ static void DrawLast()
 {
     const float s = g_tableScale, k = 9.0f / 16.0f;
     Title(Txt(T_LAST));
-    AddHit(0.0f, 0.0f, 1.0f, 1.0f, H_SELECT, 0);   // a click goes back
-    Help(Txt(T_BACK_HELP));
+    if (g_recap) {   // after a versus game, over the map: one button, Back to the map
+        const float y = kRecapY, rowH = 0.06f;
+        DarkRect(kRecapBx, y - 0.006f, kRecapBx + kRecapBw, y + rowH - 0.006f, 0.95f);
+        ColorRect(kRecapBx, y + rowH - 0.010f, kRecapBx + kRecapBw, y + rowH - 0.006f, 0.9f, kGold[0], kGold[1], kGold[2]);
+        Put(Txt(T_TO_MAP), kRecapBx + kRecapBw * 0.5f, y, g_scale * 0.85f, ST_SEL, 2, kRecapBw - 0.02f);
+    } else {
+        AddHit(0.0f, 0.0f, 1.0f, 1.0f, H_SELECT, 0);   // a click goes back
+        Help(Txt(T_BACK_HELP));
+    }
     if (g_sum.empty()) { Put(Txt(T_LAST_NONE), 0.5f, 0.30f, s, ST_LABEL, 2); return; }
     const bool pvp = g_sumKind == 3;
     const float x0 = 0.08f, x1 = 0.92f, colW = 0.13f, rowH = 0.085f;
     const std::string level = g_sumLevel.empty() ? std::string() : LangGameText(g_sumLevel.c_str());
     float y = 0.16f;
     if (!level.empty() && level != g_sumLevel) { Put(level, x0, y, s * 1.4f, ST_SEL, 0, x1 - x0); y += 0.065f; }   // its name in the game's language
-    Heading(Txt(pvp ? T_LAST_PVP : g_sumKind == 1 ? T_LAST_COOP : T_LAST_LOST), x0, y, x1);
-    const int nc = pvp ? 2 : 3;
+    // a versus game (04/11/2026): how it ended under the level's name, its kind in the heading ("Versus: Teams, heroes
+    // only, timed 2 minutes, best of 3"); the winners marked in gold, the teams by the names, the rounds won
+    if (pvp && !g_sumResult.empty()) { Put(g_sumResult, x0, y, s * 1.05f, ST_VALUE, 0, x1 - x0); y += 0.055f; }
+    Heading(pvp && !g_sumMode.empty() ? Txt(T_LAST_PVP) + ": " + g_sumMode : Txt(pvp ? T_LAST_PVP : g_sumKind == 1 ? T_LAST_COOP : T_LAST_LOST),
+            x0, y, x1);
+    const bool rich = pvp && !g_sumMode.empty();   // (a Last game saved before 1.4.0 has two columns)
+    const int nc = !pvp ? 3 : rich && g_sumTourney ? 3 : 2;
     auto colX = [&](int c) { return x1 - (nc - 1 - c) * colW; };   // right edge of a column
     const std::vector<std::string> cols = Columns(Txt(pvp ? T_LAST_PVP_COLS : T_LAST_COLS));
     y += 0.05f;
@@ -3447,17 +4299,23 @@ static void DrawLast()
     for (const SumRow& r : g_sum) if (!top || r.k > top->k) top = &r;
     if (g_sum.size() < 2 || !top || top->k <= 0) top = nullptr;
     const float ih = 0.07f, nx = x0 + ih * k + 0.015f, nw = colX(0) - colW - nx;
-    int tot[3] = {};
+    int tot[4] = {};
     for (size_t i = 0; i < g_sum.size() && i < 4; ++i, y += rowH) {
         const SumRow& r = g_sum[i];
+        const bool gold = rich ? r.win : &r == top;   // a versus game: its winners; a level: the most kills
         Band((int)i, y, rowH);
-        if (&r == top) ColorRect(0.035f, y - 0.006f, 0.041f, y + rowH - 0.006f, 1.0f, kGold[0], kGold[1], kGold[2]);
+        if (gold) ColorRect(0.035f, y - 0.006f, 0.041f, y + rowH - 0.006f, 1.0f, kGold[0], kGold[1], kGold[2]);
         if (void* icon = HeroIcon(r.hero)) DrawIcon(icon, x0, y, x0 + ih * k, y + ih);
-        Put(r.name, nx, y + 0.004f, s * 1.1f, &r == top ? ST_SEL : ST_VALUE, 0, nw);
-        Put(r.hero >= 0 && r.hero <= 8 ? HeroName(r.hero) : std::string("?"), nx, y + 0.042f, s * 0.75f, ST_LABEL, 0, nw);
-        const int vals[3] = { r.k, pvp ? r.d : r.a, r.d };
+        Put(r.name, nx, y + 0.004f, s * 1.1f, gold ? ST_SEL : ST_VALUE, 0, nw);
+        std::string under = r.hero >= 0 && r.hero <= 8 ? HeroName(r.hero) : std::string("?");
+        Put(under, nx, y + 0.042f, s * 0.75f, ST_LABEL, 0, nw);
+        if (rich && (r.team == 0 || r.team == 1)) {   // the team, after the hero: "Aragorn  Sun"
+            const float hx = nx + (std::min)(TextWidth(ST_LABEL, under, s * 0.75f), nw * 0.6f) + 0.02f;
+            Put(Txt(r.team == 0 ? T_MP_SUN : T_MP_MOON), hx, y + 0.042f, s * 0.75f, r.team == 0 ? ST_SEL : ST_MOON, 0, nw * 0.3f);
+        }
+        const int vals[3] = { r.k, pvp ? r.d : r.a, pvp ? r.rounds : r.d };
         for (int c = 0; c < nc; ++c) {
-            Put(Num(vals[c]), colX(c), y + 0.018f, s * 1.1f, &r == top && c == 0 ? ST_SEL : ST_VALUE, 1, colW - 0.01f);
+            Put(Num(vals[c]), colX(c), y + 0.018f, s * 1.1f, gold && c == 0 ? ST_SEL : ST_VALUE, 1, colW - 0.01f);
             tot[c] += vals[c];
         }
     }
@@ -3467,7 +4325,48 @@ static void DrawLast()
         for (int c = 0; c < nc; ++c) Put(Num(tot[c]), colX(c), y + 0.016f, s, ST_HEAD, 1, colW - 0.01f);
         y += 0.06f;
     }
-    if (top) Put(Replace(Txt(T_SUM_BEST), "{name}", top->name), x0, y + 0.03f, s * 0.9f, ST_LABEL, 0, x1 - x0);
+    if (top) Put(Replace(Txt(pvp ? T_SUM_BEST_PVP : T_SUM_BEST), "{name}", top->name), x0, y + 0.03f, s * 0.9f, ST_LABEL, 0, x1 - x0);
+}
+
+// --- after a versus game: the Last game over the map (05/11/2026) -------------------------------------------------
+// Screens.cpp opens it when it sends the game straight to the map ([PvP] SkipScoreScreens and LastGame) and gives it
+// every menu action while it is open (the map's own keys are held back meanwhile); confirm or back (or a click on its
+// button) close it, and the map is there as usual. (A rematch from here, the same arena and heroes again, was tried on
+// 05/11/2026 and set aside: see the project's notes.)
+void PlayersOpenRecap()
+{
+    if (!g_enabled) return;
+    LoadSummary();
+    g_page = P_LAST;
+    g_recap = true;
+    g_recapAt = GetTickCount();
+    g_recapDrawn = false;
+    Log("players: the Last game over the map, until confirm or back");
+}
+
+bool PlayersRecapOpen() { return g_recap && g_page == P_LAST; }
+
+void PlayersCloseRecap()
+{
+    if (!g_recap) return;
+    g_recap = false;
+    if (g_page == P_LAST) g_page = P_CLOSED;
+}
+
+int PlayersRecapAction(int action, int slot)
+{
+    if (!g_recap) return 0;
+    if (slot == 3) {   // the pointer: only a click on the button (test of 05/11/2026: a click anywhere chose)
+        float x, y;
+        if (action != 7 || !PointerPos(x, y)) return 0;
+        if (x < kRecapBx || x >= kRecapBx + kRecapBw || y < kRecapY - 0.006f || y >= kRecapY + 0.054f) return 0;
+    }
+    // (the buttons pressed in the last moments of the fight must not close it at once: a second to look first)
+    if (GetTickCount() - g_recapAt < 1000) return 0;
+    if (action != 7 && action != 8) return 0;
+    PlayersCloseRecap();
+    Log("players: the Last game closed, the map");
+    return 2;
 }
 
 // The names (Manage names, and the names to merge with), in the Fellowship page's style: eight a page with the favourite
@@ -3574,20 +4473,54 @@ static void DrawSummaryOverlay()
     const SumRow* top = nullptr;
     for (const SumRow& row : g_sum) if (!top || row.k > top->k) top = &row;
     std::string head = Txt(T_SUM_TITLE);
-    if (top && g_sum.size() > 1 && top->k > 0) head += "   " + Replace(Txt(T_SUM_BEST), "{name}", top->name);
+    if (top && g_sum.size() > 1 && top->k > 0) head += "   " + Replace(Txt(g_sumKind == 3 ? T_SUM_BEST_PVP : T_SUM_BEST), "{name}", top->name);
     TextWith(tpl, head, 0.03f, y, g_sumScale);
     for (const SumRow& row : g_sum) { y += 0.045f * g_sumScale / 0.8f; TextWith(tpl, SumLine(row), 0.03f, y, g_sumScale); }
 }
 
 // after an element is drawn (Hud.cpp): our page goes on top of the main menu's last root, the summary on top of the
 // score screen's
+// --- the menu's glint on our pages ------------------------------------------------------------------------------------
+// The main menu marks its selected entry with a glint: the 2D effect "FE_TextSelect", which 0x4E9920 puts on the
+// selected entry's first label with 0x4F9D70(name, {x, y, 1, 1}), keeping the handle at 0x8E5D60 (the effect clears it
+// when it ends, through the pointer at its +0xC) and stopping the one before with 0x401720. While a page is open the
+// menu's cursor does not move, so the glint stayed on the menu's entry, over the page (tests of 03/11 and 04/11/2026; a
+// version that moved it onto the page's selected row was found awkward). Now it is stopped while a page is open, and
+// when the page closes 0x4E9920 puts it back on the menu's entry.
+static bool g_glintOff;   // we stopped it
+
+static void GlintFrame(int mode)
+{
+    uint32_t* const h = (uint32_t*)0x8E5D60;
+    if (g_recap) return;   // (the recap over the map: the map's own glint stays)
+    if (g_page != P_CLOSED) {
+        if (*h) {   // the menu's own (made when the page opened, or by the game meanwhile)
+            Guard([&] { ((void(__cdecl*)(uint32_t))0x401720)(*h); });
+            *h = 0;
+            g_glintOff = true;
+        }
+        return;
+    }
+    if (!g_glintOff) return;
+    g_glintOff = false;
+    if (mode == 17) Guard([&] { ((void(__cdecl*)(char))0x4E9920)(0); });   // back on the menu's entry
+}
+
 void PlayersAfterDraw(uint32_t e)
 {
+    // (0x4F6690 draws *0x8E2F68, then *0x8E2F74, also when it is 0: the pages go after the last one, 0 included; test of
+    // 05/11/2026: skipping a null one left every page of the main menu undrawn)
     if (!g_enabled || e != *(const uint32_t*)0x8E2F74) return;
     const int mode = ScreenMode();
     if (mode == 2 && g_sumShow) { if (g_sumOn) DrawSummaryOverlay(); return; }
-    if (g_page == P_CLOSED || mode != 17) return;
-    PlayersFrame();
+    if (g_page == P_CLOSED) return;
+    if (mode != 17 && !(g_recap && mode == 4)) return;
+    if (mode == 17) PlayersFrame();
+    if (g_recap) DarkRect(0.0f, 0.0f, 1.0f, 1.0f, 0.55f);   // the map's own texts and glint further down behind it
+    if (g_recap && !g_recapDrawn) {
+        g_recapDrawn = true;
+        Log("players: the Last game drawn over the map (texts from the menu's labels: %s)", g_tplCopied[0] ? "kept" : "MISSING");
+    }
     g_nAreas = 0;
     // down to the bottom, around the menu's own "F1 Help" and our hint line (test of 30/10/2026: the edge cut the "F")
     if (g_page != P_CLOSED) DarkRect(0.025f, 0.03f, 0.975f, 0.975f, g_shade);
@@ -3678,6 +4611,7 @@ void PlayersInstall()
     g_hudNames = IniInt("Players", "HudNames", 0) != 0;     // off by default: the names above the heads are enough
     g_sumOn = IniInt("Players", "ScoreSummary", 0) != 0;   // off by default: it covered the score screen ("Last game" has it)
     g_askWho = IniInt("Players", "AskWhoPlays", 1) != 0;
+    g_multiPage = IniInt("Players", "MultiplayerPage", 1) != 0;
     LoadNames();
     LoadSummary();
     bool ok = DrawHookInstall();
@@ -3687,6 +4621,10 @@ void PlayersInstall()
         ok &= PatchCall(site, 0x40CF80, (const void*)&DamageWithData);
     // the heroes' event handler (parries and pick-ups): 0x43BA2D "mov dword ptr [esi+384h], 43A080h"
     const bool events = PatchDword(0x43BA33, 0x43A080, (uint32_t)(uintptr_t)&HeroEvent);
+    Log("players: kicks, speed and fierce attacks %s", PatchCall(0x418758, 0x401780, (const void*)&MeleeHit) ? "counted" :
+        "NOT counted (code not as expected)");
+    const bool shields = PatchCall(0x41C941, 0x401650, (const void*)&ShieldBreakA) & PatchCall(0x421A0C, 0x4016B0, (const void*)&ShieldBreakB);
+    Log("players: shields broken %s", shields ? "counted" : "NOT all counted");
     // 0x45D910: mov eax,[esp+4]; mov eax,[eax+0B8h] (replaced as a whole by LadderKillOn)
     static const uint8_t ladderOld[] = { 0x8B, 0x44, 0x24, 0x04, 0x8B, 0x80, 0xB8, 0x00, 0x00, 0x00 };
     const bool ladders = PatchJmp(0x45D910, ladderOld, sizeof ladderOld, (const void*)&LadderKillOn);
