@@ -139,9 +139,14 @@ static __typeof__(&SDL_GetGamepadName)   p_SDL_GetGamepadName;
 static __typeof__(&SDL_GetGamepadType)   p_SDL_GetGamepadType;
 static __typeof__(&SDL_GetGamepadID)     p_SDL_GetGamepadID;
 static __typeof__(&SDL_RumbleGamepad)    p_SDL_RumbleGamepad;
+static __typeof__(&SDL_GetGamepadFromID) p_SDL_GetGamepadFromID;   /* optional: see pad_update */
 
 /* Player 1's controller is the first one connected, player 2's the next.
- * A controller keeps its player until it is disconnected. */
+ * A controller keeps its player until it is disconnected. A controller that
+ * another module of the game already has open (a mod's third or fourth player)
+ * is not taken: SDL would hand back the same gamepad and it would drive two
+ * characters. Until a free one is connected the player has none, so a
+ * controller switched off and on again comes back to its player. */
 static SDL_Gamepad *g_pads[MAX_PADS];
 #define g_pad (g_pads[0])
 static DWORD        g_lastScan;
@@ -163,6 +168,7 @@ static int sdl_ready(void)
     LOAD(SDL_OpenGamepad) LOAD(SDL_CloseGamepad) LOAD(SDL_GamepadConnected) LOAD(SDL_UpdateGamepads)
     LOAD(SDL_GetGamepadAxis) LOAD(SDL_GetGamepadButton) LOAD(SDL_GetGamepadName) LOAD(SDL_GetGamepadType) LOAD(SDL_GetGamepadID) LOAD(SDL_RumbleGamepad)
 #undef LOAD
+    p_SDL_GetGamepadFromID = (__typeof__(p_SDL_GetGamepadFromID))(void *)GetProcAddress(g_sdl, "SDL_GetGamepadFromID");
     /* SDL has no window of its own here: accept input even when it thinks
      * the app is in the background, and read raw input on its own thread. */
     p_SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
@@ -201,6 +207,14 @@ static void pad_update(void)
         int used = 0;
         for (int p = 0; p < want; p++) if (g_pads[p] && p_SDL_GetGamepadID(g_pads[p]) == ids[i]) used = 1;
         if (used) continue;
+        if (p_SDL_GetGamepadFromID && p_SDL_GetGamepadFromID(ids[i])) {   /* open elsewhere in the game */
+            static SDL_JoystickID logged;
+            if (logged != ids[i]) {
+                logged = ids[i];
+                logf_("gamepad: a connected controller is in use by another part of the game, not taken");
+            }
+            continue;
+        }
         int slot = -1;
         for (int p = 0; p < want && slot < 0; p++) if (!g_pads[p]) slot = p;
         if (slot < 0) break;
