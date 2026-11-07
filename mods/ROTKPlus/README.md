@@ -3,7 +3,7 @@
 A mod for *The Lord of the Rings: The Return of the King* (PC, `rotk.exe` 1.0, the version Athelas calls "Game v1.0").
 It is developed at <https://github.com/brig-dev/ROTKPlus>: report problems there, with the session's log.
 
-- **Multiplayer** in the main menu, in place of Co-op: a page where you pick the game and who plays.
+- **Multiplayer** in the main menu, in place of Co-op: a page where you pick the game (campaign or Versus) and who plays.
   - **Campaign**: a third and a fourth hero in the same level, each with a controller of its own, a HUD box, a mark
     above the head, shared lives and a turn in the end-of-level screens.
   - **Versus**: 2 to 4 players, everybody against everybody or 2 against 2 (the teams of the Sun and of the Moon), with

@@ -2,9 +2,10 @@
 ; Without this file the mod is OFF.
 
 [Coop]
-; 1 = third and fourth player in co-op games (and the Versus entry in the main menu); 0 = the mod does nothing
+; 1 = third and fourth player in co-op games (and the Versus modes, on the Multiplayer page); 0 = the mod does nothing
 Enabled=1
-; players of the co-op: 2, 3 or 4. It is chosen in the main menu (Co-op: left/right) and saved here
+; players of the co-op: 2, 3 or 4. It is chosen on the Multiplayer page (or with left/right on the Co-op entry, with
+; [Players] MultiplayerPage=0) and saved here
 Players=3
 ; hero of the third player when it was not chosen in the selection screen:
 ; auto, aragorn, legolas, gimli, gandalf, sam, frodo, pippin, merry, faramir
@@ -30,10 +31,10 @@ HudY=-0.72
 SoundBanks=1
 
 [PvP]
-; 1 = the "Versus" entry in the main menu (confirm it and the players can hit each other)
+; 1 = the Versus modes (on the Multiplayer page; with [Players] MultiplayerPage=0 the "Versus" entry of the main menu)
 Enabled=1
-; the Versus entry's choice, made in the main menu (left/right: 2, 3, 4 players, 2 vs 2, then the same with the heroes
-; only) and saved here: players (2, 3 or 4), Teams=1 for 2 vs 2 (four players), Enemies=0 for the heroes only (the
+; the Versus choices, made on the Multiplayer page (or with left/right on the Versus entry: 2, 3, 4 players, 2 vs 2,
+; then the same with the heroes only) and saved here: players (2, 3 or 4), Teams=1 for 2 vs 2 (four players), Enemies=0 for the heroes only (the
 ; characters of the enemy side are not created; the allies are)
 Players=2
 Teams=0
@@ -78,7 +79,8 @@ CheerEvery=1500
 ; 1 = the "Fellowship" entry in the main menu ("Compagnia" in Italian): a name for each player and statistics per name (kills, assists, deaths, levels,
 ; Versus games...), added up over the sessions in ROTKPlus_players.ini (game folder). 0 = no entry, nothing is counted
 Enabled=1
-; 1 = "Who is playing?" after Single, Co-op or Versus: each place gets its name (last line-up proposed, Guest = no
+; 1 = "Who is playing?" after Single (on the Multiplayer page it is the box on the right; after Co-op or Versus with
+; MultiplayerPage=0): each place gets its name (last line-up proposed, Guest = no
 ; statistics). 0 = the names set in the Fellowship page are used
 AskWhoPlays=1
 ; 1 = one "Multiplayer" entry in place of Co-op and Versus, with a page for the mode (campaign, everybody against
