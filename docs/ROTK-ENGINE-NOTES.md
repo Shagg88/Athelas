@@ -179,7 +179,10 @@ height touching the top or bottom, untextured draws, and screen copies. The stre
 16:9.
 
 **Fonts.** A4R4G4B4 managed textures, with 0x28-byte glyphs. The loader is `0x49b740` and the
-draw function `0x49cc50`.
+draw function `0x49cc50`. The glyph records hold fractions of the used part, which the draw
+scales by `+0x444` / `+0x448`, so a texture-pack replacement that is an exact multiple of the
+whole texture fits them as they are: `textures_font_begin` accepts a 2x or 4x A8R8G8B8 one, and
+`icons.c` paints the button pictures into it at that multiple (its mipmaps made again for those rows).
 
 ## 6. Textures
 

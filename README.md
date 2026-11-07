@@ -78,7 +78,8 @@ drawn landscape instead. All game and film artwork belongs to its owners.*
 - **Controllers:** Xbox, PlayStation, Switch and most others; button remapping; the right button names in hints
 - **Co-op:** two controllers on one PC, or online by streaming with Steam Remote Play Together or Parsec (see README.txt)
 - **Movies:** cutscenes fill widescreen screens with correct proportions; optional logo skip; a sound delay setting for Bluetooth speakers
-- **Texture packs:** dump the game's textures to PNG and load replacements from a folder (no game art included)
+- **Texture packs:** dump the game's textures to PNG and load replacements from a folder (no game art included),
+  fonts too for sharper text (2x or 4x, the button pictures painted in at that size)
 - **Screenshots:** `\` or Print Screen saves a PNG
 - **Gameplay:** damage taken, enemy damage, every level and character unlocked, every hero in levels you've completed, the games' own cheat codes as switches, and kill points in The Two Towers (all off by default)
 - **Achievements:** in all four games, earned as you play (and from what your saves already hold), with a note on screen and the list in the launcher

@@ -20,6 +20,9 @@
  *        [0x1c] x offset, [0x20] y offset, [0x24] -> 16-byte source record
  *        (code u16, w u8, h u8, x u16, y u16, advance s8, xoff s8, yoff s8)
  *
+ * A font a texture pack replaces with an exact 2x / 4x picture (textures.c,
+ * #72) gets the same icons painted into that picture, at that scale.
+ *
  * The artwork is original (scripts/mkicons.py); no game or console-maker art.
  */
 #define CINTERFACE
@@ -80,6 +83,95 @@ static const IconColour k_faceColour[2][4] = {
 typedef HRESULT (WINAPI *Lock_t)(IDirect3DTexture8 *, UINT, D3DLOCKED_RECT *, const RECT *, DWORD);
 typedef HRESULT (WINAPI *Unlock_t)(IDirect3DTexture8 *, UINT);
 
+/* One texel of an icon drawn in a cell W x H from the master (sw x ICON_H): its coverage (0-1) and how dark (0-15).
+ * Smaller than the master: the master's texels under it averaged; larger (a 2x / 4x font, #72): bilinear between
+ * the four nearest, so the edges stay smooth instead of turning into steps. */
+static void sample(const IconInfo *ic, int x, int y, int W, int H, float *cov, float *ink)
+{
+    int sw = ic->w;
+    float c = 0, k = 0;
+    if (H > ICON_H) {
+        float fx = (x + 0.5f) * sw / W - 0.5f, fy = (y + 0.5f) * ICON_H / H - 0.5f;
+        int x0 = (int)(fx < 0 ? -1 : fx), y0 = (int)(fy < 0 ? -1 : fy);   /* floor */
+        float tx = fx - x0, ty = fy - y0;
+        for (int j = 0; j < 2; j++)
+            for (int i = 0; i < 2; i++) {
+                int sx = x0 + i, sy = y0 + j;
+                sx = sx < 0 ? 0 : sx >= sw ? sw - 1 : sx;
+                sy = sy < 0 ? 0 : sy >= ICON_H ? ICON_H - 1 : sy;
+                float wgt = (i ? tx : 1 - tx) * (j ? ty : 1 - ty);
+                BYTE p = k_iconPixels[ic->off + sy * sw + sx];
+                c += wgt * (p >> 4); k += wgt * (p & 15) * (p >> 4);
+            }
+    } else {
+        int sy0 = y * ICON_H / H, sy1 = (y + 1) * ICON_H / H, sx0 = x * sw / W, sx1 = (x + 1) * sw / W, n = 0;
+        if (sy1 <= sy0) sy1 = sy0 + 1;
+        if (sx1 <= sx0) sx1 = sx0 + 1;
+        for (int sy = sy0; sy < sy1 && sy < ICON_H; sy++)
+            for (int sx = sx0; sx < sx1 && sx < sw; sx++) {
+                BYTE p = k_iconPixels[ic->off + sy * sw + sx];
+                c += p >> 4; k += (p & 15) * (p >> 4); n++;
+            }
+        if (n) { c /= n; k /= n; }
+    }
+    *cov = c / 15.0f;
+    *ink = c > 0 ? k / c : 0;
+}
+
+/* The same icon set painted into the 2x / 4x replacement the font is drawn from, if it has one (#72): each cell at
+ * k times its place and size, in A8R8G8B8, then the smaller levels of those rows made again from it (the
+ * replacement's own mipmaps don't have the pictures). */
+static void paint_hd(FontIcons *fi, int style)
+{
+    const void *tex = *(void **)(fi->font + 0x438);
+    void *bits; int pitch, k; unsigned tw, th, levels;
+    if (!textures_font_hd_lock(tex, 0, &bits, &pitch, &tw, &th, &k, &levels)) return;
+    int H = fi->h * k, top = (int)th, bottom = 0;
+    for (int i = 0; i < NUM_ICONS; i++) {
+        const IconInfo *ic = &k_iconInfo[style][i];
+        const IconColour *col = (style < 2 && i < 4) ? &k_faceColour[style][i] : NULL;
+        int W = fi->w[i] * k, x0 = fi->x[i] * k, y0 = fi->y[i] * k;
+        if (x0 + W > (int)tw || y0 + H > (int)th) continue;   /* (can't happen: the cells fit the game's texture) */
+        if (y0 < top) top = y0;
+        if (y0 + H > bottom) bottom = y0 + H;
+        for (int y = 0; y < H; y++) {
+            DWORD *row = (DWORD *)((BYTE *)bits + (size_t)(y0 + y) * pitch) + x0;
+            for (int x = 0; x < W; x++) {
+                float cov, ink;
+                sample(ic, x, y, W, H, &cov, &ink);
+                DWORD a = (DWORD)(cov * 255.0f + 0.5f), c[3];
+                for (int ch = 0; ch < 3; ch++) {
+                    float v = col ? col->fill[ch] + (col->ink[ch] - col->fill[ch]) * ink / 15.0f
+                                  : 15.0f - ink * 14.0f / 15.0f;   /* light fill -> dark ink */
+                    c[ch] = (DWORD)(v * 17.0f + 0.5f);
+                }
+                row[x] = a << 24 | c[0] << 16 | c[1] << 8 | c[2];
+            }
+        }
+    }
+    textures_font_hd_unlock(tex, 0);
+    /* the smaller levels: each texel of those rows the average of the four under it in the level above */
+    for (unsigned lv = 1; lv < levels && bottom > top; lv++) {
+        void *sb, *db; int sp, dp, kk; unsigned sw2, sh2, dw, dh, nl;
+        if (!textures_font_hd_lock(tex, lv - 1, &sb, &sp, &sw2, &sh2, &kk, &nl)) break;
+        if (!textures_font_hd_lock(tex, lv, &db, &dp, &dw, &dh, &kk, &nl)) { textures_font_hd_unlock(tex, lv - 1); break; }
+        unsigned y0 = (unsigned)top >> lv, y1 = ((unsigned)bottom + (1u << lv) - 1) >> lv;
+        if (y1 > dh) y1 = dh;
+        for (unsigned y = y0; y < y1; y++) {
+            unsigned ya = 2 * y < sh2 ? 2 * y : sh2 - 1, yb = 2 * y + 1 < sh2 ? 2 * y + 1 : sh2 - 1;
+            const BYTE *ra = (const BYTE *)sb + (size_t)ya * sp, *rb = (const BYTE *)sb + (size_t)yb * sp;
+            BYTE *d = (BYTE *)db + (size_t)y * dp;
+            for (unsigned x = 0; x < dw; x++) {
+                unsigned xa = 2 * x < sw2 ? 2 * x : sw2 - 1, xb = 2 * x + 1 < sw2 ? 2 * x + 1 : sw2 - 1;
+                for (int b = 0; b < 4; b++)
+                    d[x * 4 + b] = (BYTE)((ra[xa * 4 + b] + ra[xb * 4 + b] + rb[xa * 4 + b] + rb[xb * 4 + b] + 2) / 4);
+            }
+        }
+        textures_font_hd_unlock(tex, lv);
+        textures_font_hd_unlock(tex, lv - 1);
+    }
+}
+
 /* Paint one icon set (0 Xbox, 1 PlayStation, 2 Nintendo) into a font's texture. */
 static int paint(FontIcons *fi, int style)
 {
@@ -123,6 +215,7 @@ static int paint(FontIcons *fi, int style)
         }
     }
     ((Unlock_t)vt[17])(tex, 0);
+    paint_hd(fi, style);
     fi->style = style;
     return 1;
 }
@@ -197,6 +290,9 @@ int icons_font_is_white(const void *tex)
 static void __cdecl on_font_loaded(BYTE *font)
 {
     remember_font(font);
+    /* a texture pack's 2x / 4x picture of this font: drawn instead of it from now on (before the button pictures are
+     * painted, which go into both) */
+    if (font && readable(font, 0x43c)) textures_font_begin(*(void **)(font + 0x438));
     if (!g_enabled || !font || !readable(font, 0x464)) return;
     Glyph **table = (Glyph **)(font + 0x0c);
     int tw = *(short *)(font + 0x418), th = *(short *)(font + 0x41a);
