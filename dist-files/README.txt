@@ -393,7 +393,16 @@ includes no game art: packs are made from your own copy.
   can be any size, but should keep the original's shape, and its name must
   end with the original's 16-character code; anything before it is free,
   for example hud_health_256x64_0123456789abcdef.png.
-Text, the movie picture and the screen effects cannot be replaced.
+- The game's fonts (the textures the letters are drawn from) can be replaced
+  for sharper text, with two rules: exactly 2 or 4 times the dumped size (a
+  1024x1024 font as 2048x2048 or 4096x4096), and a PNG or an uncompressed
+  (A8R8G8B8) DDS, not DXT. ROTK Fix paints its button pictures into it at that
+  size. Keep the letters where they are (a plain 2x or 4x upscale does) and the
+  empty rows below them empty. 2x is the one to start with: a 4x font takes
+  64 MB and is read again with every level. The log says which fonts are used.
+  (Older dumps may also hold a copy of each font with the button pictures in
+  it: that copy is never replaced; use the one without them.)
+The movie picture and the screen effects cannot be replaced.
 
 
 FSR AND DLSS (THE XBOX PORTS)

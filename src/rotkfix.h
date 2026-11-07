@@ -85,6 +85,10 @@ void    textures_on_create(void *dev, void *realCreateTexture, void *tex);
 void   *textures_bind(void *dev, void *tex, int skip);   /* returns the texture to bind */
 void    textures_note_2d(const void *tex);
 void    textures_on_release(void *tex);
+int     textures_font_begin(void *tex);     /* a font has loaded: its 2x / 4x replacement's scale, 0 = none */
+int     textures_font_hd_lock(const void *tex, unsigned level, void **bits, int *pitch, unsigned *w, unsigned *h,
+                              int *k, unsigned *levels);   /* that replacement, to paint the button pictures into */
+void    textures_font_hd_unlock(const void *tex, unsigned level);
 
 /* input.c */
 void    input_load_settings(const char *ini);
