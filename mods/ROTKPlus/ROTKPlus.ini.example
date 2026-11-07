@@ -57,6 +57,10 @@ SkipScoreScreens=1
 ; BossScene: 1 = with the heroes only at the Black Gate the boss still comes for its opening scene (Frodo's mithril)
 ; and goes away when the fight begins; 0 = no boss at all (only its voice is heard)
 BossScene=1
+; HeavyUnblockable: 1 = between players a parry cannot stop a fierce attack (Triangle), the last move of a combo
+; (Orc Slayer's glowing blow, not the X before it) or a fully drawn shot; speed attacks, plain arrows and spears are
+; parried as before. 0 = the parry stops everything, as in the game
+HeavyUnblockable=1
 ; LastGame: 1 = after a versus game (with SkipScoreScreens=1) the Last game is shown over the map until confirm or
 ; back; 0 = just the map
 LastGame=1

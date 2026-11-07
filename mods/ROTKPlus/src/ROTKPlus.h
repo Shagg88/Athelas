@@ -18,7 +18,7 @@
 #include <stdint.h>
 #include <string>
 
-#define ROTKPLUS_VERSION "1.4.1"
+#define ROTKPLUS_VERSION "1.4.2"
 
 // --- one source for MSVC and g++ ----------------------------------------------------------------------------------
 // Inline assembly, Intel syntax, one instruction per ASM(...) line between ASM_BEGIN and ASM_END: MSVC reads every line
