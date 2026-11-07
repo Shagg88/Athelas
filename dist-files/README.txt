@@ -399,8 +399,10 @@ includes no game art: packs are made from your own copy.
   (A8R8G8B8) DDS, not DXT. ROTK Fix paints its button pictures into it at that
   size. Keep the letters where they are (a plain 2x or 4x upscale does) and the
   empty rows below them empty. 2x is the one to start with: a 4x font takes
-  64 MB and is read again with every level. The log says which fonts are used.
-  (Older dumps may also hold a copy of each font with the button pictures in
+  64 MB and is read again with every level. The game has two sets of fonts
+  and picks one by screen resolution, so dump them at the resolution you
+  play at (a pack for every resolution needs both sets). For each font with
+  a replacement, the log says whether it is drawn from it. (Older dumps may also hold a copy of each font with the button pictures in
   it: that copy is never replaced; use the one without them.)
 The movie picture and the screen effects cannot be replaced.
 
