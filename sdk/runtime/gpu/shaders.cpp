@@ -1016,16 +1016,18 @@ std::string MotionHlsl(std::string s, MotionKind kind) {
         s.insert(e, prev);
         std::string jit = kind == kMotionProgram ? "    o.pos.xy += jit.xy * o.pos.w;\n" : "";
         // a 2D draw (HUD, text, menus): marked for the upscaler's reactive mask (mvp.z is unused by the pixel shader)
-        if (kind == kMotionFlat) jit = "    o.mvp.z = 1e9;\n";
+        // jittered like the 3D, or the upscaler, told the frame's jitter, moves it back by it every frame: the HUD shook
+        // over the world with FSR (GitHub #54: "in levels, only the health bar and the menu shake")
+        if (kind == kMotionFlat) jit = "    o.mvp.z = 1e9;\n    o.pos.xy += jit.xy * o.pos.w;\n";
         Sub(s, "    o.pos = q;\n",
             "    o.pos = q;\n    {\n        float4 pp = mv_po;\n        pp.w = magclamp(pp.w);\n        float4 qp;\n"
             "        qp.x = pp.x * 2 / surf.x - 1;\n        qp.y = 1 - pp.y * 2 / surf.y;\n        qp.z = pp.z * surf.z;\n"
             "        qp.xyz *= pp.w;\n        qp.w = pp.w;\n        o.mvc = q;\n        o.mvp = qp;\n    }\n" + jit);
         return s;
     }
-    // fixed function, transformed here (flat: a 2D draw in screen space, left still and unjittered)
+    // fixed function, transformed here (flat: a 2D draw in screen space, still, jittered as the rest: #54)
     if (kind == kMotionFlat) {
-        Sub(s, "    o.pos = cp;\n", "    o.pos = cp;\n    o.mvc = cp;\n    o.mvp = cp;\n    o.mvp.z = 1e9;\n");
+        Sub(s, "    o.pos = cp;\n", "    o.pos = cp;\n    o.mvc = cp;\n    o.mvp = cp;\n    o.mvp.z = 1e9;\n    o.pos.xy += jit.xy * o.pos.w;\n");
         return s;
     }
     Sub(s, "    float4 cp = mul(ip, wvp);\n", "    float4 cp = mul(ip, wvp);\n    float4 mv_cp = mul(ip, wvp_prev);\n");

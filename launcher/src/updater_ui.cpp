@@ -30,7 +30,7 @@ void update_popup(App &a)
         dl->PopClipRect();
         section("Update Athelas");
         ImGui::PushTextWrapPos(0);
-        ImGui::Text("Download Athelas %s from GitHub (about 25 MB) and install it here?", v.c_str());
+        ImGui::Text("Download Athelas %s (about 125 MB) and install it here?", v.c_str());
         ImGui::TextColored(C_DIM, "The launcher starts again when it's done. Your settings, saves and achievements are kept.");
         if (a.running) ImGui::TextColored(C_WARN, "Close the game first.");
         ImGui::PopTextWrapPos();
@@ -83,7 +83,7 @@ void update_section(App &a)
         // (update_checked: GitHub answered, or couldn't be reached - as COGBox says it)
         if (!updates_on()) status_dot(true, true, "Athelas " LAUNCHER_VERSION " - checking for updates is off", nullptr);
         else if (!update_checked()) status_dot(false, true, "Athelas " LAUNCHER_VERSION " - checking for updates...", nullptr);
-        else status_dot(true, false, "Athelas " LAUNCHER_VERSION " - the latest (or GitHub couldn't be reached)", nullptr);
+        else status_dot(true, false, "Athelas " LAUNCHER_VERSION " - the latest (or GitHub and GitLab couldn't be reached)", nullptr);
     }
     ImGui::PopTextWrapPos();
 }

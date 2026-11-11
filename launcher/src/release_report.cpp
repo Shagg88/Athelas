@@ -86,8 +86,10 @@ void report_version(App &a, const char *dir, const char *game, const LibGame &g,
                        (worked ? "\n\nWhere it came from (region, disc revision, Platinum Hits...), and anything that didn't work:\n"
                                : "\n\nWhat happened (didn't start, crashed, a level that broke...). Please drag the game's log in too "
                                  "(the Report a problem button on the game's page collects it):\n");
-    ShellExecuteA(NULL, "open", ("https://github.com/Shagg88/Athelas/issues/new?labels=version&title=" + url_encode(title) +
-                                 "&body=" + url_encode(body)).c_str(), NULL, NULL, SW_SHOWNORMAL);
+    SDL_SetClipboardText(("Title: " + title + "\n\n" + body).c_str());
+    std::string u = std::string(kTicketsNew) + "?labels=version&title=" + url_encode(title) + "&body=" + url_encode(body);
+    if (u.size() > 2000) u = std::string(kTicketsNew) + "?labels=version&title=" + url_encode(title);
+    ShellExecuteA(NULL, "open", u.c_str(), NULL, NULL, SW_SHOWNORMAL);
     set_message(a, worked ? "Thanks - this version won't be questioned again. A GitHub page opened with its details: submit it to let us know."
                           : "Thanks - a GitHub page opened with this version's details: submit it to let us know.", false);
 }

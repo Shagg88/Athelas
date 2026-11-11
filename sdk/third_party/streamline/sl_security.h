@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
-#include <softpub.h>  // lower case for MinGW (Windows takes either)
+#include <Softpub.h>
 #include <wincrypt.h>
 #include <wintrust.h>
 #include <inttypes.h>

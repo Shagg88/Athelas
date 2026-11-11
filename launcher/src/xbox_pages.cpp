@@ -116,6 +116,8 @@ static void tt_setting_row(App &a, const PortSetting &ps)
         if (ImGui::Checkbox("##b", &b)) a.ttFile.set(ps.section, ps.key, b ? "true" : "false");
     } else if (ps.type == "choice") {
         std::string cur = toml_unquote(v);
+        // an older file's flag for what is now a choice (frame_generation = true): the second choice, as the game reads it
+        if ((cur == "true" || cur == "false") && ps.choices.size() >= 2) cur = ps.choices[cur == "true" ? 1 : 0];
         int idx = -1;
         std::vector<std::string> names;
         for (size_t i = 0; i < ps.choices.size(); i++) {

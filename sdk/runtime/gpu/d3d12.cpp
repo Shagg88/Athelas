@@ -784,6 +784,8 @@ private:
     ComPtr<ID3D12DescriptorHeap> rtv_heap_;
     ComPtr<ID3D12DescriptorHeap> dsv_heap_;
     ComPtr<ID3D12DescriptorHeap> ui_heap_;
+    static constexpr int kUiDescriptors = 16;   // the menu's textures (Dear ImGui 1.93)
+    bool ui_used_[kUiDescriptors] = {};
     uint32_t srv_inc_ = 0;
     uint32_t smp_inc_ = 0;
     uint32_t rtv_inc_ = 0;
@@ -882,7 +884,7 @@ private:
     float xmul_ = 1.0f;  // extra width of the targets (g_wide_targets)
     float TargetScale();  // render_percent's, or the upscaler's render size
 
-    // upscaling, [graphics] upscaler (FSR, DLSS): the frame drawn smaller and jittered, with motion vectors to a
+    // upscaling, [graphics] upscaler (FSR, DLSS, XeSS): the frame drawn smaller and jittered, with motion vectors to a
     // second target, then the upscaler makes the shown frame from it and its history (upscale.h)
     std::unique_ptr<up::Upscaler> up_;
     uint32_t up_kind_ = 0, up_quality_ = 0, up_ow_ = 0, up_oh_ = 0, up_rw_ = 0, up_rh_ = 0;  // as made
@@ -992,8 +994,36 @@ bool D3D12Backend::Init(uint32_t width, uint32_t height) {
     StartWarmUp();
     CreateFrames();
     CreateGammaLut();
-    ImGui_ImplDX12_Init(dev_.Get(), kFrames, bb_fmt_, ui_heap_.Get(),
-                        ui_heap_->GetCPUDescriptorHandleForHeapStart(), ui_heap_->GetGPUDescriptorHandleForHeapStart());
+    {   // Dear ImGui 1.93: an InitInfo, and its textures (the font atlas, which may grow) take descriptors from a small
+        // pool in ui_heap_ (kUiDescriptors slots, handed out in turn and given back)
+        ImGui_ImplDX12_InitInfo ii;
+        ii.Device = dev_.Get();
+        ii.CommandQueue = queue_.Get();
+        ii.NumFramesInFlight = kFrames;
+        ii.RTVFormat = bb_fmt_;
+        ii.DSVFormat = DXGI_FORMAT_UNKNOWN;
+        ii.UserData = this;
+        ii.SrvDescriptorHeap = ui_heap_.Get();
+        ii.SrvDescriptorAllocFn = [](ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE* cpu, D3D12_GPU_DESCRIPTOR_HANDLE* gpu) {
+            auto* self = static_cast<D3D12Backend*>(info->UserData);
+            UINT inc = self->dev_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+            int slot = -1;
+            for (int i = 0; i < kUiDescriptors; i++) if (!self->ui_used_[i]) { slot = i; break; }
+            if (slot < 0) slot = 0;  // (never expected: a handful of textures at most)
+            self->ui_used_[slot] = true;
+            *cpu = info->SrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+            *gpu = info->SrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+            cpu->ptr += SIZE_T(slot) * inc;
+            gpu->ptr += UINT64(slot) * inc;
+        };
+        ii.SrvDescriptorFreeFn = [](ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpu, D3D12_GPU_DESCRIPTOR_HANDLE) {
+            auto* self = static_cast<D3D12Backend*>(info->UserData);
+            UINT inc = self->dev_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+            SIZE_T i = (cpu.ptr - info->SrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr) / inc;
+            if (i < SIZE_T(kUiDescriptors)) self->ui_used_[i] = false;
+        };
+        ImGui_ImplDX12_Init(&ii);
+    }
     LoadSettings();
     Begin();
     LOGI("d3d12: %ux%u guest, %ux%u window, render scale %.3f (%.2f across)", width, height, bb_w_, bb_h_, scale_,
@@ -1106,13 +1136,14 @@ bool D3D12Backend::CreateSwapChain(HWND hwnd) {
     sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
     sd.Flags = tearing_ ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
     ComPtr<IDXGISwapChain1> sc1;
-    // [graphics] frame_generation: FSR's swap chain, which shows a made-up frame between each two drawn ones
+    // [graphics] frame_generation: the upscaler's frame-generation swap chain (FSR's, XeSS's or Streamline's), which
+    // shows made-up frames between the drawn ones
     {
         std::string why;
         IDXGISwapChain4* fg = nullptr;
-        if (up::FgCreateSwapChain(hwnd, sd, factory_.Get(), queue_.Get(), &fg, why)) {
+        if (up::FgCreateSwapChain(hwnd, sd, factory_.Get(), dev_.Get(), queue_.Get(), &fg, why)) {
             sc1.Attach(fg);
-            LOGR("frame generation: on (AMD FSR); one made-up frame between each two drawn ones in 3D scenes");
+            LOGR("frame generation: on (%s); made-up frames between the drawn ones in 3D scenes", up::FgName());
         } else if (why != "off") {
             LOGR("frame generation: not available: %s", why.c_str());
         }
@@ -1123,7 +1154,8 @@ bool D3D12Backend::CreateSwapChain(HWND hwnd) {
     }
     factory_->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER);
     if (!up::FgActive()) {
-        // DLSS (manual hooking): Streamline's own bookkeeping runs on the swap chain's Present
+        // DLSS (manual hooking): Streamline's own bookkeeping runs on the swap chain's Present (with DLSS frame
+        // generation the swap chain was made through Streamline's factory instead)
         IDXGISwapChain1* raw = sc1.Detach();
         up::UpgradeSwapChain(reinterpret_cast<IDXGISwapChain**>(&raw));
         sc1.Attach(raw);
@@ -1194,7 +1226,7 @@ void D3D12Backend::CreateHeaps() {
     smp_inc_ = CreateHeap(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, kSamplerCount, true, smp_heap_);
     rtv_inc_ = CreateHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, kRtvCount + kFrames + 2 * kMotionSlots, false, rtv_heap_);
     dsv_inc_ = CreateHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, kDsvCount, false, dsv_heap_);
-    CreateHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, true, ui_heap_);
+    CreateHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, kUiDescriptors, true, ui_heap_);
     for (uint32_t i = kRtvCount; i-- > 0;) free_rtv_.push_back(i);
     for (uint32_t i = kDsvCount; i-- > 0;) free_dsv_.push_back(i);
 }
@@ -2696,7 +2728,7 @@ void D3D12Backend::WarmUp(std::vector<PsoKey> keys) {
 D3D12Backend::~D3D12Backend() {
     warm_stop_ = true;
     if (warm_.joinable()) warm_.join();
-    // FSR's frame generation and swap chain go first, the GPU idle
+    // frame generation and its swap chain go first, the GPU idle
     // (review: FSR's presents waited for, the frame-generation context destroyed, then the game's own references to
     // FSR's swap chain released before FSR's swap chain context goes, as AMD's samples do)
     if (up::FgActive()) {
@@ -4349,6 +4381,8 @@ void D3D12Backend::ResizeSwap() {
     for (auto& f : frames_) {
         if (f.fence) WaitFence(f.fence);
     }
+    // frame generation readied for the new size first (its work on the old buffers done, the GPU idle above)
+    if (up::FgActive()) up::FgResize();
     for (auto& b : bb_) b.Reset();
     HRESULT hr = swap_->ResizeBuffers(kFrames, w, h, bb_fmt_, tearing_ ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0);
     if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET || hr == DXGI_ERROR_DEVICE_HUNG) DeviceLost("resize", hr);
@@ -5127,15 +5161,31 @@ void D3D12Backend::Present(const Surface& front) {
     if (ramp_dirty_) UploadGammaRamp();
     Transition(lut_.Get(), lut_state_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
+    // XeLL's and Reflex's frame points (frame generation's latency reduction; nothing without XeFG or DLSS-G): the
+    // game's work for the frame ends with this Present, the screen's drawing and submission follow
+    up::FgMark(up::kSimEnd);
+    up::FgMark(up::kSubmitStart);
     uint32_t bi = swap_->GetCurrentBackBufferIndex();
     DrawFrame(t, bi);
     Submit(false);
-    // nothing to make a frame from (menus, films): FSR shows this one as it is
+    up::FgMark(up::kSubmitEnd);
+    // nothing to make a frame from (menus, films): frame generation shows this one as it is
     if (up::FgActive() && !fg_ready_) up::FgPause();
     fg_ready_ = false;
     bool vsync = app::Get().vsync && !app::FastForward();  // fast forward: not held to the screen's refresh
+    // DLSS frame generation: Streamline and the driver keep to the screen's refresh, the game presents unsynced
+    if (vsync && tearing_ && up::FgPresentUnsynced()) {
+        static bool said = false;
+        if (!said) {
+            said = true;
+            LOGR("frame generation: DLSS-G on: presented without vsync (sync interval 0, tearing allowed); the driver keeps to the screen's refresh");
+        }
+        vsync = false;
+    }
     auto perf_swap = PerfClock::now();
+    up::FgMark(up::kPresentStart);
     HRESULT hr = swap_->Present(vsync ? 1 : 0, !vsync && tearing_ ? DXGI_PRESENT_ALLOW_TEARING : 0);
+    up::FgMark(up::kPresentEnd);
     g_perf.swap += PerfMs(perf_swap);
     // the driver gone (a GPU timeout on a card asked too much of, a driver crash or update): nothing drawn reaches the
     // screen again, so end with the reason rather than show a frozen picture
@@ -5188,7 +5238,7 @@ float D3D12Backend::TargetScale() {
 
 bool D3D12Backend::UpWanted() const {
     uint32_t k = app::Get().upscaler;
-    return (k == up::kFsr || k == up::kDlss) && up_failed_ != k;
+    return (k == up::kFsr || k == up::kDlss || k == up::kXess) && up_failed_ != k;
 }
 
 D3D12Backend::Motion* D3D12Backend::EnsureMotion(const Target& rt) {
@@ -5332,10 +5382,7 @@ bool D3D12Backend::Upscale(Target& t, uint32_t ow, uint32_t oh, D3D12_CPU_DESCRI
     f.out_h = oh;
     f.jitter_x = jit_px_[0];
     f.jitter_y = jit_px_[1];
-    // a frame drawn only in screen space (a title screen, a menu: no draw took the jitter, they're drawn still) is
-    // told no jitter, or the upscaler moves the still picture back by it each frame: it shook (GitHub #54, FSR at
-    // native size on the title screen; "0 draws with motion" in the reporter's log)
-    if (mv_draws_ == 0) f.jitter_x = f.jitter_y = 0;
+    // (2D draws are jittered too, shaders.cpp: every frame's picture takes the jitter the upscaler is told, #54)
     // a test: XBE_UP_JITTER_SIGN=-x, -y or -xy flips what the upscaler is told (the drawn jitter stays)
     if (const char* e = std::getenv("XBE_UP_JITTER_SIGN")) {
         if (std::strchr(e, 'x')) f.jitter_x = -f.jitter_x;
@@ -5350,6 +5397,7 @@ bool D3D12Backend::Upscale(Target& t, uint32_t ow, uint32_t oh, D3D12_CPU_DESCRI
     // [graphics] frame_generation: readied from the same depth and motion (the frame is shown in the middle of the screen)
     if (ok && up::FgActive()) {
         up::FgFrame g;
+        g.upscaler = up_->kind();
         g.cl = cl_.Get();
         g.depth = f.depth;
         g.motion = f.motion;

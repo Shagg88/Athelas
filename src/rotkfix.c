@@ -784,6 +784,12 @@ static void stall_start(void)
     if (h) { SetThreadPriority(h, THREAD_PRIORITY_TIME_CRITICAL); CloseHandle(h); logf_("diagnostics: stall sampler running"); }
 }
 
+LONGLONG hitch_us(void)
+{
+    LARGE_INTEGER t; QueryPerformanceCounter(&t);
+    return g_freq.QuadPart ? t.QuadPart * 1000000 / g_freq.QuadPart : 0;
+}
+
 static void hitch_frame(LONGLONG now, LONGLONG us)
 {
     LONG c[HITCH_N];
@@ -798,9 +804,10 @@ static void hitch_frame(LONGLONG now, LONGLONG us)
     if (g_presT0 > g_lastFrame && g_presT1 >= g_presT0 && g_presT1 <= now) {
         work = (g_presT0 - g_lastFrame) * f; pres = (g_presT1 - g_presT0) * f; after = (now - g_presT1) * f;
     }
-    logf_("slow frame %.1f ms: game %.1f, present %.1f, after %.1f | files %ld (%s) read %ld KB in %.1f ms | draws %ld (3D %ld) | new textures %ld, new buffers %ld | 2D copies %ld KB",
+    logf_("slow frame %.1f ms: game %.1f, present %.1f, after %.1f | files %ld (%s) read %ld KB in %.1f ms | draws %ld (3D %ld) | new textures %ld, new buffers %ld | 2D copies %ld KB | in draw calls %.1f ms (the calls themselves %.1f), vertex locks %.1f ms",
           us / 1000.0, work, pres, after, (long)c[HITCH_FILES], c[HITCH_FILES] ? g_lastFile : "-", (long)c[HITCH_READKB], c[HITCH_READUS] / 1000.0,
-          (long)c[HITCH_DRAWS], (long)c[HITCH_DRAWS3D], (long)c[HITCH_TEXNEW], (long)c[HITCH_VBNEW], (long)c[HITCH_VBKB]);
+          (long)c[HITCH_DRAWS], (long)c[HITCH_DRAWS3D], (long)c[HITCH_TEXNEW], (long)c[HITCH_VBNEW], (long)c[HITCH_VBKB],
+          c[HITCH_DRAWUS] / 1000.0, c[HITCH_REALUS] / 1000.0, c[HITCH_LOCKUS] / 1000.0);
     if (g_detailLog && us >= 30000 && us < 2000000) stall_report();
     g_presT0 = g_presT1 = 0;
 }

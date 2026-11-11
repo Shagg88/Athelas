@@ -24,6 +24,23 @@ original Xbox disc, which a PC can't answer as it has no Xbox drive; they
 don't decrypt or change the game's files.
 
 
+QUICK START
+-----------
+1. Extract the .7z into a folder of its own, for example C:\Games\Athelas
+   (Windows 11: right-click > Extract All; Windows 10: the free 7-Zip,
+   7-zip.org). Not into a game folder.
+2. Double-click Athelas.exe in that folder. That's the launcher; there's no
+   installer.
+   - No Athelas.exe after extracting? Your antivirus removed it (it isn't
+     code-signed). Restore it from quarantine, add an exception for the
+     Athelas folder, and extract again. See ANTIVIRUS WARNINGS.
+   - "Windows protected your PC"? Click More info > Run anyway.
+3. Pick a game's card and show the launcher your game: the installed Return
+   of the King (PC), or your own US Xbox disc image (.iso) for the Xbox games.
+4. Press PLAY. Always start the games from the launcher.
+More detail: INSTALL, below.
+
+
 REQUIREMENTS
 ------------
 - Windows 10 or 11 (64-bit), or Linux / Steam Deck through Proton (see STEAM
@@ -51,7 +68,7 @@ while it runs. Some antivirus programs distrust exactly that, and the files
 aren't code-signed (signing costs money every year), so Windows SmartScreen
 may say the launcher is "unrecognised" (click "More info", then "Run anyway").
 - Each download has a .sha256 file next to it. To check your download: in
-  PowerShell, run  Get-FileHash Athelas-<version>.zip  and compare the result
+  PowerShell, run  Get-FileHash Athelas-<version>.7z  and compare the result
   with the .sha256 file.
 - If your antivirus removes a file, restore it and add an exception for the
   game folder, or report the false positive to your antivirus maker.
@@ -61,8 +78,9 @@ folder (and the game's settings file in Documents, with a backup).
 
 INSTALL
 -------
-1. Unzip everything into a folder of its own, for example C:\Games\Athelas
-   (not into a game folder).
+1. Extract the .7z into a folder of its own, for example C:\Games\Athelas
+   (Windows 11 opens .7z files itself: right-click > Extract All; on Windows 10
+   use the free 7-Zip, 7-zip.org), not into a game folder.
 2. Run Athelas.exe (the launcher) and show it where your games are:
    - The Return of the King (PC): choose your installed game and press
      "Set up ROTK Fix here". This puts ROTK Fix's files (ROTKFix.dll,
@@ -89,13 +107,13 @@ press Play, and with the game's own keyboard and mouse controls when none is
 
 NEW VERSIONS
 ------------
-When it starts, the launcher asks GitHub for the number of the newest Athelas
+When it starts, the launcher asks GitHub (or GitLab, when GitHub doesn't answer) for the number of the newest Athelas
 release, and says so under the settings and on the About tab when a newer one
-is out. Press "Update now" there: it downloads the new version from GitHub,
+is out. Press "Update now" there: it downloads the new version from there,
 checks it, installs it over this folder and starts again. Your settings, saves
 and achievements are kept. Nothing about you or your games is sent, and
 nothing is downloaded until you press it. Turn the check off on the About tab
-("Look for new versions"). You can also update by hand: unzip the new version
+("Look for new versions"). You can also update by hand: extract the new version
 over this folder.
 
 
@@ -142,7 +160,7 @@ starts maximised and borderless.
 The launcher's language: asked on first start; change it under "This window"
 on any game's About tab. English, Spanish, French, German, Italian,
 Portuguese (Brazil), Polish, Russian, Japanese, Chinese (Simplified), Korean.
-The translations are in the lang folder; corrections are welcome on GitHub.
+The translations are in the lang folder; corrections are welcome as a GitHub issue.
 The play time of the PC game is counted too: Athelas now waits, hidden,
 while it plays, and closes when it does.
 
@@ -360,21 +378,21 @@ The quickest way: on the launcher's About tab, press "Make a problem report"
 (the same button is offered after a crash). It puts the logs, the settings,
 the newest crash dump of each Xbox port and a description of your PC
 (Windows, processor, graphics card and driver, screens, controllers) into one
-zip in the Reports folder beside Athelas.exe, shows it, and opens a new bug
-report on GitHub with those details filled in. Write what happened and what
-you did just before, and drag the zip into the box. Athelas sends nothing
-itself; your Windows user name is taken out of the files, but the folder
-names where your games are stay. A free GitHub account is needed.
+zip in the Reports folder beside Athelas.exe, shows it, copies the report's
+and opens a new issue on GitHub with those details filled in. Write what
+happened and what you did just before, and drag the zip into the box.
+Athelas sends nothing itself; your Windows user name is taken out of the
+files, but the folder names where your games are stay. A free GitHub account
+is needed.
 
-By hand: open an issue at https://github.com/Shagg88/Athelas/issues, choose
-"Bug report", and attach the log (drag the file into the box):
+By hand: open an issue at https://github.com/Shagg88/Athelas/issues and
+attach the log:
   The Return of the King (PC)    ROTKFix.log in the game folder
   The Return of the King (Xbox)  ROTK-Xbox\rotkx.log
   The Two Towers                 TT-Xbox\tt.log
   The Fellowship of the Ring     FOTR-Xbox\fotrx.log
 After an Xbox port crashes, also the newest .dmp file in its CrashDumps folder,
-zipped first (right-click > Compress to ZIP file): GitHub doesn't take .dmp
-files as they are.
+zipped first (right-click > Compress to ZIP file).
 
 
 TEXTURE PACKS
@@ -396,8 +414,8 @@ includes no game art: packs are made from your own copy.
 Text, the movie picture and the screen effects cannot be replaced.
 
 
-FSR AND DLSS (THE XBOX PORTS)
------------------------------
+FSR, DLSS AND XESS (THE XBOX PORTS)
+-----------------------------------
 The Two Towers, The Return of the King (Xbox) and The Fellowship of the Ring can
 draw the game smaller and rebuild a sharp, smooth picture from several frames:
 faster, and it smooths jagged edges as well. Pick it in Athelas, the game's
@@ -405,12 +423,18 @@ Graphics page, Upscaler (or in the game with F10):
 - AMD FSR: any graphics card (FSR 4 on the newest Radeon cards, FSR 3.1 on the
   others, NVIDIA and Intel included).
 - NVIDIA DLSS: GeForce RTX cards. Takes effect the next time the game starts.
+- Intel XeSS: any graphics card (best on Intel Arc).
 Upscaler quality sets how much smaller the game is drawn: Native keeps the full
 size and only smooths (DLAA with DLSS), Quality is the best balance,
 Performance and Ultra performance are fastest. While one is on it replaces
 Render resolution and Anti-aliasing. Not on Windows on ARM. The files are in
-the upscalers folder, under AMD's and NVIDIA's own licences; the log says why
-when one can't be used on your PC.
+the upscalers folder, under AMD's, NVIDIA's and Intel's own licences; the log
+says why when one can't be used on your PC.
+Frame generation (experimental) shows made-up frames between the drawn ones in
+3D scenes, using the chosen upscaler's own: FSR's or XeSS's on any card, DLSS's
+on GeForce RTX 40 and 50 cards. Frame generation amount: 2x everywhere, 3x and
+4x with DLSS on RTX 50 cards or XeSS on Intel Arc. It adds a little delay to
+the controls and takes effect the next time the game starts.
 
 
 PLAYING CO-OP ONLINE
@@ -433,11 +457,10 @@ Controls tab is set to "Second controller" (the default).
 
 WINDOWS ON ARM (SNAPDRAGON LAPTOPS)
 -----------------------------------
-On a Windows on ARM PC, download Athelas-<version>-arm64.zip instead of the
-usual zip. It has everything the usual one has, plus native ARM64 builds of
+The one download is for every PC: it also has native ARM64 builds of
 the Xbox ports (TwoTowers-arm64.exe, ROTKXbox-arm64.exe, FOTRXbox-arm64.exe),
 which the launcher starts by itself on an ARM PC (the About tab then says
-"ARM64 build"). The launcher's updates fetch the ARM zip there too. If the
+"ARM64 build"). If the
 ARM64 builds in the folder are from another version, the launcher runs the
 usual ones instead and offers to install the right ARM64 builds on the About
 tab.
@@ -463,7 +486,7 @@ The games run through Proton, Steam's Windows layer. This has been tested
 on Linux in a setup like the Deck's (1280x800, Proton's graphics layers), and
 players have reported The Two Towers working on a real Deck. More reports are
 welcome.
-1. In Desktop Mode, unzip Athelas into a folder of its own, for example
+1. In Desktop Mode, extract the Athelas .7z (Ark opens it) into a folder of its own, for example
    /home/deck/Games/Athelas.
 2. In Steam: Games > "Add a Non-Steam Game to My Library", choose Athelas.exe.
    Then its Properties > Compatibility: tick "Force the use of a specific Steam
@@ -490,7 +513,7 @@ turns Windows and DirectX 12 into macOS and Metal. They have been tested in a
 Wine setup like CrossOver's on Linux, not yet on a real Mac: reports are very
 welcome (see REPORTING A PROBLEM; the game's log says "on Wine ... on macOS").
 1. In CrossOver, make a new bottle for Windows 10 64-bit.
-2. Unzip Athelas (the usual zip, not the arm64 one) into a folder of its own,
+2. Extract Athelas (the usual .7z) into a folder of its own,
    then in CrossOver use Run Command and choose Athelas.exe in that bottle.
    CrossOver can save it as a launcher for next time.
 3. Show Athelas your games:
@@ -726,5 +749,23 @@ ROTKFix\licenses in the game folder once ROTK Fix is set up there)
   PT Sans, Uncial Antiqua, Cormorant Unicase (SIL Open Font License)
                        Polish and Russian text in FOTR-Xbox\fonts
   toml++ (MIT)         settings files in the Xbox ports
-  (each Xbox port's own list is THIRD_PARTY.txt in its folder)
+  miniz (MIT), LZMA SDK (public domain)  reading update downloads
+  Zydis (MIT), glslang (BSD-3-Clause), Vulkan headers (Apache 2.0 / MIT)
+                       Xbox ports
+  ROTKPlus mod (MIT)   ROTKFix\mods
+
+UPSCALERS AND FRAME GENERATION (the upscalers folder; licences beside them)
+------------------------------------------------------------
+  AMD FidelityFX SDK: FSR, FSR frame generation (AMD binary licence)
+  NVIDIA Streamline (MIT), NVIDIA DLSS, DLSS frame generation and Reflex
+                       (NVIDIA RTX SDKs licence)
+  Intel XeSS, XeFG and XeLL (Intel Simplified Software License)
+Athelas uses NVIDIA DLSS, AMD FidelityFX Super Resolution and Intel XeSS.
+These DLLs belong to NVIDIA, AMD and Intel, ship unmodified and stay under
+their own licences, not Athelas' MIT licence: they may not be reverse
+engineered or redistributed apart from Athelas. NVIDIA, DLSS, Reflex, AMD,
+FidelityFX, Intel and XeSS are trademarks of their owners; Athelas isn't
+affiliated with or endorsed by them.
+
+(each Xbox port's own list is THIRD_PARTY.txt in its folder)
 ROTK Fix and Athelas are MIT licensed, (c) 2026 Shagg.

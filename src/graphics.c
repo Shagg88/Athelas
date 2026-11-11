@@ -727,8 +727,20 @@ typedef HRESULT (WINAPI *GetLevelDesc_t)(IDirect3DTexture8 *, UINT, D3DSURFACE_D
 typedef D3DRESOURCETYPE (WINAPI *GetType_t)(IDirect3DBaseTexture8 *);
 
 static SetTexture_t g_realSetTexture;
-static DrawPrim_t   g_realDrawPrim;
-static DrawIdx_t    g_realDrawIdx;
+static DrawPrim_t   g_realDrawPrim_;
+static DrawIdx_t    g_realDrawIdx_;
+/* the game's draw calls themselves (DXVK or Direct3D 8), timed apart from ROTK Fix's own work around them (#58) */
+static HRESULT WINAPI g_realDrawPrim(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE pt, UINT start, UINT count)
+{
+    LONGLONG t0 = hitch_us(); HRESULT hr = g_realDrawPrim_(dev, pt, start, count);
+    InterlockedExchangeAdd(&g_hitch[HITCH_REALUS], (LONG)(hitch_us() - t0)); return hr;
+}
+static HRESULT WINAPI g_realDrawIdx(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE pt, UINT mi, UINT nv, UINT si, UINT pc)
+{
+    LONGLONG t0 = hitch_us(); HRESULT hr = g_realDrawIdx_(dev, pt, mi, nv, si, pc);
+    InterlockedExchangeAdd(&g_hitch[HITCH_REALUS], (LONG)(hitch_us() - t0)); return hr;
+}
+
 static CreateVB_t   g_realCreateVB;
 static CreateTex_t  g_realCreateTex;
 static SetStream_t  g_realSetStream;
@@ -770,7 +782,9 @@ static int is_rt(void *t) { for (int i = 0; i < g_nrt; i++) if (g_rtTex[i] == t)
  * buffer back instead is very slow: it lives in graphics memory.) */
 static HRESULT WINAPI hook_VBLock(IDirect3DVertexBuffer8 *vb, UINT off, UINT size, BYTE **pp, DWORD flags)
 {
+    LONGLONG t0 = hitch_us();   /* (#58: how long locks take, with the copies) */
     HRESULT hr = g_realVBLock(vb, off, size, pp, flags);
+    InterlockedExchangeAdd(&g_hitch[HITCH_LOCKUS], (LONG)(hitch_us() - t0));
     TrackedVB *t = SUCCEEDED(hr) && pp && *pp ? find_vb(vb) : NULL;
     if (t && !t->lockPtr && !(flags & D3DLOCK_READONLY) && off < t->size) {
         UINT n = size ? size : t->size - off;
@@ -780,7 +794,15 @@ static HRESULT WINAPI hook_VBLock(IDirect3DVertexBuffer8 *vb, UINT off, UINT siz
     }
     return hr;
 }
+static HRESULT WINAPI hook_VBUnlock_(IDirect3DVertexBuffer8 *vb);
 static HRESULT WINAPI hook_VBUnlock(IDirect3DVertexBuffer8 *vb)
+{
+    LONGLONG t0 = hitch_us();
+    HRESULT hr = hook_VBUnlock_(vb);
+    InterlockedExchangeAdd(&g_hitch[HITCH_LOCKUS], (LONG)(hitch_us() - t0));
+    return hr;
+}
+static HRESULT WINAPI hook_VBUnlock_(IDirect3DVertexBuffer8 *vb)
 {
     TrackedVB *t = find_vb(vb);
     if (t && t->lockPtr) {
@@ -1040,7 +1062,7 @@ static int uv_leaves_unit(D3DPRIMITIVETYPE pt, int idx, UINT a, UINT b)
 static int sharpen_draw_x(IDirect3DDevice8 *dev, int pct, int x2, D3DPRIMITIVETYPE pt, int idx, UINT a, UINT b, UINT c4, UINT d)
 {
     void *tex = g_tex0Bound ? g_tex0Bound : g_tex0;
-    if (!pct || g_moviePSFailed || !tex || !g_realDrawPrim) return 0;
+    if (!pct || g_moviePSFailed || !tex || !g_realDrawPrim_) return 0;
     UINT w, h;
     tex_size(tex, &w, &h);
     if (!w || !h) return 0;
@@ -1577,6 +1599,25 @@ static int text_is_black(UINT first, UINT count)
         if (*(const DWORD *)(t->shadow + (first + i) * stride + 12) & 0x00FFFFFF) return 0;
     return 1;
 }
+/* #61 diagnosis: on the frame after a screenshot (\ or Print Screen), every text draw is logged (vertex count,
+ * colour, and its first vertices' positions), so the log shows exactly where the game puts each shadow copy against
+ * the letters. Only that one frame, so the log stays small. */
+volatile LONG g_textLog;   /* 1: a screenshot was taken; 2: this frame is logged */
+static void text_log(UINT first, UINT count)
+{
+    TrackedVB *t = g_stream0 ? find_vb(g_stream0) : NULL;
+    UINT stride = g_stream0Stride ? g_stream0Stride : 24;
+    if (g_textLog != 2 || !g_tex0 || !icons_is_font_texture(g_tex0)) return;
+    if (!t || count == 0 || stride < 24 || first > t->size / stride || count > t->size / stride - first) return;
+    char line[512];
+    int n = snprintf(line, sizeof line, "textlog: %u verts fvf %#lx colour %08lx at", count, (unsigned long)g_curFVF,
+                     (unsigned long)*(const DWORD *)(t->shadow + first * stride + 12));
+    for (UINT i = 0; i < count && i < 8 && n < (int)sizeof line - 32; i++) {
+        const float *v = (const float *)(t->shadow + (first + i) * stride);
+        n += snprintf(line + n, sizeof line - n, " (%.2f,%.2f)", v[0], v[1]);
+    }
+    logf_("%s", line);
+}
 static int outline_soften(IDirect3DDevice8 *dev, DWORD saved[6], UINT first, UINT count)
 {
     if (!text_is_black(first, count)) return 0;
@@ -1622,23 +1663,31 @@ static void outline_restore(IDirect3DDevice8 *dev, const DWORD saved[6])
 static HRESULT WINAPI hook_DrawPrimitive(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE pt, UINT start, UINT count)
 {
     DWORD sv[3];
+    LONGLONG tq = hitch_us();   /* (#58: time inside the draw calls, ROTK Fix's work included) */
     DWORD so[6];
-    int fix = font_colour_fix(dev, sv, start, prim_verts(pt, count));
-    int ol = outline_soften(dev, so, start, prim_verts(pt, count));
+    int fix = (font_colour_fix(dev, sv, start, prim_verts(pt, count)));
+    text_log(start, prim_verts(pt, count));
+    int ol = 0;   /* outline softening off: it made the outline look doubled (#61, 1.8.2 report) */
+    (void)outline_soften;
     HRESULT hr = draw_prim(dev, pt, start, count);
     if (ol) outline_restore(dev, so);
     if (fix) font_colour_restore(dev, sv);
+    InterlockedExchangeAdd(&g_hitch[HITCH_DRAWUS], (LONG)(hitch_us() - tq));
     return hr;
 }
 static HRESULT WINAPI hook_DrawIndexedPrimitive(IDirect3DDevice8 *dev, D3DPRIMITIVETYPE pt, UINT mi, UINT nv, UINT si, UINT pc)
 {
     DWORD sv[3];
+    LONGLONG tq = hitch_us();   /* (#58: time inside the draw calls, ROTK Fix's work included) */
     DWORD so[6];
-    int fix = font_colour_fix(dev, sv, g_baseVertex + mi, nv);
-    int ol = outline_soften(dev, so, g_baseVertex + mi, nv);
+    int fix = (font_colour_fix(dev, sv, g_baseVertex + mi, nv));
+    text_log(g_baseVertex + mi, nv);
+    int ol = 0;   /* outline softening off: it made the outline look doubled (#61, 1.8.2 report) */
+    (void)outline_soften;
     HRESULT hr = draw_idx(dev, pt, mi, nv, si, pc);
     if (ol) outline_restore(dev, so);
     if (fix) font_colour_restore(dev, sv);
+    InterlockedExchangeAdd(&g_hitch[HITCH_DRAWUS], (LONG)(hitch_us() - tq));
     return hr;
 }
 
@@ -1715,6 +1764,7 @@ static void borderless_yield_to_shell(HWND win)
 static HRESULT WINAPI hook_Present(IDirect3DDevice8 *dev, const RECT *a, const RECT *b, HWND w, const RGNDATA *r)
 {
     g_presentNo++;
+    if (g_textLog) { if (g_textLog == 2) { g_textLog = 0; logf_("textlog: end of frame (%ux%u)", (unsigned)g_modeW, (unsigned)g_modeH); } else { g_textLog = 2; logf_("textlog: next frame's text draws"); } }
     if (hud_aspect() > 0.0f && g_draws3D < 40 && !g_copyDrawn) {
         LONG barW = (LONG)((g_modeW - g_modeH * hud_aspect()) / 2);
         if (barW > 0) {
@@ -1785,8 +1835,8 @@ static void hook_device(IDirect3DDevice8 *dev)
     patch_vtbl(vt, 50, (void *)hook_SetRS, (void **)&g_realSetRS);
     patch_vtbl(vt, 76, (void *)hook_SetVS, (void **)&g_realSetVS);
     patch_vtbl(vt, 61, (void *)hook_SetTexture, (void **)&g_realSetTexture);
-    patch_vtbl(vt, 70, (void *)hook_DrawPrimitive, (void **)&g_realDrawPrim);
-    patch_vtbl(vt, 71, (void *)hook_DrawIndexedPrimitive, (void **)&g_realDrawIdx);
+    patch_vtbl(vt, 70, (void *)hook_DrawPrimitive, (void **)&g_realDrawPrim_);
+    patch_vtbl(vt, 71, (void *)hook_DrawIndexedPrimitive, (void **)&g_realDrawIdx_);
     patch_vtbl(vt, 83, (void *)hook_SetStream, (void **)&g_realSetStream);
     patch_vtbl(vt, 85, (void *)hook_SetIndices, (void **)&g_realSetIndices);
 }

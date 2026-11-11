@@ -3,7 +3,7 @@
 # the picture left / motion right with XBE_UP_SHOW_MOTION), screenshots every 50 s into /tmp/claude-0/upt_<name>
 N=$1; EXE=$2; GAME=$3; shift 3; ENVS="$*"
 D=/tmp/claude-0/upt_$N; rm -rf $D; mkdir -p $D; cd $D
-cp /home/claude/work/mingw/obj_$N/$EXE .; cp /tmp/claude-0/sdl/SDL3-3.4.18/x86_64-w64-mingw32/bin/SDL3.dll .
+cp /home/claude/work/mingw/obj_$N/$EXE .; cp /tmp/claude-0/sdl/SDL3-3.4.20/x86_64-w64-mingw32/bin/SDL3.dll .
 printf '[display]\nmode = "windowed"\nwidth = 640\nheight = 480\n[graphics]\nskip_all_videos = true\nskip_logos = true\nupscaler = "1"\nupscaler_quality = "3"\n' > settings.toml
 printf "%b" "$PAD" > pad.txt
 export WINEDEBUG=-all WINEPREFIX=/tmp/claude-0/wpfx

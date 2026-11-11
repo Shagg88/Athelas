@@ -19,6 +19,7 @@ void update_install_start(const std::string &version);
 int update_install_state(float *progress, std::string *error);
 // at start: removes what the last update left behind
 void update_tidy();
+int update_remove_leftovers();   // files an older Athelas shipped that this one doesn't (athelas-files.txt)
 // starts Athelas again (the new one); the caller then quits
 bool update_restart();
 

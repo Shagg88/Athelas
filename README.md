@@ -1,249 +1,127 @@
 # Athelas
 
-I'm Shagg and I created this project with the help of Claude (Anthropic). This is a free, unofficial launcher for four Lord of the Rings games, so you can play
-your own copies on a modern Windows PC from one place.  Tolkien created an amazing world that deserves to be lived and experienced in every way possible. I used to play this with my siblings 
-and friends for hours on end, day after day and it's an absolute shame they're not distributable today, so that's why I'm here. (Athelas is kingsfoil, the healing herb).  
-After the release of the War in the North "remaster" I decided to really take on this project. This is my first ever project of this magnitude so I expect there to be a few bugs.  
-I have a Windows PC that I tested this on, that's about it.  It's supposed to run on Linux and Steam Deck(Mac and Android maybe in the future) but only time will tell. Mods and Texture 
-packs are supported but I have not done any of those.  I'll be open to accepting public contributions and pull requests as well.
+A free, unofficial launcher for four Lord of the Rings games, so you can play your own copies on a modern PC from
+one place. (Athelas is kingsfoil, the healing herb.)
 
-- **The Return of the King (PC, 2003)**, through **ROTK Fix** (This is the recommended way to play The Return of the King, at least in my opinion)
-- **The Return of the King (Xbox)**, through a native PC port
-- **The Two Towers (Xbox)**, through a native PC port
-- **The Fellowship of the Ring (Xbox)**, through a native PC port (new in 1.4)
-- **The Third Age (Xbox)**, through a native PC port (new in 1.7.3)
+I'm Shagg, and I made this with the help of Claude (Anthropic). I played these games with my siblings and friends for
+hours on end, and it's a shame they can't be bought today. Tolkien's world deserves to be lived in every way
+possible. This is my first project of this size, so expect a few bugs; reports and contributions are welcome.
 
-Download it from [Releases](../../releases): one zip with the launcher, ROTK Fix and all four ports.
-
-Since 1.6 Athelas opens on your games as boxes on a carousel, with their original box art if you'd like it (see README.txt).
-
-Since 1.7 the launcher also has:
-- **Save backups**: back up a game's saves to a zip on your desktop and restore them (your current saves are zipped first)
-- **A log folder per play**, plain-English exit messages, and **Clear shaders** for the Xbox ports (set aside, not deleted)
-- **Mods from a .zip** for the PC game, with an order you set (Up / Down) and a warning before any code mod
-- **Desktop shortcuts** for Athelas and for each game
-- **A resizable window**: fullscreen with F11 or LT + RT, a borderless option, and maximised and borderless on a Steam Deck-sized screen
-- **11 languages**: English, Spanish, French, German, Italian, Portuguese (Brazil), Polish, Russian, Japanese, Chinese (Simplified), Korean
-- **Play time for the PC game** too
-
-> Not affiliated with or endorsed by Electronic Arts, New Line Cinema, Warner Bros. or the Tolkien Estate.
-> No game files are included. You need your own copy of each game: the PC game installed, or your own Xbox disc as
-> an `.iso` or extracted files (US releases). ROTK Fix doesn't change or bypass the PC game's copy protection. The
-> Xbox ports skip the console's check for an original Xbox disc, which a PC can't answer as it has no Xbox drive;
-> the games' own files are never decrypted or changed.
-
-## Screenshots
-
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/7a19a7d8-5653-4a2c-909e-cd8dd1dcf653" width="49%">
-  <img src="https://github.com/user-attachments/assets/a3e6f93c-6f4a-49a3-838f-882b6918a74c" width="49%">
-  <img src="https://github.com/user-attachments/assets/3430b371-e91e-4384-84d3-0da9656f378a" width="49%">
-  <img src="https://github.com/user-attachments/assets/12192f57-5179-470c-bee4-6dec1affec9d" width="49%">
-</p>
-
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/4bea88f9-01f9-484e-8f0b-d22c6fbf1864" width="32%">
-  <img src="https://github.com/user-attachments/assets/f5a0d251-7208-46ff-aea8-03d63577a4f2" width="32%">
-  <img src="https://github.com/user-attachments/assets/d9600fa1-c760-4185-a82c-ada85b03ea87" width="32%">
-</p>
-
-
-
-
-*The background pictures in these screenshots are artwork from the games themselves. They aren't included in the
-download: Athelas reads them from your own copy of a game, so you'll only see them once the launcher has found one
-of your games. Until then, or if you choose "None" under About → Background pictures, the launcher shows its own
-drawn landscape instead. All game and film artwork belongs to its owners.*
-
-## In this repository
-
-| Path | What it is |
+| Game | How it runs |
 |---|---|
-| `launcher/` | Athelas, the launcher |
-| `src/`, `build.sh` | ROTK Fix, for the PC game |
-| `ports/two-towers/` | The Two Towers PC port ([its README](ports/two-towers/README.md)) |
-| `ports/rotk-xbox/` | The Return of the King Xbox PC port ([its README](ports/rotk-xbox/README.md)) |
-| `ports/fellowship/` | The Fellowship of the Ring Xbox PC port ([its README](ports/fellowship/README.md)) |
-| `ports/third-age/` | The Third Age Xbox PC port ([its README](ports/third-age/README.md)) |
-| `dist-files/README.txt` | The README that comes in the download, with every setting |
-| `docs/` | Release notes and engine notes |
-| `scripts/` | Packaging the release zip |
-| `third_party/`, `licenses/` | Bundled libraries and every licence |
+| **The Return of the King (PC, 2003)** | ROTK Fix, a mod for your installed game (the recommended way to play ROTK) |
+| **The Return of the King (Xbox)** | Native PC port |
+| **The Two Towers (Xbox)** | Native PC port |
+| **The Fellowship of the Ring (Xbox)** | Native PC port |
+| **The Third Age (Xbox)** | Native PC port (newest, still being polished) |
 
-## ROTK Fix: what it does
+> No game files are included: you need your own copy of each game (the PC game installed, or your own US Xbox disc as
+> an `.iso`). Not affiliated with or endorsed by Electronic Arts, New Line Cinema, Warner Bros. or the Tolkien Estate.
 
-- **Any screen:** widescreen and ultrawide without stretching (menus and HUD stay at most 16:9), any resolution, borderless/fullscreen/windowed with ultrawide window sizes, Alt-Tab that works
-- **Smooth:** 60 to 240 fps at normal game speed, even frame pacing, V-Sync aware
-- **Sharper:** anti-aliasing, texture filtering, sharpening, working brightness in borderless
-- **Controllers:** Xbox, PlayStation, Switch and most others; button remapping; the right button names in hints
-- **Co-op:** two controllers on one PC, or online by streaming with Steam Remote Play Together or Parsec (see README.txt)
-- **Movies:** cutscenes fill widescreen screens with correct proportions; optional logo skip; a sound delay setting for Bluetooth speakers
-- **Texture packs:** dump the game's textures to PNG and load replacements from a folder (no game art included)
-- **Screenshots:** `\` or Print Screen saves a PNG
-- **Gameplay:** damage taken, enemy damage, every level and character unlocked, every hero in levels you've completed, the games' own cheat codes as switches, and kill points in The Two Towers (all off by default)
-- **Achievements:** in all four games, earned as you play (and from what your saves already hold), with a note on screen and the list in the launcher
-- **Launcher:** every setting in one place, with presets (Original, Balanced, High, Ultra)
+## Quick start
+
+1. **Download** `Athelas-<version>.7z` from [Releases](https://github.com/Shagg88/Athelas/releases) (a copy on [GitLab](https://gitlab.com/shagg88/athelas/-/releases)).
+2. **Extract it** into a folder of its own, for example `C:\Games\Athelas` (Windows 11: right-click > Extract All;
+   Windows 10: [7-Zip](https://www.7-zip.org)). Not into a game folder.
+3. **Double-click `Athelas.exe`.** That's the launcher; there's no installer.
+   - **No `Athelas.exe`?** Your antivirus removed it (it isn't code-signed). Restore it from quarantine, add an
+     exception for the folder, and extract again.
+   - **"Windows protected your PC"?** Click **More info > Run anyway**.
+4. **Pick a game and show the launcher your copy**, then press **Play**.
+
+To uninstall: **About → Remove ROTK Fix** in the launcher, then delete the Athelas folder.
+
+## Features
+
+**In every game**
+- Widescreen and ultrawide (up to 32:9) without stretching, any resolution, 60 to 240 fps at normal game speed
+- Xbox, PlayStation and Switch controllers, with the right button pictures; keyboard and mouse
+- Sharper text, anti-aliasing, texture filtering, sharpening; FSR, DLSS and XeSS upscaling in the Xbox games
+- Texture packs, screenshots (`\` or Print Screen), achievements, the games' own cheat codes as switches
+- Faithful by default: every enhancement can be turned off, with presets from Original to Ultra
+
+**Game highlights**
+- **The Return of the King (PC):** two-player co-op on one PC (or online through Parsec or Steam Remote Play
+  Together), mods, cutscenes that fill the screen, restored 3D sound and EAX reverb
+- **The Return of the King (Xbox):** co-op, fixes for slowdowns and vanishing enemies at high frame rates
+- **The Two Towers:** an in-game settings menu (`F10`), fast forward (hold `F9`)
+- **The Fellowship of the Ring:** chapter select, the developers' unused Combat Test arenas, nine languages
+- **The Third Age:** field of view, draw distance, difficulty sliders
+
+**The launcher:** every setting in one place, save backups, desktop shortcuts, 11 languages, and "Report a problem",
+which gathers the logs for you.
 
 ## Requirements
 
-- Windows 10 or 11 (64-bit), or Linux / Steam Deck through Proton (The Two Towers reported working on a real Steam Deck; see README.txt).
-- Mac: through CrossOver (DirectX 12 through Apple's D3DMetal). Tested in a Wine setup like CrossOver's, not yet on a
-  real Mac: reports welcome. See README.txt's Mac section.
-- Your own US copy of each game. No game files are included.
-- **The Return of the King (PC):** a Vulkan 1.4 graphics driver is recommended. Without one, the game runs
-  through Windows' Direct3D 8 with the DXVK-only options (sharpening, colour looks, texture filtering)
-  turned off. The launcher's About tab shows which renderer you'll get.
-- **The Two Towers, The Return of the King, The Fellowship of the Ring and The Third Age (Xbox):** a DirectX 12 graphics card.
+- Windows 10 or 11 (64-bit). Steam Deck and Linux through Proton; Mac through CrossOver (less tested).
+- Xbox games: a DirectX 12 graphics card.
+- The Return of the King (PC): a Vulkan graphics driver is recommended (without one, a few graphics options are off).
 
-## The Two Towers (Xbox)
+**Steam Deck / Linux:** extract Athelas into a folder, then in Steam use **Add a Non-Steam Game** on `Athelas.exe`
+and set **Properties > Compatibility** to the newest Proton. The Deck's controls work as an Xbox controller.
 
-Played through its PC port, `TwoTowers.exe`, started from the launcher.
-
-- Supported: the US Xbox release, as a disc image (`.iso`) or the extracted files. Other releases are recognised,
-  with a warning before they start.
-- Keyboard and mouse or a controller. `F10` (or both stick clicks) opens an in-game settings menu; every setting is
-  also on the launcher's page or in `settings.toml`.
-- The game's own files are only read, never changed.
-- Sharper text: the game's fonts redrawn at four times their size, crisp at high resolutions.
-- Keys: `F10` settings menu, `\` screenshot, `F1` hide the HUD, `[` sharpening off/on, `]` next colour look,
-  `F8` texture packs off/on, `F7` a pair of screenshots with and without texture packs, `F9` (held) fast forward.
-  The keys work the same in all four Xbox ports. Fast forward runs the game 3 times as fast while `F9` is held, with
-  the sound off; the speed (2 to 8) is on the launcher's Gameplay tab.
-- Problem reports: the log (`TT-Xbox\tt.log` next to the launcher), plus the newest `.dmp` in
-  `TT-Xbox\CrashDumps` after a crash.
-
-## The Return of the King (Xbox)
-
-Played through its PC port, `ROTKXbox.exe`, started from the launcher with the same settings page as the PC game.
-
-- Supported: the US Xbox release, as a disc image (`.iso`) or the extracted files.
-- Frame rates up to 240, widescreen and ultrawide, fixes for slowdowns and vanishing enemies at high frame rates.
-- Sharper text and menus: with the PC game installed too, its larger fonts and menu pictures are used; other menu
-  pictures are scaled up sharply.
-- Two-player co-op on one PC, or online by streaming (Parsec, or Steam Remote Play Together).
-- Problem reports: `ROTK-Xbox\rotkx.log`, plus the newest `.dmp` in `ROTK-Xbox\CrashDumps` after a crash.
-
-## The Fellowship of the Ring (Xbox)
-
-Played through its PC port, `FOTRXbox.exe`, started from the launcher (since 1.4).
-
-- Supported: the US Xbox release, as a disc image (`.iso`) or the extracted files.
-- As on the Xbox by default (30 fps, 4:3); frame rates up to 240 at normal game speed, the game's own widescreen
-  mode and ultrawide (21:9, 32:9), field of view, difficulty, sharper upscaled cutscenes, logo skip.
-- The game's text in nine languages (our own translations), the game's own cheat codes as switches, and
-  achievements for each part of the journey.
-- A chapter select (a new game can start at the beginning of any chapter) and the developers' unused Combat Test
-  arenas, switched on from Bilbo's room in Rivendell.
-- Problem reports: `FOTR-Xbox\fotrx.log`, plus the newest `.dmp` in `FOTR-Xbox\CrashDumps` after a crash.
-
-## The Third Age (Xbox)
-
-Played through its PC port, `TAXbox.exe`, started from the launcher (newest of the four, still being polished).
-
-- Supported: the US Xbox release, as a disc image (`.iso`) or the extracted files. Other releases start with a
-  warning that they are untested and unsupported (European and Japanese copies are not expected to run yet).
-- 60 fps, widescreen and ultrawide (up to 32:9), field of view, draw distance, sharper text, button pictures
-  (PlayStation, Nintendo or keyboard), difficulty sliders and achievements.
-- Vulkan is marked experimental in this game; DirectX 12 is the default.
-- Problem reports: `TA-Xbox\ta.log`, plus the newest `.dmp` in `TA-Xbox\CrashDumps` after a crash.
-
-## Steam Deck and Linux
-
-There's no Linux build or AppImage: Athelas and the games run through Proton, Steam's Windows layer, which also
-covers their DirectX 12. The Two Towers has been reported working on a real Steam Deck.
-
-1. In Desktop Mode, unzip Athelas into a folder of its own, for example `/home/deck/Games/Athelas`.
-2. In Steam: **Games > Add a Non-Steam Game to My Library**, and choose `Athelas.exe`. In its **Properties >
-   Compatibility**, tick **Force the use of a specific Steam Play compatibility tool** and pick the newest Proton.
-3. Start it from Steam (Game Mode works too) and point it at your games: disc images (.iso) or extracted folders
-   anywhere on the Deck or an SD card. For The Return of the King (PC), a folder with the installed game copied from a
-   Windows PC (the original disc's copy protection doesn't run under Proton).
-
-The Deck's controls work as an Xbox controller in Athelas and in every game. The Balanced preset at 60 fps suits the
-Deck. DLSS needs an NVIDIA card, so on the Deck leave the upscaler off or try FSR (it hasn't been tried on a Deck yet; if
-it can't start, the game shows its normal picture). On other Linux PCs, adding it to Steam with Proton the same way is
-the route to try first. Plain Wine (or a Wine launcher) hasn't been tested and needs DXVK and VKD3D-Proton installed in
-its prefix; if the launcher says a port "didn't answer", the reason and what the port printed are in `port-query.log`
-in that port's folder beside the launcher (include it in a report). More details are in README.txt.
+More detail on every setting, key and platform is in `README.txt` in the download.
 
 ## Reporting a problem
 
-Open an [issue](../../issues) and choose **Bug report**. Attach the game's log: `ROTKFix.log` in the PC game's folder,
-`ROTK-Xbox\rotkx.log`, `TT-Xbox\tt.log` or `FOTR-Xbox\fotrx.log` beside the launcher. After an Xbox port crashes, add the newest `.dmp` from its
-`CrashDumps` folder, zipped first (GitHub doesn't take `.dmp` files as they are).
+Use **Report a problem** in the launcher: it packs the logs and settings into a zip and opens a new
+[GitHub issue](https://github.com/Shagg88/Athelas/issues) for you.
 
-## Antivirus and SmartScreen
+## Building
 
-ROTK Fix replaces `d3d8.dll`/`dinput8.dll` in the game folder and patches the game in memory, the usual way
-for game mods, and its files aren't code-signed. So SmartScreen may call the launcher "unrecognised" and
-some antivirus programs may flag it. Every zip has a `.sha256` next to it (`Get-FileHash` in PowerShell to compare). ROTK Fix makes no network connections.
-
-## Install
-
-1. Download the zip from [Releases](../../releases).
-2. Unzip it into a folder of its own (not a game folder).
-3. Run `Athelas.exe` (the launcher) and show it your games. For the PC game it puts ROTK Fix's files
-   (the DLLs and a `ROTKFix` folder) next to `rotk.exe`; the Xbox games are only read.
-4. Press **Play**.
-
-To uninstall, use **About → Remove ROTK Fix** in the launcher, then delete the launcher's folder.
-
-## How it works
-
-`d3d8.dll` and `dinput8.dll` are small loaders that hand the game's graphics and input calls to `ROTKFix.dll`:
-
-- **Graphics:** drawn through [DXVK](https://github.com/doitsujin/dxvk) (Vulkan), with ROTK Fix's own changes applied on the way.
-- **Controllers:** read through [SDL3](https://libsdl.org) and shown to the game as standard pads (one per player), with button names or pictures in the game's hints.
-- **Sound:** the game's 3D sound and EAX reverb restored through [DSOAL](https://github.com/kcat/dsoal) and [OpenAL Soft](https://openal-soft.org).
-- **Launcher:** writes `ROTKFix.ini` and the game's own `ROTK.ini`.
-
-## Building (for developers)
-
-Players don't need this: download the zip from [Releases](../../releases) instead. This section is only for
-changing the code and building it yourself.
-
-Builds cross-compile on Linux with MinGW-w64 (32-bit, because the game is 32-bit):
+Players don't need this. ROTK Fix and the launcher cross-compile on Linux with MinGW-w64:
 
 ```sh
-sudo apt install gcc-mingw-w64-i686 g++-mingw-w64-i686 zip
-# unpack SDL3-devel-3.4.18-mingw.tar.gz and dxvk-3.1.1.tar.gz, then:
-SDL_DIR=path/to/SDL3-3.4.18 DXVK_DIR=path/to/dxvk-3.1.1 DSOAL_DIR=third_party/dsoal sh scripts/package.sh 1.0
+sudo apt install gcc-mingw-w64-i686 g++-mingw-w64-i686 p7zip-full
+SDL_DIR=path/to/SDL3-3.4.20 DXVK_DIR=path/to/dxvk-3.1.1 DSOAL_DIR=third_party/dsoal sh scripts/package.sh <version>
 ```
 
-The 3D sound libraries (DSOAL and OpenAL Soft) are kept in `third_party/dsoal` with checksums, so every release ships the tested versions.
+The Xbox ports build on Windows with each port's `build.bat` (see its README in `ports/`). Recompiling them needs
+your own game's `default.xbe`, which is never part of this repository.
 
-The GitHub Actions workflow (`.github/workflows/build.yml`) builds ROTK Fix and Athelas the same way on every push. It can't build the two Xbox ports: recompiling them needs the game's own `default.xbe`, which can never be in a repository. Each port builds on Windows with its `build.bat` (see the ports' READMEs), and the full Athelas download is packaged with `TT_DIR` and `RX_DIR` pointing at the ports' release folders.
+| Folder | What's in it |
+|---|---|
+| `launcher/` | The launcher |
+| `src/` | ROTK Fix |
+| `ports/` | The four Xbox ports |
+| `sdk/` | The shared engine the ports build on |
+| `dist-files/`, `scripts/` | The download's README and packaging |
+| `licenses/` | Every licence |
 
 ## Credits
 
 Made by Shagg, with Claude (Anthropic).
 
-Thank you to:
-- **The developers:** Stormfront Studios, EA Redwood Shores and Hypnos Entertainment, for making these games. And
-  to J.R.R. Tolkien and the films, for the world they're set in.
-- **[XboxXBE-Recomp](https://github.com/TGP482/XboxXBE-Recomp)** by TGP482, which made the Xbox ports possible.
-- **The open-source projects** this is built on: [DXVK](https://github.com/doitsujin/dxvk),
-  [SDL](https://libsdl.org), [DSOAL](https://github.com/kcat/dsoal), [OpenAL Soft](https://openal-soft.org),
-  [Dear ImGui](https://github.com/ocornut/imgui), [toml++](https://github.com/marzer/tomlplusplus),
-  [stb](https://github.com/nothings/stb), [XbSymbolDatabase](https://github.com/Cxbx-Reloaded/XbSymbolDatabase)
-  and [Cxbx-Reloaded](https://github.com/Cxbx-Reloaded/Cxbx-Reloaded).
-- **Everyone who plays it and reports a problem.**
-
-Every licence is in the [licenses](licenses) folder.
+Thanks to Stormfront Studios, EA Redwood Shores and Hypnos Entertainment for the games; to J.R.R. Tolkien and the
+films for their world; to [XboxXBE-Recomp](https://github.com/TGP482/XboxXBE-Recomp) by TGP482, which made the Xbox
+ports possible; to the open-source projects listed below; and to everyone who plays and reports problems.
 
 ## Licences
 
-Athelas, ROTK Fix and the ports are MIT licensed, © 2026 Shagg (see `LICENSE`).
+Athelas, ROTK Fix and the ports are MIT licensed, © 2026 Shagg (see `LICENSE`). If you use the code, please credit
+"Athelas by Shagg" with a link to https://github.com/Shagg88/Athelas.
 
-Using our code? You're welcome to. If you use Athelas's code in your own project, please credit "Athelas by Shagg" and link to https://github.com/Shagg88/Athelas in your readme or credits. (The MIT licence already asks you to keep the copyright notice in copies of the code.)
+Bundled components keep their own licences; every text is in `licenses/` and in the download's `licenses` folder.
 
-Bundled components keep their own licences, all in `licenses/` and shipped in `ROTKFix\licenses`:
+| Component | Licence |
+|---|---|
+| [DXVK](https://github.com/doitsujin/dxvk), [SDL3](https://libsdl.org) | zlib |
+| [Dear ImGui](https://github.com/ocornut/imgui), [stb](https://github.com/nothings/stb), [miniz](https://github.com/richgel999/miniz), [toml++](https://github.com/marzer/tomlplusplus), [Zydis](https://github.com/zyantific/zydis), ROTKPlus mod | MIT |
+| [XboxXBE-Recomp](https://github.com/TGP482/XboxXBE-Recomp) | MIT, © 2026 TGP482 |
+| [LZMA SDK](https://www.7-zip.org/sdk.html) | Public domain |
+| [DSOAL](https://github.com/kcat/dsoal), [OpenAL Soft](https://openal-soft.org) | LGPL 2.1 (source in the download's `licenses\source`) |
+| [glslang](https://github.com/KhronosGroup/glslang) | BSD-3-Clause and others |
+| [Vulkan-Headers](https://github.com/KhronosGroup/Vulkan-Headers) | Apache 2.0 / MIT |
+| Uncial Antiqua, Cinzel, EB Garamond, Cormorant Unicase, PT Sans, Liberation Sans | SIL Open Font License 1.1 |
+| [AMD FidelityFX SDK](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK) (FSR, FSR frame generation) | AMD binary licence |
+| [NVIDIA Streamline](https://github.com/NVIDIA-RTX/Streamline) | MIT, with its third-party notices |
+| NVIDIA DLSS, DLSS frame generation, Reflex | NVIDIA RTX SDKs licence |
+| [Intel XeSS](https://github.com/intel/xess), XeFG, XeLL | Intel Simplified Software License, with its third-party notices |
 
-- DXVK (zlib)
-- SDL3 (zlib)
-- Dear ImGui (MIT)
-- stb (MIT / public domain)
-- DSOAL and OpenAL Soft (LGPL; their source at the shipped commits is in the download's `licenses\source`)
-- Uncial Antiqua, Cinzel and EB Garamond fonts (SIL OFL)
-- Liberation Sans (SIL OFL), used to draw the letters in the button pictures
-- XboxXBE-Recomp (MIT, © 2026 TGP482) and toml++ (MIT), inside the bundled Xbox ports
+Symbol data from [XbSymbolDatabase](https://github.com/Cxbx-Reloaded/XbSymbolDatabase) and
+[Cxbx-Reloaded](https://github.com/Cxbx-Reloaded/Cxbx-Reloaded).
+
+Athelas uses NVIDIA DLSS, AMD FidelityFX Super Resolution and Intel XeSS. Their DLLs (the download's `upscalers`
+folder) belong to NVIDIA, AMD and Intel, ship unmodified and stay under their own licences, not Athelas' MIT licence;
+they may not be reverse engineered or redistributed apart from Athelas. NVIDIA, DLSS, Reflex, AMD, FidelityFX, Intel
+and XeSS are trademarks of their owners, and Athelas isn't affiliated with or endorsed by them.

@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 cd "$(dirname "$0")"
-SDL_DIR=${SDL_DIR:-/tmp/claude-0/sdl/SDL3-3.4.18}   # SDL3 mingw development package
+SDL_DIR=${SDL_DIR:-/tmp/claude-0/sdl/SDL3-3.4.20}   # SDL3 mingw development package
 SDLINC=$SDL_DIR/i686-w64-mingw32/include
 CC="i686-w64-mingw32-gcc -O2 -Wall -Wextra -std=gnu11 -static -static-libgcc -s"
 VERSION_FILE=VERSION . ./scripts/version.sh

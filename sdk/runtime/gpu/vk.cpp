@@ -2509,7 +2509,7 @@ bool VkBackend::InitUi() {
     pi.pPoolSizes = &size;
     VkResult r = vkCreateDescriptorPool(device_, &pi, nullptr, &ui_pool_);
     if (r != VK_SUCCESS) return Fail("vkCreateDescriptorPool (menu)", r);
-    if (!ImGui_ImplVulkan_LoadFunctions([](const char* name, void* inst) { return Lookup(name, inst); }, instance_))
+    if (!ImGui_ImplVulkan_LoadFunctions(VK_API_VERSION_1_2, [](const char* name, void* inst) { return Lookup(name, inst); }, instance_))
         return Fail("the menu's Vulkan functions could not be loaded");
     ImGui_ImplVulkan_InitInfo ii{};
     ii.Instance = instance_;
@@ -2520,12 +2520,13 @@ bool VkBackend::InitUi() {
     ii.DescriptorPool = ui_pool_;
     ii.MinImageCount = 2;
     ii.ImageCount = std::max<uint32_t>(uint32_t(images_.size()), 2);
-    ii.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+    ii.ApiVersion = VK_API_VERSION_1_2;   // (Dear ImGui 1.93: the instance's version, and the pipeline in PipelineInfoMain)
+    ii.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     ii.PipelineCache = VK_NULL_HANDLE;
     ii.UseDynamicRendering = true;
-    ii.PipelineRenderingCreateInfo = {VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR};
-    ii.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
-    ii.PipelineRenderingCreateInfo.pColorAttachmentFormats = &swap_fmt_;
+    ii.PipelineInfoMain.PipelineRenderingCreateInfo = {VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR};
+    ii.PipelineInfoMain.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
+    ii.PipelineInfoMain.PipelineRenderingCreateInfo.pColorAttachmentFormats = &swap_fmt_;
     if (!ImGui_ImplVulkan_Init(&ii)) return Fail("the menu's Vulkan backend did not start");
     ui_ = true;
     return true;

@@ -120,3 +120,7 @@ Using WSL or Linux with `i686-w64-mingw32-gcc`:
 cd mods/ValarBoons
 sh build.sh
 ```
+
+## Licence
+
+Part of Athelas, under its MIT licence (see `ROTKFix-LICENSE.txt` / the project's LICENSE).

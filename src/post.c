@@ -422,8 +422,11 @@ static HRESULT WINAPI hook_Present9(IDirect3DDevice9 *dev, const RECT *a, const 
     RF_RunRenderHooks(dev); /* External mod visual render hooks (auras, HUD, effects) */
     RF_RunFrameHooks();  /* External mod frame hooks / updates */
     /* Print Screen (DIK_SYSRQ) or \ (DIK_BACKSLASH): screenshot of the finished frame */
-    if (input_keyboard_seen() && (input_take_key_presses(0xB7) + input_take_key_presses(0x2B)) > 0)
+    if (input_keyboard_seen() && (input_take_key_presses(0xB7) + input_take_key_presses(0x2B)) > 0) {
+        extern volatile LONG g_textLog;
         shot_take(dev);
+        g_textLog = 1;   /* #61: log the next frame's text draws */
+    }
     return g_realPresent9(dev, a, b, w, r);
 }
 

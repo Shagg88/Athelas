@@ -30,8 +30,6 @@ std::atomic<bool> g_title{true};
 // a level other than the prologue was just won (ui\endlvl.bff): the main menu file that opens next is the map with
 // its "Do you want to save your game?" Yes/No, not the title, so A doesn't press Start there (GitHub #56: Start took
 // Yes whatever was chosen). After the prologue the title does come (#8), and A still passes it.
-bool g_won_level = false;
-bool g_in_prologue = false;
 void AchievementsFile(const std::string& lower_name);  // tt_achievements.cpp
 void GandalfWorld(const std::string& lower_name);      // tt_gandalf.cpp
 void FrameRateWorld(const std::string& lower_name);   // tt_framerate.cpp
@@ -44,19 +42,13 @@ void FileOpened(const char* name) {
     auto ends = [&](const char* e) { size_t k = std::strlen(e); return n.size() >= k && n.compare(n.size() - k, k, e) == 0; };
     bool was = g_front_end;
     if (n.find("\\ui\\") != std::string::npos && ends(".bff")) {
-        if (n.find("\\ui\\endlvl.bff") != std::string::npos) g_won_level = !g_in_prologue;
-        bool main_menu = n.find("\\ui\\mainmenu.bff") != std::string::npos;
-        g_title = n.find("\\ui\\startup.bff") != std::string::npos || (main_menu && !g_won_level);
-        if (main_menu && g_won_level) {
-            g_won_level = false;
-            LOGI("tt: main menu after a level: A doesn't press Start (#56)");
-        }
-        LOGI("tt: menu file %s", name);
+        // "press start" is the start-up screen's alone: any other menu file ends it. The Yes/No box on the map after a
+        // level (#56) took Enter's Start as its Yes; the main menu after a level was not always told apart (1.8.2)
+        g_title = n.find("\\ui\\startup.bff") != std::string::npos;
+        LOGR("tt: menu file %s%s", name, g_title ? " (press start: Enter presses Start too)" : "");
     }
     if (n.find("\\worlds\\") != std::string::npos && (ends(".bfa") || ends(".bfl") || ends(".bfg") || ends(".bfi"))) {
         g_front_end = g_title = false;
-        g_in_prologue = n.find("\\worlds\\00isul1") != std::string::npos;
-        g_won_level = false;
     }
     else if (n.find("\\ui\\") != std::string::npos && ends(".bff") && n.find("\\ui\\load") == std::string::npos &&
              n.find("\\ui\\options") == std::string::npos && n.find("\\ui\\upg") == std::string::npos) {

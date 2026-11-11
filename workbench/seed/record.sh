@@ -3,7 +3,7 @@
 # pipelines merged into seed/GAME.pipelines
 G=$1; EXEN=$3; VAR=$4; LEVELS=$5; T=${6:-130}
 S=/home/claude/work/seed; W=/tmp/claude-0/seedrun/$G; mkdir -p $W
-cp /home/claude/work/mingw/$2/$EXEN.exe /tmp/claude-0/sdl/SDL3-3.4.18/x86_64-w64-mingw32/bin/SDL3.dll $W/
+cp /home/claude/work/mingw/$2/$EXEN.exe /tmp/claude-0/sdl/SDL3-3.4.20/x86_64-w64-mingw32/bin/SDL3.dll $W/
 case $G in tt) GAME='Z:\mnt\user-data\uploads\TT--extracted';; rx) GAME='Z:\mnt\user-data\uploads\ROTKX--extracted';; fx) GAME='Z:\mnt\user-data\uploads\FOTR-extracted';; esac
 python3 $S/mkpad.py $G $T > $W/pad.txt
 export WINEDEBUG=-all WINEPREFIX=/tmp/claude-0/wpfx

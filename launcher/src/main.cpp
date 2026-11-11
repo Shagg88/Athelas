@@ -234,12 +234,27 @@ static void draw_window_buttons(App &a, ImVec2 size)
 
 static DWORD WINAPI cleanup_thread(LPVOID) { builder_cleanup_old(); return 0; }
 
+// ATHELAS_TIMING=1 (testing): how long each step of starting takes, in athelas-startup.log; it quits after the first
+// frame is on screen
+static LARGE_INTEGER g_st0;
+static std::string g_stLog;
+static void st_mark(const char *what)
+{
+    if (!getenv("ATHELAS_TIMING")) return;
+    LARGE_INTEGER f, n;
+    QueryPerformanceFrequency(&f); QueryPerformanceCounter(&n);
+    char b[96];
+    snprintf(b, sizeof b, "%8.1f ms  %s\r\n", (n.QuadPart - g_st0.QuadPart) * 1000.0 / f.QuadPart, what);
+    g_stLog += b;
+}
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
 {
+    QueryPerformanceCounter(&g_st0);
     if (cmdLine && strstr(cmdLine, "--vkprobe")) return gpu_probe_main();   // the background graphics check (gpu.cpp)
     // 1.7.3/1.7.4's build kits and tools, not needed since 1.7.5: removed in the background (thousands of files)
     CloseHandle(CreateThread(NULL, 0, cleanup_thread, NULL, 0, NULL));
     if (!(cmdLine && strstr(cmdLine, "--install-to "))) gpu_probe_start();
+    st_mark("threads started");
     // "--install-to <dir>" (with administrator rights): put ROTK Fix into a protected game
     // folder, then carry on as the launcher for that game. "--pc <dir>": show that PC game.
     auto quoted_arg = [&](const char *name) {
@@ -266,6 +281,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
         MessageBoxA(NULL, SDL_GetError(), "Athelas", MB_ICONERROR);
         return 1;
     }
+    st_mark("SDL started");
     g_scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
     if (g_scale <= 0.0f) g_scale = 1.0f;
     // landscape, so the background pictures (screenshots, the games' art) show at their own shape beside the settings
@@ -295,6 +311,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     SDL_Renderer *ren = win ? SDL_CreateRenderer(win, NULL) : nullptr;
     if (!ren) { MessageBoxA(NULL, SDL_GetError(), "Athelas", MB_ICONERROR); return 1; }
     SDL_SetRenderVSync(ren, 1);
+    st_mark("window and renderer");
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -329,12 +346,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     orn_set_scale(g_scale);
     ImGui_ImplSDL3_InitForSDLRenderer(win, ren);
     ImGui_ImplSDLRenderer3_Init(ren);
+    st_mark("fonts, language, style");
 
     App a;
     a.win = win;
     g_mainWin = win;
     // the player's games, remembered next to the launcher (ROTKFix\games.ini)
     a.lib = library_load(exe_dir());
+    st_mark("game library read");
     // Which PC game's settings to show: one named on the command line; else the launcher's own
     // folder if it is a game folder (older layout); else the first remembered PC copy with ROTK Fix.
     std::string pcDir;
@@ -368,11 +387,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
                 if (a.lib[i].kind == k) a.cur = (int)i;
     if (const char *t = getenv("ROTKFIX_GAME")) { int n = atoi(t); if (n >= 0 && n < (int)a.lib.size()) a.cur = n; }   // testing
     a.monitors = enum_monitors();
+    st_mark("PC game checked, monitors");
     bool hadIni = load_pc_settings(a, pcDir.empty() ? exe_dir() : pcDir);
     // the front screen first, unless ROTK Fix was just set up (its page says what to do next)
     a.front = !justInstalled && !getenv("ATHELAS_PAGE");   // ATHELAS_PAGE (testing): open on the page
     if (getenv("ATHELAS_JOURNEY")) { a.journey = true; a.front = false; }   // testing: open on the Journey page
     refresh_controllers(a);
+    st_mark("settings, controllers");
 
     bg_show_load();   // the pictures themselves are listed on the first frame
     if (getenv("ROTKFIX_SAVE_AND_EXIT")) { save(a); return 0; }     // testing
@@ -384,7 +405,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     // "--play <fotr|tt|rotk-xbox|rotk-pc|ta>" (a game's desktop shortcut): start that game as its Play button would
     std::string playArg = quoted_arg("--play ");
     music_init();    // the front screen's music (nothing plays without a sound device)
+    st_mark("music");
+    if (int n = update_remove_leftovers())   // files an older Athelas shipped that this one doesn't
+        set_message(a, std::to_string(n) + " file" + (n == 1 ? "" : "s") + " left over from an older Athelas removed "
+                       "(listed in athelas-cleanup.log).", false);
     update_tidy();   // what an update left behind
+    st_mark("leftovers checked");
     if (updates_on()) update_check_start(LAUNCHER_VERSION);
 
     bool playPending = !playArg.empty();
@@ -480,6 +506,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
         ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), ren);
         i18n_frame_end();
         SDL_RenderPresent(ren);
+        if (getenv("ATHELAS_TIMING")) {
+            static int frames = 0;
+            char what[32]; snprintf(what, sizeof what, "frame %d on screen", ++frames);
+            st_mark(what);
+            if (frames == 3) {
+                HANDLE h = CreateFileA((exe_dir() + "\\athelas-startup.log").c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
+                if (h != INVALID_HANDLE_VALUE) { DWORD w; WriteFile(h, g_stLog.data(), (DWORD)g_stLog.size(), &w, NULL); CloseHandle(h); }
+                a.quit = true;
+            }
+        }
     }
     music_shutdown();
     ImGui_ImplSDLRenderer3_Shutdown();

@@ -90,7 +90,11 @@ static bool make_report(App &a, std::string title)
                        "\n**The log**\n<!-- Drag \"" + zipName + "\" from the folder Athelas just opened into this box. "
                        "It has the logs and settings, with your Windows user name taken out. -->\n";
     if (title.empty()) title = report_game_name(a) + ": ";
-    g_reportUrl = "https://github.com/Shagg88/Athelas/issues/new?labels=bug&title=" + url_encode(title) + "&body=" + url_encode(body);
+    // GitHub's new-issue form is filled from its address; the text also goes on the clipboard, in case a long report
+    // is cut short by the browser
+    SDL_SetClipboardText(("Title: " + title + "\n\n" + body).c_str());
+    g_reportUrl = std::string(kTicketsNew) + "?labels=bug&title=" + url_encode(title) + "&body=" + url_encode(body);
+    if (g_reportUrl.size() > 2000) g_reportUrl = std::string(kTicketsNew) + "?labels=bug&title=" + url_encode(title);
     ShellExecuteA(NULL, "open", "explorer.exe", ("/select,\"" + g_reportZip + "\"").c_str(), NULL, SW_SHOWNORMAL);
     ShellExecuteA(NULL, "open", g_reportUrl.c_str(), NULL, NULL, SW_SHOWNORMAL);
     return true;
@@ -103,10 +107,11 @@ void report_section(App &a)
     if (ImGui::Button("Report a problem")) {
         if (!make_report(a, "")) set_message(a, g_reportErr, true);
     }
-    tip("Puts the logs, the settings and a description of this PC into one zip and opens a new report on GitHub. "
+    tip("Puts the logs, the settings and a description of this PC into one zip, opens a new issue on GitHub with the report "
+        "filled in (it's on the clipboard too): drag the zip in. "
         "Nothing is sent by itself; your Windows user name is taken out.");
     ImGui::SameLine();
-    if (ImGui::Button("Open the issues on GitHub")) ShellExecuteA(NULL, "open", "https://github.com/Shagg88/Athelas/issues", NULL, NULL, SW_SHOWNORMAL);
+    if (ImGui::Button("Open the tickets")) ShellExecuteA(NULL, "open", kTickets, NULL, NULL, SW_SHOWNORMAL);
     if (!g_reportZip.empty() && g_reportErr.empty()) {
         ImGui::SameLine();
         if (ImGui::Button("Show the zip")) ShellExecuteA(NULL, "open", "explorer.exe", ("/select,\"" + g_reportZip + "\"").c_str(), NULL, SW_SHOWNORMAL);
@@ -140,8 +145,8 @@ void crash_box(App &a, const std::string &text, const std::string &title)
             ShellExecuteA(NULL, "open", a.runningLog.substr(0, a.runningLog.find_last_of('\\')).c_str(), NULL, NULL, SW_SHOWNORMAL);
     } else if (pressed == 2) {
         if (!make_report(a, title)) {   // the report couldn't be written: the form on its own
-            std::string url = "https://github.com/Shagg88/Athelas/issues/new?template=bug_report.md&title=" + url_encode(title);
-            ShellExecuteA(NULL, "open", url.c_str(), NULL, NULL, SW_SHOWNORMAL);
+            SDL_SetClipboardText(title.c_str());
+            ShellExecuteA(NULL, "open", kTicketsNew, NULL, NULL, SW_SHOWNORMAL);
         }
     }
 }

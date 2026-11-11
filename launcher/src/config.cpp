@@ -1437,6 +1437,20 @@ bool install_to(const std::string &src, const std::string &dst, std::string &err
         if (GetFileAttributesA(from.c_str()) == INVALID_FILE_ATTRIBUTES) continue;
         DWORD e = 0;
         CreateDirectoryA((dst + "\\ROTKFix").c_str(), NULL);
+        // a DLL an older ROTK Fix put in ROTKFix\dxvk or \sound that this one no longer has could be loaded with the
+        // new ones: removed (only DLLs, only in these two folders of ROTK Fix's own; a dxvk.conf of the player's stays)
+        if (strcmp(sub, "licenses")) {
+            std::string to = dst + "\\ROTKFix\\" + sub;
+            WIN32_FIND_DATAA od;
+            HANDLE oh = FindFirstFileA((to + "\\*.dll").c_str(), &od);
+            if (oh != INVALID_HANDLE_VALUE) {
+                do {
+                    if (!(od.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && !file_exists(from + "\\" + od.cFileName))
+                        DeleteFileA((to + "\\" + od.cFileName).c_str());
+                } while (FindNextFileA(oh, &od));
+                FindClose(oh);
+            }
+        }
         if (!copy_tree(from, dst + "\\ROTKFix", e)) { err = std::string("Could not copy ROTKFix\\") + sub + " (error " + std::to_string(e) + ")."; return false; }
     }
     // the mods that come with Athelas (ROTKFix\mods): their code updated, but a mod's .ini kept once it is there (it holds

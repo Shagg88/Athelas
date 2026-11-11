@@ -1,7 +1,7 @@
 #!/bin/bash
 # tt_text_test.sh <tag> <true|false>: TT's Windows test build under Wine, windowed 1280x960, the front end; shots at 40, 60, 80 s
 N=$1; ON=$2; D=/tmp/claude-0/tttext_$N; rm -rf $D; mkdir -p $D; cd $D
-cp /home/claude/work/mingw/obj_TwoTowers/TwoTowers.exe .; cp /tmp/claude-0/sdl/SDL3-3.4.18/x86_64-w64-mingw32/bin/SDL3.dll .
+cp /home/claude/work/mingw/obj_TwoTowers/TwoTowers.exe .; cp /tmp/claude-0/sdl/SDL3-3.4.20/x86_64-w64-mingw32/bin/SDL3.dll .
 printf '[display]\nmode = "windowed"\nwidth = 1280\nheight = 960\n[graphics]\nsharp_text = %s\nskip_all_videos = true\nskip_logos = true\n' $ON > settings.toml
 printf '25 START\n32 START\n38 A\n80 START\n' > pad.txt
 export WINEDEBUG=-all WINEPREFIX=/tmp/claude-0/wpfx

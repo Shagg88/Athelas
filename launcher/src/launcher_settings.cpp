@@ -34,7 +34,7 @@ static void window_section(App &a)
     if (ImGui::Checkbox("Borderless window", &bl)) set_borderless(a, bl);
     tip("Athelas draws its own minimise, maximise and close buttons in the top-right corner; drag the strip beside them to move it.");
     bool on = updates_on();
-    if (ImGui::Checkbox("Check GitHub for a newer Athelas at start", &on)) {
+    if (ImGui::Checkbox("Check for a newer Athelas at start", &on)) {
         WritePrivateProfileStringA("Updates", "Check", on ? "1" : "0", ports_ini().c_str());
         if (on) update_check_start(LAUNCHER_VERSION);
     }
@@ -135,7 +135,8 @@ void about_credits(App &a)
     ImGui::Dummy(ImVec2(0, S(4)));
     ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
     ImGui::PushTextWrapPos(0);
-    ImGui::TextColored(C_DIM, "Athelas " LAUNCHER_VERSION "  -  by Shagg, with Claude (Anthropic)  -  free fan project, not affiliated with EA, Warner Bros. or the Tolkien Estate");
+    ImGui::TextColored(C_DIM, "Athelas " LAUNCHER_VERSION "  -  by Shagg, with Claude (Anthropic)  -  free fan project, not affiliated with EA, Warner Bros. or the Tolkien Estate.  "
+                       "Uses NVIDIA DLSS, AMD FidelityFX Super Resolution and Intel XeSS.");
     ImGui::PopTextWrapPos();
     ImGui::PopFont();
 
@@ -153,10 +154,16 @@ void about_credits(App &a)
         static const char *lic[][2] = {
             { "DXVK", "zlib" }, { "SDL3", "zlib" }, { "Dear ImGui", "MIT" }, { "stb_image, stb_image_write", "public domain / MIT" },
             { "DSOAL, OpenAL Soft", "LGPL" }, { "Uncial Antiqua, Cinzel, EB Garamond", "SIL Open Font License" },
-            { "Liberation Sans", "SIL Open Font License" }, { "XboxXBE-Recomp", "MIT, (c) 2026 TGP482" },
-            { "toml++", "MIT" }, { "miniz", "MIT" } };
+            { "Liberation Sans, Cormorant Unicase, PT Sans", "SIL Open Font License" }, { "XboxXBE-Recomp", "MIT, (c) 2026 TGP482" },
+            { "toml++", "MIT" }, { "miniz", "MIT" }, { "LZMA SDK (7z)", "public domain" }, { "Zydis, glslang", "MIT, BSD-3-Clause" },
+            { "AMD FidelityFX (FSR)", "AMD binary licence" }, { "NVIDIA Streamline", "MIT" }, { "NVIDIA DLSS, DLSS frame generation, Reflex", "NVIDIA RTX SDKs licence" }, { "Vulkan headers", "Apache 2.0 / MIT" },
+            { "Intel XeSS, XeFG, XeLL", "Intel Simplified Software License" } };
         for (auto &l : lic) { ImGui::TextColored(C_GOLD, "%s", l[0]); ImGui::SameLine(S(330)); ImGui::TextUnformatted(l[1]); }
         ImGui::Spacing();
+        ImGui::PushTextWrapPos(0);
+        ImGui::TextColored(C_DIM, "The full texts are in the licenses folder. AMD's, NVIDIA's and Intel's DLLs (upscalers folder) are theirs, under "
+                                  "their own licences, not Athelas' MIT licence; they may not be reverse engineered.");
+        ImGui::PopTextWrapPos();
         if (ImGui::Button("Close", ImVec2(S(150), 0)) || dialog_back()) ImGui::CloseCurrentPopup();
         ImGui::EndPopup();
     }

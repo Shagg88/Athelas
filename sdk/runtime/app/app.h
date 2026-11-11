@@ -86,9 +86,12 @@ struct Settings {
     bool smooth_2d = true;                 // unfiltered 2D pictures (menus, HUD) upscaled bicubic past 1.2x the console's lines
     bool show_fps = false;                 // [display] show_fps: the frames per second in the screen's top right corner
     uint32_t msaa = 0;                     // anti-aliasing samples: 0 off, 2, 4 or 8
-    uint32_t upscaler = 0;                 // 0 off, 1 FSR (AMD, any card), 2 DLSS (NVIDIA RTX): drawn smaller, upscaled temporally
+    uint32_t upscaler = 0;                 // 0 off, 1 FSR (AMD, any card), 2 DLSS (NVIDIA RTX), 3 XeSS (Intel, any card): drawn smaller, upscaled temporally
     uint32_t upscaler_quality = 1;         // 0 native (DLAA / FSR native AA), 1 quality, 2 balanced, 3 performance, 4 ultra performance
-    bool frame_generation = false;         // AMD FSR frame generation (with the FSR upscaler): a made-up frame between each two drawn, read at start
+    // frame generation of the upscaler's kind (FSR's, XeSS's or DLSS's): made-up frames between the drawn ones, read at
+    // start. 0 off, 1 on (an older file's true reads as on)
+    uint32_t frame_generation = 0;
+    uint32_t frame_generation_frames = 2;  // 2x, 3x, 4x: the drawn frame and 1-3 made up (3x and 4x with DLSS on RTX 50, XeSS on Intel)
     bool hdr = false;                      // HDR output on an HDR screen (Windows HDR on), read at start
     uint32_t renderer = 0;                 // 0 Direct3D 12, 1 Vulkan (in development; Direct3D 12 if it can't start), read at start
     uint32_t colour_look = 0;              // 0 original, 1 film, 2 vivid, 3 dark fantasy

@@ -109,6 +109,15 @@ NVIDIA Streamline 2.14.16 headers (https://github.com/NVIDIA-RTX/Streamline), th
 
 Copyright (c) 2022-2025 NVIDIA CORPORATION. MIT licence, as written at the top of each header and in
 third_party/streamline/LICENSE.txt. sl_security.h: its <softpub.h> include is written in lower case for MinGW.
-The Streamline and DLSS DLLs (sl.interposer.dll, sl.common.dll, sl.dlss.dll, nvngx_dlss.dll) are not in this
-repository; the release ships them under NVIDIA's own terms (licenses\NVIDIA-DLSS-LICENSE.txt,
-licenses\NVIDIA-Streamline-LICENSE.txt).
+The Streamline and DLSS DLLs (sl.interposer.dll, sl.common.dll, sl.dlss.dll, sl.dlss_g.dll, sl.reflex.dll, sl.pcl.dll,
+nvngx_dlss.dll, nvngx_dlssg.dll) are not in this repository; the release ships them under NVIDIA's own terms
+(licenses\NVIDIA-DLSS-LICENSE.txt, licenses\NVIDIA-Streamline-LICENSE.txt).
+
+
+Intel XeSS SDK 3.0.2 headers (https://github.com/intel/xess), the XeSS upscaler's, XeSS frame generation's and XeLL's
+interface (third_party/xess)
+
+Copyright (C) 2025 Intel Corporation. Intel Simplified Software License (third_party/xess/LICENSE.txt). MinGW builds
+declare ID3D12PipelineLibrary themselves before including them (gpu/upscale.cpp). The DLLs (libxess.dll,
+libxess_fg.dll, libxell.dll) are not in this repository; the release ships them unmodified under the same licence
+(licenses\INTEL-XeSS-LICENSE.txt).

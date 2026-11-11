@@ -63,18 +63,25 @@ std::vector<cfg::Desc> SettingsList() {
          &s.smaa},
         {"graphics", "upscaler", Type::Choice, "Upscaler",
          "Draws the game smaller and rebuilds a sharp, smooth picture from several frames: faster, and it smooths jagged "
-         "edges as well. FSR works on any graphics card (FSR 4 on the newest AMD ones); DLSS needs an NVIDIA RTX card. "
-         "Replaces Render resolution and Anti-aliasing while on. DLSS takes effect at the next start.",
-         nullptr, &s.upscaler, nullptr, 0, 0, {"0", "1", "2"}, nullptr, nullptr, {"Off", "AMD FSR (experimental)", "NVIDIA DLSS (experimental)"}},
+         "edges as well. FSR and XeSS work on any graphics card (FSR 4 on the newest AMD ones, XeSS best on Intel's); "
+         "DLSS needs an NVIDIA RTX card. Replaces Render resolution and Anti-aliasing while on. DLSS takes effect at the "
+         "next start.",
+         nullptr, &s.upscaler, nullptr, 0, 0, {"0", "1", "2", "3"}, nullptr, nullptr,
+         {"Off", "AMD FSR (experimental)", "NVIDIA DLSS (experimental)", "Intel XeSS (experimental)"}},
         {"graphics", "upscaler_quality", Type::Choice, "Upscaler quality",
          "How much smaller the game is drawn for the upscaler. Native draws it at full size and only smooths it (DLAA "
          "with DLSS); Quality is the best balance; Performance and Ultra performance are fastest but softer.",
          nullptr, &s.upscaler_quality, nullptr, 0, 0, {"0", "1", "2", "3", "4"}, nullptr, nullptr,
          {"Native", "Quality", "Balanced", "Performance", "Ultra performance"}},
-        {"graphics", "frame_generation", Type::Bool, "Frame generation (experimental)",
-         "With the AMD FSR upscaler: shows a made-up frame between each two the game draws, so 3D scenes move more "
-         "smoothly (on any graphics card). Adds a little delay to the controls. Takes effect at the next start.",
-         &s.frame_generation},
+        {"graphics", "frame_generation", Type::Choice, "Frame generation (experimental)",
+         "Shows made-up frames between the ones the game draws, so 3D scenes move more smoothly. Uses the upscaler's "
+         "own: FSR's (any card), XeSS's (any card) or DLSS's (NVIDIA RTX 40 and 50). Adds a little delay to the "
+         "controls. Takes effect at the next start.",
+         nullptr, &s.frame_generation, nullptr, 0, 0, {"off", "on"}, nullptr, nullptr, {"Off", "On (experimental)"}},
+        {"graphics", "frame_generation_frames", Type::Choice, "Frame generation amount",
+         "How many frames are shown for each one drawn. 2x works everywhere; 3x and 4x need DLSS on an RTX 50 card or "
+         "XeSS on an Intel Arc card (others make 2x). Takes effect at the next start.",
+         nullptr, &s.frame_generation_frames, nullptr, 0, 0, {"2", "3", "4"}, nullptr, nullptr, {"2x", "3x", "4x"}},
         {"graphics", "anisotropic_filtering", Type::Choice, "Texture filtering",
          "Anisotropic filtering: keeps ground and walls sharp at a distance.", nullptr, &s.aniso, nullptr, 0, 0,
          {"0", "2", "4", "8", "16"}, "anisotropic_filtering", nullptr, {"Off", "2x", "4x", "8x", "16x"}},

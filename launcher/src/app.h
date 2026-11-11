@@ -13,6 +13,11 @@
 #include <time.h>
 #include <string>
 #include <vector>
+
+// where Athelas lives: GitHub (home again since 11 Nov 2026), with GitLab as a copy of every release
+static const char kProjectPage[] = "https://github.com/Shagg88/Athelas";
+static const char kTickets[] = "https://github.com/Shagg88/Athelas/issues";
+static const char kTicketsNew[] = "https://github.com/Shagg88/Athelas/issues/new";
 #include <map>
 #include <algorithm>
 #define IMGUI_DEFINE_MATH_OPERATORS

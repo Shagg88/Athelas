@@ -2,13 +2,13 @@
 # Athelas, the launcher (32-bit, uses the SDL3.dll shipped with ROTK Fix)
 set -e
 cd "$(dirname "$0")"
-SDL=${SDL_DIR:-/tmp/claude-0/sdl/SDL3-3.4.18}/i686-w64-mingw32   # SDL3 mingw development package
+SDL=${SDL_DIR:-/tmp/claude-0/sdl/SDL3-3.4.20}/i686-w64-mingw32   # SDL3 mingw development package
 IM=third_party/imgui
 VERSION_FILE=../VERSION . ../scripts/version.sh
 mkdir -p build/obj
 # the launcher's own objects are all rebuilt below: old ones (from a source file since removed or split) would
 # otherwise be linked in by build/obj/*.o; Dear ImGui's and miniz's are kept
-find build/obj -name '*.o' ! -name 'imgui*' ! -name 'miniz.o' -delete
+find build/obj -name '*.o' ! -name 'imgui*' ! -name 'miniz.o' ! -name 'lzma_*' -delete
 CXX="i686-w64-mingw32-g++ -O2 -std=c++17 -isystem $IM -isystem $SDL/include -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS"
 # the launcher's own code (Dear ImGui's and SDL's headers are -isystem: their warnings aren't ours)
 WARN="-Wall -Wextra -Wno-missing-field-initializers -Wshadow -Wconversion -Wformat=2 -Wno-format-nonliteral -Wduplicated-cond -Wlogical-op -Wredundant-decls -Wnull-dereference"
@@ -23,6 +23,11 @@ $CXX $WARN -c src/gpu.cpp -o build/obj/gpu.o
 $CXX $WARN -c src/gameart.cpp -o build/obj/gameart.o
 [ build/obj/miniz.o -nt third_party/miniz/miniz.c ] || i686-w64-mingw32-gcc -O2 -c third_party/miniz/miniz.c -o build/obj/miniz.o
 $CXX $WARN -c src/update.cpp -o build/obj/update.o
+$CXX $WARN -c src/unpack7z.cpp -o build/obj/unpack7z.o
+# LZMA SDK's 7z decoder (public domain): the release download is a .7z since 1.8.3
+for f in 7zAlloc 7zArcIn 7zBuf 7zCrc 7zCrcOpt 7zDec 7zStream Bcj2 Bra Bra86 BraIA64 CpuArch Delta Lzma2Dec LzmaDec; do
+  [ build/obj/lzma_$f.o -nt third_party/lzma/$f.c ] || i686-w64-mingw32-gcc -O2 -c third_party/lzma/$f.c -o build/obj/lzma_$f.o
+done
 $CXX $WARN -c src/report.cpp -o build/obj/report.o
 $CXX $WARN -c src/music.cpp -o build/obj/music.o
 $CXX $WARN -c src/userdata.cpp -o build/obj/userdata.o

@@ -132,7 +132,8 @@ static int paint(FontIcons *fi, int style)
 #define MAX_FONT_TEX 32
 static BYTE *g_fontObj[MAX_FONT_TEX];
 static void *g_fontTex[MAX_FONT_TEX];
-static int g_fontWhite[MAX_FONT_TEX];   /* its letters are white: only their alpha shapes them */
+static int g_fontWhite[MAX_FONT_TEX];
+static float g_fontVEnd[MAX_FONT_TEX];   /* its letters are white: only their alpha shapes them */
 int icons_is_font_texture(const void *tex)
 {
     if (!tex) return 0;
@@ -148,7 +149,7 @@ static void remember_font(BYTE *font)
         if (g_fontObj[i] == font) { slot = i; break; }
         if (slot < 0 && !g_fontObj[i]) slot = i;
     }
-    if (slot >= 0) { g_fontObj[slot] = font; g_fontTex[slot] = tex; g_fontWhite[slot] = 0; }
+    if (slot >= 0) { g_fontObj[slot] = font; g_fontTex[slot] = tex; g_fontWhite[slot] = 0; g_fontVEnd[slot] = 0.0f; }
 }
 
 /* Are the font's letters white (every well-covered texel of the letters' rows light)? Then drawing it
@@ -177,13 +178,21 @@ static int letters_white(BYTE *font)
 /* v (as drawn) where a font's letters end: the text draw (0x49cc50) multiplies the glyph's v by font +0x448, the used
  * height over the texture's power-of-two height (th / ph), so letters reach th / ph and the button pictures below
  * them (from y = th + 1) lie between that and 1; 0 = not a font (#34, brig-dev's analysis) */
+/* (asked for every text draw: worked out once per font, #58) */
 float icons_letters_v_end(const void *tex)
 {
     if (!tex) return 0.0f;
     for (int i = 0; i < MAX_FONT_TEX; i++)
-        if (g_fontTex[i] == tex && g_fontObj[i] && readable(g_fontObj[i], 0x444)) {
-            int th = *(short *)(g_fontObj[i] + 0x41a), ph = *(int *)(g_fontObj[i] + 0x440);
-            return th > 0 && ph > th ? (th + 0.5f) / (float)ph : 0.0f;
+        if (g_fontTex[i] == tex && g_fontObj[i]) {
+            if (g_fontVEnd[i] == 0.0f) {
+                float v = -1.0f;
+                if (readable(g_fontObj[i], 0x444)) {
+                    int th = *(short *)(g_fontObj[i] + 0x41a), ph = *(int *)(g_fontObj[i] + 0x440);
+                    if (th > 0 && ph > th) v = (th + 0.5f) / (float)ph;
+                }
+                g_fontVEnd[i] = v;
+            }
+            return g_fontVEnd[i] > 0.0f ? g_fontVEnd[i] : 0.0f;
         }
     return 0.0f;
 }

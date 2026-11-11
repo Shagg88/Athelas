@@ -1,5 +1,7 @@
-// update.h: GitHub answers /releases/latest with a redirect to /releases/tag/<version>; the version is read from that
-// address, without following it (no API, no rate limit, nothing to parse but one header).
+// update.h: GitLab answers /-/releases/permalink/latest with a redirect to /-/releases/<tag>; the version is read
+// from that address, without following it (no API, nothing to parse but one header). GitLab since 9 Nov 2026 (the
+// GitHub account was suspended). Each release's tag is its version ("1.8.3") and it carries the .7z and its .sha256
+// as release links with the direct paths /Athelas-<version>.7z and /Athelas-<version>.7z.sha256.
 #include "update.h"
 
 #include <windows.h>
@@ -13,9 +15,47 @@ static volatile LONG g_started = 0, g_done = 0;
 static std::string g_current, g_latest;
 static CRITICAL_SECTION g_lock;
 
+// GitHub first (Athelas' home again since 11 Nov 2026), GitLab when GitHub doesn't answer; the update is then
+// downloaded from whichever answered
 static const wchar_t kHost[] = L"github.com";
-static const wchar_t kPath[] = L"/Shagg88/Athelas/releases/latest";
-const char *update_page() { return "https://github.com/Shagg88/Athelas/releases/latest"; }
+static volatile LONG g_fromGitLab = 0;
+const char *update_page()
+{
+    return g_fromGitLab ? "https://gitlab.com/shagg88/athelas/-/releases" : "https://github.com/Shagg88/Athelas/releases/latest";
+}
+
+// a HEAD of https://<host><path> without following its redirect: the Location, or "" (none, or no answer)
+static std::wstring redirect_of(HINTERNET s, const wchar_t *host, const wchar_t *path)
+{
+    std::wstring out;
+    HINTERNET c = WinHttpConnect(s, host, INTERNET_DEFAULT_HTTPS_PORT, 0);
+    HINTERNET r = c ? WinHttpOpenRequest(c, L"HEAD", path, NULL, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES,
+                                         WINHTTP_FLAG_SECURE) : NULL;
+    if (r) {
+        DWORD off = WINHTTP_DISABLE_REDIRECTS;
+        WinHttpSetOption(r, WINHTTP_OPTION_DISABLE_FEATURE, &off, sizeof off);
+        if (WinHttpSendRequest(r, WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0) &&
+            WinHttpReceiveResponse(r, NULL)) {
+            wchar_t loc[1024];
+            DWORD size = sizeof loc;
+            if (WinHttpQueryHeaders(r, WINHTTP_QUERY_LOCATION, WINHTTP_HEADER_NAME_BY_INDEX, loc, &size, WINHTTP_NO_HEADER_INDEX))
+                out = loc;
+        }
+        WinHttpCloseHandle(r);
+    }
+    if (c) WinHttpCloseHandle(c);
+    return out;
+}
+// the part of loc after marker, up to / ? or # ("" when the marker isn't there)
+static std::string tag_after(const std::wstring &loc, const wchar_t *marker)
+{
+    std::string found;
+    size_t at = loc.find(marker);
+    if (at == std::wstring::npos) return found;
+    for (size_t i = at + wcslen(marker); i < loc.size() && loc[i] != L'/' && loc[i] != L'?' && loc[i] != L'#' && found.size() < 32; i++)
+        found += (char)(loc[i] < 128 ? loc[i] : '?');
+    return found;
+}
 
 // "v1.0.2" or "1.0.2" against "1.0.1": numbers compared part by part; anything else (a test build's "dev") is never newer
 static bool newer(const std::string &a, const std::string &b)
@@ -41,27 +81,14 @@ static DWORD WINAPI check(void *)
                               WINHTTP_NO_PROXY_BYPASS, 0);
     if (s) {
         WinHttpSetTimeouts(s, 5000, 5000, 5000, 5000);
-        HINTERNET c = WinHttpConnect(s, kHost, INTERNET_DEFAULT_HTTPS_PORT, 0);
-        HINTERNET r = c ? WinHttpOpenRequest(c, L"HEAD", kPath, NULL, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES,
-                                             WINHTTP_FLAG_SECURE) : NULL;
-        if (r) {
-            DWORD off = WINHTTP_DISABLE_REDIRECTS;
-            WinHttpSetOption(r, WINHTTP_OPTION_DISABLE_FEATURE, &off, sizeof off);
-            if (WinHttpSendRequest(r, WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0) &&
-                WinHttpReceiveResponse(r, NULL)) {
-                wchar_t loc[1024];
-                DWORD size = sizeof loc;
-                if (WinHttpQueryHeaders(r, WINHTTP_QUERY_LOCATION, WINHTTP_HEADER_NAME_BY_INDEX, loc, &size,
-                                        WINHTTP_NO_HEADER_INDEX)) {
-                    const wchar_t *t = wcsstr(loc, L"/releases/tag/");
-                    if (t)
-                        for (t += 14; *t && *t != L'/' && *t != L'?' && found.size() < 32; t++)
-                            found += (char)(*t < 128 ? *t : '?');
-                }
-            }
-            WinHttpCloseHandle(r);
+        // GitHub: /releases/latest redirects to /releases/tag/<version>
+        found = tag_after(redirect_of(s, L"github.com", L"/Shagg88/Athelas/releases/latest"), L"/releases/tag/");
+        if (found.empty()) {
+            // GitLab: /-/releases/permalink/latest redirects to /-/releases/<version>
+            found = tag_after(redirect_of(s, L"gitlab.com", L"/shagg88/athelas/-/releases/permalink/latest"), L"/-/releases/");
+            if (found == "permalink") found.clear();
+            if (!found.empty()) InterlockedExchange(&g_fromGitLab, 1);
         }
-        if (c) WinHttpCloseHandle(c);
         WinHttpCloseHandle(s);
     }
     EnterCriticalSection(&g_lock);
@@ -92,11 +119,12 @@ std::string update_newer()
 
 bool update_checked() { return g_done != 0; }
 
-// ---- Installing an update: the release's zip and its .sha256 from GitHub, checked, then unpacked over this folder.
+// ---- Installing an update: the release's .7z and its .sha256 from GitHub (or GitLab), checked, then unpacked over this folder.
 // A running program and its DLLs can be renamed but not overwritten, so each file it replaces is first renamed to
 // <name>.old-athelas (deleted at the next start) and the new one moved into its place. If anything fails half way,
 // the files already replaced are put back.
 #include "../third_party/miniz/miniz.h"
+#include "unpack7z.h"
 #include <bcrypt.h>
 #include <vector>
 
@@ -113,7 +141,7 @@ static std::wstring exe_dir_w()
     return s.substr(0, s.find_last_of(L'\\'));
 }
 
-// a GET of https://<host><path> (github.com unless given), redirects followed (release files are served from another host)
+// a GET of https://<host><path> (gitlab.com unless given), redirects followed (release links lead to where the file is stored)
 static bool http_get(const std::wstring &path, std::string &out, bool progress, const wchar_t *host = kHost)
 {
     out.clear();
@@ -136,12 +164,15 @@ static bool http_get(const std::wstring &path, std::string &out, bool progress, 
                             &size, WINHTTP_NO_HEADER_INDEX);
         if (status == 200) {
             ok = true;
+            // one block of the right size up front: growing a 124 MB string in a 32-bit launcher needs a 256 MB block
+            // at some point, which can fail; a failure is an ordinary "couldn't download", not a crash
+            try { if (total) out.reserve(total); } catch (...) { ok = false; }
             char buf[65536];
             DWORD got = 0;
             for (;;) {
                 if (!WinHttpReadData(r, buf, sizeof buf, &got)) { ok = false; break; }
                 if (!got) break;
-                out.append(buf, got);
+                try { out.append(buf, got); } catch (...) { ok = false; break; }
                 if (progress && total) InterlockedExchange(&g_ipermille, (LONG)(out.size() * 1000ull / total));
             }
             if (total && out.size() != total) ok = false;
@@ -206,50 +237,46 @@ static bool install(const std::string &version)
     if (ph == INVALID_HANDLE_VALUE) return fail("Windows doesn't let Athelas change its own folder. Download the update from its page instead.");
     CloseHandle(ph);
 
-    // one zip for every PC since 1.7.7: it carries the ports' ARM64 builds and ARM64.txt as well (a release before
-    // it had a separate -arm64.zip, which a Windows on ARM PC took)
-    std::wstring base = L"/Shagg88/Athelas/releases/download/" + widen(version) + L"/Athelas-" + widen(version) + L".zip";
+    // one download for every PC since 1.7.7 (it carries the ports' ARM64 builds and ARM64.txt as well); a .7z since
+    // 1.8.3 (smaller), the .zip for a release before it
+    // GitHub: /releases/download/<tag>/Athelas-<version>.7z; GitLab: /-/releases/<tag>/downloads/Athelas-<version>.7z
+    // (the release link's direct path)
+    const bool gl = g_fromGitLab != 0;
+    const wchar_t *host = gl ? L"gitlab.com" : L"github.com";
+    std::wstring tag = gl ? L"/shagg88/athelas/-/releases/" + widen(version) + L"/downloads/Athelas-" + widen(version)
+                          : L"/Shagg88/Athelas/releases/download/" + widen(version) + L"/Athelas-" + widen(version);
+    std::wstring page_path = gl ? L"/shagg88/athelas/-/releases/" + widen(version) : L"/Shagg88/Athelas/releases/tag/" + widen(version);
+    auto file = [](const std::wstring &p) { return p; };
     std::string sum, zip;
-    // its checksum: the .sha256 beside the zip, else the one the release notes give ("SHA-256: `...`")
-    if (!http_get(base + L".sha256", sum, false) || sum.size() < 64 || !is_hex64(sum.substr(0, 64))) {
+    bool sevenz = false;
+    // its checksum: the .sha256 beside the download, else the one the release notes give ("SHA-256: `...`")
+    for (int k = 0; k < 2 && sum.empty(); k++) {
+        std::string s;
+        if (http_get(file(tag + (k == 0 ? L".7z.sha256" : L".zip.sha256")), s, false, host) && s.size() >= 64 && is_hex64(s.substr(0, 64))) {
+            sum = s; sevenz = k == 0;
+        }
+    }
+    std::wstring base = tag + (sevenz ? L".7z" : L".zip");
+    if (sum.empty()) {
         std::string page;
-        sum.clear();
-        if (http_get(L"/Shagg88/Athelas/releases/tag/" + widen(version), page, false)) {
+        if (http_get(page_path, page, false, host)) {
             size_t at = page.find("SHA-256");
             while (at != std::string::npos && sum.empty()) {
                 for (size_t i = at; i + 64 <= page.size() && i < at + 400; i++)
                     if (is_hex64(page.substr(i, 64)) && (i == 0 || !isxdigit((unsigned char)page[i - 1]))) { sum = page.substr(i, 64); break; }
                 at = page.find("SHA-256", at + 7);
             }
+            sevenz = page.find("Athelas-" + version + ".7z") != std::string::npos;
+            base = tag + (sevenz ? L".7z" : L".zip");
         }
         if (sum.empty()) return fail("The update's checksum couldn't be found. Try again later, or download it from its page.");
     }
     sum = sum.substr(0, 64);
     for (char &ch : sum) ch = (char)tolower((unsigned char)ch);
-    if (!http_get(base, zip, true)) return fail("The download didn't finish. Check the internet connection and try again.");
+    if (!http_get(file(base), zip, true, host)) return fail("The download didn't finish. Check the internet connection and try again.");
     if (sha256_hex(zip) != sum) return fail("The download was damaged (its checksum doesn't match). Try again.");
 
     InterlockedExchange(&g_istate, 2);
-    mz_zip_archive ar;
-    memset(&ar, 0, sizeof ar);
-    if (!mz_zip_reader_init_mem(&ar, zip.data(), zip.size(), 0)) return fail("The update couldn't be opened.");
-    mz_uint count = mz_zip_reader_get_num_files(&ar);
-    // the files, and the folder they are all in when the zip has one at its top ("Athelas-1.1/...")
-    std::vector<std::string> names(count);
-    std::string top;
-    bool one_top = true;
-    for (mz_uint i = 0; i < count; i++) {
-        char n[1024];
-        mz_zip_reader_get_filename(&ar, i, n, sizeof n);
-        names[i] = n;
-        std::string first = names[i].substr(0, names[i].find('/') + 1);
-        if (i == 0) top = first;
-        if (first.empty() || first != top) one_top = false;
-    }
-    bool has_root_exe = false;
-    for (auto &n : names) if (n == "Athelas.exe") has_root_exe = true;
-    size_t strip = one_top && !has_root_exe ? top.size() : 0;
-
     struct Done { std::wstring target; bool had_old; };
     std::vector<Done> done;
     auto undo = [&] {
@@ -258,39 +285,75 @@ static bool install(const std::string &version)
             if (it->had_old) MoveFileExW((it->target + L".old-athelas").c_str(), it->target.c_str(), MOVEFILE_REPLACE_EXISTING);
         }
     };
-    bool ok = true;
-    for (mz_uint i = 0; i < count && ok; i++) {
-        if (mz_zip_reader_is_file_a_directory(&ar, i)) continue;
-        std::string rel = names[i].substr(std::min(strip, names[i].size()));
-        if (rel.empty() || rel.find("..") != std::string::npos || rel[0] == '/' || rel.find(':') != std::string::npos) continue;
+    // one file of the update put in place: written beside it first, the old one kept until the whole update is in
+    auto put = [&](std::string rel, const void *p, size_t size) -> bool {
+        if (rel.empty() || rel.find("..") != std::string::npos || rel[0] == '/' || rel.find(':') != std::string::npos) return true;
         for (char &ch : rel) if (ch == '/') ch = '\\';
         std::wstring target = g_exe_dir + L"\\" + widen(rel), fresh = target + L".new-athelas";
-        size_t size = 0;
-        void *p = mz_zip_reader_extract_to_heap(&ar, i, &size, 0);
-        if (!p) { ok = fail("The update couldn't be unpacked (" + rel + ")."); break; }
         make_dirs(target);
         HANDLE f = CreateFileW(fresh.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
         DWORD wrote = 0;
-        bool written = f != INVALID_HANDLE_VALUE && WriteFile(f, p, (DWORD)size, &wrote, NULL) && wrote == size;
+        bool written = f != INVALID_HANDLE_VALUE && (size == 0 || (WriteFile(f, p, (DWORD)size, &wrote, NULL) && wrote == size));
         if (f != INVALID_HANDLE_VALUE) CloseHandle(f);
-        mz_free(p);
-        if (!written) { DeleteFileW(fresh.c_str()); ok = fail("Couldn't write " + rel + "."); break; }
+        if (!written) { DeleteFileW(fresh.c_str()); return fail("Couldn't write " + rel + "."); }
         bool had = GetFileAttributesW(target.c_str()) != INVALID_FILE_ATTRIBUTES;
         if (had && !MoveFileExW(target.c_str(), (target + L".old-athelas").c_str(), MOVEFILE_REPLACE_EXISTING)) {
             DeleteFileW(fresh.c_str());
-            ok = fail("Couldn't replace " + rel + " (is a game still running?).");
-            break;
+            return fail("Couldn't replace " + rel + " (is a game still running?).");
         }
         if (!MoveFileExW(fresh.c_str(), target.c_str(), MOVEFILE_REPLACE_EXISTING)) {
             if (had) MoveFileExW((target + L".old-athelas").c_str(), target.c_str(), MOVEFILE_REPLACE_EXISTING);
             DeleteFileW(fresh.c_str());
-            ok = fail("Couldn't replace " + rel + ".");
-            break;
+            return fail("Couldn't replace " + rel + ".");
         }
         done.push_back({target, had});
-        InterlockedExchange(&g_ipermille, (LONG)((i + 1) * 1000ull / count));
+        return true;
+    };
+    bool ok = true;
+    if (sevenz) {
+        // made by package.sh with its files at the top (Athelas.exe beside the folders), in blocks small enough for
+        // this 32-bit program to unpack one at a time
+        bool any = false;
+        ok = unpack7z(zip, [&](const std::string &name, bool dir, const void *data, size_t size) {
+                 if (dir) return true;
+                 any = true;
+                 return put(name, data, size);
+             },
+             [&](unsigned n, unsigned count) { InterlockedExchange(&g_ipermille, (LONG)(n * 1000ull / (count ? count : 1))); });
+        if (!ok && g_istate != -1) fail("The update couldn't be opened or unpacked.");
+        ok = ok && any;
+    } else {
+        mz_zip_archive ar;
+        memset(&ar, 0, sizeof ar);
+        if (!mz_zip_reader_init_mem(&ar, zip.data(), zip.size(), 0)) return fail("The update couldn't be opened.");
+        mz_uint count = mz_zip_reader_get_num_files(&ar);
+        // the files, and the folder they are all in when the zip has one at its top ("Athelas-1.1/...")
+        std::vector<std::string> names(count);
+        std::string top;
+        bool one_top = true;
+        for (mz_uint i = 0; i < count; i++) {
+            char n[1024];
+            mz_zip_reader_get_filename(&ar, i, n, sizeof n);
+            names[i] = n;
+            std::string first = names[i].substr(0, names[i].find('/') + 1);
+            if (i == 0) top = first;
+            if (first.empty() || first != top) one_top = false;
+        }
+        bool has_root_exe = false;
+        for (auto &n : names) if (n == "Athelas.exe") has_root_exe = true;
+        size_t strip = one_top && !has_root_exe ? top.size() : 0;
+        for (mz_uint i = 0; i < count && ok; i++) {
+            if (mz_zip_reader_is_file_a_directory(&ar, i)) continue;
+            std::string rel = names[i].substr(std::min(strip, names[i].size()));
+            size_t size = 0;
+            void *p = mz_zip_reader_extract_to_heap(&ar, i, &size, 0);
+            if (!p) { ok = fail("The update couldn't be unpacked (" + rel + ")."); break; }
+            ok = put(rel, p, size);
+            mz_free(p);
+            InterlockedExchange(&g_ipermille, (LONG)((i + 1) * 1000ull / count));
+        }
+        mz_zip_reader_end(&ar);
     }
-    mz_zip_reader_end(&ar);
     if (!ok) { undo(); return false; }
     InterlockedExchange(&g_istate, 3);
     return true;
@@ -351,4 +414,93 @@ bool update_restart()
     CloseHandle(pi.hThread);
     CloseHandle(pi.hProcess);
     return true;
+}
+
+// ---- After an update (by the launcher or a .7z extracted by hand): the files an older Athelas shipped that this one
+// doesn't are removed, so nothing left over can clash with the new version (Shagg, 8 Nov 2026).
+// athelas-files.txt (this download's files and their SHA-256) against athelas-installed.txt (the list the last run
+// saw) and athelas-shipped-before.txt (what 1.8.2 shipped, for a folder from before these lists). A file is removed
+// only when its contents are still exactly what an Athelas download put there: a file the player changed or added,
+// settings, saves, shader caches, logs and texture packs are never touched.
+#include <map>
+static bool read_all(const std::wstring &path, std::string &out)
+{
+    out.clear();
+    HANDLE f = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+    if (f == INVALID_HANDLE_VALUE) return false;
+    LARGE_INTEGER n;
+    bool ok = GetFileSizeEx(f, &n) && n.QuadPart < (1LL << 30);
+    if (ok) {
+        out.resize((size_t)n.QuadPart);
+        DWORD got = 0;
+        ok = out.empty() || (ReadFile(f, &out[0], (DWORD)out.size(), &got, NULL) && got == out.size());
+    }
+    CloseHandle(f);
+    return ok;
+}
+// "<sha256>  <path>" lines; the path lower-cased with backslashes as the key
+static void read_list(const std::wstring &path, std::map<std::string, std::string> &into)
+{
+    std::string t;
+    if (!read_all(path, t)) return;
+    size_t at = 0;
+    while (at < t.size()) {
+        size_t e = t.find('\n', at);
+        std::string l = t.substr(at, e == std::string::npos ? std::string::npos : e - at);
+        at = e == std::string::npos ? t.size() : e + 1;
+        while (!l.empty() && (l.back() == '\r' || l.back() == ' ')) l.pop_back();
+        if (l.size() < 67 || !is_hex64(l.substr(0, 64)) || l[64] != ' ') continue;
+        std::string p = l.substr(l[65] == ' ' || l[65] == '*' ? 66 : 65);
+        for (char &ch : p) ch = ch == '/' ? '\\' : (char)tolower((unsigned char)ch);
+        into[p] = l.substr(0, 64);
+    }
+}
+static bool protected_path(const std::string &p)
+{
+    if (p.empty() || p.find("..") != std::string::npos || p.find(':') != std::string::npos || p[0] == '\\') return true;
+    for (const char *part : { "saves\\", "shadercache", "logs\\", "reports\\", "textures\\", "screenshots", "my game\\" })
+        if (p.find(part) != std::string::npos) return true;
+    for (const char *ext : { ".ini", ".toml", ".sav", ".log" })
+        if (p.size() > strlen(ext) && !p.compare(p.size() - strlen(ext), strlen(ext), ext)) return true;
+    return p == "athelas-files.txt" || p == "athelas-installed.txt";
+}
+
+int update_remove_leftovers()
+{
+    std::wstring dir = exe_dir_w();
+    std::string now, before;
+    if (!read_all(dir + L"\\athelas-files.txt", now)) return 0;    // a build from source: no list, nothing done
+    if (read_all(dir + L"\\athelas-installed.txt", before) && before == now) return 0;   // the same version as last time
+    std::map<std::string, std::string> cur, old;
+    read_list(dir + L"\\athelas-files.txt", cur);
+    if (cur.empty()) return 0;
+    read_list(dir + L"\\athelas-shipped-before.txt", old);
+    read_list(dir + L"\\athelas-installed.txt", old);
+    int removed = 0, stuck = 0;
+    std::string log;
+    for (auto &kv : old) {
+        if (cur.count(kv.first) || protected_path(kv.first)) continue;
+        std::wstring f = dir + L"\\" + widen(kv.first);
+        std::string data;
+        if (!read_all(f, data) || sha256_hex(data) != kv.second) continue;   // gone already, or not ours as it was
+        if (!DeleteFileW(f.c_str()) && !MoveFileExW(f.c_str(), (f + L".old-athelas").c_str(), MOVEFILE_REPLACE_EXISTING)) { stuck++; continue; }
+        removed++;
+        log += kv.first + "\r\n";
+        // its folder too, once nothing is left in it (RemoveDirectory only takes an empty one)
+        for (std::wstring d = f.substr(0, f.find_last_of(L'\\')); d.size() > dir.size(); d = d.substr(0, d.find_last_of(L'\\')))
+            if (!RemoveDirectoryW(d.c_str())) break;
+    }
+    if (removed) {
+        HANDLE h = CreateFileW((dir + L"\\athelas-cleanup.log").c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
+        if (h != INVALID_HANDLE_VALUE) {
+            std::string head = "Left over from an older Athelas and removed (" + std::to_string(removed) + "):\r\n";
+            DWORD w;
+            WriteFile(h, head.data(), (DWORD)head.size(), &w, NULL);
+            WriteFile(h, log.data(), (DWORD)log.size(), &w, NULL);
+            CloseHandle(h);
+        }
+    }
+    // a file that couldn't go (a game still running) is tried again next start
+    if (!stuck) CopyFileW((dir + L"\\athelas-files.txt").c_str(), (dir + L"\\athelas-installed.txt").c_str(), FALSE);
+    return removed;
 }

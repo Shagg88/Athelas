@@ -1,8 +1,10 @@
-// Temporal upscaling: AMD FSR (FSR 4 on the Radeon cards that have it, FSR 3.1 on every other card) and NVIDIA DLSS
-// Super Resolution (RTX cards), behind one interface. Both take the frame at the render size, its depth, motion
-// vectors (from the current pixel to where it was a frame earlier, in UV units) and the camera jitter, and write the
-// frame at the output size. Their DLLs are loaded at run time from beside the game: without them (the ARM64 builds,
-// a copy without the files) the setting falls back to off and says why in the log.
+// Temporal upscaling: AMD FSR (FSR 4 on the Radeon cards that have it, FSR 3.1 on every other card), NVIDIA DLSS
+// Super Resolution (RTX cards) and Intel XeSS Super Resolution (any card), behind one interface. All take the frame at
+// the render size, its depth, motion vectors (from the current pixel to where it was a frame earlier, in UV units) and
+// the camera jitter, and write the frame at the output size. Frame generation goes with the upscaler: FSR's with FSR,
+// XeSS's (XeFG, with Intel's XeLL latency markers) with XeSS, DLSS's (DLSS-G, with Reflex) with DLSS. Their DLLs are
+// loaded at run time from beside the game: without them (the ARM64 builds, a copy without the files) the setting
+// falls back to off and says why in the log.
 #pragma once
 #include <cstdint>
 #include <memory>
@@ -21,7 +23,7 @@
 
 namespace gpu::up {
 
-enum Kind : uint32_t { kOff = 0, kFsr = 1, kDlss = 2 };
+enum Kind : uint32_t { kOff = 0, kFsr = 1, kDlss = 2, kXess = 3 };
 // [graphics] upscaler_quality
 enum Quality : uint32_t { kNative = 0, kQuality = 1, kBalanced = 2, kPerformance = 3, kUltraPerformance = 4 };
 
@@ -66,18 +68,31 @@ std::unique_ptr<Upscaler> Create(Kind k, Quality q, ID3D12Device* dev, ID3D12Com
                                  uint32_t out_w, uint32_t out_h, uint32_t max_render_w, uint32_t max_render_h, bool hdr,
                                  std::string& why);
 
-// ------------------------------------------------------------------------------------- AMD FSR frame generation
-// One made-up frame shown between each two the game draws (FSR 3.1 / FSR 4 frame generation, AMD's
-// amd_fidelityfx_framegeneration_dx12.dll): it needs FSR's own swap chain, so it is set up at start, and only with the
-// FSR upscaler (it takes the same depth and motion). Frames without 3D (menus, films) are shown as they are.
+// ----------------------------------------------------------------------------------------- frame generation
+// Made-up frames shown between each two the game draws. Each kind needs its own swap chain, so it is set up at start,
+// and each goes only with its own upscaler, as it takes the same depth, motion and jitter:
+//   FSR:  one made-up frame (AMD's amd_fidelityfx_framegeneration_dx12.dll)
+//   XeSS: XeFG, libxess_fg.dll with libxell.dll (Intel's latency reduction, which XeFG refuses to run without); one
+//         made-up frame on AMD and NVIDIA cards, up to three on Intel's
+//   DLSS: DLSS-G through Streamline (sl.dlss_g.dll, nvngx_dlssg.dll, with Reflex), RTX 40 and 50 by NVIDIA's rules;
+//         up to three made-up frames where the card has multi frame generation (RTX 50)
+// Frames without 3D (menus, films) are shown as they are.
 
-// [graphics] frame_generation on, FSR the upscaler, the files there: the swap chain is made through FSR (false and
-// why: the caller makes the normal one)
-bool FgCreateSwapChain(HWND hwnd, DXGI_SWAP_CHAIN_DESC1& desc, IDXGIFactory* factory, ID3D12CommandQueue* queue,
-                       IDXGISwapChain4** out, std::string& why);
-bool FgActive();  // the swap chain is FSR's
+// [graphics] frame_generation on, the upscaler's kind available, the files there: the swap chain is made through it
+// (false and why: the caller makes the normal one). dev: XeFG and XeLL are made for the device.
+bool FgCreateSwapChain(HWND hwnd, DXGI_SWAP_CHAIN_DESC1& desc, IDXGIFactory* factory, ID3D12Device* dev,
+                       ID3D12CommandQueue* queue, IDXGISwapChain4** out, std::string& why);
+bool FgActive();          // the swap chain is frame generation's
+const char* FgName();     // for the log: "AMD FSR", "Intel XeSS", "NVIDIA DLSS"
+
+// The points of each frame that XeLL and Reflex time the game by (frame generation holds frames back, so both need
+// them to keep the controls from lagging). Called at every Present, with or without frame generation: nothing is done
+// without XeFG or DLSS-G. The next frame starts (XeLL / Reflex may wait there) at kPresentEnd.
+enum Mark : uint32_t { kSimEnd, kSubmitStart, kSubmitEnd, kPresentStart, kPresentEnd };
+void FgMark(Mark m);
 
 struct FgFrame {
+    Kind upscaler = kOff;              // the upscaler that ran on the frame: another kind than frame generation's pauses it
     ID3D12GraphicsCommandList* cl = nullptr;
     ID3D12Resource* depth = nullptr;   // as up::Frame, in PIXEL_SHADER_RESOURCE state
     ID3D12Resource* motion = nullptr;
@@ -92,6 +107,12 @@ struct FgFrame {
 };
 // a 3D frame upscaled: frame generation readied for it (records into f.cl, before the frame is drawn to the screen)
 bool FgPrepare(ID3D12Device* dev, const FgFrame& f);
+// before the swap chain's ResizeBuffers (the GPU idle): DLSS-G and XeFG paused, FSR's context (made for the old
+// display size) destroyed after its presents; each starts again at the new size with the next 3D frame
+void FgResize();
+// DLSS-G paces the frames itself (the driver keeps to the screen's refresh): Present with sync interval 0 and tearing
+// allowed while it is the frame generation
+bool FgPresentUnsynced();
 // a frame with nothing to make frames from (menus, films, the upscaler off for it): shown as it is
 void FgPause();
 // before the swap chain goes (the game's queue idle): FSR's presents waited for, frame generation's context destroyed
