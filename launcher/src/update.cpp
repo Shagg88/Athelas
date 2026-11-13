@@ -1,3 +1,4 @@
+#include <functional>
 // update.h: GitLab answers /-/releases/permalink/latest with a redirect to /-/releases/<tag>; the version is read
 // from that address, without following it (no API, nothing to parse but one header). GitLab since 9 Nov 2026 (the
 // GitHub account was suspended). Each release's tag is its version ("1.8.3") and it carries the .7z and its .sha256
@@ -13,6 +14,7 @@
 
 static volatile LONG g_started = 0, g_done = 0;
 static std::string g_current, g_latest;
+static std::string g_tag;   // the release's tag as its page has it ("1.8.4", or "v1.8.4"): the download's address uses it as it is
 static CRITICAL_SECTION g_lock;
 
 // GitHub first (Athelas' home again since 11 Nov 2026), GitLab when GitHub doesn't answer; the update is then
@@ -58,7 +60,7 @@ static std::string tag_after(const std::wstring &loc, const wchar_t *marker)
 }
 
 // "v1.0.2" or "1.0.2" against "1.0.1": numbers compared part by part; anything else (a test build's "dev") is never newer
-static bool newer(const std::string &a, const std::string &b)
+bool update_version_newer(const std::string &a, const std::string &b)
 {
     const char *p = a.c_str(), *q = b.c_str();
     if (*p == 'v' || *p == 'V') p++;
@@ -92,7 +94,8 @@ static DWORD WINAPI check(void *)
         WinHttpCloseHandle(s);
     }
     EnterCriticalSection(&g_lock);
-    g_latest = newer(found, g_current) ? (found[0] == 'v' || found[0] == 'V' ? found.substr(1) : found) : "";
+    g_latest = update_version_newer(found, g_current) ? (found[0] == 'v' || found[0] == 'V' ? found.substr(1) : found) : "";
+    g_tag = g_latest.empty() ? "" : found;
     LeaveCriticalSection(&g_lock);
     InterlockedExchange(&g_done, 1);
     return 0;
@@ -142,13 +145,26 @@ static std::wstring exe_dir_w()
 }
 
 // a GET of https://<host><path> (gitlab.com unless given), redirects followed (release links lead to where the file is stored)
-static bool http_get(const std::wstring &path, std::string &out, bool progress, const wchar_t *host = kHost)
+// With toFile, the body is written to that file as it arrives (never held in memory whole) and out gets its SHA-256
+// as 64 hex digits.
+static bool http_get(const std::wstring &path, std::string &out, bool progress, const wchar_t *host = kHost, HANDLE toFile = NULL)
 {
     out.clear();
+    BCRYPT_ALG_HANDLE halg = NULL;
+    BCRYPT_HASH_HANDLE hh = NULL;
+    if (toFile && (BCryptOpenAlgorithmProvider(&halg, BCRYPT_SHA256_ALGORITHM, NULL, 0) != 0 ||
+                   BCryptCreateHash(halg, &hh, NULL, 0, NULL, 0, 0) != 0)) {
+        if (halg) BCryptCloseAlgorithmProvider(halg, 0);
+        return false;
+    }
     bool ok = false;
     HINTERNET s = WinHttpOpen(L"Athelas launcher", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, WINHTTP_NO_PROXY_NAME,
                               WINHTTP_NO_PROXY_BYPASS, 0);
-    if (!s) return false;
+    if (!s) {
+        if (hh) BCryptDestroyHash(hh);
+        if (halg) BCryptCloseAlgorithmProvider(halg, 0);
+        return false;
+    }
     WinHttpSetTimeouts(s, 10000, 10000, 15000, 30000);
     HINTERNET c = WinHttpConnect(s, host, INTERNET_DEFAULT_HTTPS_PORT, 0);
     HINTERNET r = c ? WinHttpOpenRequest(c, L"GET", path.c_str(), NULL, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES,
@@ -166,17 +182,35 @@ static bool http_get(const std::wstring &path, std::string &out, bool progress, 
             ok = true;
             // one block of the right size up front: growing a 124 MB string in a 32-bit launcher needs a 256 MB block
             // at some point, which can fail; a failure is an ordinary "couldn't download", not a crash
-            try { if (total) out.reserve(total); } catch (...) { ok = false; }
+            try { if (total && !toFile) out.reserve(total); } catch (...) { ok = false; }
             char buf[65536];
             DWORD got = 0;
+            unsigned long long sofar = 0;
             for (;;) {
                 if (!WinHttpReadData(r, buf, sizeof buf, &got)) { ok = false; break; }
                 if (!got) break;
-                try { out.append(buf, got); } catch (...) { ok = false; break; }
-                if (progress && total) InterlockedExchange(&g_ipermille, (LONG)(out.size() * 1000ull / total));
+                if (toFile) {
+                    DWORD wrote = 0;
+                    if (!WriteFile(toFile, buf, got, &wrote, NULL) || wrote != got || BCryptHashData(hh, (PUCHAR)buf, got, 0) != 0) { ok = false; break; }
+                } else {
+                    // (only the download itself is large, and it goes to a file: a checksum or a page
+                    // of this size isn't one)
+                    if (out.size() + got > (16u << 20)) { ok = false; break; }
+                    try { out.append(buf, got); } catch (...) { ok = false; break; }
+                }
+                sofar += got;
+                if (progress && total) InterlockedExchange(&g_ipermille, (LONG)(sofar * 1000ull / total));
             }
-            if (total && out.size() != total) ok = false;
+            if (total && sofar != total) ok = false;
         }
+    }
+    if (toFile) {
+        unsigned char d[32];
+        if (ok && BCryptFinishHash(hh, d, 32, 0) == 0)
+            for (unsigned char v : d) { out += "0123456789abcdef"[v >> 4]; out += "0123456789abcdef"[v & 15]; }
+        else ok = false;
+        BCryptDestroyHash(hh);
+        BCryptCloseAlgorithmProvider(halg, 0);
     }
     if (r) WinHttpCloseHandle(r);
     if (c) WinHttpCloseHandle(c);
@@ -185,21 +219,6 @@ static bool http_get(const std::wstring &path, std::string &out, bool progress, 
 }
 
 bool http_download(const wchar_t *host, const std::wstring &path, std::string &out) { return http_get(path, out, false, host); }
-
-static std::string sha256_hex(const std::string &data)
-{
-    BCRYPT_ALG_HANDLE alg = NULL;
-    BCRYPT_HASH_HANDLE h = NULL;
-    unsigned char d[32];
-    std::string hex;
-    if (BCryptOpenAlgorithmProvider(&alg, BCRYPT_SHA256_ALGORITHM, NULL, 0) != 0) return "";
-    if (BCryptCreateHash(alg, &h, NULL, 0, NULL, 0, 0) == 0 &&
-        BCryptHashData(h, (PUCHAR)data.data(), (ULONG)data.size(), 0) == 0 && BCryptFinishHash(h, d, 32, 0) == 0)
-        for (unsigned char b : d) { hex += "0123456789abcdef"[b >> 4]; hex += "0123456789abcdef"[b & 15]; }
-    if (h) BCryptDestroyHash(h);
-    BCryptCloseAlgorithmProvider(alg, 0);
-    return hex;
-}
 
 static std::wstring widen(const std::string &s)
 {
@@ -215,11 +234,23 @@ static void make_dirs(const std::wstring &file)
         CreateDirectoryW(file.substr(0, i).c_str(), NULL);
 }
 
+// the reason only: the thread reports "failed" once everything is undone (install_thread), so "Try again" can't
+// start a second install while the first is still putting files back
 static bool fail(const std::string &why)
 {
-    g_ierror = why;
-    InterlockedExchange(&g_istate, -1);
+    if (g_ierror.empty()) g_ierror = why;
     return false;
+}
+// an install in progress, noted beside the launcher: if Athelas ends before it finishes (closed, crashed, power cut),
+// the next start puts the old files back (update_tidy) instead of keeping a mix of two versions
+static std::wstring journal_path() { return g_exe_dir + L"\\athelas-update-unfinished.txt"; }
+// a read-only file (7-Zip keeps the attribute when it extracts; 1.8.3's .7z had 81 such files) can be renamed but not
+// deleted or moved onto: before either, the attribute is cleared (review). Nothing happens when it isn't there.
+static void make_writable(const std::wstring &p)
+{
+    DWORD a = GetFileAttributesW(p.c_str());
+    if (a != INVALID_FILE_ATTRIBUTES && (a & FILE_ATTRIBUTE_READONLY) && !(a & FILE_ATTRIBUTE_DIRECTORY))
+        SetFileAttributesW(p.c_str(), a & ~FILE_ATTRIBUTE_READONLY);
 }
 
 static bool is_hex64(const std::string &t)
@@ -229,8 +260,15 @@ static bool is_hex64(const std::string &t)
     return true;
 }
 
+static std::wstring download_path() { return g_exe_dir + L"\\athelas-update.download"; }
+
+static void finish_unfinished();
 static bool install(const std::string &version)
 {
+    finish_unfinished();   // a journal left by an earlier attempt: its files are put back before anything new
+    if (GetFileAttributesW(journal_path().c_str()) != INVALID_FILE_ATTRIBUTES)   // it couldn't be (before the download, not after)
+        return fail("An earlier update couldn't be fully undone (a file was in use, or another Athelas window is installing). "
+                    "Close every Athelas window, start it again, then try again.");
     // somewhere to write first (a protected folder such as Program Files needs the download page instead)
     std::wstring probe = g_exe_dir + L"\\athelas-update-test.tmp";
     HANDLE ph = CreateFileW(probe.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_FLAG_DELETE_ON_CLOSE, NULL);
@@ -243,9 +281,13 @@ static bool install(const std::string &version)
     // (the release link's direct path)
     const bool gl = g_fromGitLab != 0;
     const wchar_t *host = gl ? L"gitlab.com" : L"github.com";
-    std::wstring tag = gl ? L"/shagg88/athelas/-/releases/" + widen(version) + L"/downloads/Athelas-" + widen(version)
-                          : L"/Shagg88/Athelas/releases/download/" + widen(version) + L"/Athelas-" + widen(version);
-    std::wstring page_path = gl ? L"/shagg88/athelas/-/releases/" + widen(version) : L"/Shagg88/Athelas/releases/tag/" + widen(version);
+    // (the tag as the release has it - a "v1.8.4" tag's files are under v1.8.4 - and the file's name without the v)
+    EnterCriticalSection(&g_lock);
+    std::wstring rtag = widen(g_tag.empty() ? version : g_tag);
+    LeaveCriticalSection(&g_lock);
+    std::wstring tag = gl ? L"/shagg88/athelas/-/releases/" + rtag + L"/downloads/Athelas-" + widen(version)
+                          : L"/Shagg88/Athelas/releases/download/" + rtag + L"/Athelas-" + widen(version);
+    std::wstring page_path = gl ? L"/shagg88/athelas/-/releases/" + rtag : L"/Shagg88/Athelas/releases/tag/" + rtag;
     auto file = [](const std::wstring &p) { return p; };
     std::string sum, zip;
     bool sevenz = false;
@@ -273,18 +315,71 @@ static bool install(const std::string &version)
     }
     sum = sum.substr(0, 64);
     for (char &ch : sum) ch = (char)tolower((unsigned char)ch);
-    if (!http_get(file(base), zip, true, host)) return fail("The download didn't finish. Check the internet connection and try again.");
-    if (sha256_hex(zip) != sum) return fail("The download was damaged (its checksum doesn't match). Try again.");
+    // the download goes to a file beside Athelas.exe, not into memory. One handle from the download to the end of the
+    // unpacking (others may read it, none may write, replace or delete it), then the file is deleted, however this ends.
+    struct DownloadFile {
+        std::wstring path;
+        HANDLE h;
+        ~DownloadFile() { if (h != INVALID_HANDLE_VALUE) CloseHandle(h); DeleteFileW(path.c_str()); }
+    } dl{ download_path(), INVALID_HANDLE_VALUE };
+    dl.h = CreateFileW(dl.path.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (dl.h == INVALID_HANDLE_VALUE) {
+        if (GetLastError() == ERROR_SHARING_VIOLATION) return fail("Another Athelas window is downloading the update. Close it, then try again.");
+        return fail("Windows doesn't let Athelas change its own folder. Download the update from its page instead.");
+    }
+    {
+        std::string got;
+        if (!http_get(file(base), got, true, host, dl.h))
+            return fail("The download didn't finish. Check the internet connection (and the free disk space) and try again.");
+        if (got != sum) return fail("The download was damaged (its checksum doesn't match). Try again.");
+    }
+    if (!sevenz) {   // (a release before 1.8.3: its .zip is small enough to read whole)
+        LARGE_INTEGER zs, zero;
+        zero.QuadPart = 0;
+        bool read = GetFileSizeEx(dl.h, &zs) && zs.QuadPart < (300ll << 20) && SetFilePointerEx(dl.h, zero, NULL, FILE_BEGIN);
+        if (read) {
+            zip.resize((size_t)zs.QuadPart);
+            DWORD n = 0;
+            read = zip.empty() || (ReadFile(dl.h, &zip[0], (DWORD)zip.size(), &n, NULL) && n == zip.size());
+        }
+        if (!read) return fail("The update couldn't be opened.");
+    }
 
     InterlockedExchange(&g_istate, 2);
+    HANDLE jf = CreateFileW(journal_path().c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    auto journal = [&](const std::wstring &target, bool had) {   // "1 <path>": an old copy kept; "0 <path>": a new file
+        if (jf == INVALID_HANDLE_VALUE) return;
+        // relative to Athelas' folder: the undo still finds the files when the folder is reached by another spelling
+        // (c:\games against C:\Games, a short name, a moved folder) at the next start
+        std::wstring rel = target.size() > g_exe_dir.size() + 1 ? target.substr(g_exe_dir.size() + 1) : target;
+        std::wstring line = (had ? L"1 " : L"0 ") + rel + L"\n";
+        int n = WideCharToMultiByte(CP_UTF8, 0, line.c_str(), (int)line.size(), NULL, 0, NULL, NULL);
+        std::string u(n, '\0');
+        WideCharToMultiByte(CP_UTF8, 0, line.c_str(), (int)line.size(), &u[0], n, NULL, NULL);
+        DWORD w;
+        WriteFile(jf, u.data(), (DWORD)u.size(), &w, NULL);
+        FlushFileBuffers(jf);
+    };
     struct Done { std::wstring target; bool had_old; };
     std::vector<Done> done;
-    auto undo = [&] {
+    // false: a file couldn't be put back (antivirus holding a new exe, say). The journal is then kept, so the next
+    // start finishes the undo (finish_unfinished) before its tidy-up deletes the .old-athelas copies (review)
+    auto undo = [&]() -> bool {
+        bool all = true;
         for (auto it = done.rbegin(); it != done.rend(); ++it) {
-            DeleteFileW(it->target.c_str());
-            if (it->had_old) MoveFileExW((it->target + L".old-athelas").c_str(), it->target.c_str(), MOVEFILE_REPLACE_EXISTING);
+            make_writable(it->target);
+            if (!DeleteFileW(it->target.c_str()) && GetFileAttributesW(it->target.c_str()) != INVALID_FILE_ATTRIBUTES) all = false;
+            if (it->had_old && !MoveFileExW((it->target + L".old-athelas").c_str(), it->target.c_str(), MOVEFILE_REPLACE_EXISTING)) all = false;
         }
+        return all;
     };
+    // an exception (out of memory while unpacking) must still undo, close the journal and delete it: otherwise a
+    // "Try again" would treat the half-installed new files as the old ones and overwrite the real backups
+    struct Guard {
+        bool armed = true; HANDLE jf; std::function<bool()> undo;
+        ~Guard() { if (!armed) return; bool back = undo(); if (jf != INVALID_HANDLE_VALUE) CloseHandle(jf); if (back) DeleteFileW(journal_path().c_str()); }
+    } guard{true, jf, undo};
+
     // one file of the update put in place: written beside it first, the old one kept until the whole update is in
     auto put = [&](std::string rel, const void *p, size_t size) -> bool {
         if (rel.empty() || rel.find("..") != std::string::npos || rel[0] == '/' || rel.find(':') != std::string::npos) return true;
@@ -297,6 +392,9 @@ static bool install(const std::string &version)
         if (f != INVALID_HANDLE_VALUE) CloseHandle(f);
         if (!written) { DeleteFileW(fresh.c_str()); return fail("Couldn't write " + rel + "."); }
         bool had = GetFileAttributesW(target.c_str()) != INVALID_FILE_ATTRIBUTES;
+        make_writable(target);                       // (so its .old-athelas copy can be deleted later)
+        make_writable(target + L".old-athelas");     // one an earlier update left read-only is moved onto
+        journal(target, had);   // before the move: a start after a crash here still finds the old copy
         if (had && !MoveFileExW(target.c_str(), (target + L".old-athelas").c_str(), MOVEFILE_REPLACE_EXISTING)) {
             DeleteFileW(fresh.c_str());
             return fail("Couldn't replace " + rel + " (is a game still running?).");
@@ -314,14 +412,14 @@ static bool install(const std::string &version)
         // made by package.sh with its files at the top (Athelas.exe beside the folders), in blocks small enough for
         // this 32-bit program to unpack one at a time
         bool any = false;
-        ok = unpack7z(zip, [&](const std::string &name, bool dir, const void *data, size_t size) {
+        ok = unpack7z_handle(dl.h, [&](const std::string &name, bool dir, const void *data, size_t size) {
                  if (dir) return true;
                  any = true;
                  return put(name, data, size);
              },
              [&](unsigned n, unsigned count) { InterlockedExchange(&g_ipermille, (LONG)(n * 1000ull / (count ? count : 1))); });
-        if (!ok && g_istate != -1) fail("The update couldn't be opened or unpacked.");
-        ok = ok && any;
+        if (!ok) fail("The update couldn't be opened or unpacked.");
+        if (ok && !any) ok = fail("The update had no files in it. Try again, or download it from its page.");
     } else {
         mz_zip_archive ar;
         memset(&ar, 0, sizeof ar);
@@ -354,13 +452,27 @@ static bool install(const std::string &version)
         }
         mz_zip_reader_end(&ar);
     }
-    if (!ok) { undo(); return false; }
+    guard.armed = false;
+    bool back = ok || undo();
+    if (jf != INVALID_HANDLE_VALUE) CloseHandle(jf);
+    if (back) DeleteFileW(journal_path().c_str());   // finished, or undone (kept when the undo couldn't finish)
+    if (!ok) return false;
     InterlockedExchange(&g_istate, 3);
     return true;
 }
 
 static std::string g_iversion;
-static DWORD WINAPI install_thread(void *) { install(g_iversion); return 0; }
+static DWORD WINAPI install_thread(void *)
+{
+    bool ok = false;
+    try { ok = install(g_iversion); }
+    catch (...) { fail("Athelas ran out of memory installing the update. Close other programs and try again."); }
+    if (!ok) {
+        if (g_ierror.empty()) g_ierror = "The update couldn't be installed.";
+        InterlockedExchange(&g_istate, -1);
+    }
+    return 0;
+}
 
 void update_install_start(const std::string &version)
 {
@@ -372,7 +484,7 @@ void update_install_start(const std::string &version)
     InterlockedExchange(&g_istate, 1);
     HANDLE h = CreateThread(NULL, 0, install_thread, NULL, 0, NULL);
     if (h) CloseHandle(h);
-    else fail("The update couldn't start.");
+    else { fail("The update couldn't start."); InterlockedExchange(&g_istate, -1); }
 }
 
 int update_install_state(float *progress, std::string *error)
@@ -393,14 +505,71 @@ static void tidy(const std::wstring &dir, int depth)
         if (n == L"." || n == L"..") continue;
         if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
             if (depth < 4) tidy(dir + L"\\" + n, depth + 1);
-        } else if (n.size() > 12 && (n.compare(n.size() - 12, 12, L".old-athelas") == 0 || n.compare(n.size() - 12, 12, L".new-athelas") == 0)) {
+        } else if (n.size() > 12 && (n.compare(n.size() - 12, 12, L".old-athelas") == 0 || n.compare(n.size() - 12, 12, L".new-athelas") == 0 ||
+                                      n.compare(n.size() - 12, 12, L".del-athelas") == 0)) {
+            make_writable(dir + L"\\" + n);
             DeleteFileW((dir + L"\\" + n).c_str());
         }
     } while (FindNextFileW(f, &fd));
     FindClose(f);
 }
 
-void update_tidy() { tidy(exe_dir_w(), 0); }
+// an install that never finished (see journal_path): its new files are taken away and the old ones put back
+static void finish_unfinished()
+{
+    g_exe_dir = exe_dir_w();
+    std::wstring j = journal_path();
+    HANDLE f = CreateFileW(j.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+    if (f == INVALID_HANDLE_VALUE) return;
+    std::string data;
+    char buf[65536];
+    DWORD got;
+    while (ReadFile(f, buf, sizeof buf, &got, NULL) && got) data.append(buf, got);
+    CloseHandle(f);
+    std::vector<std::string> lines;
+    for (size_t at = 0; at < data.size();) {
+        size_t e = data.find('\n', at);
+        if (e == std::string::npos) break;   // a half-written last line: its file wasn't touched yet
+        lines.push_back(data.substr(at, e - at));
+        at = e + 1;
+    }
+    bool all_ok = true;
+    for (auto it = lines.rbegin(); it != lines.rend(); ++it) {
+        if (it->size() < 3) continue;
+        std::wstring target = widen(it->substr(2));
+        if (target.size() > 2 && target[1] == L':') {   // (a full path: a journal from before they were relative)
+            if (target.size() <= g_exe_dir.size() || _wcsnicmp(target.c_str(), g_exe_dir.c_str(), g_exe_dir.size()) != 0) { all_ok = false; continue; }
+        } else {
+            if (target.find(L"..") != std::wstring::npos || target[0] == L'\\' || target[0] == L'/') { all_ok = false; continue; }
+            target = g_exe_dir + L"\\" + target;
+        }
+        std::wstring old = target + L".old-athelas";
+        make_writable(target);
+        make_writable(target + L".del-athelas");
+        if ((*it)[0] == '1') {
+            if (GetFileAttributesW(old.c_str()) != INVALID_FILE_ATTRIBUTES &&
+                !MoveFileExW(old.c_str(), target.c_str(), MOVEFILE_REPLACE_EXISTING)) {
+                // in use (this very Athelas.exe): moved aside instead, and deleted at a later start
+                MoveFileExW(target.c_str(), (target + L".del-athelas").c_str(), MOVEFILE_REPLACE_EXISTING);
+                if (!MoveFileExW(old.c_str(), target.c_str(), MOVEFILE_REPLACE_EXISTING)) all_ok = false;
+            }
+        } else {
+            if (!DeleteFileW(target.c_str()) && !MoveFileExW(target.c_str(), (target + L".del-athelas").c_str(), MOVEFILE_REPLACE_EXISTING) &&
+                GetFileAttributesW(target.c_str()) != INVALID_FILE_ATTRIBUTES) all_ok = false;
+        }
+    }
+    if (all_ok) DeleteFileW(j.c_str());   // kept when a file was locked: the next start tries again
+}
+
+void update_tidy()
+{
+    finish_unfinished();   // first: it needs the .old-athelas copies tidy() deletes
+    // a journal still there: another Athelas window is installing right now, or an undo isn't finished - the
+    // .old-athelas copies are its only way back, so nothing is tidied this time (review)
+    if (GetFileAttributesW(journal_path().c_str()) != INVALID_FILE_ATTRIBUTES) return;
+    DeleteFileW((exe_dir_w() + L"\\athelas-update.download").c_str());   // a download a closed launcher left behind
+    tidy(exe_dir_w(), 0);
+}
 
 bool update_restart()
 {
@@ -416,12 +585,15 @@ bool update_restart()
     return true;
 }
 
-// ---- After an update (by the launcher or a .7z extracted by hand): the files an older Athelas shipped that this one
-// doesn't are removed, so nothing left over can clash with the new version (Shagg, 8 Nov 2026).
+// ---- After an update (by the launcher, the installer, or a .7z extracted by hand): the files an older Athelas
+// shipped that this one doesn't are taken out of the way, so nothing left over can clash with the new version
+// (Shagg, 8 Nov 2026). They are moved, not deleted (Shagg, 13 Nov 2026), into the folder "Old files - safe to
+// delete" beside Athelas.exe, each under its old path: the player deletes that folder when they like, and nothing
+// is lost if one was wanted after all. So a file the player changed goes there too (it could clash just the same).
 // athelas-files.txt (this download's files and their SHA-256) against athelas-installed.txt (the list the last run
-// saw) and athelas-shipped-before.txt (what 1.8.2 shipped, for a folder from before these lists). A file is removed
-// only when its contents are still exactly what an Athelas download put there: a file the player changed or added,
-// settings, saves, shader caches, logs and texture packs are never touched.
+// saw) and athelas-shipped-before.txt (what 1.8.2 shipped, for a folder from before these lists). Only paths an
+// Athelas download put there are looked at: files the player added, settings, saves, shader caches, logs, texture
+// packs, covers and the games' own files are never touched.
 #include <map>
 static bool read_all(const std::wstring &path, std::string &out)
 {
@@ -458,49 +630,91 @@ static void read_list(const std::wstring &path, std::map<std::string, std::strin
 static bool protected_path(const std::string &p)
 {
     if (p.empty() || p.find("..") != std::string::npos || p.find(':') != std::string::npos || p[0] == '\\') return true;
-    for (const char *part : { "saves\\", "shadercache", "logs\\", "reports\\", "textures\\", "screenshots", "my game\\" })
+    for (const char *part : { "saves\\", "shadercache", "logs\\", "reports\\", "textures\\", "screenshots", "my game\\", "covers\\",
+                              "old files - safe to delete\\" })
         if (p.find(part) != std::string::npos) return true;
     for (const char *ext : { ".ini", ".toml", ".sav", ".log" })
         if (p.size() > strlen(ext) && !p.compare(p.size() - strlen(ext), strlen(ext), ext)) return true;
     return p == "athelas-files.txt" || p == "athelas-installed.txt";
 }
 
+static const wchar_t *const kOldFilesDir = L"Old files - safe to delete";
 int update_remove_leftovers()
 {
     std::wstring dir = exe_dir_w();
     std::string now, before;
     if (!read_all(dir + L"\\athelas-files.txt", now)) return 0;    // a build from source: no list, nothing done
     if (read_all(dir + L"\\athelas-installed.txt", before) && before == now) return 0;   // the same version as last time
+    // an update being put in place by another window, or an undo not yet finished: the files may be a mix of two
+    // versions, so nothing is judged left over until it is done (review)
+    if (GetFileAttributesW((dir + L"\\athelas-update-unfinished.txt").c_str()) != INVALID_FILE_ATTRIBUTES) return 0;
     std::map<std::string, std::string> cur, old;
     read_list(dir + L"\\athelas-files.txt", cur);
     if (cur.empty()) return 0;
     read_list(dir + L"\\athelas-shipped-before.txt", old);
     read_list(dir + L"\\athelas-installed.txt", old);
-    int removed = 0, stuck = 0;
-    std::string log;
+    int removed = 0;
+    std::string log, stuckLines;   // stuckLines: kept in the installed list, so the next start tries them again
     for (auto &kv : old) {
         if (cur.count(kv.first) || protected_path(kv.first)) continue;
         std::wstring f = dir + L"\\" + widen(kv.first);
-        std::string data;
-        if (!read_all(f, data) || sha256_hex(data) != kv.second) continue;   // gone already, or not ours as it was
-        if (!DeleteFileW(f.c_str()) && !MoveFileExW(f.c_str(), (f + L".old-athelas").c_str(), MOVEFILE_REPLACE_EXISTING)) { stuck++; continue; }
+        DWORD attr = GetFileAttributesW(f.c_str());
+        if (attr == INVALID_FILE_ATTRIBUTES || (attr & FILE_ATTRIBUTE_DIRECTORY)) continue;   // gone already
+        // never through a linked folder (a junction or symbolic link the player made, a game folder kept elsewhere):
+        // what is behind it isn't Athelas' to tidy (review)
+        bool linked = (attr & FILE_ATTRIBUTE_REPARSE_POINT) != 0;
+        for (std::wstring d = f.substr(0, f.find_last_of(L'\\')); !linked && d.size() > dir.size(); d = d.substr(0, d.find_last_of(L'\\'))) {
+            DWORD da = GetFileAttributesW(d.c_str());
+            linked = da == INVALID_FILE_ATTRIBUTES || (da & FILE_ATTRIBUTE_REPARSE_POINT);
+        }
+        if (linked) continue;
+        // moved under its old path (the folders made first); a copy an earlier update put there is kept: this one
+        // gets a number (name.2, name.3...)
+        std::wstring to = dir + L"\\" + kOldFilesDir + L"\\" + widen(kv.first);
+        for (size_t at = dir.size() + 1; (at = to.find(L'\\', at)) != std::wstring::npos; at++)
+            CreateDirectoryW(to.substr(0, at).c_str(), NULL);
+        for (int n = 2; n < 100 && GetFileAttributesW(to.c_str()) != INVALID_FILE_ATTRIBUTES; n++) {
+            std::wstring base = dir + L"\\" + kOldFilesDir + L"\\" + widen(kv.first);
+            to = base + L"." + std::to_wstring(n);
+        }
+        make_writable(f);
+        if (!MoveFileExW(f.c_str(), to.c_str(), 0)) {   // in use (a game running): tried again next start
+            stuckLines += kv.second + "  " + kv.first + "\r\n";
+            continue;
+        }
         removed++;
         log += kv.first + "\r\n";
-        // its folder too, once nothing is left in it (RemoveDirectory only takes an empty one)
-        for (std::wstring d = f.substr(0, f.find_last_of(L'\\')); d.size() > dir.size(); d = d.substr(0, d.find_last_of(L'\\')))
-            if (!RemoveDirectoryW(d.c_str())) break;
+        // its folder too, once nothing is left in it (RemoveDirectory only takes an empty one; never a linked one)
+        for (std::wstring d = f.substr(0, f.find_last_of(L'\\')); d.size() > dir.size(); d = d.substr(0, d.find_last_of(L'\\'))) {
+            DWORD da = GetFileAttributesW(d.c_str());
+            if (da == INVALID_FILE_ATTRIBUTES || (da & FILE_ATTRIBUTE_REPARSE_POINT) || !RemoveDirectoryW(d.c_str())) break;
+        }
     }
     if (removed) {
-        HANDLE h = CreateFileW((dir + L"\\athelas-cleanup.log").c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
+        // added to (each update's moves under their own heading), not written over
+        HANDLE h = CreateFileW((dir + L"\\athelas-cleanup.log").c_str(), FILE_APPEND_DATA, 0, NULL, OPEN_ALWAYS, 0, NULL);
         if (h != INVALID_HANDLE_VALUE) {
-            std::string head = "Left over from an older Athelas and removed (" + std::to_string(removed) + "):\r\n";
+            std::string head = "Left over from an older Athelas and moved into the folder \"Old files - safe to delete\" (" +
+                               std::to_string(removed) + "). Delete that folder whenever you like:\r\n";
             DWORD w;
             WriteFile(h, head.data(), (DWORD)head.size(), &w, NULL);
             WriteFile(h, log.data(), (DWORD)log.size(), &w, NULL);
             CloseHandle(h);
         }
     }
-    // a file that couldn't go (a game still running) is tried again next start
-    if (!stuck) CopyFileW((dir + L"\\athelas-files.txt").c_str(), (dir + L"\\athelas-installed.txt").c_str(), FALSE);
+    // the installed list: this version's, plus any file that couldn't go yet (a game still running), so the next
+    // start tries those again - and a later version still compares against this version's list (review)
+    {
+        std::string list = now;
+        if (!list.empty() && list.back() != '\n') list += "\r\n";
+        list += stuckLines;
+        std::wstring tmp = dir + L"\\athelas-installed.txt.new-athelas";
+        HANDLE h = CreateFileW(tmp.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        DWORD w = 0;
+        bool ok = h != INVALID_HANDLE_VALUE && WriteFile(h, list.data(), (DWORD)list.size(), &w, NULL) && w == list.size();
+        if (h != INVALID_HANDLE_VALUE) CloseHandle(h);
+        make_writable(dir + L"\\athelas-installed.txt");
+        if (!ok || !MoveFileExW(tmp.c_str(), (dir + L"\\athelas-installed.txt").c_str(), MOVEFILE_REPLACE_EXISTING)) DeleteFileW(tmp.c_str());
+    }
     return removed;
 }

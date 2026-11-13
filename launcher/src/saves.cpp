@@ -72,7 +72,8 @@ void saves_section(App &a, const std::string &game, const std::string &saves, co
         ImGui::Spacing();
         if (ImGui::Button("Restore", ImVec2(S(150), 0))) {
             std::string before, err;
-            if (restore_folder(pickZip, pickFor, game, before, err))
+            if (a.running) set_message(a, "Close the game first: the saves weren't restored.", true);   // started since the box opened
+            else if (restore_folder(pickZip, pickFor, game, before, err))
                 set_message(a, before.empty() ? "Saves restored." : "Saves restored. The ones before are in " + before.substr(before.find_last_of('\\') + 1) + " on your desktop.", false);
             else set_message(a, "The saves weren't restored: " + err, true);
             ImGui::CloseCurrentPopup();

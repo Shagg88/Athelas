@@ -1,5 +1,5 @@
 # Builds Athelas & ROTK Fix on every push. Pushing a tag like v1.0 also publishes a
-# release with the zip, so every download is built from the code shown here.
+# release with the .7z, so every download is built from the code shown here.
 name: build
 on:
   push:
@@ -12,18 +12,24 @@ permissions:
 env:
   SDL_VERSION: 3.4.20
   DXVK_VERSION: "3.1.1"
+  # the downloads' checksums: a changed or swapped file stops the build (update them with the versions)
+  SDL_SHA256: d2d3bf3fb97a90b22e908a306d7362631ef1bab229d988fe6669595dc29cd9ed
+  DXVK_SHA256: 40565b4a724aadc4433fa4e010b4b23916d9b1f1baeee64e17186db94f54e608
 jobs:
   build:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Install tools
-        run: sudo apt-get update && sudo apt-get install -y gcc-mingw-w64-i686 g++-mingw-w64-i686 binutils-mingw-w64-i686 zip
+        run: sudo apt-get update && sudo apt-get install -y gcc-mingw-w64-i686 g++-mingw-w64-i686 binutils-mingw-w64-i686 zip p7zip-full
       - name: Download SDL3 and DXVK
         run: |
           mkdir -p deps
-          curl -sSfL "https://github.com/libsdl-org/SDL/releases/download/release-$SDL_VERSION/SDL3-devel-$SDL_VERSION-mingw.tar.gz" | tar -xz -C deps
-          curl -sSfL "https://github.com/doitsujin/dxvk/releases/download/v$DXVK_VERSION/dxvk-$DXVK_VERSION.tar.gz" | tar -xz -C deps
+          curl -sSfL -o deps/sdl.tgz "https://github.com/libsdl-org/SDL/releases/download/release-$SDL_VERSION/SDL3-devel-$SDL_VERSION-mingw.tar.gz"
+          curl -sSfL -o deps/dxvk.tgz "https://github.com/doitsujin/dxvk/releases/download/v$DXVK_VERSION/dxvk-$DXVK_VERSION.tar.gz"
+          printf '%s  deps/sdl.tgz\n%s  deps/dxvk.tgz\n' "$SDL_SHA256" "$DXVK_SHA256" | sha256sum -c -
+          tar -xzf deps/sdl.tgz -C deps
+          tar -xzf deps/dxvk.tgz -C deps
       # 3D sound (DSOAL + OpenAL Soft) comes from third_party/dsoal: the
       # upstream download link always points at the newest build.
       - name: Build and package
@@ -36,7 +42,30 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: Athelas-${{ env.VER }}
-          path: dist/Athelas-${{ env.VER }}.zip*
+          path: dist/Athelas-${{ env.VER }}.7z*
+          if-no-files-found: error
+  # the launcher's own tests (launcher/tests): versions, settings-file edits, unpacking a .7z.
+  # A job of its own, so a problem setting up Wine never stops the build above.
+  tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install -y gcc-mingw-w64-i686 g++-mingw-w64-i686 binutils-mingw-w64-i686 p7zip-full wine wine32:i386
+      - name: Download SDL3
+        run: |
+          mkdir -p deps
+          curl -sSfL -o deps/sdl.tgz "https://github.com/libsdl-org/SDL/releases/download/release-$SDL_VERSION/SDL3-devel-$SDL_VERSION-mingw.tar.gz"
+          printf '%s  deps/sdl.tgz\n' "$SDL_SHA256" | sha256sum -c -
+          tar -xzf deps/sdl.tgz -C deps
+      - name: Build the launcher and run its tests
+        run: |
+          export SDL_DIR=$PWD/deps/SDL3-$SDL_VERSION
+          bash launcher/build.sh
+          sh launcher/test.sh
   publish:
     if: github.ref_type == 'tag'
     needs: build
@@ -47,7 +76,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          pattern: Athelas-*        # the build job's zip (named without the tag's "v")
+          pattern: Athelas-*        # the build job's .7z (named without the tag's "v")
           merge-multiple: true
           path: dist
       - name: Publish release (draft)
@@ -55,4 +84,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           VER=${GITHUB_REF_NAME#v}
-          gh release create "$GITHUB_REF_NAME" dist/Athelas-$VER.zip dist/Athelas-$VER.zip.sha256 --draft --title "Athelas $VER" --notes-file "$(test -f docs/release-notes-$VER.md && echo docs/release-notes-$VER.md || echo dist-files/README.txt)"
+          gh release create "$GITHUB_REF_NAME" dist/Athelas-$VER.7z dist/Athelas-$VER.7z.sha256 --draft --title "Athelas $VER" --notes-file "$(test -f docs/release-notes-$VER.md && echo docs/release-notes-$VER.md || echo dist-files/README.txt)"

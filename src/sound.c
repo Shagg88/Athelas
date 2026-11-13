@@ -112,7 +112,8 @@ void sound_patch(void)
     HMODULE owner = NULL;
     if (!readable(slot, sizeof *slot) || !*slot ||
         !GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCSTR)*slot, &owner) ||
-        (*slot != real && owner != k32 && owner != GetModuleHandleA("kernelbase.dll"))) {
+        (*slot != real && *slot != (void *)GetProcAddress(GetModuleHandleA("kernelbase.dll") ? GetModuleHandleA("kernelbase.dll") : k32, "GetProcAddress"))) {
+        /* (only GetProcAddress itself: another kernel32 function in that slot means a differently laid-out exe) */
         /* the original disc exe: SafeDisc routes the game's imports through
          * its own code. Hook eax.dll's export instead, once graphics start
          * (sound_late_patch): the game looks the function up after that. */
@@ -163,4 +164,92 @@ void sound_late_patch(void)
     *(LONG *)(jmp + 1) = (LONG)((DWORD_PTR)&rf_EAXDirectSoundCreate8 - ((DWORD_PTR)fn + 5));
     if (write_code(fn, jmp, 5))
         logf_("sound: ready to restore 3D sound and EAX (%s; disc version)", g_soundMode == SOUND_HEADPHONES ? "headphones" : "speakers");
+}
+
+/* #78: with real DirectSound a game's sounds go quiet while its window isn't in front (no global-focus buffers);
+ * DSOAL keeps playing, so minimized, the music's last streamed piece played on and on as a short loop. While the
+ * window is minimized, this process's sound session in Windows is muted, and unmuted when it comes back (only if
+ * we muted it: a mute the player set in the Volume mixer stays). */
+#define COBJMACROS
+#include <initguid.h>
+#include <mmdeviceapi.h>
+#include <audiopolicy.h>
+/* looked up fresh each time (a minimize or restore): the default device may have changed since (headphones) */
+static ISimpleAudioVolume *session_volume(void)
+{
+    static int com;
+    ISimpleAudioVolume *vol = NULL;
+    if (!com) {
+        /* first called at a minimize, long after the game has set COM up on this thread itself: then this is
+         * S_FALSE (same kind) or RPC_E_CHANGED_MODE (the game chose multithreaded), and either way COM is ready and
+         * nothing of the game's changes. Only if the game never set it up does this one stay, as STA. */
+        HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+        if (hr != S_OK && hr != S_FALSE && hr != RPC_E_CHANGED_MODE) logf_("sound: COM not available (%08lx)", (unsigned long)hr);
+        com = 1;
+    }
+    IMMDeviceEnumerator *en = NULL;
+    IMMDevice *dev = NULL;
+    IAudioSessionManager *mgr = NULL;
+    if (SUCCEEDED(CoCreateInstance(&CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL, &IID_IMMDeviceEnumerator, (void **)&en)) &&
+        SUCCEEDED(IMMDeviceEnumerator_GetDefaultAudioEndpoint(en, eRender, eConsole, &dev)) &&
+        SUCCEEDED(IMMDevice_Activate(dev, &IID_IAudioSessionManager, CLSCTX_ALL, NULL, (void **)&mgr)))
+        IAudioSessionManager_GetSimpleAudioVolume(mgr, NULL, FALSE, &vol);
+    if (mgr) IAudioSessionManager_Release(mgr);
+    if (dev) IMMDevice_Release(dev);
+    if (en) IMMDeviceEnumerator_Release(en);
+    static int logged;
+    if (!logged++) logf_("sound: %s", vol ? "the game's sound is muted while it's minimized (#78)" : "Windows' sound session not found: no mute when minimized");
+    return vol;
+}
+static volatile LONG g_muted_by_us;
+static ISimpleAudioVolume *g_muted_vol;   /* the session we muted: the unmute goes to it, even if the device changed */
+static void muted_note(char *out) { path_in_dir(out, "ROTKFix.muted"); }   /* beside ROTKFix.dll, whatever "Start in" is */
+void sound_minimized(int minimized)
+{
+    char note[MAX_PATH];
+    muted_note(note);
+    if (minimized) {
+        if (g_muted_by_us) return;
+        ISimpleAudioVolume *v = session_volume();
+        if (!v) return;
+        BOOL m = FALSE;
+        if (SUCCEEDED(ISimpleAudioVolume_GetMute(v, &m)) && !m) {
+            /* a note beside the game first, in case it ends while minimized: the next start undoes the mute. No note
+             * (the folder can't be written), no mute: Windows would remember it with nothing to undo it (review) */
+            HANDLE f = CreateFileA(note, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+            if (f != INVALID_HANDLE_VALUE) {
+                CloseHandle(f);
+                if (SUCCEEDED(ISimpleAudioVolume_SetMute(v, TRUE, NULL))) {
+                    g_muted_by_us = 1;
+                    g_muted_vol = v;   /* kept until the restore */
+                    return;
+                }
+                DeleteFileA(note);
+            }
+        }
+        ISimpleAudioVolume_Release(v);
+    } else if (g_muted_by_us) {
+        ISimpleAudioVolume *v = g_muted_vol ? g_muted_vol : session_volume();
+        int undone = 0;
+        if (v) { undone = SUCCEEDED(ISimpleAudioVolume_SetMute(v, FALSE, NULL)); ISimpleAudioVolume_Release(v); }
+        if (!undone && g_muted_vol && (v = session_volume()) != NULL) {   /* the device went away meanwhile: the session there is now */
+            undone = SUCCEEDED(ISimpleAudioVolume_SetMute(v, FALSE, NULL));
+            ISimpleAudioVolume_Release(v);
+        }
+        g_muted_vol = NULL;
+        g_muted_by_us = 0;
+        if (undone) DeleteFileA(note);   /* else it stays: the next start tries again */
+    }
+}
+/* the game ended while minimized last time (closed from the taskbar, a crash): Windows remembers a program's mute,
+ * so the first frame of this run undoes the one we set (only ours: the note says so) */
+void sound_unmute_left_over(void)
+{
+    char note[MAX_PATH];
+    muted_note(note);
+    if (GetFileAttributesA(note) == INVALID_FILE_ATTRIBUTES) return;
+    g_muted_by_us = 1;
+    sound_minimized(0);
+    logf_(g_muted_by_us ? "sound: still muted from last time (the game had ended while minimized); will try again"
+                        : "sound: unmuted (the game had ended while minimized)");
 }

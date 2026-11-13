@@ -71,7 +71,9 @@ void update_section(App &a)
                                      "They aren't installed for Athelas " LAUNCHER_VERSION " yet.");
         if (st == -1) ImGui::TextColored(C_BAD, "%s", err.c_str());
         else ImGui::TextUnformatted("Your settings, saves and achievements are kept.");
+        if (a.running) ImGui::BeginDisabled();   // not over a game that's running
         if (ImGui::Button("Install the ARM64 builds")) update_install_start(LAUNCHER_VERSION);
+        if (a.running) ImGui::EndDisabled();
     } else if (!v.empty()) {
         ImGui::TextColored(C_GOLD_H, "Athelas %s is out (you have " LAUNCHER_VERSION ").", v.c_str());
         if (st == -1) ImGui::TextColored(C_BAD, "%s", err.c_str());

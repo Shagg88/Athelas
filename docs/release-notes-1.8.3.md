@@ -37,9 +37,9 @@ folder with 7-Zip (or Windows 11's Extract All). Your settings, saves and achiev
 
 Being worked on; if you see one, please report it with the launcher's "Report a problem" button:
 the Two Towers map screen's glow, the Perfect Mode ring in ROTK (PC), ROTK (PC) stopping behind the death menu, the
-in-game subtitle shadow in ROTK (PC), a ghost image in the ROTK (PC) credits, a graphics glitch at Helm's Deep in The
-Third Age, and Breached Wall's catapults above 30 fps.
+in-game subtitle shadow in ROTK (PC), a ghost image in the ROTK (PC) credits and a graphics glitch at Helm's Deep in
+The Third Age.
 
 ## Checksums (SHA-256)
 
-- Athelas-1.8.3.7z: `CHECKSUM`
+- Athelas-1.8.3.7z: `8810be13f034c201e6374d8ce936e14ef2963163970fa6fecfcdc2a14ec4925e`

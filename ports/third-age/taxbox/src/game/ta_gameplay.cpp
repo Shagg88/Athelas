@@ -59,7 +59,11 @@ X86_FUNC(sub_001F4E30) {
             // the Journey's Virtues and Fate (ATHELAS_VIRTUES, 100 each when unset) on top of the damage settings
             uint32_t pct = party ? ta::g_damage_percent * ach::VirtueTaken() / 100
                                  : ta::g_enemy_damage_percent * ach::VirtueDealt() / 100;
-            ctx.ecx = uint32_t(Scale(change, pct < 10 ? 10 : pct > 500 ? 500 : pct));
+            pct = pct < 10 ? 10 : pct > 500 ? 500 : pct;
+            // the caller already decided whether this blow kills (the byte at esp+4): a killing blow is never made
+            // smaller, or the target would be "killed" with HP left. (A blow made bigger without that byte could take
+            // HP to 0 without a kill: not seen in play so far; it needs a test above 100% on the PC, see notes.)
+            if (!(::kernel::G<uint8_t>(ctx.esp + 4) && pct < 100)) ctx.ecx = uint32_t(Scale(change, pct));
         }
         if (!party && InParty(ctx.eax) && ::kernel::G<uint8_t>(ctx.esp + 4)) {
             __imp__sub_001F4E30(ctx, base);

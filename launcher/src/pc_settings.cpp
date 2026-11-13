@@ -909,6 +909,7 @@ bool own_game(const App &a)
 // setting ROTK Fix up somewhere, and when the player switches to another PC copy.
 bool load_pc_settings(App &a, const std::string &dir)
 {
+    game_ini_to_utf8(dir);   // before it is read: mod names an older launcher wrote in the PC's code page
     a.dir = dir;
     a.game = inspect_game(a.dir);
     a.s = Settings();

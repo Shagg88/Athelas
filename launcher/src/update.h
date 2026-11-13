@@ -17,6 +17,9 @@ const char *update_page();
 void update_install_start(const std::string &version);
 // 0 idle, 1 downloading, 2 unpacking, 3 done (restart), -1 failed (error says why); progress 0 to 1
 int update_install_state(float *progress, std::string *error);
+// an update's files are being put in place: no game may start, and Athelas doesn't close until it's done (a
+// download can still be left: nothing has changed yet)
+inline bool update_busy() { return update_install_state(nullptr, nullptr) == 2; }
 // at start: removes what the last update left behind
 void update_tidy();
 int update_remove_leftovers();   // files an older Athelas shipped that this one doesn't (athelas-files.txt)
@@ -25,3 +28,5 @@ bool update_restart();
 
 // a file from https://<host><path> (redirects followed), for the box art; false on any failure or an answer but 200
 bool http_download(const wchar_t *host, const std::wstring &path, std::string &out);
+// "v1.0.2" or "1.0.2" against "1.0.1": is a the newer version? (anything that isn't a number, a test build's "dev", never is)
+bool update_version_newer(const std::string &a, const std::string &b);

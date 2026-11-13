@@ -35,14 +35,15 @@ bool Widescreen() {
     return wide;
 }
 float g_max_frame_aspect = 16.0f / 9.0f;
-// ASPECT=2.37 (in the environment; TT_ASPECT in older scripts) tests an ultrawide screen
+float g_min_frame_aspect = 16.0f / 9.0f;
+// ASPECT=2.37 (or 1.6 for 16:10) (in the environment; TT_ASPECT in older scripts) tests an ultrawide screen
 float FrameAspect() {
     static const float a = [] {  // read once: this is asked per HUD quad
         const char* e = std::getenv("ASPECT");
         if (!e) e = std::getenv("TT_ASPECT");
         return e ? float(std::atof(e)) : 16.0f / 9.0f;
     }();
-    return std::clamp(a, 16.0f / 9.0f, std::max(g_max_frame_aspect, 16.0f / 9.0f));
+    return std::clamp(a, std::min(g_min_frame_aspect, 16.0f / 9.0f), std::max(g_max_frame_aspect, 16.0f / 9.0f));
 }
 
 std::filesystem::path ExeDir() {
@@ -120,6 +121,7 @@ const std::vector<std::string>& ScreenNames() {
 void* ScreenMonitor() { return nullptr; }
 std::filesystem::path LogFolder() { return ExeDir() / "logs"; }
 std::filesystem::path SettingsFile() { return ExeDir() / "settings.toml"; }
+int ExitingWith() { return -1; }
 void Fail(int code, const std::wstring& message) {
     LOGE("Exit (%d): %s", code, std::string(message.begin(), message.end()).c_str());
     logx::Flush();

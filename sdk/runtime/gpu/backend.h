@@ -32,6 +32,13 @@ public:
     virtual void Copy(const Surface& src, const Surface& dst, uint32_t count, uint32_t src_rects_va,
                       uint32_t dst_points_va) = 0;
     virtual void Present(const Surface& front) = 0;
+    // on the game's own thread, once a frame after its Present (and the frame cap): where the game's next frame
+    // starts, so frame generation's latency markers and the Reflex / XeLL sleep time the game, not the renderer
+    virtual void GameFrame() {}
+    // on the game's own thread, just before each Present it asks for (swap: the Swap's own, not a re-shown picture
+    // while the game is held): frame generation numbers each frame here, so the game thread's markers and the
+    // renderer's carry the same number for the same frame
+    virtual void PresentQueued(bool /*swap*/) {}
     // the CPU is about to touch this resource's memory: write GPU results back first
     virtual void Sync(uint32_t data_va, uint32_t size) = 0;
     // a lock that does not wait for the GPU (NOOVERWRITE): a result a frame or two old is what the console gives too

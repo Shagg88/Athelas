@@ -86,6 +86,17 @@ static int paint(FontIcons *fi, int style)
     IDirect3DTexture8 *tex = *(IDirect3DTexture8 **)(fi->font + 0x438);
     if (!tex || !readable(tex, 4)) return 0;
     void **vt = *(void ***)tex;
+    /* the cells are written as 16-bit A4R4G4B4: any other texture format (or a texture smaller than the cells)
+     * would be overrun, so it is left alone */
+    D3DSURFACE_DESC d;
+    typedef HRESULT (WINAPI *LevelDesc_t)(IDirect3DTexture8 *, UINT, D3DSURFACE_DESC *);
+    if (FAILED(((LevelDesc_t)vt[14])(tex, 0, &d)) || d.Format != D3DFMT_A4R4G4B4) {
+        static int logged;
+        if (!logged++) logf_("icons: font texture isn't 16-bit A4R4G4B4; button pictures left as they are");
+        return 0;
+    }
+    for (int i = 0; i < NUM_ICONS; i++)
+        if (fi->x[i] < 0 || fi->y[i] < 0 || (UINT)(fi->x[i] + fi->w[i]) > d.Width || (UINT)(fi->y[i] + fi->h) > d.Height) return 0;
     D3DLOCKED_RECT lr;
     if (FAILED(((Lock_t)vt[16])(tex, 0, &lr, NULL, 0)) || !lr.pBits) return 0;
     int H = fi->h;
@@ -160,6 +171,10 @@ static int letters_white(BYTE *font)
     int tw = *(short *)(font + 0x418), th = *(short *)(font + 0x41a);
     if (!tex || !readable(tex, 4) || tw <= 0 || th <= 0) return 0;
     void **vt = *(void ***)tex;
+    /* read as 16-bit A4R4G4B4 below: any other format is reported as not white (the text is drawn as before) */
+    D3DSURFACE_DESC d;
+    typedef HRESULT (WINAPI *LevelDesc_t)(IDirect3DTexture8 *, UINT, D3DSURFACE_DESC *);
+    if (FAILED(((LevelDesc_t)vt[14])(tex, 0, &d)) || d.Format != D3DFMT_A4R4G4B4 || (UINT)tw > d.Width || (UINT)th > d.Height) return 0;
     D3DLOCKED_RECT lr;
     if (FAILED(((Lock_t)vt[16])(tex, 0, &lr, NULL, D3DLOCK_READONLY)) || !lr.pBits) return 0;
     int seen = 0, dark = 0;

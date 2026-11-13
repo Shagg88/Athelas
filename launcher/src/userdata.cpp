@@ -4,6 +4,7 @@
 
 #include <windows.h>
 #include <shlobj.h>
+#include "config.h"   // ansi_path, exe_dir
 #include <algorithm>
 #include <ctime>
 #include <cstdio>
@@ -53,10 +54,16 @@ bool folder_has_files(const std::string &dir)
 
 std::string desktop_dir()
 {
-    char d[MAX_PATH] = "";
-    if (SUCCEEDED(SHGetFolderPathA(NULL, CSIDL_DESKTOPDIRECTORY, NULL, 0, d)) && d[0]) return d;
-    if (SUCCEEDED(SHGetFolderPathA(NULL, CSIDL_PERSONAL, NULL, 0, d)) && d[0]) return d;
-    return "";
+    // the wide name, made ANSI-safe (its short name when the user name has letters the code page can't hold:
+    // the ANSI call would give question marks, and every backup would fail); then Documents, then Athelas' folder
+    for (int id : { CSIDL_DESKTOPDIRECTORY, CSIDL_PERSONAL }) {
+        wchar_t w[MAX_PATH] = L"";
+        if (SUCCEEDED(SHGetFolderPathW(NULL, id, NULL, 0, w)) && w[0]) {
+            std::string p = ansi_path(w);
+            if (!p.empty()) return p;
+        }
+    }
+    return exe_dir();
 }
 
 static std::string safe_name(std::string s)

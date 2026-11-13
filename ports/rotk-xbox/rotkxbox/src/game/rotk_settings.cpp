@@ -223,6 +223,19 @@ bool ApplyIni(const std::filesystem::path& file) {
     uint32_t target = g_fps, limiter = 1;
     r.Int("Frame", "TargetFPS", target, 0, 1000);
     r.Int("Frame", "Limiter", limiter, 0, 1);
+    // the port's choices are 30..240 (no "unlocked"): 0 (ROTK Fix: no cap) takes the highest, anything else the nearest
+    if (limiter) {
+        static const uint32_t kRates[] = {30, 60, 90, 120, 144, 165, 180, 240};
+        uint32_t best = 240;
+        if (target != 0) {
+            uint32_t diff = ~0u;
+            for (uint32_t r8 : kRates) {
+                uint32_t d = r8 > target ? r8 - target : target - r8;
+                if (d < diff) diff = d, best = r8;
+            }
+        }
+        target = best;
+    }
     g_fps = limiter ? target : 30;
     r.Bool("Frame", "ShowFPS", s.show_fps);  // the frame rate counter, top right
     // [Video]

@@ -15,6 +15,7 @@
 #endif
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <cstdlib>
@@ -28,6 +29,8 @@
 
 #include "core/diag.h"
 #include "core/log.h"
+
+namespace app { int ExitingWith(); }
 #include "core/state_gen.h"
 #include "gpu/backend.h"
 #include "gpu/vertex.h"
@@ -134,9 +137,17 @@ public:
             std::unique_lock plock(pm_);
             pcv_.wait_for(plock, std::chrono::milliseconds(500), [&] { return prep_exited_; });
         }
+        quit_.store(true);  // the worker drops what is left of its batches after the command it is running
+        const int failing = app::ExitingWith();
+        if (failing >= 0) return;   // the process is ending (Fail): its threads are already gone, nothing to wait for
         std::unique_lock lock(m_);
-        // at exit the worker may be gone mid-batch: then the inner backend is left, not freed under it
-        if (!done_cv_.wait_for(lock, std::chrono::milliseconds(500), [&] { return exited_; })) (void)inner_.release();
+        // the worker uses this object and the inner backend: neither may be freed while it runs. It can be held up in
+        // Present, the Reflex sleep or a fence wait (2 s at a time), so it gets a while; if it is still stuck, this is
+        // the game closing with a hung GPU, and the process ends here rather than crash in freed memory
+        if (!done_cv_.wait_for(lock, std::chrono::seconds(6), [&] { return exited_; })) {
+            LOGE("render thread: still busy 6 s after the renderer was closed; ending the process");
+            TerminateProcess(GetCurrentProcess(), 1);   // not 0: the launcher shows that the game didn't close normally
+        }
     }
 
     bool Init(uint32_t width, uint32_t height) override { return inner_->Init(width, height); }
@@ -208,6 +219,8 @@ public:
         g_perf_capture_ns += Ns(t);
     }
 
+    void GameFrame() override { inner_->GameFrame(); }  // on the calling (game) thread, not queued
+    void PresentQueued(bool swap) override { inner_->PresentQueued(swap); }  // the same
     void Present(const Surface& front) override {
         auto t = Clock::now();
         Cmd c{Op::Present};
@@ -222,7 +235,7 @@ public:
         last_present_ = id;
     }
 
-    void Sync(uint32_t data, uint32_t) override { ReadBack(data, false); }
+    void Sync(uint32_t data, uint32_t size) override { ReadBack(data, false, size); }
 
     void SyncLate(uint32_t data) override {
         if (!inner_->DeliverLate(data)) {
@@ -294,7 +307,7 @@ private:
         return uint32_t(at);
     }
 
-    void ReadBack(uint32_t data, bool late) {
+    void ReadBack(uint32_t data, bool late, uint32_t size = 0) {
         // only surfaces the GPU wrote since the last read-back hold anything newer than guest memory
         if (!written_.erase(data)) return;
         (late ? g_perf_sync_late : g_perf_sync_block)++;
@@ -302,6 +315,7 @@ private:
             LOGI("render thread: read-back of %08X for %s", data, late ? "a NOOVERWRITE lock without a finished copy" : "a lock / BlockOnResource");
         Cmd c{Op::Sync};
         c.a = data;
+        c.b = size;
         cur_->cmds.push_back(c);
         Wait(Submit(), WaitFor::ReadBack, "read-back");
     }
@@ -535,6 +549,7 @@ private:
                 queue_.pop_front();
             }
             for (size_t i = 0; i < b->cmds.size(); i++) {
+                if (quit_.load(std::memory_order_relaxed)) break;  // closing: the rest isn't drawn
                 if (b->prepped && b->cmds[i].op == Op::Draw && b->pre_ok[i]) {
                     t_preassembled = &b->pre[i];
                     t_preassembled_ok = b->pre_ok[i] == 1;
@@ -576,7 +591,7 @@ private:
             case Op::Clear: inner_->Clear(state_, c.a, c.size ? data : nullptr, c.b, c.c, c.f, c.d); break;
             case Op::Copy: inner_->Copy(c.s1, c.s2, c.a, c.b, c.c); break;
             case Op::Present: inner_->Present(c.s1); break;
-            case Op::Sync: inner_->Sync(c.a, 0); break;
+            case Op::Sync: inner_->Sync(c.a, c.b); break;
             case Op::RecordLate: inner_->RecordLate(c.a); break;
             case Op::Flush: inner_->Flush(); break;
             case Op::Gamma: inner_->SetGamma(data); break;
@@ -623,6 +638,7 @@ private:
     std::vector<Batch*> free_;
     std::atomic<uint64_t> done_{0};
     bool stop_ = false, exited_ = false;
+    std::atomic<bool> quit_{false};
 
     // the prep thread
     bool prep_on_ = true;

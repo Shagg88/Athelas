@@ -211,7 +211,6 @@ static void build_lut(IDirect3DDevice9 *dev)
 
 static void WINAPI hook_SetGamma9(IDirect3DDevice9 *dev, UINT sc, DWORD flags, const D3DGAMMARAMP *r)
 {
-    (void)dev; (void)flags;
     if (!r || sc != 0) return;
     if (!g_haveGameRamp || memcmp(g_gameRamp, r, sizeof g_gameRamp)) {
         memcpy(g_gameRamp[0], r->red, sizeof g_gameRamp[0]);
@@ -223,7 +222,9 @@ static void WINAPI hook_SetGamma9(IDirect3DDevice9 *dev, UINT sc, DWORD flags, c
         g_haveGameRamp = 1;
         g_lutDirty = 1;
     }
-    /* not passed on: DXVK would apply it in fullscreen and we apply it ourselves */
+    /* not passed on: DXVK would apply it in fullscreen and we apply it ourselves; but when post-processing is off or
+     * has failed nothing would, so the game's own brightness goes to Direct3D as it would without ROTK Fix */
+    if ((!g_postEnabled || g_failed) && g_realSetGamma9) g_realSetGamma9(dev, sc, flags, r);
 }
 
 /* The game keeps its gamma / contrast / brightness at 0x569c2c and builds
@@ -442,15 +443,16 @@ static HRESULT WINAPI hook_Reset9(IDirect3DDevice9 *dev, D3DPRESENT_PARAMETERS *
 static HRESULT WINAPI hook_CreateDev9(IDirect3D9 *d3d, UINT ad, D3DDEVTYPE t, HWND h, DWORD fl,
                                       D3DPRESENT_PARAMETERS *pp, IDirect3DDevice9 **out)
 {
+    /* objects made on an earlier device can't be used on the new one, and they hold that device (and its swap chain on
+     * this window) alive: released before the new device is made, so its creation doesn't find the window in use */
+    release_default_pool();
+    shot_release();
+    achieve_release();
+    RF_RunResetHooks(NULL);   /* the mods' objects too (a mod's reset hook is told the device is gone) */
+    if (g_psPost) { IDirect3DPixelShader9_Release(g_psPost); g_psPost = NULL; }
+    if (g_lutTex) { IDirect3DVolumeTexture9_Release(g_lutTex); g_lutTex = NULL; }
     HRESULT hr = g_realCreateDev9(d3d, ad, t, h, fl, pp, out);
     if (SUCCEEDED(hr) && out && *out) {
-        /* objects made on an earlier device can't be used on this one */
-        release_default_pool();
-        shot_release();
-        achieve_release();
-        RF_RunResetHooks(NULL);   /* the mods' objects too (a mod's reset hook is told the device is gone) */
-        if (g_psPost) { IDirect3DPixelShader9_Release(g_psPost); g_psPost = NULL; }
-        if (g_lutTex) { IDirect3DVolumeTexture9_Release(g_lutTex); g_lutTex = NULL; }
         g_lutDirty = 1; g_errors = 0; g_waitFrames = 0;
         void **vt = *(void ***)*out;
         patch_vt(vt, 16, (void *)hook_Reset9, (void **)&g_realReset9);

@@ -210,6 +210,7 @@ float g_listener[3] = {}, g_front[3] = {0, 0, 1}, g_top[3] = {0, 1, 0};
 // the I3DL2 mix bin: every voice's send, through the room reverb the console's DSP ran. DSOUND_REVERB=0 leaves it out.
 constexpr uint32_t kI3dl2Bin = 10;
 audio::Reverb g_reverb(audio::kRate);
+std::atomic<float> g_meter_peak[2] = {0.0f, 0.0f}, g_meter_rms[2] = {0.0f, 0.0f};  // Render: the mix's levels
 bool g_reverb_set = false;  // no room until the title sets its listener
 std::vector<float> g_send;
 bool ReverbOn() {
@@ -454,6 +455,23 @@ void Render(float* out, uint32_t frames) {
         g_reverb.Process(g_send.data(), out, frames);
     if (!before.empty())
         for (uint32_t i = 0; i < frames * 2; i++) wet_e += double(out[i] - before[i]) * (out[i] - before[i]);
+    // the output meters IDirectSound_GetOutputLevels reads (Fellowship moves its characters' lips by them, #79):
+    // each channel's peak since the last read that reset it, and its RMS over this block (about 10 ms)
+    {
+        float pk[2] = {0, 0};
+        double ms[2] = {0, 0};
+        for (uint32_t i = 0; i < frames; i++)
+            for (int c = 0; c < 2; c++) {
+                float x = std::fabs(out[i * 2 + c]);
+                pk[c] = std::max(pk[c], x);
+                ms[c] += double(x) * x;
+            }
+        for (int c = 0; c < 2; c++) {
+            float was = g_meter_peak[c].load(std::memory_order_relaxed);
+            while (pk[c] > was && !g_meter_peak[c].compare_exchange_weak(was, pk[c], std::memory_order_relaxed)) {}
+            g_meter_rms[c].store(frames ? float(std::sqrt(ms[c] / frames)) : 0.0f, std::memory_order_relaxed);
+        }
+    }
     // DSOUND_STATS=1: every 2 s, what the mixer is playing (diagnostics)
     static uint64_t mixed = 0;
     static float peak = 0;
@@ -803,9 +821,23 @@ HLE_STDCALL(IDirectSound_GetEffectData, 5) {
     return 0;
 }
 HLE_STDCALL(IDirectSound_CommitEffectData, 1) { return 0; }
-// (this, DSOUTPUTLEVELS out, reset peaks): 16 dwords of meters, silent
+// (this, DSOUTPUTLEVELS out, reset peaks): the mix's meters, 16 dwords - analog left / right peak, then RMS; digital
+// front left, centre, front right, back left, back right, LFE peaks, then the same six RMS. Full scale is 0x7FFFFF
+// (the chip's 24-bit samples). They were always 0 before 1.8.4: Fellowship's lips, moved by them, never did (#79).
+// The port mixes in stereo: the centre is the two sides' mean, the back the sides again, the LFE nothing.
 HLE_STDCALL(IDirectSound_GetOutputLevels, 3) {
-    if (a[1]) std::memset(HostPtr(a[1]), 0, 64);
+    if (!a[1]) return 0;
+    auto lv = [](float x) { return uint32_t(std::clamp(x, 0.0f, 1.0f) * 8388607.0f); };
+    float pk[2], rms[2];
+    for (int c = 0; c < 2; c++) {
+        pk[c] = a[2] ? g_meter_peak[c].exchange(0.0f) : g_meter_peak[c].load();
+        rms[c] = g_meter_rms[c].load();
+    }
+    const uint32_t v[16] = {lv(pk[0]),  lv(pk[1]),  lv(rms[0]), lv(rms[1]),
+                            lv(pk[0]),  lv(0.5f * (pk[0] + pk[1])),   lv(pk[1]),  lv(pk[0]), lv(pk[1]), 0,
+                            lv(rms[0]), lv(0.5f * (rms[0] + rms[1])), lv(rms[1]), lv(rms[0]), lv(rms[1]), 0};
+    for (int i = 0; i < 16; i++) W32(a[1] + 4 * i, v[i]);
+    LOG_FIRST(1, "dsound: output levels read (peak %.2f / %.2f)", pk[0], pk[1]);
     return 0;
 }
 

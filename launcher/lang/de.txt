@@ -1158,3 +1158,11 @@ This is an untested and unsupported version (%s copy). Proceed with caution: it 
 Did it work? Let us know: = Hat es funktioniert? Sag uns Bescheid:
 It worked = Es hat funktioniert
 It didn't work = Es hat nicht funktioniert
+Before you play = Bevor du spielst
+Athelas includes no game files, and none will be provided. To play, you use your own copy of each game: the PC game you have installed, or a disc image made from your own Xbox disc. = Athelas enthält keine Spieldateien, und es werden auch keine bereitgestellt. Zum Spielen verwendest du deine eigene Kopie jedes Spiels: das installierte PC-Spiel oder ein Disc-Abbild deiner eigenen Xbox-Disc.
+By choosing Accept, you confirm that the game files you use with Athelas are your own. = Mit „Akzeptieren“ bestätigst du, dass die Spieldateien, die du mit Athelas verwendest, deine eigenen sind.
+Athelas is an unofficial fan project. It has nothing to do with, and is not endorsed by, Microsoft, Electronic Arts, Vivendi, New Line Cinema, Warner Bros., the Tolkien Estate, or any developer or publisher of these games. = Athelas ist ein inoffizielles Fanprojekt. Es hat nichts mit Microsoft, Electronic Arts, Vivendi, New Line Cinema, Warner Bros., dem Tolkien Estate oder einem Entwickler oder Publisher dieser Spiele zu tun und wird von ihnen nicht unterstützt.
+Don't ask me again = Nicht mehr fragen
+Counts only with Accept. Without it, Athelas asks once more after each update. = Gilt nur mit „Akzeptieren“. Ohne das fragt Athelas nach jedem Update einmal erneut.
+Decline = Ablehnen
+Accept = Akzeptieren

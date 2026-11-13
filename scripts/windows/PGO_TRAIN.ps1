@@ -10,11 +10,13 @@ $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
 $cm = "$vs\Common7\IDE\CommonExtensions\Microsoft\CMake"
 $env:PATH = "$cm\CMake\bin;$cm\Ninja;C:\Athelas\tools\llvm-mingw\bin;$env:PATH"
 $d = "C:\Athelas\source\ports\$Port"; $game = "C:\Athelas\games\xbox-us\$Game"
+# the highest frame rate the game offers ("0" = unlocked is The Third Age's only: the others ignore it and run at 30)
+$fps = if ($Exe -eq 'TAXbox') { '0' } else { '240' }
 $p = "C:\Athelas\work\pgo-$Exe"; Remove-Item $p -Recurse -Force -ErrorAction SilentlyContinue; New-Item -ItemType Directory -Force $p | Out-Null
 Copy-Item "$d\out\build\mingw\$Exe.exe" "$p\$Exe-plain.exe"
 function Run([string]$exe, [string]$name, [int]$secs) {
   $w = "$p\$name"; New-Item -ItemType Directory -Force "$w\shots" | Out-Null
-  Set-Content "$w\settings.toml" -Encoding ascii -Value "[display]`nwidth = 2560`nheight = 1440`nshow_fps = true`nvsync = false`n[graphics]`nwidescreen = true`nfps = `"0`"`nsharp_text = true`nskip_logos = true`nsecond_core = true`nanti_aliasing = `"4`"`nalpha_edges = true`nsmaa = true`nanisotropic_filtering = `"16`""
+  Set-Content "$w\settings.toml" -Encoding ascii -Value "[display]`nwidth = 2560`nheight = 1440`nshow_fps = true`nvsync = false`n[graphics]`nwidescreen = true`nfps = `"$fps`"`nsharp_text = true`nskip_logos = true`nsecond_core = true`nanti_aliasing = `"4`"`nalpha_edges = true`nsmaa = true`nanisotropic_filtering = `"16`""
   Set-Content "$w\pad.txt" -Encoding ascii -Value $Pad
   $env:XBE_PAD_SCRIPT = "$w\pad.txt"
   $pr = Start-Process $exe -ArgumentList "--game `"$game`" --config `"$w\settings.toml`" --log `"$w\game.log`" --saves `"$w\saves`" --screenshots `"$w\shots`" --textures `"$w\textures`"" -PassThru
@@ -28,9 +30,11 @@ $env:LLVM_PROFILE_FILE = "$p\run-%p.profraw"
 Run "$d\out\build\pgo-gen\$Exe.exe" 'train' $Train
 Remove-Item Env:LLVM_PROFILE_FILE
 Get-ChildItem $p -Filter *.profraw | Select-Object Name, Length
+if (-not (Get-ChildItem $p -Filter *.profraw)) { "STOPPED: the training run wrote no .profraw (the old profile is left as it was)"; exit 1 }
 "== 2. merge"
 New-Item -ItemType Directory -Force "$d\pgo" | Out-Null
 llvm-profdata merge -o "$d\pgo\$Exe.profdata" (Get-ChildItem $p -Filter *.profraw).FullName 2>&1
+if ($LASTEXITCODE -ne 0) { "STOPPED: llvm-profdata merge failed"; exit 1 }
 llvm-profdata show "$d\pgo\$Exe.profdata" 2>&1 | Select-Object -Last 4
 "== 3. build with the profile"
 $cc = "$d\out\build\mingw\CMakeCache.txt"   # (a build folder from before the shared sdk\ points at a toolchain that is gone)

@@ -207,6 +207,7 @@ void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
         const float nameW = titleX - pad - S(18);
         float x = pad + S(4), y = S(36);
         if (!g_front.coversLooked) front_load_covers(ren);   // (a page opened first: the boxes' covers for its header)
+        front_covers_poll(ren);
         front_art_poll(a, ren);
         if (a.cur >= 0) {
             int e = fr_entry_of(a.lib[a.cur].kind);
@@ -241,6 +242,12 @@ void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
             ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
             ImGui::SetCursorPosX(x);
             ImGui::TextColored(C_DIM, "%s", game_kind_short(a.lib[a.cur].kind));
+            if (a.lib[a.cur].kind == GK_TA_XBOX) {
+                ImGui::SameLine();
+                ImGui::TextColored(ImVec4(0.84f, 0.59f, 0.35f, 1.0f), "  %s", tr("Early version"));
+                tip(tr("The Third Age is the newest port: most of it plays well, but some screens and effects may still look "
+                       "wrong. Please use Report a problem when you see one."));
+            }
             ImGui::PopFont();
         } else {
             ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);
@@ -483,7 +490,7 @@ void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     static bool autoPlay = getenv("ROTKFIX_PLAY") != nullptr;
     if (autoPlay && ttShown) { autoPlay = false; tt_play(a, a.lib[a.cur]); }
     ImGui::SetCursorPos(ImVec2(bx, by));
-    bool playOk = !(ttShown ? a.running != NULL : (!own || !g.exeFound || g_fixRemoved));
+    bool playOk = !(ttShown ? a.running != NULL : (!own || !g.exeFound || g_fixRemoved)) && !update_busy();   // not while an update is put in place
     // a controller's Start is Play, and its View / Back button Save, wherever the cursor is (not with a menu open,
     // a control being changed or a button being set)
     bool padFree = (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) && !ImGui::IsAnyItemActive() &&
@@ -497,7 +504,8 @@ void draw_ui(App &a, ImVec2 size, SDL_Renderer *ren)
     // back to the front screen (the carousel), bottom left
     ImGui::SetCursorPos(ImVec2(pad + S(6), by + (playH - btnH) * 0.5f));
     if (orn_plate_button("\xe2\x80\xb9  Library", ImVec2(S(130), btnH), true) ||
-        (padFree && ImGui::IsKeyPressed(ImGuiKey_GamepadFaceUp, false)))
+        (padFree && (ImGui::IsKeyPressed(ImGuiKey_GamepadFaceUp, false) ||
+                     ImGui::IsKeyPressed(ImGuiKey_GamepadFaceRight, false))))   // Y, or B as in most launchers (#83)
         back_to_front(a);
     libId = ImGui::GetItemID();
     bx -= saveW + S(12);

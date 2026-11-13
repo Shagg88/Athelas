@@ -135,20 +135,76 @@ RunResult query_run(const std::string &exe, const char *arg, std::string &out, F
 }
 }
 
+// What a port answers to --version and --describe-settings is fixed in its program, so it is kept beside the log
+// (port-query.cache) and used again for as long as the program is the same file (path, size and time): opening a
+// game's page doesn't start the port twice each time. A cache that can't be read is ignored and written anew.
+namespace {
+std::string exe_stamp(const std::string &exe)
+{
+    WIN32_FILE_ATTRIBUTE_DATA fa;
+    if (!GetFileAttributesExA(exe.c_str(), GetFileExInfoStandard, &fa)) return "";
+    char b[96];
+    snprintf(b, sizeof b, "v1|%lu:%lu|%lu:%lu|", (unsigned long)fa.nFileSizeHigh, (unsigned long)fa.nFileSizeLow,
+             (unsigned long)fa.ftLastWriteTime.dwHighDateTime, (unsigned long)fa.ftLastWriteTime.dwLowDateTime);
+    return b + exe;
+}
+bool cache_read(const std::string &path, const std::string &exe, std::string &version, std::string &json)
+{
+    std::string stamp = exe_stamp(exe), text;
+    FILE *f = stamp.empty() ? nullptr : fopen(path.c_str(), "rb");
+    if (!f) return false;
+    char buf[65536];
+    size_t n;
+    while ((n = fread(buf, 1, sizeof buf, f)) > 0 && text.size() < (8u << 20)) text.append(buf, n);
+    fclose(f);
+    size_t l1 = text.find('\n'), l2 = l1 == std::string::npos ? l1 : text.find('\n', l1 + 1);
+    if (l2 == std::string::npos || text.compare(0, l1, stamp) != 0) return false;
+    version = text.substr(l1 + 1, l2 - l1 - 1);
+    json = text.substr(l2 + 1);
+    return !version.empty() && !json.empty();
+}
+void cache_write(const std::string &path, const std::string &exe, const std::string &version, const std::string &json)
+{
+    std::string stamp = exe_stamp(exe), tmp = path + ".tmp";
+    if (stamp.empty() || version.find('\n') != std::string::npos) return;
+    FILE *f = fopen(tmp.c_str(), "wb");
+    if (!f) return;
+    std::string text = stamp + "\n" + version + "\n" + json;
+    bool ok = fwrite(text.data(), 1, text.size(), f) == text.size();
+    ok = fclose(f) == 0 && ok;
+    if (!ok || !MoveFileExA(tmp.c_str(), path.c_str(), MOVEFILE_REPLACE_EXISTING)) DeleteFileA(tmp.c_str());
+}
+bool query_impl(Port &p, FILE *log, const std::string &cachePath, bool useCache);
+}
+
 bool port_query(Port &p, const std::string &logPath)
 {
-    p.version.clear(); p.settings.clear(); p.presets.clear(); p.err.clear();
     FILE *log = logPath.empty() ? nullptr : fopen(logPath.c_str(), "w");
     struct Closer { FILE *f; ~Closer() { if (f) fclose(f); } } closer{ log };
     if (log) fprintf(log, "Asking %s\n", p.exe.c_str());
+    size_t slash = logPath.find_last_of("\\/");
+    std::string cachePath = slash == std::string::npos ? std::string() : logPath.substr(0, slash + 1) + "port-query.cache";
+    if (!cachePath.empty() && query_impl(p, log, cachePath, true)) return true;
+    return query_impl(p, log, cachePath, false);   // no cache, or one that couldn't be used: the port is asked
+}
+
+namespace {
+bool query_impl(Port &p, FILE *log, const std::string &cachePath, bool useCache)
+{
+    p.version.clear(); p.settings.clear(); p.presets.clear(); p.err.clear();
     std::string out;
-    // one try each, so a port that never answers holds the launcher's window up at most 75 s (review)
-    RunResult rc = query_run(p.exe, "--version", out, log, 1, 45000);
-    if (!rc.ok()) { p.err = "The port didn't answer (--version, " + exit_code_text(rc) + ")."; return false; }
-    while (!out.empty() && (out.back() == '\n' || out.back() == '\r' || out.back() == ' ')) out.pop_back();
-    p.version = out;
-    rc = query_run(p.exe, "--describe-settings", out, log, 1, 30000);
-    if (!rc.ok()) { p.err = "The port didn't list its settings (" + exit_code_text(rc) + ")."; return false; }
+    if (useCache) {
+        if (!cache_read(cachePath, p.exe, p.version, out)) return false;
+        if (log) fprintf(log, "(answers kept from an earlier start of this same program: port-query.cache)\n--version: %s\n--describe-settings: %u bytes\n", p.version.c_str(), (unsigned)out.size());
+    } else {
+        // one try each, so a port that never answers holds the launcher's window up at most 75 s (review)
+        RunResult rc = query_run(p.exe, "--version", out, log, 1, 45000);
+        if (!rc.ok()) { p.err = "The port didn't answer (--version, " + exit_code_text(rc) + ")."; return false; }
+        while (!out.empty() && (out.back() == '\n' || out.back() == '\r' || out.back() == ' ')) out.pop_back();
+        p.version = out;
+        rc = query_run(p.exe, "--describe-settings", out, log, 1, 30000);
+        if (!rc.ok()) { p.err = "The port didn't list its settings (" + exit_code_text(rc) + ")."; return false; }
+    }
     size_t at = out.find('{');
     if (at == std::string::npos) { p.err = "The port's settings list couldn't be read."; return false; }
     JParse jp{ out.data() + at, out.data() + out.size() };
@@ -195,8 +251,10 @@ bool port_query(Port &p, const std::string &logPath)
         }
         if (!ps.values.empty()) p.presets.push_back(ps);
     }
+    if (!useCache && !cachePath.empty()) cache_write(cachePath, p.exe, p.version, out);
     return true;
 }
+}  // namespace
 
 // ---------------------------------------------------------------------------
 // settings.toml: plain [section] and key = value lines, edited in place
@@ -210,6 +268,8 @@ static std::string line_section(const std::string &l)
 {
     std::string t = trim(l);
     if (t.size() >= 2 && t[0] == '[' && t[1] != '[') { size_t e = t.find(']'); if (e != std::string::npos) return trim(t.substr(1, e - 1)); }
+    // [[array]]: a table of its own, never one a setting is in (a name no [section] can have)
+    if (t.size() >= 4 && t[0] == '[' && t[1] == '[') { size_t e = t.find("]]"); if (e != std::string::npos) return "\x02" + trim(t.substr(2, e - 2)); }
     return std::string("\x01");   // not a section line
 }
 // key and value of a 'key = value' line ("" if it isn't one); the value without a trailing comment
@@ -222,7 +282,15 @@ static bool line_kv(const std::string &l, std::string &k, std::string &v)
     k = trim(t.substr(0, eq));
     v = trim(t.substr(eq + 1));
     if (!v.empty() && v[0] != '"' && v[0] != '\'') { size_t h = v.find('#'); if (h != std::string::npos) v = trim(v.substr(0, h)); }
-    else if (!v.empty()) { size_t q = v.find(v[0], 1); while (q != std::string::npos && v[0] == '"' && v[q - 1] == '\\') q = v.find('"', q + 1); if (q != std::string::npos) v = v.substr(0, q + 1); }
+    else if (!v.empty()) {
+        // the closing quote: in "..." a backslash escapes the next character ("a\\" ends after the second backslash)
+        size_t q = std::string::npos;
+        for (size_t i = 1; i < v.size(); i++) {
+            if (v[0] == '"' && v[i] == '\\') { i++; continue; }
+            if (v[i] == v[0]) { q = i; break; }
+        }
+        if (q != std::string::npos) v = v.substr(0, q + 1);
+    }
     return !k.empty();
 }
 
@@ -272,8 +340,14 @@ void PortSettingsFile::remove(const std::string &sec, const std::string &key)
 bool settings_file_load(const std::string &path, PortSettingsFile &f)
 {
     f.lines.clear();
+    f.unreadable = false;
     FILE *fp = fopen(path.c_str(), "rb");
-    if (!fp) return false;
+    // there but locked for a moment (OneDrive, antivirus, the port still closing): a few tries, then marked unreadable
+    for (int t = 0; !fp && t < 5 && GetFileAttributesA(path.c_str()) != INVALID_FILE_ATTRIBUTES; t++) {
+        Sleep(100);
+        fp = fopen(path.c_str(), "rb");
+    }
+    if (!fp) { f.unreadable = GetFileAttributesA(path.c_str()) != INVALID_FILE_ATTRIBUTES; return false; }
     std::string text; char b[4096]; size_t n;
     while ((n = fread(b, 1, sizeof b, fp)) > 0) text.append(b, n);
     fclose(fp);
@@ -292,6 +366,7 @@ bool settings_file_load(const std::string &path, PortSettingsFile &f)
 
 bool settings_file_save(const std::string &path, const PortSettingsFile &f)
 {
+    if (f.unreadable) return false;   // never over a file that couldn't be read
     std::string text;
     for (const std::string &l : f.lines) text += l + "\r\n";
     std::string tmp = path + ".tmp";

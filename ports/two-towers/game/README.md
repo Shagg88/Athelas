@@ -38,7 +38,7 @@ The US release of the game is supported. Another release is detected and you are
 - Button remapping, rumble strength, stick deadzone and trigger sensitivity.
 
 **In-game settings menu**
-- `F10`, or both stick clicks together on a controller, opens a settings menu over the game, which stands still behind it.
+- `F10`, or Back + Start on a controller, opens a settings menu over the game, which stands still behind it.
 - It holds the settings that take effect at once (picture, controls, field of view, damage) and the achievements list. It saves them when it closes (`F10`, `Esc`, B or Start). LB and RB, or Page Up and Page Down, change its page.
 
 **In the background**

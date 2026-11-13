@@ -452,6 +452,8 @@ public:
     void Draw(const State& s, uint32_t prim, uint32_t start, uint32_t count, const uint8_t* indices) override;
     void Copy(const Surface& src, const Surface& dst, uint32_t count, uint32_t src_rects, uint32_t dst_points) override;
     void Present(const Surface& front) override;
+    void GameFrame() override { up::FgGameFrame(); }
+    void PresentQueued(bool swap) override { up::FgPresentQueued(swap); }
     void Sync(uint32_t data, uint32_t size) override;
     void SyncLate(uint32_t data) override;
     bool DeliverLate(uint32_t data) override;
@@ -1174,9 +1176,18 @@ bool D3D12Backend::CreateSwapChain(HWND hwnd) {
                  hdr_paper_ * 80.0f);
         } else {
             LOGR("d3d12: HDR could not be set up on this screen: the normal picture");
-            hdr_ = false;
-            bb_fmt_ = DXGI_FORMAT_B8G8R8A8_UNORM;
-            swap_->ResizeBuffers(kFrames, bb_w_, bb_h_, bb_fmt_, sd.Flags);
+            // frame generation readied for the format change first (FSR's context, made for the old format, made
+            // again with the new one at its next frame), as for a resize
+            if (up::FgActive()) up::FgResize();
+            HRESULT hr = swap_->ResizeBuffers(kFrames, bb_w_, bb_h_, DXGI_FORMAT_B8G8R8A8_UNORM, sd.Flags);
+            if (FAILED(hr)) {
+                // the buffers keep their HDR format: so does the renderer, shown as HDR without the screen's colours
+                LOGW("d3d12: the swap chain could not be changed back to the normal picture (%08lX); HDR output kept",
+                     static_cast<unsigned long>(hr));
+            } else {
+                hdr_ = false;
+                bb_fmt_ = DXGI_FORMAT_B8G8R8A8_UNORM;
+            }
         }
     }
     return true;
@@ -2731,13 +2742,17 @@ D3D12Backend::~D3D12Backend() {
     // frame generation and its swap chain go first, the GPU idle
     // (review: FSR's presents waited for, the frame-generation context destroyed, then the game's own references to
     // FSR's swap chain released before FSR's swap chain context goes, as AMD's samples do)
+    // the GPU idle before anything it may still be using is freed (the members after this), frame generation or not
+    if (cl_.Get() && fence_ && queue_) Flush();   // (not for a backend whose Init stopped part way)
     if (up::FgActive()) {
-        if (cl_.Get()) Flush();
         up::FgShutdown();
         for (auto& b : bb_) b.Reset();
         swap_.Reset();
         up::FgReleaseSwapChain();
     }
+    // the upscaler's resources, then Streamline itself, before the device goes (NVIDIA's order)
+    up_.reset();
+    up::ShutdownStreamline();
     if (pso_list_) std::fclose(pso_list_);
 }
 
@@ -5481,10 +5496,23 @@ bool D3D12Backend::TargetStale(uint32_t data) const {
 }
 
 // the CPU reads a surface the GPU drew: bring the pixels back
-void D3D12Backend::Sync(uint32_t data, uint32_t) {
+void D3D12Backend::Sync(uint32_t data, uint32_t size) {
     FlushBatch();
     auto it = targets_.find(TargetMapKey(data, false));
-    if (it == targets_.end() || !it->second.drawn || TargetStale(data)) return;
+    if (it == targets_.end() || !it->second.drawn) return;
+    // Long unused, the memory may be the title's again for something else - unless nothing has written it since we
+    // last did: then it is still this target's, and its pixels go back. (A copy of the frame made when a menu opens
+    // and read seconds later, when the save is written: Fellowship's save pictures were black squares, #81.)
+    // (by its bytes: a lock - this read's own - marks the memory as touched, so the lock epoch can't tell)
+    if (TargetStale(data)) {
+        // only into a resource of the target's own size, whose memory nothing has written since (by its bytes, and
+        // by the lock epoch: this lock's own MarkDirty comes after it)
+        if (size != it->second.bytes || DirtyEpoch(data) > it->second.epoch || MemSig(data, it->second.bytes) != it->second.sig) {
+            LOG_FIRST(8, "d3d12: read-back of %08X skipped: unused for a while and its memory written since", data);
+            return;
+        }
+        LOG_FIRST(8, "d3d12: read-back of %08X after a while unused (its memory untouched: still its pixels)", data);
+    }
     PerfScope perf_sync{g_perf.sync};
     g_perf.syncs++;
     if (diag::Perf()) {

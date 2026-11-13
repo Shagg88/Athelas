@@ -292,7 +292,10 @@ std::vector<LibGame> library_load(const std::string &launcherDir)
         LibGame g;
         // check again: the folder may have moved, or a port may now read it differently
         if (detect_game_at(v.substr(bar + 1), g) == GK_NONE) {
-            if (!drive_there(v.substr(bar + 1))) g_offline.push_back(v);   // its drive unplugged: kept for next time
+            // its drive unplugged, or the game still there but unreadable just now (a slow or busy drive, a locked
+            // disc image): kept for next time; only a game that is gone from a drive that is there is dropped
+            std::string at = v.substr(bar + 1);
+            if (!drive_there(at) || GetFileAttributesA(at.c_str()) != INVALID_FILE_ATTRIBUTES) g_offline.push_back(v);
             continue;
         }
         if (g.kind != saved) continue;

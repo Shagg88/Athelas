@@ -107,4 +107,8 @@ int     icons_font_is_white(const void *tex);     /* its letters are white (thei
 void    input_patch_rumble(void);          /* the game's Xbox vibration calls -> controllers */         /* controller button names in on-screen prompts */
 HRESULT input_wrap_dinput8(void *realCreate, HINSTANCE h, DWORD v, REFIID r, LPVOID *o, LPVOID u);
 
+void sound_minimized(int minimized);   /* sound.c: mute this process's sound while minimized (#78) */
+void sound_unmute_left_over(void);     /* sound.c: undo a mute left by a run that ended minimized */
+void bars_follow(HWND game, int minimized);   /* graphics.c: borderless black bars follow the game's minimize */
+
 #endif

@@ -64,6 +64,7 @@ bool Message(void*, uint32_t msg, uintptr_t wp, intptr_t lp, intptr_t*) {
 // after the settings load
 void InitCamera() {
     app::g_max_frame_aspect = 32.0f / 9.0f;  // ultrawide screens get their full width (see Place2D)
+    app::g_min_frame_aspect = 3.0f / 2.0f;   // 16:10 (the Steam Deck) at its own shape too (#80): relative to 4:3 throughout
     gpu::g_wide_targets = true;              // drawn at the screen's own width, not stretched sideways
     gpu::g_movie_fit_max = (4.0f / 3.0f) * 480.0f / 348.0f;  // the films are 1.84:1 (rows 65 to 413 of the frame)
     gpu::g_alpha_edges = g_alpha_edges;

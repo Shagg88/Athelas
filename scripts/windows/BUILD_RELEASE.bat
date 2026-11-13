@@ -7,7 +7,24 @@ rem which game and which step. Nothing is pushed or published.
 rem Since 1.7.5 the port programs ship again (Shagg, 30 Oct: the launcher's build from kits failed for players in
 rem 1.7.4): each port's folder goes in with its .exe, and arm64\<exe>-arm64.exe for Windows on ARM. No kits.
 setlocal EnableExtensions
-for %%I in ("%~dp0..\..\..") do set "ROOT=%%~fI"
+rem started by a job or a schedule (CI=1 from the caller): no "press a key" at the end
+if defined CI set "BR_UNATTENDED=1"
+rem UPDATE_SOURCE rewrites this very file, and cmd reads a running .bat from a byte position: so it always runs from a
+rem copy in %TEMP% (BR_HOME = this folder), and after the update the new version starts again from a fresh copy
+rem (no parenthesised block: a %TEMP% with a ")" in it, as in a user name "Foo (Admin)", would break one)
+if defined BR_COPY goto :br_running
+set "BR_HOME=%~dp0"
+set "BR_RUN=%TEMP%\athelas-build-release-%RANDOM%%RANDOM%.bat"
+set "BR_COPY=%TEMP%\athelas-build-release-%RANDOM%%RANDOM%-updated.bat"
+copy /y "%~f0" "%BR_RUN%" >nul || goto :br_copyfail
+rem one line, read once: this file may be rewritten while the copy runs. The copies go afterwards, the result kept.
+call "%BR_RUN%" %* & if errorlevel 1 (del "%BR_RUN%" "%BR_COPY%" 2>nul & exit /b 1) else (del "%BR_RUN%" "%BR_COPY%" 2>nul & exit /b 0)
+:br_copyfail
+echo Could not copy BUILD_RELEASE.bat to the TEMP folder.
+if not defined BR_UNATTENDED pause
+exit /b 1
+:br_running
+for %%I in ("%BR_HOME%..\..\..") do set "ROOT=%%~fI"
 set "SRC=%ROOT%\source"
 set "TT_GAME=%ROOT%\games\xbox-us\two-towers"
 set "RX_GAME=%ROOT%\games\xbox-us\return-of-the-king"
@@ -20,7 +37,14 @@ set "ARM_NOTE="
 call :find_git || (set "STEP=Git was not found - install Git for Windows" & goto :failed)
 if not exist "%SRC%\.git" (set "STEP=%SRC% is not the Athelas repository" & goto :failed)
 if not exist "%ROOT%\backup\athelas.bundle" (set "STEP=backup\athelas.bundle is missing, so the source can't be brought up to date - ask Claude to back it up again" & goto :failed)
-call "%~dp0UPDATE_SOURCE.bat" quiet || (set "STEP=bringing source\ up to date from backup\athelas.bundle" & goto :failed)
+if not defined BR_UPDATED (
+  call "%BR_HOME%UPDATE_SOURCE.bat" quiet < nul || (set "STEP=bringing source\ up to date from backup\athelas.bundle" & goto :failed)
+  rem start the updated BUILD_RELEASE.bat again (from its own fresh copy), without updating twice
+  set "BR_UPDATED=1"
+  copy /y "%BR_HOME%BUILD_RELEASE.bat" "%BR_COPY%" >nul || (set "STEP=copying the updated BUILD_RELEASE.bat" & goto :failed)
+  call "%BR_COPY%" %*
+  exit /b
+)
 for %%G in ("%TT_GAME%" "%RX_GAME%" "%FX_GAME%" "%TA_GAME%") do if not exist "%%~G\default.xbe" (set "STEP=The game files were not found at %%~G" & goto :failed)
 
 rd /s /q "%OUTDIR%" 2>nul
@@ -81,7 +105,7 @@ type "%INFO%"
 echo.
 echo   Next: tell Claude it's done. Nothing has been pushed or published.
 echo ==========================================================================
-pause
+if not defined BR_UNATTENDED pause
 exit /b 0
 
 :assets
@@ -108,13 +132,24 @@ for %%P in (mingw mingw-arm64) do (
 )
 popd
 copy /y "%~1\out\build\mingw\%~3.exe" "%OUTDIR%\%~2\%~3.exe" >nul || (set "STEP=%~2: copying the x64 program" & exit /b 1)
-for /f "delims=" %%H in ('certutil -hashfile "%OUTDIR%\%~2\%~3.exe" SHA256 ^| findstr /v ":"') do (
-  echo %%H  %~3.exe> "%OUTDIR%\%~2\%~3.exe.sha256"
-  echo %~2\%~3.exe  %%H  ^(llvm-mingw, PGO^)>> "%INFO%"
-)
+set "BR_H="
+for /f "delims=" %%H in ('certutil -hashfile "%OUTDIR%\%~2\%~3.exe" SHA256 ^| findstr /v ":"') do set "BR_H=%%H"
+if not defined BR_H (set "STEP=%~2: hashing the x64 program" & exit /b 1)
+rem (older Windows' certutil prints the hash with spaces between the bytes)
+set "BR_H=%BR_H: =%"
+echo %BR_H%  %~3.exe> "%OUTDIR%\%~2\%~3.exe.sha256"
+echo %~2\%~3.exe  %BR_H%  ^(llvm-mingw, PGO^)>> "%INFO%"
+rem the symbols for the program that actually ships (not release.bat's Visual Studio build): symbols\<sha256>
+if not exist "%~1\symbols\%BR_H%" mkdir "%~1\symbols\%BR_H%"
+copy /y "%~1\out\build\mingw\%~3.exe" "%~1\symbols\%BR_H%\" >nul
+if exist "%~1\out\build\mingw\%~3.pdb" copy /y "%~1\out\build\mingw\%~3.pdb" "%~1\symbols\%BR_H%\" >nul
 if not exist "%OUTDIR%\arm64" mkdir "%OUTDIR%\arm64"
 copy /y "%~1\out\build\mingw-arm64\%~3.exe" "%OUTDIR%\arm64\%~3-arm64.exe" >nul || (set "STEP=%~2: copying the ARM64 program" & exit /b 1)
-for /f "delims=" %%H in ('certutil -hashfile "%OUTDIR%\arm64\%~3-arm64.exe" SHA256 ^| findstr /v ":"') do echo arm64\%~3-arm64.exe  %%H>> "%INFO%"
+set "BR_H="
+for /f "delims=" %%H in ('certutil -hashfile "%OUTDIR%\arm64\%~3-arm64.exe" SHA256 ^| findstr /v ":"') do set "BR_H=%%H"
+if not defined BR_H set "BR_H=(no hash)"
+set "BR_H=%BR_H: =%"
+echo arm64\%~3-arm64.exe  %BR_H%>> "%INFO%"
 exit /b 0
 
 :kit
@@ -127,7 +162,11 @@ set CI=1
 call "%~1\build_arm64.bat"
 if errorlevel 1 (set "ARM_NOTE=%ARM_NOTE% %~3 ARM64 build failed; the rest is fine." & exit /b 0)
 copy /y "%~1\out\build\release-arm64\%~2-arm64.exe" "%OUTDIR%\arm64\" >nul
-for /f "delims=" %%H in ('certutil -hashfile "%OUTDIR%\arm64\%~2-arm64.exe" SHA256 ^| findstr /v ":"') do echo arm64\%~2-arm64.exe  %%H>> "%INFO%"
+set "BR_H="
+for /f "delims=" %%H in ('certutil -hashfile "%OUTDIR%\arm64\%~2-arm64.exe" SHA256 ^| findstr /v ":"') do set "BR_H=%%H"
+if not defined BR_H set "BR_H=(no hash)"
+set "BR_H=%BR_H: =%"
+echo arm64\%~2-arm64.exe  %BR_H%>> "%INFO%"
 exit /b 0
 
 :find_git
@@ -144,5 +183,5 @@ echo ==========================================================================
 echo   STOPPED: %STEP%
 echo   Scroll up for the details. Nothing has been pushed or published.
 echo ==========================================================================
-pause
+if not defined BR_UNATTENDED pause
 exit /b 1

@@ -51,5 +51,5 @@ $CXX $WARN $VDEF -c src/pages.cpp -o build/obj/pages.o
 $CXX $WARN $VDEF -c src/main.cpp -o build/obj/main.o
 printf '#define VERSION_RC %s\n#define VERSION_STR "%s"\n' "$VERSION_RC" "$ROTKFIX_VERSION" > build/obj/version_rc.h
 i686-w64-mingw32-windres -Ibuild/obj src/launcher.rc -O coff -o build/obj/launcher_res.o
-i686-w64-mingw32-g++ -mwindows -static-libgcc -static-libstdc++ -s -o build/Athelas.exe build/obj/*.o \
+i686-w64-mingw32-g++ -mwindows -Wl,--large-address-aware -static-libgcc -static-libstdc++ -s -o build/Athelas.exe build/obj/*.o \
   $SDL/lib/libSDL3.dll.a -lshell32 -lole32 -luuid -lwinhttp -lbcrypt -ladvapi32 -luuid

@@ -20,11 +20,11 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER I
 OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-Dear ImGui v1.91.0 (https://github.com/ocornut/imgui)
+Dear ImGui v1.93.0 (https://github.com/ocornut/imgui)
 
 The MIT License (MIT)
 
-Copyright (c) 2014-2024 Omar Cornut
+Copyright (c) 2014-2026 Omar Cornut
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -45,7 +45,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 
-SDL 3.4.18 (https://github.com/libsdl-org/SDL)
+SDL 3.4.20 (https://github.com/libsdl-org/SDL)
 
 Copyright (C) 1997-2026 Sam Lantinga <slouken@libsdl.org>
 
@@ -86,8 +86,14 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER I
 OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-Liberation Sans Regular 2.1.5 (https://github.com/liberationfonts/liberation-fonts), the in-game settings menu's
-font (runtime/app/overlay_font.h)
+Uncial Antiqua, Cinzel Decorative, IM Fell English and EB Garamond (digits), the in-game menu's fonts
+(runtime/app/menu_fonts.h): SIL Open Font License, Version 1.1. Copyright (c) 2011 Astigmatic (Uncial Antiqua);
+(c) 2012 Natanael Gama, with Reserved Font Name 'Cinzel' (Cinzel Decorative); (c) 2010 Igino Marini (IM Fell English);
+(c) 2017 The EB Garamond Project Authors (EB Garamond). The license texts are in the release's licenses folder.
+
+
+Liberation Sans Regular 2.1.5 (https://github.com/liberationfonts/liberation-fonts), the in-game menu's fallback
+font and the notes over the game (runtime/app/overlay_font.h)
 
 Digitized data copyright (c) 2010 Google Corporation with Reserved Font Arimo, Tinos and Cousine.
 Copyright (c) 2012 Red Hat, Inc. with Reserved Font Name Liberation.
@@ -121,3 +127,29 @@ Copyright (C) 2025 Intel Corporation. Intel Simplified Software License (third_p
 declare ID3D12PipelineLibrary themselves before including them (gpu/upscale.cpp). The DLLs (libxess.dll,
 libxess_fg.dll, libxell.dll) are not in this repository; the release ships them unmodified under the same licence
 (licenses\INTEL-XeSS-LICENSE.txt).
+
+
+glslang 16.6.0 (https://github.com/KhronosGroup/glslang), the Vulkan renderer's shader compiler (runtime/gpu/spirv.cpp)
+
+Copyright (c) 2015-2025 The Khronos Group Inc. and others: BSD-3-Clause, BSD-2-Clause, MIT and Apache 2.0 parts. The
+full text is in the release's licenses folder (glslang-LICENSE.txt).
+
+
+Khronos Vulkan-Headers v1.4.368 (https://github.com/KhronosGroup/Vulkan-Headers), the Vulkan renderer's interface
+(third_party/vulkan)
+
+Copyright 2015-2026 The Khronos Group Inc. Apache-2.0 OR MIT (third_party/vulkan/LICENSE.md; in the release's licenses
+folder as Vulkan-Headers-LICENSE.md).
+
+
+SMAA: Enhanced Subpixel Morphological Antialiasing (https://github.com/iryoku/smaa), the SMAA option's lookup
+textures and method (runtime/third_party/smaa)
+
+Copyright (C) 2013 Jorge Jimenez, Jose I. Echevarria, Belen Masia, Fernando Navarro and Diego Gutierrez. MIT licence
+(runtime/third_party/smaa/LICENSE.txt; in the release's licenses folder as SMAA-LICENSE.txt).
+
+
+Compiler runtimes built into the programs: LLVM's libc++, libunwind and compiler-rt (https://llvm.org), Apache
+License 2.0 with LLVM Exceptions (LLVM-runtime-LICENSE.txt in the release's licenses folder), and the MinGW-w64
+runtime (https://www.mingw-w64.org), Zope Public License 2.1 with public-domain and other permissive parts
+(mingw-w64-runtime-LICENSE.txt). The tool chain is llvm-mingw (https://github.com/mstorsjo/llvm-mingw).

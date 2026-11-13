@@ -23,7 +23,7 @@
 #               x64 only: left out of the ARM64 zip
 #   TT_ARM, RX_ARM = the ports' ARM64 builds (TwoTowers-arm64.exe, ROTKXbox-arm64.exe): with both, a second zip,
 #               (FX_ARM, FOTRXbox-arm64.exe, goes in it too when given)
-#               Athelas-<ver>-arm64.zip, the same files plus those two and ARM64.txt (the launcher's sign that its
+#               Athelas-<ver>-arm64.7z, the same files plus those two and ARM64.txt (the launcher's sign that its
 #               ARM64 builds are this release's; its updater fetches this zip on Windows on ARM)
 #
 # Layout (the launcher lives in a folder of its own; see README.txt):
@@ -69,7 +69,8 @@ fi
 cp launcher/build/Athelas.exe dist-files/README.txt "$OUT/"
 # What's new (GitHub #51): every release's notes, newest first, without their checksum lists, read by the launcher
 for f in $(ls docs/release-notes-*.md | sed 's/.*release-notes-//; s/\.md$//' | sort -t. -k1,1nr -k2,2nr -k3,3nr); do
-    sed '/^## Checksums/,$d' "docs/release-notes-$f.md"; printf '\n'
+    # (and without badges: a picture's link would show as raw text)
+    sed '/^## Checksum/,$d; /^\[!\[/d' "docs/release-notes-$f.md" | cat -s; printf '\n'
 done > "$OUT/WHATS-NEW.txt"
 # the launcher's translations (lang\<code>.txt, read by Athelas.exe)
 mkdir -p "$OUT/lang"; cp launcher/lang/*.txt "$OUT/lang/"
@@ -125,7 +126,7 @@ missing=""
 for f in licenses/*; do [ -f "$OUT/licenses/$(basename "$f")" ] || missing="$missing licenses/$(basename "$f")"; done
 [ -f "$OUT/licenses/XboxXBE-Recomp-LICENSE.txt" ] || { [ -z "$TT_DIR$RX_DIR$FX_DIR$TA_DIR" ] || missing="$missing licenses/XboxXBE-Recomp-LICENSE.txt"; }
 for f in licenses/*; do [ -f "$FIX/ROTKFix/licenses/$(basename "$f")" ] || missing="$missing ROTK-PC/pcfix/ROTKFix/licenses/$(basename "$f")"; done
-if [ -n "$DSOAL_DIR" ] && [ -d third_party/dsoal/source ]; then ls "$OUT"/licenses/source/*.zip >/dev/null 2>&1 || missing="$missing licenses/source (DSOAL/OpenAL Soft source)"; fi
+if [ -n "$DSOAL_DIR" ]; then [ -d third_party/dsoal/source ] && ls "$OUT"/licenses/source/*.zip >/dev/null 2>&1 || missing="$missing licenses/source (DSOAL/OpenAL Soft source: LGPL, needed beside dsound.dll)"; fi
 if [ -d "$OUT/upscalers" ]; then
     for f in AMD-FSR-LICENSE.md NVIDIA-DLSS-LICENSE.txt NVIDIA-Streamline-LICENSE.txt NVIDIA-Streamline-3rd-party-licenses.md \
              INTEL-XeSS-LICENSE.txt INTEL-XeSS-third-party-programs.txt; do
@@ -137,20 +138,36 @@ for d in FOTR-Xbox TA-Xbox; do
     [ -d "$OUT/$d/fonts" ] && for f in CormorantUnicase-OFL.txt PTSans-OFL.txt UncialAntiqua-OFL.txt; do [ -f "$OUT/$d/fonts/$f" ] || missing="$missing $d/fonts/$f"; done
 done
 if [ -n "$missing" ]; then echo "STOPPED: licences missing from the download:$missing"; exit 1; fi
+# ARM_DIR (BUILD_RELEASE's release-out\arm64): each port's <exe>-arm64.exe goes beside its x64 program
+if [ -n "$ARM_DIR" ]; then
+    # a Windows path (release-out\arm64) would match nothing: stop rather than ship x64-only ports without a word
+    if [ ! -d "$ARM_DIR" ]; then echo "STOPPED: ARM_DIR $ARM_DIR isn't a folder (use / in the path)"; exit 1; fi
+    armmiss=""
+    for p in TT-Xbox:TwoTowers ROTK-Xbox:ROTKXbox FOTR-Xbox:FOTRXbox TA-Xbox:TAXbox; do
+        d=$OUT/${p%%:*}; e=${p#*:}-arm64.exe
+        [ -d "$d" ] || continue
+        if [ -f "$ARM_DIR/$e" ]; then cp "$ARM_DIR/$e" "$d/"; (cd "$d" && sha256sum "$e" > "$e.sha256")
+        else armmiss="$armmiss $e"; fi
+    done
+    if [ -n "$armmiss" ]; then echo "STOPPED: ARM64 builds missing from $ARM_DIR:$armmiss"; exit 1; fi
+fi
 # the ports' ARM64 builds in the one download: ARM64.txt (this version) is the launcher's sign they belong to it
 if ls "$OUT"/*-Xbox/*-arm64.exe >/dev/null 2>&1; then printf '%s\r\n' "$VER" > "$OUT/ARM64.txt"; fi
 manifest "$OUT"
 # a .7z since 1.8.3 (Shagg): smaller; files at its top, in 64 MB blocks (the 32-bit launcher unpacks updates a block at a time)
 # -mf=BCJ: only the classic x86 filter, which every extractor knows (7-Zip's automatic ARM64 filter made older 7-Zip and
 # WinRAR call the ARM64 programs corrupted, Reddit, Nov 2026)
+# nothing read-only in the download (7-Zip keeps the attribute, and a read-only file can't be replaced by a later
+# update; review): the upscaler DLLs and some licence texts come read-only from their sources
+chmod -R u+w "$OUT"
 (cd "$OUT" && 7z a -t7z -mx=9 -ms=64m -mf=BCJ -bd -bso0 "../Athelas-$VER.7z" .)
 (cd dist && sha256sum "Athelas-$VER.7z" > "Athelas-$VER.7z.sha256")
 echo "built dist/Athelas-$VER.7z"
 cat "dist/Athelas-$VER.7z.sha256"
-# the ARM64 zip: the same, with the ARM64 kits (KITS_ARM_DIR: <folder>-arm64) and ARM64 build tools (TOOLS_ARM)
+# the ARM64 .7z: the same, with the ARM64 kits (KITS_ARM_DIR: <folder>-arm64) and ARM64 build tools (TOOLS_ARM)
 if [ -n "$KITS_DIR" ] && [ -n "$KITS_ARM_DIR" ] && [ -n "$TOOLS_ARM" ]; then
     ARM=dist/Athelas-$VER-arm64
-    rm -rf "$ARM" "$ARM.zip"
+    rm -rf "$ARM" "$ARM.zip" "$ARM.7z"
     cp -r "$OUT" "$ARM"
     rm -rf "$ARM/upscalers" "$ARM/kits" "$ARM/tools"   # (AMD's and NVIDIA's files are x64 only)
     mkdir -p "$ARM/kits" "$ARM/tools/llvm-mingw"
@@ -158,14 +175,15 @@ if [ -n "$KITS_DIR" ] && [ -n "$KITS_ARM_DIR" ] && [ -n "$TOOLS_ARM" ]; then
     cp -r "$TOOLS_ARM"/. "$ARM/tools/llvm-mingw/"
     printf '%s\r\n' "$VER" > "$ARM/ARM64.txt"
     manifest "$ARM"
-    (cd "$ARM" && zip -qr9 "../Athelas-$VER-arm64.zip" .)
-    (cd dist && sha256sum "Athelas-$VER-arm64.zip" > "Athelas-$VER-arm64.zip.sha256")
-    echo "built dist/Athelas-$VER-arm64.zip"
-    cat "dist/Athelas-$VER-arm64.zip.sha256"
+    # a .7z like the main download (Shagg: every download is a .7z); -mf=BCJ as there, so every 7-Zip opens it
+    (cd "$ARM" && 7z a -t7z -mx=9 -ms=64m -mf=BCJ -bd -bso0 "../Athelas-$VER-arm64.7z" .)
+    (cd dist && sha256sum "Athelas-$VER-arm64.7z" > "Athelas-$VER-arm64.7z.sha256")
+    echo "built dist/Athelas-$VER-arm64.7z"
+    cat "dist/Athelas-$VER-arm64.7z.sha256"
 fi
 if [ -z "$KITS_DIR" ] && [ -n "$TT_ARM" ] && [ -n "$RX_ARM" ]; then
     ARM=dist/Athelas-$VER-arm64
-    rm -rf "$ARM" "$ARM.zip"
+    rm -rf "$ARM" "$ARM.zip" "$ARM.7z"
     cp -r "$OUT" "$ARM"
     rm -rf "$ARM/upscalers"  # AMD's and NVIDIA's files are x64 only
     cp "$TT_ARM" "$ARM/TT-Xbox/TwoTowers-arm64.exe"
@@ -176,9 +194,15 @@ if [ -z "$KITS_DIR" ] && [ -n "$TT_ARM" ] && [ -n "$RX_ARM" ]; then
         cp "$FX_ARM" "$ARM/FOTR-Xbox/FOTRXbox-arm64.exe"
         (cd "$ARM/FOTR-Xbox" && sha256sum FOTRXbox-arm64.exe > FOTRXbox-arm64.exe.sha256)
     fi
+    if [ -n "$TA_ARM" ] && [ -d "$ARM/TA-Xbox" ]; then
+        cp "$TA_ARM" "$ARM/TA-Xbox/TAXbox-arm64.exe"
+        (cd "$ARM/TA-Xbox" && sha256sum TAXbox-arm64.exe > TAXbox-arm64.exe.sha256)
+    fi
     printf '%s\r\n' "$VER" > "$ARM/ARM64.txt"
-    (cd "$ARM" && zip -qr9 "../Athelas-$VER-arm64.zip" .)
-    (cd dist && sha256sum "Athelas-$VER-arm64.zip" > "Athelas-$VER-arm64.zip.sha256")
-    echo "built dist/Athelas-$VER-arm64.zip"
-    cat "dist/Athelas-$VER-arm64.zip.sha256"
+    manifest "$ARM"   # its own list: no upscalers, with the ARM programs
+    # a .7z like the main download (Shagg: every download is a .7z); -mf=BCJ as there, so every 7-Zip opens it
+    (cd "$ARM" && 7z a -t7z -mx=9 -ms=64m -mf=BCJ -bd -bso0 "../Athelas-$VER-arm64.7z" .)
+    (cd dist && sha256sum "Athelas-$VER-arm64.7z" > "Athelas-$VER-arm64.7z.sha256")
+    echo "built dist/Athelas-$VER-arm64.7z"
+    cat "dist/Athelas-$VER-arm64.7z.sha256"
 fi

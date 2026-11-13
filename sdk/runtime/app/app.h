@@ -29,6 +29,8 @@ uint64_t Add(const char* name, uint64_t n);   // adds and returns the new total
 void Flush();                                 // write what's not written yet (at exit)
 void DrawNotes(float scale);                  // the renderer's ImGui frame: "Achievement earned" in the corner
 void DrawList();                              // the in-game menu's page
+struct Entry { const char* title; const char* desc; bool earned; std::string when; };
+std::vector<Entry> Entries();                 // the list as the in-game menu draws it: earned or not, and when
 // Virtues (opt-in, the launcher's Journey page): ATHELAS_VIRTUES=<dealt>,<taken>, percents the launcher works out
 // from the deeds earned and sets for the game it starts. 100 each when it isn't set.
 uint32_t VirtueDealt();                       // the damage the player's hits do, percent
@@ -159,6 +161,7 @@ enum ExitCode : int {
 };
 // logs the reason, shows it unless --no-dialogs, and ends the process with code
 [[noreturn]] void Fail(int code, const std::wstring& message);
+int ExitingWith();   // the exit code Fail is ending the process with, -1 otherwise
 std::filesystem::path TextureDir();  // --textures, or textures beside the exe: replace/ holds packs, dump/ dumps
 std::filesystem::path SavesDir();        // --saves, or hdd beside the exe (hddN for --instance N above 1)
 std::filesystem::path ShaderCacheDir();  // --shader-cache, or shadercache beside the exe
@@ -181,6 +184,8 @@ bool Widescreen();
 // g_max_frame_aspect (16:9 unless the game handles wider screens: its 3D, 2D and movies then follow FrameAspect)
 float FrameAspect();
 extern float g_max_frame_aspect;
+// the narrowest frame a game draws at its own shape (16:9 unless it handles narrower ones, 16:10 say: 3:2 at least)
+extern float g_min_frame_aspect;
 
 std::filesystem::path ExeDir();
 // the game in assets (game_files.cpp): its folder and this executable's xbe, from the extracted files or a disc
@@ -273,7 +278,7 @@ extern const GameInfo kGame;
 // sleeps out the rest of the frame for the fps cap
 void Pace();
 
-// the in-game menu (overlay.cpp): F10 or both stick clicks open it, and the game stands still behind it
+// the in-game menu (overlay.cpp): F10 or Back + Start open it, and the game stands still behind it
 bool OverlayOpen();
 void OverlayPad(int port, input::Pad& pad);  // input::Poll: the menu's stick-click combination, and its masks
 void DrawOverlay(double fps);                // the renderer's ImGui frame, UiLock held

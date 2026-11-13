@@ -1158,3 +1158,11 @@ This is an untested and unsupported version (%s copy). Proceed with caution: it 
 Did it work? Let us know: = 動きましたか？お知らせください：
 It worked = 動いた
 It didn't work = 動かなかった
+Before you play = プレイする前に
+Athelas includes no game files, and none will be provided. To play, you use your own copy of each game: the PC game you have installed, or a disc image made from your own Xbox disc. = Athelas にはゲームファイルは含まれておらず、提供されることもありません。プレイするには、各ゲームのご自身のコピーを使用します：インストール済みの PC 版、またはご自身の Xbox ディスクから作成したディスクイメージです。
+By choosing Accept, you confirm that the game files you use with Athelas are your own. = 「同意する」を選ぶと、Athelas で使用するゲームファイルがご自身のものであることを確認したことになります。
+Athelas is an unofficial fan project. It has nothing to do with, and is not endorsed by, Microsoft, Electronic Arts, Vivendi, New Line Cinema, Warner Bros., the Tolkien Estate, or any developer or publisher of these games. = Athelas は非公式のファンプロジェクトです。Microsoft、Electronic Arts、Vivendi、New Line Cinema、Warner Bros.、Tolkien Estate、およびこれらのゲームの開発元・販売元とは一切関係がなく、承認も受けていません。
+Don't ask me again = 今後表示しない
+Counts only with Accept. Without it, Athelas asks once more after each update. = 「同意する」を選んだ場合のみ有効です。チェックしない場合、更新のたびにもう一度確認します。
+Decline = 同意しない
+Accept = 同意する

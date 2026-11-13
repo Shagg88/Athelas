@@ -508,6 +508,7 @@ bool OrthoExtent(const State& s, uint32_t start, uint32_t count, const uint8_t* 
     return true;
 }
 ScreenSpacePlace g_screen_space_place = nullptr;
+thread_local float g_screen_space_height = 0;
 
 namespace {
 // x of the position register (v0, screen pixels) pulled towards the target's centre by f
@@ -531,6 +532,7 @@ void SqueezeScreenX(const State& s, const int* regs, int nregs, float f, Assembl
     if (wide && !g_screen_space_place) return;
     if (wide) f = 1;
     float a = f, b = float(w) / 2 * (1 - f), c = 1, d = 0;
+    g_screen_space_height = float(h);
     if (g_screen_space_place) g_screen_space_place(lo, hi, ylo, yhi, float(w), f, a, b, c, d);
     for (uint32_t v = 0; v < out.vertex_count; v++) {
         float* p = &out.vertices[(size_t(v) * nregs + k) * 4];

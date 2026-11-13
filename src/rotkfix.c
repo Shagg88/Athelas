@@ -432,6 +432,36 @@ static int data_mod_listed(const char *name)
     for (int i = 0; i < g_dataModCount; i++) if (!lstrcmpiA(g_dataMods[i], name)) return 1;
     return 0;
 }
+/* Mod names in ROTKFix.ini: the launcher has written them as UTF-8 since 1.8.4 (its own code page), while the game
+ * runs in the PC's code page and has the files' names in that. Plain ASCII names are the same in both. A name with
+ * other letters is looked up as UTF-8 first, then as it is (an entry from an older launcher). */
+static int name_utf8(const char *ansi, char *out, int size)
+{
+    WCHAR w[MAX_PATH];
+    out[0] = 0;
+    if (!MultiByteToWideChar(CP_ACP, 0, ansi, -1, w, MAX_PATH)) return 0;
+    return WideCharToMultiByte(CP_UTF8, 0, w, -1, out, size, NULL, NULL) > 0;
+}
+static int has_high(const char *s) { for (; *s; s++) if ((unsigned char)*s >= 0x80) return 1; return 0; }
+static int mod_ini_int(const char *sec, const char *name, int def, const char *ini)
+{
+    char u[MAX_PATH * 3];
+    if (has_high(name) && name_utf8(name, u, sizeof u)) {
+        int v = (int)GetPrivateProfileIntA(sec, u, -12345, ini);
+        if (v != -12345) return v;
+    }
+    return (int)GetPrivateProfileIntA(sec, name, def, ini);
+}
+/* a name read from ROTKFix.ini, to the game's code page: UTF-8 when it is valid UTF-8, else left as it is */
+static void name_from_ini(char *s, int size)
+{
+    WCHAR w[MAX_PATH];
+    char a[MAX_PATH];
+    if (!has_high(s)) return;
+    if (!MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, s, -1, w, MAX_PATH)) return;
+    if (WideCharToMultiByte(CP_ACP, 0, w, -1, a, sizeof a, NULL, NULL) > 0) lstrcpynA(s, a, size);
+}
+
 static void data_mod_add(const char *name, const char *ini)
 {
     char dir[MAX_PATH], rel[MAX_PATH];
@@ -441,7 +471,7 @@ static void data_mod_add(const char *name, const char *ini)
     path_in_dir(dir, rel);
     DWORD at = GetFileAttributesA(dir);
     if (at == INVALID_FILE_ATTRIBUTES || !(at & FILE_ATTRIBUTE_DIRECTORY)) return;
-    if (GetPrivateProfileIntA("DataMods", name, 1, ini) == 0) { logf_("mods: data mod '%s' is off", name); return; }
+    if (mod_ini_int("DataMods", name, 1, ini) == 0) { logf_("mods: data mod '%s' is off", name); return; }
     lstrcpynA(g_dataMods[g_dataModCount++], name, sizeof g_dataMods[0]);
 }
 static void data_mods_read(void)
@@ -457,7 +487,10 @@ static void data_mods_read(void)
     for (char *p = order; *p;) {
         char *bar = strchr(p, '|');
         if (bar) *bar = 0;
-        data_mod_add(p, ini);
+        char nm[MAX_PATH];
+        lstrcpynA(nm, p, sizeof nm);
+        name_from_ini(nm, sizeof nm);
+        data_mod_add(nm, ini);
         if (!bar) break;
         p = bar + 1;
     }
@@ -478,15 +511,26 @@ static const char *redirect_mod_file(const char *n, char *buf, size_t max)
     if (!n || IsBadStringPtrA(n, MAX_PATH)) return n;
     const char *d = NULL;
     for (const char *p = n; *p; p++) {
-        if ((p == n || p[-1] == '\\' || p[-1] == '/') && !_strnicmp(p, "data\\", 5)) {
+        if ((p == n || p[-1] == '\\' || p[-1] == '/') && !_strnicmp(p, "data", 4) && (p[4] == '\\' || p[4] == '/')) {   /* Data\ or Data/ */
             d = p;
             break;
         }
     }
     if (!d) return n;   /* only the game's own data files (Data\...), matched by their whole path */
-    const char *sub = d;
-    char rel[MAX_PATH];
+    char sub[MAX_PATH];
+    lstrcpynA(sub, d, sizeof sub);
+    for (char *q = sub; *q; q++) if (*q == '/') *q = '\\';   /* the mods' folders are looked up with backslashes */
     data_mods_read();
+    if (g_dataModCount == 0) {
+        /* only ROTKFix\mods\Data to check: skip the lookup when that folder doesn't exist (one check per open) */
+        /* checked again every 5 s, so a folder added while the game runs is picked up */
+        static volatile LONG hasBase = -1;
+        static volatile DWORD checkedAt;
+        DWORD now = GetTickCount();
+        if (hasBase < 0 || now - checkedAt > 5000) { char b[MAX_PATH]; path_in_dir(b, "ROTKFix\\mods\\Data"); DWORD at = GetFileAttributesA(b); hasBase = at != INVALID_FILE_ATTRIBUTES && (at & FILE_ATTRIBUTE_DIRECTORY); checkedAt = now; }
+        if (!hasBase) return n;
+    }
+    char rel[MAX_PATH];
     for (int i = g_dataModCount; i >= 0; i--) {   /* the last data mod first; i == 0 last of all: ROTKFix\mods\Data */
         if (i > 0) snprintf(rel, sizeof rel, "ROTKFix\\mods\\%s\\%s", g_dataMods[i - 1], sub);
         else snprintf(rel, sizeof rel, "ROTKFix\\mods\\%s", sub);
@@ -630,7 +674,7 @@ void mods_load(void)
     do {
         if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
             /* 1. Check if disabled in ROTKFix.ini [Mods] */
-            if (GetPrivateProfileIntA("Mods", fd.cFileName, 1, ini) == 0) {
+            if (mod_ini_int("Mods", fd.cFileName, 1, ini) == 0) {
                 logf_("mods: '%s' is disabled in ROTKFix.ini [Mods]; skipping", fd.cFileName);
                 continue;
             }

@@ -364,7 +364,9 @@ KERNEL_EXPORT(99, KeDelayExecutionThread, 3) {
     Thread* t = Current();
     if (alertable && t && RunApcs(*t)) return kUserApc;
     int64_t deadline = ToDeadline(interval);
-    auto now = [] {
+    // guest time (ToDeadline): the pause menu holds a Sleep, fast forward shortens it
+    auto now = [] { return GuestNs(); };
+    auto host_now = [] {
         return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
     };
     SuspendPoint();
@@ -373,16 +375,16 @@ KERNEL_EXPORT(99, KeDelayExecutionThread, 3) {
         std::this_thread::yield();
         return kSuccess;
     }
-    int64_t start = now();
+    int64_t start = host_now();
     while (now() < deadline) {
-        int64_t left = deadline - now();
+        int64_t left = (deadline - now()) / std::max<uint32_t>(Speed(), 1) + 1;
         std::this_thread::sleep_for(std::chrono::nanoseconds(std::min<int64_t>(left, 2000000)));
         if (alertable && t && RunApcs(*t)) {
-            CountSleep(now() - start);
+            CountSleep(host_now() - start);
             return kUserApc;
         }
     }
-    CountSleep(now() - start);
+    CountSleep(host_now() - start);
     return kSuccess;
 }
 

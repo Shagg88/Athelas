@@ -67,6 +67,8 @@ extern ScreenSpaceHook g_screen_space_hook;
 using ScreenSpacePlace = void (*)(float x0, float x1, float y0, float y1, float width, float squeeze, float& a,
                                   float& b, float& c, float& d);
 extern ScreenSpacePlace g_screen_space_place;
+// the target's height in the same pixels as width, set before each g_screen_space_place call (for a y placement)
+extern thread_local float g_screen_space_height;   // (each thread its own: the prep and render threads both place)
 // a draw in screen space (HUD, menus, text), as the game tells: texture dumps name the textures such draws use once
 // in the log, so the pieces of a HUD are easy to find for a texture pack. Null for none.
 using ScreenSpaceTest = bool (*)(const State& s);

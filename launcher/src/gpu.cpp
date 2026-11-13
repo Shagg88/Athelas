@@ -82,8 +82,8 @@ static GpuInfo g_info;
 
 static DWORD WINAPI probe_thread(LPVOID)
 {
-    char self[MAX_PATH];
-    GetModuleFileNameA(NULL, self, MAX_PATH);
+    char self[MAX_PATH * 4] = "";   // (UTF-8: up to three bytes a letter)
+    GetModuleFileNameA(NULL, self, sizeof self);
     std::string out;
     GpuInfo r;
     RunResult rc = run_capture(self, "--vkprobe", out, 15000);

@@ -235,6 +235,17 @@ void DrawNotes(float scale) {
 }
 
 // the in-game menu's Achievements page
+std::vector<Entry> Entries() {
+    std::lock_guard lock(g_lock);
+    Load();
+    std::vector<Entry> out;
+    for (const Def& d : app::kGame.achievements) {
+        auto it = g_unlocked.find(d.id);
+        out.push_back({d.title, d.desc, it != g_unlocked.end(), it != g_unlocked.end() ? it->second : std::string()});
+    }
+    return out;
+}
+
 void DrawList() {
     std::lock_guard lock(g_lock);
     Load();

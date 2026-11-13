@@ -159,6 +159,11 @@ std::string exe_dir();
 // A wide (Unicode) path as the 2003 game and this launcher's ANSI calls can use it: as is when every
 // character fits the system's code page, otherwise its short 8.3 form (all ASCII); "" if neither works.
 std::string ansi_path(const wchar_t *w);
+void text_files_to_utf8();   // once at start: older settings files in the PC's code page, to UTF-8
+bool text_file_to_utf8(const std::string &path, unsigned from, bool every = false);   // one file, line by line; true: it was rewritten
+void game_ini_to_utf8(const std::string &gameDir);                // the PC game's ROTKFix.ini (mod names)
+unsigned system_code_page();                                      // the PC's own code page (the 32-bit game's)
+std::wstring game_safe_path(const std::string &path);             // a path the PC game's code page can hold
 
 // First-run help when the launcher is not in the game folder
 struct FoundGame { std::string dir; GameInfo info; };

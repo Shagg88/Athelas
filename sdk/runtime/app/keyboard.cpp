@@ -13,6 +13,7 @@
 #include <atomic>
 #include <cmath>
 #include <cstring>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -38,12 +39,20 @@ std::string Trim(const std::string& s) {
     return a == std::string::npos ? std::string() : s.substr(a, b - a + 1);
 }
 
+// parsed again when a key setting changes (settings reloaded or edited while the game runs); the parsed list is
+// swapped in whole, so a reader on another thread never sees one half built
 const Bindings& Get() {
-    static std::once_flag once;
-    static Bindings b;
-    std::call_once(once, [] {
-        const app::Settings& s = app::Get();
-        std::string list;
+    static std::mutex m;
+    static std::string src[kCount];
+    static std::shared_ptr<const Bindings> cur;
+    static thread_local std::shared_ptr<const Bindings> held;   // keeps the list a caller got alive until its next read
+    std::lock_guard lock(m);
+    const app::Settings& s = app::Get();
+    bool same = cur != nullptr;
+    for (uint32_t a = 0; same && a < kCount; a++) same = src[a] == s.keys[a];
+    if (!same) {
+        auto nbp = std::make_shared<Bindings>();
+        Bindings& nb = *nbp;
         for (uint32_t a = 0; a < kCount; a++) {
             const std::string& text = s.keys[a];
             size_t start = 0;
@@ -55,15 +64,18 @@ const Bindings& Get() {
                 bool found = false;
                 for (const Key& k : kKeys)
                     if (_stricmp(k.name, name.c_str()) == 0) {
-                        b.vk[a].push_back(k.vk);
+                        nb.vk[a].push_back(k.vk);
                         found = true;
                     }
                 if (!found) LOGW("keyboard: unknown key \"%s\" for %s", name.c_str(), kSettingKeys[a]);
             }
         }
         LOGR("keyboard: %s, player %u", s.keyboard ? "on" : "off", s.keyboard_player);
-    });
-    return b;
+        for (uint32_t a = 0; a < kCount; a++) src[a] = s.keys[a];
+        cur = std::move(nbp);
+    }
+    held = cur;
+    return *held;
 }
 
 // keys held as the in-game menu opened or closed: not read again until let go (Esc closing it would pause the game)

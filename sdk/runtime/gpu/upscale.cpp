@@ -9,6 +9,8 @@
 //         GetProcAddress, as the SDK's import libraries would make the game need the files to start
 #include "gpu/upscale.h"
 
+#include <atomic>
+#include <shared_mutex>
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -96,10 +98,16 @@ std::filesystem::path Beside(const wchar_t* name) { return Folder(name) / name; 
 
 // which frame generation made the swap chain (FgCreateSwapChain)
 enum FgKind { kFgNone, kFgFsr, kFgXess, kFgDlss };
-FgKind g_fg_kind = kFgNone;
+std::atomic<FgKind> g_fg_kind{kFgNone};   // read by the game thread too (FgGameFrame)
+// held shared by the game thread while it uses XeLL / Streamline (FgGameFrame), exclusively while they are torn down
+std::shared_mutex g_fg_game_mx;
+std::atomic<int> g_fg_closing{0};   // teardown waiting: the game thread stops sleeping in XeLL / Reflex first
 // the frame number XeLL's markers, XeFG's present id and Streamline's frame token share; FgMark moves it on at each
 // Present
-uint32_t g_frame_id = 1;
+std::atomic<uint32_t> g_frame_id{1};   // read by the game thread too (FgGameFrame)
+// DLSS's own frame token when DLSS-G is off: kept across Dlss objects (a quality or size change makes a new one), so
+// Streamline's per-frame tags never see an index again
+uint32_t g_dlss_frame = 1;
 
 // ------------------------------------------------------------------------------------------------------------- FSR
 
@@ -108,7 +116,13 @@ ffxFunctions g_ffx_fn{};
 
 void FfxMessage(uint32_t type, const wchar_t* message) {
     char buf[512];
-    WideCharToMultiByte(CP_UTF8, 0, message, -1, buf, sizeof(buf), nullptr, nullptr);
+    // a longer message fails the conversion and leaves buf unterminated: cut it and always terminate
+    int n = message ? WideCharToMultiByte(CP_UTF8, 0, message, -1, buf, sizeof(buf) - 1, nullptr, nullptr) : 0;
+    if (n <= 0 && message) {
+        int len = (int)wcsnlen(message, 160);
+        n = WideCharToMultiByte(CP_UTF8, 0, message, len, buf, sizeof(buf) - 1, nullptr, nullptr);
+    }
+    buf[n > 0 && n < (int)sizeof(buf) ? n : 0] = 0;
     if (type == FFX_API_MESSAGE_TYPE_ERROR) LOGE("FSR: %s", buf);
     else LOGI("FSR: %s", buf);
 }
@@ -245,6 +259,7 @@ private:
 
 HMODULE g_sl = nullptr;
 bool g_sl_ready = false;
+bool g_sl_failed = false;  // slInit refused once
 std::string g_sl_why = "DLSS was not started";
 bool g_sl_fg = false;  // DLSS-G, Reflex and PCL were loaded with DLSS
 std::string g_sl_fg_why = "DLSS frame generation was not started";
@@ -332,7 +347,7 @@ public:
     bool Evaluate(const Frame& f) override {
         sl::FrameToken* token = nullptr;
         // with DLSS-G the frame's token is the one its Reflex and PCL markers carry (FgMark's frame number)
-        uint32_t index = g_fg_kind == kFgDlss ? g_frame_id : frame_++;
+        uint32_t index = g_fg_kind == kFgDlss ? g_frame_id.load() : g_dlss_frame++;   // never restarts at 0 for a new Dlss
         if (slGetNewFrameToken(token, &index) != sl::Result::eOk || !token) return false;
         sl::Constants c = SlIdentityConstants(f.jitter_x, f.jitter_y, float(f.out_w) / float(std::max(f.out_h, 1u)), f.reset);
         if (slSetConstants(c, *token, view_) != sl::Result::eOk) {
@@ -374,7 +389,6 @@ private:
     sl::ViewportHandle view_{0};
     sl::DLSSOptions opt_{};
     std::string version_;
-    uint32_t frame_ = 0;
     bool made_ = false;
 };
 
@@ -526,6 +540,7 @@ private:
 
 bool InitStreamline(IDXGIAdapter* adapter, std::string& why) {
     if (g_sl_ready) return true;
+    if (g_sl_failed) { why = g_sl_why; return false; }   // slInit failed before: not tried twice
 #if defined(_M_ARM64) || defined(__aarch64__)
     why = g_sl_why = "DLSS is not made for Windows on ARM";
     return false;
@@ -593,8 +608,9 @@ bool InitStreamline(IDXGIAdapter* adapter, std::string& why) {
     sl::Result r = slInit(p, sl::kSDKVersion);
     if (r != sl::Result::eOk) {
         why = g_sl_why = "Streamline did not start (" + std::to_string(int(r)) + ")";
-        FreeLibrary(g_sl);
-        g_sl = nullptr;
+        // kept loaded: the sl* wrappers below keep the function addresses they looked up, and a second start (a new
+        // backend) would otherwise jump into an unloaded DLL
+        g_sl_failed = true;
         return false;
     }
     g_sl_ready = true;
@@ -603,6 +619,20 @@ bool InitStreamline(IDXGIAdapter* adapter, std::string& why) {
 
 namespace {
 bool g_sl_device = false;
+}
+
+void ShutdownStreamline() {
+    if (!g_sl_ready) return;
+    g_fg_closing++;
+    std::unique_lock<std::shared_mutex> lk(g_fg_game_mx);   // the game thread out of slReflexSleep first
+    g_fg_closing--;
+    sl::Result r = slShutdown();
+    if (r != sl::Result::eOk) LOGW("Streamline: shutdown returned %d", int(r));
+    g_sl_ready = false;
+    g_sl_device = false;
+    // Streamline can't be started again in the same process after slShutdown: never tried again
+    g_sl_failed = true;
+    g_sl_why = "Streamline was shut down";
 }
 
 // right after the device is made: Streamline's Present bookkeeping needs it before the swap chain is upgraded, else it
@@ -906,6 +936,9 @@ bool LoadXefg(std::string& why) {
 }
 
 void XefgDestroyContexts() {
+    g_fg_closing++;
+    std::unique_lock<std::shared_mutex> lk(g_fg_game_mx);   // the game thread out of xellSleep first
+    g_fg_closing--;
     // (XeFG first: it holds XeLL's context, Intel's guide)
     if (g_xefg) g_xefg_fn.Destroy(g_xefg);
     if (g_xell) g_xell_fn.DestroyContext(g_xell);
@@ -1226,7 +1259,6 @@ void DlssgPause() {
 }
 
 // --------------------------------------------------------------------------------------- latency markers
-bool g_frame_begun = false;
 
 void XellMark(xell_latency_marker_type_t m) { g_xell_fn.AddMarkerData(g_xell, g_frame_id, m); }
 
@@ -1234,14 +1266,28 @@ void SlMark(sl::PCLMarker m) {
     if (sl::FrameToken* t = SlToken()) slPCLSetMarker(m, *t);
 }
 
-// a frame's start: XeLL / Reflex wait here when the GPU is behind, so the game reads the controls later
-void BeginFrame() {
-    g_frame_begun = true;
-    if (g_fg_kind == kFgXess && g_xell) {
-        g_xell_fn.Sleep(g_xell, g_frame_id);
-        XellMark(XELL_SIMULATION_START);
-    } else if (g_fg_kind == kFgDlss) {
-        if (sl::FrameToken* t = SlToken()) {
+// The game's side of the frame numbers. g_frame_id counts the presents the renderer has finished (present p carries
+// p, from 1); g_queued counts the same presents as the game's thread asks for them (FgPresentQueued), so it runs ahead
+// by the frames still queued for the render thread. The frame the game has just simulated is the Swap's present
+// (g_swap_id); the next one it simulates is presented next (g_queued + 1), after any pictures shown again while it was
+// held (the pause menu). Every present asked for reaches the renderer's present, so the counts stay paired.
+std::atomic<uint32_t> g_queued{0}, g_swap_id{0};
+
+void XellMarkAt(uint32_t id, xell_latency_marker_type_t m) { g_xell_fn.AddMarkerData(g_xell, id, m); }
+void SlMarkAt(uint32_t id, sl::PCLMarker m) {
+    sl::FrameToken* t = nullptr;
+    if (slGetNewFrameToken(t, &id) == sl::Result::eOk && t) slPCLSetMarker(m, *t);
+}
+
+// a frame's start, on the game's thread: XeLL / Reflex wait here when the GPU is behind, so the game reads the
+// controls later
+void BeginFrame(uint32_t id, FgKind kind) {
+    if (kind == kFgXess && g_xell) {
+        g_xell_fn.Sleep(g_xell, id);
+        XellMarkAt(id, XELL_SIMULATION_START);
+    } else if (kind == kFgDlss) {
+        sl::FrameToken* t = nullptr;
+        if (slGetNewFrameToken(t, &id) == sl::Result::eOk && t) {
             slReflexSleep(*t);
             slPCLSetMarker(sl::PCLMarker::eSimulationStart, *t);
         }
@@ -1314,7 +1360,8 @@ bool FgPrepare(ID3D12Device* dev, const FgFrame& f) {
     return ok;
 }
 
-bool FgPresentUnsynced() { return g_fg_kind == kFgDlss; }
+// only while DLSS-G is actually generating frames: menus, films and the pause menu (DLSS-G off) keep V-Sync
+bool FgPresentUnsynced() { return g_fg_kind == kFgDlss && g_dlssg_on; }
 
 void FgResize() {
     // DLSS-G off (back on at the new size with the next 3D frame, its history started again); FSR's context, made for
@@ -1357,6 +1404,9 @@ void FgReleaseSwapChain() {
     // (the game's references to the swap chain gone: XeFG's destroy fails while any are left)
     if (g_fg_kind == kFgFsr) FsrFgRelease();
     else if (g_fg_kind == kFgXess) XefgDestroyContexts();
+    g_fg_closing++;
+    std::unique_lock<std::shared_mutex> lk(g_fg_game_mx);
+    g_fg_closing--;
     g_fg_kind = kFgNone;
 }
 
@@ -1372,11 +1422,10 @@ void FgMark(Mark m) {
         if (m == kPresentEnd) g_frame_id++;
         return;
     }
-    if (!g_frame_begun) BeginFrame();
     if (g_fg_kind == kFgXess) {
         if (!g_xell) return;
         switch (m) {
-            case kSimEnd: XellMark(XELL_SIMULATION_END); break;
+            case kSimEnd: break;  // sent from the game's thread (FgGameFrame)
             case kSubmitStart: XellMark(XELL_RENDERSUBMIT_START); break;
             case kSubmitEnd: XellMark(XELL_RENDERSUBMIT_END); break;
             case kPresentStart:
@@ -1387,18 +1436,30 @@ void FgMark(Mark m) {
         }
     } else {
         switch (m) {
-            case kSimEnd: SlMark(sl::PCLMarker::eSimulationEnd); break;
+            case kSimEnd: break;
             case kSubmitStart: SlMark(sl::PCLMarker::eRenderSubmitStart); break;
             case kSubmitEnd: SlMark(sl::PCLMarker::eRenderSubmitEnd); break;
             case kPresentStart: SlMark(sl::PCLMarker::ePresentStart); break;
             case kPresentEnd: SlMark(sl::PCLMarker::ePresentEnd); break;
         }
     }
-    if (m == kPresentEnd) {
-        // the next frame starts here: the game's own work for it follows this Present
-        g_frame_id++;
-        BeginFrame();
-    }
+    if (m == kPresentEnd) g_frame_id++;
+}
+
+void FgPresentQueued(bool swap) {
+    uint32_t p = ++g_queued;
+    if (swap) g_swap_id = p;
+}
+
+void FgGameFrame() {
+    // never waits for the render thread: while it tears XeLL / Streamline down, this frame's markers are skipped
+    std::shared_lock<std::shared_mutex> lk(g_fg_game_mx, std::try_to_lock);
+    const FgKind kind = g_fg_kind;
+    if (!lk.owns_lock() || g_fg_closing || (kind != kFgXess && kind != kFgDlss) || (kind == kFgXess && !g_xell)) return;
+    const uint32_t done = g_swap_id, next = g_queued + 1;
+    if (kind == kFgXess) XellMarkAt(done, XELL_SIMULATION_END);
+    else SlMarkAt(done, sl::PCLMarker::eSimulationEnd);
+    BeginFrame(next, kind);  // the game's next frame: its controls read after this
 }
 
 }  // namespace gpu::up
@@ -1410,7 +1471,8 @@ using gpu::up::SlFn;
 
 #define SL_FORWARD(name, sig, call, ...)                                     \
     extern "C" sl::Result name sig {                                         \
-        static auto* f = SlFn<PFun_##name>(#name);                           \
+        static PFun_##name* f = nullptr;                                     \
+        if (!f) f = SlFn<PFun_##name>(#name); /* not kept while unloaded */  \
         return f ? f call : sl::Result::eErrorNotInitialized;                \
     }
 

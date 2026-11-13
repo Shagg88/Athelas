@@ -55,6 +55,7 @@ constexpr uint32_t kApp = 0x1ECBA8;
 // screens up to 32:9 drawn at their own width (the 3D, the HUD through its projection); films stay 16:9 at most
 const bool g_wide_setup = [] {
     app::g_max_frame_aspect = 32.0f / 9.0f;
+    app::g_min_frame_aspect = 3.0f / 2.0f;  // 16:10 (the Steam Deck, #80) at its own shape too: see Shape below
     gpu::g_wide_targets = true;
     return true;
 }();
@@ -66,12 +67,20 @@ float F(uint32_t a) {
 }
 void SetF(uint32_t a, float f) { std::memcpy(::kernel::HostPtr(a), &f, 4); }
 
-// the frame's shape over 16:9 when the game draws widescreen, else 1
-float Wider() {
+// the frame's shape over 16:9 when the game draws widescreen, else 1: above 1 on wider screens, below on narrower ones
+// (16:10: 0.9). Narrower: the horizontal angle is kept as at 16:9 and the vertical one made with the real shape
+// (a little more is seen above and below), the projection gets the real shape, and the HUD - laid out for 16:9 -
+// keeps its shape across the whole width, its height times the shape (a 16:9 band in the middle, nothing cut off).
+float Shape() {
     uint32_t app = ::kernel::R32(kApp);
     if (!app || !*static_cast<uint8_t*>(::kernel::HostPtr(app + 0x30))) return 1.0f;
     float k = app::FrameAspect() / k169;
-    return k > 1.001f ? k : 1.0f;
+    return std::fabs(k - 1.0f) > 0.001f ? k : 1.0f;
+}
+// only wider (the horizontal angles are widened for those)
+float Wider() {
+    float k = Shape();
+    return k > 1.0f ? k : 1.0f;
 }
 
 // the gameplay camera's last angle as the game gave it, to set it again when the setting or the screen's shape
@@ -104,7 +113,7 @@ X86_FUNC(sub_000D68B0) {
             h = std::min(h * float(std::clamp(fotr::g_fov_percent, 50u, 200u)) / 100.0f, 2.9f);
         float k = Wider();
         if (k > 1.0f) h = std::min(2.0f * std::atan(std::tan(h / 2) * k), 3.05f);
-        if (gameplay) g_cam = {ctx.esi, ret, was, h, fotr::g_fov_percent, k};
+        if (gameplay) g_cam = {ctx.esi, ret, was, h, fotr::g_fov_percent, Shape()};
         if (h != was) {
             SetF(at, h);
             LOG_FIRST(1, "fotr: camera angle %.1f -> %.1f degrees (fov %u%%, %.2f of 16:9)", was * 57.2958f,
@@ -118,8 +127,8 @@ X86_FUNC(sub_000D68B0) {
 X86_FUNC(__imp__sub_000D6A60);
 X86_FUNC(sub_000D6840);
 X86_FUNC(sub_000D6A60) {
-    float k = Wider();
-    if (k <= 1.0f) {
+    float k = Shape();
+    if (k == 1.0f) {
         __imp__sub_000D6A60(ctx, base);
         return;
     }
@@ -138,9 +147,9 @@ X86_FUNC(sub_000D6A60) {
 // a projection: the 16:9 shape becomes the frame's
 X86_FUNC(__imp__sub_0005843E);
 X86_FUNC(sub_0005843E) {
-    float k = Wider();
+    float k = Shape();
     uint32_t at = ctx.esp + 8;  // the shape (after the return address and the vertical angle)
-    if (k > 1.0f && std::fabs(F(at) - k169) < 0.001f) SetF(at, k169 * k);
+    if (k != 1.0f && std::fabs(F(at) - k169) < 0.001f) SetF(at, k169 * k);
     __imp__sub_0005843E(ctx, base);
 }
 
@@ -174,15 +183,31 @@ float ScreenSqueeze(const gpu::State& s) {
     if (!Is(s, kScreenProgram)) return 1.0f;
     if (gpu::g_movie) return 1.0f;  // a film's frame: the movie settings show it (the title screen's moving picture
                                     // is not one: it gets bars as the menu pictures do)
-    float k = Wider();
-    return k > 1.0f ? 1.0f / k : 1.0f;
+    float k = Shape();
+    if (k > 1.0f) return 1.0f / k;
+    // a narrower screen (16:10): x as it is, y made smaller in ScreenPlace (a squeeze just under 1 only asks for it)
+    if (k < 1.0f) return 0.9999f;
+    return 1.0f;
 }
-// x' = a x + b: into the middle; a picture as wide as the screen too, unless it is over the world
-void ScreenPlace(float, float, float, float, float w, float f, float& a, float& b, float&, float&) {
+// x' = a x + b: into the middle; a picture as wide as the screen too, unless it is over the world. On a narrower
+// screen (16:10) y' = c y + d instead: the menus and text, laid out for a 16:9 TV, keep that shape in a band across
+// the full width, centred top to bottom - as the HUD is (WideHud) - instead of coming out taller (review)
+void ScreenPlace(float, float, float, float, float w, float f, float& a, float& b, float& c, float& d) {
+    const float k = Shape();
+    if (k < 1.0f) {
+        a = 1.0f;
+        b = 0.0f;
+        bool world = g_frame ? g_world_frame == g_frame : NowMs() - g_world_ms < 250;
+        if (f == 1.0f && world) return;  // a full-screen fade or flash over the world: all of it, as it is
+        // the target's own height (an anamorphic 640x480 target is not w / the screen's shape tall: review)
+        const float h = gpu::g_screen_space_height > 0 ? gpu::g_screen_space_height : w / app::FrameAspect();
+        c = k;
+        d = h / 2 * (1 - k);
+        return;
+    }
     if (f == 1.0f) {
         bool world = g_frame ? g_world_frame == g_frame : NowMs() - g_world_ms < 250;
         if (world) return;  // over the 3D world drawn this frame (fades, flashes): as it is
-        float k = Wider();
         if (k <= 1.0f) return;
         f = 1.0f / k;
     }
@@ -191,8 +216,8 @@ void ScreenPlace(float, float, float, float, float w, float f, float& a, float& 
 }
 const int kScreenHooks = (gpu::g_screen_space_hook = ScreenSqueeze, gpu::g_screen_space_place = ScreenPlace, 0);
 constexpr int kRow = 45;  // the matrix's x row, hardware constant numbering
-bool g_squeezed = false;
-std::array<float, 4> g_orig{}, g_put{};
+bool g_squeezed = false, g_squeezed_y = false;
+std::array<float, 4> g_orig{}, g_put{}, g_orig_y{}, g_put_y{};
 }  // namespace
 
 namespace fotr {
@@ -222,6 +247,12 @@ void WideHud(const gpu::State& cs) {
             if (row[j] == g_put[j]) row[j] = g_orig[j];
         g_squeezed = false;
     }
+    if (g_squeezed_y) {
+        auto& yrow = s.vsc[kRow + 1];
+        for (int j = 0; j < 4; j++)
+            if (yrow[j] == g_put_y[j]) yrow[j] = g_orig_y[j];
+        g_squeezed_y = false;
+    }
     if (!Is(s, kHudProgram)) {
         if (s.vs && (s.vs_handle & 1) && !Is(s, kScreenProgram)) {  // a 3D draw
             g_world_ms = NowMs();
@@ -239,13 +270,22 @@ void WideHud(const gpu::State& cs) {
         g_squeezed = true;
         return;
     }
-    float k = Wider();
-    if (k <= 1.0f) return;
-    g_orig = row;
-    for (float& v : row) v /= k;
-    g_put = row;
-    g_squeezed = true;
-    LOG_FIRST(1, "fotr: HUD kept 16:9 in the middle (%.2f of 16:9)", k);
+    float k = Shape();
+    if (k > 1.0f) {
+        g_orig = row;
+        for (float& v : row) v /= k;
+        g_put = row;
+        g_squeezed = true;
+        LOG_FIRST(1, "fotr: HUD kept 16:9 in the middle (%.2f of 16:9)", k);
+    } else if (k < 1.0f) {
+        // a narrower screen (16:10): the y row times the shape, so the HUD keeps its 16:9 shape across the width
+        auto& yrow = s.vsc[kRow + 1];
+        g_orig_y = yrow;
+        for (float& v : yrow) v *= k;
+        g_put_y = yrow;
+        g_squeezed_y = true;
+        LOG_FIRST(1, "fotr: HUD kept 16:9 across the width (%.2f of 16:9)", k);
+    }
 }
 }  // namespace fotr
 
@@ -280,7 +320,7 @@ void CameraFrame(X86Context& ctx, uint8_t* base) {
     } d{dump ? g_cam.view : 0};
 #endif
     if (!g_cam.view) return;
-    float k = Wider();
+    float k = Shape();
     if (g_cam.fov == g_fov_percent && std::fabs(g_cam.wider - k) < 1e-4f) return;
     uint32_t view = g_cam.view;
     if (F(view) != g_cam.set) {

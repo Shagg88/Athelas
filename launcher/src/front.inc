@@ -4,8 +4,9 @@
 // in front (read from the player's own copy, as on the settings pages), crossfading as the carousel turns.
 //
 // A box's front is, in this order: the player's own cover scan (covers\<key>.png or .jpg beside Athelas), the box
-// art downloaded on request from RetroArch's collection (libretro thumbnails, covers\<key>-libretro.png), or a cover
-// made from the game's own art with its title. The Return of the King is one box for both versions; with both, Play
+// art downloaded on request - full-size scans from the LaunchBox games database (covers\<key>-hd.jpg, about 1500 x
+// 2150) or, for any it couldn't get, RetroArch's small ones (libretro thumbnails, covers\<key>-libretro.png) - or a
+// cover made from the game's own art with its title. The Return of the King is one box for both versions; with both, Play
 // and Settings ask which (and can remember it). Nothing is shipped: art comes from the player's files or, when they
 // ask, from the public collection.
 
@@ -66,6 +67,15 @@ static const char *const k_frLibretro[FR_COUNT] = {
     "Lord of the Rings, The - The Two Towers (USA)",
     "Lord of the Rings, The - The Return of the King (USA)",
     "Lord of the Rings, The - The Third Age (USA)" };
+// the LaunchBox games database's North American box fronts (games 7695, 7692, 7694, 7693 there), full size; and The
+// Return of the King's PC box (game 2386), for a player with only the PC version
+static const wchar_t *const k_frLaunchBoxHost = L"images.launchbox-app.com";
+static const char *const k_frLaunchBox[FR_COUNT] = {
+    "//ca87110a-2f00-49c0-a5de-28dc8163def6.jpg",
+    "//d2a5a318-5d2f-4afa-802e-fddfbb4948b3.jpg",
+    "//4e95f88b-c95a-4171-8b82-7da6b9df1149.jpg",
+    "//e309349a-60d0-4d47-9cdf-274ab1db295f.jpg" };
+static const char *const k_frLaunchBoxRotkPc = "//ea007bb8-c714-480d-bb17-fc9190d9f7d5.jpg";
 
 struct FrontTex { SDL_Texture *tex = nullptr; int w = 0, h = 0; };
 struct Front {
@@ -73,7 +83,8 @@ struct Front {
     float pos = 0;                     // where the carousel is (eases towards sel)
     bool started = false;
     FrontTex cover[FR_COUNT];          // a cover scan or downloaded box art
-    int coverFrom[FR_COUNT] = {};      // 0 none, 1 the player's own, 2 libretro
+    int coverFrom[FR_COUNT] = {};      // 0 none, 1 the player's own, 2 libretro, 3 LaunchBox (full size)
+    FrontTex coverPc;                  // The Return of the King's PC box, downloaded (covers\rotk-pc-hd.jpg)
     bool coversLooked = false;
     FrontTex art[FR_COUNT];            // the game's own art, for a made cover
     BgJob *artJob[FR_COUNT] = {};
@@ -152,11 +163,15 @@ static bool fr_owned(const App &a, int e) { return !fr_lib(a, e).empty(); }
 // the box art a box shows, or null for a cover made from the game's own art. libretro's collection has The Return of
 // the King's Xbox box only (no PC set): with only the PC version, that box would be the wrong game's, so the PC box is
 // made from the PC game's own art instead (or the player's own scan, covers\rotk.png)
+static bool fr_rotk_pc_only(const App &a, int e)
+{
+    return e == FR_ROTK && fr_first(a, e, GK_ROTK_PC) >= 0 && fr_first(a, e, GK_ROTK_XBOX) < 0;
+}
 static const FrontTex *fr_cover(const App &a, int e)
 {
+    // with only the PC version, a downloaded Xbox box would be the wrong game's: its PC box (downloaded too), or none
+    if (fr_rotk_pc_only(a, e) && g_front.coverFrom[e] != 1) return g_front.coverPc.tex ? &g_front.coverPc : nullptr;
     if (!g_front.cover[e].tex) return nullptr;
-    if (e == FR_ROTK && g_front.coverFrom[e] == 2 && fr_first(a, e, GK_ROTK_PC) >= 0 && fr_first(a, e, GK_ROTK_XBOX) < 0)
-        return nullptr;
     return &g_front.cover[e];
 }
 static const FrontTex &fr_face(const App &a, int e) { const FrontTex *c = fr_cover(a, e); return c ? *c : g_front.art[e]; }
@@ -280,28 +295,121 @@ static unsigned char *upscale_cubic(const unsigned char *src, int w, int h, int 
     return out;
 }
 
-static void front_load_covers(SDL_Renderer *ren)
+// a large scan (LaunchBox's are about 1500 x 2150) drawn a box's height tall is shrunk 2-3 times by the renderer's
+// bilinear filter, which skips pixels and shimmers as the carousel turns. It is shrunk once here instead, averaging
+// every pixel it covers (premultiplied, for transparent corners), to about the screen's height: never more than
+// about 1.5 times the drawn size, which the bilinear filter handles smoothly.
+static unsigned char *downscale_area(const unsigned char *src, int w, int h, int W, int H)
+{
+    // one pixel of the result along a line: the source pixels it covers, each weighted by how much of it is covered
+    auto line = [](const float *in, size_t step, int n, float *out, size_t ostep, int N) {
+        float r = (float)n / N;
+        for (int o = 0; o < N; o++) {
+            float a0 = o * r, a1 = a0 + r, acc[4] = {};
+            for (int i = (int)a0; i < n && i < a1; i++) {
+                float k = std::min(a1, (float)(i + 1)) - std::max(a0, (float)i);
+                for (int ch = 0; ch < 4; ch++) acc[ch] += in[(size_t)i * step + ch] * k;
+            }
+            for (int ch = 0; ch < 4; ch++) out[(size_t)o * ostep + ch] = acc[ch] / r;
+        }
+    };
+    std::vector<float> pm, mid, fin;
+    try { pm.resize((size_t)w * h * 4); mid.resize((size_t)W * h * 4); fin.resize((size_t)W * H * 4); } catch (...) { return nullptr; }
+    for (size_t i = 0; i < (size_t)w * h; i++) {
+        float al = src[i * 4 + 3] / 255.0f;
+        for (int ch = 0; ch < 3; ch++) pm[i * 4 + ch] = src[i * 4 + ch] / 255.0f * al;
+        pm[i * 4 + 3] = al;
+    }
+    for (int y = 0; y < h; y++) line(&pm[(size_t)y * w * 4], 4, w, &mid[(size_t)y * W * 4], 4, W);   // rows
+    for (int x = 0; x < W; x++) line(&mid[(size_t)x * 4], (size_t)W * 4, h, &fin[(size_t)x * 4], (size_t)W * 4, H);   // columns
+    unsigned char *dst = (unsigned char *)malloc((size_t)W * H * 4);
+    if (!dst) return nullptr;
+    for (size_t i = 0; i < (size_t)W * H; i++) {
+        float al = fin[i * 4 + 3];
+        for (int ch = 0; ch < 3; ch++)
+            dst[i * 4 + ch] = (unsigned char)std::lround(std::clamp(al > 0 ? fin[i * 4 + ch] / al : 0.0f, 0.0f, 1.0f) * 255);
+        dst[i * 4 + 3] = (unsigned char)std::lround(std::clamp(al, 0.0f, 1.0f) * 255);
+    }
+    return dst;
+}
+
+// one cover file into pixels (free() them): small ones enlarged sharply, large ones shrunk smoothly to the screen's
+// height (sh). No SDL here: it runs on the covers' worker thread.
+static unsigned char *decode_cover_file(const std::string &file, int sh, int &w, int &h)
+{
+    int c;
+    unsigned char *px = stbi_load(file.c_str(), &w, &h, &c, 4);
+    if (!px) return nullptr;
+    unsigned char *mine = nullptr;
+    if (w < 700 && h < 1000) {   // small (libretro's): enlarged with a sharper filter than the renderer's
+        int k = w < 350 ? 3 : 2;
+        if ((mine = upscale_cubic(px, w, h, k))) { w *= k; h *= k; }
+    } else if (h > sh) {
+        int W = std::max(1, (int)std::lround((double)w * sh / h));
+        if ((mine = downscale_area(px, w, h, W, sh))) { w = W; h = sh; }
+    }
+    if (!mine && (mine = (unsigned char *)malloc((size_t)w * h * 4))) memcpy(mine, px, (size_t)w * h * 4);
+    stbi_image_free(px);
+    return mine;
+}
+
+// The covers are read, and the large ones shrunk (a tenth of a second and more each), on a worker thread: the
+// launcher's first frame doesn't wait for them (review). The boxes show their made covers, or the covers they had,
+// until the new ones are in. Slot FR_COUNT is The Return of the King's PC box.
+struct CoverJob {
+    std::string dir;
+    int sh = 1080;
+    unsigned char *px[FR_COUNT + 1] = {};
+    int w[FR_COUNT + 1] = {}, h[FR_COUNT + 1] = {}, from[FR_COUNT + 1] = {};
+    SDL_AtomicInt done;
+};
+static CoverJob *g_coverJob = nullptr;
+static bool g_coverAgain = false;      // asked again while one was being read: read once more after it
+static int SDLCALL cover_worker(void *p)
+{
+    CoverJob *j = (CoverJob *)p;
+    for (int e = 0; e < FR_COUNT; e++) {
+        std::string base = j->dir + "\\" + k_frKey[e];
+        const std::string tries[] = { base + ".png", base + ".jpg", base + ".jpeg", base + "-hd.jpg", base + "-libretro.png" };
+        const int from[] = { 1, 1, 1, 3, 2 };
+        for (int i = 0; i < 5 && !j->px[e]; i++)
+            if ((j->px[e] = decode_cover_file(tries[i], j->sh, j->w[e], j->h[e]))) j->from[e] = from[i];
+    }
+    j->px[FR_COUNT] = decode_cover_file(j->dir + "\\rotk-pc-hd.jpg", j->sh, j->w[FR_COUNT], j->h[FR_COUNT]);
+    SDL_SetAtomicInt(&j->done, 1);
+    return 0;
+}
+static void front_load_covers(SDL_Renderer *)
 {
     g_front.coversLooked = true;
-    for (int e = 0; e < FR_COUNT; e++) {
-        free_tex(g_front.cover[e]);
-        g_front.coverFrom[e] = 0;
-        std::string base = covers_dir() + "\\" + k_frKey[e];
-        const std::string tries[] = { base + ".png", base + ".jpg", base + ".jpeg", base + "-libretro.png" };
-        for (int i = 0; i < 4 && !g_front.cover[e].tex; i++) {
-            int w, h, c;
-            unsigned char *px = stbi_load(tries[i].c_str(), &w, &h, &c, 4);
-            if (!px) continue;
-            if (w < 700 && h < 1000) {   // small (libretro's): enlarged with a sharper filter than the renderer's
-                int k = w < 350 ? 3 : 2;
-                if (unsigned char *big = upscale_cubic(px, w, h, k)) { stbi_image_free(px); px = big; w *= k; h *= k; }
-            }
-            g_front.cover[e].tex = make_texture(ren, px, w, h);
-            g_front.cover[e].w = w; g_front.cover[e].h = h;
-            g_front.coverFrom[e] = i < 3 ? 1 : 2;
-            stbi_image_free(px);
-        }
+    if (g_coverJob) { g_coverAgain = true; return; }
+    CoverJob *j = new CoverJob;
+    j->dir = covers_dir();
+    if (const SDL_DisplayMode *m = SDL_GetDesktopDisplayMode(SDL_GetPrimaryDisplay())) j->sh = std::max(720, (int)(m->h * m->pixel_density));
+    SDL_SetAtomicInt(&j->done, 0);
+    SDL_Thread *t = SDL_CreateThread(cover_worker, "covers", j);
+    if (!t) { delete j; return; }
+    SDL_DetachThread(t);
+    g_coverJob = j;
+}
+// each frame: the covers read since, made into textures
+static void front_covers_poll(SDL_Renderer *ren)
+{
+    CoverJob *j = g_coverJob;
+    if (!j || !SDL_GetAtomicInt(&j->done)) return;
+    for (int e = 0; e <= FR_COUNT; e++) {
+        FrontTex &t = e < FR_COUNT ? g_front.cover[e] : g_front.coverPc;
+        free_tex(t);
+        if (e < FR_COUNT) g_front.coverFrom[e] = 0;
+        if (!j->px[e]) continue;
+        t.tex = make_texture(ren, j->px[e], j->w[e], j->h[e]);
+        t.w = j->w[e]; t.h = j->h[e];
+        if (e < FR_COUNT && t.tex) g_front.coverFrom[e] = j->from[e];
+        free(j->px[e]);
     }
+    delete j;
+    g_coverJob = nullptr;
+    if (g_coverAgain) { g_coverAgain = false; front_load_covers(ren); }
 }
 
 // the game's own art for a made cover: one picture, read on a worker thread as the backgrounds are
@@ -358,28 +466,62 @@ static void front_art_poll(App &a, SDL_Renderer *ren)
     }
 }
 
-// "Get box art": the three US Xbox boxes from libretro thumbnails (the collection RetroArch uses), on GitHub
+// a downloaded picture, written beside the others in one step (a half-written file never replaces a good one)
+static bool art_save(const std::string &out, const std::string &data)
+{
+    std::string tmp = out + ".new";
+    FILE *f = fopen(tmp.c_str(), "wb");
+    bool ok = f && fwrite(data.data(), 1, data.size(), f) == data.size();
+    if (f) ok = fclose(f) == 0 && ok;
+    if (ok && MoveFileExA(tmp.c_str(), out.c_str(), MOVEFILE_REPLACE_EXISTING)) return true;
+    DeleteFileA(tmp.c_str());
+    return false;
+}
+// the whole picture reads (not only its header): one that doesn't is refused, and the small one fetched instead
+static bool art_decodes(const std::string &data)
+{
+    int w, h, c;
+    unsigned char *px = stbi_load_from_memory((const unsigned char *)data.data(), (int)data.size(), &w, &h, &c, 4);
+    if (px) stbi_image_free(px);
+    return px != nullptr;
+}
+// a full-size front from LaunchBox: a JPEG, upright, at least 600 pixels wide (anything else - an error page, a
+// moved picture - is refused, and the small one is fetched instead)
+static bool art_get_launchbox(const char *path, std::string &data)
+{
+    std::string p(path);
+    int w = 0, h = 0, c = 0;
+    return http_download(k_frLaunchBoxHost, std::wstring(p.begin(), p.end()), data) && data.size() > 20000 &&
+           data.compare(0, 3, "\xFF\xD8\xFF", 3) == 0 &&
+           stbi_info_from_memory((const unsigned char *)data.data(), (int)data.size(), &w, &h, &c) && w >= 600 && h > w &&
+           art_decodes(data);
+}
+// "Get box art": the US Xbox boxes at full size from the LaunchBox games database; any it can't get, the small ones
+// from libretro thumbnails (the collection RetroArch uses, on GitHub)
 static int SDLCALL art_download_worker(void *)
 {
     std::string dir = covers_dir();
     SHCreateDirectoryExA(NULL, dir.c_str(), NULL);
-    int got = 0, failed = 0;
+    int got = 0, hd = 0, failed = 0;
     for (int e = 0; e < FR_COUNT; e++) {
-        std::string path = "/libretro-thumbnails/Microsoft_-_Xbox/master/Named_Boxarts/" + url_encode(k_frLibretro[e]) + ".png";
         std::string data;
+        if (art_get_launchbox(k_frLaunchBox[e], data) && art_save(dir + "\\" + k_frKey[e] + "-hd.jpg", data)) { got++; hd++; continue; }
+        std::string path = "/libretro-thumbnails/Microsoft_-_Xbox/master/Named_Boxarts/" + url_encode(k_frLibretro[e]) + ".png";
         if (!http_download(L"raw.githubusercontent.com", std::wstring(path.begin(), path.end()), data) || data.size() < 1000 ||
             data.compare(0, 8, "\x89PNG\r\n\x1a\n", 8) != 0) { failed++; continue; }
-        std::string out = dir + "\\" + k_frKey[e] + "-libretro.png", tmp = out + ".new";
-        FILE *f = fopen(tmp.c_str(), "wb");
-        bool ok = f && fwrite(data.data(), 1, data.size(), f) == data.size();
-        if (f) ok = fclose(f) == 0 && ok;
-        if (ok && MoveFileExA(tmp.c_str(), out.c_str(), MOVEFILE_REPLACE_EXISTING)) got++;
-        else { DeleteFileA(tmp.c_str()); failed++; }
+        if (art_save(dir + "\\" + k_frKey[e] + "-libretro.png", data)) got++;
+        else failed++;
     }
+    {   // The Return of the King's PC box (not counted: only a player with the PC version alone sees it)
+        std::string data;
+        if (art_get_launchbox(k_frLaunchBoxRotkPc, data)) art_save(dir + "\\rotk-pc-hd.jpg", data);
+    }
+    const char *src = hd == got ? "from the LaunchBox games database" : hd ? "from the LaunchBox games database and RetroArch's collection"
+                                                                            : "from RetroArch's libretro thumbnails";
     g_artDlBad = got == 0;
     g_artDlMsg = got == 0 ? "The box art couldn't be downloaded - check the internet connection and try again."
-               : failed ? "Box art downloaded for " + std::to_string(got) + " of the games (from RetroArch's libretro thumbnails)."
-                        : "Box art downloaded (from RetroArch's libretro thumbnails).";
+               : failed ? "Box art downloaded for " + std::to_string(got) + " of the games (" + src + ")."
+                        : std::string("Box art downloaded (") + src + ").";
     SDL_SetAtomicInt(&g_artDl, 2);
     return 0;
 }
@@ -481,7 +623,7 @@ static ImRect draw_box(ImDrawList *dl, const App &a, int e, float d, ImVec2 c, f
     float h = H * scale, w = h * aspect, hw = w * 0.5f, hh = h * 0.5f, depth = h * 0.05f;
     BoxProj P{ c.x, c.y + (1 - scale) * H * 0.18f, cosf(yaw), sinf(yaw), H * 3.2f };
     // the PC box (the PC version's own scan) is a plain black case; the Xbox ones have their green band
-    bool pcCase = e == FR_ROTK && g_front.coverFrom[e] == 1 && fr_first(a, e, GK_ROTK_XBOX) < 0;
+    bool pcCase = fr_rotk_pc_only(a, e) && cov;
     // a scanned cover has its own top band; a made one gets the case's green band
     float band = pcCase || cov ? 0.0f : h * 0.085f;
     float edge = cov ? 0.0f : h * 0.012f;   // box art fills the case: no dark rim round it
@@ -546,7 +688,9 @@ static ImRect draw_box(ImDrawList *dl, const App &a, int e, float d, ImVec2 c, f
             ImVec2 tl = P.at(coverX0, coverY0), tr = P.at(coverX1, coverY0);
             float tw = (tr.x - tl.x) * 0.86f, tcx = (tl.x + tr.x) * 0.5f, ty = tl.y + h * 0.05f;
             ty = centred_text(dl, F_HEAD, h * 0.045f, tcx, ty, tw, IM_COL32(200, 170, 110, (int)(255 * ta)), "THE LORD OF THE RINGS");
-            centred_text(dl, F_TITLE, h * 0.085f, tcx, ty + h * 0.012f, tw, IM_COL32(236, 206, 140, (int)(255 * ta)), k_frTitle[e]);
+            float ny = centred_text(dl, F_TITLE, h * 0.085f, tcx, ty + h * 0.012f, tw, IM_COL32(236, 206, 140, (int)(255 * ta)), k_frTitle[e]);
+            // The Third Age is the newest port: say so before a first-time player meets its rough edges (Shagg)
+            if (e == FR_TA) centred_text(dl, F_SMALL, h * 0.04f, tcx, ny + h * 0.01f, tw, IM_COL32(214, 150, 90, (int)(240 * ta)), "EARLY VERSION");
         }
         if (!owned) {
             float tb = std::max(0.0f, 1.0f - fabsf(d) * 2.5f);
@@ -810,6 +954,7 @@ static void draw_front(App &a, ImVec2 size, SDL_Renderer *ren)
         front_load_covers(ren);
         set_message(a, g_artDlMsg, g_artDlBad);
     }
+    front_covers_poll(ren);
     front_art_poll(a, ren);
     // the music of the game in front ([Front] Music = 0: off)
     {
@@ -980,10 +1125,10 @@ static void draw_front(App &a, ImVec2 size, SDL_Renderer *ren)
         if (orn_plate_button(lbl, ImVec2(S(170), S(32)), st != 1) || (padOn && !modal && ImGui::IsKeyPressed(ImGuiKey_GamepadFaceUp, false)))
             art_download_start();
         if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("Downloads the original Xbox box art of the games from RetroArch's collection\n"
-                              "(libretro thumbnails, on GitHub) into the covers folder beside Athelas.\n"
-                              "Your own scans there (fotr.png, tt.png, rotk.png, ta.png) are used first. There is no PC box in\n"
-                              "the collection: with only the PC Return of the King, its box is made from the game's own art.");
+            ImGui::SetTooltip("Downloads the original box art of the games, full size, from the LaunchBox games database\n"
+                              "(or, for any it can't get, the small ones from RetroArch's collection) into the covers folder\n"
+                              "beside Athelas. Your own scans there (fotr.png, tt.png, rotk.png, ta.png) are used first.\n"
+                              "Already downloaded the small ones? Press it again for the sharp ones.");
     }
     {   // Music on / off, remembered
         bool on = front_get("Music") != "0";

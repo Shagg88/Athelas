@@ -162,6 +162,7 @@ bool Widescreen() {
 }
 
 float g_max_frame_aspect = 16.0f / 9.0f;
+float g_min_frame_aspect = 16.0f / 9.0f;
 
 float FrameAspect() {
     if (!Widescreen()) return 4.0f / 3.0f;
@@ -173,7 +174,11 @@ float FrameAspect() {
         Mode m = Output();
         aspect = m.height ? float(m.width) / float(m.height) : 16.0f / 9.0f;
     }
-    return std::clamp(aspect.load(), 16.0f / 9.0f, std::max(g_max_frame_aspect, 16.0f / 9.0f));
+    // between the game's narrowest and widest (16:9 both unless the game handles other shapes): a 16:10 screen (the
+    // Steam Deck's 1280x800) shows a 16:10 picture in a game that sets g_min_frame_aspect lower, not 16:9 with bars
+    // above and below (GitHub #80). (Widescreen() is only on from 3:2: narrower screens get the console's 4:3.)
+    const float lo = std::min(g_min_frame_aspect, 16.0f / 9.0f), hi = std::max(g_max_frame_aspect, 16.0f / 9.0f);
+    return std::clamp(aspect.load(), lo, hi);
 }
 
 float RenderScale(uint32_t guest_height) {

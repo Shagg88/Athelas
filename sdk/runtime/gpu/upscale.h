@@ -89,7 +89,9 @@ const char* FgName();     // for the log: "AMD FSR", "Intel XeSS", "NVIDIA DLSS"
 // them to keep the controls from lagging). Called at every Present, with or without frame generation: nothing is done
 // without XeFG or DLSS-G. The next frame starts (XeLL / Reflex may wait there) at kPresentEnd.
 enum Mark : uint32_t { kSimEnd, kSubmitStart, kSubmitEnd, kPresentStart, kPresentEnd };
-void FgMark(Mark m);
+void FgMark(Mark m);   // on the renderer's thread: submission and present
+void FgGameFrame();    // on the game's thread at each Swap: simulation end, the sleep, the next simulation start
+void FgPresentQueued(bool swap);   // on the game's thread before each Present it asks for: the frame's number
 
 struct FgFrame {
     Kind upscaler = kOff;              // the upscaler that ran on the frame: another kind than frame generation's pauses it
@@ -117,6 +119,7 @@ bool FgPresentUnsynced();
 void FgPause();
 // before the swap chain goes (the game's queue idle): FSR's presents waited for, frame generation's context destroyed
 void FgShutdown();
+void ShutdownStreamline();  // slShutdown, once its upscaler is gone (the library stays loaded)
 // then, once the game has released its references to the swap chain: FSR's swap chain context
 void FgReleaseSwapChain();
 

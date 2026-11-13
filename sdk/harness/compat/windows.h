@@ -18,6 +18,9 @@ typedef int BOOL;
 inline HMODULE GetModuleHandleW(const wchar_t*) { return nullptr; }
 inline void* GetProcAddress(HMODULE, const char*) { return nullptr; }
 inline HANDLE GetCurrentThread() { return nullptr; }
+inline HANDLE GetCurrentProcess() { return nullptr; }
+#include <cstdlib>
+inline BOOL TerminateProcess(HANDLE, UINT code) { std::_Exit(int(code)); }
 
 // window messages and keys a game's GameInfo::message names; no window sends them here
 enum : uint32_t {

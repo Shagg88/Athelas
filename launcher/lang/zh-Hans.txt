@@ -1158,3 +1158,11 @@ This is an untested and unsupported version (%s copy). Proceed with caution: it 
 Did it work? Let us know: = 能运行吗？请告诉我们：
 It worked = 能运行
 It didn't work = 不能运行
+Before you play = 开始游戏之前
+Athelas includes no game files, and none will be provided. To play, you use your own copy of each game: the PC game you have installed, or a disc image made from your own Xbox disc. = Athelas 不包含任何游戏文件，也不会提供。要游玩，你需要使用自己拥有的每款游戏：已安装的 PC 版游戏，或由你自己的 Xbox 光盘制作的光盘映像。
+By choosing Accept, you confirm that the game files you use with Athelas are your own. = 选择“接受”即表示你确认用于 Athelas 的游戏文件属于你自己。
+Athelas is an unofficial fan project. It has nothing to do with, and is not endorsed by, Microsoft, Electronic Arts, Vivendi, New Line Cinema, Warner Bros., the Tolkien Estate, or any developer or publisher of these games. = Athelas 是非官方的粉丝项目，与 Microsoft、Electronic Arts、Vivendi、New Line Cinema、Warner Bros.、Tolkien Estate 以及这些游戏的任何开发商或发行商均无关，也未获其认可。
+Don't ask me again = 不再询问
+Counts only with Accept. Without it, Athelas asks once more after each update. = 仅在选择“接受”时生效。否则每次更新后 Athelas 会再询问一次。
+Decline = 拒绝
+Accept = 接受

@@ -294,6 +294,9 @@ std::filesystem::path ShaderCacheDir() {
     return Args().shader_cache.empty() ? ExeDir() / "shadercache" : Args().shader_cache;
 }
 
+static std::atomic<int> g_exiting_with{-1};
+int ExitingWith() { return g_exiting_with.load(); }
+
 void Fail(int code, const std::wstring& message) {
     std::string narrow;
     int n = WideCharToMultiByte(CP_UTF8, 0, message.c_str(), int(message.size()), nullptr, 0, nullptr, nullptr);
@@ -301,8 +304,14 @@ void Fail(int code, const std::wstring& message) {
     if (n > 0) WideCharToMultiByte(CP_UTF8, 0, message.c_str(), int(message.size()), narrow.data(), n, nullptr, nullptr);
     LOGE("Exit (%d): %s", code, narrow.c_str());
     logx::Flush();
-    if (!Args().no_dialogs) MessageBoxW(nullptr, message.c_str(), kGame.short_title, MB_ICONERROR);
+    if (!Args().no_dialogs) {
+        // the game's full-screen window would cover the box (it is shown from any thread, the renderer's for a lost
+        // device): the window hidden first, and the box kept on top
+        if (g_hwnd) ShowWindowAsync(static_cast<HWND>(g_hwnd), SW_HIDE);
+        MessageBoxW(nullptr, message.c_str(), kGame.short_title, MB_ICONERROR | MB_TOPMOST | MB_SETFOREGROUND);
+    }
     // as kernel::Shutdown: NVIDIA's Streamline crashes in its own clean-up at exit, so with it loaded no DLL clean-up
+    g_exiting_with = code;   // only now (after the box): the renderer's teardown then doesn't wait for a thread the exit ends
     if (GetModuleHandleW(L"sl.interposer.dll")) TerminateProcess(GetCurrentProcess(), UINT(code));
     ExitProcess(UINT(code));
 }

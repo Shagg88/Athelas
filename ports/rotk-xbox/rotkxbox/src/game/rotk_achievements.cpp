@@ -90,16 +90,24 @@ void Check() {
     // records: a level completed is a new bit for some hero (alone or co-op) since the last look. A level replayed
     // with a hero who has already completed it sets no new bit, so it isn't recorded.
     {
+        // The first look can come before the save is loaded (every level reads as not done): when the save then
+        // loads, its levels appear all at once. Finishing a level adds one level (for one or two heroes), so a look
+        // that finds more than one new level is a save being loaded, not records.
         static bool seen = false;
         static uint32_t was[9][2];
+        uint32_t fresh_levels = 0, fresh[9][2];
         for (int h = 0; h < 9; h++)
             for (int c = 0; c < 2; c++) {
                 uint32_t now = Done(h, c != 0) & kAllLevels;
-                uint32_t fresh = seen ? now & ~was[h][c] : 0;
+                fresh[h][c] = seen ? now & ~was[h][c] : 0;
+                fresh_levels |= fresh[h][c];
                 was[h][c] = now;
-                for (const Level& l : kLevels)
-                    if (fresh & (1u << l.bit)) ach::LevelDone(l.id);
             }
+        if (fresh_levels && (fresh_levels & (fresh_levels - 1)) == 0)   // exactly one level
+            for (int h = 0; h < 9; h++)
+                for (int c = 0; c < 2; c++)
+                    for (const Level& l : kLevels)
+                        if (fresh[h][c] & (1u << l.bit)) ach::LevelDone(l.id);
         seen = true;
         bool fate_all = true;
         for (const Level& l : kLevels) fate_all = fate_all && ach::FateDone(l.id);

@@ -92,7 +92,8 @@ void InitWidescreen() {
     gpu::g_wide_targets = true;  // drawn at the screen's own width, not stretched sideways
     // ultrawide screens get their full width (GitHub #35): the 2D is held at 16:9 in the middle (ta_hud.cpp Place2D)
     app::g_max_frame_aspect = 32.0f / 9.0f;
-    LOGR("ta: widescreen %s", app::Widescreen() ? (app::FrameAspect() > 16.0f / 9.0f + 0.01f ? "on (ultrawide)" : "on (16:9)") : "off (4:3)");
+    app::g_min_frame_aspect = 3.0f / 2.0f;  // 16:10 (the Steam Deck) at its own shape too (#80): relative to 4:3 throughout
+    LOGR("ta: widescreen %s", app::Widescreen() ? (app::FrameAspect() > 16.0f / 9.0f + 0.01f ? "on (ultrawide)" : app::FrameAspect() < 16.0f / 9.0f - 0.01f ? "on (16:10)" : "on (16:9)") : "off (4:3)");
     ApplyCameraSettings();
 }
 

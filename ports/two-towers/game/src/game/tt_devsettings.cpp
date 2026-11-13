@@ -31,6 +31,8 @@ struct Known {
     std::string name;
     uint32_t type = 0, addr = 0;
     float original = 0;  // a float's value as the game set it, before any change here
+    float written = 0;   // the last value Scale() put there (has_written): a re-registration that still reads it
+    bool has_written = false;  // keeps `original` instead of taking the scaled value as the new original
 };
 // a setting registered on a record that isn't there yet (a null base plus the field's offset, seen as 0x0C when the
 // prologue is loaded for Gimli) has no value to read
@@ -62,6 +64,14 @@ bool Log() {
     return on;
 }
 
+// a float's original as the game set it: not the value Scale() left at that address (50% would become 25%, 12.5%...)
+float Original(Known& k, uint32_t addr) {
+    float now = ReadFloat(addr);
+    if (k.has_written && addr == k.addr && now == k.written) return k.original;
+    k.has_written = false;
+    return now;
+}
+
 Known* Find(const std::string& n) {
     for (auto& k : g_known)
         if (k.name == n) return &k;
@@ -78,8 +88,8 @@ X86_FUNC(sub_000E4870) {
     while (!n.empty() && (n.back() == ' ' || n.back() == '\t')) n.pop_back();
     uint32_t addr = ::kernel::R32(data);
     if (Known* k = Find(n)) {
+        k->original = type == 2 ? Original(*k, addr) : 0;
         k->addr = addr;
-        k->original = type == 2 ? ReadFloat(addr) : 0;
     } else {
         g_known.push_back({n, type, addr, type == 2 ? ReadFloat(addr) : 0});
     }
@@ -94,8 +104,8 @@ X86_FUNC(sub_000E4E60) {
     std::string n = static_cast<const char*>(::kernel::HostPtr(name));
     while (!n.empty() && (n.back() == ' ' || n.back() == '\t')) n.pop_back();
     if (Known* k = Find(n)) {
+        if (k->type == 2) k->original = Original(*k, addr);
         k->addr = addr;
-        if (k->type == 2) k->original = ReadFloat(addr);
         if (Log()) LOGI("dev: > %s now at %08x = %s", n.c_str(), addr, Value(k->type, addr).c_str());
     }
 }
@@ -117,6 +127,8 @@ void Scale(const char* side, uint32_t percent) {
         if (!k || !Readable(k->addr) || k->type != 2) continue;
         float f = k->original * float(percent) / 100.0f;
         std::memcpy(::kernel::HostPtr(k->addr), &f, 4);
+        k->written = f;
+        k->has_written = true;
     }
 }
 }  // namespace
@@ -157,6 +169,8 @@ void DevSettingsFrame() {
         if (k->type == 2) {
             float f = float(std::atof(val.c_str()));
             std::memcpy(::kernel::HostPtr(k->addr), &f, 4);
+        k->written = f;
+        k->has_written = true;
         } else if (k->type == 3) {
             *static_cast<uint8_t*>(::kernel::HostPtr(k->addr)) = uint8_t(std::atoi(val.c_str()));
         } else {

@@ -1,5 +1,7 @@
 # Athelas
 
+[![Get it on RecompLauncher](https://recomplauncher.com/assets/press/launcher/badge-dark.svg)](https://recomplauncher.com/game/athelas)
+
 A free, unofficial launcher for four Lord of the Rings games, so you can play your own copies on a modern PC from
 one place. (Athelas is kingsfoil, the healing herb.)
 
@@ -20,16 +22,30 @@ possible. This is my first project of this size, so expect a few bugs; reports a
 
 ## Quick start
 
-1. **Download** `Athelas-<version>.7z` from [Releases](https://github.com/Shagg88/Athelas/releases) (a copy on [GitLab](https://gitlab.com/shagg88/athelas/-/releases)).
-2. **Extract it** into a folder of its own, for example `C:\Games\Athelas` (Windows 11: right-click > Extract All;
-   Windows 10: [7-Zip](https://www.7-zip.org)). Not into a game folder.
-3. **Double-click `Athelas.exe`.** That's the launcher; there's no installer.
-   - **No `Athelas.exe`?** Your antivirus removed it (it isn't code-signed). Restore it from quarantine, add an
-     exception for the folder, and extract again.
-   - **"Windows protected your PC"?** Click **More info > Run anyway**.
-4. **Pick a game and show the launcher your copy**, then press **Play**.
+**1. Download** one of these from [Releases](https://github.com/Shagg88/Athelas/releases) (a copy is on [GitLab](https://gitlab.com/shagg88/athelas/-/releases), and Athelas is also on [RecompLauncher](https://recomplauncher.com/game/athelas), the free home for recompiled PC games):
 
-To uninstall: **About → Remove ROTK Fix** in the launcher, then delete the Athelas folder.
+| | |
+|---|---|
+| **`Athelas-Setup-<version>.exe`** (easiest) | Double-click it and click **Install**. It goes in `C:\Games\Athelas` with a Start menu and desktop shortcut. No administrator rights needed. |
+| **`Athelas-<version>.7z`** | Make a new empty folder (for example `C:\Games\Athelas`, not inside a game's folder) and extract it there. Windows 11: right-click > **Extract All**. Windows 10: use [7-Zip](https://www.7-zip.org). |
+
+**2. Start Athelas** from the Start menu or desktop, or double-click `Athelas.exe` in its folder. The first time (and once after each update), it asks you to confirm that the game files you use are your own: click **Accept**.
+- **"Windows protected your PC"?** Click **More info**, then **Run anyway**. (Athelas isn't code-signed.)
+- **No `Athelas.exe` after extracting?** Your antivirus removed it. Restore it from quarantine, add an exception for
+  the Athelas folder, and extract again.
+
+**3. Add your game.** Pick a game in the launcher and point it at your copy:
+- **The Return of the King (PC):** the folder where the game is installed.
+- **The Xbox games:** your own disc image (`.iso`) of the **US** version. European and other versions don't work.
+
+**4. Press Play.**
+
+**Updating:** when there's a new version the launcher shows **Update**; click it. Your settings, saves and
+achievements are kept.
+
+**Uninstalling:** if you set up ROTK Fix for the PC game, first use **About > Remove ROTK Fix** in the launcher.
+Then use **Uninstall Athelas** in the Start menu (installer), or delete the Athelas folder (.7z). Your saves in the
+Athelas folder go with it when you delete the folder, so back them up first if you want them.
 
 ## Features
 
@@ -65,7 +81,9 @@ More detail on every setting, key and platform is in `README.txt` in the downloa
 ## Reporting a problem
 
 Use **Report a problem** in the launcher: it packs the logs and settings into a zip and opens a new
-[GitHub issue](https://github.com/Shagg88/Athelas/issues) for you.
+[GitHub issue](https://github.com/Shagg88/Athelas/issues) for you. Your Windows user name is taken out of the logs.
+After a crash the zip also holds the game's crash file, a memory snapshot that can't be cleaned the same way; a
+switch beside the button leaves it out.
 
 ## Building
 
@@ -111,8 +129,11 @@ Bundled components keep their own licences; every text is in `licenses/` and in 
 | [LZMA SDK](https://www.7-zip.org/sdk.html) | Public domain |
 | [DSOAL](https://github.com/kcat/dsoal), [OpenAL Soft](https://openal-soft.org) | LGPL 2.1 (source in the download's `licenses\source`) |
 | [glslang](https://github.com/KhronosGroup/glslang) | BSD-3-Clause and others |
+| [SMAA](https://github.com/iryoku/smaa) | MIT |
+| Compiler runtimes inside the programs: [LLVM](https://llvm.org) libc++, libunwind, compiler-rt | Apache 2.0 with LLVM Exceptions |
+| [MinGW-w64](https://www.mingw-w64.org) runtime; GCC's libstdc++ and libgcc (launcher, ROTK Fix) | ZPL 2.1 and permissive parts; GPL 3 with the GCC Runtime Library Exception |
 | [Vulkan-Headers](https://github.com/KhronosGroup/Vulkan-Headers) | Apache 2.0 / MIT |
-| Uncial Antiqua, Cinzel, EB Garamond, Cormorant Unicase, PT Sans, Liberation Sans | SIL Open Font License 1.1 |
+| Uncial Antiqua, Cinzel, Cinzel Decorative, EB Garamond, IM Fell English, Cormorant Unicase, PT Sans, Liberation Sans | SIL Open Font License 1.1 |
 | [AMD FidelityFX SDK](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK) (FSR, FSR frame generation) | AMD binary licence |
 | [NVIDIA Streamline](https://github.com/NVIDIA-RTX/Streamline) | MIT, with its third-party notices |
 | NVIDIA DLSS, DLSS frame generation, Reflex | NVIDIA RTX SDKs licence |

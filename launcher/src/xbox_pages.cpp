@@ -1239,9 +1239,12 @@ static void tt_about(App &a)
     if (ImGui::BeginPopupModal("Reset to defaults?", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) {
         ImGui::TextUnformatted("Put every setting of this game back to its default? Your saves are not touched.");
         if (ImGui::Button("Reset", ImVec2(S(150), 0))) {
+          if (a.running) set_message(a, "Close the game first: its settings weren't reset.", true);
+          else {
             a.ttFile = PortSettingsFile();
             tt_save(a);
             set_message(a, std::string(tp().game) + " settings are back to their defaults", false);
+          }
             ImGui::CloseCurrentPopup();
         }
         ImGui::SameLine();
@@ -1289,10 +1292,24 @@ void tt_tabs(App &a, const LibGame &)
                 pad_tab_focus();
                 ImGui::PopFont();
                 ImGui::BeginChild("tttab", ImVec2(0, 0), ImGuiChildFlags_NavFlattened, ImGuiWindowFlags_NoBackground);
+                // settings.toml there but locked when it was read: nothing can be changed (a change would be lost when
+                // the file is read again at save), until it can be read
+                const bool locked = a.ttFile.unreadable && t != 6;
+                if (locked) {
+                    static double lastTry = -10;
+                    double now = ImGui::GetTime();
+                    if (now - lastTry > 2.0) { lastTry = now; settings_file_load(tt_settings_path(), a.ttFile); }
+                }
+                if (locked && a.ttFile.unreadable) {
+                    ImGui::TextWrapped("%s", tr("The settings file is open in another program (OneDrive or antivirus, for example), so the settings can't be changed right now. Athelas tries again every few seconds."));
+                    ImGui::BeginDisabled();
+                }
+                const bool disabledHere = locked && a.ttFile.unreadable;
                 if (t == 0) tt_tab_display(a); else if (t == 1) tt_tab_graphics(a); else if (t == 2) tt_tab_controls(a);
                 else if (t == 5) tt_tab_gameplay(a); else if (t < 5) tt_settings_on_tab(a, t); else if (t == 7) tt_tab_mods(a); else tt_about(a);
                 if (getenv("ROTKFIX_SCROLL_END")) ImGui::SetScrollY(ImGui::GetScrollMaxY());   // testing
                 else if (const char *sy = getenv("ROTKFIX_SCROLL_Y")) ImGui::SetScrollY(std::min((float)atof(sy) * g_scale, ImGui::GetScrollMaxY()));   // testing
+                if (disabledHere) ImGui::EndDisabled();
                 ImGui::Dummy(ImVec2(0, S(6)));
                 ImGui::EndChild();
                 ImGui::PushFont(F_HEAD, F_HEAD->LegacySize);

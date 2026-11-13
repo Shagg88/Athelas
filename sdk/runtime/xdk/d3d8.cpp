@@ -548,7 +548,10 @@ HLE_STDCALL(D3D_BlockOnResource, 1) {
                 }
                 LOGI("d3d: BlockOnResource on surface %08X, stack %08X %08X %08X %08X", data, code[0], code[1], code[2], code[3]);
             }
-            g_backend->Sync(data, 0);
+            // (with the locked resource's size: a target long unused is read back only into a resource of its own
+            // size - review: memory re-used for something smaller would get old pixels over its neighbours)
+            gpu::TextureDesc td;
+            g_backend->Sync(data, gpu::Describe(res, td) ? gpu::TotalSize(td) : 0);
         } else {
             g_backend->WaitResource(res);
         }
@@ -719,6 +722,14 @@ HLE_STDCALL(D3DDevice_Swap, 1) {
         }
         app::FinishHandover();
     }
+    // the frame cap and frame generation's frame start (the Reflex / XeLL sleep) after the device lock is let go
+    // (destructors run in reverse order): loader and streaming threads' D3D calls aren't held up for a whole frame
+    struct AfterSwap {
+        ~AfterSwap() {
+            app::Pace();
+            if (gpu::Backend* b = g_backend.get()) b->GameFrame();
+        }
+    } after_swap;
     DeviceLock lock;
     g_presents++;
     // the kept display is shown until the title presents its own
@@ -732,11 +743,16 @@ HLE_STDCALL(D3DDevice_Swap, 1) {
         }
     }
     kernel::MarkFrameThread();
-    if (g_backend) g_backend->Present(SurfaceOf(g_buffers[1]));
-    app::Pace();
+    if (g_backend) {
+        g_backend->PresentQueued(true);
+        g_backend->Present(SurfaceOf(g_buffers[1]));
+    }
     // the in-game menu or a pause in the background: the game waits here, its last picture shown again with the
     // menu over it, until it may go on
-    if (app::Paused() && g_backend) app::Hold([&] { g_backend->Present(SurfaceOf(g_buffers[1])); });
+    if (app::Paused() && g_backend) app::Hold([&] {
+        g_backend->PresentQueued(false);
+        g_backend->Present(SurfaceOf(g_buffers[1]));
+    });
     if (g_title_surfaces) {
         // surfaces the title supplied (present params +0x34): the title tracks which one is the back buffer itself
         // (The Two Towers flips an index at each Swap and picks its surface by it), so the surfaces rotate, not their

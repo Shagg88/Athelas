@@ -35,6 +35,8 @@
 enum { R_DXVK, R_NATIVE };
 enum { DM_BORDERLESS, DM_FULLSCREEN, DM_WINDOWED };
 
+static int g_muteBg;   /* [Window] MuteInBackground */
+static int g_keepShape;   /* [Window] KeepShape: black bars, not stretching, for a borderless resolution of another shape */
 static int  g_renderer   = R_DXVK;
 static int  g_width      = 0;      /* 0 = desktop resolution */
 static int  g_height     = 0;
@@ -76,6 +78,10 @@ void graphics_load_settings(const char *ini)
     static const char *const rn[] = { "dxvk", "native" };
     static const char *const dn[] = { "borderless", "fullscreen", "windowed" };
     g_gfxEnabled = GetPrivateProfileIntA("Graphics", "Enabled", 1, ini);
+    g_muteBg = GetPrivateProfileIntA("Window", "MuteInBackground", 0, ini);   /* also silent behind another window */
+    /* a borderless resolution of another shape than the monitor keeps its shape, with black bars (Shagg: on).
+     * [Window] KeepShape = 0 brings back 1.8.3's stretching, should the bars misbehave on some PC. */
+    g_keepShape = GetPrivateProfileIntA("Window", "KeepShape", 1, ini);
     GetPrivateProfileStringA("Graphics", "Renderer", "dxvk", buf, sizeof buf, ini);
     g_renderer = parse_choice(buf, rn, 2, R_DXVK);
     /* which DXVK to use: a folder inside ROTKFix\ (dxvk = the standard one,
@@ -387,15 +393,88 @@ static void get_monitor_rect(IDirect3D8 *real, UINT adapter, RECT *r)
     else SetRect(r, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
 }
 
+static HWND g_bars;   /* black bars behind a borderless picture of another shape than the monitor */
+static int g_barsShown;
+/* the bars aren't owned by the game window, so they follow its minimize and restore here (from the Present hook) */
+void bars_follow(HWND game, int minimized)
+{
+    if (!g_bars || !g_barsShown) return;
+    if (minimized) ShowWindow(g_bars, SW_HIDE);
+    else SetWindowPos(g_bars, game, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW);
+}
+/* The bars' window: black, never active. A timer hides it should the game's window be gone (a slow or hung exit would
+ * leave a black screen), and Windows is told the game's window is a full-screen one while the bars are up: its own
+ * rule ("the foreground window covers the monitor") no longer holds for the smaller picture, and the taskbar would
+ * stay drawn over the bottom of it. */
+static HWND g_barsGame;
+static LRESULT CALLBACK bars_proc(HWND h, UINT m, WPARAM wp, LPARAM lp)
+{
+    if (m == WM_TIMER && (!g_barsGame || !IsWindow(g_barsGame))) ShowWindow(h, SW_HIDE);
+    return DefWindowProcA(h, m, wp, lp);
+}
+static void taskbar_fullscreen(HWND game, int on)
+{
+    /* ITaskbarList2::MarkFullscreenWindow, by its vtable (slot 8) so no shell headers or libraries are needed */
+    static const GUID clsid = { 0x56FDF344, 0xFD6D, 0x11d0, { 0x95, 0x8A, 0x00, 0x60, 0x97, 0xC9, 0xA0, 0x90 } };
+    static const GUID iid2 = { 0x602D4995, 0xB13A, 0x429b, { 0xA6, 0x6E, 0x19, 0x35, 0xE4, 0x4F, 0x43, 0x17 } };
+    typedef struct TB { void **vt; } TB;
+    static int marked;
+    if (!on && !marked) return;
+    HRESULT ci = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+    if (FAILED(ci) && ci != RPC_E_CHANGED_MODE) return;
+    TB *tb = NULL;
+    if (SUCCEEDED(CoCreateInstance(&clsid, NULL, CLSCTX_INPROC_SERVER, &iid2, (void **)&tb)) && tb) {
+        if (SUCCEEDED(((HRESULT (WINAPI *)(TB *))tb->vt[3])(tb)))                       /* HrInit */
+            ((HRESULT (WINAPI *)(TB *, HWND, BOOL))tb->vt[8])(tb, game, on ? TRUE : FALSE);   /* MarkFullscreenWindow */
+        ((ULONG (WINAPI *)(TB *))tb->vt[2])(tb);                                        /* Release */
+        marked = on;
+    }
+    if (ci == S_OK) CoUninitialize();   /* (only an apartment made here) */
+}
 static void setup_window(HWND w, IDirect3D8 *real, UINT adapter)
 {
     if (!w) return;
+    if (g_bars) { ShowWindow(g_bars, SW_HIDE); g_barsShown = 0; }
+    taskbar_fullscreen(w, 0);
     RECT mr;
     get_monitor_rect(real, adapter, &mr);
     if (g_dispMode == DM_BORDERLESS) {
         SetWindowLongA(w, GWL_STYLE, WS_POPUP | WS_VISIBLE);
         SetWindowLongA(w, GWL_EXSTYLE, 0);
-        SetWindowPos(w, HWND_TOP, mr.left, mr.top, mr.right - mr.left, mr.bottom - mr.top, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+        int mw = mr.right - mr.left, mh = mr.bottom - mr.top, x = mr.left, y = mr.top, ww = mw, wh = mh;
+        /* a resolution of another shape than the monitor (1920x1200 on 16:9) keeps its shape: the picture is
+         * centred with black bars, instead of being stretched against the camera and HUD maths */
+        UINT pw = g_modeW, ph = g_modeH;   /* the picture's shape: the one the camera and HUD are worked out for */
+        if (g_keepShape && pw && ph && mw && mh) {
+            long long a = (long long)pw * mh, b = (long long)ph * mw;   /* compare pw/ph with mw/mh */
+            if (a * 100 < b * 99) { ww = (int)((long long)mh * pw / ph); x += (mw - ww) / 2; }
+            else if (a * 99 > b * 100) { wh = (int)((long long)mw * ph / pw); y += (mh - wh) / 2; }
+        }
+        /* (under Wine and on the Steam Deck no second window: gamescope might show it instead of the game's; the
+         * picture keeps its shape there too, centred) */
+        HMODULE nt = GetModuleHandleA("ntdll.dll");
+        int wine = nt && GetProcAddress(nt, "wine_get_version");
+        if ((ww != mw || wh != mh) && !wine) {
+            if (!g_bars) {
+                WNDCLASSA wc = { 0 };
+                wc.lpfnWndProc = bars_proc; wc.hInstance = GetModuleHandleA(NULL);
+                wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH); wc.lpszClassName = "ROTKFixBars";
+                RegisterClassA(&wc);
+                g_bars = CreateWindowExA(WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW, "ROTKFixBars", "", WS_POPUP | WS_DISABLED,
+                                       mr.left, mr.top, mw, mh, NULL, NULL, wc.hInstance, NULL);   /* unowned: an owned window would sit above the game */
+            }
+            logf_("graphics: borderless %ux%u keeps its shape: %dx%d with black bars", (unsigned)pw, (unsigned)ph, ww, wh);
+        }
+        SetWindowPos(w, HWND_TOP, x, y, ww, wh, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+        /* the bars go directly under the game window (inserted after it in the z-order) */
+        /* (not while the game is minimized: the bars would cover the desktop until it is restored - review) */
+        if (g_bars && (ww != mw || wh != mh) && !wine) {
+            g_barsGame = w;
+            SetTimer(g_bars, 1, 1000, NULL);
+            SetWindowPos(g_bars, w, mr.left, mr.top, mw, mh, SWP_NOACTIVATE | (IsIconic(w) ? 0 : SWP_SHOWWINDOW));
+            g_barsShown = 1;
+            taskbar_fullscreen(w, 1);
+        }
     } else if (g_dispMode == DM_WINDOWED) {
         DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE;
         RECT r = { 0, 0, (LONG)g_outW, (LONG)g_outH };
@@ -780,12 +859,20 @@ static int is_rt(void *t) { for (int i = 0; i < g_nrt; i++) if (g_rtTex[i] == t)
 /* The game writes 2D vertices into our ordinary-memory copy, and on Unlock
  * the locked range is copied on to the real buffer. (Reading the real
  * buffer back instead is very slow: it lives in graphics memory.) */
+typedef HRESULT (WINAPI *VBGetDesc_t)(IDirect3DVertexBuffer8 *, D3DVERTEXBUFFER_DESC *);
 static HRESULT WINAPI hook_VBLock(IDirect3DVertexBuffer8 *vb, UINT off, UINT size, BYTE **pp, DWORD flags)
 {
     LONGLONG t0 = hitch_us();   /* (#58: how long locks take, with the copies) */
     HRESULT hr = g_realVBLock(vb, off, size, pp, flags);
     InterlockedExchangeAdd(&g_hitch[HITCH_LOCKUS], (LONG)(hitch_us() - t0));
     TrackedVB *t = SUCCEEDED(hr) && pp && *pp ? find_vb(vb) : NULL;
+    if (t && !t->lockPtr && !(flags & D3DLOCK_READONLY)) {
+        /* the buffer's real size, not the remembered one: a stale entry must never let Unlock write past it */
+        D3DVERTEXBUFFER_DESC d;
+        if (FAILED(((VBGetDesc_t)(*(void ***)vb)[13])(vb, &d)) || d.Size != t->size) {
+            HeapFree(GetProcessHeap(), 0, t->shadow); *t = g_vbs[--g_nvbs]; t = NULL;
+        }
+    }
     if (t && !t->lockPtr && !(flags & D3DLOCK_READONLY) && off < t->size) {
         UINT n = size ? size : t->size - off;
         if (off + n > t->size) n = t->size - off;
@@ -837,10 +924,14 @@ static ULONG WINAPI hook_VBRelease(IUnknown *u)
  * buffers without a vertex format (FVF 0) and only says at draw time that a
  * buffer holds 2D vertices, so buffers are taken on when first drawn as 2D;
  * their contents are known from the next time the game fills them. */
-typedef HRESULT (WINAPI *VBGetDesc_t)(IDirect3DVertexBuffer8 *, D3DVERTEXBUFFER_DESC *);
 static TrackedVB *track_vb(IDirect3DVertexBuffer8 *vb)
 {
-    if (!vb || g_nvbs >= MAX_VB) return NULL;
+    if (!vb) return NULL;
+    /* an old entry at this address belongs to a buffer freed without our Release seeing it (native D3D8 / Wine
+     * free a buffer still bound later): drop it, or its larger size would overrun the new buffer */
+    TrackedVB *old = find_vb(vb);
+    if (old) { HeapFree(GetProcessHeap(), 0, old->shadow); *old = g_vbs[--g_nvbs]; }
+    if (g_nvbs >= MAX_VB) return NULL;
     void **vt = *(void ***)vb;
     D3DVERTEXBUFFER_DESC d;
     if (FAILED(((VBGetDesc_t)vt[13])(vb, &d)) || !d.Size || d.Size > (4u << 20)) return NULL;
@@ -891,6 +982,10 @@ static HRESULT WINAPI hook_CreateTex(IDirect3DDevice8 *dev, UINT w, UINT h, UINT
     g_hitch[HITCH_TEXNEW]++;
     if (SUCCEEDED(hr) && out && *out) {
         patch_vtbl(*(void ***)*out, 2, (void *)hook_TexRelease, (void **)&g_realTexRelease);
+        /* a new texture at an address we still have records for: the old one was freed without our Release seeing it
+         * (native D3D8 / Wine): forget them, or the new texture would get the old one's replacement or state */
+        textures_on_release(*out);
+        for (int i = 0; i < g_nrt; i++) if (g_rtTex[i] == (void *)*out) { g_rtTex[i] = g_rtTex[--g_nrt]; break; }
         textures_on_create(dev, (void *)g_realCreateTex, *out);
         if (usage & D3DUSAGE_RENDERTARGET) {
             if (g_nrt < MAX_RT) g_rtTex[g_nrt++] = *out;
@@ -1605,9 +1700,9 @@ static int text_is_black(UINT first, UINT count)
 volatile LONG g_textLog;   /* 1: a screenshot was taken; 2: this frame is logged */
 static void text_log(UINT first, UINT count)
 {
+    if (g_textLog != 2 || !g_tex0 || !icons_is_font_texture(g_tex0)) return;   /* (checked first: every draw passes here) */
     TrackedVB *t = g_stream0 ? find_vb(g_stream0) : NULL;
     UINT stride = g_stream0Stride ? g_stream0Stride : 24;
-    if (g_textLog != 2 || !g_tex0 || !icons_is_font_texture(g_tex0)) return;
     if (!t || count == 0 || stride < 24 || first > t->size / stride || count > t->size / stride - first) return;
     char line[512];
     int n = snprintf(line, sizeof line, "textlog: %u verts fvf %#lx colour %08lx at", count, (unsigned long)g_curFVF,
@@ -1807,6 +1902,19 @@ static HRESULT WINAPI hook_Present(IDirect3DDevice8 *dev, const RECT *a, const R
      * dropped and the game slowed to ~60 loops a second meanwhile. */
     HWND win = w ? w : g_window;
     borderless_yield_to_shell(win);
+    {
+        static int was_min, first = 1;
+        if (first) { first = 0; sound_unmute_left_over(); }
+        /* minimized: always silent (#78); MuteInBackground=1: also while another program's window is in front */
+        int now_min = win && (IsIconic(win) || (g_muteBg && GetForegroundWindow() != win));
+        if (now_min != was_min) { sound_minimized(now_min); was_min = now_min; }   /* #78 */
+        static int was_icon;
+        int icon = win && IsIconic(win);
+        static int was_front;
+        int front = win && GetForegroundWindow() == win;   /* back from Alt-Tab: the bars go under the game again */
+        if (icon != was_icon || (front && !was_front)) { bars_follow(win, icon); was_icon = icon; }
+        was_front = front;
+    }
     if (win && IsIconic(win)) {
         static int logged;
         if (!logged++) logf_("graphics: window minimized - not presenting until it is restored");

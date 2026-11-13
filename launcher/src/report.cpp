@@ -1,4 +1,5 @@
 // Athelas - a problem report in one zip (see report.h)
+#include <new>
 #include "report.h"
 #include "config.h"
 
@@ -156,27 +157,45 @@ static void replace_all_ci(std::string &s, const std::string &from, const std::s
     s.swap(out);
 }
 
-std::string report_anonymise(const std::string &text)
+// one spelling of the profile folder and the user name taken out of s
+static void anonymise_with(std::string &s, const std::string &p, const std::string &u)
 {
-    std::string s = text;
-    char prof[MAX_PATH] = "", user[256] = "";
-    GetEnvironmentVariableA("USERPROFILE", prof, sizeof prof);
-    GetEnvironmentVariableA("USERNAME", user, sizeof user);
-    std::string p = prof;
     if (p.size() > 3) {
         replace_all_ci(s, p, "%USERPROFILE%");
         std::string fwd = p;
         std::replace(fwd.begin(), fwd.end(), '\\', '/');
         replace_all_ci(s, fwd, "%USERPROFILE%");
     }
-    // the name in other users-folder paths too (another drive, a moved profile, a short 8.3 name is left)
-    std::string u = user;
+    // the name in other users-folder paths too (another drive, a moved profile)
     if (!u.empty()) {
         replace_all_ci(s, "\\Users\\" + u, "\\Users\\%USERNAME%");
         replace_all_ci(s, "/Users/" + u, "/Users/%USERNAME%");
         replace_all_ci(s, "/home/" + u, "/home/%USERNAME%");   // Wine shows Linux paths as Z:\home\name
         replace_all_ci(s, "\\home\\" + u, "\\home\\%USERNAME%");
     }
+}
+static std::string narrow_cp(const std::wstring &w, unsigned cp)
+{
+    int n = WideCharToMultiByte(cp, 0, w.c_str(), -1, NULL, 0, NULL, NULL);
+    if (n <= 1) return "";
+    std::string o((size_t)n, '\0');
+    WideCharToMultiByte(cp, 0, w.c_str(), -1, &o[0], n, NULL, NULL);
+    o.resize((size_t)n - 1);
+    return o;
+}
+std::string report_anonymise(const std::string &text)
+{
+    std::string s = text;
+    wchar_t prof[MAX_PATH * 2] = L"", user[256] = L"", sh[MAX_PATH * 2] = L"";
+    GetEnvironmentVariableW(L"USERPROFILE", prof, MAX_PATH * 2);
+    GetEnvironmentVariableW(L"USERNAME", user, 256);
+    // as this program spells them (UTF-8 with its manifest: the ports' logs), as the PC's own code page does (the PC
+    // game's ROTKFix.log), and the profile's short 8.3 name (what the PC game is started by when its code page can't
+    // hold the name)
+    anonymise_with(s, narrow_cp(prof, CP_ACP), narrow_cp(user, CP_ACP));
+    if (system_code_page() != GetACP()) anonymise_with(s, narrow_cp(prof, system_code_page()), narrow_cp(user, system_code_page()));
+    DWORD k = GetShortPathNameW(prof, sh, MAX_PATH * 2);
+    if (k > 0 && k < MAX_PATH * 2 && _wcsicmp(sh, prof)) anonymise_with(s, narrow_cp(sh, CP_ACP), "");
     return s;
 }
 
@@ -216,7 +235,7 @@ static bool read_whole(const std::string &path, std::string &out, size_t limit, 
         // a very long log: its start (the PC, the settings) and its end (what went wrong) are what matter
         unsigned long long n = (unsigned long long)size.QuadPart;
         auto chunk = [&](unsigned long long at, size_t len, std::string &to) {
-            to.resize(len);
+            try { to.resize(len); } catch (const std::bad_alloc &) { to.clear(); return false; }   // no room: left out
             LARGE_INTEGER p; p.QuadPart = (LONGLONG)at;
             DWORD got = 0;
             return SetFilePointerEx(h, p, NULL, FILE_BEGIN) && ReadFile(h, &to[0], (DWORD)len, &got, NULL) && (to.resize(got), true);
@@ -226,7 +245,7 @@ static bool read_whole(const std::string &path, std::string &out, size_t limit, 
         else {
             std::string head, tail;
             ok = chunk(0, limit / 4, head) && chunk(n - limit * 3 / 4, limit * 3 / 4, tail);
-            out = head + "\r\n\r\n[... " + std::to_string(n - limit) + " bytes of the log left out here ...]\r\n\r\n" + tail;
+            if (ok) try { out = head + "\r\n\r\n[... " + std::to_string(n - limit) + " bytes of the log left out here ...]\r\n\r\n" + tail; } catch (const std::bad_alloc &) { ok = false; }
         }
     }
     CloseHandle(h);

@@ -3,7 +3,11 @@
   <assemblyIdentity type="win32" name="ROTKFix.Launcher" version="0.1.0.0"/>
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3"><security><requestedPrivileges>
     <requestedExecutionLevel level="asInvoker" uiAccess="false"/></requestedPrivileges></security></trustInfo>
+  <!-- activeCodePage UTF-8 (Windows 10 1903 and later; ignored before): the narrow Windows and C functions the
+       launcher uses take UTF-8, so a folder or user name in any alphabet works, and shows as written. Older settings
+       files in the PC's own code page are converted once at start (text_files_to_utf8). -->
   <application xmlns="urn:schemas-microsoft-com:asm.v3"><windowsSettings>
+    <activeCodePage xmlns="http://schemas.microsoft.com/SMI/2019/WindowsSettings">UTF-8</activeCodePage>
     <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/pm</dpiAware>
     <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2</dpiAwareness>
   </windowsSettings></application>

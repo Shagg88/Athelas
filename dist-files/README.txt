@@ -29,8 +29,12 @@ QUICK START
 1. Extract the .7z into a folder of its own, for example C:\Games\Athelas
    (Windows 11: right-click > Extract All; Windows 10: the free 7-Zip,
    7-zip.org). Not into a game folder.
-2. Double-click Athelas.exe in that folder. That's the launcher; there's no
-   installer.
+2. Double-click Athelas.exe in that folder. That's the launcher. (Or use
+   Athelas-Setup-<version>.exe instead of the .7z: it does steps 1 and 2 and
+   adds Start menu shortcuts.)
+   The first time (and once after each update) it asks you to confirm that
+   the game files you use are your own: choose Accept. "Don't ask me again"
+   with it ends the question for good.
    - No Athelas.exe after extracting? Your antivirus removed it (it isn't
      code-signed). Restore it from quarantine, add an exception for the
      Athelas folder, and extract again. See ANTIVIRUS WARNINGS.
@@ -116,13 +120,25 @@ nothing is downloaded until you press it. Turn the check off on the About tab
 ("Look for new versions"). You can also update by hand: extract the new version
 over this folder.
 
+After an update or a new install over an old folder, Athelas checks its folder
+at the next start: files an older version put there that the new one no longer
+uses are moved into a folder named "Old files - safe to delete", so nothing
+old can clash with the new version. Delete that folder whenever you like. Your
+own files are never moved: games, saves, settings, texture packs, covers,
+screenshots, logs and anything you added yourself.
+
+Athelas is also on RecompLauncher, the free home for recompiled PC games:
+https://recomplauncher.com/game/athelas
+
 
 UNINSTALL
 ---------
 Open the launcher, go to About, and press "Remove ROTK Fix". It removes every
 ROTK Fix file from the game folder and puts the game's own files back. Saved
 games, screenshots, achievements and texture packs are kept (the last two in
-the ROTKFix folder). Then delete the launcher's folder.
+the ROTKFix folder). Then delete the launcher's folder, or, if you used
+Athelas-Setup, use "Uninstall Athelas" in Windows' Apps list: it removes only
+the files Athelas put there (not your settings, saves or the mods' .ini files).
 
 
 YOUR GAMES ON THE CAROUSEL
@@ -131,9 +147,10 @@ Athelas opens on your games as boxes. Turn the carousel with the arrow keys,
 the D-pad or stick, the mouse wheel, or a click on a box at the side. Play
 starts the game in front; Settings opens its page (Library there goes back).
 With a controller: A plays, X opens Settings, Y gets box art.
-- Box art: "Get box art" downloads the original Xbox covers from RetroArch's
-  collection (libretro thumbnails) into the covers folder beside Athelas. Your
-  own scans there are used first: fotr.png, tt.png, rotk.png (or .jpg).
+- Box art: "Get box art" downloads the original box covers, full size, from
+  the LaunchBox games database (any it can't get: the small ones from
+  RetroArch's collection) into the covers folder beside Athelas. Your own
+  scans there are used first: fotr.png, tt.png, rotk.png, ta.png (or .jpg).
   Without either, each box shows a cover made from the game's own art.
 - The Return of the King is one box for both versions: with both, Athelas asks
   PC or Xbox, and can remember the answer ("Ask which version" undoes it).
@@ -338,7 +355,7 @@ The mouse: hold the ranged attack (Left Shift) and move the mouse to aim
 wheel moves up and down, a left click chooses and a right click goes back
 ("Mouse in the menus"). Both are on the Controls tab.
 
-F10, or both stick clicks together on a controller, opens the settings menu
+F10, or Back + Start on a controller (Share + Options on PlayStation), opens the settings menu
 over the game, which stands still behind it. It holds the settings that take
 effect at once (picture, controls, field of view, damage) and saves them when
 it closes (F10, Esc, B or Start). LB and RB, or Page Up and Page Down, change
@@ -458,7 +475,7 @@ Controls tab is set to "Second controller" (the default).
 WINDOWS ON ARM (SNAPDRAGON LAPTOPS)
 -----------------------------------
 The one download is for every PC: it also has native ARM64 builds of
-the Xbox ports (TwoTowers-arm64.exe, ROTKXbox-arm64.exe, FOTRXbox-arm64.exe),
+the Xbox ports (TwoTowers-arm64.exe, ROTKXbox-arm64.exe, FOTRXbox-arm64.exe, TAXbox-arm64.exe),
 which the launcher starts by itself on an ARM PC (the About tab then says
 "ARM64 build"). If the
 ARM64 builds in the folder are from another version, the launcher runs the
@@ -732,7 +749,7 @@ The launcher writes ROTKFix.ini in the game folder. You can also edit it in Note
 
 [Launcher]  Launcher
   Monitor                (default 0)
-  CreatedGameSettings    1 = the launcher made the game's ROTK.ini (removed again when uninstalling)
+  CreatedGameSettings    1 = the launcher made the game's ROTK.ini
 
 
 INCLUDED OPEN-SOURCE SOFTWARE (licences in the licenses folder, and in
@@ -744,14 +761,18 @@ ROTKFix\licenses in the game folder once ROTK Fix is set up there)
   Dear ImGui (MIT)     launcher interface
   stb_image, stb_image_write (MIT / public domain)
   Uncial Antiqua, Cinzel, EB Garamond fonts (SIL Open Font License)  launcher
+  Cinzel Decorative, IM Fell English fonts (SIL Open Font License)  the Xbox games' in-game menu
   Liberation Sans (SIL Open Font License)  letters in the button pictures
-  XboxXBE-Recomp (MIT, (c) 2026 TGP482)  runtime in the three Xbox ports
+  XboxXBE-Recomp (MIT, (c) 2026 TGP482)  runtime in the four Xbox ports
   PT Sans, Uncial Antiqua, Cormorant Unicase (SIL Open Font License)
                        Polish and Russian text in FOTR-Xbox\fonts
   toml++ (MIT)         settings files in the Xbox ports
   miniz (MIT), LZMA SDK (public domain)  reading update downloads
-  Zydis (MIT), glslang (BSD-3-Clause), Vulkan headers (Apache 2.0 / MIT)
-                       Xbox ports
+  Zydis (MIT), glslang (BSD-3-Clause), Vulkan headers (Apache 2.0 / MIT),
+  SMAA (MIT)           Xbox ports
+  Compiler runtimes inside the programs: LLVM libc++, libunwind and
+  compiler-rt (Apache 2.0 with LLVM Exceptions), MinGW-w64 runtime (ZPL 2.1),
+  GCC libstdc++ and libgcc (GPL 3 with the GCC Runtime Library Exception)
   ROTKPlus mod (MIT)   ROTKFix\mods
 
 UPSCALERS AND FRAME GENERATION (the upscalers folder; licences beside them)

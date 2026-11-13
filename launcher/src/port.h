@@ -18,6 +18,7 @@ struct PortSetting {
 
 struct PortSettingsFile {
     std::vector<std::string> lines;    // the file as read, so unknown keys and comments are kept
+    bool unreadable = false;           // it exists but couldn't be read (locked): never saved over, or it would be reset
     std::string get(const std::string &sec, const std::string &key, const std::string &def) const;
     void set(const std::string &sec, const std::string &key, const std::string &value);
     void remove(const std::string &sec, const std::string &key);   // drops the key's line, if there is one

@@ -163,7 +163,7 @@ void SetSpeed(uint32_t times);
 uint32_t Speed();
 int64_t SpeedExtraNs();
 bool Frozen();
-int64_t ToDeadline(int64_t due_100ns);        // relative or absolute to a steady clock deadline in ns
+int64_t ToDeadline(int64_t due_100ns);        // relative or absolute to a deadline on the guest clock (GuestNs), in ns
 void QueueDpc(uint32_t dpc, uint32_t arg1, uint32_t arg2);
 bool RemoveDpc(uint32_t dpc);  // a queued DPC taken out before it runs (KeRemoveQueueDpc): true when it was queued
 struct Thread;

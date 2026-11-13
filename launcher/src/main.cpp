@@ -70,6 +70,7 @@ static void test_pad_poll()
 static bool g_langAsk;              // no language chosen yet: ask on the front screen
 
 static std::string g_langFontPending;
+static std::string g_langLoadPending;   // set_language: loaded between frames
 
 static bool g_langFontsAll;         // the language list is showing: every language's font, for their names
 
@@ -98,8 +99,9 @@ static void lang_font_for(const std::string &code)
 static void set_language(const std::string &code)
 {
     WritePrivateProfileStringA("Launcher", "Language", code.c_str(), ports_ini().c_str());
-    i18n_load(code);
-    g_langFontPending = i18n_current();   // its font, before the next frame
+    // loaded once this frame is drawn (i18n_load empties the translations this frame's text may still point into),
+    // then its font, before the next frame
+    g_langLoadPending = code.empty() ? "auto" : code;
     g_langAsk = false;
 }
 
@@ -151,6 +153,49 @@ static void language_first_ask()
         ImGui::PopFont();
         ImGui::EndPopup();
     }
+}
+
+// First start, and the first start of each new version: the player confirms the games are their own (as COGBox
+// asks). Accept goes on; "Don't ask me again" with it ends the question for later versions too. Decline closes
+// Athelas: nothing can be played or set up without accepting. [Launcher] Agreed = the version accepted, or "always".
+static bool g_ownAsk;
+static void own_games_ask(App &a)
+{
+    if (!g_ownAsk || (g_langAsk && a.front)) return;   // after the language question, when that is being asked
+    if (!ImGui::IsPopupOpen("##owngames")) ImGui::OpenPopup("##owngames");
+    ImVec2 ds = ImGui::GetIO().DisplaySize;
+    ImGui::SetNextWindowSize(ImVec2(std::min(S(620), ds.x - S(40)), 0));
+    if (!ImGui::BeginPopupModal("##owngames", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar)) return;
+    static bool never = false;
+    ImGui::TextColored(C_GOLD, "Before you play");
+    ImGui::Spacing();
+    ImGui::PushTextWrapPos(0);
+    ImGui::TextUnformatted("Athelas includes no game files, and none will be provided. To play, you use your own copy of each game: "
+                           "the PC game you have installed, or a disc image made from your own Xbox disc.");
+    ImGui::Spacing();
+    ImGui::TextUnformatted("By choosing Accept, you confirm that the game files you use with Athelas are your own.");
+    ImGui::Spacing();
+    ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
+    ImGui::TextColored(C_DIM, "Athelas is an unofficial fan project. It has nothing to do with, and is not endorsed by, Microsoft, "
+                              "Electronic Arts, Vivendi, New Line Cinema, Warner Bros., the Tolkien Estate, or any developer or "
+                              "publisher of these games.");
+    ImGui::PopFont();
+    ImGui::PopTextWrapPos();
+    ImGui::Spacing();
+    ImGui::Checkbox("Don't ask me again", &never);
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Counts only with Accept. Without it, Athelas asks once more after each update.");
+    ImGui::Spacing();
+    float bw = S(150);
+    ImGui::SetCursorPosX(ImGui::GetWindowWidth() - bw * 2 - ImGui::GetStyle().ItemSpacing.x - ImGui::GetStyle().WindowPadding.x);
+    if (ImGui::Button("Decline", ImVec2(bw, 0))) { a.quit = true; ImGui::CloseCurrentPopup(); }
+    ImGui::SameLine();
+    if (ImGui::Button("Accept", ImVec2(bw, 0))) {
+        WritePrivateProfileStringA("Launcher", "Agreed", never ? "always" : LAUNCHER_VERSION, ports_ini().c_str());
+        g_ownAsk = false;
+        ImGui::CloseCurrentPopup();
+    }
+    ImGui::SetItemDefaultFocus();
+    ImGui::EndPopup();
 }
 
 // The window's size, remembered for next time (not while fullscreen or maximised: then only that it was)
@@ -251,6 +296,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
 {
     QueryPerformanceCounter(&g_st0);
     if (cmdLine && strstr(cmdLine, "--vkprobe")) return gpu_probe_main();   // the background graphics check (gpu.cpp)
+    text_files_to_utf8();   // before any settings file is read
     // 1.7.3/1.7.4's build kits and tools, not needed since 1.7.5: removed in the background (thousands of files)
     CloseHandle(CreateThread(NULL, 0, cleanup_thread, NULL, 0, NULL));
     if (!(cmdLine && strstr(cmdLine, "--install-to "))) gpu_probe_start();
@@ -338,6 +384,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
         char lang[32] = "";
         GetPrivateProfileStringA("Launcher", "Language", "", lang, sizeof lang, ports_ini().c_str());
         g_langAsk = !lang[0];
+        char agreed[32];
+        GetPrivateProfileStringA("Launcher", "Agreed", "", agreed, sizeof agreed, ports_ini().c_str());
+        g_ownAsk = strcmp(agreed, "always") != 0 && strcmp(agreed, LAUNCHER_VERSION) != 0;
         i18n_load(lang[0] ? lang : "auto");
         lang_font_for(i18n_current());
     }
@@ -406,16 +455,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     std::string playArg = quoted_arg("--play ");
     music_init();    // the front screen's music (nothing plays without a sound device)
     st_mark("music");
+    update_tidy();   // what an update left behind - first: an unfinished one is undone before its file list is acted on
     if (int n = update_remove_leftovers())   // files an older Athelas shipped that this one doesn't
-        set_message(a, std::to_string(n) + " file" + (n == 1 ? "" : "s") + " left over from an older Athelas removed "
-                       "(listed in athelas-cleanup.log).", false);
-    update_tidy();   // what an update left behind
+        set_message(a, std::to_string(n) + " file" + (n == 1 ? "" : "s") + " left over from an older Athelas moved into "
+                       "the folder \"Old files - safe to delete\".", false);
     st_mark("leftovers checked");
     if (updates_on()) update_check_start(LAUNCHER_VERSION);
 
     bool playPending = !playArg.empty();
-    while (!a.quit) {
-        if (playPending && ImGui::GetFrameCount() > 1) { playPending = false; shortcut_play(a, playArg); }
+    // never closed in the middle of putting an update's files in place (a mix of two versions): it closes once done
+    auto may_close = [&]() {
+        int st = update_install_state(nullptr, nullptr);
+        if (st != 2) return true;   // a download can be left: only putting files in place can't
+        static bool told;
+        if (!told) { told = true; set_message(a, "Athelas closes as soon as the update has finished installing.", false); }
+        return false;
+    };
+    while (!a.quit || !may_close()) {
+        // (a game's shortcut waits for the own-games question: Accept starts it, Decline closes Athelas - review)
+        if (playPending && !g_ownAsk && ImGui::GetFrameCount() > 1) { playPending = false; shortcut_play(a, playArg); }
         test_pad_poll();
         SDL_Event e;
         while (SDL_PollEvent(&e)) {
@@ -434,7 +492,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
             }
             if (e.type == SDL_EVENT_WINDOW_RESIZED || e.type == SDL_EVENT_WINDOW_MAXIMIZED || e.type == SDL_EVENT_WINDOW_RESTORED)
                 window_remember(win);
-            if (e.type == SDL_EVENT_DROP_FILE && !a.running) front_drop(a, e.drop.data);   // a game dropped on the window
+            if (e.type == SDL_EVENT_DROP_FILE && !a.running && !g_ownAsk) front_drop(a, e.drop.data);   // a game dropped on the window
             if ((e.type == SDL_EVENT_GAMEPAD_ADDED || e.type == SDL_EVENT_GAMEPAD_REMOVED) && !a.running) refresh_controllers(a);
             capture_event(a, e);
         }
@@ -500,11 +558,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
         draw_ui(a, io.DisplaySize, ren);
         draw_window_buttons(a, io.DisplaySize);
         if (a.front && !a.running && !getenv("ATHELAS_PAGE")) language_first_ask();
+        if (!a.running && !getenv("ATHELAS_PAGE") && !getenv("ATHELAS_JOURNEY")) own_games_ask(a);
         ImGui::Render();
         SDL_SetRenderDrawColor(ren, 10, 8, 6, 255);
         SDL_RenderClear(ren);
         ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), ren);
         i18n_frame_end();
+        if (!g_langLoadPending.empty()) { i18n_load(g_langLoadPending); g_langFontPending = i18n_current(); g_langLoadPending.clear(); }
         SDL_RenderPresent(ren);
         if (getenv("ATHELAS_TIMING")) {
             static int frames = 0;

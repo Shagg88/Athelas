@@ -62,7 +62,10 @@ bool IsSubstitute(SDL_Gamepad* p) {
     const char* path = SDL_GetGamepadPath(p);
     uint16_t v = SDL_GetGamepadVendor(p), pr = SDL_GetGamepadProduct(p);
     bool xin = path && std::strncmp(path, "XInput", 6) == 0;
-    return (v == 0x28DE && pr == 0x11FF) || (g_steam_launched && xin && v != 0x28DE);
+    // XBE_KEEP_STEAM_PAD=1: Steam Input off for the game with another pad plugged in (Steam Deck): under Wine an
+    // ordinary XInput pad can't be told from Steam's virtual one, so the Deck's own controls are kept with this
+    static const bool keep = SDL_getenv("XBE_KEEP_STEAM_PAD") != nullptr;
+    return (v == 0x28DE && pr == 0x11FF) || (!keep && g_steam_launched && xin && v != 0x28DE);
 }
 bool AnySubstitute() {
     for (SDL_Gamepad* p : g_pads)
@@ -80,25 +83,38 @@ void AddPad(SDL_JoystickID id) {
     // tell the virtual pad apart, so one Deck could be two players. A real Steam controller is left out only while a
     // pad that stands in for it is open (Steam's virtual one: 28DE:11FF, or under Steam an XInput pad of another
     // vendor), and comes back when that one goes (review: never on Steam's settings alone - no controller at all).
+    SDL_Gamepad** reuse = nullptr;   // the port of a DirectInput duplicate the XInput listing replaces
     if (g_wine) {
         uint16_t v0 = SDL_GetGamepadVendorForID(id), p0 = SDL_GetGamepadProductForID(id);
         if (v0 == 0x28DE && p0 != 0x11FF && AnySubstitute()) {
             const char* n0 = SDL_GetGamepadNameForID(id);
-            LOGR("input: %s left out: Steam Input gives it as its virtual pad (Wine/Proton)", n0 ? n0 : "a Steam controller");
+            LOGR("input: %s left out: Steam Input gives it as its virtual pad (Wine/Proton; if Steam Input is off for the "
+                 "game, set XBE_KEEP_STEAM_PAD=1 to keep it)", n0 ? n0 : "a Steam controller");
             return;
         }
         const char* p = SDL_GetGamepadPathForID(id);
         bool xin = p && std::strncmp(p, "XInput", 6) == 0;
         uint16_t v = SDL_GetGamepadVendorForID(id), pr = SDL_GetGamepadProductForID(id);
+        // pads are paired by count, not by model alone: two identical controllers are two XInput pads and two
+        // DirectInput ones, and only the duplicates go (review: one XInput listing closed every pad of its model)
+        int nx = 0, nd = 0;
+        SDL_Gamepad** first_d = nullptr;
         for (SDL_Gamepad*& pad : g_pads) {
             if (!pad || SDL_GetGamepadVendor(pad) != v || SDL_GetGamepadProduct(pad) != pr) continue;
             const char* op = SDL_GetGamepadPath(pad);
             bool oxin = op && std::strncmp(op, "XInput", 6) == 0;
-            if (oxin && !xin) { LOGR("input: %s left out: the same pad as controller %d (Wine)", p ? p : "a pad", int(&pad - g_pads) + 1); return; }
-            if (xin && !oxin) { SDL_CloseGamepad(pad); pad = nullptr; }   // the XInput one takes its place
+            if (oxin) nx++;
+            else if (nd++ == 0) first_d = &pad;
+        }
+        if (!xin && nd < nx) { LOGR("input: %s left out: the same pad as an XInput controller already in (Wine)", p ? p : "a pad"); return; }
+        if (xin && nd > 0 && first_d) {   // (any DirectInput twin still in: two identical pads can list D, D, X, X)   // its DirectInput listing came first: the XInput one takes that player's port
+            LOGR("input: controller %d is the same pad as the XInput one now listed: replaced (Wine)", int(first_d - g_pads) + 1);
+            SDL_CloseGamepad(*first_d);
+            *first_d = nullptr;
+            reuse = first_d;
         }
     }
-    SDL_Gamepad** slot = std::find(std::begin(g_pads), std::end(g_pads), nullptr);
+    SDL_Gamepad** slot = reuse ? reuse : std::find(std::begin(g_pads), std::end(g_pads), nullptr);
     if (slot == std::end(g_pads)) return;
     *slot = SDL_OpenGamepad(id);
     if (g_wine && *slot && IsSubstitute(*slot))   // the stand-in arrives: a real Steam controller read before gives way
@@ -271,7 +287,7 @@ Pad Poll(int port) {
         p = Pad{};
         p.connected = connected;
     }
-    app::OverlayPad(port, p);  // both stick clicks open the in-game menu; nothing reaches the game while it is open
+    app::OverlayPad(port, p);  // Back + Start opens the in-game menu; nothing reaches the game while it is open
     if (app::kGame.pad) app::kGame.pad(port, p);
     keys::Merge(port, p);
     return p;

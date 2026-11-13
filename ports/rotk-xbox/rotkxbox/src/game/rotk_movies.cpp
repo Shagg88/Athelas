@@ -171,15 +171,17 @@ X86_FUNC(sub_00111B90) {
 }
 
 namespace rotk {
-// GameInfo::pad (rotk_controls.cpp), player 1: A pressed for 100 ms in every 200 while a skipped movie plays; done
+// GameInfo::pad (rotk_controls.cpp), player 1: A pressed for 100 ms in every 200 while a skipped movie's frames show; done
 // once its frames have stopped coming (the movie flag down after they were seen)
 void SkipPress(int port, input::Pad& pad) {
     if (port != 0 || g_skip_until == 0) return;
     int64_t now = NowMs();
-    if (now > g_skip_until || (g_skip_seen && !gpu::g_movie)) {
+    // done: its frames stopped, or none came within 3 s (frames not recognised: never press A into the menus)
+    if (now > g_skip_until || (g_skip_seen && !gpu::g_movie) || (!g_skip_seen && now > g_skip_until - 7000)) {
         g_skip_until = 0;
         return;
     }
-    if (now / 100 % 2 == 0) pad.analog[0] = 255;
+    // only while a movie frame is on screen, so no press lands after it has ended
+    if (gpu::g_movie && now / 100 % 2 == 0) pad.analog[0] = 255;
 }
 }  // namespace rotk

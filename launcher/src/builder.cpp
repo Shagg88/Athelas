@@ -65,6 +65,20 @@ void builder_cleanup_old()
 {
     std::string root = exe_dir();
     if (!exists(root + "\\kits") && !exists(root + "\\tools\\llvm-mingw")) return;
+    // a release that ships kits or the build tools itself (package.sh with KITS_DIR / TOOLS_X64) keeps them: its
+    // athelas-files.txt lists them ("<sha256>  kits/...")
+    if (FILE *m = fopen((root + "\\athelas-files.txt").c_str(), "rb")) {
+        char line[1024];
+        bool shipped = false;
+        while (!shipped && fgets(line, sizeof line, m)) {
+            const char *pth = strstr(line, "  ");
+            if (!pth) continue;
+            pth += 2;
+            shipped = _strnicmp(pth, "kits/", 5) == 0 || _strnicmp(pth, "tools/llvm-mingw/", 17) == 0;
+        }
+        fclose(m);
+        if (shipped) return;
+    }
     static const char *const ports[][2] = { { "TT-Xbox", "TwoTowers" }, { "ROTK-Xbox", "ROTKXbox" },
                                             { "FOTR-Xbox", "FOTRXbox" }, { "TA-Xbox", "TAXbox" } };
     for (auto &p : ports)

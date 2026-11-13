@@ -56,6 +56,7 @@ namespace {
 // with side bars, see the panel zoom below), drawn at the screen's own width rather than stretched sideways
 const bool g_wide_setup = [] {
     app::g_max_frame_aspect = 32.0f / 9.0f;
+    app::g_min_frame_aspect = 3.0f / 2.0f;  // 16:10 (the Steam Deck) at its own shape too (#80): all of it is relative to 4:3
     gpu::g_wide_targets = true;
     return true;
 }();

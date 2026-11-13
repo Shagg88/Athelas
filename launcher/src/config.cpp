@@ -13,6 +13,7 @@
 #include <algorithm>
 #include "config.h"
 #include "gamedata.h"
+#include "update.h"
 
 // ---------------------------------------------------------------------------
 // Presets (graphics quality only; display, frame rate and FOV are left alone)
@@ -179,10 +180,113 @@ static bool write_file(const std::string &p, const std::string &data)
     return fclose(f) == 0 && ok;
 }
 
+// With the UTF-8 code page (the manifest), a settings file an earlier Athelas wrote in the PC's own code page would be
+// read wrongly where it has letters outside ASCII (a game's folder, say): such a file is rewritten as UTF-8, once.
+// A file that is already UTF-8 (or plain ASCII) is left alone; the old bytes are kept beside it as <name>.before-utf8.
+static bool valid_utf8(const std::string &s, bool &highBytes)
+{
+    highBytes = false;
+    for (size_t i = 0; i < s.size();) {
+        unsigned char c = (unsigned char)s[i];
+        size_t n = c < 0x80 ? 1 : (c >> 5) == 6 ? 2 : (c >> 4) == 14 ? 3 : (c >> 3) == 30 ? 4 : 0;
+        if (c >= 0x80) highBytes = true;
+        if (!n || i + n > s.size()) return false;
+        for (size_t k = 1; k < n; k++) if (((unsigned char)s[i + k] >> 6) != 2) return false;
+        i += n;
+    }
+    return true;
+}
+// the PC's own ("ANSI") code page, whatever this program's is: what the 32-bit game and files from before use
+unsigned system_code_page()
+{
+    DWORD cp = 0;
+    if (!GetLocaleInfoW(LOCALE_SYSTEM_DEFAULT, LOCALE_IDEFAULTANSICODEPAGE | LOCALE_RETURN_NUMBER, (LPWSTR)&cp, sizeof cp / sizeof(wchar_t)) || !cp)
+        cp = GetACP();
+    return cp;
+}
+// One file: each line that isn't UTF-8 already is converted from code page 'from' (a file can hold both, after going
+// back to an older Athelas and forward again). false: nothing needed doing, or it couldn't be done (file untouched).
+bool text_file_to_utf8(const std::string &path, unsigned from, bool every)
+{
+    std::string text, out;
+    if (!read_file(path, text) || text.empty() || text.size() > (4u << 20)) return false;
+    if (text.size() >= 2 && (unsigned char)text[0] == 0xFF && (unsigned char)text[1] == 0xFE) return false;   // UTF-16 (Notepad's "Unicode")
+    if (text.size() >= 2 && (unsigned char)text[0] == 0xFE && (unsigned char)text[1] == 0xFF) return false;
+    bool changed = false;
+    for (size_t at = 0; at < text.size();) {
+        size_t end = text.find('\n', at);
+        end = end == std::string::npos ? text.size() : end + 1;
+        std::string line = text.substr(at, end - at);
+        at = end;
+        bool high = false;
+        // every: each line with letters outside ASCII (a file known to be from before UTF-8: some Chinese and Korean
+        // two-byte letters happen to be valid UTF-8 as well, and would be left as they are - review)
+        if (!valid_utf8(line, high) || (every && high)) {
+            int wn = MultiByteToWideChar(from, 0, line.data(), (int)line.size(), NULL, 0);
+            if (wn <= 0) return false;
+            std::wstring w((size_t)wn, L'\0');
+            MultiByteToWideChar(from, 0, line.data(), (int)line.size(), &w[0], wn);
+            int n = WideCharToMultiByte(CP_UTF8, 0, w.data(), wn, NULL, 0, NULL, NULL);
+            if (n <= 0) return false;
+            line.assign((size_t)n, '\0');
+            WideCharToMultiByte(CP_UTF8, 0, w.data(), wn, &line[0], n, NULL, NULL);
+            changed = true;
+        }
+        out += line;
+    }
+    if (!changed) return false;
+    // the old bytes first (the first time only: a later conversion must not replace the original with a mix)
+    std::string keep = path + ".before-utf8", tmp = path + ".utf8-new";
+    if (GetFileAttributesA(keep.c_str()) == INVALID_FILE_ATTRIBUTES && !write_file(keep, text)) return false;
+    if (!write_file(tmp, out) || !MoveFileExA(tmp.c_str(), path.c_str(), MOVEFILE_REPLACE_EXISTING)) { DeleteFileA(tmp.c_str()); return false; }
+    return true;
+}
+void text_files_to_utf8()
+{
+    if (GetACP() != CP_UTF8) return;   // an older Windows: the manifest's setting isn't known, all is as before
+    unsigned old = system_code_page();
+    if (old == CP_UTF8) return;
+    // [Launcher] Utf8 = 1 in Athelas.ini once this has been done: until then the files are from an older Athelas,
+    // wholly in the PC's code page
+    std::string ini = exe_dir() + "\\" + ATHELAS_INI;
+    const bool fresh = GetPrivateProfileIntA("Launcher", "Utf8", 0, ini.c_str()) == 0;
+    for (const char *name : { ATHELAS_INI, "ROTKFix\\launcher.ini", "ROTKFix\\ports.ini", "ROTKFix\\games.ini" })
+        text_file_to_utf8(exe_dir() + "\\" + name, old, fresh);
+    if (fresh && GetFileAttributesA(ini.c_str()) != INVALID_FILE_ATTRIBUTES) WritePrivateProfileStringA("Launcher", "Utf8", "1", ini.c_str());
+}
+// the PC game's ROTKFix.ini: the launcher writes mod names into it, as UTF-8 since 1.8.4 (ROTK Fix reads them so);
+// lines an older launcher wrote in the PC's code page are converted, so their ticks and order are kept
+void game_ini_to_utf8(const std::string &gameDir)
+{
+    if (GetACP() != CP_UTF8 || system_code_page() == CP_UTF8 || gameDir.empty()) return;
+    text_file_to_utf8(gameDir + "\\ROTKFix.ini", system_code_page());
+}
+
+// A path handed to the PC game (rotk.exe and ROTK Fix run in the PC's own code page, not UTF-8): as it is when that
+// code page can hold it, else its short 8.3 name, which is plain ASCII. The game learns its own folder from the name
+// it was started by, so a name it can't hold would leave it unable to find ROTKFix.ini, its log and its mods.
+std::wstring game_safe_path(const std::string &path)
+{
+    int wn = MultiByteToWideChar(CP_ACP, 0, path.c_str(), -1, NULL, 0);
+    if (wn <= 0) return L"";
+    std::wstring w((size_t)wn, L'\0');
+    MultiByteToWideChar(CP_ACP, 0, path.c_str(), -1, &w[0], wn);
+    w.resize((size_t)wn - 1);
+    unsigned cp = system_code_page();
+    if (cp == CP_UTF8) return w;
+    BOOL lossy = FALSE;
+    if (WideCharToMultiByte(cp, WC_NO_BEST_FIT_CHARS, w.c_str(), -1, NULL, 0, NULL, &lossy) > 0 && !lossy) return w;
+    wchar_t sh[MAX_PATH * 2];
+    DWORD k = GetShortPathNameW(w.c_str(), sh, MAX_PATH * 2);
+    return k > 0 && k < MAX_PATH * 2 ? std::wstring(sh, k) : w;   // (no short names on this drive: as it is)
+}
+
 std::string ansi_path(const wchar_t *w)
 {
     if (!w || !*w) return "";
-    char buf[MAX_PATH * 2];
+    char buf[MAX_PATH * 4];
+    // the launcher's code page is UTF-8 (its manifest, Windows 10 1903 and later): every name fits as it is
+    if (GetACP() == CP_UTF8) return WideCharToMultiByte(CP_UTF8, 0, w, -1, buf, sizeof buf, NULL, NULL) > 0 ? std::string(buf) : std::string();
     BOOL lossy = FALSE;
     int n = WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, w, -1, buf, sizeof buf, NULL, &lossy);
     if (n > 0 && !lossy) return buf;
@@ -1040,24 +1144,27 @@ static bool wine_forget_fix_dlls()
 bool launch_game(const std::string &dir, std::string &err, void **process)
 {
     if (process) *process = NULL;
+    if (update_busy()) { err = "Wait for the update to finish installing, then press Play."; return false; }
     std::string exe = dir + "\\rotk.exe";
     wine_prefer_fix_dlls(dir);
-    STARTUPINFOA si; memset(&si, 0, sizeof si); si.cb = sizeof si;
+    // started by a name the game's own code page can hold (game_safe_path)
+    std::wstring wexe = game_safe_path(exe), wdir = game_safe_path(dir);
+    STARTUPINFOW si; memset(&si, 0, sizeof si); si.cb = sizeof si;
     PROCESS_INFORMATION pi;
-    std::string cmd = "\"" + exe + "\"";
-    if (!CreateProcessA(exe.c_str(), &cmd[0], NULL, NULL, FALSE, 0, NULL, dir.c_str(), &si, &pi)) {
+    std::wstring cmd = L"\"" + wexe + L"\"";
+    if (!CreateProcessW(wexe.c_str(), &cmd[0], NULL, NULL, FALSE, 0, NULL, wdir.c_str(), &si, &pi)) {
         DWORD e = GetLastError();
         if (e == ERROR_ELEVATION_REQUIRED) {
             // the original disc exe asks to run as administrator: start it the
             // way Explorer does, which shows Windows' usual permission prompt
-            SHELLEXECUTEINFOA sei; memset(&sei, 0, sizeof sei);
+            SHELLEXECUTEINFOW sei; memset(&sei, 0, sizeof sei);
             sei.cbSize = sizeof sei;
             sei.fMask = SEE_MASK_NOASYNC | (process ? SEE_MASK_NOCLOSEPROCESS : 0);
-            sei.lpVerb = "open";
-            sei.lpFile = exe.c_str();
-            sei.lpDirectory = dir.c_str();
+            sei.lpVerb = L"open";
+            sei.lpFile = wexe.c_str();
+            sei.lpDirectory = wdir.c_str();
             sei.nShow = SW_SHOWNORMAL;
-            if (ShellExecuteExA(&sei)) { if (process) *process = sei.hProcess; return true; }
+            if (ShellExecuteExW(&sei)) { if (process) *process = sei.hProcess; return true; }
             e = GetLastError();
             if (e == ERROR_CANCELLED) { err = "The game was not started (the Windows permission prompt was declined)."; return false; }
         }
@@ -1104,42 +1211,61 @@ bool uninstall(const std::string &dir, std::vector<std::string> &done, std::stri
         if (file_exists(keep) && MoveFileA(keep.c_str(), p.c_str())) done.push_back(std::string("Restored the previous ") + f.name);
     }
 
-    // 2. Controller profile in the game's Input.ini
+    // 2. Controller profile in the game's Input.ini: only ROTK Fix's profiles are taken out, so key changes the player
+    // made in the game since are kept (copying Input.ini.original back would undo them)
     std::string inp = dir + "\\Input.ini", orig = inp + ".original";
-    if (file_exists(orig)) {
-        if (CopyFileA(orig.c_str(), inp.c_str(), FALSE)) { DeleteFileA(orig.c_str()); done.push_back("Restored the game's Input.ini"); }
-        else done.push_back("Could not restore Input.ini (Input.ini.original is still there)");
-    } else {
+    {
         std::string text;
         size_t at;
         bool changed = false;
         std::string parts[4];
         split_profile(k_inputProfile, parts[0], parts[1]);
         split_profile(pad2_profile(), parts[2], parts[3]);
-        if (read_file(inp, text)) {
+        bool read = read_file(inp, text);
+        if (!read && !file_exists(inp) && file_exists(orig)) {   // Input.ini gone: the game's own goes back
+            if (MoveFileExA(orig.c_str(), inp.c_str(), 0)) done.push_back("Put the game's Input.ini back");
+        }
+        if (read) {
             if ((at = text.find(k_inputProfile)) != std::string::npos) { text.erase(at, strlen(k_inputProfile)); changed = true; }
             for (auto &part : parts)
                 if (!part.empty() && (at = text.find(part)) != std::string::npos) { text.erase(at, part.size()); changed = true; }
         }
-        if (changed && write_file(inp, text)) done.push_back("Removed the controller profiles from Input.ini");
+        if (changed && write_file(inp, text)) { done.push_back("Removed the controller profiles from Input.ini"); DeleteFileA(orig.c_str()); }
+        else if (changed) done.push_back("Could not change Input.ini (Input.ini.original, the game's own, is still there)");
+        else if (read) DeleteFileA(orig.c_str());   // nothing of ours in it
     }
 
-    // 3. The game's own settings in Documents
-    if (!g.rotkIniPath.empty()) {
+    // 3. The game's own settings in Documents: kept as the player has them now (copying the file from before ROTK Fix
+    // back, or deleting one ROTK Fix created, would undo every change made since). Only what ROTK Fix itself changed
+    // goes back: the controller layouts, and the saved controller layouts it tidied away.
+    (void)createdRotkIni;
+    if (!g.rotkIniPath.empty() && g.rotkIniExists) {
+        const char *r = g.rotkIniPath.c_str();
+        bool back = false;
         std::string before = g.rotkIniPath + ".before-rotkfix";
-        if (file_exists(before)) {
-            if (CopyFileA(before.c_str(), g.rotkIniPath.c_str(), FALSE)) { DeleteFileA(before.c_str()); done.push_back("Restored your game settings (ROTK.ini)"); }
-        } else if (createdRotkIni && g.rotkIniExists) {
-            DeleteFileA(g.rotkIniPath.c_str());
-            done.push_back("Removed the game settings file ROTK Fix created (the game makes a new one)");
-        } else if (g.rotkIniExists) {
-            // no copy of the old file: point player 1 back at the game's keyboard layout
-            const char *r = g.rotkIniPath.c_str();
-            if (_stricmp(gets(r, "input0", "map", "").c_str(), "ROTKFixPad") == 0) {
-                WritePrivateProfileStringA("input0", "map", "ROTKDefault", r);
-                WritePrivateProfileStringA("input0", "mode", "KB", r);
-                done.push_back("Set player 1 back to keyboard in ROTK.ini");
+        const bool haveBefore = file_exists(before);
+        for (const char *in : { "input0", "input1" })
+            if (_strnicmp(gets(r, in, "map", "").c_str(), "ROTKFixPad", 10) == 0) {
+                // the layout this player had before ROTK Fix, when that was the game's own; else the keyboard
+                std::string m = haveBefore ? gets(before.c_str(), in, "map", "") : "";
+                std::string md = haveBefore ? gets(before.c_str(), in, "mode", "") : "";
+                if (m.empty() || _strnicmp(m.c_str(), "ROTKFixPad", 10) == 0) { m = "ROTKDefault"; md = "KB"; }
+                if (md.empty()) md = "KB";
+                WritePrivateProfileStringA(in, "map", m.c_str(), r);
+                WritePrivateProfileStringA(in, "mode", md.c_str(), r);
+                back = true;
             }
+        if (back) done.push_back("Set the players back to the layouts they had before ROTK Fix in ROTK.ini");
+        if (haveBefore) {
+            char names[16384];
+            DWORD n = GetPrivateProfileSectionNamesA(names, sizeof names, before.c_str());
+            for (const char *q = names; q < names + n && *q; q += strlen(q) + 1) {
+                if (_strnicmp(q, "input_JS_BASE_", 14) || !gets(r, q, "ROOT_MAP", "").empty()) continue;
+                char sec[32768];
+                DWORD m = GetPrivateProfileSectionA(q, sec, sizeof sec, before.c_str());
+                if (m > 0 && m < sizeof sec - 2) WritePrivateProfileSectionA(q, sec, r);
+            }
+            DeleteFileA(before.c_str());
         }
     }
 
@@ -1197,9 +1323,9 @@ bool uninstall(const std::string &dir, std::vector<std::string> &done, std::stri
 
 void remove_launcher_after_exit()
 {
-    char self[MAX_PATH];
-    DWORD n = GetModuleFileNameA(NULL, self, MAX_PATH);
-    if (!n || n >= MAX_PATH) return;
+    char self[MAX_PATH * 4];   // (UTF-8: up to three bytes a letter)
+    DWORD n = GetModuleFileNameA(NULL, self, sizeof self);
+    if (!n || n >= sizeof self) return;
     std::string exe = self, dir = exe.substr(0, exe.find_last_of("\\/"));
     std::string q = "\"" + exe + "\"", sdl = "\"" + dir + "\\SDL3.dll\"";
     // retry for up to ~30 s in case closing takes a moment
@@ -1238,8 +1364,9 @@ static void add_candidate(std::vector<std::string> &out, std::string d)
 {
     d = trim_dir(d);
     if (d.empty() || !file_exists(d + "\\rotk.exe")) return;
-    char full[MAX_PATH];
-    if (GetFullPathNameA(d.c_str(), MAX_PATH, full, NULL)) d = full;
+    char full[MAX_PATH * 4];   // (UTF-8: up to three bytes a letter)
+    DWORD fn = GetFullPathNameA(d.c_str(), sizeof full, full, NULL);
+    if (fn > 0 && fn < sizeof full) d = full;   // (more than the buffer: the size needed, nothing written)
     for (auto &o : out) if (lower(o) == lower(d)) return;
     out.push_back(d);
 }

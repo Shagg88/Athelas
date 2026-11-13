@@ -181,6 +181,13 @@ void tt_load_settings(App &a)
 bool tt_save(App &a)
 {
     SHCreateDirectoryExA(NULL, tt_data_dir().c_str(), NULL);
+    if (a.ttFile.unreadable) {   // read it now, or leave it alone: saving over it would reset every setting
+        settings_file_load(tt_settings_path(), a.ttFile);
+        if (a.ttFile.unreadable) {
+            set_message(a, "Couldn't read " + tt_settings_path() + " (another program has it open), so it wasn't changed. Try again in a moment.", true);
+            return false;
+        }
+    }
     tt_apply_refresh(a);   // fullscreen: the refresh rate that suits the frame rate, as ROTK does
     // the old frame limit is gone from the port: take it out of the file
     if (!tt_setting(a, "display", "fps_cap")) a.ttFile.remove("display", "fps_cap");
@@ -193,6 +200,7 @@ bool tt_save(App &a)
 
 void tt_play(App &a, const LibGame &g)
 {
+    if (update_busy()) { set_message(a, "Wait for the update to finish installing, then press Play.", true); return; }
     if (!tt_save(a)) return;
     std::string tex = tt_data_dir() + "\\textures";
     SHCreateDirectoryExA(NULL, (tex + "\\replace").c_str(), NULL);
@@ -213,7 +221,10 @@ void tt_play(App &a, const LibGame &g)
         }
     }
     std::string shots = exe_dir() + "\\Screenshots";   // with ROTK's; the names start TT_
-    std::string args = "--game \"" + g.path + "\" --config \"" + tt_settings_path() + "\" --textures \"" + tex +
+    // a folder at the top of a drive ("E:\"): its closing backslash would escape the closing quote, so it is doubled
+    std::string gp = g.path;
+    if (!gp.empty() && gp.back() == '\\') gp += '\\';
+    std::string args = "--game \"" + gp + "\" --config \"" + tt_settings_path() + "\" --textures \"" + tex +
                        "\" --log \"" + tt_log_path() + "\" --saves \"" + saves + "\" --shader-cache \"" + tt_data_dir() +
                        "\\shadercache\" --screenshots \"" + shots + "\" --no-dialogs";
     // The Return of the King: the PC version's folder, whose Data its Sharper text reads (beside its ROTKFix.ini)

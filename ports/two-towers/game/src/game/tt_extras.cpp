@@ -27,6 +27,8 @@ std::atomic<bool> g_front_end{true};
 // menu shown after the prologue and on leaving a level (ui\mainmenu.bff), as the last menu file opened (#8). On the
 // others, the between-level screen (ui\endlvl.bff, its Yes/No pop-ups, #17), saving, options and upgrades, A is A.
 std::atomic<bool> g_title{true};
+static std::atomic<bool> g_won_level{false};   // a level other than the prologue was won: the next main menu is the map (#56)
+static std::atomic<bool> g_in_prologue{false};  // the prologue (worlds\00isul1*): the title follows it, not the map (#8)
 // a level other than the prologue was just won (ui\endlvl.bff): the main menu file that opens next is the map with
 // its "Do you want to save your game?" Yes/No, not the title, so A doesn't press Start there (GitHub #56: Start took
 // Yes whatever was chosen). After the prologue the title does come (#8), and A still passes it.
@@ -42,13 +44,25 @@ void FileOpened(const char* name) {
     auto ends = [&](const char* e) { size_t k = std::strlen(e); return n.size() >= k && n.compare(n.size() - k, k, e) == 0; };
     bool was = g_front_end;
     if (n.find("\\ui\\") != std::string::npos && ends(".bff")) {
-        // "press start" is the start-up screen's alone: any other menu file ends it. The Yes/No box on the map after a
-        // level (#56) took Enter's Start as its Yes; the main menu after a level was not always told apart (1.8.2)
-        g_title = n.find("\\ui\\startup.bff") != std::string::npos;
+        // "press start": the start-up screen, and the title, which is the main menu file (after the logos, the idle
+        // intro or leaving a level: #77, 1.8.3 had the start-up screen only, and the keyboard couldn't pass the title).
+        // But after a won level the main menu file is the map with its "save your game?" Yes/No, where Enter's Start
+        // took Yes (#56): there A is A.
+        if (n.find("\\ui\\endlvl.bff") != std::string::npos) g_won_level = !g_in_prologue;
+        bool main_menu = n.find("\\ui\\mainmenu.bff") != std::string::npos;
+        bool startup = n.find("\\ui\\startup.bff") != std::string::npos;
+        // options, loading pictures and the moves lists can open over the title: they leave it as it was
+        bool overlay = n.find("\\ui\\load") != std::string::npos || n.find("\\ui\\options") != std::string::npos ||
+                       n.find("\\ui\\upg") != std::string::npos;
+        if (startup || main_menu) g_title = startup || !g_won_level.load();
+        else if (!overlay) g_title = false;
+        if (main_menu) g_won_level = false;
         LOGR("tt: menu file %s%s", name, g_title ? " (press start: Enter presses Start too)" : "");
     }
     if (n.find("\\worlds\\") != std::string::npos && (ends(".bfa") || ends(".bfl") || ends(".bfg") || ends(".bfi"))) {
         g_front_end = g_title = false;
+        g_in_prologue = n.find("\\worlds\\00isul1") != std::string::npos;
+        g_won_level = false;
     }
     else if (n.find("\\ui\\") != std::string::npos && ends(".bff") && n.find("\\ui\\load") == std::string::npos &&
              n.find("\\ui\\options") == std::string::npos && n.find("\\ui\\upg") == std::string::npos) {
