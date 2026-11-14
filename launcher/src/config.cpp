@@ -1526,6 +1526,26 @@ bool copy_folder(const std::string &from, const std::string &to)
     return copy_tree(from + "\\*", to, e);   // the folder's contents, not the folder itself
 }
 
+// A bundled mod's .ini that is already in the game folder is kept (Enabled and the mod's own settings are the
+// player's), but the keys that only describe the mod follow the shipped copy, so the Mods tab shows the version
+// that is installed. A key the shipped .ini doesn't have is left as it is; a file is only written when a value
+// differs.
+static void refresh_mod_ini(const std::string &shipped, const std::string &installed)
+{
+    static const char *keys[] = { "Name", "Description", "Author", "Version", "Category", "Games", "DLL", "Hotkeys" };
+    static const char missing[] = "\x01";   // never a real value: tells a missing key from an empty one
+    for (const char *k : keys) {
+        char want[2048], have[2048];
+        GetPrivateProfileStringA("Mod", k, missing, want, sizeof want, shipped.c_str());
+        if (!strcmp(want, missing)) continue;
+        GetPrivateProfileStringA("Mod", k, missing, have, sizeof have, installed.c_str());
+        // (the space keeps a "Key = value" line looking so: Windows keeps the "Key " it finds and reads values
+        // without the space; a key it adds is written "Key=value")
+        if (strcmp(want, have))
+            WritePrivateProfileStringA("Mod", k, (strcmp(have, missing) ? std::string(" ") + want : std::string(want)).c_str(), installed.c_str());
+    }
+}
+
 // Puts ROTK Fix into a PC game folder (only its own files; the launcher stays where it is).
 bool install_to(const std::string &src, const std::string &dst, std::string &err, bool &accessDenied)
 {
@@ -1581,7 +1601,7 @@ bool install_to(const std::string &src, const std::string &dst, std::string &err
         if (!copy_tree(from, dst + "\\ROTKFix", e)) { err = std::string("Could not copy ROTKFix\\") + sub + " (error " + std::to_string(e) + ")."; return false; }
     }
     // the mods that come with Athelas (ROTKFix\mods): their code updated, but a mod's .ini kept once it is there (it holds
-    // the player's choices, Enabled among them)
+    // the player's choices, Enabled among them), with only its descriptive [Mod] keys brought up to date
     {
         std::string from = src + "\\ROTKFix\\mods", to = dst + "\\ROTKFix\\mods";
         WIN32_FIND_DATAA fd;
@@ -1593,7 +1613,7 @@ bool install_to(const std::string &src, const std::string &dst, std::string &err
                 if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) continue;
                 std::string n = fd.cFileName, f = from + "\\" + n, t = to + "\\" + n;
                 bool ini = n.size() > 4 && !_stricmp(n.c_str() + n.size() - 4, ".ini");
-                if (ini && file_exists(t)) continue;
+                if (ini && file_exists(t)) { refresh_mod_ini(f, t); continue; }
                 if (!CopyFileA(f.c_str(), t.c_str(), FALSE)) { FindClose(fh); err = "Could not copy ROTKFix\\mods\\" + n + "."; return false; }
             } while (FindNextFileA(fh, &fd));
             FindClose(fh);
