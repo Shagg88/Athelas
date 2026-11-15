@@ -8,6 +8,7 @@
 #include <map>
 #include <mutex>
 #include <string>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <vector>
@@ -172,6 +173,8 @@ struct Packet {
 struct Voice {
     uint32_t obj = 0;
     bool stream = false;
+    float stat_src = 0, stat_out = 0;  // DSOUND_STATS: this voice's loudest sample before and after its volume
+    uint32_t output = 0;  // IDirectSoundBuffer_SetOutputBuffer: the buffer this voice plays into (dsound::g_output_buffers)
     int refs = 1;
     // format
     uint16_t tag = 1, channels = 1, bits = 16, align = 2;
@@ -303,9 +306,40 @@ void Complete(Voice& v, Packet& pk, uint32_t status) {
     }
 }
 
+}  // namespace
+namespace dsound {
+// set by a game: a voice given an output buffer (IDirectSoundBuffer_SetOutputBuffer) is heard at that buffer's
+// volume and mix bins, as the console's mixer routed it (Fellowship's DirectMusic notes, #90); off, it keeps its own
+bool g_output_buffers = false;
+}  // namespace dsound
+namespace {
+void LevelsOwn(Voice& v, float g[2][2]);
+Voice* Find(uint32_t obj);
+void Levels(Voice& v, float g[2][2]) {
+    LevelsOwn(v, g);
+    if (!dsound::g_output_buffers || !v.output) return;
+    Voice* d = Find(v.output);
+    if (!d || d == &v) return;
+    float dg[2][2];
+    LevelsOwn(*d, dg);
+    // the voice keeps its own pan and 3D placement; each side is scaled by the output buffer's level on that side
+    for (int c = 0; c < 2; c++) {
+        g[c][0] *= std::max(dg[0][0], dg[1][0]);
+        g[c][1] *= std::max(dg[0][1], dg[1][1]);
+    }
+}
+// a routed voice's reverb send follows its output buffer's level too (the louder side of that buffer)
+float OutputScale(Voice& v) {
+    if (!dsound::g_output_buffers || !v.output) return 1.0f;
+    Voice* d = Find(v.output);
+    if (!d || d == &v) return 1.0f;
+    float dg[2][2];
+    LevelsOwn(*d, dg);
+    return std::max({dg[0][0], dg[0][1], dg[1][0], dg[1][1]});
+}
 // gain of voice channel c on host left and right. A hardware voice holds two channels and owns a run of slots,
 // which alternate left and right.
-void Levels(Voice& v, float g[2][2]) {
+void LevelsOwn(Voice& v, float g[2][2]) {
     static const uint8_t kFront[2] = {0, 1};
     const uint8_t* bin = v.nbins ? v.bin : kFront;
     uint32_t n = v.nbins ? v.nbins : 2, voices = (std::max<uint32_t>(v.channels, 1) - 1) / 2 + 1;
@@ -361,7 +395,54 @@ void Deactivate(Voice& v) {
     if (v.active) v.active = v.paused = v.ending = false;
 }
 
+// DSOUND_DUMP=<folder> (diagnostics, #90): the mix (mix.wav) and each stereo stream's own sound before its volume
+// (stream-<object>.wav) as 48 kHz 16-bit WAV files, the first 4 minutes of each
+namespace {
+struct Wav {
+    FILE* f = nullptr;
+    uint32_t frames = 0;
+    void Open(const std::string& path) {
+        f = std::fopen(path.c_str(), "wb");
+        if (!f) return;
+        uint8_t h[44] = {'R','I','F','F',0,0,0,0,'W','A','V','E','f','m','t',' ',16,0,0,0,1,0,2,0};
+        uint32_t rate = audio::kRate, bps = audio::kRate * 4;
+        std::memcpy(h + 24, &rate, 4); std::memcpy(h + 28, &bps, 4);
+        h[32] = 4; h[34] = 16;
+        std::memcpy(h + 36, "data", 4);
+        std::fwrite(h, 1, 44, f);
+    }
+    void Add(float l, float r) {
+        if (!f || frames >= 240 * audio::kRate) return;
+        int16_t s[2] = {int16_t(std::clamp(l, -1.0f, 1.0f) * 32767), int16_t(std::clamp(r, -1.0f, 1.0f) * 32767)};
+        std::fwrite(s, 2, 2, f);
+        if (++frames % audio::kRate == 0) Finish();  // sizes right after every second, so a killed game leaves a good file
+    }
+    void Finish() {
+        if (!f) return;
+        uint32_t data = frames * 4, riff = data + 36;
+        long at = std::ftell(f);
+        std::fseek(f, 4, SEEK_SET); std::fwrite(&riff, 4, 1, f);
+        std::fseek(f, 40, SEEK_SET); std::fwrite(&data, 4, 1, f);
+        std::fseek(f, at, SEEK_SET); std::fflush(f);
+    }
+};
+const char* DumpDir() { static const char* d = std::getenv("DSOUND_DUMP"); return d && *d ? d : nullptr; }
+std::map<uint32_t, Wav> g_dumps;  // mixer thread only
+Wav* DumpFor(uint32_t obj) {
+    auto it = g_dumps.find(obj);
+    if (it == g_dumps.end()) {
+        it = g_dumps.emplace(obj, Wav{}).first;
+        char name[64];
+        std::snprintf(name, sizeof name, obj ? "/stream-%08X.wav" : "/mix.wav", obj);
+        it->second.Open(std::string(DumpDir()) + name);
+    }
+    return &it->second;
+}
+}  // namespace
+
 void Render(float* out, uint32_t frames) {
+    static const bool stats_on = std::getenv("DSOUND_STATS") != nullptr;
+    const bool dump = DumpDir() != nullptr;
     std::memset(out, 0, frames * 2 * sizeof(float));
     std::lock_guard<std::recursive_mutex> lock(g_lock);
     bool reverb = g_reverb_set && ReverbOn();
@@ -370,7 +451,7 @@ void Render(float* out, uint32_t frames) {
         if (v.paused || v.sync || (!v.stream && !v.playing)) continue;
         float g[2][2];
         Levels(v, g);
-        float send = reverb ? SendLevel(v) : 0.0f;
+        float send = reverb ? SendLevel(v) * OutputScale(v) : 0.0f;
         uint32_t base = v.data + v.play_start;
         double step = double(v.freq ? v.freq : v.rate) / audio::kRate;
         // a buffer's loop or play range (fixed while the lock is held); mono voices read each frame once
@@ -427,6 +508,11 @@ void Render(float* out, uint32_t frames) {
             float t = float(v.pos - f);
             a += (a1 - a) * t;
             b += (b1 - b) * t;
+            if (dump && v.stream && v.channels == 2) DumpFor(obj)->Add(a, b);
+            if (stats_on) {
+                v.stat_src = std::max(v.stat_src, std::max(std::fabs(a), std::fabs(b)));
+                v.stat_out = std::max(v.stat_out, std::max(std::fabs(a * g[0][0] + b * g[1][0]), std::fabs(a * g[0][1] + b * g[1][1])));
+            }
             out[i * 2] += a * g[0][0] + b * g[1][0];
             out[i * 2 + 1] += a * g[0][1] + b * g[1][1];
             if (send > 0) g_send[i] += (v.channels > 1 ? 0.5f * (a + b) : a) * send;
@@ -473,6 +559,10 @@ void Render(float* out, uint32_t frames) {
             g_meter_rms[c].store(frames ? float(std::sqrt(ms[c] / frames)) : 0.0f, std::memory_order_relaxed);
         }
     }
+    if (dump) {
+        Wav* m = DumpFor(0);
+        for (uint32_t i = 0; i < frames; i++) m->Add(out[i * 2], out[i * 2 + 1]);
+    }
     // DSOUND_STATS=1: every 2 s, what the mixer is playing (diagnostics)
     static uint64_t mixed = 0;
     static float peak = 0;
@@ -493,6 +583,10 @@ void Render(float* out, uint32_t frames) {
             Levels(v, g);
             float m = std::max({g[0][0], g[0][1], g[1][0], g[1][1]});
             if (m < 0.01f) quiet++;
+            // each sounding voice: what it is, its volume and how loud it really came out (#90)
+            LOGI("dsound:   %s %08X %uch %u Hz tag %u%s vol %.3f gain %.3f, source peak %.2f, out peak %.3f%s, into %08X",
+                 v.stream ? "stream" : "buffer", obj, v.channels, v.rate, v.tag, v.looping ? " loop" : "",
+                 v.volume, m, v.stat_src, v.stat_out, v.paused ? " paused" : "", v.output);
             if (v.is3d && v.mode != 2) {
                 d3++;
                 float d[3] = {v.p[0], v.p[1], v.p[2]};
@@ -513,6 +607,7 @@ void Render(float* out, uint32_t frames) {
         LOGI("dsound: %d voices, %d buffers playing (%d paused, %d held), streams %d/%d fed, %d 3d, %d near silent, "
              "peak %.2f, %d plays", n, play, pause, sync, sactive, streams, d3, quiet, peak, g_starts.exchange(0));
         peak = 0;
+        for (auto& [obj, v] : g_voices) v.stat_src = v.stat_out = 0;
         std::string calls;
         for (auto& [k, c] : g_calls) calls += " " + k + "=" + std::to_string(c.first) + (c.second ? "/" + std::to_string(c.second) + "?" : "");
         g_calls.clear();
@@ -890,6 +985,7 @@ BUFFER(Release, 1) {
     if (v.owned) mem::FreeContiguous(v.owned);
     uint32_t obj = v.obj;
     g_voices.erase(obj);
+    for (auto& [o, w] : g_voices) if (w.output == obj) w.output = 0;  // the address may be reused
     mem::FreeSystem(obj);
     return 0;
 }
@@ -1020,7 +1116,16 @@ BUFFER(SetRolloffCurve, 4) {
     for (uint32_t i = 0; a[1] && i < std::min<uint32_t>(a[2], 64); i++) v.curve.push_back(F32(R32(a[1] + i * 4)));
     return 0;
 }
-BUFFER(SetOutputBuffer, 2) { return 0; }  // the voice keeps its own mix bins
+BUFFER(SetOutputBuffer, 2) {  // heard through that buffer with dsound::g_output_buffers, else its own mix bins
+    static const bool stats = std::getenv("DSOUND_STATS") != nullptr;
+    if (stats && v.output != a[1]) {
+        Voice* d = Find(a[1]);
+        LOGI("dsound: %08X plays into %08X (%s, vol %.3f headroom %.3f, %u bins)", v.obj, a[1], d ? (d->stream ? "stream" : "buffer") : "unknown",
+             d ? d->volume : 0.0f, d ? d->headroom : 0.0f, d ? d->nbins : 0u);
+    }
+    v.output = a[1];
+    return 0;
+}
 BUFFER(SetFormat, 2) {
     ReadFormat(v, a[1]);
     v.freq = 0;
@@ -1102,6 +1207,7 @@ STREAM(Release, 1) {
     FlushStream(v);
     uint32_t obj = v.obj;
     g_voices.erase(obj);
+    for (auto& [o, w] : g_voices) if (w.output == obj) w.output = 0;  // the address may be reused
     mem::FreeSystem(obj);
     return 0;
 }
@@ -1148,6 +1254,9 @@ STREAM(Pause, 2) {
     return 0;
 }
 STREAM(SetVolume, 2) {
+    static const bool stats = std::getenv("DSOUND_STATS") != nullptr;  // each change of a stereo stream's volume (#90)
+    if (stats && v.channels == 2 && Db(int32_t(a[1])) != v.volume)
+        LOGI("dsound: stream %08X volume %d mB", v.obj, int32_t(a[1]));
     v.volume = Db(int32_t(a[1]));
     return 0;
 }

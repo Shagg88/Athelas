@@ -293,27 +293,78 @@ KERNEL_EXPORT(122, KeLeaveCriticalRegion, 0) { return 0; }
 
 // irql, time
 
+bool g_dispatch_lock = false;
+
+namespace {
+// kernel::g_dispatch_lock: the one processor's DISPATCH_LEVEL as a lock. Recursive (a raise inside a raise). A
+// thread that can't have it within 2 s goes on without it, and from then on nobody waits for it (a thread that
+// crashed holding it would otherwise cost every later raise 2 s): the lock is given up for the rest of the run.
+std::recursive_timed_mutex g_dispatch;
+std::atomic<bool> g_dispatch_broken{false};
+thread_local bool t_dispatch = false;
+void SetIrql(uint8_t to) {
+    const uint8_t from = Irql();
+    if (g_dispatch_lock) {
+        if (from < 2 && to >= 2 && !t_dispatch && !g_dispatch_broken.load(std::memory_order_relaxed)) {
+            if (g_dispatch.try_lock_for(std::chrono::seconds(2))) {
+                t_dispatch = true;
+            } else if (!g_dispatch_broken.exchange(true)) {
+                LOGW("kernel: a thread waited 2 s for DISPATCH_LEVEL; the lock is off for the rest of this run");
+            }
+        } else if (to < 2 && t_dispatch) {  // also when the IRQL was written directly and reads below 2 already
+            t_dispatch = false;
+            g_dispatch.unlock();
+        }
+    }
+    Irql() = to;
+}
+}  // namespace
+
+// a guest wait, sleep or read while holding the lock holds every other thread's raise up (to 2 s, then the lock is
+// off for the run): logged, rate-limited, so a test log shows it
+void WarnIfWaitingAtDispatch() {
+    if (!t_dispatch) return;
+    static std::atomic<int> n{0};
+    if (n.fetch_add(1) < 5) LOGW("kernel: a thread waits while it holds DISPATCH_LEVEL");
+}
+
+// a thread that ends at DISPATCH_LEVEL gives the lock back (ExitThread, a start routine returning, a host thread)
+void ReleaseDispatchOnExit() {
+    if (t_dispatch) {
+        t_dispatch = false;
+        g_dispatch.unlock();
+    }
+}
+
+// a DPC routine runs at DISPATCH_LEVEL, as the console's did (objects.cpp RunDpcs)
+uint8_t RaiseIrqlForDpc() {
+    uint8_t old = Irql();
+    SetIrql(2);
+    return old;
+}
+void LowerIrqlAfterDpc(uint8_t old) { SetIrql(old); }
+
 KERNEL_FASTCALL(160, KfRaiseIrql) {
     uint8_t old = Irql();
-    Irql() = uint8_t(ctx.ecx);
+    SetIrql(uint8_t(ctx.ecx));
     return old;
 }
 
 KERNEL_FASTCALL(161, KfLowerIrql) {
-    Irql() = uint8_t(ctx.ecx);
+    SetIrql(uint8_t(ctx.ecx));
     return 0;
 }
 
 KERNEL_EXPORT(129, KeRaiseIrqlToDpcLevel, 0) {
     uint8_t old = Irql();
-    Irql() = 2;
+    SetIrql(2);
     return old;
 }
 
 // one processor: synch level is dispatch level
 KERNEL_EXPORT(130, KeRaiseIrqlToSynchLevel, 0) {
     uint8_t old = Irql();
-    Irql() = 2;
+    SetIrql(2);
     return old;
 }
 

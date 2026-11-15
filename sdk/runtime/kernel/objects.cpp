@@ -339,7 +339,14 @@ void RunDpcs(X86Context& ctx) {
         uint32_t dpc = d[0];
         G<uint8_t>(dpc + 2) = 0;  // Inserted
         uint32_t routine = R32(dpc + 0x0C), context = R32(dpc + 0x10);  // KDPC.DeferredRoutine and DeferredContext
-        if (routine) CallGuest(ctx, routine, {dpc, context, d[1], d[2]});
+        if (routine) {
+            // at DISPATCH_LEVEL, as on the console, for a game that asks for it (g_dispatch_lock: Fellowship's
+            // DirectMusic synth works in a DPC and guards its voice list by that alone); the others as before
+            const bool raise = g_dispatch_lock;
+            const uint8_t old = raise ? RaiseIrqlForDpc() : 0;
+            CallGuest(ctx, routine, {dpc, context, d[1], d[2]});
+            if (raise) LowerIrqlAfterDpc(old);
+        }
     }
 }
 

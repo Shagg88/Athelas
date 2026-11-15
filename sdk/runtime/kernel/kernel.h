@@ -205,8 +205,20 @@ void SuspendPoint();           // blocks the current thread while it is suspende
 // set by a game: told on the calling thread around each kernel call that waits or gives up the processor (waits,
 // delays, yields, file reads) and each frame shown (D3DDevice_Swap): false before, true after. Null: nothing told.
 extern void (*g_blocking)(bool done);
+// set by a game before its threads start: raising the IRQL to DISPATCH_LEVEL or above takes one lock that every
+// thread shares, and lowering it below gives it back. On the console's one processor a thread at DISPATCH_LEVEL ran
+// alone (no other thread could be scheduled), and the XDK's libraries guard their state with it alone (Fellowship's
+// DirectMusic synth: the crash as its opening film starts). Off: the IRQL is only a number, as before.
+extern bool g_dispatch_lock;
+uint8_t RaiseIrqlForDpc();           // DPC routines run at DISPATCH_LEVEL (and take g_dispatch_lock's lock)
+void LowerIrqlAfterDpc(uint8_t old);
+void ReleaseDispatchOnExit();        // a thread ending while it holds g_dispatch_lock's lock
+void WarnIfWaitingAtDispatch();      // a wait while holding it (logged: it holds every other raise up)
 struct Blocking {
-    Blocking() { if (g_blocking) g_blocking(false); }
+    Blocking() {
+        WarnIfWaitingAtDispatch();
+        if (g_blocking) g_blocking(false);
+    }
     ~Blocking() { if (g_blocking) g_blocking(true); }
     Blocking(const Blocking&) = delete;
     Blocking& operator=(const Blocking&) = delete;

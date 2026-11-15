@@ -197,6 +197,7 @@ void StartThread(ThreadRef t) {
         else
             code = CallGuest(ctx, si.start_routine, {si.start_context});
         LOGI("thread %X returned %08X", t->id, code);
+        ReleaseDispatchOnExit();
         MarkExited(*t, code);
         Unregister(t.get());
         t_current.reset();
@@ -215,11 +216,13 @@ void StartHostThread(const char* name, std::function<void(X86Context&)> fn) {
         X86Context ctx;
         InitContext(*t, ctx);
         fn(ctx);
+        ReleaseDispatchOnExit();
         t_current.reset();
     });
 }
 
 void ExitThread(uint32_t code) {
+    ReleaseDispatchOnExit();
     Thread* t = Current();
     if (t) {
         LOGI("thread %X exits with %08X", t->id, code);
