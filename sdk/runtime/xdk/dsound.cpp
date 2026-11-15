@@ -6,6 +6,7 @@
 #include <condition_variable>
 #include <deque>
 #include <map>
+#include <mutex>
 #include <string>
 #include <cstdlib>
 #include <cstring>
@@ -825,13 +826,39 @@ HLE_STDCALL(IDirectSound_CommitEffectData, 1) { return 0; }
 // front left, centre, front right, back left, back right, LFE peaks, then the same six RMS. Full scale is 0x7FFFFF
 // (the chip's 24-bit samples). They were always 0 before 1.8.4: Fellowship's lips, moved by them, never did (#79).
 // The port mixes in stereo: the centre is the two sides' mean, the back the sides again, the LFE nothing.
+// Fellowship reads them once a frame, as the console did at 30 frames a second. Above 30 (fps = "60") fresh levels every
+// frame made the lips move twice as fast (#91), so new levels come on a fixed 30-a-second grid (8 ms early allowed for
+// frame jitter, so a 30 fps game gets new levels every read); a read between grid points gets the last ones again and
+// resets nothing. The grid restarts after a stall (a pause, a load) rather than catching up.
 HLE_STDCALL(IDirectSound_GetOutputLevels, 3) {
     if (!a[1]) return 0;
     auto lv = [](float x) { return uint32_t(std::clamp(x, 0.0f, 1.0f) * 8388607.0f); };
+    static std::mutex lock;
+    static std::chrono::steady_clock::time_point next{};
+    static float held_pk[2] = {0, 0}, held_rms[2] = {0, 0};
     float pk[2], rms[2];
-    for (int c = 0; c < 2; c++) {
-        pk[c] = a[2] ? g_meter_peak[c].exchange(0.0f) : g_meter_peak[c].load();
-        rms[c] = g_meter_rms[c].load();
+    {
+        std::lock_guard<std::mutex> g(lock);
+        const auto now = std::chrono::steady_clock::now();
+        static uint32_t reads = 0, fresh = 0;
+        static std::chrono::steady_clock::time_point counted = now;
+        constexpr auto kPeriod = std::chrono::microseconds(33333);
+        reads++;
+        if (now >= next - std::chrono::milliseconds(8)) {
+            next = (now - next > kPeriod) ? now + kPeriod : next + kPeriod;
+            fresh++;
+            for (int c = 0; c < 2; c++) {
+                held_pk[c] = a[2] ? g_meter_peak[c].exchange(0.0f) : g_meter_peak[c].load();
+                held_rms[c] = g_meter_rms[c].load();
+            }
+        }
+        if (now - counted >= std::chrono::seconds(5)) {  // XBE_LOG_ALL: how often the levels were new (#91)
+            LOGI("dsound: output levels read %u times in %.1f s, %u of them new", reads,
+                 std::chrono::duration<double>(now - counted).count(), fresh);
+            reads = fresh = 0;
+            counted = now;
+        }
+        for (int c = 0; c < 2; c++) pk[c] = held_pk[c], rms[c] = held_rms[c];
     }
     const uint32_t v[16] = {lv(pk[0]),  lv(pk[1]),  lv(rms[0]), lv(rms[1]),
                             lv(pk[0]),  lv(0.5f * (pk[0] + pk[1])),   lv(pk[1]),  lv(pk[0]), lv(pk[1]), 0,

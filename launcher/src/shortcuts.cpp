@@ -52,6 +52,18 @@ static const char *k_pinTip = "To pin one to the taskbar or Start, right-click t
 
 void shortcuts_section(App &a)
 {
+    // Wine / Proton / CrossOver: Windows shortcuts would land inside the Wine prefix, where nothing shows them. A
+    // game is started straight from Steam (or Lutris, Bottles) with a launch option instead (review)
+    if (running_on_wine()) {
+        ImGui::PushTextWrapPos(0);
+        ImGui::TextUnformatted("Shortcuts: under Wine, Proton or CrossOver, add Athelas.exe to Steam (or Lutris, Bottles) "
+                               "once for each game you want its own entry for, and give it a launch option:");
+        ImGui::TextUnformatted("--play fotr   --play tt   --play rotk-xbox   --play rotk-pc   --play ta");
+        ImGui::TextUnformatted("In Steam: right-click the entry > Properties > Launch options. It opens Athelas and starts "
+                               "that game with its settings.");
+        ImGui::PopTextWrapPos();
+        return;
+    }
     for (int k = 0; k < 2; k++) {
         bool desktop = k == 0;
         std::wstring lnk = shortcut_path(desktop);

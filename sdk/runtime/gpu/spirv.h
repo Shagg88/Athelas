@@ -9,7 +9,8 @@ namespace gpu::spirv {
 
 enum class Stage { Vertex, Pixel };
 
-// Compiles one HLSL stage (Vulkan 1.1, SPIR-V 1.3). False on failure, with glslang's log in error.
+// Compiles one HLSL stage (Vulkan 1.1, SPIR-V 1.3), legalised by SPIRV-Tools when it hands textures or samplers to
+// functions. False on failure, with glslang's log in error; true with error set: compiled, but not legalised (why).
 bool Compile(const std::string& hlsl, const char* entry, Stage stage, std::vector<uint32_t>& out, std::string& error);
 
 }  // namespace gpu::spirv

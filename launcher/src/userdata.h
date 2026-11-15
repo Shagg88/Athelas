@@ -10,6 +10,15 @@ bool backup_folder(const std::string &dir, const std::string &zipPath, int &file
 // The newest backup names: "<desktop>\Athelas saves - <game> - 2026-10-28 09-41.zip"
 std::string backup_name(const std::string &game);
 std::string desktop_dir();
+// Where save backups go: the desktop on Windows; under Wine / Proton / CrossOver the Backups folder beside Athelas
+// (the Windows desktop there is inside the Wine prefix - Proton's is deleted with the game's compatdata: review).
+// backup_place() says where in words: "your desktop" or "the Backups folder beside Athelas".
+std::string backup_dir();
+const char *backup_place();
+bool running_on_wine();
+// The file shown in its folder (Explorer, the file chosen); under Wine its folder through winebrowser, which hands it
+// to the Linux / Mac file manager (Wine's own explorer.exe would open a window a controller can't close)
+void show_file_in_folder(const std::string &file);
 // Put a backup back: first the current saves are zipped beside the backup ("... - before restore ..."), then dir's
 // files are moved aside to dir + ".old-<time>" and the zip is unpacked into dir. Only plain relative paths in the zip
 // are used (no "..", no drive letters). On failure the old files are put back.

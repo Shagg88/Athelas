@@ -119,7 +119,17 @@ void ApplyNow() {
     bool other_size = fw != desktop.dmPelsWidth || fh != desktop.dmPelsHeight;
     DWORD hz = s.refresh ? s.refresh : other_size ? BestRefresh(mi.szDevice, fw, fh) : 0;
     bool other_rate = hz && hz != desktop.dmDisplayFrequency;
-    if (s.display_mode == DisplayMode::Fullscreen && (other_size || other_rate)) {
+    // gamescope (Steam Deck Game Mode, Steam Big Picture on Linux) scales the game itself and owns the screen: a display
+    // mode change there does nothing useful, and stepping aside minimized on focus loss could leave the game hidden
+    // (Wine / Proton review): the desktop mode is kept
+    // (SteamDeck=1 only: Steam may set SteamDeck=0 on other machines, review)
+    static const bool gamescope = [] {
+        const char* deck = std::getenv("SteamDeck");
+        return std::getenv("GAMESCOPE_WAYLAND_DISPLAY") || (deck && std::strcmp(deck, "1") == 0);
+    }();
+    if (gamescope && s.display_mode == DisplayMode::Fullscreen && (other_size || other_rate))
+        LOGR("display: under gamescope (Steam Deck / Steam's Game Mode): the screen's own mode is kept, gamescope scales");
+    if (!gamescope && s.display_mode == DisplayMode::Fullscreen && (other_size || other_rate)) {
         DEVMODEW dm{};
         dm.dmSize = sizeof(dm);
         dm.dmPelsWidth = fw;

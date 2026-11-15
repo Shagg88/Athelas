@@ -5,13 +5,185 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdlib>
+#include <chrono>
 #include <cstring>
+#include <fstream>
+#include <string>
+#include <vector>
 
 #include "app/app.h"
+#include "core/diag.h"
 #include "core/log.h"
 #include "gpu/backend.h"
 
 namespace gpu {
+
+// A small draw whose every float2 input lies in 0..1: sprites, HUD pieces, text, full screen passes. The console's
+// pixel centres sample such a quad from its first texel to half a texel short of its far edge; upscaled, the far
+// edge's last half texel is drawn too, and wrapped it blends in the opposite edge (thin dark lines on HUD sprites).
+// Clamped, it takes the edge texel instead, which a wrapped texture used once over 0..1 has there anyway.
+bool UnitTexcoords(const Assembled& a) {
+    constexpr float kLo = -1e-4f;
+    constexpr float kHi = 1.0001f;
+    constexpr uint32_t kSmallDrawVertices = 4096;  // most vertices a small draw has
+    if (!a.vertices.empty() || !a.vertex_count || a.vertex_count > kSmallDrawVertices) return false;
+    bool any = false;
+    for (int r = 0; r < 16; r++) {
+        const VertexElement& e = a.elements[size_t(r)];
+        if (!(a.regs >> r & 1) || e.format != 16) continue;  // DXGI_FORMAT_R32G32_FLOAT
+        const VertexBuffer& vb = a.buffers[e.buffer];
+        if (!vb.src || !vb.stride || uint64_t(a.vertex_count) * vb.stride > vb.bytes) return false;
+        for (uint32_t v = 0; v < a.vertex_count; v++) {
+            float uv[2];
+            std::memcpy(uv, vb.src + size_t(v) * vb.stride + e.offset, sizeof(uv));
+            if (!(uv[0] >= kLo && uv[0] <= kHi && uv[1] >= kLo && uv[1] <= kHi)) return false;
+        }
+        any = true;
+    }
+    return any;
+}
+
+// ---- SMAA's shaders (both renderers): the reference SMAA.hlsl ("high", luma edges) with its edges, weights and
+// blend passes; t0..t2 their inputs, b1 rt metrics, s0 linear, s1 point
+
+#include "gpu/smaa_core.inc"
+
+const std::string& SmaaSource() {
+    static const std::string s = [] {
+        std::string h = R"(
+#define SMAA_CUSTOM_SL 1
+#define SMAA_PRESET_HIGH 1
+SamplerState LinearSampler : register(s0);
+SamplerState PointSampler : register(s1);
+cbuffer B : register(b1) { float4 rtm; float4 pad; };
+#define SMAA_RT_METRICS rtm
+#define SMAATexture2D(tex) Texture2D tex
+#define SMAATexturePass2D(tex) tex
+#define SMAASampleLevelZero(tex, coord) tex.SampleLevel(LinearSampler, coord, 0)
+#define SMAASampleLevelZeroPoint(tex, coord) tex.SampleLevel(PointSampler, coord, 0)
+#define SMAASampleLevelZeroOffset(tex, coord, offset) tex.SampleLevel(LinearSampler, coord, 0, offset)
+#define SMAASample(tex, coord) tex.Sample(LinearSampler, coord)
+#define SMAASamplePoint(tex, coord) tex.Sample(PointSampler, coord)
+#define SMAASampleOffset(tex, coord, offset) tex.Sample(LinearSampler, coord, offset)
+#define SMAA_FLATTEN [flatten]
+#define SMAA_BRANCH [branch]
+#define SMAAGather(tex, coord) tex.Gather(LinearSampler, coord, 0)
+)";
+        for (const char* c : kSmaaCore) h += c;
+        h += R"(
+Texture2D t0 : register(t0);
+Texture2D t1 : register(t1);
+Texture2D t2 : register(t2);
+struct O { float4 p : SV_Position; float2 uv : TEXCOORD0; };
+O vs(uint id : SV_VertexID) {
+    O o;
+    o.uv = float2((id << 1) & 2, id & 2);
+    o.p = float4(o.uv * float2(2, -2) + float2(-1, 1), 0, 1);
+    return o;
+}
+float4 edges(O i) : SV_Target {
+    float4 off[3];
+    SMAAEdgeDetectionVS(i.uv, off);
+    return float4(SMAALumaEdgeDetectionPS(i.uv, off, t0), 0, 0);
+}
+float4 weights(O i) : SV_Target {
+    float2 pix;
+    float4 off[3];
+    SMAABlendingWeightCalculationVS(i.uv, pix, off);
+    return SMAABlendingWeightCalculationPS(i.uv, pix, off, t0, t1, t2, float4(0, 0, 0, 0));
+}
+float4 blend(O i) : SV_Target {
+    float4 off;
+    SMAANeighborhoodBlendingVS(i.uv, off);
+    return SMAANeighborhoodBlendingPS(i.uv, off, t0, t1);
+}
+)";
+        return h;
+    }();
+    return s;
+}
+
+// ---- F3 frame captures (both backends)
+
+// F3 captures only with diag::CaptureDir set
+bool CaptureOn() {
+    if (diag::CaptureDir().empty()) LOG_FIRST(1, "capture: set XBE_CAPTURE_DIR");
+    return !diag::CaptureDir().empty();
+}
+
+// testing, with XBE_CAPTURE_DIR: frame captures without a key, at most 300 a run, to catch a screen that only lasts
+// a moment. XBE_CAPTURE_EVERY: seconds between captures (decimals allowed; 0 = every frame);
+// XBE_CAPTURE_START / XBE_CAPTURE_END: the window, in seconds after the first frame (default: the whole run)
+bool AutoCaptureDue() {
+    static const char* every_s = std::getenv("XBE_CAPTURE_EVERY");
+    if (!every_s) return false;
+    static const double every = std::atof(every_s);
+    static const double start = std::getenv("XBE_CAPTURE_START") ? std::atof(std::getenv("XBE_CAPTURE_START")) : 0.0;
+    static const double end = std::getenv("XBE_CAPTURE_END") ? std::atof(std::getenv("XBE_CAPTURE_END")) : 1e30;
+    static const auto t0 = std::chrono::steady_clock::now();
+    static double next = start;
+    static int taken = 0;
+    double now = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+    if (now < next || now > end || taken >= 300) return false;
+    next = now + every;
+    taken++;
+    return true;
+}
+
+// BMP file and info header: byte offsets of the fields CapSave writes
+constexpr int kBmpHeaderBytes = 54;
+constexpr int kBmpFileSize = 2;
+constexpr int kBmpPixelOffset = 10;
+constexpr int kBmpInfoSize = 14;
+constexpr int kBmpWidth = 18;
+constexpr int kBmpHeight = 22;  // negative: rows top down
+constexpr int kBmpPlanes = 26;
+constexpr int kBmpBitCount = 28;
+constexpr int kBmpImageSize = 34;
+constexpr uint32_t kBmpInfoBytes = 40;
+
+// px: w x h BGRA rows, top first
+void WriteCaptureBmp(const std::filesystem::path& file, uint32_t w, uint32_t h, const std::vector<uint8_t>& px) {
+    std::ofstream f(file, std::ios::binary);
+    if (!f) return;
+    uint8_t hd[kBmpHeaderBytes] = {'B', 'M'};  // BITMAPFILEHEADER and BITMAPINFOHEADER, top down 32 bit
+    auto put = [&](int o, uint32_t v) { std::memcpy(hd + o, &v, 4); };
+    put(kBmpFileSize, kBmpHeaderBytes + uint32_t(px.size()));
+    put(kBmpPixelOffset, kBmpHeaderBytes);
+    put(kBmpInfoSize, kBmpInfoBytes);
+    put(kBmpWidth, w);
+    put(kBmpHeight, uint32_t(-int32_t(h)));
+    hd[kBmpPlanes] = 1;
+    hd[kBmpBitCount] = 32;
+    put(kBmpImageSize, uint32_t(px.size()));
+    f.write(reinterpret_cast<const char*>(hd), kBmpHeaderBytes);
+    f.write(reinterpret_cast<const char*>(px.data()), std::streamsize(px.size()));
+}
+
+void ShotAtFrame() {
+    static const std::vector<uint64_t> frames = [] {
+        std::vector<uint64_t> v;
+        if (const char* e = std::getenv("XBE_SHOT_FRAMES"))
+            for (const char* p = e; *p;) {
+                char* end = nullptr;
+                unsigned long long f = std::strtoull(p, &end, 10);
+                if (end == p) break;
+                v.push_back(f);
+                p = *end ? end + 1 : end;
+            }
+        if (!v.empty()) LOGR("test: screenshots at presented frames (XBE_SHOT_FRAMES), %zu of them", v.size());
+        return v;
+    }();
+    if (frames.empty()) return;
+    static uint64_t n = 0;
+    n++;
+    for (uint64_t f : frames)
+        if (f == n) {
+            g_screenshot = true;
+            LOGR("test: screenshot at presented frame %llu", static_cast<unsigned long long>(n));
+        }
+}
 
 const char* kBlitHlsl = R"(
 cbuffer B : register(b1) { float4 uvrect; float4 opts; float4 sharp; float4 hdr; float4 look; float4 look2; float4 shade; float4 light; };

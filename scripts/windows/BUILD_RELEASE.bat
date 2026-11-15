@@ -61,6 +61,8 @@ call :assets "%SRC%\ports\third-age\taxbox" "%TA_GAME%" || goto :failed
 rem llvm-mingw (both hosts) for the kits and the zips' build tools: tools\llvm-mingw and tools\llvm-mingw-arm64host
 set "LLVM_MINGW=%ROOT%\tools\llvm-mingw"
 if not exist "%LLVM_MINGW%\bin\clang.exe" (set "STEP=llvm-mingw is missing from %LLVM_MINGW% - ask Claude to fetch it" & goto :failed)
+rem Python 3: the Vulkan renderer's shader legaliser (SPIRV-Tools) generates its tables with it while it builds
+python -c "pass" >nul 2>&1 || py -3 -c "pass" >nul 2>&1 || (set "STEP=Python 3 is not installed (python.org, or: winget install Python.Python.3.12)" & goto :failed)
 for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property installationPath`) do set "VSDIR=%%i"
 set "PATH=%VSDIR%\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin;%VSDIR%\Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja;%LLVM_MINGW%\bin;%PATH%"
 

@@ -140,6 +140,11 @@ static __typeof__(&SDL_GetGamepadType)   p_SDL_GetGamepadType;
 static __typeof__(&SDL_GetGamepadID)     p_SDL_GetGamepadID;
 static __typeof__(&SDL_RumbleGamepad)    p_SDL_RumbleGamepad;
 static __typeof__(&SDL_GetGamepadFromID) p_SDL_GetGamepadFromID;   /* optional: see pad_update */
+/* optional, for Wine (pad_wine_skip) */
+static __typeof__(&SDL_GetGamepadVendorForID)  p_SDL_GetGamepadVendorForID;
+static __typeof__(&SDL_GetGamepadProductForID) p_SDL_GetGamepadProductForID;
+static __typeof__(&SDL_GetGamepadPathForID)    p_SDL_GetGamepadPathForID;
+static int g_onWine, g_steamLaunched, g_keepSteamPad;
 
 /* Player 1's controller is the first one connected, player 2's the next.
  * A controller keeps its player until it is disconnected. A controller that
@@ -169,6 +174,23 @@ static int sdl_ready(void)
     LOAD(SDL_GetGamepadAxis) LOAD(SDL_GetGamepadButton) LOAD(SDL_GetGamepadName) LOAD(SDL_GetGamepadType) LOAD(SDL_GetGamepadID) LOAD(SDL_RumbleGamepad)
 #undef LOAD
     p_SDL_GetGamepadFromID = (__typeof__(p_SDL_GetGamepadFromID))(void *)GetProcAddress(g_sdl, "SDL_GetGamepadFromID");
+    p_SDL_GetGamepadVendorForID = (__typeof__(p_SDL_GetGamepadVendorForID))(void *)GetProcAddress(g_sdl, "SDL_GetGamepadVendorForID");
+    p_SDL_GetGamepadProductForID = (__typeof__(p_SDL_GetGamepadProductForID))(void *)GetProcAddress(g_sdl, "SDL_GetGamepadProductForID");
+    p_SDL_GetGamepadPathForID = (__typeof__(p_SDL_GetGamepadPathForID))(void *)GetProcAddress(g_sdl, "SDL_GetGamepadPathForID");
+    {
+        HMODULE nt = GetModuleHandleA("ntdll.dll");
+        g_onWine = nt && GetProcAddress(nt, "wine_get_version");
+        g_steamLaunched = GetEnvironmentVariableA("SteamVirtualGamepadInfo", NULL, 0) > 0 ||
+                          GetEnvironmentVariableA("SDL_GAMECONTROLLER_ALLOW_STEAM_VIRTUAL_GAMEPAD", NULL, 0) > 0;
+        g_keepSteamPad = GetEnvironmentVariableA("XBE_KEEP_STEAM_PAD", NULL, 0) > 0;
+    }
+    /* Under Wine / Proton the Xbox ports' settings (sdk/runtime/core/input.cpp): WGI off (Wine's WGI doesn't list
+     * Steam's virtual pad), DirectInput on, raw input off */
+    if (g_onWine) {
+        p_SDL_SetHint(SDL_HINT_JOYSTICK_WGI, "0");
+        p_SDL_SetHint(SDL_HINT_JOYSTICK_RAWINPUT, "0");
+        p_SDL_SetHint(SDL_HINT_JOYSTICK_DIRECTINPUT, "1");
+    }
     /* SDL has no window of its own here: accept input even when it thinks
      * the app is in the background, and read raw input on its own thread. */
     p_SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
@@ -181,6 +203,39 @@ static int sdl_ready(void)
     g_sdlState = 1;
     logf_("gamepad: SDL3 ready");
     return 1;
+}
+
+/* Under Wine one physical pad can be listed more than once, and would be both players (review, 14 Nov 2026), as the
+ * Xbox ports already handle (sdk/runtime/core/input.cpp AddPad):
+ * - Wine lists an Xbox pad through XInput and again through DirectInput: the DirectInput listing of a model is left
+ *   out while an XInput listing of the same model takes its place (paired by count: two identical pads stay two);
+ * - Steam (Steam Deck, SteamOS) gives a game started with Steam Input a virtual Xbox pad (28DE:11FF, or under Steam an
+ *   XInput pad of another vendor) and leaves the real Steam controls (vendor 28DE) in the list too: those are left
+ *   out while a stand-in is there. XBE_KEEP_STEAM_PAD=1 keeps them (Steam Input off for the game, another pad in). */
+static int pad_xin(SDL_JoystickID id)
+{
+    const char *p = p_SDL_GetGamepadPathForID ? p_SDL_GetGamepadPathForID(id) : NULL;
+    return p && !strncmp(p, "XInput", 6);
+}
+static int pad_wine_skip(const SDL_JoystickID *ids, int n, int i)
+{
+    if (!g_onWine || !p_SDL_GetGamepadVendorForID || !p_SDL_GetGamepadProductForID || !p_SDL_GetGamepadPathForID) return 0;
+    Uint16 v = p_SDL_GetGamepadVendorForID(ids[i]), pr = p_SDL_GetGamepadProductForID(ids[i]);
+    if (v == 0x28DE && pr != 0x11FF && !g_keepSteamPad) {
+        for (int k = 0; k < n; k++) {
+            Uint16 kv = p_SDL_GetGamepadVendorForID(ids[k]), kp = p_SDL_GetGamepadProductForID(ids[k]);
+            if ((kv == 0x28DE && kp == 0x11FF) || (g_steamLaunched && kv != 0x28DE && pad_xin(ids[k]))) return 1;
+        }
+    }
+    if (pad_xin(ids[i])) return 0;
+    /* a DirectInput listing: left out when its model has at least as many XInput listings as DirectInput ones before it */
+    int nx = 0, before = 0;
+    for (int k = 0; k < n; k++) {
+        if (p_SDL_GetGamepadVendorForID(ids[k]) != v || p_SDL_GetGamepadProductForID(ids[k]) != pr) continue;
+        if (pad_xin(ids[k])) nx++;
+        else if (k < i) before++;
+    }
+    return before < nx;
 }
 
 static void pad_update(void)
@@ -207,6 +262,17 @@ static void pad_update(void)
         int used = 0;
         for (int p = 0; p < want; p++) if (g_pads[p] && p_SDL_GetGamepadID(g_pads[p]) == ids[i]) used = 1;
         if (used) continue;
+        if (pad_wine_skip(ids, n, i)) {
+            static SDL_JoystickID skipped[4];   /* one line per listing */
+            int seen = 0;
+            for (int k = 0; k < 4; k++) if (skipped[k] == ids[i]) seen = 1;
+            if (!seen) {
+                for (int k = 3; k > 0; k--) skipped[k] = skipped[k - 1];
+                skipped[0] = ids[i];
+                logf_("gamepad: a controller listed twice under Wine (or the Steam controls behind Steam's virtual pad) left out");
+            }
+            continue;
+        }
         if (p_SDL_GetGamepadFromID && p_SDL_GetGamepadFromID(ids[i])) {   /* open elsewhere in the game */
             static SDL_JoystickID logged[4];   /* one line per controller (two mod players' pads took turns) */
             int seen = 0;

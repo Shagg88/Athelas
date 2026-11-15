@@ -115,9 +115,11 @@ std::vector<cfg::Desc> SettingsList() {
          "screens, so this brightens what it drew rather than adding detail. On other screens the picture stays as it is.",
          &s.hdr},
         {"graphics", "renderer", Type::Choice, "Renderer",
-         "Direct3D 12 is the tested renderer. Vulkan is still being made: it draws the game but is untested and lacks "
-         "anti-aliasing, HDR and the upscalers. If it can't start, Direct3D 12 is used. Takes effect at the next start.",
-         nullptr, &s.renderer, nullptr, 0, 0, {"0", "1"}, nullptr, nullptr, {"Direct3D 12", kGame.vulkan_label ? kGame.vulkan_label : "Vulkan (in development)"}},
+         "Direct3D 12 and Vulkan both draw the whole game, with the same picture and settings; on some cards one runs "
+         "faster than the other. The upscalers and frame generation are Direct3D 12's only. If Vulkan can't start, "
+         "Direct3D 12 is used; if Direct3D 12 can't start (some Wine and Mac set-ups), Vulkan is used and a note says "
+         "so. Takes effect at the next start.",
+         nullptr, &s.renderer, nullptr, 0, 0, {"0", "1"}, nullptr, nullptr, {"Direct3D 12", kGame.vulkan_label ? kGame.vulkan_label : "Vulkan"}},
         {"graphics", "widescreen", Type::Bool, "Widescreen correction",
          "Shows more at the sides. Off keeps the original 4:3 picture, with bars at the sides.", &s.widescreen, nullptr,
          nullptr, 0, 0, {}, "widescreen"},

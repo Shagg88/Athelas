@@ -48,7 +48,27 @@ foreach(opt ENABLE_OPT ENABLE_GLSLANG_BINARIES ENABLE_SPVREMAPPER ENABLE_CTEST G
 endforeach()
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(glslang GIT_REPOSITORY https://github.com/KhronosGroup/glslang.git GIT_TAG 16.6.0 GIT_SHALLOW TRUE)
-FetchContent_MakeAvailable(zydis tomlplusplus imgui SDL3 glslang)
+# SPIRV-Tools' optimizer, static, for its legalisation passes alone (runtime/gpu/spirv.cpp): glslang's SPIR-V from HLSL
+# that hands textures and samplers to functions is not valid Vulkan until legalised (job 335, The Two Towers). The
+# commits glslang 16.6.0 was tested with (its known_good.json); no tools, no tests. Its build runs Python 3.
+set(SPIRV_SKIP_TESTS ON CACHE BOOL "" FORCE)
+set(SPIRV_SKIP_EXECUTABLES ON CACHE BOOL "" FORCE)
+set(SPIRV_WERROR OFF CACHE BOOL "" FORCE)
+set(SPIRV_TOOLS_BUILD_STATIC ON CACHE BOOL "" FORCE)
+set(SKIP_SPIRV_TOOLS_INSTALL ON CACHE BOOL "" FORCE)
+set(SPIRV_HEADERS_SKIP_EXAMPLES ON CACHE BOOL "" FORCE)
+set(SPIRV_HEADERS_SKIP_INSTALL ON CACHE BOOL "" FORCE)
+FetchContent_Declare(SPIRV-Headers GIT_REPOSITORY https://github.com/KhronosGroup/SPIRV-Headers.git
+                     GIT_TAG 496543121ce6419f23d6fa5d7194ba66c36212d2)
+FetchContent_Declare(SPIRV-Tools GIT_REPOSITORY https://github.com/KhronosGroup/SPIRV-Tools.git
+                     GIT_TAG ef96ed763b43b59b33b31b362f09a02b729fa1c9)
+FetchContent_MakeAvailable(SPIRV-Headers)
+set(SPIRV-Headers_SOURCE_DIR ${spirv-headers_SOURCE_DIR})
+FetchContent_MakeAvailable(zydis tomlplusplus imgui SDL3 SPIRV-Tools glslang)
+# SPIRV-Tools always declares its DLL as well; only the static libraries are linked, so the DLL is not built
+if(TARGET SPIRV-Tools-shared)
+    set_target_properties(SPIRV-Tools-shared PROPERTIES EXCLUDE_FROM_ALL TRUE)
+endif()
 
 # Cross-compiling (an ARM64 build on an x64 PC): the tools must run on this machine, so they come from a build
 # for it, XBE_HOST_TOOLS = the folder holding its xbe_recomp and xbe_symbols
@@ -91,7 +111,10 @@ file(GLOB XBE_RUNTIME_SOURCES CONFIGURE_DEPENDS ${XBE_SDK_DIR}/runtime/*/*.cpp)
 # SDL's headers go to the input code alone (it is linked LINK_ONLY), so the generated sources' compile line stays the same
 set_source_files_properties(${XBE_SDK_DIR}/runtime/core/input.cpp PROPERTIES INCLUDE_DIRECTORIES "${sdl3_SOURCE_DIR}/include")
 # glslang's headers likewise go to spirv.cpp alone (the kit records only the include folders of the recompiled code)
-set_source_files_properties(${XBE_SDK_DIR}/runtime/gpu/spirv.cpp PROPERTIES INCLUDE_DIRECTORIES "${glslang_SOURCE_DIR}")
+set_source_files_properties(${XBE_SDK_DIR}/runtime/gpu/spirv.cpp PROPERTIES INCLUDE_DIRECTORIES "${glslang_SOURCE_DIR};${spirv-tools_SOURCE_DIR}/include")
+# the Vulkan Memory Allocator's header (third_party/vma) likewise to the Vulkan renderer's files alone
+set_source_files_properties(${XBE_SDK_DIR}/runtime/gpu/vk.cpp ${XBE_SDK_DIR}/runtime/gpu/vk_mem.cpp
+                            PROPERTIES INCLUDE_DIRECTORIES "${XBE_SDK_DIR}/third_party/vma")
 
 # One executable per recompiled image: its code from config/<config> (partitions as that config sets them),
 # the SDK runtime, XBE_HOST_SOURCES shared by every image of the game, and src/<game_dir> hooks only this image has.
@@ -161,7 +184,8 @@ else()
     set(extra)
 endif()
 target_link_libraries(${target} PRIVATE tomlplusplus::tomlplusplus $<LINK_ONLY:SDL3::SDL3-static>
-        $<LINK_ONLY:glslang::glslang> $<LINK_ONLY:glslang::SPIRV> $<LINK_ONLY:glslang::glslang-default-resource-limits> d3d12 dxgi dxguid d3dcompiler ${xaudio} ole32 windowscodecs dbghelp winmm dwmapi ws2_32 ${extra})
+        $<LINK_ONLY:glslang::glslang> $<LINK_ONLY:glslang::SPIRV> $<LINK_ONLY:glslang::glslang-default-resource-limits>
+        $<LINK_ONLY:SPIRV-Tools-opt> $<LINK_ONLY:SPIRV-Tools-static> d3d12 dxgi dxguid d3dcompiler ${xaudio} ole32 windowscodecs dbghelp winmm dwmapi ws2_32 ${extra})
     # lld keeps the recompiled weak functions overridable by the host ones
     target_link_options(${target} PRIVATE -fuse-ld=lld -g)
     # profile-guided optimisation (clang): XBE_PGO=GEN builds a measuring program (it writes <target>-<pid>.profraw,

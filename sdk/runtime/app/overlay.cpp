@@ -547,6 +547,16 @@ void DrawOverlay(double) {
         ImGui::GetForegroundDrawList()->AddText(nullptr, f, ImVec2(v->Pos.x + v->Size.x - w - f, v->Pos.y + f * 0.8f),
                                                 IM_COL32(255, 220, 90, 230), text);
     }
+    if (g_vulkan_fallback) {   // the first 12 s: Direct3D 12 couldn't start, so Vulkan draws the game
+        static const double t0 = ImGui::GetTime();
+        if (ImGui::GetTime() - t0 < 12.0) {
+            const ImGuiViewport* v = ImGui::GetMainViewport();
+            float f = ImGui::GetFontSize() * UiScale();
+            ImGui::GetForegroundDrawList()->AddText(nullptr, f, ImVec2(v->Pos.x + f, v->Pos.y + v->Size.y - f * 2.0f),
+                                                    IM_COL32(255, 220, 90, 230),
+                                                    "Direct3D 12 couldn't start: the Vulkan renderer is drawing the game");
+        }
+    }
     DrawSubtitles(UiScale());
     if (!g_open) {
         shown = false;

@@ -356,7 +356,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     }
     SDL_Renderer *ren = win ? SDL_CreateRenderer(win, NULL) : nullptr;
     if (!ren) { MessageBoxA(NULL, SDL_GetError(), "Athelas", MB_ICONERROR); return 1; }
-    SDL_SetRenderVSync(ren, 1);
+    // vsync keeps the launcher to the screen's rate; where it can't be had (some Wine / virtual displays) frames are
+    // paced by hand below, or the launcher would draw as fast as it can (review: 156% of a CPU under Xvfb)
+    int vs = 0;
+    bool vsyncOk = SDL_SetRenderVSync(ren, 1) && SDL_GetRenderVSync(ren, &vs) && vs != 0;
     st_mark("window and renderer");
 
     IMGUI_CHECKVERSION();
@@ -566,6 +569,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
         i18n_frame_end();
         if (!g_langLoadPending.empty()) { i18n_load(g_langLoadPending); g_langFontPending = i18n_current(); g_langLoadPending.clear(); }
         SDL_RenderPresent(ren);
+        {
+            // battery (Steam Deck, laptops): in the background the launcher waits for something to happen, up to a
+            // tenth of a second (its fades and progress bars still move, at 10 frames a second); without vsync the
+            // frames are kept to about 60 a second
+            static Uint64 last = 0;
+            Uint64 now = SDL_GetTicksNS();
+            if (!(SDL_GetWindowFlags(win) & SDL_WINDOW_INPUT_FOCUS) && !getenv("ATHELAS_PAGE") && !getenv("ATHELAS_JOURNEY"))
+                SDL_WaitEventTimeout(NULL, 100);
+            else if (!vsyncOk && last && now - last < 16000000ull)
+                SDL_DelayNS(16000000ull - (now - last));
+            last = SDL_GetTicksNS();
+        }
         if (getenv("ATHELAS_TIMING")) {
             static int frames = 0;
             char what[32]; snprintf(what, sizeof what, "frame %d on screen", ++frames);

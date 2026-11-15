@@ -163,6 +163,7 @@ bool Widescreen() {
 
 float g_max_frame_aspect = 16.0f / 9.0f;
 float g_min_frame_aspect = 16.0f / 9.0f;
+bool g_vulkan_fallback = false;
 
 float FrameAspect() {
     if (!Widescreen()) return 4.0f / 3.0f;

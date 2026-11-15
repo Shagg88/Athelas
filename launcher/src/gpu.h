@@ -4,7 +4,9 @@
 #pragma once
 #include <string>
 
-enum GpuState { GPU_CHECKING, GPU_VULKAN_OK, GPU_VULKAN_TOO_OLD, GPU_NO_VULKAN };
+// GPU_VULKAN_NO_EXT: Vulkan 1.4, but without an extension DXVK 3 needs (transform feedback, depth clip, robustness2 -
+// MoltenVK on a Mac lacks transform feedback): ROTK Fix falls back to Direct3D 8 there too (src/graphics.c)
+enum GpuState { GPU_CHECKING, GPU_VULKAN_OK, GPU_VULKAN_TOO_OLD, GPU_NO_VULKAN, GPU_VULKAN_NO_EXT };
 struct GpuInfo {
     GpuState state = GPU_CHECKING;
     std::string name;          // the best device's name ("" if none)

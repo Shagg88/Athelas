@@ -164,11 +164,6 @@ struct PerfScope {
     ~PerfScope() { acc += PerfMs(t); }
 };
 
-// F3 captures only with diag::CaptureDir set
-bool CaptureOn() {
-    if (diag::CaptureDir().empty()) LOG_FIRST(1, "capture: set XBE_CAPTURE_DIR");
-    return !diag::CaptureDir().empty();
-}
 
 // D3DBLEND, the console uses GL values
 constexpr uint32_t kBlendDestColor = 0x306;  // D3DBLEND_DESTCOLOR
@@ -399,17 +394,6 @@ struct BlitOptions {
     float texel[2] = {0, 0};
     bool hdr = false;         // to the HDR (scRGB) screen: linear, highlights raised (kBlitHlsl)
     bool look = false;        // through [graphics] colour_look
-};
-
-// the colour looks, ROTK Fix's own numbers: contrast, pivot, saturation, vibrance, gamma, shadow tint, light tint
-struct ColourLook {
-    float contrast, pivot, sat, vibrance, gamma, shadow[3], light[3];
-};
-constexpr ColourLook kLooks[] = {
-    {1.00f, 0.30f, 1.00f, 0.00f, 1.00f, {0.000f, 0.000f, 0.000f}, {0.000f, 0.000f, 0.000f}},     // original
-    {1.12f, 0.30f, 1.06f, 0.15f, 0.97f, {-0.012f, 0.006f, 0.028f}, {0.045f, 0.018f, -0.030f}},   // film
-    {1.08f, 0.30f, 1.30f, 0.35f, 0.93f, {0.000f, 0.000f, 0.000f}, {0.010f, 0.005f, 0.000f}},     // vivid
-    {1.15f, 0.30f, 0.72f, 0.00f, 1.05f, {-0.020f, 0.000f, 0.025f}, {0.012f, 0.006f, -0.006f}},   // dark fantasy
 };
 
 // Shrink's settings past the source and the size
@@ -775,6 +759,8 @@ private:
     ComPtr<ID3D12CommandQueue> queue_;
     ComPtr<IDXGISwapChain3> swap_;
     ComPtr<ID3D12Resource> bb_[kFrames];
+    UINT sc_flags_ = 0;              // the swap chain's flags (ResizeBuffers must be given the same)
+    HANDLE latency_wait_ = nullptr;  // its frame-latency waitable object (not frame generation's): Present waits on it
     ComPtr<ID3D12Fence> fence_;
     HANDLE event_ = nullptr;
     uint64_t fence_value_ = 0;
@@ -1150,10 +1136,20 @@ bool D3D12Backend::CreateSwapChain(HWND hwnd) {
             LOGR("frame generation: not available: %s", why.c_str());
         }
     }
-    if (!sc1 && FAILED(factory_->CreateSwapChainForHwnd(queue_.Get(), hwnd, &sd, nullptr, nullptr, &sc1))) {
-        LOGE("d3d12: no swap chain");
-        return false;
+    // input lag (Steam Deck review): without frame generation the swap chain keeps at most two frames queued for the
+    // screen (a waitable swap chain, its latency 2; the default lets three pile up). Present then waits for a free slot,
+    // never more than 100 ms. Frame generation's own swap chains pace themselves and are left alone.
+    if (!sc1) {
+        sd.Flags |= DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
+        if (FAILED(factory_->CreateSwapChainForHwnd(queue_.Get(), hwnd, &sd, nullptr, nullptr, &sc1))) {
+            sd.Flags &= ~DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;   // (one that refuses the flag: as before)
+            if (FAILED(factory_->CreateSwapChainForHwnd(queue_.Get(), hwnd, &sd, nullptr, nullptr, &sc1))) {
+                LOGE("d3d12: no swap chain");
+                return false;
+            }
+        }
     }
+    sc_flags_ = sd.Flags;
     factory_->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER);
     if (!up::FgActive()) {
         // DLSS (manual hooking): Streamline's own bookkeeping runs on the swap chain's Present (with DLSS frame
@@ -1163,6 +1159,11 @@ bool D3D12Backend::CreateSwapChain(HWND hwnd) {
         sc1.Attach(raw);
     }
     sc1.As(&swap_);
+    if ((sc_flags_ & DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT) && swap_ && SUCCEEDED(swap_->SetMaximumFrameLatency(2)))
+        latency_wait_ = swap_->GetFrameLatencyWaitableObject();
+    else if (sc_flags_ & DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT)
+        LOGW("d3d12: the frame queue limit could not be set; frames are queued as the driver chooses");  // (review)
+    if (latency_wait_) LOGR("d3d12: at most 2 frames queued for the screen");
     if (hdr_) {
         UINT support = 0;
         constexpr DXGI_COLOR_SPACE_TYPE kScRgb = DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709;
@@ -2754,6 +2755,7 @@ D3D12Backend::~D3D12Backend() {
     up_.reset();
     up::ShutdownStreamline();
     if (pso_list_) std::fclose(pso_list_);
+    if (latency_wait_) CloseHandle(latency_wait_);  // (review)
 }
 
 
@@ -3671,31 +3673,6 @@ D3D12_SRV_DIMENSION NullViewDimension(uint8_t kind) {
     return D3D12_SRV_DIMENSION_TEXTURE2D;
 }
 
-// A small draw whose every float2 input lies in 0..1: sprites, HUD pieces, text, full screen passes. The console's
-// pixel centres sample such a quad from its first texel to half a texel short of its far edge; upscaled, the far
-// edge's last half texel is drawn too, and wrapped it blends in the opposite edge (thin dark lines on HUD sprites).
-// Clamped, it takes the edge texel instead, which a wrapped texture used once over 0..1 has there anyway.
-bool UnitTexcoords(const Assembled& a) {
-    constexpr float kLo = -1e-4f;
-    constexpr float kHi = 1.0001f;
-    constexpr uint32_t kSmallDrawVertices = 4096;  // most vertices a small draw has
-    if (!a.vertices.empty() || !a.vertex_count || a.vertex_count > kSmallDrawVertices) return false;
-    bool any = false;
-    for (int r = 0; r < 16; r++) {
-        const VertexElement& e = a.elements[size_t(r)];
-        if (!(a.regs >> r & 1) || e.format != DXGI_FORMAT_R32G32_FLOAT) continue;
-        const VertexBuffer& vb = a.buffers[e.buffer];
-        if (!vb.src || !vb.stride || uint64_t(a.vertex_count) * vb.stride > vb.bytes) return false;
-        for (uint32_t v = 0; v < a.vertex_count; v++) {
-            float uv[2];
-            std::memcpy(uv, vb.src + size_t(v) * vb.stride + e.offset, sizeof(uv));
-            if (!(uv[0] >= kLo && uv[0] <= kHi && uv[1] >= kLo && uv[1] <= kHi)) return false;
-        }
-        any = true;
-    }
-    return any;
-}
-
 // a stage without a texture gets a null view of its kind; the samplers read the views after
 void D3D12Backend::SetTextureViewsAndSamplers(const State& s, const Assembled& a, DrawTextures& stages) {
     for (int i = 0; i < 4; i++) {
@@ -4399,7 +4376,7 @@ void D3D12Backend::ResizeSwap() {
     // frame generation readied for the new size first (its work on the old buffers done, the GPU idle above)
     if (up::FgActive()) up::FgResize();
     for (auto& b : bb_) b.Reset();
-    HRESULT hr = swap_->ResizeBuffers(kFrames, w, h, bb_fmt_, tearing_ ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0);
+    HRESULT hr = swap_->ResizeBuffers(kFrames, w, h, bb_fmt_, sc_flags_);   // (the flags it was made with)
     if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET || hr == DXGI_ERROR_DEVICE_HUNG) DeviceLost("resize", hr);
     if (FAILED(hr)) {
         // the old buffers stay: keep drawing at the old size
@@ -4493,64 +4470,9 @@ void D3D12Backend::BlackSides(D3D12_CPU_DESCRIPTOR_HANDLE rh, uint32_t w, uint32
 
 // SMAA (Jimenez et al. 2012, the reference SMAA.hlsl, "high" preset, luma edges): three full-screen passes, the
 // edges, their blending weights (from the area and search tables), then the frame blended along them.
-#include "gpu/smaa_core.inc"
 #include "third_party/smaa/AreaTex.h"
 #include "third_party/smaa/SearchTex.h"
 
-const std::string& SmaaSource() {
-    static const std::string s = [] {
-        std::string h = R"(
-#define SMAA_CUSTOM_SL 1
-#define SMAA_PRESET_HIGH 1
-SamplerState LinearSampler : register(s0);
-SamplerState PointSampler : register(s1);
-cbuffer B : register(b1) { float4 rtm; float4 pad; };
-#define SMAA_RT_METRICS rtm
-#define SMAATexture2D(tex) Texture2D tex
-#define SMAATexturePass2D(tex) tex
-#define SMAASampleLevelZero(tex, coord) tex.SampleLevel(LinearSampler, coord, 0)
-#define SMAASampleLevelZeroPoint(tex, coord) tex.SampleLevel(PointSampler, coord, 0)
-#define SMAASampleLevelZeroOffset(tex, coord, offset) tex.SampleLevel(LinearSampler, coord, 0, offset)
-#define SMAASample(tex, coord) tex.Sample(LinearSampler, coord)
-#define SMAASamplePoint(tex, coord) tex.Sample(PointSampler, coord)
-#define SMAASampleOffset(tex, coord, offset) tex.Sample(LinearSampler, coord, offset)
-#define SMAA_FLATTEN [flatten]
-#define SMAA_BRANCH [branch]
-#define SMAAGather(tex, coord) tex.Gather(LinearSampler, coord, 0)
-)";
-        for (const char* c : kSmaaCore) h += c;
-        h += R"(
-Texture2D t0 : register(t0);
-Texture2D t1 : register(t1);
-Texture2D t2 : register(t2);
-struct O { float4 p : SV_Position; float2 uv : TEXCOORD0; };
-O vs(uint id : SV_VertexID) {
-    O o;
-    o.uv = float2((id << 1) & 2, id & 2);
-    o.p = float4(o.uv * float2(2, -2) + float2(-1, 1), 0, 1);
-    return o;
-}
-float4 edges(O i) : SV_Target {
-    float4 off[3];
-    SMAAEdgeDetectionVS(i.uv, off);
-    return float4(SMAALumaEdgeDetectionPS(i.uv, off, t0), 0, 0);
-}
-float4 weights(O i) : SV_Target {
-    float2 pix;
-    float4 off[3];
-    SMAABlendingWeightCalculationVS(i.uv, pix, off);
-    return SMAABlendingWeightCalculationPS(i.uv, pix, off, t0, t1, t2, float4(0, 0, 0, 0));
-}
-float4 blend(O i) : SV_Target {
-    float4 off;
-    SMAANeighborhoodBlendingVS(i.uv, off);
-    return SMAANeighborhoodBlendingPS(i.uv, off, t0, t1);
-}
-)";
-        return h;
-    }();
-    return s;
-}
 
 // the area and search tables, uploaded once; false when they can't be made
 bool D3D12Backend::SmaaTables() {
@@ -5111,25 +5033,6 @@ void LogPerf() {
     }
 }
 
-// testing, with XBE_CAPTURE_DIR: frame captures without a key, at most 300 a run, to catch a screen that only lasts
-// a moment. XBE_CAPTURE_EVERY: seconds between captures (decimals allowed; 0 = every frame);
-// XBE_CAPTURE_START / XBE_CAPTURE_END: the window, in seconds after the first frame (default: the whole run)
-static bool AutoCaptureDue() {
-    static const char* every_s = std::getenv("XBE_CAPTURE_EVERY");
-    if (!every_s) return false;
-    static const double every = std::atof(every_s);
-    static const double start = std::getenv("XBE_CAPTURE_START") ? std::atof(std::getenv("XBE_CAPTURE_START")) : 0.0;
-    static const double end = std::getenv("XBE_CAPTURE_END") ? std::atof(std::getenv("XBE_CAPTURE_END")) : 1e30;
-    static const auto t0 = std::chrono::steady_clock::now();
-    static double next = start;
-    static int taken = 0;
-    double now = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
-    if (now < next || now > end || taken >= 300) return false;
-    next = now + every;
-    taken++;
-    return true;
-}
-
 void D3D12Backend::Present(const Surface& front) {
     FlushBatch();
     PerfScope perf_present{g_perf.present};
@@ -5201,6 +5104,7 @@ void D3D12Backend::Present(const Surface& front) {
     up::FgMark(up::kPresentStart);
     HRESULT hr = swap_->Present(vsync ? 1 : 0, !vsync && tearing_ ? DXGI_PRESENT_ALLOW_TEARING : 0);
     up::FgMark(up::kPresentEnd);
+    if (latency_wait_) WaitForSingleObjectEx(latency_wait_, 100, TRUE);   // a slot for the next frame (at most 2 queued)
     g_perf.swap += PerfMs(perf_swap);
     // the driver gone (a GPU timeout on a card asked too much of, a driver crash or update): nothing drawn reaches the
     // screen again, so end with the reason rather than show a frozen picture
@@ -5711,37 +5615,11 @@ bool D3D12Backend::ReadBack(ID3D12Resource* res, uint32_t w, uint32_t h, std::ve
     return true;
 }
 
-// BMP file and info header: byte offsets of the fields CapSave writes
-constexpr int kBmpHeaderBytes = 54;
-constexpr int kBmpFileSize = 2;
-constexpr int kBmpPixelOffset = 10;
-constexpr int kBmpInfoSize = 14;
-constexpr int kBmpWidth = 18;
-constexpr int kBmpHeight = 22;  // negative: rows top down
-constexpr int kBmpPlanes = 26;
-constexpr int kBmpBitCount = 28;
-constexpr int kBmpImageSize = 34;
-constexpr uint32_t kBmpInfoBytes = 40;
-
 void D3D12Backend::CapSave(const CapImage& img, const char* name) {
     ComPtr<ID3D12Resource> down = Shrink(img.res, *img.state, img.fmt, img.w, img.h, {.mul = img.mul});
     std::vector<uint8_t> px;
     if (!down || !ReadBack(down.Get(), img.w, img.h, px)) return;
-    FILE* f = _wfopen((cap_dir_ / (std::string(name) + ".bmp")).c_str(), L"wb");
-    if (!f) return;
-    uint8_t hd[kBmpHeaderBytes] = {'B', 'M'};  // BITMAPFILEHEADER and BITMAPINFOHEADER, top down 32 bit
-    auto put = [&](int o, uint32_t v) { std::memcpy(hd + o, &v, 4); };
-    put(kBmpFileSize, kBmpHeaderBytes + uint32_t(px.size()));
-    put(kBmpPixelOffset, kBmpHeaderBytes);
-    put(kBmpInfoSize, kBmpInfoBytes);
-    put(kBmpWidth, img.w);
-    put(kBmpHeight, uint32_t(-int32_t(img.h)));
-    hd[kBmpPlanes] = 1;
-    hd[kBmpBitCount] = 32;
-    put(kBmpImageSize, uint32_t(px.size()));
-    fwrite(hd, 1, kBmpHeaderBytes, f);
-    fwrite(px.data(), 1, px.size(), f);
-    fclose(f);
+    WriteCaptureBmp(cap_dir_ / (std::string(name) + ".bmp"), img.w, img.h, px);
 }
 
 void D3D12Backend::CapSave(Target& t, const char* name) {

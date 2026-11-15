@@ -66,6 +66,29 @@ std::string desktop_dir()
     return exe_dir();
 }
 
+bool running_on_wine()
+{
+    HMODULE nt = GetModuleHandleA("ntdll.dll");
+    return nt && GetProcAddress(nt, "wine_get_version");
+}
+std::string backup_dir()
+{
+    if (!running_on_wine()) return desktop_dir();
+    std::string d = exe_dir() + "\\Backups";
+    CreateDirectoryA(d.c_str(), NULL);
+    return d;
+}
+void show_file_in_folder(const std::string &f)
+{
+    if (running_on_wine()) {
+        std::string d = f.substr(0, f.find_last_of('\\'));
+        ShellExecuteA(NULL, "open", "winebrowser.exe", ("\"" + d + "\"").c_str(), NULL, SW_SHOWNORMAL);
+        return;
+    }
+    ShellExecuteA(NULL, "open", "explorer.exe", ("/select,\"" + f + "\"").c_str(), NULL, SW_SHOWNORMAL);
+}
+const char *backup_place() { return running_on_wine() ? "the Backups folder beside Athelas" : "your desktop"; }
+
 static std::string safe_name(std::string s)
 {
     for (char &c : s) if (strchr("\\/:*?\"<>|", c)) c = '-';
@@ -74,7 +97,7 @@ static std::string safe_name(std::string s)
 
 std::string backup_name(const std::string &game)
 {
-    return desktop_dir() + "\\Athelas saves - " + safe_name(game) + " - " + now_stamp(true) + ".zip";
+    return backup_dir() + "\\Athelas saves - " + safe_name(game) + " - " + now_stamp(true) + ".zip";
 }
 
 static long long file_size(const std::string &p)
@@ -184,7 +207,7 @@ bool restore_folder(const std::string &zipPath, const std::string &dir, const st
     // 1. the saves there now, zipped beside the backup
     if (folder_has_files(dir)) {
         int k = 0;
-        std::string b = desktop_dir() + "\\Athelas saves - " + safe_name(game) + " - before restore " + now_stamp(true) + ".zip";
+        std::string b = backup_dir() + "\\Athelas saves - " + safe_name(game) + " - before restore " + now_stamp(true) + ".zip";
         if (!backup_folder(dir, b, k, err, game)) { mz_zip_reader_end(&z); err = "The current saves couldn't be backed up first, so nothing was changed: " + err; return false; }
         before = b;
     }

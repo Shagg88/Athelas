@@ -479,14 +479,23 @@ HLE_STDCALL(Direct3D_CreateDevice, 6) {
         } else if (!ok) {
             // Direct3D 12 couldn't start (no d3d12.dll, as under Wine with DXVK alone, or no capable driver):
             // Vulkan before giving up
-            LOGR("d3d12: not used, Vulkan instead");
+            LOGR("d3d12: not used, Vulkan instead (no upscalers or frame generation there)");
             g_backend.reset();
             g_backend = gpu::CreateVulkanBackend();
             ok = g_backend->Init(w, h);
+            if (ok) app::g_vulkan_fallback = true;   // the in-game corner note says so (review)
         }
-        if (!ok)
-            app::Fail(app::kExitNoD3D12, L"Your graphics card or driver doesn't support Direct3D 12, which this "
-                                         L"game needs. Updating the graphics driver may help; the log has the details.");
+        if (!ok) {
+            HMODULE nt = GetModuleHandleA("ntdll.dll");
+            bool wine = nt && GetProcAddress(nt, "wine_get_version");
+            // under Wine the driver isn't the problem: the Direct3D 12 translation layer is (review)
+            app::Fail(app::kExitNoD3D12,
+                      wine ? L"Neither Direct3D 12 nor Vulkan could start under Wine. On Linux and the Steam Deck, use "
+                             L"Proton, or Wine with vkd3d-proton and a Vulkan graphics driver; on a Mac (CrossOver), turn "
+                             L"on D3DMetal for the bottle. The log has the details."
+                           : L"Neither Direct3D 12 nor Vulkan could start. Updating the graphics driver may help; the "
+                             L"game needs a graphics card with Direct3D 12 or Vulkan 1.2. The log has the details.");
+        }
         if (RenderThread()) g_backend = gpu::CreateThreadedBackend(std::move(g_backend));
     }
     g_state = gpu::State{};
@@ -744,12 +753,14 @@ HLE_STDCALL(D3DDevice_Swap, 1) {
     }
     kernel::MarkFrameThread();
     if (g_backend) {
+        gpu::ShotAtFrame();
         g_backend->PresentQueued(true);
         g_backend->Present(SurfaceOf(g_buffers[1]));
     }
     // the in-game menu or a pause in the background: the game waits here, its last picture shown again with the
     // menu over it, until it may go on
     if (app::Paused() && g_backend) app::Hold([&] {
+        gpu::ShotAtFrame();
         g_backend->PresentQueued(false);
         g_backend->Present(SurfaceOf(g_buffers[1]));
     });

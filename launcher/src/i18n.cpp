@@ -160,7 +160,7 @@ std::string i18n_auto_code()
 std::string i18n_system_font(const std::string &code)
 {
     static const char *ja[] = { "YuGothM.ttc", "meiryo.ttc", "msgothic.ttc", nullptr };
-    static const char *zh[] = { "msyh.ttc", "simsun.ttc", "simhei.ttf", nullptr };
+    static const char *zh[] = { "msyh.ttc", "msyh.ttf", "simsun.ttc", "simhei.ttf", nullptr };   // (Proton ships msyh.ttf)
     static const char *ko[] = { "malgun.ttf", "gulim.ttc", nullptr };
     const char **list = code == "ja" ? ja : code == "zh-Hans" ? zh : code == "ko" ? ko : nullptr;
     if (!list) return "";
@@ -170,6 +170,23 @@ std::string i18n_system_font(const std::string &code)
         std::string p = std::string(win) + "\\Fonts\\" + list[i];
         if (GetFileAttributesA(p.c_str()) != INVALID_FILE_ATTRIBUTES) return p;
     }
+    // Wine (Linux, Steam Deck) and CrossOver (Mac) have no Windows CJK fonts: the system's own, through Wine's Z:
+    // drive (the whole Linux / Mac file system). Noto Sans CJK has Chinese, Japanese and Korean in one file; Arial
+    // Unicode is on every Mac (review)
+    static const char *unix_fonts[] = {
+        "Z:\\usr\\share\\fonts\\opentype\\noto\\NotoSansCJK-Regular.ttc",          // Debian, Ubuntu
+        "Z:\\usr\\share\\fonts\\noto-cjk\\NotoSansCJK-Regular.ttc",                 // Arch, SteamOS
+        "Z:\\usr\\share\\fonts\\google-noto-cjk\\NotoSansCJK-Regular.ttc",          // Fedora
+        "Z:\\usr\\share\\fonts\\noto-cjk\\NotoSansCJK-Regular.otf",
+        "Z:\\usr\\share\\fonts\\truetype\\droid\\DroidSansFallbackFull.ttf",
+        "Z:\\usr\\share\\fonts\\wenquanyi\\wqy-microhei\\wqy-microhei.ttc",
+        "Z:\\System\\Library\\Fonts\\Supplemental\\Arial Unicode.ttf",               // macOS
+        "Z:\\Library\\Fonts\\Arial Unicode.ttf",
+        nullptr };
+    HMODULE nt = GetModuleHandleA("ntdll.dll");
+    if (nt && GetProcAddress(nt, "wine_get_version"))
+        for (int i = 0; unix_fonts[i]; i++)
+            if (GetFileAttributesA(unix_fonts[i]) != INVALID_FILE_ATTRIBUTES) return unix_fonts[i];
     return "";
 }
 

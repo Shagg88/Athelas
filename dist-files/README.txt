@@ -29,9 +29,7 @@ QUICK START
 1. Extract the .7z into a folder of its own, for example C:\Games\Athelas
    (Windows 11: right-click > Extract All; Windows 10: the free 7-Zip,
    7-zip.org). Not into a game folder.
-2. Double-click Athelas.exe in that folder. That's the launcher. (Or use
-   Athelas-Setup-<version>.exe instead of the .7z: it does steps 1 and 2 and
-   adds Start menu shortcuts.)
+2. Double-click Athelas.exe in that folder. That's the launcher.
    The first time (and once after each update) it asks you to confirm that
    the game files you use are your own: choose Accept. "Don't ask me again"
    with it ends the question for good.
@@ -136,9 +134,10 @@ UNINSTALL
 Open the launcher, go to About, and press "Remove ROTK Fix". It removes every
 ROTK Fix file from the game folder and puts the game's own files back. Saved
 games, screenshots, achievements and texture packs are kept (the last two in
-the ROTKFix folder). Then delete the launcher's folder, or, if you used
-Athelas-Setup, use "Uninstall Athelas" in Windows' Apps list: it removes only
-the files Athelas put there (not your settings, saves or the mods' .ini files).
+the ROTKFix folder). Then delete the launcher's folder. If you installed
+an earlier version with Athelas-Setup, use "Uninstall Athelas" in Windows' Apps
+list instead: it removes only the files Athelas put there (not your settings,
+saves or the mods' .ini files).
 
 
 YOUR GAMES ON THE CAROUSEL
@@ -520,6 +519,28 @@ welcome.
   In Athelas: the D-pad moves, A chooses, B goes back, LB / RB change tab,
   Menu plays and View saves; the line under the summary reminds you.
 - The Balanced preset suits the Deck; 60 fps is a good target for battery life.
+- One game straight from Steam: add Athelas.exe again for that game and give
+  it a launch option (Properties > Launch options): --play fotr, --play tt,
+  --play rotk-xbox, --play rotk-pc or --play ta. It opens Athelas and starts
+  that game with its settings.
+- Steam Input off for a game, with another controller plugged in: the Deck's
+  own controls are then left out (they can't be told apart from Steam's
+  virtual pad). To keep them, set the launch option
+  XBE_KEEP_STEAM_PAD=1 %command%
+- Save backups ("Back up saves") go to the Backups folder beside Athelas
+  (the Windows desktop under Proton is hidden inside Steam's folders).
+
+OTHER LINUX (WINE, LUTRIS, BOTTLES)
+Proton is the easiest way. With plain Wine (10 or newer), Lutris or Bottles:
+- The Xbox games need DirectX 12 through vkd3d-proton (Lutris and Bottles
+  install it with DXVK; for plain Wine, install vkd3d-proton and DXVK, e.g.
+  with winetricks). Without it Wine's own DirectX 12 is used, or the game's
+  Vulkan renderer, which has no upscalers or frame generation (the game says
+  so in a corner).
+- ROTK Fix's Vulkan renderer (DXVK) needs Vulkan 1.4, which Wine shows from
+  version 10; with older Wine the PC game uses Wine's own Direct3D 8.
+- Chinese, Japanese and Korean text in Athelas needs the Noto Sans CJK fonts
+  installed on the system.
 
 
 MAC
@@ -540,7 +561,13 @@ welcome (see REPORTING A PROBLEM; the game's log says "on Wine ... on macOS").
      choose its folder. As under Proton, the original disc release's copy
      protection may not run there.
 - Keep DirectX 12 games on Apple's D3DMetal in the bottle's settings (the
-  default for DirectX 12 in current CrossOver versions).
+  default for DirectX 12 in current CrossOver versions). Without it the games
+  use their Vulkan renderer, which has no upscalers or frame generation (they
+  say so in a corner of the screen).
+- The Return of the King (PC) runs with Wine's own Direct3D 8 on a Mac: the
+  Vulkan renderer of ROTK Fix (DXVK) needs a Vulkan feature Macs lack, so its
+  Vulkan-only options (sharpening, colour looks, filtering) are greyed out.
+- To open the .7z on a Mac, use The Unarchiver or Keka (both free).
 - The ARM64 builds are for Windows on ARM PCs: on a Mac the usual (x64) builds
   are the ones to use; Athelas picks them by itself.
 
@@ -768,7 +795,9 @@ ROTKFix\licenses in the game folder once ROTK Fix is set up there)
                        Polish and Russian text in FOTR-Xbox\fonts
   toml++ (MIT)         settings files in the Xbox ports
   miniz (MIT), LZMA SDK (public domain)  reading update downloads
-  Zydis (MIT), glslang (BSD-3-Clause), Vulkan headers (Apache 2.0 / MIT),
+  Zydis (MIT), glslang (BSD-3-Clause), SPIRV-Tools (Apache 2.0),
+  SPIRV-Headers (MIT), Vulkan Memory Allocator (MIT),
+  Vulkan headers (Apache 2.0 / MIT),
   SMAA (MIT)           Xbox ports
   Compiler runtimes inside the programs: LLVM libc++, libunwind and
   compiler-rt (Apache 2.0 with LLVM Exceptions), MinGW-w64 runtime (ZPL 2.1),

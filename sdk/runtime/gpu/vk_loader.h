@@ -20,10 +20,12 @@ namespace gpu::vk {
     X(vkDestroyInstance) X(vkEnumeratePhysicalDevices) X(vkGetPhysicalDeviceProperties)                                 \
     X(vkGetPhysicalDeviceProperties2) X(vkGetPhysicalDeviceFeatures) X(vkGetPhysicalDeviceFeatures2)                    \
     X(vkGetPhysicalDeviceQueueFamilyProperties) X(vkGetPhysicalDeviceMemoryProperties)                                  \
-    X(vkGetPhysicalDeviceFormatProperties) X(vkEnumerateDeviceExtensionProperties) X(vkCreateDevice)                    \
+    X(vkGetPhysicalDeviceFormatProperties) X(vkGetPhysicalDeviceImageFormatProperties)                         \
+    X(vkEnumerateDeviceExtensionProperties) X(vkCreateDevice)                    \
     X(vkGetDeviceProcAddr) X(vkDestroySurfaceKHR) X(vkGetPhysicalDeviceSurfaceSupportKHR)                               \
     X(vkGetPhysicalDeviceSurfaceCapabilitiesKHR) X(vkGetPhysicalDeviceSurfaceFormatsKHR)                                \
-    X(vkGetPhysicalDeviceSurfacePresentModesKHR) GPU_VK_INSTANCE_WIN32(X)
+    X(vkGetPhysicalDeviceSurfacePresentModesKHR) X(vkCreateDebugUtilsMessengerEXT)                                 \
+    X(vkDestroyDebugUtilsMessengerEXT) X(vkSetDebugUtilsObjectNameEXT) GPU_VK_INSTANCE_WIN32(X)
 #ifdef _WIN32
 #define GPU_VK_INSTANCE_WIN32(X) X(vkCreateWin32SurfaceKHR)
 #else
@@ -51,7 +53,8 @@ namespace gpu::vk {
     X(vkCmdClearAttachments) X(vkCmdResolveImage) X(vkCmdPipelineBarrier) X(vkCmdBeginQuery) X(vkCmdEndQuery)           \
     X(vkCmdResetQueryPool) X(vkCmdCopyQueryPoolResults) X(vkCmdPushConstants) X(vkCmdBeginRenderPass)                   \
     X(vkCmdEndRenderPass) X(vkCreateRenderPass) X(vkDestroyRenderPass) X(vkCreateFramebuffer) X(vkDestroyFramebuffer) \
-    X(vkCmdBeginRenderingKHR) X(vkCmdEndRenderingKHR)
+    X(vkCmdBeginRenderingKHR) X(vkCmdEndRenderingKHR) X(vkGetQueryPoolResults)                                \
+    X(vkWaitForPresentKHR) X(vkGetDeviceFaultInfoEXT)
 
 #define GPU_VK_DECLARE(name) extern PFN_##name name;
 GPU_VK_GLOBAL(GPU_VK_DECLARE)

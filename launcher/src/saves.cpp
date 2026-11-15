@@ -3,9 +3,14 @@
 
 std::string logs_dir() { return exe_dir() + "\\Logs"; }   // one folder per play (userdata.h)
 
-static void open_folder(const std::string &d) { SHCreateDirectoryExA(NULL, d.c_str(), NULL); ShellExecuteA(NULL, "open", d.c_str(), NULL, NULL, SW_SHOWNORMAL); }
+static void open_folder(const std::string &d)
+{
+    SHCreateDirectoryExA(NULL, d.c_str(), NULL);
+    if (running_on_wine()) ShellExecuteA(NULL, "open", "winebrowser.exe", ("\"" + d + "\"").c_str(), NULL, SW_SHOWNORMAL);
+    else ShellExecuteA(NULL, "open", d.c_str(), NULL, NULL, SW_SHOWNORMAL);
+}
 
-static void show_file(const std::string &f) { ShellExecuteA(NULL, "open", "explorer.exe", ("/select,\"" + f + "\"").c_str(), NULL, SW_SHOWNORMAL); }
+static void show_file(const std::string &f) { show_file_in_folder(f); }
 
 // On each game's About page (as COGBox has it): the saves backed up to a zip on the desktop and put back from one,
 // the folders, and for the Xbox ports their saved shaders cleared (set aside, not deleted)
@@ -26,13 +31,13 @@ void saves_section(App &a, const std::string &game, const std::string &saves, co
             std::string zip = backup_name(game), err;
             int n = 0;
             if (backup_folder(saves, zip, n, err, game)) {
-                set_message(a, "Saves backed up (" + std::to_string(n) + (n == 1 ? " file" : " files") + ") to your desktop: " +
+                set_message(a, "Saves backed up (" + std::to_string(n) + (n == 1 ? " file" : " files") + ") to " + std::string(backup_place()) + ": " +
                                zip.substr(zip.find_last_of('\\') + 1), false);
                 show_file(zip);
             } else set_message(a, "The saves couldn't be backed up: " + err, true);
         }
     }
-    tip(("A copy of this game's saves in a zip on your desktop.\n" + where).c_str());
+    tip(("A copy of this game's saves in a zip in " + std::string(backup_place()) + ".\n" + where).c_str());
     ImGui::SameLine();
     static std::string pickZip, pickFor;
     if (ImGui::Button("Restore saves...")) {
@@ -66,15 +71,18 @@ void saves_section(App &a, const std::string &game, const std::string &saves, co
     if (ImGui::BeginPopupModal("Restore saves?", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove)) {
         ImGui::PushTextWrapPos(0);
         ImGui::Text("Put back the saves in %s?", pickZip.substr(pickZip.find_last_of('\\') + 1).c_str());
-        ImGui::TextUnformatted("The saves there now are replaced. They are backed up to a zip on your desktop first "
-                               "(\"before restore\"), so you can go back.");
+        ImGui::TextUnformatted(running_on_wine()
+            ? "The saves there now are replaced. They are backed up to a zip in the Backups folder beside Athelas first "
+              "(\"before restore\"), so you can go back."
+            : "The saves there now are replaced. They are backed up to a zip on your desktop first "
+              "(\"before restore\"), so you can go back.");
         ImGui::PopTextWrapPos();
         ImGui::Spacing();
         if (ImGui::Button("Restore", ImVec2(S(150), 0))) {
             std::string before, err;
             if (a.running) set_message(a, "Close the game first: the saves weren't restored.", true);   // started since the box opened
             else if (restore_folder(pickZip, pickFor, game, before, err))
-                set_message(a, before.empty() ? "Saves restored." : "Saves restored. The ones before are in " + before.substr(before.find_last_of('\\') + 1) + " on your desktop.", false);
+                set_message(a, before.empty() ? "Saves restored." : "Saves restored. The ones before are in " + before.substr(before.find_last_of('\\') + 1) + " in " + backup_place() + ".", false);
             else set_message(a, "The saves weren't restored: " + err, true);
             ImGui::CloseCurrentPopup();
         }

@@ -86,6 +86,10 @@ inline std::atomic<uint64_t> g_perf_sync_late{0}, g_perf_sync_block{0};  // read
 inline std::atomic<bool> g_capture{false};
 // \ (the key above Enter): the next frame as shown, a PNG in app::ScreenshotDir
 inline std::atomic<bool> g_screenshot{false};
+// Test runs (renderer comparisons): XBE_SHOT_FRAMES=900,1200 asks for a screenshot at those presented frames, so a
+// Direct3D 12 and a Vulkan run shoot the same moment of a scene (a pad script's SHOT is by the clock). Called once a
+// frame before each Present; nothing happens without the variable.
+void ShotAtFrame();
 // [ : sharpening off while held off, to compare; a press switches it back on
 inline std::atomic<bool> g_sharpen_off{false};
 // F8: texture pack replacements off (the game's own textures drawn), to compare; a press switches them back on

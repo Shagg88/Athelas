@@ -288,7 +288,7 @@ void tab_graphics(App &a)
     // DXVK-only options: off when the PC version will fall back to Windows' Direct3D 8
     // (no usable Vulkan driver). The Xbox port draws with its own renderer.
     GpuInfo gi = gpu_info();
-    bool noVulkan = !g_xboxPage && (gi.state == GPU_NO_VULKAN || gi.state == GPU_VULKAN_TOO_OLD);
+    bool noVulkan = !g_xboxPage && (gi.state == GPU_NO_VULKAN || gi.state == GPU_VULKAN_TOO_OLD || gi.state == GPU_VULKAN_NO_EXT);
     bool vk = g_xboxPage || (s.renderer == 0 && !noVulkan);
     section("Quality");
     static const char *pnames[] = { "Original", "Balanced", "High", "Ultra", "Custom" };
@@ -325,7 +325,10 @@ void tab_graphics(App &a)
     if (noVulkan) {
         ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
         ImGui::PushTextWrapPos(0);
-        ImGui::TextColored(C_WARN, gi.state == GPU_VULKAN_TOO_OLD
+        ImGui::TextColored(C_WARN, gi.state == GPU_VULKAN_NO_EXT
+            ? "Your graphics driver's Vulkan lacks something the Vulkan renderer (DXVK) needs (on a Mac, MoltenVK has no "
+              "transform feedback), so the game uses Direct3D 8 and the greyed-out options can't work."
+            : gi.state == GPU_VULKAN_TOO_OLD
             ? "Your graphics driver's Vulkan is too old for the Vulkan renderer (DXVK needs Vulkan 1.4), so the game uses "
               "Windows' own Direct3D 8 and the greyed-out options can't work. A newer graphics driver may fix this."
             : "No Vulkan graphics driver was found, so the game uses Windows' own Direct3D 8 and the greyed-out options "
@@ -1153,6 +1156,7 @@ void tab_about(App &a)
         std::string t = gi.state == GPU_CHECKING ? "Checking the graphics card..."
                       : gi.state == GPU_VULKAN_OK ? "Graphics: " + gi.name + (gi.software ? " (software)" : gi.integrated ? " (integrated)" : "")
                       : gi.state == GPU_VULKAN_TOO_OLD ? "Graphics: " + gi.name + " - Vulkan too old for DXVK; Direct3D 8 is used"
+                      : gi.state == GPU_VULKAN_NO_EXT ? "Graphics: " + gi.name + " - Vulkan lacks what DXVK needs; Direct3D 8 is used"
                       : "No Vulkan driver - Direct3D 8 is used";
         status_dot(gi.state == GPU_VULKAN_OK, gi.state == GPU_CHECKING, t.c_str(),
                    gi.state == GPU_VULKAN_OK ? nullptr : "Sharpening, colour looks and texture filtering need the "

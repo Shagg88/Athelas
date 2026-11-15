@@ -196,6 +196,24 @@ std::string report_anonymise(const std::string &text)
     if (system_code_page() != GetACP()) anonymise_with(s, narrow_cp(prof, system_code_page()), narrow_cp(user, system_code_page()));
     DWORD k = GetShortPathNameW(prof, sh, MAX_PATH * 2);
     if (k > 0 && k < MAX_PATH * 2 && _wcsicmp(sh, prof)) anonymise_with(s, narrow_cp(sh, CP_ACP), "");
+    // Wine: USERNAME is Proton's "steamuser" or CrossOver's "crossover", not the person's. Their real name is in the
+    // Linux / Mac home folder (/home/name, /Users/name, Z:\home\name in logs): USER and WINEHOMEDIR hold it (review)
+    wchar_t wuser[256] = L"", whome[MAX_PATH * 2] = L"";
+    GetEnvironmentVariableW(L"USER", wuser, 256);
+    GetEnvironmentVariableW(L"WINEHOMEDIR", whome, MAX_PATH * 2);
+    std::string unixUser = narrow_cp(wuser, CP_UTF8), home = narrow_cp(whome, CP_UTF8);
+    if (home.rfind("\\??\\", 0) == 0) home = home.substr(4);   // \??\Z:\home\name
+    if (home.size() > 3) {
+        replace_all_ci(s, home, "%HOME%");
+        std::string unixHome = home.size() > 2 && home[1] == ':' ? home.substr(2) : home;   // Z:\home\name -> /home/name
+        if (unixHome.rfind("unix\\", 0) == 0) unixHome = unixHome.substr(4);  // \??\unix\home\name (no Z: drive), review
+        std::replace(unixHome.begin(), unixHome.end(), '\\', '/');
+        replace_all_ci(s, unixHome, "%HOME%");
+        // the name alone, from the home folder's last part, in any other path
+        size_t cut = home.find_last_of('\\');
+        if (unixUser.empty() && cut != std::string::npos) unixUser = home.substr(cut + 1);
+    }
+    if (unixUser.size() > 1) anonymise_with(s, "", unixUser);
     return s;
 }
 

@@ -1056,7 +1056,9 @@ bool install_input_profile(const std::string &dir, std::string &err)
 // reports; the game is started either way.
 static const char k_wine_key[] = "Software\\Wine\\AppDefaults\\rotk.exe\\DllOverrides";
 static const char k_wine_before[] = "Software\\Athelas\\WineBefore";
-static const char *const k_wine_dlls[] = { "d3d8", "dinput8", "dsound" };
+// (d3d9 too: ROTK Fix's DXVK d3d8.dll loads DXVK's d3d9.dll, which Wine replaces with its own unless told - under
+// plain Wine, Lutris and Bottles DXVK then failed and the game fell back to Wine's Direct3D 8; Proton sets it already)
+static const char *const k_wine_dlls[] = { "d3d8", "d3d9", "dinput8", "dsound" };
 
 static bool on_wine()
 {

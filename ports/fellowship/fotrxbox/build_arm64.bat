@@ -40,6 +40,11 @@ set "VSCMAKE=%VSDIR%\Common7\IDE\CommonExtensions\Microsoft\CMake"
 set "PATH=%VSCMAKE%\CMake\bin;%VSCMAKE%\Ninja;%VSDIR%\VC\Tools\Llvm\x64\bin;%PATH%"
 if exist "%ProgramFiles%\LLVM\bin\clang++.exe" set "PATH=%ProgramFiles%\LLVM\bin;%PATH%"
 
+python -c "pass" >nul 2>&1 || py -3 -c "pass" >nul 2>&1 || (
+    echo   Python 3 was not found ^(SPIRV-Tools, the Vulkan shader legaliser, needs it to build^).
+    echo   Install it from python.org, or run: winget install Python.Python.3.12
+    goto :fail
+)
 echo   Compiling for ARM64 (the first time takes as long as build.bat's did) ...
 cmake --preset release-arm64 >nul || goto :fail
 cmake --build out\build\release-arm64 --target %GAME_EXE% || goto :fail

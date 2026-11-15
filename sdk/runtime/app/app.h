@@ -95,7 +95,7 @@ struct Settings {
     uint32_t frame_generation = 0;
     uint32_t frame_generation_frames = 2;  // 2x, 3x, 4x: the drawn frame and 1-3 made up (3x and 4x with DLSS on RTX 50, XeSS on Intel)
     bool hdr = false;                      // HDR output on an HDR screen (Windows HDR on), read at start
-    uint32_t renderer = 0;                 // 0 Direct3D 12, 1 Vulkan (in development; Direct3D 12 if it can't start), read at start
+    uint32_t renderer = 0;                 // 0 Direct3D 12, 1 Vulkan (Direct3D 12 if it can't start), read at start
     uint32_t colour_look = 0;              // 0 original, 1 film, 2 vivid, 3 dark fantasy
     uint32_t look_strength = 100;          // 0 to 100, how much of the look
     // [input], as ROTK Fix's controller options; 0 deadzone and threshold leave it to the game, as on the console
@@ -186,6 +186,9 @@ float FrameAspect();
 extern float g_max_frame_aspect;
 // the narrowest frame a game draws at its own shape (16:9 unless it handles narrower ones, 16:10 say: 3:2 at least)
 extern float g_min_frame_aspect;
+// Direct3D 12 couldn't start and the Vulkan renderer took over: a note in the corner says so
+// for the first seconds (d3d8.cpp, overlay.cpp; the Wine / Mac review)
+extern bool g_vulkan_fallback;
 
 std::filesystem::path ExeDir();
 // the game in assets (game_files.cpp): its folder and this executable's xbe, from the extracted files or a disc
@@ -270,7 +273,7 @@ struct GameInfo {
     const char* discord_app_id = nullptr;
     std::string (*activity)() = nullptr;        // "Helm's Deep"
     std::string (*activity_state)() = nullptr;  // "As Gandalf", "Co-op"
-    // [graphics] renderer: the Vulkan choice's name in this game (nullptr: "Vulkan (in development)")
+    // [graphics] renderer: the Vulkan choice's name in this game (nullptr: "Vulkan")
     const char* vulkan_label = nullptr;
 };
 extern const GameInfo kGame;

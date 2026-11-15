@@ -68,6 +68,7 @@ static bool make_report(App &a, std::string title)
     GpuInfo gi = gpu_info();
     std::string vk = gi.state == GPU_VULKAN_OK ? "Vulkan: " + gi.name + (gi.software ? " (software)" : "")
                    : gi.state == GPU_VULKAN_TOO_OLD ? "Vulkan: too old for DXVK (" + gi.name + ")"
+                   : gi.state == GPU_VULKAN_NO_EXT ? "Vulkan: lacks DXVK's extensions (" + gi.name + ")"
                    : gi.state == GPU_NO_VULKAN ? "Vulkan: none" : "Vulkan: still checking";
     std::string pads;
     for (SDL_Gamepad *p : a.pads) {
@@ -104,7 +105,7 @@ static bool make_report(App &a, std::string title)
     SDL_SetClipboardText(("Title: " + title + "\n\n" + body).c_str());
     g_reportUrl = std::string(kTicketsNew) + "?labels=bug&title=" + url_encode(title) + "&body=" + url_encode(body);
     if (g_reportUrl.size() > 2000) g_reportUrl = std::string(kTicketsNew) + "?labels=bug&title=" + url_encode(title);
-    ShellExecuteA(NULL, "open", "explorer.exe", ("/select,\"" + g_reportZip + "\"").c_str(), NULL, SW_SHOWNORMAL);
+    show_file_in_folder(g_reportZip);
     ShellExecuteA(NULL, "open", g_reportUrl.c_str(), NULL, NULL, SW_SHOWNORMAL);
     return true;
 }
@@ -123,7 +124,7 @@ void report_section(App &a)
     if (ImGui::Button("Open the tickets")) ShellExecuteA(NULL, "open", kTickets, NULL, NULL, SW_SHOWNORMAL);
     if (!g_reportZip.empty() && g_reportErr.empty()) {
         ImGui::SameLine();
-        if (ImGui::Button("Show the zip")) ShellExecuteA(NULL, "open", "explorer.exe", ("/select,\"" + g_reportZip + "\"").c_str(), NULL, SW_SHOWNORMAL);
+        if (ImGui::Button("Show the zip")) show_file_in_folder(g_reportZip);
         ImGui::SameLine();
         if (ImGui::Button("Open the report page")) ShellExecuteA(NULL, "open", g_reportUrl.c_str(), NULL, NULL, SW_SHOWNORMAL);
         ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
@@ -159,7 +160,7 @@ void crash_box(App &a, const std::string &text, const std::string &title)
     if (!SDL_ShowMessageBox(&box, &pressed)) return;
     if (pressed == 1) {
         if (GetFileAttributesA(a.runningLog.c_str()) != INVALID_FILE_ATTRIBUTES)
-            ShellExecuteA(NULL, "open", "explorer.exe", ("/select,\"" + a.runningLog + "\"").c_str(), NULL, SW_SHOWNORMAL);
+            show_file_in_folder(a.runningLog);
         else
             ShellExecuteA(NULL, "open", a.runningLog.substr(0, a.runningLog.find_last_of('\\')).c_str(), NULL, NULL, SW_SHOWNORMAL);
     } else if (pressed == 2) {

@@ -135,6 +135,21 @@ Copyright (c) 2015-2025 The Khronos Group Inc. and others: BSD-3-Clause, BSD-2-C
 full text is in the release's licenses folder (glslang-LICENSE.txt).
 
 
+Vulkan Memory Allocator 3.3.0 (https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator), the Vulkan
+renderer's image memory (third_party/vma, runtime/gpu/vk_mem.cpp)
+
+Copyright (c) 2017-2025 Advanced Micro Devices, Inc. MIT (third_party/vma/LICENSE.txt; in the release's licenses
+folder as VulkanMemoryAllocator-LICENSE.txt).
+
+
+SPIRV-Tools (https://github.com/KhronosGroup/SPIRV-Tools, commit ef96ed76) and SPIRV-Headers
+(https://github.com/KhronosGroup/SPIRV-Headers, commit 49654312), the Vulkan renderer's shader legaliser
+(runtime/gpu/spirv.cpp)
+
+Copyright (c) 2015-2025 The Khronos Group Inc., Google LLC and others. SPIRV-Tools: Apache-2.0; SPIRV-Headers: MIT
+style. In the release's licenses folder (SPIRV-Tools-LICENSE.txt, SPIRV-Headers-LICENSE.txt).
+
+
 Khronos Vulkan-Headers v1.4.368 (https://github.com/KhronosGroup/Vulkan-Headers), the Vulkan renderer's interface
 (third_party/vulkan)
 

@@ -22,14 +22,9 @@ possible. This is my first project of this size, so expect a few bugs; reports a
 
 ## Quick start
 
-**1. Download** one of these from [Releases](https://github.com/Shagg88/Athelas/releases) (a copy is on [GitLab](https://gitlab.com/shagg88/athelas/-/releases), and Athelas is also on [RecompLauncher](https://recomplauncher.com/game/athelas), the free home for recompiled PC games):
+**1. Download** `Athelas-<version>.7z` from [Releases](https://github.com/Shagg88/Athelas/releases) (a copy is on [GitLab](https://gitlab.com/shagg88/athelas/-/releases), and Athelas is also on [RecompLauncher](https://recomplauncher.com/game/athelas), the free home for recompiled PC games). Make a new empty folder (for example `C:\Games\Athelas`, not inside a game's folder) and extract it there. Windows 11: right-click > **Extract All**. Windows 10: use [7-Zip](https://www.7-zip.org).
 
-| | |
-|---|---|
-| **`Athelas-Setup-<version>.exe`** (easiest) | Double-click it and click **Install**. It goes in `C:\Games\Athelas` with a Start menu and desktop shortcut. No administrator rights needed. |
-| **`Athelas-<version>.7z`** | Make a new empty folder (for example `C:\Games\Athelas`, not inside a game's folder) and extract it there. Windows 11: right-click > **Extract All**. Windows 10: use [7-Zip](https://www.7-zip.org). |
-
-**2. Start Athelas** from the Start menu or desktop, or double-click `Athelas.exe` in its folder. The first time (and once after each update), it asks you to confirm that the game files you use are your own: click **Accept**.
+**2. Start Athelas:** double-click `Athelas.exe` in its folder. The first time (and once after each update), it asks you to confirm that the game files you use are your own: click **Accept**.
 - **"Windows protected your PC"?** Click **More info**, then **Run anyway**. (Athelas isn't code-signed.)
 - **No `Athelas.exe` after extracting?** Your antivirus removed it. Restore it from quarantine, add an exception for
   the Athelas folder, and extract again.
@@ -129,6 +124,8 @@ Bundled components keep their own licences; every text is in `licenses/` and in 
 | [LZMA SDK](https://www.7-zip.org/sdk.html) | Public domain |
 | [DSOAL](https://github.com/kcat/dsoal), [OpenAL Soft](https://openal-soft.org) | LGPL 2.1 (source in the download's `licenses\source`) |
 | [glslang](https://github.com/KhronosGroup/glslang) | BSD-3-Clause and others |
+| [SPIRV-Tools](https://github.com/KhronosGroup/SPIRV-Tools), [SPIRV-Headers](https://github.com/KhronosGroup/SPIRV-Headers) | Apache 2.0; MIT |
+| [Vulkan Memory Allocator](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator) | MIT |
 | [SMAA](https://github.com/iryoku/smaa) | MIT |
 | Compiler runtimes inside the programs: [LLVM](https://llvm.org) libc++, libunwind, compiler-rt | Apache 2.0 with LLVM Exceptions |
 | [MinGW-w64](https://www.mingw-w64.org) runtime; GCC's libstdc++ and libgcc (launcher, ROTK Fix) | ZPL 2.1 and permissive parts; GPL 3 with the GCC Runtime Library Exception |

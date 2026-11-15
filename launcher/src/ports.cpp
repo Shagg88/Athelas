@@ -283,7 +283,15 @@ void port_finished(App &a, DWORD code)
                         : why + (why.back() == '.' ? "" : ".");
         break;
     case 3: m = "This copy isn't the US release. Only the US version is supported for now."; break;
-    case 4: m = "Direct3D 12 couldn't start. Update your graphics driver; the port needs a DirectX 12 graphics card."; break;
+    case 4:   // neither renderer started (the port tries Direct3D 12, then Vulkan); its own message is not shown under
+              // --no-dialogs, so the launcher says it, Wine's advice under Wine (review)
+        m = running_on_wine()
+                ? "Neither Direct3D 12 nor Vulkan could start under Wine. On Linux and the Steam Deck, use Proton, or Wine "
+                  "with vkd3d-proton and a Vulkan graphics driver; on a Mac (CrossOver), turn on D3DMetal for the bottle."
+                : "Neither Direct3D 12 nor Vulkan could start. Update your graphics driver; the game needs a graphics card "
+                  "with Direct3D 12 or Vulkan 1.2.";
+        if (!why.empty()) m += " (" + why + ")";
+        break;
     case 6: m = "The graphics driver stopped responding during play" + (why.empty() ? std::string("") : " (" + why + ")") +
                 ". Try a lower Render resolution, Anti-aliasing off or a lower frame rate on the Display and Graphics tabs, "
                 "or update your graphics driver."; break;

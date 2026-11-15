@@ -40,6 +40,12 @@ if not defined TOOLS_OK (
     if not defined TOOLS_OK goto :byhand
 )
 for /f "tokens=*" %%v in ('clang++ --version ^| findstr /i version') do echo       %%v
+rem Python 3: SPIRV-Tools (the Vulkan renderer's shader legaliser) builds its tables with it
+python -c "pass" >nul 2>&1 || py -3 -c "pass" >nul 2>&1 || (
+    echo       Python 3 was not found. Install it from python.org ^(tick "Add python.exe to PATH"^),
+    echo       or run: winget install Python.Python.3.12
+    goto :fail
+)
 
 rem symbols
 echo [2/3] XDK symbols
