@@ -1099,7 +1099,7 @@ void tab_gameplay(App &a)
         }
         row_end();
     }
-    if (g_xboxPage) {
+    {   // both versions: ROTK Fix (PC) and the Xbox port read the same [Cheats]
         section("Cheats");
         ImGui::PushTextWrapPos(0);
         ImGui::TextColored(C_DIM, "The game's own secret codes, without entering them on the pause screen.");

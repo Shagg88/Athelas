@@ -100,12 +100,8 @@ void InitWidescreen() {
 // at start and when the in-game menu changes one (GameInfo::setting_changed)
 void ApplyCameraSettings() {
     gpu::g_fog_scale = float(g_draw_percent) / 100.0f;
-    // test runs only: TA_ALPHA_EDGES=1 turns the removed option back on, to compare (#64/#66)
-    static const bool test_on = std::getenv("TA_ALPHA_EDGES") != nullptr;
-    gpu::g_alpha_edges = g_alpha_edges || test_on;
-    if (test_on) LOGR("ta: TA_ALPHA_EDGES: smooth cut-out edges on (test)");
+    gpu::g_alpha_edges = false;  // smooth leaf edges: removed from every game (Shagg, 5 Nov)
     if (g_draw_percent != 100) LOGR("ta: draw distance %u%%", g_draw_percent);
-    if (g_alpha_edges) LOGR("ta: smooth cut-out edges with anti-aliasing");
 }
 }  // namespace ta
 

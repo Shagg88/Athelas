@@ -673,7 +673,7 @@ static const std::vector<IniSection> &ini_layout()
             { "AllHeroes", "0", "Xbox version: 1 = every hero on the character select of a level you've completed" },
             { "Eowyn", "0", "Xbox version: 1 = Eowyn instead of Faramir (character select, HUD, levels)" },
         } },
-        { "Cheats", "Cheats: the game's own secret codes (Xbox version)", {
+        { "Cheats", "Cheats: the game's own secret codes (both versions; ROTK Fix reads them at start)", {
             { "Invulnerable", "0", "1 = enemies can't hurt you" },
             { "InfiniteMissiles", "0", "1 = arrows and throwing weapons never run out" },
             { "AlwaysDevastating", "0", "1 = every attack is a devastating one" },

@@ -980,8 +980,11 @@ void Sub(std::string& s, const std::string& at, const std::string& with, bool al
 void AddMotionDecls(std::string& s) {
     // two more interpolants (TEXCOORD5 is QuadHlsl's) and the previous frame's constants
     Sub(s, "    float fogamt : TEXCOORD4;\n", "    float fogamt : TEXCOORD4;\n    float4 mvc : TEXCOORD6;\n    float4 mvp : TEXCOORD7;\n");
-    Sub(s, "    float4 lt[56];\n};\n",
-        "    float4 lt[56];\n};\ncbuffer MV : register(b2) { float4 cprev[192]; float4x4 wvp_prev; float4 jit; };\n");
+    // after the end of the b1 block, wherever it ends (a sprite shader declares more after lt: SpriteHlsl)
+    size_t lt = s.find("    float4 lt[56];\n");
+    size_t end = lt == std::string::npos ? lt : s.find("};\n", lt);
+    if (end != std::string::npos)
+        s.insert(end + 3, "cbuffer MV : register(b2) { float4 cprev[192]; float4x4 wvp_prev; float4 jit; };\n");
 }
 // c[...] as cprev[...] in a vertex program's body
 std::string PrevConstants(const std::string& body) {
@@ -998,6 +1001,27 @@ std::string PrevConstants(const std::string& body) {
     return o;
 }
 }  // namespace
+
+std::string SpriteHlsl(std::string s, bool program) {
+    Sub(s, "    float4 lt[56];\n};\n", "    float4 lt[56];\n    float4 sprite[2];\n};\n");
+    Sub(s, "VOut main(VIn i) {\n", "VOut main(VIn i, uint sprite_vid : SV_VertexID) {\n");
+    Sub(s, "VOut main(VRaw ri) {\n", "VOut main(VRaw ri, uint sprite_vid : SV_VertexID) {\n");
+    std::string size = program ? "sprite[0].w != 0 ? oPts.x : sprite[0].x"
+                               : "sprite[0].w != 0 ? sprite[0].x * surf.y * rsqrt(max(sprite[1].x + "
+                                 "sprite[1].y * abs(o.pos.w) + sprite[1].z * o.pos.w * o.pos.w, 1e-6)) : sprite[0].x";
+    std::string code =
+        "    {\n"
+        "        const float2 sprite_c[6] = {float2(-1, 1), float2(1, 1), float2(-1, -1), float2(1, 1), float2(1, -1), "
+        "float2(-1, -1)};\n"
+        "        float2 sc = sprite_c[sprite_vid % 6];\n"
+        "        float sz = clamp(" + size + ", sprite[0].y, sprite[0].z);\n"
+        "        o.pos.xy += sc * sz / surf.xy * o.pos.w;\n"
+        "        o.tc3 = float4(sc.x * 0.5 + 0.5, 0.5 - sc.y * 0.5, 0, 1);\n"
+        "    }\n"
+        "    return o;";
+    Sub(s, "    return o;", code, true);
+    return s;
+}
 
 std::string MotionHlsl(std::string s, MotionKind kind) {
     AddMotionDecls(s);

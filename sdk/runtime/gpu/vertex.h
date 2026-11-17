@@ -8,7 +8,9 @@
 
 namespace gpu {
 
-enum class Topology : uint8_t { Points, Lines, Triangles };
+// Sprites: a point list drawn as point sprites (D3DRS_POINTSPRITEENABLE, g_point_sprites): each point an instance of
+// a 6 vertex square, its vertex attributes stepped per instance (the input layout's), sized by SpriteHlsl
+enum class Topology : uint8_t { Points, Lines, Triangles, Sprites };
 
 // how the vertex shader finishes an element the input assembler reads raw, 4 bits per register in Assembled::decode
 enum VertexDecode : uint8_t {

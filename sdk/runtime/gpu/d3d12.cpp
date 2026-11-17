@@ -474,6 +474,7 @@ private:
         ComPtr<ID3D12CommandAllocator> alloc;
         ComPtr<ID3D12Resource> upload;
         uint8_t* map = nullptr;
+        D3D12_GPU_VIRTUAL_ADDRESS gpu = 0;  // upload's address, looked up once (Upload runs several times a draw)
         uint64_t used = 0;
         uint64_t fence = 0;
         std::vector<ComPtr<ID3D12Resource>> garbage;
@@ -1281,6 +1282,7 @@ void D3D12Backend::CreateFrames() {
         dev_->CreateCommittedResource(&hp, D3D12_HEAP_FLAG_NONE, &bd, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
                                       IID_PPV_ARGS(&f.upload));
         f.upload->Map(0, nullptr, reinterpret_cast<void**>(&f.map));
+        f.gpu = f.upload->GetGPUVirtualAddress();
     }
     dev_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence_));
     event_ = CreateEventW(nullptr, FALSE, FALSE, nullptr);
@@ -1582,7 +1584,7 @@ D3D12Backend::Alloc D3D12Backend::Upload(uint64_t size, uint64_t align) {
     uint64_t o = (f.used + align - 1) & ~(align - 1);
     if (o + size <= kUploadSize) {
         f.used = o + size;
-        return {f.upload.Get(), o, f.map + o, f.upload->GetGPUVirtualAddress() + o};
+        return {f.upload.Get(), o, f.map + o, f.gpu + o};
     }
     // too big for the ring: a buffer of its own, released with the frame
     g_perf.overflow++;
@@ -2495,8 +2497,11 @@ uint32_t FillInputLayout(const PsoKey& k, D3D12_INPUT_ELEMENT_DESC el[16]) {
     for (uint32_t r = 0; r < 16; r++) {
         if (!((k.regs >> r) & 1)) continue;
         uint32_t e = k.elements[r];
+        // point sprites: each point an instance of a 6 vertex square (Topology::Sprites)
+        bool sprite = k.topo == uint32_t(Topology::Sprites);
         el[n++] = {"ATTR", r, DXGI_FORMAT(e & 0xFF), (e >> 8) & 0xFF, e >> 16,
-                   D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0};
+                   sprite ? D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA : D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+                   sprite ? 1u : 0u};
     }
     return n;
 }
@@ -3489,6 +3494,7 @@ void D3D12Backend::UploadConstants(const State& s, const DrawShaders& sh, const 
     c.surf[3] = k.a2c ? 1.0f : 0.0f;
     FillFogConstants(s, sh.prog, c);
     FillCombinerConstants(s, c);
+    FillSpriteConstants(s, c);
     c.widen[0] = sh.prog ? g_program_widen.load() : 0.0f;
     if (g_orbit_on.load()) {
         c.orbit[0][0] = 1.0f;
@@ -3784,8 +3790,11 @@ void D3D12Backend::UploadVertexBuffers(const Assembled& a) {
 void D3D12Backend::DrawGeometry(const Assembled& a) {
     UploadVertexBuffers(a);
     D3D_PRIMITIVE_TOPOLOGY topo = PrimitiveTopology(a);
-    cl_->IASetPrimitiveTopology(topo);
-    dyn_.topo = topo;
+    // every path that records its own topology invalidates dyn_ (topo UNDEFINED), so an equal value is still set
+    if (!dyn_.valid || dyn_.topo != topo) {
+        cl_->IASetPrimitiveTopology(topo);
+        dyn_.topo = topo;
+    }
     if (a.index_count) {
         uint32_t ibytes = a.index_count * (a.index16 ? 2 : 4);
         Alloc ib = Upload(ibytes, 4);
@@ -3793,6 +3802,8 @@ void D3D12Backend::DrawGeometry(const Assembled& a) {
         D3D12_INDEX_BUFFER_VIEW ibv{ib.gpu, ibytes, a.index16 ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT};
         cl_->IASetIndexBuffer(&ibv);
         cl_->DrawIndexedInstanced(a.index_count, 1, 0, a.base_vertex, 0);
+    } else if (a.topology == Topology::Sprites) {
+        cl_->DrawInstanced(6, a.draw_count, 0, 0);  // a square per point (SpriteHlsl)
     } else {
         cl_->DrawInstanced(a.draw_count, 1, 0, 0);
     }
@@ -3800,7 +3811,7 @@ void D3D12Backend::DrawGeometry(const Assembled& a) {
 
 // a draw that can join a merged run: a list (not a strip), its streams all holding the same number of vertices
 bool D3D12Backend::Batchable(const Assembled& a) const {
-    if (a.strip || !a.buffer_count || a.buffer_count > 16) return false;
+    if (a.strip || !a.buffer_count || a.buffer_count > 16 || a.topology == Topology::Sprites) return false;
     D3D_PRIMITIVE_TOPOLOGY t = PrimitiveTopology(a);
     if (t != D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST && t != D3D_PRIMITIVE_TOPOLOGY_LINELIST &&
         t != D3D_PRIMITIVE_TOPOLOGY_POINTLIST)

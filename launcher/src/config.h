@@ -91,7 +91,7 @@ struct Settings {
     int  mouseSens = 100;         // [Keyboard] MouseSensitivity, percent
     bool mouseInvertY = false;    // [Keyboard] MouseInvertY (Xbox version): mouse aiming up and down reversed
     bool mouseMenus = true;       // [Keyboard] MouseMenus: the wheel and right click in the game's menus
-    bool cheatInvulnerable = false, cheatMissiles = false, cheatDevastating = false, cheatPerfect = false;  // [Cheats] (Xbox version)
+    bool cheatInvulnerable = false, cheatMissiles = false, cheatDevastating = false, cheatPerfect = false;  // [Cheats] (both versions)
     int  kbPlayer = 1;            // [Keyboard] Player: 1 or 2
     std::string kbKeys[21];       // [Keyboard] each KB_ action's keys ("Mouse1, Enter"); k_kbDefault when not set
 };

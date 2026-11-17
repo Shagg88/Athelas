@@ -126,3 +126,24 @@ X86_FUNC(sub_0015D1C0) {
     LOGR("ta: the game's general heap: %u KB at %08X (it asked for %u KB); console memory before it %u of %u KB free",
          ::kernel::R32(0x2826A0) / 1024, ::kernel::R32(0x282694), want / 1024, m.available_pages * 4, m.total_pages * 4);
 }
+
+// The game's heaps of each kind are made from a table in its code (0x275B38: kind, size, how many, blocks), each by
+// 0x17B510 (edx the kind, cx the most blocks, [esp+4] the size). The three of kind 1024 (flags 0x400: the scene heaps
+// 0x16BDA0 uses for shaders and models) are 512 KB. #85: a save made after travelling back to Eregion with the party's
+// later gear needs more than that there (257 blocks, 505 KB used, a 9.5 KB shader left over), and the game crashes
+// instead of handling it; the console has about 5 MB free then. They are made 768 KB (TA_SCENE_HEAP_KB to change it,
+// 512 the game's own), from the general heap (28 MB, not full when it happens).
+X86_EXTERN_FUNC(__imp__sub_0017B510);
+X86_FUNC(sub_0017B510) {
+    const uint32_t kind = ctx.edx, size_at = ctx.esp + 4, size = ::kernel::R32(size_at);
+    uint32_t want = 768;
+    if (const char* e = std::getenv("TA_SCENE_HEAP_KB")) want = uint32_t(std::strtoul(e, nullptr, 10));
+    const bool bigger = kind == 1024 && size == 0x80000u && want > 512 && want <= 4096;
+    if (bigger) ::kernel::W32(size_at, want * 1024u);
+    __imp__sub_0017B510(ctx, base);
+    if (bigger) {
+        ::kernel::W32(size_at, size);  // the caller's stack as it was
+        static std::atomic<int> n{0};
+        if (n.fetch_add(1) < 3) LOGR("ta: a scene heap made %u KB instead of 512 (#85)", want);
+    }
+}

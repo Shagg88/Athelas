@@ -12,6 +12,7 @@
 
 namespace dsound {
 extern bool g_output_buffers;  // sdk/runtime/xdk/dsound.cpp
+extern bool g_mixin_buffers;
 }
 namespace fotr {
 uint32_t g_fps = 30;  // settings.toml [graphics] fps
@@ -34,6 +35,10 @@ void Init() {
     // turns it off to compare.
     const char* ob = std::getenv("FOTR_OUTPUT_BUFFERS");
     dsound::g_output_buffers = !(ob && *ob == '0');
+    // Bag End's crickets go to effect-send bins 27 and 28, which the game plays through mix-in buffers of its own
+    // (0x8BB20) at their volumes; played straight they were too loud (#92). FOTR_MIXIN=0 turns it off to compare.
+    const char* mi = std::getenv("FOTR_MIXIN");
+    dsound::g_mixin_buffers = !(mi && *mi == '0');
     LOGR("fotr: frame rate %u%s", g_fps, g_fps == 30 ? " (the console's)" : " (the console's is 30)");
 }
 }  // namespace fotr

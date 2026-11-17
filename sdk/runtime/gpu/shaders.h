@@ -1,5 +1,7 @@
 #pragma once
+#include <algorithm>
 #include <cstdint>
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -66,6 +68,12 @@ std::string QuadHlsl(std::string s);
 enum MotionKind { kMotionNone = 0, kMotionProgram = 1, kMotionFixed = 2, kMotionFlat = 3 };  // flat: screen space, still
 std::string MotionHlsl(std::string s, MotionKind vertex);   // a vertex shader's source
 std::string MotionPixelHlsl(std::string s);                 // a pixel shader's source
+// a vertex shader's source for point sprites (Topology::Sprites): drawn per point as an instance of 6 vertices, each
+// moved out from the point by half its size to a corner of a square; texture stage 3 gets the corner's coordinates
+// (0,0 top left to 1,1), as the console's rasterizer gives point sprites (xemu: psh.c pT3 = gl_PointCoord).
+// The size: a vertex program's oPts with point scaling on, else D3DRS_POINTSIZE (xemu: vsh.c); fixed function with
+// scaling: D3D's size * height * sqrt(1 / (A + B d + C d^2)), d the eye distance. Clamped to min and max.
+std::string SpriteHlsl(std::string s, bool program);
 
 // HLSL a backend extension adds; the defaults write the console path
 struct ShaderHooks {
@@ -108,6 +116,23 @@ struct DrawConstants {
     float widen[4];      // x: a vertex program's 3D (perspective) positions widened by it, 0 off (g_program_widen)
     float orbit[2][4];   // free camera test (g_orbit_*): on, yaw, pitch, pivot; p11, p22, a, b
     float lt[8][7][4];   // per light: diffuse, specular, ambient, position range, direction falloff, attenuation, cos theta/2 phi/2
+    // point sprites (SpriteHlsl; only its shaders declare these): size, min, max (pixels), scale enable; A, B, C
+    float sprite[2][4];
 };
+
+// DrawConstants::sprite from the point render states (floats held as their bits); max 0 or below min: 64 (D3D's)
+inline void FillSpriteConstants(const State& s, DrawConstants& c) {
+    if (!s.rs[kRsPointSpriteEnable]) return;
+    auto f = [&](uint32_t r) { float v; std::memcpy(&v, &s.rs[r], 4); return v; };
+    float mn = std::max(f(kRsPointSizeMin), 0.0f), mx = f(kRsPointSizeMax);
+    if (!(mx > mn)) mx = 64.0f;
+    c.sprite[0][0] = f(kRsPointSize);
+    c.sprite[0][1] = mn;
+    c.sprite[0][2] = mx;
+    c.sprite[0][3] = s.rs[kRsPointScaleEnable] ? 1.0f : 0.0f;
+    c.sprite[1][0] = f(kRsPointScaleA);
+    c.sprite[1][1] = f(kRsPointScaleB);
+    c.sprite[1][2] = f(kRsPointScaleC);
+}
 
 }  // namespace gpu

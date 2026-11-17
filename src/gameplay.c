@@ -20,8 +20,26 @@
  * All four are off (100, 100, 0, 0) by default. */
 #include "rotkfix.h"
 #include <stdio.h>
+#include <string.h>
 
 static int g_damageTaken = 100, g_enemyDamage = 100, g_unlockAll = 0, g_allHeroes = 0;
+
+/* [Cheats]: the game's own secret codes that are switches, as the Xbox port's rotk_cheats.cpp. The pause-screen
+ * code handler (0x4E6040..0x4E6300) looks a player up with 0x4101A0 (the list at 0x57916C, two slots, into the
+ * scratch 0x8E1D58) and flips a bit of its +0x664: Invulnerable 0x04, InfiniteMissiles 0x08, AlwaysDevastating
+ * 0x10, PerfectMode 0x20. (0x8E1D5C is a separate global flags word, not a player.) A player puts itself in the list
+ * (0x410150) and takes itself out, setting its slot to 0 (0x410170), so a slot is a live player or 0. The bits are
+ * put back each frame while a switch is on (a player object lasts a level). The switches are read at start: a change
+ * takes effect at the next start. ROTK_CHEATS=Invulnerable,PerfectMode,... turns them on too (tests). */
+static DWORD g_cheatWant = 0;
+static int g_cheatsOk = -1;   /* the code recognised: -1 not checked yet */
+#define ADDR_PLAYERS    0x0057916Cu
+#define ADDR_CHEAT_SITE 0x004E62D6u
+#define ADDR_GET_PLAYER 0x004101A0u
+/* mov ecx,[0x8E1D58]; mov eax,[ecx+0x664] - the Perfect Mode code's toggle */
+static const BYTE SIG_CHEAT[12] = { 0x8B, 0x0D, 0x58, 0x1D, 0x8E, 0x00, 0x8B, 0x81, 0x64, 0x06, 0x00, 0x00 };
+/* mov eax,[esp+4]; mov eax,[eax*4+0x57916C]; ret - the player lookup */
+static const BYTE SIG_PLAYER[12] = { 0x8B, 0x44, 0x24, 0x04, 0x8B, 0x04, 0x85, 0x6C, 0x91, 0x57, 0x00, 0xC3 };
 
 static int clamp_pct(int v) { return v < 10 ? 10 : v > 500 ? 500 : v; }
 
@@ -31,6 +49,25 @@ void gameplay_load_settings(const char *ini)
     g_enemyDamage = clamp_pct(GetPrivateProfileIntA("Gameplay", "EnemyDamage", 100, ini));
     g_unlockAll = GetPrivateProfileIntA("Gameplay", "UnlockAll", 0, ini) != 0;
     g_allHeroes = GetPrivateProfileIntA("Gameplay", "AllHeroes", 0, ini) != 0;
+    {
+        static const struct { const char *key; DWORD mask; } k[] = {
+            { "Invulnerable", 0x04 }, { "InfiniteMissiles", 0x08 }, { "AlwaysDevastating", 0x10 }, { "PerfectMode", 0x20 } };
+        char env[256] = "";
+        DWORD n = GetEnvironmentVariableA("ROTK_CHEATS", env + 1, sizeof(env) - 2);
+        if (n && n < sizeof(env) - 2) {
+            env[0] = ',';
+            strcat(env, ",");
+            char *w = env;   /* spaces dropped: "Invulnerable, PerfectMode" */
+            for (char *r = env; *r; r++) if (*r != ' ') *w++ = *r;
+            *w = 0;
+        } else env[0] = 0;
+        g_cheatWant = 0;
+        for (int i = 0; i < 4; i++) {
+            char key[40];
+            sprintf(key, ",%s,", k[i].key);
+            if (GetPrivateProfileIntA("Cheats", k[i].key, 0, ini) || (env[0] && strstr(env, key))) g_cheatWant |= k[i].mask;
+        }
+    }
     {   /* Virtues (opt-in, the launcher's Journey page): ATHELAS_VIRTUES=<dealt>,<taken> percents, on top */
         char v[32];
         unsigned d = 100, t = 100;
@@ -107,8 +144,28 @@ void RF_RegisterFrameHook(RF_FrameHook_t fn)
     }
 }
 
+/* once a frame: the [Cheats] bits onto each player there is */
+static void cheats_frame(void)
+{
+    if (g_cheatsOk < 0) {
+        g_cheatsOk = readable((void *)ADDR_CHEAT_SITE, 12) && !memcmp((void *)ADDR_CHEAT_SITE, SIG_CHEAT, 12) &&
+                     readable((void *)ADDR_GET_PLAYER, 12) && !memcmp((void *)ADDR_GET_PLAYER, SIG_PLAYER, 12);
+        if (g_cheatWant) logf_(g_cheatsOk ? "gameplay: cheats %02X ([Cheats])" : "gameplay: cheat code not recognised; [Cheats] off",
+                               (unsigned)g_cheatWant);
+    }
+    if (!g_cheatsOk || !g_cheatWant) return;
+    for (int i = 0; i < 2; i++) {
+        DWORD p = *(volatile DWORD *)(ADDR_PLAYERS + 4u * i);
+        if (p < 0x10000 || !readable((void *)(p + 0x664), 4)) continue;
+        volatile DWORD *f = (volatile DWORD *)(p + 0x664);
+        DWORD v = *f;
+        if ((v | g_cheatWant) != v) *f = v | g_cheatWant;
+    }
+}
+
 void RF_RunFrameHooks(void)
 {
+    cheats_frame();
     for (int i = 0; i < g_frameHookCount; i++) {
         if (g_frameHooks[i]) g_frameHooks[i]();
     }

@@ -503,7 +503,11 @@ static void fix_present_params(D3DPRESENT_PARAMETERS *pp, IDirect3D8 *real, UINT
         pp->Windowed = FALSE;
         pp->FullScreen_RefreshRateInHz = g_modeRefresh;
         pp->FullScreen_PresentationInterval = g_vsync ? D3DPRESENT_INTERVAL_ONE : D3DPRESENT_INTERVAL_IMMEDIATE;
-        if (pp->BackBufferFormat == D3DFMT_UNKNOWN) pp->BackBufferFormat = D3DFMT_X8R8G8B8;
+        /* 16-bit colour from the game's Video menu: modern drivers (and DXVK) have no 16-bit fullscreen modes, so
+         * Reset failed (D3DERR_NOTAVAILABLE) and the game quit (#87). Fullscreen stays 32-bit, as windowed does. */
+        if (pp->BackBufferFormat == D3DFMT_UNKNOWN || pp->BackBufferFormat == D3DFMT_R5G6B5
+            || pp->BackBufferFormat == D3DFMT_X1R5G5B5 || pp->BackBufferFormat == D3DFMT_A1R5G5B5)
+            pp->BackBufferFormat = D3DFMT_X8R8G8B8;
     } else {
         pp->Windowed = TRUE;
         pp->BackBufferFormat = g_deskFormat;
@@ -1001,6 +1005,10 @@ static HRESULT WINAPI hook_CreateTex(IDirect3DDevice8 *dev, UINT w, UINT h, UINT
 static HRESULT WINAPI hook_CopyRects(IDirect3DDevice8 *dev, IDirect3DSurface8 *src, const RECT *r, UINT n, IDirect3DSurface8 *dst, const POINT *pt)
 {
     HRESULT hr = g_realCopyRects(dev, src, r, n, dst, pt);
+    if (FAILED(hr)) {  /* e.g. the screen 32-bit while the game made its copy 16-bit (#87): say so once */
+        static int said;
+        if (!said++) logf_("graphics: CopyRects failed (0x%08lx): the pause backdrop may be missing", (unsigned long)hr);
+    }
     if (SUCCEEDED(hr) && dst) {
         void *tex = NULL;
         if (SUCCEEDED(((GetContainer_t)(*(void ***)dst)[7])(dst, &IID_IDirect3DTexture8, &tex)) && tex) {
@@ -1071,6 +1079,7 @@ static void tex_size(void *t, UINT *w, UINT *h)
  *    bars at the sides.
  */
 #define FVF_MOVIE 0x1c4
+typedef HRESULT (WINAPI *GetRS8_t)(IDirect3DDevice8 *, D3DRENDERSTATETYPE, DWORD *);
 static volatile DWORD g_movieDrawTick;   /* last time a movie frame was drawn */
 int graphics_movie_playing(void) { return g_movieDrawTick && GetTickCount() - g_movieDrawTick < 150; }
 #define FILM_ROWS_SCALE (480.0f / 352.0f)   /* frame height / film height */
@@ -1102,8 +1111,12 @@ static void movie_fit_quad(IDirect3DDevice8 *dev, UINT start, UINT count)
         xy[1] = cy + (xy[1] - cy) * sy;
     }
     ((VBUnlock_t)vt[12])(g_stream0);
-    if (sx < 0.999f) {
-        /* black side bars (the game does not clear outside its picture) */
+    DWORD blend = 0;
+    ((GetRS8_t)(*(void ***)dev)[51])(dev, D3DRS_ALPHABLENDENABLE, &blend);
+    /* black side bars (the game does not clear outside its picture) - not while the frame is blended: the game
+     * fades the last film frame out over the menu after the credits, and bars there cut the menu's sides off for
+     * a moment (GitHub #62) */
+    if (sx < 0.999f && !blend) {
         LONG bar = (LONG)((W - W * sx) * 0.5f);
         D3DRECT rc[2] = { { 0, 0, bar, (LONG)H }, { (LONG)W - bar, 0, (LONG)W, (LONG)H } };
         ((Clear_t)(*(void ***)dev)[36])(dev, 2, rc, D3DCLEAR_TARGET, 0xFF000000, 1.0f, 0);
@@ -1434,7 +1447,6 @@ static void set_narrow(IDirect3DDevice8 *dev)
  * different kind of blended 3D draw (same engine code): blend factors, where the alpha
  * comes from (texture factor, material, vertex colour, texture stages) and its value.
  * Each different set is logged once (alpha in steps of 1/16), up to 200 lines. */
-typedef HRESULT (WINAPI *GetRS8_t)(IDirect3DDevice8 *, D3DRENDERSTATETYPE, DWORD *);
 typedef HRESULT (WINAPI *GetMat8_t)(IDirect3DDevice8 *, D3DMATERIAL8 *);
 static void fade_report(IDirect3DDevice8 *dev, UINT prims, UINT firstV, UINT numV)
 {

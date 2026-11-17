@@ -125,3 +125,19 @@ are gone (they came from the late constant loads as well). Trans_bridges is a tr
 - The Two Towers (for the record): projection 0x4E890 near 2 far 800 (gameplay camera 0xE3220; 300 from 0xE7BFC);
   far x3 turns the sky black (the sky is built around the far plane). "GRAPHICS/shadows distance" (0x18D800, 100)
   x4: no difference to be seen. Fog is off. The Return of the King already has a draw distance setting (50 to 800%).
+
+## #92: Bag End's crickets (16 Nov 2026)
+
+- Symptom: ambient crickets far too loud, and the Sound Effects slider doesn't change them.
+- The cricket voice (22050 Hz, no output buffer) has only bins 27 and 28, at -1635 mB (job 403).
+- lotrstdfx.bin's 4 effects name mix bins only as DSP X addresses 0x1400 + bin*0x20 in their state: 0x14C0-0x1520
+  (bins 6-9, the crosstalk effect) and 0x1540 (bin 10, I3DL2, the reverb). Nothing in the image reads 27/28.
+- They are read by the game's own mix-in buffers: 0x8BB20 makes two buffers with DSBUFFERDESC dwInputMixBin set
+  (flags 0x100000, no data) and SetMixBins front left / front right. It is called 5 times from 0x8E7D0 for bins
+  22/21, 30/29, 28/27, 26/25, 24/23. The pair object (vtable 0x1C4048) plays both (0x8B500), stops both (0x8B4B0) and
+  sets both volumes (0x8AE20, slot 1, clamped to -9600..0 mB).
+- Before the fix, the port had no mix-in buffers and played any voice without speaker bins at the front.
+- Fix: dsound::g_mixin_buffers (Fellowship only; FOTR_MIXIN=0 off). An effect-send bin with a mix-in is heard at that
+  mix-in's volume and bins, only while it plays. DSOUND_STATS logs each mix-in and its volume changes.
+- Still unknown: what calls slot 1 (the volume), and whether it follows the Sound Effects slider. Job 412 (prepared,
+  not yet run) logs it.

@@ -175,6 +175,7 @@ struct Voice {
     bool stream = false;
     float stat_src = 0, stat_out = 0;  // DSOUND_STATS: this voice's loudest sample before and after its volume
     uint32_t output = 0;  // IDirectSoundBuffer_SetOutputBuffer: the buffer this voice plays into (dsound::g_output_buffers)
+    uint8_t input_bin = 0;  // a mix-in buffer (DSBUFFERDESC dwInputMixBin): the effect-send bin it plays (dsound::g_mixin_buffers)
     int refs = 1;
     // format
     uint16_t tag = 1, channels = 1, bits = 16, align = 2;
@@ -196,7 +197,7 @@ struct Voice {
     uint8_t nbins = 0, bin[8] = {};
     int32_t bin_mb[32] = {};  // by mix bin
     std::vector<float> curve;  // rolloff
-    bool is3d = false;
+    bool is3d = false, has_pos = false;  // has_pos: given 3D parameters (DSOUND_STATS)
     uint32_t mode = 0;  // DS3DMODE: 1 head relative, 2 disabled
     float p[3] = {}, min_dist = 1, max_dist = 1e9f;
     // ADPCM block cache
@@ -311,7 +312,16 @@ namespace dsound {
 // set by a game: a voice given an output buffer (IDirectSoundBuffer_SetOutputBuffer) is heard at that buffer's
 // volume and mix bins, as the console's mixer routed it (Fellowship's DirectMusic notes, #90); off, it keeps its own
 bool g_output_buffers = false;
+// set by a game: a voice's effect-send bins (11 and up) are heard through the mix-in buffers made to read them, at
+// their volumes and mix bins, as the console's mixer did (#92: Fellowship's Bag End crickets go to bins 27 and 28,
+// read by two of the ten mix-in buffers the game makes at 0x8BB20); off, such a voice plays at the front as before
+bool g_mixin_buffers = false;
 }  // namespace dsound
+namespace {
+uint32_t g_mixin[32] = {};  // the mix-in buffer reading each bin (dsound::g_mixin_buffers)
+// a mix-in buffer's level on host left and right: its volume into its own mix bins (front left and right if none)
+bool MixinLevels(uint32_t b, float out[2]);
+}  // namespace
 namespace {
 void LevelsOwn(Voice& v, float g[2][2]);
 Voice* Find(uint32_t obj);
@@ -346,10 +356,20 @@ void LevelsOwn(Voice& v, float g[2][2]) {
     uint32_t per = std::max<uint32_t>(n / voices, 2), step = v.channels == 1 ? 1 : 2;
     bool speakers = false;
     for (uint32_t s = 0; s < n; s++) speakers |= bin[s] < 10 && bin[s] != 3;
+    // a voice with any send a mix-in plays: its other sends are not taken to the front either (as with speaker bins)
+    float probe[2];
+    for (uint32_t s = 0; s < n && !speakers; s++) speakers |= bin[s] > kI3dl2Bin && MixinLevels(bin[s], probe);
     for (uint32_t c = 0; c < 2; c++) {
         g[c][0] = g[c][1] = 0;
         for (uint32_t s = c; c < v.channels && s < per && s < n; s += step) {
             uint32_t b = bin[s];
+            float m[2];
+            if (b > kI3dl2Bin && MixinLevels(b, m)) {  // an effect send that a mix-in buffer plays
+                float x = Db(v.bin_mb[b]) * v.volume * v.headroom;
+                g[c][0] = std::max(g[c][0], x * m[0]);
+                g[c][1] = std::max(g[c][1], x * m[1]);
+                continue;
+            }
             if (speakers && (b == 3 || b > 9)) continue;  // sub and effect sends
             float x = Db(v.bin_mb[b]) * v.volume * v.headroom * (b == 2 ? 0.707f : 1.0f);
             // even bins are left, odd right, 2 is the centre
@@ -380,6 +400,31 @@ void LevelsOwn(Voice& v, float g[2][2]) {
         g[c][0] *= att * std::min(1.0f, 1.0f - pan);
         g[c][1] *= att * std::min(1.0f, 1.0f + pan);
     }
+}
+
+bool MixinLevels(uint32_t b, float out[2]) {
+    // the mix-in's own output buffer can route back to this bin (OutputScale -> LevelsOwn -> here): followed once
+    static thread_local int depth = 0;
+    if (!dsound::g_mixin_buffers || b > 31 || !g_mixin[b] || depth > 0) return false;
+    Voice* m = Find(g_mixin[b]);
+    if (!m || m->input_bin != b) return false;
+    out[0] = out[1] = 0;
+    if (!m->playing || m->paused) return true;  // stopped (0x8B4B0 stops the pair): what is sent to its bin is not heard
+    uint32_t n = m->nbins ? m->nbins : 2;
+    for (uint32_t s = 0; s < n; s++) {
+        uint32_t mb = m->nbins ? m->bin[s] : s;
+        if (mb == 3 || mb > 9) continue;  // a mix-in into the sub or another send: not followed
+        float x = Db(m->bin_mb[mb]) * m->volume * m->headroom * (mb == 2 ? 0.707f : 1.0f);
+        if (mb == 2 || !(mb & 1)) out[0] = std::max(out[0], x);
+        if (mb == 2 || (mb & 1)) out[1] = std::max(out[1], x);
+    }
+    // a mix-in that plays into an output buffer follows that buffer's level too (dsound::g_output_buffers)
+    depth++;
+    float os = OutputScale(*m);
+    depth--;
+    out[0] *= os;
+    out[1] *= os;
+    return true;
 }
 
 // the voice's level into the I3DL2 bin, 0 when it sends none
@@ -428,6 +473,26 @@ struct Wav {
 };
 const char* DumpDir() { static const char* d = std::getenv("DSOUND_DUMP"); return d && *d ? d : nullptr; }
 std::map<uint32_t, Wav> g_dumps;  // mixer thread only
+struct Group {
+    Wav wav;
+    std::vector<float> buf;  // this block's sound, frames x 2
+    void Mix(uint32_t i, float l, float r) {
+        if (buf.size() < (i + 1) * 2) buf.resize((i + 1) * 2, 0.0f);
+        buf[i * 2] += l;
+        buf[i * 2 + 1] += r;
+    }
+};
+std::map<uint32_t, Group> g_groups;  // mixer thread only
+Group* DumpGroup(uint32_t out) {
+    auto it = g_groups.find(out);
+    if (it == g_groups.end()) {
+        it = g_groups.emplace(out, Group{}).first;
+        char name[64];
+        std::snprintf(name, sizeof name, "/group-%08X.wav", out);
+        it->second.wav.Open(std::string(DumpDir()) + name);
+    }
+    return &it->second;
+}
 Wav* DumpFor(uint32_t obj) {
     auto it = g_dumps.find(obj);
     if (it == g_dumps.end()) {
@@ -449,6 +514,7 @@ void Render(float* out, uint32_t frames) {
     if (reverb) g_send.assign(frames, 0.0f);
     for (auto& [obj, v] : g_voices) {
         if (v.paused || v.sync || (!v.stream && !v.playing)) continue;
+        if (v.input_bin) continue;  // a mix-in has no data: it plays what is sent to its bin (MixinLevels), while playing
         float g[2][2];
         Levels(v, g);
         float send = reverb ? SendLevel(v) * OutputScale(v) : 0.0f;
@@ -509,6 +575,9 @@ void Render(float* out, uint32_t frames) {
             a += (a1 - a) * t;
             b += (b1 - b) * t;
             if (dump && v.stream && v.channels == 2) DumpFor(obj)->Add(a, b);
+            // and every voice's sound as heard, by the output buffer it plays into (group-<buffer>.wav, 00000000 the
+            // voices played straight to the speakers; #92: which group the crickets are in)
+            if (dump && !v.stream) DumpGroup(v.output)->Mix(i, a * g[0][0] + b * g[1][0], a * g[0][1] + b * g[1][1]);
             if (stats_on) {
                 v.stat_src = std::max(v.stat_src, std::max(std::fabs(a), std::fabs(b)));
                 v.stat_out = std::max(v.stat_out, std::max(std::fabs(a * g[0][0] + b * g[1][0]), std::fabs(a * g[0][1] + b * g[1][1])));
@@ -560,6 +629,11 @@ void Render(float* out, uint32_t frames) {
         }
     }
     if (dump) {
+        for (auto& [o, gr] : g_groups) {  // each group, the whole block (silence where none of it played)
+            gr.buf.resize(size_t(frames) * 2, 0.0f);
+            for (uint32_t i = 0; i < frames; i++) gr.wav.Add(gr.buf[i * 2], gr.buf[i * 2 + 1]);
+            std::fill(gr.buf.begin(), gr.buf.end(), 0.0f);
+        }
         Wav* m = DumpFor(0);
         for (uint32_t i = 0; i < frames; i++) m->Add(out[i * 2], out[i * 2 + 1]);
     }
@@ -587,6 +661,12 @@ void Render(float* out, uint32_t frames) {
             LOGI("dsound:   %s %08X %uch %u Hz tag %u%s vol %.3f gain %.3f, source peak %.2f, out peak %.3f%s, into %08X",
                  v.stream ? "stream" : "buffer", obj, v.channels, v.rate, v.tag, v.looping ? " loop" : "",
                  v.volume, m, v.stat_src, v.stat_out, v.paused ? " paused" : "", v.output);
+            if (v.nbins || v.is3d || v.has_pos) {  // its mix bins and 3D state (#92)
+                std::string bins;
+                for (uint32_t k = 0; k < v.nbins; k++) bins += " " + std::to_string(v.bin[k]) + ":" + std::to_string(v.bin_mb[v.bin[k]]);
+                LOGI("dsound:     bins%s; 3d %d mode %u pos %.1f %.1f %.1f dist %.1f-%.1f", bins.empty() ? " (front)" : bins.c_str(),
+                     int(v.is3d), v.mode, v.p[0], v.p[1], v.p[2], v.min_dist, v.max_dist);
+            }
             if (v.is3d && v.mode != 2) {
                 d3++;
                 float d[3] = {v.p[0], v.p[1], v.p[2]};
@@ -699,6 +779,14 @@ uint32_t NewBuffer(uint32_t desc, uint32_t out) {
     SetBins(v, R32(desc + 16));
     v.is3d = flags & 0x10;  // DSBCAPS_CTRL3D
     v.headroom = DefaultHeadroom(flags);
+    // DSBUFFERDESC's sixth word, dwInputMixBin: a buffer without data that plays an effect-send bin (a mix-in)
+    uint32_t in = R32(desc) >= 0x18 && !bytes ? R32(desc + 20) : 0;
+    if (dsound::g_mixin_buffers && in > kI3dl2Bin && in < 32) {
+        v.input_bin = uint8_t(in);
+        g_mixin[in] = obj;
+        static const bool stats = std::getenv("DSOUND_STATS") != nullptr;
+        if (stats) LOGI("dsound: mix-in buffer %08X plays bin %u", obj, in);
+    }
     if (bytes) {
         v.data = v.owned = mem::AllocContiguous(bytes, 0, 0xFFFFFFFF, 4);
         v.bytes = v.play_len = v.loop_len = bytes;
@@ -784,7 +872,22 @@ HLE_STDCALL(IDirectSound_GetSpeakerConfig, 2) {
     W32(a[1], 0);  // DSSPEAKER_STEREO
     return 0;
 }
-HLE_STDCALL(IDirectSound_SetEffectData, 6) { return 0; }
+// (this, effect index, offset, data, size, flags): the game's own DSP effects' parameters. Not played (the port has no
+// DSP); DSOUND_STATS logs each, the first 8 words of what is written (#92: Bag End's crickets go only to effect sends)
+HLE_STDCALL(IDirectSound_SetEffectData, 6) {
+    static const bool stats = std::getenv("DSOUND_STATS") != nullptr;
+    static std::atomic<int> n{0};
+    if (stats && n.fetch_add(1) < 400) {
+        std::string w;
+        for (uint32_t i = 0; a[3] && i < std::min<uint32_t>(a[4] / 4, 8); i++) {
+            char b[16];
+            std::snprintf(b, sizeof b, " %08X", R32(a[3] + i * 4));
+            w += b;
+        }
+        LOGI("dsound: effect data: effect %u offset %u, %u bytes, flags %u:%s", a[1], a[2], a[4], a[5], w.c_str());
+    }
+    return 0;
+}
 HLE_STDCALL(IDirectSound_EnableHeadphones, 2) { return 0; }
 HLE_STDCALL(IDirectSound_SetMixBinHeadroom, 3) { return 0; }
 HLE_STDCALL(IDirectSound_CommitDeferredSettings, 1) { return 0; }
@@ -984,7 +1087,13 @@ BUFFER(Release, 1) {
     if (--v.refs > 0) return uint32_t(v.refs);
     if (v.owned) mem::FreeContiguous(v.owned);
     uint32_t obj = v.obj;
+    uint8_t in = v.input_bin;
     g_voices.erase(obj);
+    // a released mix-in: its bin goes to another mix-in still reading it, if there is one
+    if (in && g_mixin[in] == obj) {
+        g_mixin[in] = 0;
+        for (auto& [o, w] : g_voices) if (w.input_bin == in) g_mixin[in] = o;
+    }
     for (auto& [o, w] : g_voices) if (w.output == obj) w.output = 0;  // the address may be reused
     mem::FreeSystem(obj);
     return 0;
@@ -1068,6 +1177,13 @@ BUFFER(Lock, 8) {
     return 0;
 }
 BUFFER(SetVolume, 2) {
+    static const bool stats = std::getenv("DSOUND_STATS") != nullptr;  // each change of a buffer that others play into
+    if (stats && Db(int32_t(a[1])) != v.volume) {
+        bool target = false;
+        for (auto& [o, w] : g_voices) if (w.output == v.obj) { target = true; break; }
+        if (target) LOGI("dsound: output buffer %08X volume %d mB", v.obj, int32_t(a[1]));
+        if (v.input_bin) LOGI("dsound: mix-in buffer %08X (bin %u) volume %d mB", v.obj, v.input_bin, int32_t(a[1]));
+    }
     v.volume = Db(int32_t(a[1]));
     return 0;
 }
@@ -1108,6 +1224,7 @@ BUFFER(SetAllParameters, 3) {
     v.min_dist = F32(R32(a[1] + 0x34));
     v.max_dist = F32(R32(a[1] + 0x38));
     v.mode = R32(a[1] + 0x3C);
+    v.has_pos = true;
     return 0;
 }
 // (this, points, count, apply)

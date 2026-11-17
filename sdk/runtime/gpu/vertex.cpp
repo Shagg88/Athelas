@@ -6,6 +6,7 @@
 #include <dxgiformat.h>
 
 #include "core/log.h"
+#include "gpu/backend.h"
 #include "gpu/texture.h"
 #include "kernel/kernel.h"
 #include "kernel/memory.h"
@@ -542,6 +543,28 @@ void SqueezeScreenX(const State& s, const int* regs, int nregs, float f, Assembl
 }
 }  // namespace
 
+// an unindexed point list with point sprites on is drawn as squares (Topology::Sprites); indexed ones stay points
+static void Spritify(const State& s, Assembled& out) {
+    if (out.topology != Topology::Points || !s.rs[kRsPointSpriteEnable] || !g_point_sprites.load()) return;
+    // the converted path lists its vertices through an index list: in order (0, 1, 2 ...) it is dropped
+    if (out.index_count && out.index_src == out.indices.data() && out.index_count == out.vertex_count) {
+        bool in_order = true;
+        for (uint32_t i = 0; i < out.index_count && in_order; i++) in_order = out.indices[i] == i;
+        if (in_order) {
+            out.draw_count = out.index_count;
+            out.index_count = 0;
+            out.index_src = nullptr;
+            out.base_vertex = 0;
+        }
+    }
+    if (out.index_count || !out.draw_count) {
+        LOG_FIRST(1, "gpu: an indexed point sprite draw drawn as points (one pixel each)");
+        return;
+    }
+    out.topology = Topology::Sprites;
+    LOG_FIRST(1, "gpu: point sprites drawn as squares");
+}
+
 bool Assemble(const State& s, uint32_t prim, uint32_t start, uint32_t count, const uint8_t* ip, Assembled& out) {
     ResetAssembled(out);
     if (!count || prim < 1 || prim > 10) return false;
@@ -576,9 +599,14 @@ bool Assemble(const State& s, uint32_t prim, uint32_t start, uint32_t count, con
     float squeeze = g_screen_space_hook ? g_screen_space_hook(s) : 1.0f;
     // the guest's own vertices when the input assembler can read every element of them
     bool raw = kRawVertices && squeeze == 1.0f && RawReadable(s, inputs);
-    if (raw) return AssembleRaw(s, inputs, d, out);
+    if (raw) {
+        bool ok = AssembleRaw(s, inputs, d, out);
+        if (ok) Spritify(s, out);
+        return ok;
+    }
     bool ok = AssembleConverted(s, inputs, d, out);
     if (ok && squeeze != 1.0f) SqueezeScreenX(s, regs, nregs, squeeze, out);
+    if (ok) Spritify(s, out);
     return ok;
 }
 

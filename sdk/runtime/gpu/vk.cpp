@@ -3552,7 +3552,9 @@ VkPipeline VkBackend::MakePipeline(const PipeKey& k, VkShaderModule vs, VkShader
     st[1] = {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0, VK_SHADER_STAGE_FRAGMENT_BIT, ps, "main", nullptr};
 
     VkVertexInputBindingDescription vb[16]{};
-    for (uint32_t b = 0; b < k.buffers; b++) vb[b] = {b, k.strides[b], VK_VERTEX_INPUT_RATE_VERTEX};
+    // point sprites: each point an instance of a 6 vertex square (Topology::Sprites)
+    VkVertexInputRate rate = k.topo == uint32_t(Topology::Sprites) ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
+    for (uint32_t b = 0; b < k.buffers; b++) vb[b] = {b, k.strides[b], rate};
     VkVertexInputAttributeDescription va[16]{};
     uint32_t n = 0;
     for (uint32_t r = 0; r < 16; r++) {
@@ -4026,6 +4028,7 @@ void VkBackend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t cou
     c.misc[3] = s.rs[kRsSpecularEnable] ? 1.0f : 0.0f;
     FillFogConstants(s, sh.prog, c);
     FillCombinerConstants(s, c);
+    FillSpriteConstants(s, c);
     c.widen[0] = sh.prog ? g_program_widen.load() : 0.0f;
     if (g_orbit_on.load()) {
         c.orbit[0][0] = 1.0f;
@@ -4216,6 +4219,8 @@ bool VkBackend::DrawGeometry(VkCommandBuffer cb, const Assembled& a) {
     if (a.index_count) {
         vkCmdBindIndexBuffer(cb, f.upload, ib_off, a.index16 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32);
         vkCmdDrawIndexed(cb, a.index_count, 1, 0, a.base_vertex, 0);
+    } else if (a.topology == Topology::Sprites) {
+        vkCmdDraw(cb, 6, a.draw_count, 0, 0);  // a square per point (SpriteHlsl)
     } else {
         vkCmdDraw(cb, a.draw_count, 1, 0, 0);
     }

@@ -566,6 +566,7 @@ void EnsureProgramHash(const State& s) {
 
 // vertex shader cache key salts
 constexpr uint64_t kDeclarationSalt = 0x10000;    // fixed function seed, above the 16 bit register mask
+constexpr uint64_t kSpriteSalt = 0x5B7E0000;        // the SpriteHlsl variant, for point sprites
 constexpr uint64_t kPretransformedSalt = 0x5A5A;  // screen space fixed function vertices, apart from untransformed
 constexpr uint64_t kQuadSalt = 0xC3C30000;        // the QuadHlsl variant, apart from the plain shader
 
@@ -575,12 +576,15 @@ uint64_t VertexKey(const State& s, const Assembled& a, const ShaderChoice& sh) {
     if (!sh.prog && a.pretransformed) vkey ^= kPretransformedSalt;
     if (sh.quad) vkey ^= kQuadSalt;
     if (!sh.prog) vkey = Hash(&sh.fk, sizeof(sh.fk), vkey);
+    if (a.topology == Topology::Sprites) vkey ^= kSpriteSalt;
     return vkey;
 }
 
 std::string VertexHlsl(const State& s, const Assembled& a, const ShaderChoice& sh) {
-    if (sh.prog) return VertexProgramHlsl(s.vs->program, a.regs, a.decode);
-    return FixedVertexHlsl(a.regs, a.pretransformed, a.decode, sh.fk);
+    std::string src = sh.prog ? VertexProgramHlsl(s.vs->program, a.regs, a.decode)
+                              : FixedVertexHlsl(a.regs, a.pretransformed, a.decode, sh.fk);
+    if (a.topology == Topology::Sprites) src = SpriteHlsl(std::move(src), sh.prog);
+    return src;
 }
 
 }  // namespace gpu

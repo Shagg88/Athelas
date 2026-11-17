@@ -18,7 +18,12 @@ static std::string reg_string(HKEY root, const char *key, const char *value)
 {
     char b[512];
     DWORD n = sizeof b;
-    if (RegGetValueA(root, key, value, RRF_RT_REG_SZ, NULL, b, &n) != ERROR_SUCCESS) return "";
+    // the 64-bit view: the launcher is 32-bit, and the 32-bit copy of CurrentVersion keeps an old edition after
+    // Windows is upgraded (Pro reported as Enterprise, #89); on 32-bit Windows the flag is ignored
+    if (RegGetValueA(root, key, value, RRF_RT_REG_SZ | RRF_SUBKEY_WOW6464KEY, NULL, b, &n) != ERROR_SUCCESS) {
+        n = sizeof b;
+        if (RegGetValueA(root, key, value, RRF_RT_REG_SZ, NULL, b, &n) != ERROR_SUCCESS) return "";
+    }
     return b;
 }
 

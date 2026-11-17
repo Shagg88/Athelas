@@ -149,6 +149,9 @@ inline std::atomic<float> g_orbit_p11{1.0f}, g_orbit_p22{1.0f}, g_orbit_a{0.0f},
 inline bool g_draw_same_state = false;
 // set by a game: alpha to coverage for cut-outs (leaves, grass, fences) when anti-aliasing is on
 inline std::atomic<bool> g_alpha_edges{false};
+// point sprites (D3DRS_POINTSPRITEENABLE) drawn as textured squares, as the console does; off: one pixel per point, as
+// before. Set per game (GitHub #55: The Two Towers' map screen burns along its edges with them)
+inline std::atomic<bool> g_point_sprites{false};
 // set by a game: fixed function fog distances scaled by this (a longer draw distance), density divided by it
 inline std::atomic<float> g_fog_scale{1.0f};
 // ] : the colour look shown, from [graphics] colour_look at start, the key steps through them while playing

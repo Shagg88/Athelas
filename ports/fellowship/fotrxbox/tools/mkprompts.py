@@ -84,6 +84,11 @@ LIGHT = (236, 236, 240, 255)
 CROSS, CIRCLE, SQUARE, TRIANGLE = (102, 153, 255, 255), (238, 85, 85, 255), (221, 119, 204, 255), (68, 204, 170, 255)
 PICTURES = {
     # Xbox button the game shows -> (style, picture)
+    # today's Xbox controllers: the original's White and Black became the shoulder buttons LB and RB (the face
+    # buttons, triggers, START and BACK keep the game's own pictures)
+    'xbox': {
+        'WHITE': disc(DARK, word('LB')), 'BLACK': disc(DARK, word('RB')),
+    },
     'playstation': {
         'A': disc(DARK, shape('cross', CROSS)),
         'B': disc(DARK, shape('circle', CIRCLE)),

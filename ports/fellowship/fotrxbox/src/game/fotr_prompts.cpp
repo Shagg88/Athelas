@@ -170,7 +170,8 @@ void Shrink(const gpu::pack::Image& src, uint8_t* out) {
         }
 }
 
-// the eight pictures in the chosen style (have: each one made; one not made stays the game's); false for the Xbox's
+// the eight pictures in the chosen style (have: each one made; one not made stays the game's: in the Xbox style all but
+// White and Black)
 bool Pictures(uint8_t (*out)[kBytes], bool* have) {
     uint32_t style = g_button_pictures;
     if (style == 0) {
@@ -178,8 +179,9 @@ bool Pictures(uint8_t (*out)[kBytes], bool* have) {
         if (st.keyboard && st.keyboard_player == 1 && !input::Raw(0).connected) style = 4;
         else style = uint32_t(input::Style(0)) + 1;  // 1 xbox, 2 playstation, 3 nintendo
     }
-    if (style == 1) return false;
-    const char* name = style == 2 ? "playstation" : style == 3 ? "nintendo" : "keyboard";
+    // xbox: only White and Black are drawn (LB and RB, where today's controllers have them, #82); the rest stay the
+    // game's own Xbox pictures
+    const char* name = style == 1 ? "xbox" : style == 2 ? "playstation" : style == 3 ? "nintendo" : "keyboard";
     for (uint32_t i = 0; i < kCount; i++) {
         gpu::pack::Image img;
         bool got = false;
@@ -219,7 +221,6 @@ void PromptsFile(const char* name) {
 void PromptsFrame() {
     if (!g_loaded || g_done) return;
     g_done = true;
-    if (g_button_pictures == 1) return;
     uint32_t va = Find();
     if (!va) {
         LOGW("fotr: the game's button pictures weren't found in memory; they stay the Xbox ones");
