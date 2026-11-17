@@ -340,7 +340,19 @@ void tab_mods(App &a)
             auto more = scan_mods_dir(fallbackDir, rotkFixIni);
             for (auto &m : more) {
                 bool dup = false;
-                for (auto &ex : s_mods) if (!_stricmp(ex.id.c_str(), m.id.c_str())) { dup = true; break; }
+                for (auto &ex : s_mods) if (!_stricmp(ex.id.c_str(), m.id.c_str())) {
+                    // a mod that comes with Athelas is described as the launcher carries it: after an update of
+                    // Athelas the game folder has the previous one until Play brings it up to date (install_to),
+                    // and the tab shows the new version from the start. Enabled, the .ini and the .dll stay the
+                    // game folder's.
+                    if (!m.iniPath.empty() && !ex.iniPath.empty()) {
+                        ex.name = m.name; ex.description = m.description; ex.author = m.author;
+                        ex.version = m.version; ex.category = m.category; ex.hotkeys = m.hotkeys;
+                        ex.games = m.games; ex.supportsAll = m.supportsAll;
+                    }
+                    dup = true;
+                    break;
+                }
                 if (!dup) s_mods.push_back(m);
             }
         }
