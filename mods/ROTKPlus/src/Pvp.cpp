@@ -962,6 +962,130 @@ static void LogBones(const char* who, uint32_t c)
     });
 }
 
+// --- [PvP] HeavyUnblockable: what a parry cannot stop between players -------------------------------------------------
+// All nine parries (states 0x1F-0x27) ask 0x433A40 (EAX = the event, ESI = the hero, one word on the stack, called from
+// 0x433E43, 0x434023 ... 0x434D43, every 0x1E0 bytes) whether a hit is parried: 0 = not parried, and the hit then goes
+// on as any other (damage and reaction); otherwise the parry sound, 0x25A to the attacker (its recoil, 0x414E50), the
+// sparks "sparka" and the parry's reaction. The game already answers 0 for a hit without attacker and for the kinds the
+// hero's table (+0xD0 -> +0x474 + kind * 2) marks. With HeavyUnblockable=1 (the default), in a versus game and between
+// players only, it also answers 0 for a fierce attack (Triangle: states 0x0E, 0x0F, 0x10, 0x1D), the last move of a
+// combo (combo_1..combo_12, states 0x11-0x1C: Orc Slayer's glowing blow, not the X before it) and a shot from a full
+// charge (kind 0xE or 0xF, or let go from proj_hold, 0x37, to proj_fire, 0x38). Speed attacks, plain arrows and spears are parried as before.
+static bool  g_heavyUnblock = true;   // [PvP] HeavyUnblockable
+static DWORD g_chargedAt[4];          // when player N let go of a fully drawn shot (0 = no such shot in flight)
+static DWORD g_chargeFrom[4];         // when player N started drawing (proj_charge), for the log
+static int   g_shotState[4] = { -1, -1, -1, -1 };
+static int   g_parryLogged;
+
+static int StateOf(uint32_t c)
+{
+    int s = -1;
+    Guard([&] { s = ((int(__cdecl*)(const void*))0x42F570)((const void*)(uintptr_t)c); });
+    return s;
+}
+
+static const char* BlowName(int s)
+{
+    if (s >= 0x08 && s <= 0x0D) return "speed attack";
+    if (s == 0x0E || s == 0x0F || s == 0x10 || s == 0x1D) return "fierce attack";
+    if (s >= 0x11 && s <= 0x1C) return "combo's last move";
+    if (s >= 0x2D && s <= 0x30) return "devastating attack";
+    if (s == 0x1E) return "physical attack";
+    return "blow";
+}
+
+// every frame: a shot let go from proj_hold is a full charge (the next arrow of that player that reaches a parry)
+static void ShotFrame(DWORD now)
+{
+    if (!g_pvp || !g_heavyUnblock) return;
+    for (int i = 0; i < 4; ++i) {
+        const uint32_t p = g_players[i];
+        const int s = p ? StateOf(p) : -1;
+        const int was = g_shotState[i];
+        if (s == 0x35 && was != 0x35) g_chargeFrom[i] = now;
+        if (s == 0x38 && was != 0x38) {
+            const bool full = was == 0x37;
+            if (full) g_chargedAt[i] = now | 1;
+            else if (was == 0x35) g_chargedAt[i] = 0;   // a plain shot (not a state read that failed for a frame)
+            if (g_parryLogged < 300) {
+                ++g_parryLogged;
+                Log("pvp: player %d shoots after %s%s, drawn for %.2f s", i + 1, was == 0x37 ? "proj_hold" : was == 0x35 ?
+                    "proj_charge" : "another state", full ? " (a full charge: not parried)" : "",
+                    g_chargeFrom[i] ? (now - g_chargeFrom[i]) / 1000.0f : 0.0f);
+            }
+        }
+        if (g_chargedAt[i] && now - g_chargedAt[i] > 4000) g_chargedAt[i] = 0;
+        g_shotState[i] = s;
+    }
+}
+
+static bool __cdecl Unparryable(uint32_t ev, uint32_t hero) ASM_NAME(Unparryable);
+
+static bool __cdecl Unparryable(uint32_t ev, uint32_t hero)
+{
+    if (!g_pvp || !g_heavyUnblock || !InCoop() || !IsPlayer(hero)) return false;
+    bool r = false;
+    Guard([&] {
+        if (*(const int*)(ev + 8) != 0x259) return;
+        const uint32_t* d = *(const uint32_t* const*)(ev + 0xC);
+        if (!d || !d[0]) return;
+        const uint32_t a = d[0];
+        const int kind = (int)d[1], dmg = (int)d[2];
+        const bool log = g_parryLogged < 300;
+        if (IsPlayer(a)) {
+            if (a == hero || SameTeam(a, hero)) return;
+            const int s = StateOf(a);
+            // a shot: the hit comes from the shooter itself, still in proj_fire (log of 08/11/2026: a full charge is
+            // kind 0xE with 100 damage, then kind 0x18 with none; a plain arrow kind 0x10 with 25, then 0x18)
+            const int n = PlayerNo(a) - 1;
+            const bool fullShot = kind == 0xE || kind == 0xF ||
+                                  (s == 0x38 && n >= 0 && n < 4 && g_chargedAt[n] && GetTickCount() - g_chargedAt[n] < 1500);
+            r = s == 0x0E || s == 0x0F || s == 0x10 || s == 0x1D || (s >= 0x11 && s <= 0x1C) || fullShot;
+            if (log) {
+                ++g_parryLogged;
+                Log("pvp: player %d parries player %d's %s (state %X, kind %X, damage %d)%s", PlayerNo(hero), PlayerNo(a),
+                    fullShot ? "fully drawn shot" : BlowName(s), s, kind, dmg, r ? ": it can't be parried, the blow lands" : ": parried");
+            }
+            return;
+        }
+        const uint32_t o = ObjectOwner(a);
+        if (!IsPlayer(o) || o == hero || SameTeam(o, hero)) return;
+        const int n = PlayerNo(o) - 1;
+        r = n >= 0 && n < 4 && g_chargedAt[n] != 0;
+        if (r) g_chargedAt[n] = 0;   // one shot
+        if (log) {
+            ++g_parryLogged;
+            Log("pvp: player %d parries a shot of player %d (object type %X, kind %X, damage %d)%s", PlayerNo(hero), n + 1,
+                *(const int16_t*)(a + 0x78), kind, dmg, r ? ": a full charge, it can't be parried" : ": parried");
+        }
+    });
+    return r;
+}
+
+// called instead of 0x433A40 at its nine call sites: EAX (the event) and ESI (the hero) kept for it
+static NAKED void ParryStub()
+{
+    ASM_BEGIN
+    ASM(push eax)
+    ASM(push ecx)
+    ASM(push edx)
+    ASM(push esi)                    // the hero
+    ASM(push eax)                    // the event
+    ASM(call Unparryable)
+    ASM(add  esp, 8)
+    ASM(test al, al)
+    ASM(pop  edx)
+    ASM(pop  ecx)
+    ASM(pop  eax)
+    ASM(jnz  ParryStub_lands)
+    ASM(push 0x433A40)
+    ASM(ret)
+ASM(ParryStub_lands:)
+    ASM(xor  eax, eax)               // not parried
+    ASM(ret)
+    ASM_END
+}
+
 // --- [PvP] BossScene: the Black Gate's boss only for its scene ---------------------------------------------------------
 // Test of 05/11/2026 (BossBones=1): created during the loading, the boss plays the whole opening scene (Frodo's mithril,
 // its lines), then fights; killed, the level makes a second one at once (the gate's scene, 26 s without the HUD). With
@@ -1211,6 +1335,7 @@ void PvpFrame()
     }
     BossFrame(now, mode);
     BossSceneFrame(now, mode);
+    ShotFrame(now);
     if (g_pvp && InCoop() && mode == 0 && g_players[0] && g_players[1] &&
         (g_loaded || memcmp(g_startedFor, g_players, sizeof g_startedFor))) {
         g_loaded = false;
@@ -1306,6 +1431,7 @@ void PvpInstall()
     g_suddenOn = IniInt("PvP", "SuddenDeath", 1) != 0;
     g_bossBones = IniInt("Diag", "BossBones", 0) != 0;
     g_bossScene = IniInt("PvP", "BossScene", 1) != 0;
+    g_heavyUnblock = IniInt("PvP", "HeavyUnblockable", 1) != 0;
     if (g_bossBones) Log("pvp: [Diag] BossBones=1: the Black Gate's boss is created also with the heroes only, its bones in the log");
     // the "die" state of the players: log of the falls and deaths in the players' statistics also without the versus
     // mode (its own rules act only while a versus game is in progress)
@@ -1333,6 +1459,10 @@ void PvpInstall()
     ok &= PatchDword(0x454EF6, 0x4543A0, (uint32_t)(uintptr_t)&ProjFilter);
     ok &= PatchDword(0x454F25, 0x4543A0, (uint32_t)(uintptr_t)&ProjFilter);
     ok &= PatchDword(0x4534B5, 0x452FE0, (uint32_t)(uintptr_t)&SpearContact);
+    // the parries' question "is this hit parried?" ([PvP] HeavyUnblockable)
+    for (uintptr_t at = 0x433E43; at <= 0x434D43; at += 0x1E0) ok &= PatchCall(at, 0x433A40, (const void*)&ParryStub);
+    Log("pvp: fierce attacks, the last moves of the combos and fully drawn shots %s between players",
+        g_heavyUnblock ? "can't be parried" : "are parried as in the game ([PvP] HeavyUnblockable=0)");
     Log("pvp: versus mode patches (Versus entry in the main menu), %d lives each: %s", g_lives, ok ? "active" : "NOT completely installed");
     Log("pvp: timed games get up after %d s; after a versus game %s", respawn,
         g_skipScore ? "straight to the map (no score screens)" : "the game's score screens");
