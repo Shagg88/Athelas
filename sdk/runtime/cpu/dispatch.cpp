@@ -6,9 +6,11 @@
 #include <unordered_set>
 #include <vector>
 
+#include "app/app.h"
 #include "core/log.h"
 #include "cpu/x86_ops.h"
 #include "kernel/kernel.h"
+#include "kernel/lockstep.h"
 
 #ifdef _WIN32
 #include <intrin.h>  // __debugbreak
@@ -113,6 +115,11 @@ const char* ExportName(uint32_t ordinal) { return ordinal < 400 && g_exports[ord
 bool HasExport(uint32_t ordinal) { return ordinal < 400 && (g_exports[ordinal].fn || g_exports[ordinal].data); }
 
 uint32_t CallGuest(X86Context& ctx, uint32_t fn, const uint32_t* args, size_t count) {
+    // lockstep: guest code only ever runs on a participant; another thread doing so is named once (a source of drift)
+    if (kernel::ls::g_on && !kernel::ls::InTurn()) {
+        static std::atomic<int> told{0};
+        if (told++ < 5) LOGR("lockstep: guest code %08X called from a thread outside the scheduler", fn);
+    }
     // the D3D and DirectSound hooks call this several times a draw: no heap, only the registers put back are kept
     struct {
         uint32_t eax, ecx, edx, ebx, esi, edi, ebp;
@@ -184,7 +191,17 @@ void x86_priv(X86Context& ctx, uint32_t va, const char* what) {
 }
 
 // the guest measured time against a 733.33 MHz time stamp counter
+namespace kernel { void TimeTrace(int source); }
 uint64_t x86_rdtsc() {
+    kernel::TimeTrace(3);
+    // tests (lockstep research): XBE_FIXED_CLOCK=1 counts 733 MHz cycles of the game's steps plus 1000 a read on
+    // this thread, the same in every run that reads in the same order
+    if (kernel::ls::g_on) return uint64_t(kernel::ls::Now()) * 733 / 1000;  // lockstep: 733 MHz of virtual time
+    static const bool fixed = std::getenv("XBE_FIXED_CLOCK") != nullptr;
+    if (fixed) {
+        thread_local uint64_t reads = 0;
+        return app::g_game_steps.load() * 12216667ull + ++reads * 1000ull;
+    }
     using namespace std::chrono;
     static const auto start = steady_clock::now();
     // fast forward (kernel::SetSpeed): the time it added, as the guest's other clocks have it

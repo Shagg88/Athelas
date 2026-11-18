@@ -10,6 +10,7 @@
 #include <thread>
 
 #include "app/app.h"
+#include "xdk/netplay.h"
 #include "core/log.h"
 
 namespace app {
@@ -20,6 +21,8 @@ Settings& Get() {
 }
 void Load() {
     std::string error;
+    cfg::Read(SettingsFile().string(), SettingsList(), error);  // this PC's own: whether to host or join
+    netplay::Prepare();
     if (!cfg::Read(SettingsFile().string(), SettingsList(), error)) LOGE("settings: %s", error.c_str());
 }
 void Save() {}
@@ -111,7 +114,10 @@ const CommandLine& Args() {
     return c;
 }
 std::filesystem::path TextureDir() { return ExeDir() / "textures"; }
-std::filesystem::path SavesDir() { return ExeDir() / (Instance() > 1 ? "hdd" + std::to_string(Instance()) : std::string("hdd")); }
+std::filesystem::path SavesDir() {
+    if (auto p = netplay::SessionSaves(); !p.empty()) return p;
+    return ExeDir() / (Instance() > 1 ? "hdd" + std::to_string(Instance()) : std::string("hdd"));
+}
 std::filesystem::path ShaderCacheDir() { return ExeDir() / "shadercache"; }
 std::filesystem::path ScreenshotDir() { return ExeDir() / "Screenshots"; }
 const std::vector<std::string>& ScreenNames() {
@@ -120,7 +126,10 @@ const std::vector<std::string>& ScreenNames() {
 }
 void* ScreenMonitor() { return nullptr; }
 std::filesystem::path LogFolder() { return ExeDir() / "logs"; }
-std::filesystem::path SettingsFile() { return ExeDir() / "settings.toml"; }
+std::filesystem::path SettingsFile() {
+    if (auto p = netplay::SessionSettings(); !p.empty()) return p;
+    return ExeDir() / "settings.toml";
+}
 int ExitingWith() { return -1; }
 void Fail(int code, const std::wstring& message) {
     LOGE("Exit (%d): %s", code, std::string(message.begin(), message.end()).c_str());

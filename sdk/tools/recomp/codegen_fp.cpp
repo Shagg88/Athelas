@@ -163,23 +163,23 @@ bool CodeGen::EmitX87(uint32_t va, const ZydisDecodedInstruction& in, const Zydi
         case ZYDIS_MNEMONIC_FABS: emit("X87_ST(0) = std::fabs(X87_ST(0));"); return true;
         case ZYDIS_MNEMONIC_FSQRT: emit("X87_ST(0) = x87_prec(ctx, std::sqrt(X87_ST(0)));"); return true;
         // clearing C2 (0x400) reports the argument in range
-        case ZYDIS_MNEMONIC_FSIN: emit("X87_ST(0) = std::sin(X87_ST(0)); ctx.fsw &= ~0x400;"); return true;
-        case ZYDIS_MNEMONIC_FCOS: emit("X87_ST(0) = std::cos(X87_ST(0)); ctx.fsw &= ~0x400;"); return true;
+        case ZYDIS_MNEMONIC_FSIN: emit("X87_ST(0) = x86_sin(X87_ST(0)); ctx.fsw &= ~0x400;"); return true;
+        case ZYDIS_MNEMONIC_FCOS: emit("X87_ST(0) = x86_cos(X87_ST(0)); ctx.fsw &= ~0x400;"); return true;
         case ZYDIS_MNEMONIC_FSINCOS:
-            emit("double v = X87_ST(0); X87_ST(0) = std::sin(v); x87_push(ctx, std::cos(v)); ctx.fsw &= ~0x400;");
+            emit("double v = X87_ST(0); X87_ST(0) = x86_sin(v); x87_push(ctx, x86_cos(v)); ctx.fsw &= ~0x400;");
             return true;
         case ZYDIS_MNEMONIC_FPTAN:
-            emit("X87_ST(0) = std::tan(X87_ST(0)); x87_push(ctx, 1.0); ctx.fsw &= ~0x400;");
+            emit("X87_ST(0) = x86_tan(X87_ST(0)); x87_push(ctx, 1.0); ctx.fsw &= ~0x400;");
             return true;
         case ZYDIS_MNEMONIC_FPATAN:
-            emit("double v = std::atan2(X87_ST(1), X87_ST(0)); x87_pop(ctx); X87_ST(0) = v;");
+            emit("double v = x86_atan2(X87_ST(1), X87_ST(0)); x87_pop(ctx); X87_ST(0) = v;");
             return true;
-        case ZYDIS_MNEMONIC_F2XM1: emit("X87_ST(0) = std::exp2(X87_ST(0)) - 1.0;"); return true;
+        case ZYDIS_MNEMONIC_F2XM1: emit("X87_ST(0) = x86_exp2(X87_ST(0)) - 1.0;"); return true;
         case ZYDIS_MNEMONIC_FYL2X:
-            emit("double v = X87_ST(1) * std::log2(X87_ST(0)); x87_pop(ctx); X87_ST(0) = v;");
+            emit("double v = X87_ST(1) * x86_log2(X87_ST(0)); x87_pop(ctx); X87_ST(0) = v;");
             return true;
         case ZYDIS_MNEMONIC_FYL2XP1:
-            emit("double v = X87_ST(1) * std::log2(X87_ST(0) + 1.0); x87_pop(ctx); X87_ST(0) = v;");
+            emit("double v = X87_ST(1) * x86_log2(X87_ST(0) + 1.0); x87_pop(ctx); X87_ST(0) = v;");
             return true;
         case ZYDIS_MNEMONIC_FSCALE:
             emit("X87_ST(0) = std::ldexp(X87_ST(0), (int)std::trunc(X87_ST(1)));");

@@ -1,4 +1,5 @@
 #pragma once
+#include <atomic>
 #include <cstdint>
 #include <filesystem>
 #include <functional>
@@ -62,6 +63,9 @@ void Start();
 namespace app {
 // set by a game: called by the crash handler after the guest registers and stack, with the crashing guest thread's id,
 // to log what the game was doing there (The Third Age's file-read callbacks, GitHub #40)
+// tests: the game's own frame steps, counted by a port that knows them (ROTK: its frame step); XBE_PAD_STEPS=<n> times
+// a pad script in steps (n to a second) instead of seconds, so two runs press on the same step (lockstep research)
+inline std::atomic<uint64_t> g_game_steps{0};
 inline void (*g_crash_note)(uint32_t thread_id) = nullptr;
 
 
@@ -77,6 +81,10 @@ struct Settings {
     bool vsync = true;
     uint32_t aniso = 0;              // 0 as the game asks
     std::string join_ip;                   // co-op: a host past the LAN the system link search also asks
+    // online co-op (GameInfo::online_coop, xdk/netplay.h): "off", "host" (player 1) or "join" (player 2)
+    std::string online_coop = "off";
+    std::string online_address;            // join: player 1's address
+    uint32_t online_port = 47100;          // UDP
     bool widescreen = false;               // 16:9 picture on a wide display; false keeps the console's 4:3 with side bars
     bool texture_dump = false;             // write each texture as it is first seen to textures/dump (texture packs)
     bool texture_replace = true;           // draw texture pack files from textures/replace in place of the game's
@@ -201,6 +209,10 @@ bool FindGame(GameFiles& game);
 int Instance();  // Args().instance
 void* Window();  // HWND
 // boot splash: GameInfo::splash .bmp or .png beside the exe, up before the game window
+// online co-op's window while the PCs connect (app/netplay_window.cpp; xdk/netplay.h's g_status and g_cancelled)
+void NetplayStatus(const std::string& text);
+bool NetplayCancelled();
+bool NetplayWindowless();  // the online co-op window couldn't be made
 bool OpenSplash();        // window thread, at launch; false without one, and the game window opens at once
 void SplashFirstFrame();  // the game's first Swap: waits out the splash's minimum, then opens the game window
 void CloseSplash();       // window thread
@@ -244,6 +256,9 @@ struct GameInfo {
     void (*rumble)(int port, uint16_t& left, uint16_t& right);
     // [controls] in the settings (the overlay, --describe-settings): off for a game that remaps its buttons another way
     bool remap_controls = true;
+    // [network] online co-op settings (xdk/netplay.h): a game whose lockstep build has been checked to run the same on
+    // two PCs
+    bool online_coop = false;
     // [keyboard]: the game's own default keys where they differ from keys::kDefaults ({keys::kBlack, "Tab"})
     std::vector<std::pair<uint32_t, const char*>> key_defaults;
     // the in-game menu: the game's settings (options) that take effect while playing, "section.key"; the host's

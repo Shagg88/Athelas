@@ -24,6 +24,7 @@
 #include <backends/imgui_impl_win32.h>
 
 #include "app/app.h"
+#include "xdk/netplay.h"
 #include "core/diag.h"
 #include "core/input.h"
 #include "core/log.h"
@@ -288,6 +289,7 @@ std::filesystem::path TextureDir() { return Args().textures.empty() ? ExeDir() /
 std::filesystem::path LogFolder() { return Args().log.empty() ? ExeDir() / "logs" : Args().log.parent_path(); }
 
 std::filesystem::path SavesDir() {
+    if (auto p = netplay::SessionSaves(); !p.empty()) return p;  // online co-op, player 2: player 1's saves
     // started on its own: the saves Athelas keeps beside the exe (saves) when it has played the game, else hdd
     std::error_code ec;
     std::filesystem::path base = !Args().saves.empty()                              ? Args().saves
@@ -321,6 +323,7 @@ void Fail(int code, const std::wstring& message) {
         MessageBoxW(nullptr, message.c_str(), kGame.short_title, MB_ICONERROR | MB_TOPMOST | MB_SETFOREGROUND);
     }
     // as kernel::Shutdown: NVIDIA's Streamline crashes in its own clean-up at exit, so with it loaded no DLL clean-up
+    netplay::End();          // online co-op: as kernel::Shutdown
     g_exiting_with = code;   // only now (after the box): the renderer's teardown then doesn't wait for a thread the exit ends
     if (GetModuleHandleW(L"sl.interposer.dll")) TerminateProcess(GetCurrentProcess(), UINT(code));
     ExitProcess(UINT(code));
@@ -368,7 +371,7 @@ void Pace() {
     bool ff = g_ff_on.load() || (!Get().fast_forward_toggle && f9);
     uint32_t times = 1;
     if (!Paused()) {
-        if (ff) times = std::max(2u, std::min(8u, Get().fast_forward_speed));
+        if (ff && !netplay::Active()) times = std::max(2u, std::min(8u, Get().fast_forward_speed));  // not online
         // the game's own speed-up (its battles) when fast forward isn't faster
         times = std::max(times, g_game_speed.load());
     }
@@ -473,6 +476,9 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int) {
     if (app::Instance() > 1) log += "-" + std::to_string(app::Instance());
     if (!app::Args().log.empty()) log = app::Args().log.stem().string();
     logx::Init(app::LogDir().string(), log, relaunched);
+    netplay::g_status = app::NetplayStatus;  // online co-op: a small window while the PCs connect (in Load)
+    netplay::g_cancelled = app::NetplayCancelled;
+    netplay::g_windowless = app::NetplayWindowless;
     app::Load();
     if (app::kGame.init) app::kGame.init();
     if (relaunched && !logx::kVerbose) LOGR("Relaunched: %s", IMAGE_XBE);

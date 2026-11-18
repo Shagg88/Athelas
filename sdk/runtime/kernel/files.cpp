@@ -10,6 +10,7 @@
 #include "kernel/disc.h"
 #include "kernel/kernel.h"
 #include "kernel/exports.h"
+#include "kernel/lockstep.h"
 
 namespace fs = std::filesystem;
 
@@ -99,6 +100,9 @@ struct Link : Object {
 
 uint64_t ToFileTime(fs::file_time_type t) {
     using namespace std::chrono;
+    // lockstep (online co-op): player 2's copies of the saves were written at another time, and files written in the
+    // session at slightly different moments on each PC: one date for all (1 Jan 2004, the start of the game's clock)
+    if (ls::g_on) return 126596736000000000ull;
     auto sys = time_point_cast<nanoseconds>(t - fs::file_time_type::clock::now() + system_clock::now());
     return uint64_t(sys.time_since_epoch().count() / 100 + 116444736000000000ll);
 }
@@ -116,8 +120,12 @@ void FillNetworkInfo(uint32_t out, const fs::path& p) {
     FillNetworkInfo(out, ToFileTime(fs::last_write_time(p, ec)), dir ? 0 : fs::file_size(p, ec), dir);
 }
 
+// a disc's files carry the image's date: in lockstep the fixed one (ToFileTime), as one player may play from an image
+// and the other from an extracted folder, or images made at different times
+uint64_t DiscTime() { return ls::g_on ? 126596736000000000ull : MountedDisc()->Time(); }
+
 void FillNetworkInfo(uint32_t out, const Disc::Entry& e) {
-    FillNetworkInfo(out, MountedDisc()->Time(), e.dir ? 0 : e.size, e.dir);
+    FillNetworkInfo(out, DiscTime(), e.dir ? 0 : e.size, e.dir);
 }
 
 bool WildMatch(const std::string& pat, const std::string& s) {
@@ -601,7 +609,7 @@ KERNEL_EXPORT(211, NtQueryInformationFile, 5) {
     std::memset(HostPtr(out), 0, len);
     switch (cls) {
         case 4: {  // FileBasicInformation
-            uint64_t t = f->mem ? kMemoryFileTime : f->entry ? MountedDisc()->Time() : ToFileTime(fs::last_write_time(f->host, ec));
+            uint64_t t = f->mem ? kMemoryFileTime : f->entry ? DiscTime() : ToFileTime(fs::last_write_time(f->host, ec));
             for (int i = 0; i < 4; i++) W64(out + i * 8, t);
             W32(out + 0x20, f->dir ? 0x10 : 0x80);
             IoStatus(iosb, kSuccess, 0x28);

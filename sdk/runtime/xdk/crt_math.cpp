@@ -3,6 +3,7 @@
 // the host instead.
 #include <cmath>
 
+#include "cpu/det_math.h"
 #include "xdk/hle.h"
 
 // each function's body, shared by its stack entry (sin) and its register entry (_CIsin): x in st0, popped by its ret
@@ -24,32 +25,32 @@
 #define SYM_crt_log10 FFFFFD08
 #define SYM_crt_pow FFFFFD09
 #endif
-CRT_MATH(crt_sin, std::sin)
-CRT_MATH(crt_cos, std::cos)
-CRT_MATH(crt_tan, std::tan)
-CRT_MATH(crt_asin, std::asin)
-CRT_MATH(crt_acos, std::acos)
-CRT_MATH(crt_atan, std::atan)
+CRT_MATH(crt_sin, x86_sin)
+CRT_MATH(crt_cos, x86_cos)
+CRT_MATH(crt_tan, x86_tan)
+CRT_MATH(crt_asin, x86_asin)
+CRT_MATH(crt_acos, x86_acos)
+CRT_MATH(crt_atan, x86_atan)
 CRT_MATH(crt_sqrt, std::sqrt)
-CRT_MATH(crt_log, std::log)
-CRT_MATH(crt_log10, std::log10)
+CRT_MATH(crt_log, x86_log)
+CRT_MATH(crt_log10, x86_log10)
 #undef CRT_MATH
 
 // x and y above the return address, y in st0
 X86_FUNC(GUEST(crt_pow)) {
-    X87_ST(0) = std::pow(double(X86_MEMF64(ctx.esp + 4)), double(X86_MEMF64(ctx.esp + 12)));
+    X87_ST(0) = x86_pow(double(X86_MEMF64(ctx.esp + 4)), double(X86_MEMF64(ctx.esp + 12)));
     ctx.esp += 4;
 }
 
 // configs written before the bodies had names
 X86_FUNC(GUEST(_CIacos)) {
     (void)base;
-    X87_ST(0) = std::acos(X87_ST(0));
+    X87_ST(0) = x86_acos(X87_ST(0));
     ctx.esp += 4;
 }
 
 X86_FUNC(GUEST(_CIasin)) {
     (void)base;
-    X87_ST(0) = std::asin(X87_ST(0));
+    X87_ST(0) = x86_asin(X87_ST(0));
     ctx.esp += 4;
 }

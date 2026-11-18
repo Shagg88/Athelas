@@ -18,6 +18,7 @@
 #include <unistd.h>
 #endif
 #include "xbe/xbe.h"
+#include "xdk/netplay.h"
 
 namespace dispatch {
 void Init();
@@ -204,6 +205,7 @@ void Relaunch(const char* exe) {
 }
 
 void Shutdown(int code) {
+    netplay::End();  // online co-op: the partner told and the router's port given back (no atexit handlers here)
     TidyHardDisk();
     LOGR("Exit (%d)", code);
     logx::Flush();

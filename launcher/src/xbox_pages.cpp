@@ -360,8 +360,10 @@ static bool tt_hidden(const PortSetting &ps)
     if (ps.section == "system" && ps.key == "one_core") return !native_arm64();   // shown on Windows on ARM PCs only
     return (ps.section == "display" && ps.key == "fps_cap") || ps.section == "window" || ps.section == "keyboard" ||
            (ps.section == "discord" && ps.key == "app_id") ||
-           (ps.section == "network" && tp().kind != GK_ROTK_XBOX);   // system link co-op: The Return of the King's only
-                                                                     // (the others have no network play, so it does nothing)
+           // [network]: The Return of the King's online co-op (online_coop, online_address, online_port); the SDK's system
+           // link address (join_ip) does nothing in any of these games (none has network play of its own: no XNet in
+           // ROTK's image either), so it isn't shown
+           (ps.section == "network" && (ps.key == "join_ip" || tp().kind != GK_ROTK_XBOX));
 }
 
 // The tab a setting is shown on: its section's, except the frame rate, which is on Display as in ROTK's
@@ -673,6 +675,10 @@ static void tt_tab_graphics(App &a)
     if (const PortSetting *up = tt_setting(a, "graphics", "upscaler")) {
         mark("graphics", "upscaler");
         tt_setting_row(a, *up);
+        // the upscalers are Direct3D 12 only: on Vulkan the setting is kept but does nothing (a player's log, 17 Nov)
+        const PortSetting *api = tt_setting(a, "graphics", "renderer");
+        if (api && toml_unquote(tt_val(a, *api)) == "1" && toml_unquote(tt_val(a, *up)) != "0")
+            ImGui::TextColored(C_WARN, "%s", "Upscalers work with Direct3D 12 only: on Vulkan this setting is ignored.");
         if (const PortSetting *q = tt_setting(a, "graphics", "upscaler_quality")) {
             mark("graphics", "upscaler_quality");
             if (toml_unquote(tt_val(a, *up)) != "0") tt_setting_row(a, *q);

@@ -257,7 +257,8 @@ fixes for slowdowns and vanishing enemies at high frame rates.
   larger fonts and menu pictures are used (Graphics tab). Not required.
 - Needs Windows 10 or 11 (64-bit) and a Direct3D 12 graphics card.
 - Co-op: two players on one screen, with two controllers (or a controller
-  and the keyboard); it can also be played online (see PLAYING CO-OP ONLINE).
+  and the keyboard); it can also be played online, built in (experimental)
+  or by streaming (see PLAYING CO-OP ONLINE).
 - Keyboard and mouse, an in-game settings menu (F10), and pausing in the
   background: see KEYBOARD, MOUSE AND THE IN-GAME MENU below. With no
   controller plugged in, the game's hints show the keys.
@@ -456,9 +457,55 @@ the controls and takes effect the next time the game starts.
 PLAYING CO-OP ONLINE
 --------------------
 Both Return of the King games have two-player co-op on one PC (The Two Towers
-is single-player). A friend can join over the internet by streaming it: only
-your PC needs the game, and your friend's controller arrives as a second
-controller and plays player 2.
+is single-player). There are two ways to play it with a friend over the
+internet.
+
+Built in: The Return of the King (Xbox), experimental
+Both of you run the game on your own PC and only your controller presses go
+between you, so it looks and sounds as sharp as playing alone. You both need
+the same Athelas version and your own US copy of the game.
+1. Player 1 (the host): on the game's Network tab set "Online co-op" to
+   "Host (player 1)" and press Play. A small window shows an address, like
+   203.0.113.7:47100. Send it to your friend. If Windows asks whether the
+   game may use the network, allow it.
+2. Player 2: on the Network tab set "Online co-op" to "Join (player 2)",
+   paste the address into "Friend's address" and press Play.
+3. The games connect, player 1's save and settings are copied to player 2
+   (player 2's own saves aren't touched) and both games start together.
+4. Start co-op in the game as you would with two controllers on one PC. Each
+   of you plays with your own controller (or keyboard).
+Good to know:
+- Player 1's router is asked to open the port by itself. If the window says
+  it couldn't, forward UDP port 47100 to player 1's PC in the router's
+  settings (search the web for your router's model and "port forwarding").
+  If that isn't possible on either side, use streaming instead (below).
+- Playing in the same house? Player 2 types the home-network address the
+  window also shows (like 192.168.1.20:47100) instead.
+- Athelas must be in a folder you can write to (not Program Files): player 2's
+  copy of the save goes beside the game.
+- Both PCs must be the same kind: a Windows on ARM laptop can't join a regular
+  PC (or the other way round).
+- So both games stay the same, a few things follow player 1 or are left out
+  for the session: widescreen is 16:9 for both (other screen shapes get
+  bars), and the Journey page's virtues and Fellowship bonus are off. Each of
+  you keeps your own screen, sound, buttons, keyboard and mouse settings;
+  the Graphics tab follows player 1.
+- The progress you make is kept in player 1's save. Player 2 earns
+  achievements only for levels completed during the session.
+- Co-op plays at 30 or 60 frames a second (a higher setting plays at 60).
+- Player 2's copy of player 1's save goes in an "online-session" folder beside
+  the game; the one from the session before is moved into "DELETE ME" (you
+  can delete that folder whenever you like).
+- Opening the in-game menu (F10) pauses both games; the other player sees
+  "Waiting for player ...". Difficulty and cheat changes wait for the next
+  start.
+- If one of you leaves, the other carries on alone. If a message says the two
+  games no longer match, start the session again.
+- Set "Online co-op" back to "Off" afterwards to play as usual.
+
+Streaming: both Return of the King games
+Only your PC needs the game: your friend sees your screen with a short delay,
+and their controller arrives as a second controller and plays player 2.
 - Parsec (parsec.app): both of you install it. Your friend connects to your
   PC, and you allow their controller. Works with both games.
 - Steam Remote Play Together: in Steam, add Athelas.exe as a non-Steam game
@@ -466,9 +513,9 @@ controller and plays player 2.
   friend from the Steam overlay (Shift+Tab). Your friend needs Steam, not the
   game. Steam only promises this for its own games, so if the invite option
   doesn't appear, use Parsec.
-Then pick Co-op in the game's menu. Your friend sees your screen with a short
-delay. For the PC game, check that "Player 2 (co-op)" on the launcher's
-Controls tab is set to "Second controller" (the default).
+Then pick Co-op in the game's menu. For the PC game, check that "Player 2
+(co-op)" on the launcher's Controls tab is set to "Second controller" (the
+default).
 
 
 WINDOWS ON ARM (SNAPDRAGON LAPTOPS)

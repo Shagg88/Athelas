@@ -773,6 +773,7 @@ bool VkBackend::Init(uint32_t width, uint32_t height) {
     if (pack_lib_.Size()) LOGR("texture pack: %zu replacement files under %s", pack_lib_.Size(), app::TextureDir().string().c_str());
     if (app::Get().texture_dump) LOGR("texture pack: dumping textures to %s", (app::TextureDir() / "dump").string().c_str());
     LOGR("vulkan: ready");
+    if (app::Get().upscaler) LOGR("vulkan: the upscaler setting is ignored (FSR, DLSS and XeSS are Direct3D 12 only)");
     return true;
 }
 

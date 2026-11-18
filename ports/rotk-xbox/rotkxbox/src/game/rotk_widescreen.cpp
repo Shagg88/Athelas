@@ -33,6 +33,8 @@
 #include "gpu/texture.h"
 #include "gpu/vertex.h"
 #include "kernel/kernel.h"
+#include "kernel/lockstep.h"
+#include "cpu/det_math.h"
 #include "xdk/hle.h"
 
 namespace rotk {
@@ -326,10 +328,14 @@ X86_FUNC(sub_000A32F0) {
         float h;
         std::memcpy(&h, &saved, 4);
         if (h > 0.0f && h < 3.1f) {
-            float tv = std::tan(h * 0.5f) / (4.0f / 3.0f);  // the vertical half angle on the console's 4:3
-            float v = std::atan(tv);
+            // lockstep (online co-op): the angle lands in the game's memory, so the math built in (cpu/det_math.h), the
+            // same on every PC; otherwise the C library's, as before
+            auto tan_ = [](float x) { return ::kernel::ls::g_on ? float(x86_tan(double(x))) : std::tan(x); };
+            auto atan_ = [](float x) { return ::kernel::ls::g_on ? float(x86_atan(double(x))) : std::atan(x); };
+            float tv = tan_(h * 0.5f) / (4.0f / 3.0f);  // the vertical half angle on the console's 4:3
+            float v = atan_(tv);
             if (pct != 100 && 2.0f * v > 25.0f / kDeg) v = std::fmin(v * float(pct) / 100.0f, 75.0f / kDeg);
-            float nh = 2.0f * std::atan(std::tan(v) * (wide ? app::FrameAspect() : 4.0f / 3.0f));
+            float nh = 2.0f * atan_(tan_(v) * (wide ? app::FrameAspect() : 4.0f / 3.0f));
             uint32_t u;
             std::memcpy(&u, &nh, 4);
             ::kernel::W32(at, u);

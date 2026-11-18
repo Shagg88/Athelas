@@ -26,6 +26,8 @@ namespace gpu::vk {
 bool Probe();  // gpu/vk_probe.cpp
 }
 #include "kernel/kernel.h"
+#include "kernel/lockstep.h"
+#include "xdk/netplay.h"
 #include "xdk/d3d8.h"
 #include "xdk/hle.h"
 #include "xdk/layout.h"
@@ -248,8 +250,12 @@ bool g_walking = false;  // inside Walk: the commands it draws are its own
 struct DeviceLock {
     std::lock_guard<std::recursive_mutex> lock{g_lock};
     DeviceLock() {
+        ++kernel::ls::t_keep_turn;  // lockstep: no turn passed while it's held (lockstep.h)
         if (!g_walking) Walk(Dev(kDevPush));
     }
+    ~DeviceLock() { --kernel::ls::t_keep_turn; }
+    DeviceLock(const DeviceLock&) = delete;
+    DeviceLock& operator=(const DeviceLock&) = delete;
 };
 
 // the device's transforms as last taken (D3DTS 0-9: view, projection, texture 0-3, world 0-3), raw
@@ -356,11 +362,18 @@ void VerticalBlank(X86Context& ctx) {
     using clock = std::chrono::steady_clock;
     uint32_t info = mem::AllocSystem(12), shown = 0;
     auto next = clock::now();
+    int64_t next_v = kernel::ls::Now();  // lockstep: the next blank on virtual time (60 Hz exactly)
+    const bool lockstep = kernel::ls::InTurn();
     for (;;) {
-        // fast forward (kernel::Speed): the blanks come that much sooner, so a game paced by them runs faster too
-        next = std::max(next + std::chrono::microseconds(16667 / std::max(1u, kernel::Speed())), clock::now());
-        std::this_thread::sleep_until(next);
-        if (kernel::Frozen()) continue;  // paused: no blanks, as no time passes for the game
+        if (lockstep) {
+            next_v += 16666667;
+            kernel::ls::Block([] { return false; }, next_v);
+        } else {
+            // fast forward (kernel::Speed): the blanks come that much sooner, so a game paced by them runs faster too
+            next = std::max(next + std::chrono::microseconds(16667 / std::max(1u, kernel::Speed())), clock::now());
+            std::this_thread::sleep_until(next);
+            if (kernel::Frozen()) continue;  // paused: no blanks, as no time passes for the game
+        }
         // counted for WaitVBlank first: a frame end that saw this blank's count and then waits must wait for the
         // next one, not wake on this one (review, 1.7.7)
         {
@@ -381,7 +394,10 @@ void VerticalBlank(X86Context& ctx) {
         shown = swaps;
         g_blank_cv.notify_all();
         // the title clears the event in its own memory before a wait, which the host object does not see
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        if (lockstep)
+            kernel::ls::Block([] { return false; }, next_v + 1000000);
+        else
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         ResetEvent(*event);
     }
 }
@@ -391,6 +407,18 @@ void VerticalBlank(X86Context& ctx) {
 gpu::State& State() { return g_state; }
 
 void WaitVBlank(int max_ms) {
+    if (kernel::ls::InTurn()) {
+        uint64_t seen;
+        {
+            std::lock_guard<std::mutex> l(g_blank_mutex);
+            seen = g_blank_seq;
+        }
+        kernel::ls::Block([&] {
+            std::lock_guard<std::mutex> l(g_blank_mutex);
+            return g_blank_seq != seen;
+        }, kernel::ls::Now() + int64_t(max_ms) * 1000000);
+        return;
+    }
     std::unique_lock<std::mutex> l(g_blank_mutex);
     uint64_t seen = g_blank_seq;
     g_blank_cv.wait_for(l, std::chrono::milliseconds(max_ms), [&] { return g_blank_seq != seen; });
@@ -486,8 +514,12 @@ HLE_STDCALL(Direct3D_CreateDevice, 6) {
             if (ok) app::g_vulkan_fallback = true;   // the in-game corner note says so (review)
         }
         if (!ok) {
+#ifdef _WIN32
             HMODULE nt = GetModuleHandleA("ntdll.dll");
             bool wine = nt && GetProcAddress(nt, "wine_get_version");
+#else
+            bool wine = false;  // (the Linux test build)
+#endif
             // under Wine the driver isn't the problem: the Direct3D 12 translation layer is (review)
             app::Fail(app::kExitNoD3D12,
                       wine ? L"Neither Direct3D 12 nor Vulkan could start under Wine. On Linux and the Steam Deck, use "
@@ -560,7 +592,14 @@ HLE_STDCALL(D3D_BlockOnResource, 1) {
             // (with the locked resource's size: a target long unused is read back only into a resource of its own
             // size - review: memory re-used for something smaller would get old pixels over its neighbours)
             gpu::TextureDesc td;
-            g_backend->Sync(data, gpu::Describe(res, td) ? gpu::TotalSize(td) : 0);
+            // lockstep (online co-op): what the graphics card drew differs between PCs (vendor, render scale), so it
+            // never goes into the game's memory, where it would make the two games differ; the GPU's own copy is
+            // still what later draws use
+            if (kernel::ls::g_on) {
+                LOG_FIRST_R(4, "d3d: read-back of %08X skipped in lockstep (GPU output differs between PCs)", data);
+            } else {
+                g_backend->Sync(data, gpu::Describe(res, td) ? gpu::TotalSize(td) : 0);
+            }
         } else {
             g_backend->WaitResource(res);
         }
@@ -572,7 +611,8 @@ HLE_STDCALL(D3D_BlockOnResource, 1) {
 // title may read what the GPU drew
 HLE_WRAP(Lock2DSurface, 6) {
     uint32_t res = a[0];
-    if ((a[5] & 0x20) && res && g_backend) {  // D3DLOCK_NOOVERWRITE
+    if ((a[5] & 0x20) && res && g_backend && kernel::ls::g_on) LOG_FIRST_R(4, "d3d: late read-back skipped in lockstep");
+    if ((a[5] & 0x20) && res && g_backend && !kernel::ls::g_on) {  // D3DLOCK_NOOVERWRITE (none in lockstep: above)
         DeviceLock lock;
         g_backend->SyncLate(mem::VirtualFromPhysical(R32(res + 4)));
     }
@@ -608,6 +648,11 @@ HLE_STDCALL(D3DDevice_InsertFence, 0) {
 }
 HLE_STDCALL(D3DDevice_IsFencePending, 1) {
     DeviceLock lock;
+    if (kernel::ls::g_on) {
+        // lockstep: the answer can't depend on how far the GPU has got, so it is always "done" (after waiting for it)
+        if (g_backend) g_backend->WaitFence(a[0]);
+        return 0;
+    }
     return g_backend && g_backend->FencePending(a[0]) ? 1 : 0;
 }
 HLE_STDCALL(D3D_SetFence, 1) {
@@ -635,6 +680,10 @@ HLE_STDCALL(D3D_MakeRequestedSpace, 2) {
 }
 
 HLE_STDCALL(D3DDevice_BlockUntilVerticalBlank, 0) {
+    if (kernel::ls::InTurn()) {
+        kernel::ls::Block([] { return false; }, kernel::ls::Now() + 16000000);  // lockstep: 16 ms of virtual time
+        return 0;
+    }
     std::this_thread::sleep_for(std::chrono::milliseconds(16));
     return 0;
 }
@@ -648,7 +697,8 @@ HLE_STDCALL(D3DDevice_PersistDisplay, 0) {
     uint32_t front = g_buffers[0], size = R32(front + 0x10);
     uint32_t pitch = ((size >> 24 & 0xFF) + 1) * 64, height = (size >> 12 & 0xFFF) + 1, bytes = pitch * height;
     uint32_t data = mem::VirtualFromPhysical(R32(front + 4));
-    if (g_backend) g_backend->Sync(data, bytes);
+    if (g_backend && !kernel::ls::g_on) g_backend->Sync(data, bytes);  // lockstep: no GPU output into guest memory (above)
+    if (kernel::ls::g_on) LOG_FIRST_R(4, "d3d: PersistDisplay's read-back skipped in lockstep");
     kernel::SavePersistedDisplay(R32(front), R32(front + 0xC), size, HostPtr(data), bytes);
     LOGI("d3d: PersistDisplay, %u bytes", bytes);
     return 0;
@@ -719,6 +769,39 @@ namespace {
 std::atomic<uint32_t> g_presents{0};
 }  // namespace
 
+namespace {
+// lockstep (online co-op): the game's clock is virtual (kernel/lockstep.h) and moves only 20 us a safepoint while
+// threads run, so a frame that waits for nothing barely moved it: the sound mixer (10 ms of sound per 10 ms of game
+// time), vertical blanks and timers ran at about 1% speed (silent sessions; review, 18 Nov 2026). As on the console,
+// a picture takes at least one vertical blank (1/60 s) of the game's clock: the wait lets every other participant run
+// to then, and depends only on virtual time, so it is the same on both PCs (a game's own frame pacing, longer, comes on
+// top: ROTK's frame end, rotk_framerate.cpp). Then this PC sleeps until real time has caught up with the game's clock,
+// so the session runs at real speed whatever the rate of pictures (movies show 60 a second, gameplay 30); that sleep
+// is host-only and decides nothing the game sees. A PC too slow to keep up just runs behind (no catching up).
+void LockstepFramePace() {
+    kernel::ls::ResetFloatState();  // after the present: an overlay's hook ran on this thread
+    static int64_t last = -1;
+    constexpr int64_t kBlank = 1000000000LL / 60;
+    const int64_t now = kernel::ls::Now();
+    if (last >= 0 && now < last + kBlank) {
+        last += kBlank;
+        kernel::ls::Block([] { return false; }, last);
+    } else {
+        last = now;
+    }
+    using clock = std::chrono::steady_clock;
+    static clock::time_point real0 = clock::now();
+    static int64_t virt0 = kernel::ls::Now();
+    const int64_t ahead = (kernel::ls::Now() - virt0) - std::chrono::duration_cast<std::chrono::nanoseconds>(clock::now() - real0).count();
+    if (ahead > 0) {
+        std::this_thread::sleep_for(std::chrono::nanoseconds(std::min<int64_t>(ahead, 250000000)));
+    } else if (ahead < -250000000) {  // behind by more than a quarter second: start counting again from here
+        real0 = clock::now();
+        virt0 = kernel::ls::Now();
+    }
+}
+}  // namespace
+
 HLE_STDCALL(D3DDevice_Swap, 1) {
     kernel::Blocking told;  // the game told on its own thread, before and after (kernel::g_blocking)
     app::SplashFirstFrame();
@@ -736,6 +819,7 @@ HLE_STDCALL(D3DDevice_Swap, 1) {
     struct AfterSwap {
         ~AfterSwap() {
             app::Pace();
+            if (kernel::ls::g_on && kernel::ls::InTurn()) LockstepFramePace();  // after the device lock (above)
             if (gpu::Backend* b = g_backend.get()) b->GameFrame();
         }
     } after_swap;
@@ -757,6 +841,13 @@ HLE_STDCALL(D3DDevice_Swap, 1) {
         g_backend->PresentQueued(true);
         g_backend->Present(SurfaceOf(g_buffers[1]));
     }
+    // online co-op: this frame's input sent, the partner's for the next one in hand. After the present, so a wait for
+    // the partner shows this picture (again, with "Waiting for player 2..." over it), not the last one frozen
+    netplay::OnFrame([&] {
+        if (!g_backend) return;
+        g_backend->PresentQueued(false);
+        g_backend->Present(SurfaceOf(g_buffers[1]));
+    });
     // the in-game menu or a pause in the background: the game waits here, its last picture shown again with the
     // menu over it, until it may go on
     if (app::Paused() && g_backend) app::Hold([&] {
@@ -1308,7 +1399,9 @@ HLE_STDCALL(D3DDevice_GetVisibilityTestResult, 3) {
         DeviceLock lock;
         // a backend without queries: everything visible, as before tests were counted
         done = g_backend && g_backend->QueryResult(a[0], pixels);
-        if (!g_backend || !g_backend->Queries()) {
+        // lockstep (online co-op): the count and whether it's ready differ between GPUs: everything visible, at once,
+        // on every PC (ROTK, the one game with online co-op, uses no visibility tests)
+        if (!g_backend || !g_backend->Queries() || kernel::ls::g_on) {
             pixels = g_screen_pixels;
             done = true;
         }
@@ -1323,8 +1416,12 @@ HLE_STDCALL(D3DDevice_GetVisibilityTestResult, 3) {
 
 // every draw goes to the backend through here: whether the state is the draw before's (gpu::g_draw_same_state, for
 // D3D12's repeat path), on this thread; the threaded renderer works that out itself
+namespace d3d {
+void (*g_guest_draw)(const gpu::State& s) = nullptr;  // d3d8.h
+}  // namespace d3d
 uint64_t g_last_draw_gen = ~0ull;
 void BackendDraw(uint32_t prim, uint32_t start, uint32_t count, const uint8_t* indices) {
+    if (d3d::g_guest_draw) d3d::g_guest_draw(g_state);
     core::t_draw_thread = true;  // both ways: the threaded renderer sends only draw data while the count stands still
     if (RenderThread()) {
         g_backend->Draw(g_state, prim, start, count, indices);

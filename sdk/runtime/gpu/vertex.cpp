@@ -545,7 +545,9 @@ void SqueezeScreenX(const State& s, const int* regs, int nregs, float f, Assembl
 
 // an unindexed point list with point sprites on is drawn as squares (Topology::Sprites); indexed ones stay points
 static void Spritify(const State& s, Assembled& out) {
-    if (out.topology != Topology::Points || !s.rs[kRsPointSpriteEnable] || !g_point_sprites.load()) return;
+    // every point has its size on the console (xemu: gl_PointSize always), sprite or not; the sprite switch only
+    // gives texture stage 3 the square's coordinates (DrawConstants::sprite[1][3])
+    if (out.topology != Topology::Points || !g_point_sprites.load()) return;
     // the converted path lists its vertices through an index list: in order (0, 1, 2 ...) it is dropped
     if (out.index_count && out.index_src == out.indices.data() && out.index_count == out.vertex_count) {
         bool in_order = true;
@@ -558,11 +560,11 @@ static void Spritify(const State& s, Assembled& out) {
         }
     }
     if (out.index_count || !out.draw_count) {
-        LOG_FIRST(1, "gpu: an indexed point sprite draw drawn as points (one pixel each)");
+        LOG_FIRST(1, "gpu: an indexed point draw drawn as points (one pixel each)");
         return;
     }
     out.topology = Topology::Sprites;
-    LOG_FIRST(1, "gpu: point sprites drawn as squares");
+    LOG_FIRST(1, "gpu: points drawn as squares of their size (%s)", s.rs[kRsPointSpriteEnable] ? "sprites" : "not sprites");
 }
 
 bool Assemble(const State& s, uint32_t prim, uint32_t start, uint32_t count, const uint8_t* ip, Assembled& out) {

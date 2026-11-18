@@ -1016,7 +1016,7 @@ std::string SpriteHlsl(std::string s, bool program) {
         "        float2 sc = sprite_c[sprite_vid % 6];\n"
         "        float sz = clamp(" + size + ", sprite[0].y, sprite[0].z);\n"
         "        o.pos.xy += sc * sz / surf.xy * o.pos.w;\n"
-        "        o.tc3 = float4(sc.x * 0.5 + 0.5, 0.5 - sc.y * 0.5, 0, 1);\n"
+        "        if (sprite[1].w != 0) o.tc3 = float4(sc.x * 0.5 + 0.5, 0.5 - sc.y * 0.5, 0, 1);\n"
         "    }\n"
         "    return o;";
     Sub(s, "    return o;", code, true);

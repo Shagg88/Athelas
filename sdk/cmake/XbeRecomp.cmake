@@ -39,6 +39,13 @@ set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
 set(SDL_RENDER OFF CACHE BOOL "" FORCE)
 set(SDL_GPU OFF CACHE BOOL "" FORCE)
 set(SDL_CAMERA OFF CACHE BOOL "" FORCE)
+# miniupnpc (BSD), static: online co-op (xdk/netplay.cpp) asks the router to open the host's port (UPnP)
+set(UPNPC_BUILD_STATIC ON CACHE BOOL "" FORCE)
+set(UPNPC_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+set(UPNPC_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(UPNPC_BUILD_SAMPLE OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(miniupnpc GIT_REPOSITORY https://github.com/miniupnp/miniupnp.git GIT_TAG miniupnpc_2_3_3
+                     GIT_SHALLOW TRUE SOURCE_SUBDIR miniupnpc)
 FetchContent_Declare(SDL3 GIT_REPOSITORY https://github.com/libsdl-org/SDL.git GIT_TAG release-3.4.20 GIT_SHALLOW TRUE)
 # glslang, static, for the Vulkan backend's HLSL to SPIR-V at run time (runtime/gpu/spirv.cpp): its HLSL front end
 # alone, no optimizer (SPIRV-Tools), no tools or tests
@@ -64,11 +71,15 @@ FetchContent_Declare(SPIRV-Tools GIT_REPOSITORY https://github.com/KhronosGroup/
                      GIT_TAG ef96ed763b43b59b33b31b362f09a02b729fa1c9)
 FetchContent_MakeAvailable(SPIRV-Headers)
 set(SPIRV-Headers_SOURCE_DIR ${spirv-headers_SOURCE_DIR})
-FetchContent_MakeAvailable(zydis tomlplusplus imgui SDL3 SPIRV-Tools glslang)
+FetchContent_MakeAvailable(zydis tomlplusplus imgui SDL3 SPIRV-Tools glslang miniupnpc)
 # SPIRV-Tools always declares its DLL as well; only the static libraries are linked, so the DLL is not built
 if(TARGET SPIRV-Tools-shared)
     set_target_properties(SPIRV-Tools-shared PROPERTIES EXCLUDE_FROM_ALL TRUE)
 endif()
+
+# lockstep mode (online co-op research, kernel/lockstep.h): generated code counts its loops for the scheduler. Off in
+# every normal build (the count costs speed); XBE_LOCKSTEP=1 at run time still has to turn the mode on.
+option(XBE_LOCKSTEP "Build with lockstep safepoints (online co-op research)" OFF)
 
 # Cross-compiling (an ARM64 build on an x64 PC): the tools must run on this machine, so they come from a build
 # for it, XBE_HOST_TOOLS = the folder holding its xbe_recomp and xbe_symbols
@@ -168,6 +179,12 @@ function(add_xbe_image target xbe config partitions game_dir)
     target_include_directories(${target} SYSTEM PRIVATE ${imgui_SOURCE_DIR} ${XBE_SDK_DIR}/third_party/vulkan/include)
     target_compile_options(${target} PRIVATE -fno-strict-aliasing)
     target_compile_definitions(${target} PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS)
+    target_compile_definitions(${target} PRIVATE XBE_HAS_UPNP=1 MINIUPNP_STATICLIB)
+    target_include_directories(${target} PRIVATE ${miniupnpc_SOURCE_DIR}/miniupnpc/include)
+    if(XBE_LOCKSTEP)
+        target_compile_definitions(${target} PRIVATE XBE_LOCKSTEP=1)
+        message(STATUS "${target}: lockstep safepoints (XBE_LOCKSTEP)")
+    endif()
     if(XBE_VERSION)
         target_compile_definitions(${target} PRIVATE GAME_VERSION="${XBE_VERSION}")
     endif()
@@ -185,7 +202,7 @@ else()
 endif()
 target_link_libraries(${target} PRIVATE tomlplusplus::tomlplusplus $<LINK_ONLY:SDL3::SDL3-static>
         $<LINK_ONLY:glslang::glslang> $<LINK_ONLY:glslang::SPIRV> $<LINK_ONLY:glslang::glslang-default-resource-limits>
-        $<LINK_ONLY:SPIRV-Tools-opt> $<LINK_ONLY:SPIRV-Tools-static> d3d12 dxgi dxguid d3dcompiler ${xaudio} ole32 windowscodecs dbghelp winmm dwmapi ws2_32 ${extra})
+        $<LINK_ONLY:SPIRV-Tools-opt> $<LINK_ONLY:SPIRV-Tools-static> $<LINK_ONLY:libminiupnpc-static> iphlpapi d3d12 dxgi dxguid d3dcompiler ${xaudio} ole32 windowscodecs dbghelp winmm dwmapi ws2_32 ${extra})
     # lld keeps the recompiled weak functions overridable by the host ones
     target_link_options(${target} PRIVATE -fuse-ld=lld -g)
     # profile-guided optimisation (clang): XBE_PGO=GEN builds a measuring program (it writes <target>-<pid>.profraw,

@@ -29,6 +29,7 @@
 #include "core/log.h"
 #include "kernel/kernel.h"
 #include "kernel/memory.h"
+#include "xdk/netplay.h"
 
 namespace rotk {
 
@@ -76,17 +77,21 @@ void Check() {
     if (!mem::IsCommitted(kSlot) || !mem::IsCommitted(kSlot + 0x988 - 4)) return;
     uint32_t any = 0, all_heroes_all = kAllLevels;
     bool coop = false;
+    // online co-op, player 2: the save in memory is player 1's, so what it already holds isn't this player's progress;
+    // only levels completed during the session count (below, as they happen)
+    const bool guest = netplay::Active() && netplay::LocalPort() == 1;
     for (int h = 0; h < 9; h++) {
         uint32_t m = (Done(h, false) | Done(h, true)) & kAllLevels;
-        if (m) ach::Unlock(kHeroIds[h]);
+        if (m && !guest) ach::Unlock(kHeroIds[h]);
         if (Done(h, true) & kAllLevels) coop = true;
         any |= m;
         all_heroes_all &= m;
         float lv = HeroLevel(h);
-        if (lv >= 10.0f && lv < 100.0f) ach::Unlock("hero_level_10");
+        if (lv >= 10.0f && lv < 100.0f && !guest) ach::Unlock("hero_level_10");
     }
-    for (const Level& l : kLevels)
-        if (any & (1u << l.bit)) ach::Unlock(l.id);
+    if (!guest)
+        for (const Level& l : kLevels)
+            if (any & (1u << l.bit)) ach::Unlock(l.id);
     // records: a level completed is a new bit for some hero (alone or co-op) since the last look. A level replayed
     // with a hero who has already completed it sets no new bit, so it isn't recorded.
     {
@@ -107,12 +112,20 @@ void Check() {
             for (int h = 0; h < 9; h++)
                 for (int c = 0; c < 2; c++)
                     for (const Level& l : kLevels)
-                        if (fresh[h][c] & (1u << l.bit)) ach::LevelDone(l.id);
+                        if (fresh[h][c] & (1u << l.bit)) {
+                            ach::LevelDone(l.id);
+                            if (guest) {  // player 2: this level, its hero and co-op, completed now
+                                ach::Unlock(l.id);
+                                ach::Unlock(kHeroIds[h]);
+                                if (c) ach::Unlock("coop");
+                            }
+                        }
         seen = true;
         bool fate_all = true;
         for (const Level& l : kLevels) fate_all = fate_all && ach::FateDone(l.id);
         if (fate_all) ach::Unlock("fate_all");
     }
+    if (guest) return;
     if (coop) ach::Unlock("coop");
     if ((any & kAllLevels) == kAllLevels) ach::Unlock("every_level");
     if (all_heroes_all == kAllLevels) ach::Unlock("every_level_every_hero");

@@ -13,8 +13,10 @@
 #include <cstring>
 #include <vector>
 
+#include "cpu/det_math.h"
 #include "audio/audio.h"
 #include "audio/reverb.h"
+#include "kernel/lockstep.h"
 #include "xbe/xbe.h"
 #include "xdk/hle.h"
 #include "xdk/layout.h"
@@ -703,6 +705,7 @@ void Render(float* out, uint32_t frames) {
 
 int64_t NowMs() {
     using namespace std::chrono;
+    if (kernel::ls::g_on) return kernel::ls::Now() / 1000000;  // lockstep: virtual time
     return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
 }
 
@@ -713,15 +716,44 @@ void Run(X86Context& ctx, const std::vector<Done>& done) {
 void Start() {
     if (g_started) return;
     g_started = true;
-    audio::StartOutput(Render);
+    if (kernel::ls::g_on) {
+        // lockstep: the mix (packets completing, their events and callbacks) is done every 10 ms of virtual time by a
+        // participant; the sound device only plays what was mixed, from a queue (a late device hears silence, and
+        // nothing it does reaches the game)
+        static std::mutex q_lock;
+        static std::deque<float> q;
+        audio::StartOutput([](float* out, uint32_t frames) {
+            std::lock_guard<std::mutex> l(q_lock);
+            for (uint32_t i = 0; i < frames * 2; i++) {
+                out[i] = q.empty() ? 0.0f : q.front();
+                if (!q.empty()) q.pop_front();
+            }
+        });
+        StartHostThread("audio mixer", [](X86Context&) {
+            constexpr uint32_t kFrames = audio::kRate / 100;
+            std::vector<float> b(kFrames * 2);
+            int64_t next = kernel::ls::Now();
+            for (;;) {
+                next += 10000000;
+                kernel::ls::Block([] { return false; }, next);
+                Render(b.data(), kFrames);
+                std::lock_guard<std::mutex> l(q_lock);
+                q.insert(q.end(), b.begin(), b.end());
+                while (q.size() > audio::kRate / 2 * 2) q.pop_front();  // at most half a second behind
+            }
+        });
+    } else {
+        audio::StartOutput(Render);
+    }
     // for a title that never calls DirectSoundDoWork: its callbacks come from here instead
     StartHostThread("dsound", [](X86Context& ctx) {
         constexpr int64_t kPumpMs = 250;
         for (;;) {
             std::vector<Done> done;
+            if (kernel::ls::InTurn()) kernel::ls::Block([] { return false; }, kernel::ls::Now() + 50000000);
             {
                 std::unique_lock<std::recursive_mutex> lock(g_lock);
-                g_done_cv.wait_for(lock, std::chrono::milliseconds(50));
+                if (!kernel::ls::InTurn()) g_done_cv.wait_for(lock, std::chrono::milliseconds(50));
                 if (NowMs() - g_pumped < kPumpMs) continue;
                 done.assign(g_done.begin(), g_done.end());
                 g_done.clear();
@@ -1414,7 +1446,7 @@ STREAM(SetI3DL2Source, 3) { return 0; }
 // ---- XDK 4928 additions (The Two Towers). Arg counts from the 4928 code's ret imm16. ----
 // lPitch is in 1/4096 octave relative to 48 kHz (XAudioCalculatePitch's inverse)
 static uint32_t PitchToHz(uint32_t pitch) {
-    return uint32_t(std::lround(48000.0 * std::exp2(double(int32_t(pitch)) / 4096.0)));
+    return uint32_t(std::lround(48000.0 * x86_exp2(double(int32_t(pitch)) / 4096.0)));
 }
 // (this, time low, time high, flags): plays now, the start time is not reproduced
 BUFFER(PlayEx, 4) {

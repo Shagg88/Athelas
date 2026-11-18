@@ -15,6 +15,8 @@
 #include <toml++/toml.hpp>
 
 #include "app/app.h"
+#include "kernel/lockstep.h"
+#include "xdk/netplay.h"
 #include "core/log.h"
 
 namespace app {
@@ -37,10 +39,20 @@ Settings& Get() {
 }
 
 std::filesystem::path SettingsFile() {
+    if (auto p = netplay::SessionSettings(); !p.empty()) return p;  // online co-op, player 2: player 1's settings
     return Args().config.empty() ? ExeDir() / kGame.settings : Args().config;
 }
 
 void Load() {
+    // online co-op: this PC's own settings say whether to host or join; then the PCs connect and player 2 gets player
+    // 1's settings and saves, which are what is read below
+    static bool prepared = [] {
+        std::string e;
+        cfg::Read(SettingsFile().string(), SettingsList(), e);
+        netplay::Prepare();
+        return true;
+    }();
+    (void)prepared;
     std::filesystem::path file = SettingsFile();
     std::error_code ec;
     bool fresh = !std::filesystem::exists(file, ec);
@@ -153,6 +165,9 @@ bool Widescreen() {
     static std::atomic<bool> wide{true};
     const Settings& s = Get();
     if (!s.widescreen) return false;  // the console's 4:3, side bars on a wide display
+    // lockstep (online co-op): the game's camera and viewports are made from this, so it must be the same on both PCs:
+    // the shared setting alone, not this PC's screen (a 4:3 monitor gets the 16:9 picture with bars)
+    if (kernel::ls::g_on) return true;
     uint64_t k = uint64_t(s.width) << 32 | s.height;
     if (key.exchange(k) != k) {
         Mode m = Output();
@@ -167,6 +182,7 @@ bool g_vulkan_fallback = false;
 
 float FrameAspect() {
     if (!Widescreen()) return 4.0f / 3.0f;
+    if (kernel::ls::g_on) return 16.0f / 9.0f;  // the same on both PCs (Widescreen), bars on other screen shapes
     static std::atomic<uint64_t> key{~0ull};
     static std::atomic<float> aspect{16.0f / 9.0f};
     const Settings& s = Get();

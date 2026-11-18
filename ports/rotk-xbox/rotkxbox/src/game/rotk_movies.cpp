@@ -43,10 +43,8 @@ std::atomic<bool> g_skip_seen{false};  // the skipped movie's frames have been d
 namespace {
 constexpr uint32_t kMovieTable = 0x179F30, kMovieTableMax = 64;
 std::atomic<int64_t> g_movie_drawn{0};  // steady clock ms of the last movie frame
-int64_t NowMs() {
-    using namespace std::chrono;
-    return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
-}
+// the game's clock (pauses left out; virtual in lockstep mode, so the skip presses land on the same frames everywhere)
+int64_t NowMs() { return ::kernel::GuestNs() / 1000000; }
 }  // namespace
 
 void HarnessLevel();  // rotk_harness_level.cpp, test build only

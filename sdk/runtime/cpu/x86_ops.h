@@ -5,7 +5,11 @@
 #include <limits>
 #include <type_traits>
 
+#include "det_math.h"
 #include "x86_context.h"
+#ifdef XBE_LOCKSTEP
+#include "kernel/lockstep.h"
+#endif
 
 typedef uint16_t __attribute__((aligned(1), may_alias)) x86_u16u;
 typedef uint32_t __attribute__((aligned(1), may_alias)) x86_u32u;
@@ -42,7 +46,13 @@ typedef double __attribute__((aligned(1), may_alias)) x86_f64u;
 
 #define X86_SAVE_FLAGS() (ctx.cf = cf, ctx.zf = zf, ctx.sf = sf, ctx.of = of, ctx.pf = pf)
 #define X86_LOAD_FLAGS() uint32_t cf = ctx.cf, zf = ctx.zf, sf = ctx.sf, of = ctx.of, pf = ctx.pf
+// every backward jump: spin loops reread memory other threads write. Lockstep builds (XBE_LOCKSTEP) also count it
+// for the scheduler's safepoints (kernel/lockstep.h).
+#ifdef XBE_LOCKSTEP
+#define X86_BARRIER() do { __asm__ volatile("" ::: "memory"); kernel::ls::Backedge(); } while (0)
+#else
 #define X86_BARRIER() __asm__ volatile("" ::: "memory")
+#endif
 #define X86_PARITY(r) ((uint32_t)(__builtin_parity((uint32_t)(r)&0xFF) ^ 1))
 
 #define X87_ST(i) ctx.st[(ctx.top + (i)) & 7]

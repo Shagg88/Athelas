@@ -1089,6 +1089,16 @@ static void movie_fit_quad(IDirect3DDevice8 *dev, UINT start, UINT count)
     if (fit == MOVIE_FIT_STRETCH || !g_stream0 || g_stream0Stride < 8 || !g_modeW || !g_modeH) return;
     float W = (float)g_modeW, H = (float)g_modeH;
     if (W / H < 4.0f / 3.0f + 0.01f) return;
+    /* a blended frame is the game fading the last film frame out over the menu (after a trailer): drawn at the
+     * game's own size, full screen, as without ROTK Fix; fitted (and barred) it showed as a smaller ghost picture
+     * on top of the menu (GitHub #62, #93) */
+    DWORD blend = 0;
+    ((GetRS8_t)(*(void ***)dev)[51])(dev, D3DRS_ALPHABLENDENABLE, &blend);
+    if (blend) {
+        static int said;
+        if (!said) { said = 1; logf_("video: a film frame drawn blended (the fade to the menu): left full screen"); }
+        return;
+    }
     float sx = 1.0f, sy = 1.0f;
     if (fit == MOVIE_FIT_FILM) {
         sy = (W * 3.0f / 4.0f) / H;                           /* frame height grows to match the width */
@@ -1111,12 +1121,8 @@ static void movie_fit_quad(IDirect3DDevice8 *dev, UINT start, UINT count)
         xy[1] = cy + (xy[1] - cy) * sy;
     }
     ((VBUnlock_t)vt[12])(g_stream0);
-    DWORD blend = 0;
-    ((GetRS8_t)(*(void ***)dev)[51])(dev, D3DRS_ALPHABLENDENABLE, &blend);
-    /* black side bars (the game does not clear outside its picture) - not while the frame is blended: the game
-     * fades the last film frame out over the menu after the credits, and bars there cut the menu's sides off for
-     * a moment (GitHub #62) */
-    if (sx < 0.999f && !blend) {
+    /* black side bars (the game does not clear outside its picture) */
+    if (sx < 0.999f) {
         LONG bar = (LONG)((W - W * sx) * 0.5f);
         D3DRECT rc[2] = { { 0, 0, bar, (LONG)H }, { (LONG)W - bar, 0, (LONG)W, (LONG)H } };
         ((Clear_t)(*(void ***)dev)[36])(dev, 2, rc, D3DCLEAR_TARGET, 0xFF000000, 1.0f, 0);
@@ -1388,6 +1394,17 @@ static int draw_full_width(UINT first, UINT count)
         static int loggedPiece;
         if (piece && !loggedPiece++) logf_("graphics: shading band drawn in pieces -> full width");
         return piece;
+    }
+    /* a glow far bigger than the screen around a HUD piece (the Perfect Mode ring's, 2.3-2.7 screen heights)
+     * reaches both edges too: it is centred on its piece, not on the screen, and stays with the narrowed HUD;
+     * drawn full width it sat off the ring (GitHub #57, #93: right without ROTK Fix) */
+    float cx = (mn + mx) * 0.5f, cy = (ymn + ymx) * 0.5f;
+    UINT gw = 0, gh = 0;
+    tex_size(g_tex0, &gw, &gh);   /* the glow is a small texture (16x16): bigger pictures that slide or shake keep full width */
+    if ((ymx - ymn) > 2.2f && gw <= 32 && gh <= 32 && (cx < -0.05f || cx > 0.05f || cy < -0.05f || cy > 0.05f)) {
+        static int loggedGlow;
+        if (!loggedGlow++) logf_("graphics: oversized 2D draw off the screen's centre (%.2f, %.2f) -> kept with the HUD", cx, cy);
+        return 0;
     }
     g_pictureDraw = 1;   /* cleared again below if it goes full width */
     UINT w, h;

@@ -1,9 +1,12 @@
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
 #include <map>
 #include <queue>
 
+#include "app/app.h"
 #include "kernel/kernel.h"
+#include "kernel/lockstep.h"
 
 namespace kernel {
 
@@ -174,6 +177,10 @@ static void Consume(Object& o, uint32_t me) {
 
 int64_t Now100ns() {
     using namespace std::chrono;
+    // lockstep, or the frozen clock test: 1 Jan 2004 plus the guest's time, the same on every PC
+    static const bool fixed = std::getenv("XBE_FIXED_CLOCK") != nullptr;
+    if (ls::g_on) return 126596736000000000ll + ls::Now() / 100;
+    if (fixed) return 126596736000000000ll + int64_t(app::g_game_steps.load()) * 166667;
     // 1601 to 1970 in 100 ns units
     auto t = duration_cast<nanoseconds>(system_clock::now().time_since_epoch()).count();
     return t / 100 + 116444736000000000ll;
@@ -194,6 +201,41 @@ static uint32_t WaitFor(const std::vector<ObjectRef>& objs, bool wait_all, int64
     uint32_t me = Me();
     bool infinite = timeout == INT64_MAX;
     int64_t deadline = infinite ? 0 : ToDeadline(timeout);
+    if (ls::InTurn()) {
+        // lockstep: checked each time the turn comes round, timed out on virtual time
+        uint32_t result = kTimeout;
+        bool apc = false;
+        bool got = ls::Block([&] {
+            std::lock_guard<std::mutex> lock(g_dispatch);
+            if (wait_all) {
+                if (std::all_of(objs.begin(), objs.end(), [&](const ObjectRef& o) { return o && Satisfied(*o, me); })) {
+                    for (auto& o : objs) Consume(*o, me);
+                    result = kWait0;
+                    return true;
+                }
+            } else {
+                for (size_t i = 0; i < objs.size(); i++)
+                    if (objs[i] && Satisfied(*objs[i], me)) {
+                        Consume(*objs[i], me);
+                        result = kWait0 + uint32_t(i);
+                        return true;
+                    }
+            }
+            if (alertable && self) {
+                std::lock_guard<std::mutex> al(self->apc_lock);
+                if (!self->apcs.empty()) {
+                    apc = true;
+                    return true;
+                }
+            }
+            return false;
+        }, infinite ? INT64_MAX : deadline);
+        if (got && apc) {
+            RunApcs(*self);
+            return kUserApc;
+        }
+        return got ? result : kTimeout;
+    }
     std::unique_lock<std::mutex> lock(g_dispatch);
     for (;;) {
         if (wait_all) {
@@ -330,6 +372,13 @@ bool g_dpc_thread = false;
 void RunDpcs(X86Context& ctx) {
     for (;;) {
         std::array<uint32_t, 3> d;
+        if (ls::InTurn()) {
+            // lockstep: queued DPCs run when this participant's turn comes
+            ls::Block([] {
+                std::lock_guard<std::mutex> lock(g_dpc_lock);
+                return !g_dpcs.empty();
+            });
+        }
         {
             std::unique_lock<std::mutex> lock(g_dpc_lock);
             g_dpc_cv.wait(lock, [] { return !g_dpcs.empty(); });
@@ -371,6 +420,26 @@ void QueueDpc(uint32_t dpc, uint32_t arg1, uint32_t arg2) {
     }
 }
 
+// a timer's time has come (g_timer_lock held): signalled, its DPC queued, its APC queued, armed again if periodic
+static void Fire(TimerEntry e) {
+    auto it = g_timer_seq.find(e.timer.get());
+    if (it == g_timer_seq.end() || it->second != e.seq) return;
+    {
+        std::lock_guard<std::mutex> dl(g_dispatch);
+        SetSignal(*e.timer, 1);
+        g_cv.notify_all();
+    }
+    if (e.dpc) QueueDpc(e.dpc, uint32_t(Now100ns()), uint32_t(Now100ns() >> 32));
+    if (auto t = e.apc_thread.lock(); t && e.apc_routine)
+        QueueApc(*t, e.apc_routine, e.apc_context, uint32_t(Now100ns()), uint32_t(Now100ns() >> 32));
+    if (e.period_ms > 0) {
+        e.deadline += int64_t(e.period_ms) * 1000000;
+        g_timers.push(e);
+    } else {
+        g_timer_seq.erase(e.timer.get());
+    }
+}
+
 static void TimerLoop() {
     using namespace std::chrono;
     std::unique_lock<std::mutex> lock(g_timer_lock);
@@ -388,23 +457,25 @@ static void TimerLoop() {
             continue;
         }
         g_timers.pop();
-        auto it = g_timer_seq.find(e.timer.get());
-        if (it == g_timer_seq.end() || it->second != e.seq) continue;
-        {
-            std::lock_guard<std::mutex> dl(g_dispatch);
-            SetSignal(*e.timer, 1);
-            g_cv.notify_all();
-        }
-        if (e.dpc) QueueDpc(e.dpc, uint32_t(Now100ns()), uint32_t(Now100ns() >> 32));
-        if (auto t = e.apc_thread.lock(); t && e.apc_routine)
-            QueueApc(*t, e.apc_routine, e.apc_context, uint32_t(Now100ns()), uint32_t(Now100ns() >> 32));
-        if (e.period_ms > 0) {
-            e.deadline += int64_t(e.period_ms) * 1000000;
-            g_timers.push(e);
-        } else {
-            g_timer_seq.erase(e.timer.get());
-        }
+        Fire(e);
     }
+}
+
+// lockstep: no timer thread; the timers due fire as virtual time passes them, with the turn held
+static void LockstepTimers() {
+    ls::OnTime([](int64_t now) {
+        std::lock_guard<std::mutex> lock(g_timer_lock);
+        while (!g_timers.empty() && g_timers.top().deadline <= now) {
+            TimerEntry e = g_timers.top();
+            g_timers.pop();
+            Fire(e);
+        }
+    });
+    ls::OnDeadline([] {
+        std::lock_guard<std::mutex> lock(g_timer_lock);
+        // the earliest timer still armed (stale entries of re-armed timers only make the jump early: harmless)
+        return g_timers.empty() ? INT64_MAX : g_timers.top().deadline;
+    });
 }
 
 void SetTimer(ObjectRef timer, int64_t due, int32_t period_ms, uint32_t dpc, std::shared_ptr<Thread> apc_thread,
@@ -412,7 +483,10 @@ void SetTimer(ObjectRef timer, int64_t due, int32_t period_ms, uint32_t dpc, std
     std::lock_guard<std::mutex> lock(g_timer_lock);
     if (!g_timer_thread) {
         g_timer_thread = true;
-        std::thread(TimerLoop).detach();
+        if (ls::g_on)
+            LockstepTimers();
+        else
+            std::thread(TimerLoop).detach();
     }
     {
         std::lock_guard<std::mutex> dl(g_dispatch);

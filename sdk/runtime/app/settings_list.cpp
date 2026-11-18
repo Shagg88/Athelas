@@ -164,6 +164,21 @@ std::vector<cfg::Desc> SettingsList() {
          "Also looks for a co-op host at this address, past the local network. Empty searches the local network only.",
          nullptr, nullptr, &s.join_ip, 0, 0, {}, "join_ip"},
     };
+    if (kGame.online_coop) {
+        l.push_back({"network", "online_coop", Type::Choice, "Online co-op",
+                     "Play co-op with a friend over the internet. Host: you are player 1 and your friend joins you; your "
+                     "save and settings are used for both. Join: you are player 2 in your friend's game. Off: as usual.",
+                     nullptr, nullptr, &s.online_coop, 0, 0, {"off", "host", "join"}, nullptr, nullptr,
+                     {"Off", "Host (player 1)", "Join (player 2)"}});
+        l.push_back({"network", "online_address", Type::String, "Friend's address",
+                     "Joining: the address player 1's game showed when it started (their internet address). Not needed "
+                     "to host.",
+                     nullptr, nullptr, &s.online_address});
+        l.push_back({"network", "online_port", Type::Int, "Online co-op port",
+                     "The UDP port both games use. The host's router is asked to open it; if it can't, forward it by "
+                     "hand. Both players must use the same one.",
+                     nullptr, &s.online_port, nullptr, 1024, 65535});
+    }
     // [controls]: which controller button presses each Xbox button, named by what the game does with it
     static const char* const kKeys[8] = {"a", "b", "x", "y", "black", "white", "left_trigger", "right_trigger"};
     static const char* const kXbox[8] = {"Xbox A", "Xbox B", "Xbox X", "Xbox Y", "Xbox Black", "Xbox White",

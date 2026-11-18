@@ -7,10 +7,12 @@
 #include <cstring>
 #include <ctime>
 #include <mutex>
+#include <thread>
 
 #include "app/app.h"
 #include "kernel/crypto.h"
 #include "kernel/exports.h"
+#include "kernel/lockstep.h"
 #include "xbe/xbe.h"
 
 namespace kernel {
@@ -84,6 +86,11 @@ std::atomic<int64_t> g_frozen_at{0}, g_frozen_total{0};
 
 }  // namespace
 
+bool AtDispatchLevel() {
+    Thread* t = Current();
+    return t && G<uint8_t>(t->kpcr + 0x24) >= 2;
+}
+
 namespace {
 // the speed since a moment: the time added before it, and how fast it has run since. Each change takes the next of a
 // ring of these; the fields are atomics (no data race) and a reader checks the index again after reading them, so it
@@ -150,6 +157,7 @@ void SetSpeed(uint32_t times) {
 }
 
 int64_t GuestNs() {
+    if (ls::g_on) return ls::Now();  // lockstep: virtual time (kernel/lockstep.h)
     int64_t at = g_frozen_at.load();
     // frozen: the time stands where it was at the freeze, extra time included
     int64_t v = at ? at - g_frozen_total.load() + g_frozen_extra.load()
@@ -207,6 +215,15 @@ void InitKernelData() {
     G<uint8_t>(DataAddress(89)) = 1;
     W32(DataAddress(157), 10000);  // 1 ms in 100 ns units
     // the start of the clock
+    if (ls::g_on) {
+        // lockstep: written as virtual time moves on, with the turn held
+        ls::OnTime([](int64_t now) {
+            W32(g_tick_count_va, uint32_t(now / 1000000));
+            PutSystemTime(DataAddress(120), InterruptTime());
+            PutSystemTime(DataAddress(154), uint64_t(Now100ns()));
+        });
+        return;
+    }
     std::thread([] {
         int64_t start = GuestNs();
         for (;;) {
@@ -304,7 +321,8 @@ std::atomic<bool> g_dispatch_broken{false};
 thread_local bool t_dispatch = false;
 void SetIrql(uint8_t to) {
     const uint8_t from = Irql();
-    if (g_dispatch_lock) {
+    // lockstep: one participant runs at a time already, and it keeps the turn while at DISPATCH_LEVEL (AtDispatchLevel)
+    if (g_dispatch_lock && !ls::g_on) {
         if (from < 2 && to >= 2 && !t_dispatch && !g_dispatch_broken.load(std::memory_order_relaxed)) {
             if (g_dispatch.try_lock_for(std::chrono::seconds(2))) {
                 t_dispatch = true;
@@ -371,13 +389,34 @@ KERNEL_EXPORT(130, KeRaiseIrqlToSynchLevel, 0) {
 KERNEL_EXPORT(103, KeGetCurrentIrql, 0) { return Irql(); }
 KERNEL_EXPORT(121, KeIsExecutingDpc, 0) { return 0; }
 
+// tests (lockstep research): XBE_TIME_TRACE=1 logs the first time each host thread reads each of the game's clocks
+void TimeTrace(int source) {
+    static const bool on = std::getenv("XBE_TIME_TRACE") != nullptr;
+    if (!on) return;
+    static const char* const kNames[] = {"KeQueryInterruptTime", "KeQueryPerformanceCounter", "KeQuerySystemTime", "rdtsc"};
+    thread_local uint32_t seen = 0;
+    if (seen & (1u << source)) return;
+    seen |= 1u << source;
+    LOGR("time: thread %zu first reads %s", std::hash<std::thread::id>{}(std::this_thread::get_id()) & 0xFFFFF,
+         kNames[source]);
+}
+
 KERNEL_EXPORT(125, KeQueryInterruptTime, 0) {
+    TimeTrace(0);
     uint64_t t = InterruptTime();
     ctx.edx = uint32_t(t >> 32);
     return uint32_t(t);
 }
 
 KERNEL_EXPORT(128, KeQuerySystemTime, 1) {
+    TimeTrace(2);
+    // tests (lockstep research): XBE_FIXED_CLOCK=1 gives the date as 1 Jan 2004 plus the game's steps at 1/60 s, so
+    // two runs seed alike
+    static const bool fixed = std::getenv("XBE_FIXED_CLOCK") != nullptr;
+    if (fixed || ls::g_on) {
+        W64(a[0], uint64_t(Now100ns()));
+        return 0;
+    }
     W64(a[0], uint64_t(Now100ns()));
     return 0;
 }
@@ -391,6 +430,7 @@ KERNEL_EXPORT(228, NtSetSystemTime, 2) {
 constexpr uint64_t kPerfFrequency = 3375000;
 
 KERNEL_EXPORT(126, KeQueryPerformanceCounter, 0) {
+    TimeTrace(1);
     static const int64_t start = GuestNs();
     uint64_t ns = uint64_t(GuestNs() - start);
     uint64_t v = ns / 1000000000ull * kPerfFrequency + ns % 1000000000ull * kPerfFrequency / 1000000000ull;
@@ -404,6 +444,10 @@ KERNEL_EXPORT(127, KeQueryPerformanceFrequency, 0) {
 }
 
 KERNEL_EXPORT(151, KeStallExecutionProcessor, 1) {
+    if (ls::InTurn()) {
+        ls::Block([] { return false; }, ls::Now() + int64_t(a[0]) * 1000);  // lockstep: virtual microseconds
+        return 0;
+    }
     auto until = std::chrono::steady_clock::now() + std::chrono::microseconds(a[0]);
     while (std::chrono::steady_clock::now() < until) std::this_thread::yield();
     return 0;
@@ -422,6 +466,20 @@ KERNEL_EXPORT(99, KeDelayExecutionThread, 3) {
     };
     SuspendPoint();
     Blocking told;
+    if (ls::InTurn()) {
+        // lockstep: a yield passes the turn; a sleep waits on virtual time (an APC ends an alertable one)
+        if (interval == 0) {
+            ls::Pass();
+            return kSuccess;
+        }
+        bool apc = ls::Block([&] {
+            if (!alertable || !t) return false;
+            std::lock_guard<std::mutex> al(t->apc_lock);
+            return !t->apcs.empty();
+        }, deadline);
+        if (apc && RunApcs(*t)) return kUserApc;
+        return kSuccess;
+    }
     if (interval == 0) {
         std::this_thread::yield();
         return kSuccess;
@@ -1002,6 +1060,10 @@ KERNEL_EXPORT(92, KeAlertResumeThread, 1) { return kimpl_KeResumeThread(ctx, a);
 KERNEL_EXPORT(238, NtYieldExecution, 0) {
     SuspendPoint();
     Blocking told;
+    if (ls::InTurn()) {
+        ls::Pass();
+        return kSuccess;
+    }
     std::this_thread::yield();
     return kSuccess;
 }

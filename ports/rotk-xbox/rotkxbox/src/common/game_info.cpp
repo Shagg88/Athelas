@@ -149,6 +149,7 @@ const app::GameInfo app::kGame = {
     .pad = rotk::Pad,                     // changes a polled pad
     .rumble = nullptr,                    // changes a rumble before it is set
     .remap_controls = true,               // [controls], as in the other ports (ROTKFix.ini's layout is brought over once)
+    .online_coop = true,                  // [network] online co-op (lockstep builds; checked: notes/rotk-online-coop.md)
     // the in-game menu: these take effect at once; its changes go into settings.toml, as in the other ports
     .live_settings = {"graphics.fov", "graphics.draw_distance", "graphics.hud_edges", "gameplay.damage_taken",
                       "gameplay.enemy_damage", "cheats.invulnerable", "cheats.always_devastating",

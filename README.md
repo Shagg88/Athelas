@@ -42,6 +42,23 @@ achievements are kept.
 Then use **Uninstall Athelas** in the Start menu (installer), or delete the Athelas folder (.7z). Your saves in the
 Athelas folder go with it when you delete the folder, so back them up first if you want them.
 
+## Online co-op (The Return of the King, Xbox), experimental
+
+Each of you runs the game on your own PC; only your controller presses go between you. You both need the same Athelas
+version and your own US copy of the game.
+
+1. **Player 1 (host):** on the game's **Network** tab set **Online co-op** to **Host (player 1)** and press **Play**. A
+   small window shows an address such as `203.0.113.7:47100`; send it to your friend. If Windows asks whether the game
+   may use the network, allow it.
+2. **Player 2:** set **Online co-op** to **Join (player 2)**, paste the address into **Friend's address**, press **Play**.
+3. The games connect, player 1's save and settings are copied to player 2 (player 2's own saves aren't touched), and
+   both start together. Start co-op in the game as you would with two controllers.
+
+If the window says the router couldn't open the port, forward **UDP port 47100** to player 1's PC in the router's
+settings. In the same house, use the home-network address the window also shows. Athelas must be in a folder you can
+write to (not Program Files). Progress is kept in player 1's save. Set **Online co-op** back to **Off** afterwards. More in `README.txt`
+(PLAYING CO-OP ONLINE), including streaming with Parsec, which works for both Return of the King games.
+
 ## Features
 
 **In every game**
@@ -54,7 +71,8 @@ Athelas folder go with it when you delete the folder, so back them up first if y
 **Game highlights**
 - **The Return of the King (PC):** two-player co-op on one PC (or online through Parsec or Steam Remote Play
   Together), mods, cutscenes that fill the screen, restored 3D sound and EAX reverb
-- **The Return of the King (Xbox):** co-op, fixes for slowdowns and vanishing enemies at high frame rates
+- **The Return of the King (Xbox):** co-op on one PC or online (experimental, see above), fixes for slowdowns and
+  vanishing enemies at high frame rates
 - **The Two Towers:** an in-game settings menu (`F10`), fast forward (hold `F9`)
 - **The Fellowship of the Ring:** chapter select, the developers' unused Combat Test arenas, nine languages
 - **The Third Age:** field of view, draw distance, difficulty sliders

@@ -5,6 +5,7 @@
 //   +0x18 / +0x1C standard / daylight start: month, week of the month (1-5), day of the week, hour
 //   +0x28 / +0x2C standard / daylight bias      +0x58 misc flags: bit 1 no daylight saving
 #include <cstdint>
+#include "kernel/lockstep.h"
 #include <cstring>
 #include <ctime>
 
@@ -47,6 +48,12 @@ void Date(uint8_t* out, const SYSTEMTIME& t) {
 }  // namespace
 
 void HostTimeZone(uint8_t* user) {
+    // lockstep (online co-op): the two PCs may be in different time zones; the game's local times must be the same on
+    // both, so UTC without daylight saving
+    if (ls::g_on) {
+        user[0x58] |= 2;
+        return;
+    }
 #ifdef _WIN32
     TIME_ZONE_INFORMATION tz{};
     if (GetTimeZoneInformation(&tz) == TIME_ZONE_ID_INVALID) return;

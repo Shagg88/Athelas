@@ -1,14 +1,18 @@
 // XAPI functions that talk to hardware: controller ports and the hard disk cache partition
 #include <chrono>
+#include <algorithm>
 #include <cstdlib>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
 
+#include "app/app.h"
 #include "core/log.h"
 #include "core/input.h"
 #include "gpu/backend.h"
+#include "kernel/lockstep.h"
+#include "xdk/netplay.h"
 #include "xdk/hle.h"
 #include "xdk/layout.h"
 
@@ -65,7 +69,14 @@ const std::vector<ScriptPress>& PadScript() {
 void ApplyPadScript(int port, input::Pad& p) {
     if (port != 0 || PadScript().empty()) return;
     static const auto t0 = std::chrono::steady_clock::now();
-    double t = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+    static const double per_step = [] {
+        const char* e = std::getenv("XBE_PAD_STEPS");
+        double n = e ? std::atof(e) : 0;
+        if (n > 0) LOGR("test: pad script timed in game steps, %.0f a second (XBE_PAD_STEPS)", n);
+        return n > 0 ? 1.0 / n : 0.0;
+    }();
+    double t = per_step > 0 ? double(app::g_game_steps.load()) * per_step
+                            : std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
     p.connected = true;
     for (const ScriptPress& sp : PadScript()) {
         if (sp.shot) {
@@ -93,6 +104,7 @@ void UpdatePorts() {
     uint32_t cur = 0;
     for (int p = 0; p < 4; p++)
         if (input::Connected(p) || (p == 0 && !PadScript().empty())) cur |= 1u << p;
+    if (netplay::Active()) cur = 3;  // online co-op: both players' ports, whatever is plugged in here
     uint32_t old = R32(kGamepadType + XDK_XPP_Current);
     if (cur != old) {
         W32(kGamepadType + XDK_XPP_Changed, R32(kGamepadType + XDK_XPP_Changed) | (cur ^ old));
@@ -110,6 +122,25 @@ std::unordered_map<uint32_t, Handle> g_handles;
 
 }  // namespace
 
+namespace netplay {
+// this PC's first controller as its player's input (a test script presses it in test runs)
+input::Pad LocalSample() {
+    input::Pad p = input::Poll(0);
+    ApplyPadScript(0, p);
+    // this PC's second port too (the keyboard set to player 2, a second controller): whichever is used, it is this PC's
+    // player; buttons together, the stronger of the sticks and triggers
+    input::Pad q = input::Poll(1);
+    if (q.connected) {
+        p.connected = true;
+        p.buttons |= q.buttons;
+        for (int i = 0; i < 8; i++) p.analog[i] = std::max(p.analog[i], q.analog[i]);
+        auto stronger = [](int16_t a, int16_t b) { return std::abs(int(b)) > std::abs(int(a)) ? b : a; };
+        p.lx = stronger(p.lx, q.lx), p.ly = stronger(p.ly, q.ly), p.rx = stronger(p.rx, q.rx), p.ry = stronger(p.ry, q.ry);
+    }
+    return p;
+}
+}  // namespace netplay
+
 HLE_STDCALL(XMountUtilityDrive, 1) {
     CreateSymbolicLink("\\??\\Z:", "\\Device\\Harddisk0\\Partition5");
     return 1;
@@ -126,7 +157,7 @@ HLE_STDCALL(XInitDevices, 2) {
         W32(kMemoryUnitType + XDK_XPP_Previous, 0);
     }
     UpdatePorts();
-    if (!g_poller) {
+    if (!g_poller && !kernel::ls::g_on) {  // lockstep: what is plugged in stays as it was at the start
         g_poller = true;
         std::thread([] {
             for (;;) {
@@ -163,12 +194,23 @@ HLE_STDCALL(XInputGetState, 2) {
         if (it == g_handles.end()) return 6;  // ERROR_INVALID_HANDLE
         port = it->second.port;
     }
-    input::Pad p = input::Poll(int(port));
-    ApplyPadScript(int(port), p);
+    input::Pad p;
+    if (netplay::Active()) {
+        p = netplay::Pad(int(port));  // online co-op: the frame's input of both players, the same on both PCs
+    } else {
+        p = input::Poll(int(port));
+        ApplyPadScript(int(port), p);
+    }
     if (!p.connected) return 1167;  // ERROR_DEVICE_NOT_CONNECTED
     std::lock_guard<std::mutex> lock(g_ports_lock);
     Handle& h = g_handles[a[0]];
-    if (std::memcmp(&p, &h.last, sizeof(p))) h.packet++;
+    // field by field: a memcmp would also compare the padding byte after 'connected', whose contents are whatever the
+    // stack held (a packet counted that never was; in online co-op the two PCs counted differently)
+    auto same = [](const input::Pad& x, const input::Pad& y) {
+        return x.connected == y.connected && x.buttons == y.buttons && !std::memcmp(x.analog, y.analog, 8) &&
+               x.lx == y.lx && x.ly == y.ly && x.rx == y.rx && x.ry == y.ry;
+    };
+    if (!same(p, h.last)) h.packet++;
     h.last = p;
     uint32_t s = a[1];
     W32(s, h.packet);  // XINPUT_STATE: packet, buttons, 8 analog buttons, thumbs
@@ -190,8 +232,10 @@ HLE_STDCALL(XInputSetState, 2) {
         port = it->second.port;
     }
     uint32_t fb = a[1];
+    // online co-op: only this PC's player feels their rumble, on this PC's first controller
+    if (netplay::Active()) port = int(port) == netplay::LocalPort() ? 0 : 99;
     // XINPUT_FEEDBACK_HEADER is dwStatus, hEvent and 58 reserved bytes, the rumble follows
-    input::Rumble(int(port), R16(fb + 66), R16(fb + 68));
+    if (port < 4) input::Rumble(int(port), R16(fb + 66), R16(fb + 68));
     W32(fb, 0);
     if (uint32_t ev = R32(fb + 4))
         if (ObjectRef o = FromHandle(ev)) SetEvent(*o);

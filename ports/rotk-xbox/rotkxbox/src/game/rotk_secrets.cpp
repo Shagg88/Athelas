@@ -119,12 +119,14 @@ X86_FUNC(sub_0002A1B0) {
     // Fellowship (opt-in): in co-op, while both players have landed a hit in the last 5 seconds, +10%
     if (ach::FellowshipOn() && player(by) && who && !player(who)) {
         static uint32_t ids[2];
-        static std::chrono::steady_clock::time_point at[2];
-        auto now = std::chrono::steady_clock::now();
+        // the game's clock (virtual in lockstep mode: the bonus must land the same on both PCs)
+        static int64_t at[2];
+        int64_t now = ::kernel::GuestNs();
+        constexpr int64_t k5s = 5000000000;
         int slot = ids[0] == by ? 0 : ids[1] == by ? 1 : (now - at[0] > now - at[1] ? 0 : 1);
         ids[slot] = by;
         at[slot] = now;
-        if (ids[0] && ids[1] && ids[0] != ids[1] && now - at[0] < std::chrono::seconds(5) && now - at[1] < std::chrono::seconds(5)) {
+        if (ids[0] && ids[1] && ids[0] != ids[1] && now - at[0] < k5s && now - at[1] < k5s) {
             pct = pct * 110 / 100;
             LOG_FIRST(1, "rotk: fellowship bonus (both players fighting)");
         }

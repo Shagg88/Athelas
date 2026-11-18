@@ -3,9 +3,19 @@
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
+#include <condition_variable>
 #include <memory>
+#include <thread>
+#ifdef _WIN32
+#include <float.h>
+#if defined(__x86_64__) || defined(__i386__) || defined(_M_X64) || defined(_M_IX86)
+#include <xmmintrin.h>  // _mm_getcsr for the fp trace (x86 only; the ARM64 builds have no MXCSR)
+#define XBE_HAS_MXCSR 1
+#endif
+#endif
 
 #include "kernel/kernel.h"
+#include "kernel/lockstep.h"
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -172,14 +182,21 @@ ThreadRef CreateThread(uint32_t stack_size, uint32_t tls_size, uint32_t system_r
 
 void StartThread(ThreadRef t) {
     Register(t);
-    Spawn([t] {
+    // lockstep: a participant from here, in the order threads are started (the starter holds the turn)
+    char name[32];
+    std::snprintf(name, sizeof(name), "guest %X", t->id);
+    ls::Part* part = ls::g_on ? ls::Register(name) : nullptr;
+    Spawn([t, part] {
         t_current = t;
         char name[32];
         std::snprintf(name, sizeof(name), "guest %X", t->id);
         NameHostThread(name);
         X86Context ctx;
         InitContext(*t, ctx);
-        {
+        if (part) {
+            ls::Enter(part);
+            ls::Block([&] { return t->suspend.load() <= 0; });  // created suspended: until resumed
+        } else {
             std::unique_lock<std::mutex> lock(t->apc_lock);
             t->resume_cv.wait(lock, [&] { return t->suspend.load() <= 0; });
         }
@@ -191,6 +208,14 @@ void StartThread(ThreadRef t) {
         }
         LOGI("thread %X starts at %08X (%08X, %08X)", t->id, si.system_routine ? si.system_routine : si.start_routine,
              si.start_routine, si.start_context);
+        // tests (lockstep research): each thread's floating-point state, which decides how its sums round
+#if defined(_WIN32) && defined(XBE_HAS_MXCSR)
+        static const bool fp_trace = std::getenv("XBE_TIME_TRACE") != nullptr;
+        if (fp_trace)
+            LOGR("fp: thread %X (host %zu) at %08X: MXCSR %04X, x87 control %04X", t->id,
+                 std::hash<std::thread::id>{}(std::this_thread::get_id()) & 0xFFFFF, si.start_routine, _mm_getcsr(),
+                 unsigned(_control87(0, 0)));
+#endif
         uint32_t code;
         if (si.system_routine)
             code = CallGuest(ctx, si.system_routine, {si.start_routine, si.start_context});
@@ -201,6 +226,7 @@ void StartThread(ThreadRef t) {
         MarkExited(*t, code);
         Unregister(t.get());
         t_current.reset();
+        ls::Leave();
     });
 }
 
@@ -210,14 +236,17 @@ void StartHostThread(const char* name, std::function<void(X86Context&)> fn) {
     SetupGuestBlocks(*t, 0x20000, 0x100);
     Bind(t, t->ethread);
     std::string n = name;
-    Spawn([t, fn, n] {
+    ls::Part* part = ls::g_on ? ls::Register(name) : nullptr;  // lockstep: it runs guest code, so it takes turns
+    Spawn([t, fn, n, part] {
         t_current = t;
         NameHostThread(n.c_str());
         X86Context ctx;
         InitContext(*t, ctx);
+        if (part) ls::Enter(part);
         fn(ctx);
         ReleaseDispatchOnExit();
         t_current.reset();
+        ls::Leave();
     });
 }
 
@@ -230,6 +259,7 @@ void ExitThread(uint32_t code) {
         Unregister(t);
     }
     t_current.reset();
+    ls::Leave();
 #ifdef _WIN32
     ::ExitThread(code);
 #else
@@ -254,6 +284,10 @@ void (*g_blocking)(bool done) = nullptr;
 void SuspendPoint() {
     Thread* t = Current();
     if (!t || t->suspend.load() <= 0) return;
+    if (ls::InTurn()) {
+        ls::Block([&] { return t->suspend.load() <= 0; });
+        return;
+    }
     std::unique_lock<std::mutex> lock(t->apc_lock);
     t->resume_cv.wait(lock, [&] { return t->suspend.load() <= 0; });
 }

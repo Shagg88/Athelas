@@ -24,6 +24,9 @@ else()
     FetchContent_MakeAvailable(xbe_sdk)
     set(SDK ${xbe_sdk_SOURCE_DIR})
 endif()
+# online co-op (notes/rotk-online-coop.md): built with the lockstep safepoints; switched off it costs little (about 3%
+# uncapped, inside the run-to-run spread), so the one exe serves everyone
+set(XBE_LOCKSTEP ON CACHE BOOL "Build with lockstep safepoints (online co-op)")
 include(${SDK}/cmake/XbeRecomp.cmake)
 
 file(GLOB XBE_HOST_SOURCES CONFIGURE_DEPENDS src/*/*.cpp)

@@ -27,6 +27,7 @@
 #include <imgui_internal.h>
 
 #include "app/app.h"
+#include "xdk/netplay.h"
 #include "app/menu_look.h"
 #include "app/overlay_font.h"
 #include "core/input.h"
@@ -108,6 +109,9 @@ bool IsLive(const cfg::Desc& d) {
     std::string k = std::string(d.section) + "." + d.key;
     for (const char* l : kLive)
         if (k == l) return true;
+    // online co-op: the game's own (difficulty, cheats) change the game, which must stay the same on both PCs: they
+    // wait for the next start
+    if (netplay::Active()) return false;
     for (const char* l : kGame.live_settings)
         if (k == l) return true;
     return false;
@@ -312,7 +316,9 @@ void FeedPads() {
 }  // namespace
 
 bool OverlayOpen() { return g_open.load(); }
-bool Paused() { return g_open.load() || (Get().pause_unfocused && !g_focus.load()); }
+// online co-op: no pause for an unfocused window (the partner's game would wait); the menu still holds it, and the
+// partner sees "Waiting for player ..." meanwhile
+bool Paused() { return g_open.load() || (Get().pause_unfocused && !g_focus.load() && !netplay::Active()); }
 bool Held() { return g_held.load(); }
 bool Muted() { return g_held.load() || FastForward() || (Get().mute_unfocused && !g_focus.load()); }
 

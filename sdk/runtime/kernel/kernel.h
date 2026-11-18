@@ -213,7 +213,8 @@ extern bool g_dispatch_lock;
 uint8_t RaiseIrqlForDpc();           // DPC routines run at DISPATCH_LEVEL (and take g_dispatch_lock's lock)
 void LowerIrqlAfterDpc(uint8_t old);
 void ReleaseDispatchOnExit();        // a thread ending while it holds g_dispatch_lock's lock
-void WarnIfWaitingAtDispatch();      // a wait while holding it (logged: it holds every other raise up)
+void WarnIfWaitingAtDispatch();
+bool AtDispatchLevel();              // the calling thread's IRQL is DISPATCH_LEVEL or above (lockstep: it keeps the turn)      // a wait while holding it (logged: it holds every other raise up)
 struct Blocking {
     Blocking() {
         WarnIfWaitingAtDispatch();

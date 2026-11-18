@@ -51,9 +51,11 @@ void FileOpened(const char* name) {
         if (n.find("\\ui\\endlvl.bff") != std::string::npos) g_won_level = !g_in_prologue;
         bool main_menu = n.find("\\ui\\mainmenu.bff") != std::string::npos;
         bool startup = n.find("\\ui\\startup.bff") != std::string::npos;
-        // options, loading pictures and the moves lists can open over the title: they leave it as it was
-        bool overlay = n.find("\\ui\\load") != std::string::npos || n.find("\\ui\\options") != std::string::npos ||
-                       n.find("\\ui\\upg") != std::string::npos;
+        // options, loading pictures and the moves lists can open over the title: they leave it as it was. Not the
+        // load/save screen (ui\loadsave.bff), whose Yes/No Enter's Start answered Yes (#56 again in 1.8.7, #93)
+        bool loadsave = n.find("\\ui\\loadsave.bff") != std::string::npos;
+        bool overlay = (n.find("\\ui\\load") != std::string::npos && !loadsave) ||
+                       n.find("\\ui\\options") != std::string::npos || n.find("\\ui\\upg") != std::string::npos;
         if (startup || main_menu) g_title = startup || !g_won_level.load();
         else if (!overlay) g_title = false;
         if (main_menu) g_won_level = false;

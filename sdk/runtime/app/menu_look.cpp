@@ -403,3 +403,16 @@ void Hints(ImDrawList* dl, const Look& L, const std::vector<Hint>& hints) {
 }
 
 }  // namespace app::look
+
+namespace app::look {
+// the heading, text and digit faces as TrueType data, for the online co-op window (netplay_window.cpp), which draws with GDI
+void FontData(const unsigned char*& head, size_t& head_size, const unsigned char*& body, size_t& body_size,
+              const unsigned char*& digits, size_t& digits_size) {
+    digits = menu_font_digits;  // EB Garamond's plain figures (IM Fell's old-style 1 reads as I in an address)
+    digits_size = sizeof(menu_font_digits);
+    head = menu_font_cinzel;
+    head_size = sizeof(menu_font_cinzel);
+    body = menu_font_garamond;
+    body_size = sizeof(menu_font_garamond);
+}
+}  // namespace app::look

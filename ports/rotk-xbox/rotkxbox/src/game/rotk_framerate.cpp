@@ -12,25 +12,46 @@
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
+#include <atomic>
 #include <cstring>
 #include <string>
+#include <vector>
 
 #include "app/app.h"
 #include "core/log.h"
 #include "cpu/x86_context.h"
 #include "cpu/x86_ops.h"
 #include "kernel/kernel.h"
+#include "kernel/lockstep.h"
 #include "kernel/memory.h"
+#include "gpu/backend.h"
+#include "gpu/texture.h"
 #include "xdk/d3d8.h"
 #include "xdk/hle.h"
 
 namespace rotk {
+std::atomic<bool> g_movie_this_frame{false};  // lockstep: a movie frame was drawn since the last frame end
 uint32_t g_fps = 30;  // settings.toml [graphics] fps; 0 no cap
 bool g_unlocked = false;
 
 void InitFrameRate() {
-    g_unlocked = g_fps != 30;
-    if (g_unlocked) {
+    if (::kernel::ls::g_on)
+        d3d::g_guest_draw = [](const gpu::State& st) {
+            gpu::TextureDesc d;
+            if (st.textures[2] && gpu::Describe(st.textures[2], d) && d.width == 768 && d.height == 544 && d.linear)
+                g_movie_this_frame = true;
+        };
+    // lockstep (online co-op): always the unlocked path, at the rate set (30 too): a fixed step a frame and the frame
+    // paced on the game's clock (d3d8.cpp LockstepFramePace), instead of the console's wait that spins on the blank
+    // count (0xD03D3), which in lockstep advances only 20 us a safepoint: 30 fps sessions ran at about 4 fps
+    // lockstep: at most 60 (a picture takes at least one vertical blank of the game's clock, d3d8.cpp), so a higher rate or
+    // none (0) plays at 60; 30 stays 30
+    if (::kernel::ls::g_on && (g_fps == 0 || g_fps > 60)) g_fps = 60;
+    g_unlocked = g_fps != 30 || ::kernel::ls::g_on;
+    // (lockstep: no window frame cap; the frame end below and d3d8.cpp's LockstepFramePace pace it on the game's clock)
+    if (g_unlocked && ::kernel::ls::g_on) {
+        LOGR("rotk: frame rate %s in lockstep (paced on the game's clock)", g_fps ? std::to_string(g_fps).c_str() : "60");
+    } else if (g_unlocked) {
         app::Get().fps_cap = g_fps;
         LOGR("rotk: frame rate %s (the console's is 30)", g_fps ? std::to_string(g_fps).c_str() : "unlimited");
     }
@@ -58,9 +79,28 @@ X86_FUNC(sub_000BF1A0) {
         __imp__sub_000BF1A0(ctx, base);
         return;
     }
+    // a movie frame: one of this frame's draws used the player's Y plane (768x544, linear) on stage 2; seen in the
+    // game's own state as it draws (d3d::g_guest_draw), so the same on both PCs (the renderer's movie flag is dropped by
+    // a timer thread)
+    const bool movie_frame = rotk::g_movie_this_frame.exchange(false);
     for (uint32_t stage = 0; stage < 4; stage++) ::kernel::CallGuest(ctx, 0x12D630, {stage, 0});  // SetTexture(stage, null)
     W32(0x1E2F04, R32(0x1E2F04) + 1);
     if (!rotk::g_unlocked) d3d::WaitVBlank(40);  // at most 40 ms: a pause has no blanks
+    // lockstep (online co-op): a gameplay frame takes 1 / the rate set (60 when unlimited) of the game's clock, at least
+    // (the fixed time step below is that much); the same on both PCs (virtual time and the frame count only)
+    // Not a movie's frames: the movie player shows one movie frame a game frame and expects 60 a second (on the console
+    // it catches up from its decoder, which in lockstep runs only in turn): those take the picture's one blank alone
+    // (d3d8.cpp LockstepFramePace), and the movie plays at its own speed (measured: 57 s for PELEFMV1, as without lockstep)
+    if (::kernel::ls::g_on && ::kernel::ls::InTurn() && !movie_frame) {
+        static int64_t last = -1;
+        const int64_t step = 1000000000LL / (rotk::g_fps ? rotk::g_fps : 60), now = ::kernel::ls::Now();
+        if (last >= 0 && now < last + step) {
+            last += step;
+            ::kernel::ls::Block([] { return false; }, last);
+        } else {
+            last = now;
+        }
+    }
     ::kernel::Return(ctx, ctx.eax, 0);
 }
 
@@ -82,10 +122,14 @@ X86_FUNC(sub_0009EB20) {
     float dt = float(now - last) * 1e-9f;
     last = now;
     if (dt > 0.1f) dt = 0.1f;  // a load or a stall: at most a tenth of a second, as ROTK PC clamps it (0x3DCCCCCD)
-#ifndef _WIN32
-    static const float fixed_dt = [] {  // test build: ROTK_DT=180 steps 1/180 s a frame, however slow the harness is
+    // tests (any build; nothing without the variables): ROTK_DT=60 steps 1/60 s a frame whatever the real time, the
+    // first need of two copies staying in step (online co-op research, notes/rotk-online-coop.md)
+    static const float fixed_dt = [] {
         const char* e = std::getenv("ROTK_DT");
-        return e ? 1.0f / float(std::atof(e)) : 0.0f;
+        if (e) return 1.0f / float(std::atof(e));
+        // lockstep (online co-op): a fixed step of the frame rate set (60 when unlimited), the same on both PCs
+        if (::kernel::ls::g_on) return 1.0f / float(rotk::g_fps ? rotk::g_fps : 60);
+        return 0.0f;
     }();
     if (fixed_dt > 0) dt = fixed_dt;
     static const bool jitter = std::getenv("ROTK_DT_JITTER") != nullptr;  // steps alternate 0.5 and 1.5 times it
@@ -94,7 +138,9 @@ X86_FUNC(sub_0009EB20) {
     // test build: ROTK_MEMDUMP="dir,step,step,..." writes the guest's memory below 64 MB at those time steps
     static uint32_t steps = 0;
     steps++;
-    if (const char* md = std::getenv("ROTK_MEMDUMP")) {
+    app::g_game_steps.store(steps);
+    static const char* md = std::getenv("ROTK_MEMDUMP");
+    if (md) {
         std::string spec = md, dir = spec.substr(0, spec.find(','));
         if (steps % 100 == 0) LOGR("rotk: step %u", steps);
         for (size_t at = spec.find(','); at != std::string::npos; at = spec.find(',', at + 1)) {
@@ -108,7 +154,38 @@ X86_FUNC(sub_0009EB20) {
             }
         }
     }
-#endif
+    // test build: ROTK_MEMHASH="dir,last" appends, for every step 1..last, one 32-bit FNV-style hash per 4 KB page below
+    // 64 MB (16384 hashes, 64 KB a step) to dir/hashes.bin: comparing two runs gives the first step and page that differ
+    static const char* mh = std::getenv("ROTK_MEMHASH");
+    if (mh) {
+        static std::string spec = mh, dir = spec.substr(0, spec.find(','));
+        static const uint32_t last = spec.find(',') == std::string::npos ? 1200u : uint32_t(std::atoi(spec.c_str() + spec.find(',') + 1));
+        static FILE* hf = std::fopen((dir + "/hashes.bin").c_str(), "wb");
+        if (hf && steps <= last) {
+            static std::vector<uint32_t> h(0x4000);
+            for (uint32_t i = 0; i < 0x4000; i++) {
+                uint32_t p = i << 12;
+                uint64_t x = 1469598103934665603ull;
+                if (p >= 0x10000 && mem::IsCommitted(p)) {
+                    const uint8_t* b = static_cast<const uint8_t*>(::kernel::HostPtr(p));
+                    for (uint32_t k = 0; k < 0x1000; k += 8) {
+                        uint64_t v;
+                        std::memcpy(&v, b + k, 8);
+                        x = (x ^ v) * 1099511628211ull;
+                    }
+                } else {
+                    x = 0;
+                }
+                h[i] = uint32_t(x ^ (x >> 32));
+            }
+            std::fwrite(h.data(), 4, h.size(), hf);
+            if (steps == last) {
+                std::fclose(hf);
+                hf = nullptr;
+                LOGR("rotk: memory hashes written for steps 1-%u", last);
+            }
+        }
+    }
     constexpr uint32_t kBlanks = 0x1E2F14, kLastBlank = 0x1E3340, kStep = 0x1E3344, kReset = 0x1E3348,
                        kTicks = 0x1E334C, kTickRest = 0x1E3350;
     W32(kLastBlank, R32(kBlanks));  // the frame end and others still compare blank counts
@@ -155,11 +232,11 @@ void ROTK_MenuRepeat(X86Context& ctx, uint8_t* base) {
     (void)ctx;
     (void)base;
     if (!rotk::g_unlocked) return;
-    using clock = std::chrono::steady_clock;
-    static clock::time_point last = clock::now();
+    // the game's clock (virtual in lockstep mode)
+    static int64_t last = ::kernel::GuestNs();
     static float owed = 0;
-    clock::time_point now = clock::now();
-    float dt = std::chrono::duration<float>(now - last).count();
+    int64_t now = ::kernel::GuestNs();
+    float dt = float(now - last) * 1e-9f;
     last = now;
     owed += dt > 0.1f ? 1.0f / 30.0f : dt;  // a fresh hold (or a stall) counts as one console frame
     if (owed >= 1.0f / 30.0f) {

@@ -30,6 +30,7 @@
 
 #include "app/app.h"
 #include "core/log.h"
+#include "kernel/lockstep.h"
 
 namespace ach {
 
@@ -159,6 +160,12 @@ namespace {
 void Virtues(uint32_t& dealt, uint32_t& taken) {
     static uint32_t d = 100, t = 100;
     static bool read = [] {
+        // lockstep (online co-op): each PC's virtues are its own player's achievements; the damage must be the same on
+        // both PCs, so none (the game as it is)
+        if (kernel::ls::g_on) {
+            if (std::getenv("ATHELAS_VIRTUES")) LOGR("virtues: off in online co-op (both games must deal the same damage)");
+            return true;
+        }
         if (const char* v = std::getenv("ATHELAS_VIRTUES")) {
             unsigned a = 100, b = 100;
             if (std::sscanf(v, "%u,%u", &a, &b) == 2) {
@@ -280,6 +287,11 @@ bool Fate() {
 bool FellowshipOn() {
     static const bool on = [] {
         const char* e = std::getenv("ATHELAS_FELLOWSHIP");
+        // lockstep (online co-op): each PC's launcher sets its own; the damage must be the same on both: off
+        if (kernel::ls::g_on) {
+            if (e && *e == '1') LOGR("fellowship: off in online co-op (both games must deal the same damage)");
+            return false;
+        }
         return e && *e == '1';
     }();
     return on;

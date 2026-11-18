@@ -116,13 +116,12 @@ struct DrawConstants {
     float widen[4];      // x: a vertex program's 3D (perspective) positions widened by it, 0 off (g_program_widen)
     float orbit[2][4];   // free camera test (g_orbit_*): on, yaw, pitch, pivot; p11, p22, a, b
     float lt[8][7][4];   // per light: diffuse, specular, ambient, position range, direction falloff, attenuation, cos theta/2 phi/2
-    // point sprites (SpriteHlsl; only its shaders declare these): size, min, max (pixels), scale enable; A, B, C
+    // points (SpriteHlsl; only its shaders declare these): size, min, max (pixels), scale enable; A, B, C, sprite
     float sprite[2][4];
 };
 
 // DrawConstants::sprite from the point render states (floats held as their bits); max 0 or below min: 64 (D3D's)
 inline void FillSpriteConstants(const State& s, DrawConstants& c) {
-    if (!s.rs[kRsPointSpriteEnable]) return;
     auto f = [&](uint32_t r) { float v; std::memcpy(&v, &s.rs[r], 4); return v; };
     float mn = std::max(f(kRsPointSizeMin), 0.0f), mx = f(kRsPointSizeMax);
     if (!(mx > mn)) mx = 64.0f;
@@ -133,6 +132,8 @@ inline void FillSpriteConstants(const State& s, DrawConstants& c) {
     c.sprite[1][0] = f(kRsPointScaleA);
     c.sprite[1][1] = f(kRsPointScaleB);
     c.sprite[1][2] = f(kRsPointScaleC);
+    c.sprite[1][3] = s.rs[kRsPointSpriteEnable] ? 1.0f : 0.0f;  // texture stage 3 gets the square's coordinates
+    if (!(c.sprite[0][0] > 0.0f)) c.sprite[0][0] = 1.0f;       // size 0: one pixel (xemu)
 }
 
 }  // namespace gpu
