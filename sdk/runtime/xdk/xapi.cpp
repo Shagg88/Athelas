@@ -1,7 +1,12 @@
 // XAPI functions that talk to hardware: controller ports and the hard disk cache partition
 #include <chrono>
 #include <algorithm>
+#include <cinttypes>
+#include <cstdio>
 #include <cstdlib>
+#include <cstring>
+#include <map>
+#include <mutex>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -92,6 +97,118 @@ void ApplyPadScript(int port, input::Pad& p) {
 }
 
 
+// Replays for bug reports. XBE_PAD_RECORD=<file> writes the first controller as the game reads it; XBE_PAD_REPLAY=<file>
+// plays it back instead of the controller. Both run the game in lockstep (kernel/lockstep.h), so with the same build,
+// settings and saves the game does the same thing again, and the bug happens again on another PC. Calls are counted
+// (the game's reads of controller 1, the same on every run in lockstep), and every 60th read the record holds a hash of
+// the game's memory: a replay that goes its own way says where, which tells a missed difference (saves, settings,
+// build) from a bug. Text file:
+//   athelas-replay 1 <build hash>
+//   <read> P <buttons> <8 analog> <lx> <ly> <rx> <ry>   the pad from this read on (only when it changes)
+//   <read> H <hash>                                     the memory hash at this read
+struct Replay {
+    FILE* rec = nullptr;
+    std::map<uint64_t, input::Pad> pads;  // replay: from which read on
+    std::map<uint64_t, uint64_t> hashes;  // replay: expected
+    bool playing = false, diverged = false;
+    uint64_t reads = 0, hash = 1469598103934665603ull;
+    input::Pad last{};
+    bool have_last = false;
+};
+Replay& Rp() {
+    static Replay r = [] {
+        Replay r;
+        if ((std::getenv("XBE_PAD_REPLAY") || std::getenv("XBE_PAD_RECORD")) && !kernel::ls::kSafepoints) {
+            LOGR("replay: this game isn't built for lockstep (only The Return of the King's is, for online co-op), so "
+                 "it can't record or replay the same way twice; ignored");
+            return r;
+        }
+        if (const char* f = std::getenv("XBE_PAD_REPLAY")) {
+            FILE* in = std::fopen(f, "r");
+            char line[256];
+            unsigned ver = 0;
+            uint64_t build = 0;
+            if (!in || !std::fgets(line, sizeof line, in) || std::sscanf(line, "athelas-replay %u %" SCNx64, &ver, &build) != 2 || ver != 1) {
+                LOGR("replay: %s can't be read, playing without it", f);
+                if (in) std::fclose(in);
+                return r;
+            }
+            if (build != netplay::BuildHash())
+                LOGR("replay: recorded with another build (%016" PRIx64 ", this is %016" PRIx64 "); it may go its own way", build, netplay::BuildHash());
+            while (std::fgets(line, sizeof line, in)) {
+                uint64_t at = 0, h = 0;
+                char kind = 0;
+                unsigned b = 0, an[8] = {};
+                int lx = 0, ly = 0, rx = 0, ry = 0;
+                if (std::sscanf(line, "%" SCNu64 " H %" SCNx64, &at, &h) == 2 && std::strstr(line, " H ")) {
+                    r.hashes[at] = h;
+                } else if (std::sscanf(line, "%" SCNu64 " %c %x %u %u %u %u %u %u %u %u %d %d %d %d", &at, &kind, &b, &an[0], &an[1],
+                                       &an[2], &an[3], &an[4], &an[5], &an[6], &an[7], &lx, &ly, &rx, &ry) == 15 && kind == 'P') {
+                    input::Pad p{};
+                    p.connected = true;
+                    p.buttons = uint16_t(b);
+                    for (int i = 0; i < 8; i++) p.analog[i] = uint8_t(an[i]);
+                    p.lx = int16_t(lx), p.ly = int16_t(ly), p.rx = int16_t(rx), p.ry = int16_t(ry);
+                    r.pads[at] = p;
+                }
+            }
+            std::fclose(in);
+            r.playing = true;
+            LOGR("replay: playing %s, %zu pad changes, %zu checks", f, r.pads.size(), r.hashes.size());
+        } else if (const char* f = std::getenv("XBE_PAD_RECORD")) {
+            r.rec = std::fopen(f, "w");
+            if (r.rec) {
+                std::fprintf(r.rec, "athelas-replay 1 %016" PRIx64 "\n", netplay::BuildHash());
+                LOGR("replay: recording the controller to %s", f);
+            } else {
+                LOGR("replay: can't write %s, not recording", f);
+            }
+        }
+        return r;
+    }();
+    return r;
+}
+// the first controller's read: recorded, or replaced by the replay's; then the memory check
+void ReplayPad(input::Pad& p) {
+    static std::mutex m;
+    std::lock_guard<std::mutex> lock(m);
+    Replay& r = Rp();
+    if (!r.rec && !r.playing) return;
+    const uint64_t n = r.reads++;
+    if (r.playing) {
+        auto it = r.pads.upper_bound(n);
+        p = it == r.pads.begin() ? input::Pad{} : std::prev(it)->second;
+        if (it == r.pads.end() && !r.pads.empty() && n == r.pads.rbegin()->first + 1) LOGR("replay: last recorded press reached (read %" PRIu64 ")", n);
+    } else {
+        p.connected = true;  // recording: the first port counts as plugged in (UpdatePorts), so the replay's always is
+        auto same = [](const input::Pad& x, const input::Pad& y) {
+            return x.connected == y.connected && x.buttons == y.buttons && !std::memcmp(x.analog, y.analog, 8) && x.lx == y.lx &&
+                   x.ly == y.ly && x.rx == y.rx && x.ry == y.ry;
+        };
+        if (!r.have_last || !same(p, r.last)) {
+            const input::Pad& q = p;
+            std::fprintf(r.rec, "%" PRIu64 " P %x %u %u %u %u %u %u %u %u %d %d %d %d\n", n, q.buttons, q.analog[0], q.analog[1],
+                         q.analog[2], q.analog[3], q.analog[4], q.analog[5], q.analog[6], q.analog[7], q.lx, q.ly, q.rx, q.ry);
+            r.last = p, r.have_last = true;
+        }
+    }
+    // a slice of memory a read, the whole every 60 reads (as co-op does once a second)
+    r.hash = netplay::MemoryHashSlice(uint32_t(n % 60), r.hash);
+    if (n % 60 == 59) {
+        if (r.rec) {
+            std::fprintf(r.rec, "%" PRIu64 " H %016" PRIx64 "\n", n, r.hash);
+            std::fflush(r.rec);
+        } else if (!r.diverged) {
+            auto it = r.hashes.find(n);
+            if (it != r.hashes.end() && it->second != r.hash) {
+                r.diverged = true;
+                LOGR("replay: the game went its own way by read %" PRIu64 " (about %.0f s in): not the same build, settings or saves", n, n / 60.0);
+            }
+        }
+        r.hash = 1469598103934665603ull;
+    }
+}
+
 // XPP device type records: CurrentConnected, ChangeConnected, PreviousConnected
 constexpr uint32_t kGamepadType = SYM(XPP_GamepadType);
 constexpr uint32_t kMemoryUnitType = SYM(XPP_MemoryUnitType);
@@ -103,7 +220,7 @@ void UpdatePorts() {
     std::lock_guard<std::mutex> lock(g_ports_lock);
     uint32_t cur = 0;
     for (int p = 0; p < 4; p++)
-        if (input::Connected(p) || (p == 0 && !PadScript().empty())) cur |= 1u << p;
+        if (input::Connected(p) || (p == 0 && (!PadScript().empty() || Rp().playing || Rp().rec))) cur |= 1u << p;
     if (netplay::Active()) cur = 3;  // online co-op: both players' ports, whatever is plugged in here
     uint32_t old = R32(kGamepadType + XDK_XPP_Current);
     if (cur != old) {
@@ -200,6 +317,7 @@ HLE_STDCALL(XInputGetState, 2) {
     } else {
         p = input::Poll(int(port));
         ApplyPadScript(int(port), p);
+        if (port == 0) ReplayPad(p);
     }
     if (!p.connected) return 1167;  // ERROR_DEVICE_NOT_CONNECTED
     std::lock_guard<std::mutex> lock(g_ports_lock);

@@ -99,8 +99,8 @@ const app::GameInfo app::kGame = {
                 {"graphics", "button_pictures", cfg::Type::Choice, "Button pictures",
                  "Which controller's buttons the game's menus and battle commands show. Auto follows the controller "
                  "you play with.",
-                 nullptr, &ta::g_button_pictures, nullptr, 0, 0, {"auto", "xbox", "playstation", "nintendo", "keyboard"},
-                 nullptr, nullptr, {"Auto", "Xbox", "PlayStation", "Nintendo", "Keyboard keys"}},
+                 nullptr, &ta::g_button_pictures, nullptr, 0, 0, {"auto", "xbox", "playstation", "nintendo", "keyboard", "steamdeck", "steamcontroller"},
+                 nullptr, nullptr, {"Auto", "Xbox", "PlayStation", "Nintendo", "Keyboard keys", "Steam Deck", "Steam Controller"}},
                 {"graphics", "second_core", cfg::Type::Bool, "Draw on a second core",
                  "Faster: the drawing runs on a processor core of its own, beside the game. Turn off if characters "
                  "show a ghost image or the picture flickers. Takes effect at the next start.",

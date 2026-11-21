@@ -26,6 +26,9 @@ void OnFrame(const std::function<void()>& redraw = nullptr);
 input::Pad Pad(int port);
 // this PC's player's port (0 host, 1 guest)
 int LocalPort();
+// replays (xapi.cpp): slice k of the game's memory hashed into h, as co-op checks it; the code sections' hash
+uint64_t MemoryHashSlice(uint32_t k, uint64_t h);
+uint64_t BuildHash();
 // at the start, before the settings are read: connects, and the host sends its settings and save folder; the guest
 // plays with them (from <exe folder>/online-session; its own [display], [audio], [controls], [network] kept, its own saves
 // untouched). Nothing without XBE_NETPLAY.

@@ -88,8 +88,8 @@ const app::GameInfo app::kGame = {
                 {"graphics", "button_pictures", cfg::Type::Choice, "Button pictures",
                  "Which controller's buttons the game's hints and menus show. Auto follows the controller you play "
                  "with.",
-                 nullptr, &tt::g_button_pictures, nullptr, 0, 0, {"auto", "xbox", "playstation", "nintendo", "keyboard"},
-                 nullptr, nullptr, {"Auto", "Xbox", "PlayStation", "Nintendo", "Keyboard keys"}},
+                 nullptr, &tt::g_button_pictures, nullptr, 0, 0, {"auto", "xbox", "playstation", "nintendo", "keyboard", "steamdeck", "steamcontroller"},
+                 nullptr, nullptr, {"Auto", "Xbox", "PlayStation", "Nintendo", "Keyboard keys", "Steam Deck", "Steam Controller"}},
                 {"gameplay", "damage_taken", cfg::Type::Int, "Damage you take",
                  "How hard enemies hit you and your allies, as a share of the chosen difficulty's own (100). Lower is "
                  "easier.",

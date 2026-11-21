@@ -122,6 +122,7 @@ struct Settings {
     uint32_t keyboard_player = 1;          // 1 or 2
     std::string keys[keys::kCount];        // each action's keys, comma separated; keys::kDefaults and the game's
     bool mouse_aim = true;                 // [keyboard] mouse_aim: while the ranged attack is held, the mouse aims (the left stick)
+    bool mouse_camera = true;              // [keyboard] mouse_camera: otherwise the mouse turns the camera (kGame.mouse_camera games)
     uint32_t mouse_sensitivity = 100;      // [keyboard] mouse_sensitivity, percent
     bool mouse_invert_y = false;           // [keyboard] mouse_invert_y: mouse aiming up and down reversed
     bool mouse_menus = true;               // [keyboard] mouse_menus: in the game's menus the wheel moves, right click goes back
@@ -155,6 +156,7 @@ struct CommandLine {
     std::filesystem::path game, config, textures, log, saves, shader_cache, screenshots;
     bool no_dialogs = false, version = false, describe = false;
     bool any_release = false;  // --any-release: start another release of the game without asking (the launcher asked)
+    bool launcher = false;     // --launcher: started by Athelas, which can be gone back to (the menu offers it)
     int instance = 0;  // --instance N: a second copy on this PC for system link tests
 };
 const CommandLine& Args();
@@ -166,7 +168,10 @@ enum ExitCode : int {
     kExitNoD3D12 = 4,       // the graphics card or driver cannot run the renderer
     kExitBadSettings = 5,   // the settings file is not readable
     kExitGpuLost = 6,       // the graphics driver stopped or reset while playing (Windows' GPU timeout, a driver crash)
+    kExitToLauncher = 7,    // the player chose "Quit to Athelas": the launcher shows itself again instead of closing
 };
+// the code a normal quit ends with: kExitOk, or kExitToLauncher from the menu's "Quit to Athelas"
+extern std::atomic<int> g_quit_code;
 // logs the reason, shows it unless --no-dialogs, and ends the process with code
 [[noreturn]] void Fail(int code, const std::wstring& message);
 int ExitingWith();   // the exit code Fail is ending the process with, -1 otherwise
@@ -277,6 +282,10 @@ struct GameInfo {
     bool (*required_file)(const char* name) = nullptr;
     bool (*in_menus)() = nullptr;
     bool menu_accept_start = false;
+    // the right stick turns a free camera (The Fellowship of the Ring): [keyboard] mouse_camera lets the mouse do it,
+    // while camera_live says so (the world on screen, not a menu; null: always)
+    bool mouse_camera = false;
+    bool (*camera_live)() = nullptr;
     bool menu_start_with_a = false;
     // with menu_start_with_a: when it says so only (a title screen), A's keys press Start too; elsewhere in the menus
     // they press A alone (The Two Towers' Yes/No pop-ups took the Start as their answer, #17)

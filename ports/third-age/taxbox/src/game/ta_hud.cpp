@@ -76,16 +76,23 @@ bool Place2D(const gpu::State& s, float x0, float x1, float y0, float y1, float&
         MakeGroups();
     }
     bool spans = x0 <= -0.98f && x1 >= 0.98f, tall = y0 <= -0.98f && y1 >= 0.98f;
-    gpu::TextureDesc d;
-    if (!s.textures[0] || !gpu::Describe(s.textures[0], d)) {  // untextured: fades, flat overlays
+    gpu::TextureDesc d{};
+    bool textured = s.textures[0] && gpu::Describe(s.textures[0], d);
+    // a vertex program's 2D piece (gpu::g_ortho_place_programs): the HUD's and menus' pictures, bars and highlights
+    bool program = (s.vs_handle & 1) && s.vs && !s.vs->program.empty();
+    if (!textured) {  // untextured: fades, flat overlays
         if (spans) return false;
-        if (edges && !ta::InMenus()) return false;  // hud_edges in play: as before (review, 1.7.6)
-        // the same shape as the textured pieces they sit behind: menus up to 21:9, the HUD 4:3 (#37)
-        a = (ta::InMenus() ? std::min(frame, 21.0f / 9.0f) : 4.0f / 3.0f) / frame;
-        b = 0;
-        return true;
+        // hud_edges in play: the fixed pipeline's flat overlays as before (review, 1.7.6); a program's (a bar, a
+        // highlight band) is a HUD piece and moves with its group below
+        if (edges && !program) return false;
+        if (!edges) {
+            // the same shape as the textured pieces they sit behind: menus up to 21:9, the HUD 4:3 (#37)
+            a = (ta::InMenus() ? std::min(frame, 21.0f / 9.0f) : 4.0f / 3.0f) / frame;
+            b = 0;
+            return true;
+        }
     }
-    if (d.width >= 640 && d.height >= 480) return false;                    // a copy of the screen
+    if (textured && d.width >= 640 && d.height >= 480) return false;        // a copy of the screen
     bool edge_y = y0 <= -0.98f || y1 >= 0.98f;
     bool band = (y1 - y0) < 0.5f && edge_y;
     if (spans && (tall || band)) return false;
@@ -115,5 +122,11 @@ bool Place2D(const gpu::State& s, float x0, float x1, float y0, float y1, float&
 }  // namespace
 
 namespace ta {
-void InitHud() { gpu::g_ortho_place = Place2D; }
+void InitHud() {
+    gpu::g_ortho_place = Place2D;
+    // the HUD's and the menus' pictures (portraits, boxes, bars, the minimap) are drawn through vertex programs, their
+    // text through the fixed pipeline: both are placed, or the text keeps its 4:3 shape in the middle while the
+    // pictures stretch with the frame and nothing lines up (GitHub #95; job 442's capture)
+    gpu::g_ortho_place_programs = true;
+}
 }  // namespace ta

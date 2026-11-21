@@ -1,0 +1,6 @@
+Kenney's Input Prompts (www.kenney.nl/assets/input-prompts), Creative Commons Zero (LICENSE.txt).
+xbox, playstation, switch, steamdeck, steamcontroller and mouse/mouse_side.png: version 1.5A, as COGBox carries them
+(github.com/Shagg88/cogbox, Gears2-Native/assets/glyphs; files named by the button's place on the controller).
+keyboard and the other mouse pictures: version 1.3, "Keyboard & Mouse/Double" (the 128 pixel set), from the mirror
+github.com/Maaack/Kenney-Input-Prompts; its Xbox, PlayStation and mouse pictures were compared with COGBox's copy,
+pixel for pixel the same. Only the keys the ports' settings can name (core/keys.h) are kept.

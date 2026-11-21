@@ -14,7 +14,8 @@ static void show_file(const std::string &f) { show_file_in_folder(f); }
 
 // On each game's About page (as COGBox has it): the saves backed up to a zip on the desktop and put back from one,
 // the folders, and for the Xbox ports their saved shaders cleared (set aside, not deleted)
-void saves_section(App &a, const std::string &game, const std::string &saves, const std::string &shaders, const std::string &gameDir)
+void saves_section(App &a, const std::string &game, const std::string &saves, const std::string &shaders, const std::string &gameDir,
+                   const std::string &logGame)
 {
     section("Folders");
     if (!gameDir.empty()) {
@@ -54,7 +55,7 @@ void saves_section(App &a, const std::string &game, const std::string &saves, co
     if (busy) ImGui::EndDisabled();
     ImGui::SameLine();
     if (ImGui::Button("Logs")) {
-        std::string n = session_newest(logs_dir());
+        std::string n = session_newest(logs_dir(), logGame.empty() ? game : logGame);   // this game's, not the newest of all
         if (n.empty()) open_folder(logs_dir()); else show_file(n);
     }
     if (!shaders.empty()) {

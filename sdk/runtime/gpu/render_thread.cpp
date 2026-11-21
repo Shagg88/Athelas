@@ -110,6 +110,13 @@ bool Same(const uint8_t* a, const uint8_t* b, size_t n) {
 
 using Clock = std::chrono::steady_clock;
 uint64_t Ns(Clock::time_point t) { return uint64_t(std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now() - t).count()); }
+// the title thread's recording time (XBE_PERF's "title thread" line) is measured only with XBE_PERF set: two clock
+// reads and an atomic add a draw, ~1 ms a frame at The Third Age's 18,000 draws, for a number nobody reads otherwise
+const bool g_capture_timing = std::getenv("XBE_PERF") != nullptr;
+Clock::time_point CapNow() { return g_capture_timing ? Clock::now() : Clock::time_point{}; }
+void CapAdd(Clock::time_point t) {
+    if (g_capture_timing) g_perf_capture_ns += Ns(t);
+}
 
 class Threaded final : public Backend {
 public:
@@ -158,7 +165,7 @@ public:
     const bool g_full_state = std::getenv("XBE_FULL_STATE") != nullptr;
 
     void Draw(const State& s, uint32_t prim, uint32_t start, uint32_t count, const uint8_t* indices) override {
-        auto t = Clock::now();
+        auto t = CapNow();
         uint64_t gen = core::g_state_gen;
         SendState(s, gen != sent_gen_ || g_full_state);
         sent_gen_ = gen;
@@ -178,11 +185,11 @@ public:
         Use(s.zs.header);
         Written(s.rt);
         if (cur_->cmds.size() >= kBatchCommands) Submit();
-        g_perf_capture_ns += Ns(t);
+        CapAdd(t);
     }
 
     void Clear(const State& s, uint32_t count, const uint8_t* rects, uint32_t flags, uint32_t color, float z, uint32_t stencil) override {
-        auto t = Clock::now();
+        auto t = CapNow();
         SendState(s);
         Cmd c{Op::Clear};
         c.a = count;
@@ -198,12 +205,12 @@ public:
         Use(s.rt.header);
         Use(s.zs.header);
         if (flags & kClearTarget) Written(s.rt);
-        g_perf_capture_ns += Ns(t);
+        CapAdd(t);
     }
 
     // rects and points are taken now; the copy itself, CPU or GPU, runs in order like the console's
     void Copy(const Surface& src, const Surface& dst, uint32_t count, uint32_t src_rects, uint32_t dst_points) override {
-        auto t = Clock::now();
+        auto t = CapNow();
         Cmd c{Op::Copy};
         c.a = count;
         c.b = count && src_rects ? Scratch(kernel::HostPtr(src_rects), count * 16) : 0;
@@ -216,20 +223,20 @@ public:
         Use(src.header);
         Use(dst.header);
         Written(dst);
-        g_perf_capture_ns += Ns(t);
+        CapAdd(t);
     }
 
     void GameFrame() override { inner_->GameFrame(); }  // on the calling (game) thread, not queued
     void PresentQueued(bool swap) override { inner_->PresentQueued(swap); }  // the same
     void Present(const Surface& front) override {
-        auto t = Clock::now();
+        auto t = CapNow();
         Cmd c{Op::Present};
         c.s1 = front;
         c.s1.header = Header(front.header);
         cur_->cmds.push_back(c);
         Use(front.header);
         uint64_t id = Submit();
-        g_perf_capture_ns += Ns(t);
+        CapAdd(t);
         // the title records one frame while the one before it draws
         Wait(last_present_, WaitFor::Frame, nullptr);
         last_present_ = id;
@@ -309,6 +316,7 @@ private:
 
     void ReadBack(uint32_t data, bool late, uint32_t size = 0) {
         // only surfaces the GPU wrote since the last read-back hold anything newer than guest memory
+        if (data == last_written_) last_written_ = ~0u;  // the next draw to it marks it written again
         if (!written_.erase(data)) return;
         (late ? g_perf_sync_late : g_perf_sync_block)++;
         if (diag::Perf() && logged_.insert(uint64_t(data) << 1 | (late ? 1 : 0)).second)
@@ -429,7 +437,12 @@ private:
         *r.value = cur_->id;
     }
     void Written(const Surface& s) {
-        if (s.header) written_.insert(mem::VirtualFromPhysical(s.data));
+        if (!s.header) return;
+        // nearly every draw names the same target as the one before: one set insert only when it changes
+        uint32_t v = mem::VirtualFromPhysical(s.data);
+        if (v == last_written_) return;
+        written_.insert(v);
+        last_written_ = v;
     }
 
     uint64_t Submit() {
@@ -626,6 +639,7 @@ private:
     State sent_;  // the state as the render thread will have it
     std::unordered_map<uint32_t, uint64_t> last_use_;
     std::unordered_set<uint32_t> written_;  // surfaces drawn since their last read-back, by data address
+    uint32_t last_written_ = ~0u;           // the last one Written() put in it (still in it)
     std::unordered_set<uint64_t> logged_;   // perf diagnostic: read-backs named once, by address and kind
     uint64_t next_id_ = 0, last_present_ = 0;
 

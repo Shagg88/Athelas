@@ -23,13 +23,63 @@ namespace gpu {
 // pixel centres sample such a quad from its first texel to half a texel short of its far edge; upscaled, the far
 // edge's last half texel is drawn too, and wrapped it blends in the opposite edge (thin dark lines on HUD sprites).
 // Clamped, it takes the edge texel instead, which a wrapped texture used once over 0..1 has there anyway.
+uint32_t ClampStages(const State& s, const Assembled& a) {
+    if (!UnitTexcoords(a)) return 0;
+    uint32_t mask = 0;
+    bool program = (s.vs_handle & 1) && s.vs && !s.vs->program.empty();
+    if (!program) {
+        for (int i = 0; i < 4; i++) {
+            const auto& t = s.tss[size_t(i)];
+            // D3DTSS_TEXCOORDINDEX's high word: generated coordinates; D3DTTFF: a texture matrix at work. Neither
+            // applies to pre-transformed vertices (XYZRHW), whose coordinates always pass straight through.
+            if (a.pretransformed || (!((t[kTssTexCoordIndex] >> 16) & 7) && !(t[kTssTextureTransformFlags] & 7)))
+                mask |= 1u << i;
+        }
+        return mask;
+    }
+    // a vertex program: the input register each oT is a plain copy of (mov oTn, vR; nothing else writes that oT),
+    // 0xFF for none; kept for the program last asked about (sprites come in runs)
+    thread_local uint64_t last = 0;
+    thread_local uint8_t copy_of[4] = {0xFF, 0xFF, 0xFF, 0xFF};
+    const std::vector<uint32_t>& prog = s.vs->program;
+    uint64_t key = Hash(prog.data(), prog.size() * sizeof(uint32_t)) | 1;  // by contents: never 0, the start value
+    if (last != key) {
+        last = key;
+        uint8_t writes[4] = {};
+        for (int i = 0; i < 4; i++) copy_of[i] = 0xFF;
+        for (size_t n = 0; n + 4 <= prog.size(); n += 4) {
+            const uint32_t* t = &prog[n];
+            auto f = [&](int sub, int bit, int len) { return (t[sub] >> bit) & ((1u << len) - 1); };
+            uint32_t mac = f(1, 21, 4), ilu = f(1, 25, 3), omask = f(3, 12, 4), o = f(3, 3, 8) & 0xF;
+            bool use_ilu = f(3, 2, 1) == 1;
+            // an output register written: the same test shaders.cpp's translation makes
+            if (omask && f(3, 11, 1) && ((use_ilu && ilu) || (!use_ilu && mac && mac != 13)) && o >= 9 && o <= 12) {
+                int st = int(o) - 9;
+                writes[st]++;
+                // mov from an input register, read as xyzw, not negated, x and y both written
+                bool plain = !use_ilu && mac == 1 && f(2, 26, 2) == 2 && f(1, 8, 1) == 0 && f(1, 0, 8) == 0x1B &&
+                             (omask & 0xC) == 0xC;
+                copy_of[st] = plain && writes[st] == 1 ? uint8_t(f(1, 9, 4)) : 0xFF;
+            }
+            if (f(3, 0, 1)) break;  // last instruction
+        }
+    }
+    for (int i = 0; i < 4; i++) {
+        uint8_t r = copy_of[i];
+        if (r < 16 && (a.regs >> r & 1) && a.elements[r].format == 16) mask |= 1u << i;  // DXGI_FORMAT_R32G32_FLOAT
+    }
+    return mask;
+}
+
 bool UnitTexcoords(const Assembled& a) {
     constexpr float kLo = -1e-4f;
     constexpr float kHi = 1.0001f;
     constexpr uint32_t kSmallDrawVertices = 4096;  // most vertices a small draw has
     if (!a.vertices.empty() || !a.vertex_count || a.vertex_count > kSmallDrawVertices) return false;
     bool any = false;
-    for (int r = 0; r < 16; r++) {
+    // from register 1: register 0 is the position, which 2D sprites send as x, y in pixels (FLOAT2), not a texture
+    // coordinate (upstream XboxXBE-Recomp b69b4bb: lens flare sprites clamp at their edges)
+    for (int r = 1; r < 16; r++) {
         const VertexElement& e = a.elements[size_t(r)];
         if (!(a.regs >> r & 1) || e.format != 16) continue;  // DXGI_FORMAT_R32G32_FLOAT
         const VertexBuffer& vb = a.buffers[e.buffer];

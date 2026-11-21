@@ -1081,12 +1081,34 @@ static void wine_prefer_fix_dlls(const std::string &dir)
         for (const char *dll : k_wine_dlls) {
             char cur[1024] = "";
             DWORD type = 0, n = sizeof cur - 1;
-            bool had = RegQueryValueExA(k, dll, NULL, &type, (BYTE *)cur, &n) == ERROR_SUCCESS;
+            LONG q = RegQueryValueExA(k, dll, NULL, &type, (BYTE *)cur, &n);
+            bool had = q == ERROR_SUCCESS;
+            if (q != ERROR_SUCCESS && q != ERROR_FILE_NOT_FOUND) {   // there, but unreadable (too long): left alone
+                report += std::string(dll) + " left as it is (the player's own value couldn't be read)\r\n";
+                continue;
+            }
             if (had && type == REG_SZ && strcmp(cur, v) == 0) { report += std::string(dll) + " = native,builtin (already)\r\n"; continue; }
-            // the player's own value, kept once (not overwritten by a later launch)
-            if (had && before && RegQueryValueExA(before, dll, NULL, NULL, NULL, NULL) != ERROR_SUCCESS)
-                RegSetValueExA(before, dll, 0, type, (const BYTE *)cur, n);
+            // "<dll>.set-by-athelas" beside the kept copy: the value now there is ours, so Remove ROTK Fix only ever
+            // takes away or replaces what Athelas set (review, 19 Nov)
+            std::string mark = std::string(dll) + ".set-by-athelas";
+            bool ours = before && RegQueryValueExA(before, mark.c_str(), NULL, NULL, NULL, NULL) == ERROR_SUCCESS;
+            if (had && ours) {   // ours was there, and the player has set their own since: theirs stays, and is theirs
+                RegDeleteValueA(before, mark.c_str());
+                RegDeleteValueA(before, dll);
+                report += std::string(dll) + " left as the player set it\r\n";
+                continue;
+            }
+            // the player's own value, kept (not overwritten by a later launch). When it can't be kept, it isn't
+            // overwritten either: Remove ROTK Fix couldn't put it back (audit, 19 Nov)
+            if (had && (!before || RegSetValueExA(before, dll, 0, type, (const BYTE *)cur, n) != ERROR_SUCCESS)) {
+                report += std::string(dll) + " left as it is (it couldn't be kept for Remove ROTK Fix)\r\n";
+                continue;
+            }
             rc = RegSetValueExA(k, dll, 0, REG_SZ, (const BYTE *)v, sizeof v);
+            if (rc == ERROR_SUCCESS && before) {
+                DWORD one = 1;
+                RegSetValueExA(before, mark.c_str(), 0, REG_DWORD, (const BYTE *)&one, sizeof one);
+            }
             report += std::string(dll) + (rc == ERROR_SUCCESS ? " = native,builtin" : " FAILED (error " + std::to_string(rc) + ")") +
                       (had ? " (was " + std::string(cur) + ")" : "") + "\r\n";
         }
@@ -1111,14 +1133,33 @@ static bool wine_forget_fix_dlls()
     HKEY before = NULL;
     RegOpenKeyExA(HKEY_CURRENT_USER, k_wine_before, 0, KEY_SET_VALUE | KEY_QUERY_VALUE, &before);
     bool any = false;
+    // set up by 1.9.0 or before, which marked nothing: every native,builtin there counts as Athelas', as it did then
+    bool legacy = true;
+    for (const char *dll : k_wine_dlls)
+        if (before && RegQueryValueExA(before, (std::string(dll) + ".set-by-athelas").c_str(), NULL, NULL, NULL, NULL) == ERROR_SUCCESS)
+            legacy = false;
     for (const char *dll : k_wine_dlls) {
         char old[1024];
         DWORD type = 0, n = sizeof old - 1;
-        if (before && RegQueryValueExA(before, dll, NULL, &type, (BYTE *)old, &n) == ERROR_SUCCESS) {
-            any |= RegSetValueExA(k, dll, 0, type, (const BYTE *)old, n) == ERROR_SUCCESS;
+        // only a value Athelas set ("<dll>.set-by-athelas", wine_prefer_fix_dlls) is undone; one the player set
+        // themselves, even the same native,builtin, stays (review, 19 Nov)
+        std::string mark = std::string(dll) + ".set-by-athelas";
+        if (!legacy && (!before || RegQueryValueExA(before, mark.c_str(), NULL, NULL, NULL, NULL) != ERROR_SUCCESS)) continue;
+        char cur[64] = "";
+        DWORD ct = 0, cn = sizeof cur - 1;
+        bool still_ours = RegQueryValueExA(k, dll, NULL, &ct, (BYTE *)cur, &cn) == ERROR_SUCCESS && ct == REG_SZ &&
+                          !strcmp(cur, "native,builtin");
+        bool done = true;
+        if (still_ours) {
+            if (before && RegQueryValueExA(before, dll, NULL, &type, (BYTE *)old, &n) == ERROR_SUCCESS)
+                done = RegSetValueExA(k, dll, 0, type, (const BYTE *)old, n) == ERROR_SUCCESS;   // the player's back
+            else
+                done = RegDeleteValueA(k, dll) == ERROR_SUCCESS;                               // nothing was there
+            any |= done;
+        }
+        if (done && before) {   // the kept copy and the mark go only once that worked (audit, 19 Nov)
             RegDeleteValueA(before, dll);
-        } else {
-            any |= RegDeleteValueA(k, dll) == ERROR_SUCCESS;
+            RegDeleteValueA(before, mark.c_str());
         }
     }
     if (before) RegCloseKey(before);
@@ -1201,8 +1242,13 @@ bool uninstall(const std::string &dir, std::vector<std::string> &done, std::stri
     struct F { const char *name; bool ours; } loaders[] = {
         { "dinput8.dll", g.hasProxyDinput }, { "d3d8.dll", g.hasProxyD3D8 }, { "ROTKFix.dll", g.hasDll } };
     for (auto &f : loaders) {
-        if (!f.ours) continue;
         std::string p = dir + "\\" + f.name;
+        if (!f.ours) {
+            // an earlier uninstall removed ours but couldn't put the other mod's back: it goes back now (audit, 19 Nov)
+            std::string keep = p + ".before-rotkfix";
+            if (!file_exists(p) && file_exists(keep) && MoveFileA(keep.c_str(), p.c_str())) done.push_back(std::string("Restored the previous ") + f.name);
+            continue;
+        }
         if (!DeleteFileA(p.c_str()) && GetLastError() != ERROR_FILE_NOT_FOUND) {
             err = std::string("Could not remove ") + f.name + ". Close the game and try again.";
             return false;
@@ -1210,7 +1256,11 @@ bool uninstall(const std::string &dir, std::vector<std::string> &done, std::stri
         done.push_back(std::string("Removed ") + f.name);
         // put back another mod's file that ROTK Fix replaced, if it was kept
         std::string keep = p + ".before-rotkfix";
-        if (file_exists(keep) && MoveFileA(keep.c_str(), p.c_str())) done.push_back(std::string("Restored the previous ") + f.name);
+        if (file_exists(keep)) {
+            if (MoveFileA(keep.c_str(), p.c_str())) done.push_back(std::string("Restored the previous ") + f.name);
+            else done.push_back(std::string("Could not put back the previous ") + f.name + ": it is kept as " + f.name +
+                                ".before-rotkfix (uninstalling again puts it back)");
+        }
     }
 
     // 2. Controller profile in the game's Input.ini: only ROTK Fix's profiles are taken out, so key changes the player
@@ -1243,7 +1293,7 @@ bool uninstall(const std::string &dir, std::vector<std::string> &done, std::stri
     (void)createdRotkIni;
     if (!g.rotkIniPath.empty() && g.rotkIniExists) {
         const char *r = g.rotkIniPath.c_str();
-        bool back = false;
+        bool back = false, iniFailed = false;
         std::string before = g.rotkIniPath + ".before-rotkfix";
         const bool haveBefore = file_exists(before);
         for (const char *in : { "input0", "input1" })
@@ -1253,9 +1303,9 @@ bool uninstall(const std::string &dir, std::vector<std::string> &done, std::stri
                 std::string md = haveBefore ? gets(before.c_str(), in, "mode", "") : "";
                 if (m.empty() || _strnicmp(m.c_str(), "ROTKFixPad", 10) == 0) { m = "ROTKDefault"; md = "KB"; }
                 if (md.empty()) md = "KB";
-                WritePrivateProfileStringA(in, "map", m.c_str(), r);
-                WritePrivateProfileStringA(in, "mode", md.c_str(), r);
-                back = true;
+                // each write checked: the copy from before ROTK Fix is deleted only when everything went back (audit)
+                if (!WritePrivateProfileStringA(in, "map", m.c_str(), r) || !WritePrivateProfileStringA(in, "mode", md.c_str(), r)) iniFailed = true;
+                else back = true;
             }
         if (back) done.push_back("Set the players back to the layouts they had before ROTK Fix in ROTK.ini");
         if (haveBefore) {
@@ -1265,10 +1315,13 @@ bool uninstall(const std::string &dir, std::vector<std::string> &done, std::stri
                 if (_strnicmp(q, "input_JS_BASE_", 14) || !gets(r, q, "ROOT_MAP", "").empty()) continue;
                 char sec[32768];
                 DWORD m = GetPrivateProfileSectionA(q, sec, sizeof sec, before.c_str());
-                if (m > 0 && m < sizeof sec - 2) WritePrivateProfileSectionA(q, sec, r);
+                if (m > 0 && m < sizeof sec - 2) { if (!WritePrivateProfileSectionA(q, sec, r)) iniFailed = true; }
+                else if (m > 0) iniFailed = true;   // (too big to copy whole)
             }
-            DeleteFileA(before.c_str());
+            if (!iniFailed) DeleteFileA(before.c_str());
         }
+        if (iniFailed) done.push_back("Could not change ROTK.ini fully (is it read-only?)" +
+                                      (haveBefore ? ": its copy from before ROTK Fix, " + before + ", is kept" : std::string()));
     }
 
     // 4. Everything else ROTK Fix added (Screenshots are kept: they are the player's)
@@ -1547,16 +1600,50 @@ bool install_to(const std::string &src, const std::string &dst, std::string &err
         return false;
     }
     CloseHandle(h);
-    // keep another mod's loader files so uninstalling can put them back
+    // keep another mod's loader files so uninstalling can put them back. A move that fails stops here, before anything
+    // is changed: copying over that file would lose the other mod's loader for good (audit, 19 Nov)
     GameInfo g = inspect_game(dst);
-    if (g.otherD3D8) MoveFileExA((dst + "\\d3d8.dll").c_str(), (dst + "\\d3d8.dll.before-rotkfix").c_str(), MOVEFILE_REPLACE_EXISTING);
-    if (g.otherDinput) MoveFileExA((dst + "\\dinput8.dll").c_str(), (dst + "\\dinput8.dll.before-rotkfix").c_str(), MOVEFILE_REPLACE_EXISTING);
+    std::vector<std::string> aside;   // the loaders moved by this call, put back if it fails
+    auto put_back_loaders = [&] {
+        for (const std::string &n : aside) MoveFileExA((dst + "\\" + n + ".before-rotkfix").c_str(), (dst + "\\" + n).c_str(), MOVEFILE_REPLACE_EXISTING);
+    };
+    for (const char *n : { "d3d8.dll", "dinput8.dll" }) {
+        if (!(n[1] == '3' ? g.otherD3D8 : g.otherDinput)) continue;
+        if (!MoveFileExA((dst + "\\" + n).c_str(), (dst + "\\" + n + ".before-rotkfix").c_str(), MOVEFILE_REPLACE_EXISTING)) {
+            put_back_loaders();
+            err = std::string("Could not set aside the other mod's ") + n + " (is the game running?). Nothing was changed.";
+            return false;
+        }
+        aside.push_back(n);
+    }
+    // the four files go in together: each one there before is copied aside first, and a copy that fails puts all of
+    // them back, so the folder isn't left half one version, half another (audit, 19 Nov)
+    std::vector<std::pair<std::string, bool>> put;   // target, had a file before (its copy in <target>.rotkfix-undo)
+    auto undo = [&] {
+        for (auto it = put.rbegin(); it != put.rend(); ++it) {
+            std::string keep = it->first + ".rotkfix-undo";
+            if (it->second) { if (CopyFileA(keep.c_str(), it->first.c_str(), FALSE)) DeleteFileA(keep.c_str()); }
+            else DeleteFileA(it->first.c_str());
+        }
+        put_back_loaders();
+    };
     for (const char *f : files) {
-        if (!CopyFileA((src + "\\" + f).c_str(), (dst + "\\" + f).c_str(), FALSE)) {
-            err = std::string("Could not copy ") + f + (GetLastError() == ERROR_SHARING_VIOLATION ? " (is the game running?)" : "") + ".";
+        std::string t = dst + "\\" + f;
+        bool had = file_exists(t);
+        if (had && !CopyFileA(t.c_str(), (t + ".rotkfix-undo").c_str(), FALSE)) {
+            undo();
+            err = std::string("Could not copy ") + f + " aside first. Nothing was changed.";
+            return false;
+        }
+        put.push_back({t, had});
+        if (!CopyFileA((src + "\\" + f).c_str(), t.c_str(), FALSE)) {
+            bool busy = GetLastError() == ERROR_SHARING_VIOLATION;
+            undo();
+            err = std::string("Could not copy ") + f + (busy ? " (is the game running?)" : "") + ". The folder was left as it was.";
             return false;
         }
     }
+    for (auto &pf : put) if (pf.second) DeleteFileA((pf.first + ".rotkfix-undo").c_str());
     DeleteFileA((dst + "\\" LAUNCHER_EXE_OLD).c_str());     // the launcher's old name
     for (const char *f : { "README.txt", "ROTKFix.ini" })
         if (file_exists(src + "\\" + f) && !file_exists(dst + "\\" + f)) CopyFileA((src + "\\" + f).c_str(), (dst + "\\" + f).c_str(), TRUE);
@@ -1616,7 +1703,22 @@ bool fix_outdated(const std::string &dir)
         if (!read_file(src + "\\" + f, a)) return false;   // nothing to copy from
         if (!read_file(dir + "\\" + f, b) || a != b) return true;
     }
-    return false;
+    // the bundled mods' code too (not their .ini, which holds the player's choices): an update that changes only a
+    // mod still reaches the game folder (audit, 19 Nov; the gap PR #73 describes)
+    WIN32_FIND_DATAA fd;
+    HANDLE h = FindFirstFileA((src + "\\ROTKFix\\mods\\*").c_str(), &fd);
+    if (h == INVALID_HANDLE_VALUE) return false;
+    bool stale = false;
+    do {
+        if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) continue;
+        std::string n = fd.cFileName;
+        if (n.size() > 4 && !_stricmp(n.c_str() + n.size() - 4, ".ini")) continue;
+        std::string a, b;
+        if (!read_file(src + "\\ROTKFix\\mods\\" + n, a)) continue;
+        if (!read_file(dir + "\\ROTKFix\\mods\\" + n, b) || a != b) { stale = true; break; }
+    } while (FindNextFileA(h, &fd));
+    FindClose(h);
+    return stale;
 }
 
 // The version a ROTK Fix DLL reports in its log's first line ("ROTK Fix 1.1.2 loaded"), "" when unreadable: what

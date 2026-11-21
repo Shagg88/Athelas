@@ -39,6 +39,7 @@ struct PixelKey {
     uint32_t flat = 0, two_sided = 0;
     uint32_t proj = 0;       // fixed function: bit per stage sampled at coordinates divided by w
     uint32_t quad = 0;       // a screen quad: QuadHlsl
+    uint32_t alphatest = 0;  // alpha test on: only then may the shader discard (a discard turns off early depth tests)
     bool operator==(const PixelKey& o) const;
 };
 
@@ -114,6 +115,7 @@ struct DrawConstants {
     float mat[5][4];     // material diffuse, ambient, specular, emissive, power
     float amb[4];        // D3DRS_AMBIENT
     float widen[4];      // x: a vertex program's 3D (perspective) positions widened by it, 0 off (g_program_widen)
+                         // y, z: a vertex program's 2D positions moved sideways, x' = y * x + z; y 0 off (g_ortho_place)
     float orbit[2][4];   // free camera test (g_orbit_*): on, yaw, pitch, pivot; p11, p22, a, b
     float lt[8][7][4];   // per light: diffuse, specular, ambient, position range, direction falloff, attenuation, cos theta/2 phi/2
     // points (SpriteHlsl; only its shaders declare these): size, min, max (pixels), scale enable; A, B, C, sprite

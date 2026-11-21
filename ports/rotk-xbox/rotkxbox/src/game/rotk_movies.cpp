@@ -47,7 +47,7 @@ std::atomic<int64_t> g_movie_drawn{0};  // steady clock ms of the last movie fra
 int64_t NowMs() { return ::kernel::GuestNs() / 1000000; }
 }  // namespace
 
-void HarnessLevel();  // rotk_harness_level.cpp, test build only
+void HarnessLevel();  // rotk_harness_level.cpp: ROTK_LEVEL (scene tests)
 void InitFonts();     // rotk_fonts.cpp
 void InitEowyn();     // rotk_eowyn.cpp
 

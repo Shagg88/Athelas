@@ -185,12 +185,16 @@ float ScreenSqueeze(const gpu::State& s) {
                                     // is not one: it gets bars as the menu pictures do)
     float k = Shape();
     if (k > 1.0f) return 1.0f / k;
-    // a narrower screen (16:10): x as it is, y made smaller in ScreenPlace (a squeeze just under 1 only asks for it)
+    // a 16:10 screen (a Steam Deck, k 0.9): the menus fill it, 11% taller than laid out, instead of a 16:9 band with
+    // bars above and below (#103: the players there preferred that). Narrower ones (a 4:3 screen with widescreen on)
+    // still get the band: 33% taller would show. There x as it is, y made smaller in ScreenPlace (a squeeze just
+    // under 1 only asks for it)
+    if (k >= 0.85f && k < 1.0f) return 1.0f;
     if (k < 1.0f) return 0.9999f;
     return 1.0f;
 }
 // x' = a x + b: into the middle; a picture as wide as the screen too, unless it is over the world. On a narrower
-// screen (16:10) y' = c y + d instead: the menus and text, laid out for a 16:9 TV, keep that shape in a band across
+// screen than 16:10 (ScreenSqueeze: 16:10 itself is filled, #103) y' = c y + d instead: the menus and text, laid out for a 16:9 TV, keep that shape in a band across
 // the full width, centred top to bottom - as the HUD is (WideHud) - instead of coming out taller (review)
 void ScreenPlace(float, float, float, float, float w, float f, float& a, float& b, float& c, float& d) {
     const float k = Shape();
@@ -221,6 +225,9 @@ std::array<float, 4> g_orig{}, g_put{}, g_orig_y{}, g_put_y{};
 }  // namespace
 
 namespace fotr {
+// the 3D world drawn in the last quarter second: play, not the front end's menus (GameInfo::camera_live, the mouse
+// camera, #106)
+bool WorldShown() { return NowMs() - g_world_ms < 250; }
 extern std::atomic<bool> g_hud_hidden;  // F1 (below)
 // the draw observer, before each draw (the renderer's thread)
 void WideHud(const gpu::State& cs) {
@@ -277,8 +284,10 @@ void WideHud(const gpu::State& cs) {
         g_put = row;
         g_squeezed = true;
         LOG_FIRST(1, "fotr: HUD kept 16:9 in the middle (%.2f of 16:9)", k);
-    } else if (k < 1.0f) {
-        // a narrower screen (16:10): the y row times the shape, so the HUD keeps its 16:9 shape across the width
+    } else if (k < 0.85f) {
+        // a narrower screen (4:3 with widescreen on): the y row times the shape, so the HUD keeps its 16:9 shape
+        // across the width. A 16:10 screen fills it as the menus do (ScreenSqueeze, #103), so text over the HUD
+        // stays on it
         auto& yrow = s.vsc[kRow + 1];
         g_orig_y = yrow;
         for (float& v : yrow) v *= k;

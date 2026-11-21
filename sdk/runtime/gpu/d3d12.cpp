@@ -44,6 +44,7 @@
 #include "gpu/upscale.h"
 #include "gpu/vertex.h"
 #include "kernel/kernel.h"
+#include "kernel/memory.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -634,7 +635,7 @@ private:
     void CaptureShaders(const State& s, const Assembled& a, const DrawShaders& sh, const PixelKey& pk);
     void CaptureShader(const char* kind, uint64_t key, const std::string& src);
     void SetTextureViewsAndSamplers(const State& s, const Assembled& a, DrawTextures& stages);
-    uint32_t EnsureStageSamplers(const State& s, const DrawTextures& stages, bool clamp);
+    uint32_t EnsureStageSamplers(const State& s, const DrawTextures& stages, uint32_t clamp);
     void SetViewportScissor(const State& s, uint32_t gw, uint32_t gh);
     void SetBlendFactorStencilRef(const State& s);
     void DrawGeometry(const Assembled& a);
@@ -809,6 +810,11 @@ private:
     std::unordered_map<uint64_t, PackTex> pack_cache_;
     std::unordered_set<uint64_t> hud_logged_;  // textures already named as drawn in 2D
     std::unordered_set<uint64_t> dumped_;
+    // XBE_TEXTURE_SWEEP (texture pack making, with [textures] dump on): the textures the game holds, saved as it
+    // loads them rather than when first drawn; see SweepTextures
+    std::unordered_map<uint64_t, uint8_t> sweep_seen_;
+    PerfClock::time_point sweep_t_{};
+    void SweepTextures();
     void TexturePack(Tex& tx, const TextureDesc& d, const uint8_t* p, const uint32_t* colours,
                      const std::vector<std::vector<uint8_t>>& levels);
     bool LoadPackTexture(const std::filesystem::path& file, PackTex& out);
@@ -2617,7 +2623,7 @@ ID3D12PipelineState* D3D12Backend::EnsurePipeline(const PsoKey& k, ID3DBlob* vs,
 
 // pipelines.bin: a header, then PsoKeys as EnsurePipeline built them (zeroed padding, so equal keys are equal bytes)
 struct PipelineListHeader {
-    char magic[4] = {'A', 'P', 'L', '1'};
+    char magic[4] = {'A', 'P', 'L', '2'};  // 2: 3539c59 changed most pixel shaders' source
     uint32_t key_size = sizeof(PsoKey);
 };
 
@@ -3192,11 +3198,14 @@ D3D12_SAMPLER_DESC StageSampler(const State& s, int i, const DrawTextures& stage
     }
     // smooth_2d: the bicubic taps need a linear sampler, on the top level as the taps read it
     if (stages.info[i].flags & kTexSmooth) sd.Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-    // clamp: the draw's coordinates all lie in 0..1 (UnitTexcoords), so wrap is read as clamp
+    // clamp: this stage's coordinates all lie in 0..1 (ClampStages), so wrap is read as clamp
     sd.AddressU = Address(clamp && t[kTssAddressU] == kTaddressWrap ? kTaddressClamp : t[kTssAddressU]);
     sd.AddressV = Address(clamp && t[kTssAddressV] == kTaddressWrap ? kTaddressClamp : t[kTssAddressV]);
     sd.AddressW = Address(t[kTssAddressW]);
-    sd.MipLODBias = Bits(t[kTssMipLodBias]) + app::Get().lod_bias + extra;  // texture sharpness: 0 as the game asks
+    // texture sharpness: 0 as the game asks. Kept in the range Direct3D 12 takes: a game can ask past it, and a
+    // sampler outside it is refused (upstream XboxXBE-Recomp 655fdcd)
+    sd.MipLODBias = std::clamp(Bits(t[kTssMipLodBias]) + app::Get().lod_bias + extra, D3D12_MIP_LOD_BIAS_MIN,
+                               D3D12_MIP_LOD_BIAS_MAX);
     sd.MinLOD = float(t[kTssMaxMipLevel]);
     sd.MaxLOD = mip ? D3D12_FLOAT32_MAX : sd.MinLOD;
     Color(t[kTssBorderColor], sd.BorderColor);
@@ -3211,7 +3220,7 @@ D3D12_SAMPLER_DESC StageSampler(const State& s, int i, const DrawTextures& stage
     return sd;
 }
 
-uint32_t D3D12Backend::EnsureStageSamplers(const State& s, const DrawTextures& stages, bool clamp) {
+uint32_t D3D12Backend::EnsureStageSamplers(const State& s, const DrawTextures& stages, uint32_t clamp) {
     D3D12_SAMPLER_DESC sd[4];
     uint32_t aniso = app::Get().aniso;
     // console_textures: a 3D draw's textures one mip level softer per doubling of the console's 480 lines, so they
@@ -3225,7 +3234,7 @@ uint32_t D3D12Backend::EnsureStageSamplers(const State& s, const DrawTextures& s
     // softer than at native resolution
     if (UpOn() && up_rw_ && up_ow_ > up_rw_ && !(g_screen_space_test && g_screen_space_test(s)))
         extra += std::log2(float(up_rw_) / float(up_ow_));
-    for (int i = 0; i < 4; i++) sd[i] = StageSampler(s, i, stages, clamp, aniso, stages.rt[i] ? 0.0f : extra);
+    for (int i = 0; i < 4; i++) sd[i] = StageSampler(s, i, stages, (clamp >> i & 1) != 0, aniso, stages.rt[i] ? 0.0f : extra);
     // Above the console's 480 lines, textures the game reads unfiltered in a 3D draw would be enlarged texel by
     // texel into blocks the console never showed: there they were shrunk or drawn at about their own size.
     //   - "linear when shrunk, point when enlarged": enlarged linearly too, as the texture was read on the console;
@@ -3496,6 +3505,10 @@ void D3D12Backend::UploadConstants(const State& s, const DrawShaders& sh, const 
     FillCombinerConstants(s, c);
     FillSpriteConstants(s, c);
     c.widen[0] = sh.prog ? g_program_widen.load() : 0.0f;
+    // a program's 2D draw moved with the fixed function 2D (the fixed pipeline takes the move in its wvp)
+    bool placed = sh.prog && (place_a_ != 1.0f || place_b_ != 0.0f);
+    c.widen[1] = placed ? place_a_ : 0.0f;
+    c.widen[2] = placed ? place_b_ : 0.0f;
     if (g_orbit_on.load()) {
         c.orbit[0][0] = 1.0f;
         c.orbit[0][1] = g_orbit_yaw.load();
@@ -3646,6 +3659,11 @@ void D3D12Backend::CaptureDraw(const State& s, uint32_t prim, uint32_t count, co
         const float* t = s.transforms[size_t(m)].data();
         fprintf(cap_, " | T%d %g %g %g %g / %g %g %g", m, t[0], t[5], t[10], t[15], t[12], t[13], t[14]);
     }
+    // what the line above leaves out and a wrong blend shows up as: the blend equation as the game set it (8006 add,
+    // 800A subtract, 800B reverse subtract, 8007 min, 8008 max, F005 and F006 the console's signed ones), the blend
+    // colour, fog on or off, and a program's 2D move (g_ortho_place)
+    fprintf(cap_, " | bop %X bcol %08X fog %u move %g %g", SimpleState(s, kMBlendOp), SimpleState(s, kMBlendColor),
+            s.rs[kRsFogEnable] ? 1u : 0u, c.widen[1], c.widen[2]);
     CaptureTextures(s, stages);
 }
 
@@ -3703,7 +3721,7 @@ void D3D12Backend::SetTextureViewsAndSamplers(const State& s, const Assembled& a
         std::memcpy(last_views_.sv, stages.sv, sizeof(last_views_.sv));
     }
     cl_->SetGraphicsRootDescriptorTable(2, Gpu(srv_heap_.Get(), slot, srv_inc_));
-    uint32_t samplers = EnsureStageSamplers(s, stages, UnitTexcoords(a));
+    uint32_t samplers = EnsureStageSamplers(s, stages, ClampStages(s, a));
     cl_->SetGraphicsRootDescriptorTable(3, Gpu(smp_heap_.Get(), samplers, smp_inc_));
 }
 
@@ -3941,7 +3959,9 @@ void D3D12Backend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t 
     PerfClock::time_point t_or = DrawClock::now();
     if (g_ortho_place) {
         float x0, x1, y0, y1;
-        if (OrthoExtent(s, start, count, indices, x0, x1, y0, y1) && !g_ortho_place(s, x0, x1, y0, y1, place_a_, place_b_)) {
+        bool have = OrthoExtent(s, start, count, indices, x0, x1, y0, y1) ||
+                    (g_ortho_place_programs && ProgramExtent(s, start, count, indices, x0, x1, y0, y1));
+        if (have && !g_ortho_place(s, x0, x1, y0, y1, place_a_, place_b_)) {
             place_a_ = 1.0f;
             place_b_ = 0.0f;
         }
@@ -5044,8 +5064,88 @@ void LogPerf() {
     }
 }
 
+// XBE_TEXTURE_SWEEP=1, with [textures] dump on (making a texture pack): every 3 s the game's memory is searched for
+// its texture headers (D3DPixelContainer: Common of type texture, Data, Lock, Format, Size), the same ones a draw
+// reads (Describe), and each texture is saved as TexturePack would save it when drawn: the same hash, the same PNG.
+// So a level's textures are saved once it has loaded them, the ones the run never shows too. A texture is saved
+// after two sweeps found the same contents (not while the game is still filling it). Left out, as a draw leaves
+// them out: linear textures (drawn into or written every frame), cube and volume textures, P8 (its colours are set
+// apart from the header: saved when drawn), and formats a PNG can't hold.
+void D3D12Backend::SweepTextures() {
+    static const bool on = std::getenv("XBE_TEXTURE_SWEEP") != nullptr;
+    if (!on || !app::Get().texture_dump) return;
+    if (sweep_t_ != PerfClock::time_point{} && PerfMs(sweep_t_) < 3000.0) return;
+    sweep_t_ = PerfClock::now();
+    uint32_t found = 0, saved = 0;
+    // each hash's count of sweeps it was found in, one a sweep; those not found again are dropped
+    std::unordered_map<uint64_t, uint8_t> now;
+    std::vector<TextureDesc> cands;
+    auto sweep = [&](uint32_t lo, uint32_t hi) {
+        for (uint32_t page = lo; page < hi && page >= lo; page += mem::kPage) {
+            // the headers are read with the allocator's lock held (the game's thread may free the page meanwhile);
+            // the pixels are in physical memory, which is never unmapped, and are read after
+            cands.clear();
+            mem::Lock();
+            if (mem::IsCommitted(page)) {
+                const uint8_t* b = static_cast<const uint8_t*>(kernel::HostPtr(page));
+                for (uint32_t o = 0; o + 20 <= mem::kPage; o += 4) {
+                    uint32_t common;
+                    std::memcpy(&common, b + o, 4);
+                    if ((common & 0x70000) != 0x40000) continue;
+                    TextureDesc d;
+                    if (!Describe(page + o, d) || d.linear || d.cube || d.depth != 1 || d.format == 0x0B) continue;
+                    cands.push_back(d);
+                }
+            }
+            mem::Unlock();
+            for (const TextureDesc& d : cands) {
+                const FormatInfo& fi = Format(d.format);
+                if (fi.host == Host::None || fi.depth || d.width > 4096 || d.height > 4096 || d.width < 4 || d.height < 4)
+                    continue;
+                if (d.levels > 13 || (1u << (d.levels - 1)) > std::max(d.width, d.height)) continue;
+                DXGI_FORMAT hf = HostFormat(fi.host);
+                pack::Format pf = pack::Format(hf);
+                uint32_t total = TotalSize(d);
+                // a texture's pixels are in contiguous (physical) memory, whole
+                if (!pack::Supported(pf) || !total || total > (64u << 20) || d.data < mem::kContiguousBase ||
+                    uint64_t(d.data) + total > uint64_t(mem::kContiguousBase) + mem::kMappedPhysical)
+                    continue;
+                found++;
+                const uint8_t* p = static_cast<const uint8_t*>(kernel::HostPtr(d.data));
+                uint64_t seed = uint64_t(d.format) | uint64_t(d.width) << 8 | uint64_t(d.height) << 24 | uint64_t(d.levels) << 40;
+                uint64_t h = Hash(p, total, seed);
+                if (dumped_.count(h) || now.count(h)) continue;
+                auto was = sweep_seen_.find(h);
+                uint8_t n = uint8_t(std::min(2, (was == sweep_seen_.end() ? 0 : was->second) + 1));
+                now[h] = n;
+                if (n < 2) continue;  // the same in two sweeps: not one still being loaded
+                std::vector<uint8_t> px, rgba;
+                uint32_t pitch;
+                DecodeLevel(d, 0, 0, p, nullptr, px, pitch);
+                uint32_t rb = pack::RowBytes(pf, d.width), rows = pack::Rows(pf, d.height);
+                std::vector<uint8_t> level(size_t(rb) * rows, 0);
+                for (uint32_t y = 0; y < rows && size_t(y + 1) * pitch <= px.size(); y++)
+                    std::memcpy(&level[size_t(y) * rb], &px[size_t(y) * pitch], std::min(rb, pitch));
+                dumped_.insert(h);
+                std::filesystem::path file = app::TextureDir() / "dump" / pack::PngName(d.width, d.height, h);
+                std::error_code ec;
+                if (std::filesystem::exists(file, ec) || !pack::ToRgba(pf, d.width, d.height, level, rgba)) continue;
+                pack::WritePngLater(file, d.width, d.height, std::move(rgba));
+                saved++;
+            }
+        }
+    };
+    sweep(mem::kUserLow, mem::kUserHigh);
+    sweep(mem::kContiguousBase, mem::kContiguousBase + mem::kPhysicalSize);
+    sweep(mem::kSystemBase, mem::kSystemBase + mem::kSystemSize);
+    sweep_seen_ = std::move(now);
+    LOGR("texture sweep: %u textures in memory, %u newly saved (%zu saved in all), %.0f ms", found, saved,
+         dumped_.size(), PerfMs(sweep_t_));
+}
+
 void D3D12Backend::Present(const Surface& front) {
     FlushBatch();
+    SweepTextures();
     PerfScope perf_present{g_perf.present};
     if (cap_) {
         FinishCapture(front);

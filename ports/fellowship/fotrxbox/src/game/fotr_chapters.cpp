@@ -7,7 +7,8 @@
 // (TransitionToArea in the scene scripts). The scene's own script sets up who is played and the party. Items and
 // quest steps from the chapters skipped are not given: it is a way to replay a chapter, not a save.
 //
-// Testing, in the Linux test build only: FOTR_SCENE=<any scene folder's name> starts there.
+// Testing: FOTR_SCENE=<any scene folder's name> in the environment starts a new game there (every build: the scene
+// test runs jump straight to a scene with it; players never set it).
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -43,10 +44,8 @@ void FOTR_StartScene(X86Context& ctx, uint8_t* base) {
     (void)base;
     const char* want = nullptr;
     const char* what = nullptr;
-#ifndef _WIN32
     static const char* test = std::getenv("FOTR_SCENE");
     if (test && *test) want = what = test;
-#endif
     if (!want && fotr::g_start_chapter > 0 && fotr::g_start_chapter < sizeof kChapters / sizeof kChapters[0]) {
         want = kChapters[fotr::g_start_chapter].scene;
         what = kChapters[fotr::g_start_chapter].what;

@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """imgdiff.py - compare the screenshots of two renderer runs (Vulkan stages, notes/vulkan-parity-plan.md section 5.1).
 
-    python3 -I tools/imgdiff.py <dirA> <dirB> <outdir> [--frozen]
+    python3 -I tools/imgdiff.py <dirA> <dirB> <outdir> [--frozen] [--expect=N]
 
 Pairs PNGs by name order (both runs take their shots at the same presented frames, XBE_SHOT_FRAMES), and writes for
 each pair: PSNR (RGB), SSIM on luma (8x8 windows), the 99.9th-percentile absolute difference, the share of pixels off
 by more than 8 and 32 (of 255), the worst 64x64 tile by SSIM, and a heat map (|difference| x 8). A report.md sums up;
 the exit code is 1 when a pair fails the thresholds (--frozen: a still frame, PSNR >= 40 dB, >8 share <= 0.2 %, every
 tile SSIM >= 0.95; otherwise a moving scene: whole-frame SSIM >= 0.9 and every tile >= 0.8).
+No shots at all fails, and so does a count other than --expect=N (the frames asked for): a run that captured
+nothing, or ended early, must not pass as "all pairs pass" (audit, 19 Nov).
 """
 import os
 import sys
@@ -68,6 +70,7 @@ def compare(a_path, b_path, heat_path, tile=64):
 def main():
     args = [x for x in sys.argv[1:] if not x.startswith("--")]
     frozen = "--frozen" in sys.argv
+    expect = next((int(x.split("=", 1)[1]) for x in sys.argv[1:] if x.startswith("--expect=")), None)
     if len(args) != 3:
         print(__doc__)
         return 2
@@ -79,6 +82,12 @@ def main():
              "| # | A | B | size | PSNR dB | SSIM | worst tile (at) | p99.9 | >8 % | >32 % | result |",
              "|---|---|---|---|---|---|---|---|---|---|---|"]
     failed = 0
+    if not pa or not pb:
+        lines.insert(1, f"**No shots to compare ({len(pa)} and {len(pb)}).**")
+        failed += 1
+    if expect is not None and (len(pa) != expect or len(pb) != expect):
+        lines.insert(1, f"**{expect} shots were asked for; the runs have {len(pa)} and {len(pb)}.**")
+        failed += 1
     if len(pa) != len(pb):
         lines.insert(1, f"**Different shot counts: {len(pa)} and {len(pb)}; only the first {min(len(pa), len(pb))} compared.**")
         failed += 1

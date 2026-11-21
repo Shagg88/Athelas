@@ -95,6 +95,18 @@ if [ -n "$TOOLS_X64" ]; then mkdir -p "$OUT/tools/llvm-mingw"; cp -r "$TOOLS_X64
 bad=$(cd "$OUT" && find . \( -iname '*.xbe' -o -iname '*.iso' -o -iname 'x86_recomp*' -o -iname 'x86_func_mapping*' \) -print)
 if [ -n "$bad" ]; then echo "STOPPED: these are made from a game and can't ship:"; echo "$bad"; exit 1; fi
 if [ -n "$SEED_DIR" ]; then
+    # seeds recorded before the pipeline list's current version (APL2: 3539c59 changed most pixel shaders) would warm
+    # up shaders no draw asks for: record them again with this build (workbench/seed/all.sh)
+    for f in "$SEED_DIR"/*.pipelines; do
+        [ -f "$f" ] || continue
+        [ "$(head -c 4 "$f")" = "APL2" ] || { echo "STOPPED: $f is an old seed (not APL2): record the seeds again"; exit 1; }
+        # its shaders recorded in the same run (the shader seed has no version of its own): not over an hour apart
+        s="${f%.pipelines}.shaders"
+        [ -f "$s" ] || { echo "STOPPED: $s missing"; exit 1; }
+        d=$(( $(stat -c %Y "$f") - $(stat -c %Y "$s") )); d=${d#-}
+        [ "$d" -le 3600 ] || { echo "STOPPED: $s and $f were not recorded together"; exit 1; }
+    done
+    for s in "$SEED_DIR"/*.shaders; do [ -f "${s%.shaders}.pipelines" ] || { echo "STOPPED: $s has no pipelines"; exit 1; }; done
     for p in TT-Xbox:tt ROTK-Xbox:rx FOTR-Xbox:fx TA-Xbox:ta; do
         d=$OUT/${p%%:*}; g=${p#*:}
         [ -d "$d" ] && [ -f "$SEED_DIR/$g.shaders" ] && cp "$SEED_DIR/$g.shaders" "$d/shaders.seed"

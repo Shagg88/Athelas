@@ -271,7 +271,8 @@ void games_apply_pending(App &a);   // About: one line, the licences and launche
 
 // saves.cpp
 std::string logs_dir();
-void saves_section(App &a, const std::string &game, const std::string &saves, const std::string &shaders, const std::string &gameDir = "");
+void saves_section(App &a, const std::string &game, const std::string &saves, const std::string &shaders, const std::string &gameDir = "",
+                   const std::string &logGame = "");   // logGame: the name its play sessions are logged under, when not game
 
 // ports.cpp
 std::string port_data_dir(const char *dir, const char *oldDir);

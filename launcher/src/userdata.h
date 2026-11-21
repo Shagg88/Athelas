@@ -40,7 +40,7 @@ struct Session {
 };
 std::string session_save(const std::string &logsDir, const Session &s, unsigned long exitCode, const std::string &meaning,
                          int keep = 15);
-std::string session_newest(const std::string &logsDir);   // the newest session folder, or ""
+std::string session_newest(const std::string &logsDir, const std::string &game = "");   // the newest session folder (of that game when given), or ""
 
 // Mods for the PC game (ROTK Fix's mods folder). A mod's zip holds either a data mod - files laid out like the
 // game's own, under a "Data" folder at any depth (Data\Game\..., Data\Textures\...) - or a code mod, .dll files

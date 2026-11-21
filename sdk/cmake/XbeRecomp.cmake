@@ -39,12 +39,14 @@ set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
 set(SDL_RENDER OFF CACHE BOOL "" FORCE)
 set(SDL_GPU OFF CACHE BOOL "" FORCE)
 set(SDL_CAMERA OFF CACHE BOOL "" FORCE)
+# guest threads read the pads, which SDL's debug-only main thread checks reject (upstream XboxXBE-Recomp 7221172)
+set(SDL_ASSERTIONS release CACHE STRING "" FORCE)
 # miniupnpc (BSD), static: online co-op (xdk/netplay.cpp) asks the router to open the host's port (UPnP)
 set(UPNPC_BUILD_STATIC ON CACHE BOOL "" FORCE)
 set(UPNPC_BUILD_SHARED OFF CACHE BOOL "" FORCE)
 set(UPNPC_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(UPNPC_BUILD_SAMPLE OFF CACHE BOOL "" FORCE)
-FetchContent_Declare(miniupnpc GIT_REPOSITORY https://github.com/miniupnp/miniupnp.git GIT_TAG miniupnpc_2_3_3
+FetchContent_Declare(miniupnpc GIT_REPOSITORY https://github.com/miniupnp/miniupnp.git GIT_TAG miniupnpc_2_3_5
                      GIT_SHALLOW TRUE SOURCE_SUBDIR miniupnpc)
 FetchContent_Declare(SDL3 GIT_REPOSITORY https://github.com/libsdl-org/SDL.git GIT_TAG release-3.4.20 GIT_SHALLOW TRUE)
 # glslang, static, for the Vulkan backend's HLSL to SPIR-V at run time (runtime/gpu/spirv.cpp): its HLSL front end

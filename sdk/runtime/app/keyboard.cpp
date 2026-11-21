@@ -88,11 +88,14 @@ std::atomic<uint64_t> g_latched[4];
 // the mouse since the pad was last read (window thread: Mouse): raw movement in counts, wheel notches
 std::atomic<int32_t> g_mouse_dx{0}, g_mouse_dy{0}, g_wheel{0};
 float g_aim_x = 0, g_aim_y = 0;  // the aim the mouse holds the stick at, easing back when it stops
+float g_cam_x = 0, g_cam_y = 0;  // the same for the camera (the right stick, mouse_camera)
 
-bool Down(uint8_t vk, bool mouse_ok) {
+// latched: the taps since the last read, taken all at once (Merge): a tap that arrives while the keys are being read
+// is kept for the next read instead of being cleared unseen (audit, 19 Nov)
+bool Down(uint8_t vk, bool mouse_ok, const uint64_t* latched) {
     bool mouse = vk <= 0x06 && vk != 0x03;
     if (mouse && !mouse_ok) return false;
-    bool down = (GetAsyncKeyState(vk) & 0x8000) != 0 || (g_latched[vk >> 6].load() & (1ull << (vk & 63)));
+    bool down = (GetAsyncKeyState(vk) & 0x8000) != 0 || (latched[vk >> 6] & (1ull << (vk & 63)));
     uint64_t bit = 1ull << (vk & 63);
     std::atomic<uint64_t>& w = g_swallowed[vk >> 6];
     if (w.load() & bit) {
@@ -128,7 +131,7 @@ void Mouse(void* hwnd, uint32_t msg, uintptr_t wp, intptr_t lp) {
             g_mouse_dy += r.data.mouse.lLastY;
         }
     } else if (msg == WM_MOUSEWHEEL) {
-        g_wheel += GET_WHEEL_DELTA_WPARAM(wp) / WHEEL_DELTA;
+        g_wheel += GET_WHEEL_DELTA_WPARAM(wp);   // raw: a smooth wheel's small steps add up to a notch (Merge)
     }
     (void)wp;
 }
@@ -167,20 +170,23 @@ void Merge(int port, input::Pad& p) {
     bool held[kCount] = {};
     bool any = false;
     bool right_click = false;  // the right button held, in the menus going back instead of its action
+    uint64_t latched[4];
+    for (int i = 0; i < 4; i++) latched[i] = g_latched[i].exchange(0);
     for (uint32_t a = 0; a < kCount; a++)
         for (uint8_t vk : b.vk[a]) {
             if (menus && s.mouse_menus && vk == VK_RBUTTON) {
-                right_click = right_click || Down(vk, mouse_ok);
+                right_click = right_click || Down(vk, mouse_ok, latched);
                 continue;
             }
-            if (Down(vk, mouse_ok)) {
+            if (Down(vk, mouse_ok, latched)) {
                 held[a] = true;
                 any = true;
             }
         }
-    for (auto& l : g_latched) l = 0;  // read once
-    int32_t dx = g_mouse_dx.exchange(0), dy = g_mouse_dy.exchange(0), wheel = g_wheel.exchange(0);
-    if (!mouse_ok) dx = dy = wheel = 0;
+    int32_t dx = g_mouse_dx.exchange(0), dy = g_mouse_dy.exchange(0), raw = g_wheel.exchange(0);
+    int32_t wheel = raw / WHEEL_DELTA;   // whole notches; the rest waits for the next steps
+    if (!mouse_ok) dx = dy = wheel = raw = 0;
+    if (raw % WHEEL_DELTA) g_wheel += raw % WHEEL_DELTA;
     if (menus && s.mouse_menus) {
         if (right_click) held[kB] = any = true;
         if (wheel > 0) held[kDpadUp] = any = true;
@@ -202,6 +208,24 @@ void Merge(int port, input::Pad& p) {
         if (ax != 0 || ay != 0) any = true;
     } else {
         g_aim_x = g_aim_y = 0;
+    }
+    // mouse camera (#106): otherwise the mouse's movement holds the right stick over the same way, in games whose right
+    // stick turns a free camera
+    float cx = 0, cy = 0;
+    if (app::kGame.mouse_camera && s.mouse_camera && !menus && !held[kLeftTrigger] &&
+        (!app::kGame.camera_live || app::kGame.camera_live())) {
+        float k = float(s.mouse_sensitivity) / 100.0f / 40.0f;
+        auto toward = [](float cur, float want) {
+            float v = want != 0 ? want : cur * 0.6f;
+            return std::fabs(v) < 0.02f ? 0.0f : std::max(-1.0f, std::min(1.0f, v));
+        };
+        g_cam_x = toward(g_cam_x, float(dx) * k);
+        g_cam_y = toward(g_cam_y, float(s.mouse_invert_y ? dy : -dy) * k);
+        cx = g_cam_x;
+        cy = g_cam_y;
+        if (cx != 0 || cy != 0) any = true;
+    } else {
+        g_cam_x = g_cam_y = 0;
     }
     if (!any) return;
     if (!g_used.exchange(true)) LOGR("keyboard: first key press");
@@ -227,6 +251,11 @@ void Merge(int port, input::Pad& p) {
     } else if (ax != 0 || ay != 0) {
         p.lx = int16_t(std::lround(ax * 32767));
         p.ly = int16_t(std::lround(ay * 32767));
+    }
+    if (cx != 0 || cy != 0) {   // (a controller's own right stick, when it's pushed further, wins)
+        int16_t rx = int16_t(std::lround(cx * 32767)), ry = int16_t(std::lround(cy * 32767));
+        if (std::abs(int(rx)) > std::abs(int(p.rx))) p.rx = rx;
+        if (std::abs(int(ry)) > std::abs(int(p.ry))) p.ry = ry;
     }
     // the analog buttons, A B X Y black white left trigger right trigger, as input::Pad::analog
     for (uint32_t i = 0; i < 8; i++)

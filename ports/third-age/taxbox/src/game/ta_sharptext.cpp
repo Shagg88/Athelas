@@ -152,6 +152,26 @@ std::vector<float> Sharpen(const std::vector<float>& a, int tw, int th) {
     int W = tw * kScale, H = th * kScale;
     std::vector<float> u = Separable(a, tw, th, CubicTaps(tw, W), W, CubicTaps(th, H), H);
     u = Separable(u, W, H, GaussTaps(W, kScale * 0.35f), W, GaussTaps(H, kScale * 0.35f), H);
+    // the outline is cut at 60% of the nearest stroke's peak, at most 50%: a thin stroke (the bar of an 'e', a
+    // serif) never reaches 50% coverage in the small original, and a fixed 50% cut took it away (#94). Thick
+    // strokes peak near 100%, so their edges are where they were. The peak: the largest coverage within about one
+    // original pixel (a separable max, rows then columns)
+    int r = kScale;
+    std::vector<float> mx(size_t(W) * H), peak(size_t(W) * H);
+    Rows(H, [&](int y) {
+        for (int x = 0; x < W; x++) {
+            float m = 0;
+            for (int k = std::max(x - r, 0); k <= std::min(x + r, W - 1); k++) m = std::max(m, u[size_t(y) * W + k]);
+            mx[size_t(y) * W + x] = m;
+        }
+    });
+    Rows(H, [&](int y) {
+        for (int x = 0; x < W; x++) {
+            float m = 0;
+            for (int k = std::max(y - r, 0); k <= std::min(y + r, H - 1); k++) m = std::max(m, mx[size_t(k) * W + x]);
+            peak[size_t(y) * W + x] = m;
+        }
+    });
     std::vector<float> out(size_t(W) * H);
     Rows(H, [&](int y) {
         for (int x = 0; x < W; x++) {
@@ -159,7 +179,10 @@ std::vector<float> Sharpen(const std::vector<float>& a, int tw, int th) {
             float gx = (u[size_t(y) * W + std::min(x + 1, W - 1)] - u[size_t(y) * W + std::max(x - 1, 0)]) * 0.5f;
             float gy = (u[size_t(std::min(y + 1, H - 1)) * W + x] - u[size_t(std::max(y - 1, 0)) * W + x]) * 0.5f;
             float g = std::sqrt(gx * gx + gy * gy) + 1e-6f;
-            out[i] = std::clamp((u[i] - 0.5f) / g + 0.5f, 0.0f, 1.0f);
+            // at least 0.25: a lone faint pixel, or a faint fringe beside a stroke, stays out as before (review: a lower
+            // floor made them solid dots and ghost lines); the 'e' bar's 40-47% strokes still come through
+            float t = std::clamp(0.6f * peak[i], 0.25f, 0.5f);
+            out[i] = std::clamp((u[i] - t) / g + 0.5f, 0.0f, 1.0f);
         }
     });
     return out;

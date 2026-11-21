@@ -110,9 +110,15 @@ void FileOpened(const char* name) {
 void FileRead(const char* name) {
     size_t n = std::strlen(name);
     if (n < 4 || (std::strcmp(name + n - 4, ".vid") && std::strcmp(name + n - 4, ".VID"))) return;
-    if (!g_vid_read.load() || NowMs() - g_vid_read.load() >= kMovieGapMs) {
+    std::string vid = SceneName(name);
+    bool other;  // a different movie's file: a new movie even straight after the last (the logos skipped into a film)
+    {
+        std::lock_guard lock(g_lock);
+        other = vid != g_vid_name;
+    }
+    if (other || !g_vid_read.load() || NowMs() - g_vid_read.load() >= kMovieGapMs) {
         // a new movie: its shape from its name
-        bool logo = SceneName(name) == "logo";
+        bool logo = vid == "logo";
         // all movies fit the screen (the logos too, at Shagg's request); the zoom is for the films only
         gpu::g_movie_shape = gpu::kMovieFit;
         gpu::g_movie_fit_zoom = logo ? 1.0f : ta::g_movie_zoom / 100.0f;

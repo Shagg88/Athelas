@@ -243,10 +243,14 @@ std::vector<cfg::Desc> SettingsList() {
                  "While the ranged attack is held, moving the mouse aims, as the left stick does on a controller.",
                  &s.mouse_aim});
     l.push_back({"keyboard", "mouse_sensitivity", Type::Int, "Mouse sensitivity",
-                 "How far a mouse movement turns the aim, in % (100 is the default).", nullptr, &s.mouse_sensitivity,
+                 "How far a mouse movement turns the aim (and the camera), in % (100 is the default).", nullptr, &s.mouse_sensitivity,
                  nullptr, 10, 400});
+    if (kGame.mouse_camera)
+        l.push_back({"keyboard", "mouse_camera", Type::Bool, "Mouse camera",
+                     "Moving the mouse turns the camera, as the right stick does on a controller (except while aiming).",
+                     &s.mouse_camera});
     l.push_back({"keyboard", "mouse_invert_y", Type::Bool, "Invert mouse up/down",
-                 "Reverses up and down for mouse aiming: moving the mouse forward aims down.", &s.mouse_invert_y});
+                 "Reverses up and down for the mouse: moving it forward aims (or looks) down.", &s.mouse_invert_y});
     l.push_back({"keyboard", "mouse_menus", Type::Bool, "Mouse in the menus",
                  "In the game's menus the mouse wheel moves up and down, a left click chooses and a right click goes "
                  "back.",

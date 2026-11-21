@@ -31,18 +31,32 @@ void StartOutput(std::function<void(float*, uint32_t)> render) {
         wf.wBitsPerSample = 32;
         wf.nBlockAlign = 8;
         wf.nAvgBytesPerSec = kRate * 8;
-        if (FAILED(XAudio2Create(&xa, 0, XAUDIO2_DEFAULT_PROCESSOR)) || FAILED(xa->CreateMasteringVoice(&master)) ||
-            FAILED(xa->CreateSourceVoice(&voice, &wf))) {
-            LOGE("audio: XAudio2 unavailable, no sound");
+        // the failing call's code in the log (upstream XboxXBE-Recomp 1cfc8b1): a problem report then says why
+        HRESULT hr = XAudio2Create(&xa, 0, XAUDIO2_DEFAULT_PROCESSOR);
+        if (SUCCEEDED(hr)) hr = xa->CreateMasteringVoice(&master);
+        if (SUCCEEDED(hr)) hr = xa->CreateSourceVoice(&voice, &wf);
+        if (FAILED(hr)) {
+            LOGE("audio: XAudio2 unavailable (%08X), no sound", unsigned(hr));
             return;
         }
         voice->Start();
-        constexpr uint32_t kFrames = kRate / 100, kSlots = 4;
+        constexpr uint32_t kFrames = kRate / 100;
+        constexpr uint32_t kMinQueued = 3;
+        constexpr uint32_t kMaxQueued = 10;
+        // one slot more than can be queued, so the one rendered is never one XAudio2 still reads
+        constexpr uint32_t kSlots = kMaxQueued + 1;
         std::vector<float> bufs(kSlots * kFrames * 2);
+        uint32_t depth = kMinQueued;
         for (uint32_t n = 0;;) {
             XAUDIO2_VOICE_STATE st;
             voice->GetState(&st, XAUDIO2_VOICE_NOSAMPLESPLAYED);
-            if (st.BuffersQueued >= 3) {
+            // a starved voice crackles: one buffer more queued each time it runs dry, up to kMaxQueued (100 ms), so
+            // a PC that can't keep 30 ms ahead settles on what it can (upstream XboxXBE-Recomp 05c551b)
+            if (n && !st.BuffersQueued && depth < kMaxQueued) {
+                depth++;
+                LOGR("audio: output ran dry, queueing %u ms from now", depth * 10);
+            }
+            if (st.BuffersQueued >= depth) {
                 Sleep(2);
                 continue;
             }

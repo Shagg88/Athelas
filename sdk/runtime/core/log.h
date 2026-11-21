@@ -33,5 +33,14 @@ inline constexpr bool kVerbose = true;
 #define LOG_FIRST(n, ...)                                  \
     do {                                                   \
         static std::atomic<int> _c{0};                     \
-        if (_c.fetch_add(1, std::memory_order_relaxed) < (n)) LOGI(__VA_ARGS__); \
+        if (_c.load(std::memory_order_relaxed) < (n) && _c.fetch_add(1, std::memory_order_relaxed) < (n)) LOGI(__VA_ARGS__); \
     } while (0)
+// the same, in every log (a release build's too): a one-time line that says a fix or setting is at work, so a
+// player's report shows it
+#ifndef LOG_FIRST_R
+#define LOG_FIRST_R(n, ...)                                \
+    do {                                                   \
+        static std::atomic<int> _c{0};                     \
+        if (_c.load(std::memory_order_relaxed) < (n) && _c.fetch_add(1, std::memory_order_relaxed) < (n)) LOGR(__VA_ARGS__); \
+    } while (0)
+#endif

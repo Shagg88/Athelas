@@ -25,12 +25,14 @@ namespace kernel::ls {
 
 void ResetFloatState();  // lockstep.h
 
-bool g_on = std::getenv("XBE_LOCKSTEP") != nullptr;
 #ifdef XBE_LOCKSTEP
 const bool kSafepoints = true;
 #else
 const bool kSafepoints = false;
 #endif
+// replays (xdk/xapi.cpp) need the game to run the same each time, so recording or playing one turns it on too, in a
+// build with the safepoints only (without them a thread polling memory would never pass the turn: the game would stop)
+bool g_on = std::getenv("XBE_LOCKSTEP") || (kSafepoints && (std::getenv("XBE_PAD_RECORD") || std::getenv("XBE_PAD_REPLAY")));
 
 namespace {
 

@@ -175,6 +175,12 @@ void Relaunch(const char* exe) {
     size_t args = line[0] == L'"' ? line.find(L'"', 1) + 1 : line.find(L' ');
     line = L"\"" + path + L"\"" + (args == std::wstring::npos ? L"" : line.substr(args));
     if (line.find(L"--relaunched") == std::wstring::npos) line += L" --relaunched";  // no boot splash again
+    // the launcher waits on this process, which ends now: the new one can't go back to it ("To Athelas")
+    for (size_t at = 0; (at = line.find(L" --launcher", at)) != std::wstring::npos;) {
+        size_t end = at + 11;  // a whole argument only: followed by a space or the end
+        if (end == line.size() || line[end] == L' ') line.erase(at, 11);
+        else at = end;
+    }
     // this process lives on through the handover: the new one binds the same ports
     xnet::CloseSockets();
     STARTUPINFOW si{sizeof(si)};

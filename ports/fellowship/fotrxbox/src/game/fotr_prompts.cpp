@@ -11,8 +11,9 @@
 //
 // auto follows the controller on port 1 (the keyboard's keys when the keyboard plays there and no controller is
 // plugged in), or always xbox, playstation, nintendo or keyboard; read when the pictures are written over (the start
-// of the game). The PlayStation and Nintendo discs are the port's own (tools/mkprompts.py, original artwork, the
-// same as the other ports'), made smaller; the keyboard's are key caps with the key's name.
+// of the game). The other controllers' pictures are Kenney's Input Prompts (CC0; the ports' shared
+// pictures, sdk/tools/mkprompts.py), made smaller; the keyboard's are key caps with the key's name.
+#include <chrono>
 #include <algorithm>
 #include <atomic>
 #include <cmath>
@@ -32,6 +33,7 @@
 #endif
 
 #include "app/app.h"
+#include "app/prompt_style.h"
 #include "core/input.h"
 #include "core/keys.h"
 #include "core/log.h"
@@ -39,7 +41,6 @@
 #include "cpu/x86_context.h"
 #include "kernel/kernel.h"
 #include "kernel/memory.h"
-#include "fotr_prompts_data.h"
 
 namespace fotr {
 uint32_t g_button_pictures = 0;  // [graphics] button_pictures: 0 auto, 1 xbox, 2 playstation, 3 nintendo, 4 keyboard
@@ -58,97 +59,8 @@ uint64_t Fnv(const uint8_t* p, size_t n) {
     return h;
 }
 
-#ifdef _WIN32
-// the key a button's job is on, as a key cap filling the picture: a dark rounded square with a light edge and the
-// key's short name ("Q", "Ctrl", "LMB"), Windows' Arial Bold through GDI
-bool KeyCap(const char* button, gpu::pack::Image& out) {
-    keys::Action a = keys::kCount;
-    static const struct {
-        const char* b;
-        keys::Action a;
-    } kMap[] = {{"A", keys::kA},         {"B", keys::kB},         {"X", keys::kX},
-                {"Y", keys::kY},         {"WHITE", keys::kWhite}, {"BLACK", keys::kBlack},
-                {"LT", keys::kLeftTrigger}, {"RT", keys::kRightTrigger}};
-    for (auto& m : kMap)
-        if (!std::strcmp(m.b, button)) a = m.a;
-    if (a == keys::kCount) return false;
-    std::string key = keys::FirstKey(a);
-    if (key.empty()) return false;
-    const char* text = keys::ShortName(key.c_str());
-    constexpr int N = 128, D = N;
-    BITMAPINFO bi{};
-    bi.bmiHeader.biSize = sizeof(bi.bmiHeader);
-    bi.bmiHeader.biWidth = N;
-    bi.bmiHeader.biHeight = -N;
-    bi.bmiHeader.biPlanes = 1;
-    bi.bmiHeader.biBitCount = 32;
-    void* bits = nullptr;
-    HDC dc = CreateCompatibleDC(nullptr);
-    HBITMAP bmp = CreateDIBSection(dc, &bi, DIB_RGB_COLORS, &bits, nullptr, 0);
-    if (!dc || !bmp || !bits) {
-        if (bmp) DeleteObject(bmp);
-        if (dc) DeleteDC(dc);
-        return false;
-    }
-    HGDIOBJ old_bmp = SelectObject(dc, bmp);
-    std::memset(bits, 0, N * N * 4);
-    // the largest bold font the name fits in, inside the cap's face
-    int size = int(text[1] ? (text[2] ? D * 0.36 : D * 0.5) : D * 0.62);
-    HFONT font = nullptr;
-    SIZE ext{};
-    for (; size > 10; size -= 2) {
-        if (font) DeleteObject(font);
-        font = CreateFontA(-size, 0, 0, 0, FW_BOLD, 0, 0, 0, ANSI_CHARSET, OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS,
-                           ANTIALIASED_QUALITY, DEFAULT_PITCH, "Arial");
-        SelectObject(dc, font);
-        GetTextExtentPoint32A(dc, text, int(std::strlen(text)), &ext);
-        if (ext.cx <= D * 0.78) break;
-    }
-    SetBkMode(dc, TRANSPARENT);
-    SetTextColor(dc, RGB(255, 255, 255));
-    const float e = D * 0.94f, r = D * 0.2f;
-    TextOutA(dc, int(e - ext.cx) / 2, int(e - ext.cy) / 2 - 1, text, int(std::strlen(text)));
-    GdiFlush();
-    const uint8_t* g = static_cast<const uint8_t*>(bits);  // the text's coverage, white on black
-    out = gpu::pack::Image{};
-    out.width = out.height = N;
-    out.format = gpu::pack::Format::RGBA8;
-    std::vector<uint8_t> px(N * N * 4, 0);
-    // the cap: rounded square, anti-aliased from its edge distance; a shadow to the bottom right as the discs have
-    auto inside = [&](float x, float y, float x0, float y0, float x1, float y1, float rr) {
-        float dx = std::max({x0 + rr - x, 0.0f, x - (x1 - rr)}), dy = std::max({y0 + rr - y, 0.0f, y - (y1 - rr)});
-        float d = std::sqrt(dx * dx + dy * dy) - rr;
-        return std::clamp(0.5f - d, 0.0f, 1.0f);
-    };
-    for (int y = 0; y < N; y++)
-        for (int x = 0; x < N; x++) {
-            float fx = x + 0.5f, fy = y + 0.5f;
-            float shadow = inside(fx, fy, D * 0.05f, D * 0.05f, e + D * 0.05f, e + D * 0.05f, r);
-            float body = inside(fx, fy, 0, 0, e, e, r);
-            float face = inside(fx, fy, D * 0.04f, D * 0.04f, e - D * 0.04f, e - D * 0.04f, r * 0.8f);
-            float t = g[(y * N + x) * 4 + 1] / 255.0f;  // the text, on the face
-            float shade = 1.0f - 0.35f * fy / e;        // lighter towards the top
-            float c[3], al = std::max(body, shadow * 0.8f);
-            for (int k = 0; k < 3; k++) {
-                float edge = 150.0f, inner = (k == 2 ? 46.0f : 38.0f) * shade + 10;
-                float v = body * (face * inner + (1 - face) * edge);
-                v = v * (1 - t * face) + 255.0f * t * face;
-                c[k] = al > 0 ? v / std::max(al, 1e-3f) * (body > 0 ? 1.0f : 0.0f) : 0;
-            }
-            uint8_t* o = &px[(y * N + x) * 4];
-            for (int k = 0; k < 3; k++) o[k] = uint8_t(std::clamp(c[k], 0.0f, 255.0f));
-            o[3] = uint8_t(std::clamp(al * 255.0f, 0.0f, 255.0f));
-        }
-    out.levels.push_back(std::move(px));
-    SelectObject(dc, old_bmp);
-    if (font) DeleteObject(font);
-    DeleteObject(bmp);
-    DeleteDC(dc);
-    return true;
-}
-#else
-bool KeyCap(const char*, gpu::pack::Image&) { return false; }
-#endif
+// the key a button's job is on, as a key cap (app/prompt_style.cpp, shared by the ports)
+bool KeyCap(const char* button, gpu::pack::Image& out) { return app::KeyCapPicture(button, 128, 128, 0.05f, out); }
 
 // a 128x128 RGBA picture as the game's 32x32 one: a box filter (colour weighted by coverage), stored B G R A
 void Shrink(const gpu::pack::Image& src, uint8_t* out) {
@@ -173,24 +85,24 @@ void Shrink(const gpu::pack::Image& src, uint8_t* out) {
 // the eight pictures in the chosen style (have: each one made; one not made stays the game's: in the Xbox style all but
 // White and Black)
 bool Pictures(uint8_t (*out)[kBytes], bool* have) {
-    uint32_t style = g_button_pictures;
-    if (style == 0) {
-        const app::Settings& st = app::Get();
-        if (st.keyboard && st.keyboard_player == 1 && !input::Raw(0).connected) style = 4;
-        else style = uint32_t(input::Style(0)) + 1;  // 1 xbox, 2 playstation, 3 nintendo
-    }
+    uint32_t style = app::PromptStyle(g_button_pictures);  // auto resolved (app/prompt_style.cpp)
     // xbox: only White and Black are drawn (LB and RB, where today's controllers have them, #82); the rest stay the
     // game's own Xbox pictures
-    const char* name = style == 1 ? "xbox" : style == 2 ? "playstation" : style == 3 ? "nintendo" : "keyboard";
+    const char* shared = app::PromptStyleName(style);  // playstation, nintendo, steamdeck, steamcontroller
+    const char* name = style == 1 ? "xbox" : style == 4 ? "keyboard" : shared ? shared : "xbox";
     for (uint32_t i = 0; i < kCount; i++) {
         gpu::pack::Image img;
         bool got = false;
         if (style == 4) {
             got = KeyCap(kButtons[i], img);
         } else {
-            for (const PromptPicture& p : kPromptPictures)
-                if (!std::strcmp(p.style, name) && !std::strcmp(p.button, kButtons[i]))
-                    got = gpu::pack::DecodePng(p.png, p.size, img);
+            // xbox: only the bumpers (the game's White and Black), the rest the game's own
+            bool wanted = style != 1 || !std::strcmp(kButtons[i], "WHITE") || !std::strcmp(kButtons[i], "BLACK");
+            gpu::pack::Image pic;
+            if (const app::PromptPicture* p = wanted ? app::FindPromptPicture(name, kButtons[i]) : nullptr)
+                got = gpu::pack::DecodePng(p->png, p->size, pic) && !pic.levels.empty();
+            // the shared pictures are about 96 across: fitted to four times the game's, which Shrink then reduces
+            if (got) app::PlacePicture(pic, 0, 0, 1, kSide * 4, img);
         }
         have[i] = got && !img.levels.empty() && img.width == img.height && img.width % kSide == 0;
         if (have[i]) Shrink(img, out[i]);
@@ -220,12 +132,21 @@ void PromptsFile(const char* name) {
 // the next frame
 void PromptsFrame() {
     if (!g_loaded || g_done) return;
-    g_done = true;
+    // a miss is tried again at the next buttons (the file can be opened before its pictures are read in); only after
+    // 10 seconds of misses do they stay the game's (#102: one early miss used to keep the Xbox pictures for the whole
+    // session). Time, not a count: a menu draws many buttons a frame, which would use up a count at once (review)
+    static auto first_miss = std::chrono::steady_clock::time_point{};
     uint32_t va = Find();
     if (!va) {
-        LOGW("fotr: the game's button pictures weren't found in memory; they stay the Xbox ones");
+        auto now = std::chrono::steady_clock::now();
+        if (first_miss == std::chrono::steady_clock::time_point{}) first_miss = now;
+        if (now - first_miss >= std::chrono::seconds(10)) {
+            g_done = true;
+            LOGW("fotr: the game's button pictures weren't found in memory; they stay the Xbox ones");
+        }
         return;
     }
+    g_done = true;
     static uint8_t pics[kCount][kBytes];
     bool have[kCount] = {};
     if (!Pictures(pics, have)) return;

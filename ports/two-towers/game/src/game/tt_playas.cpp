@@ -76,7 +76,7 @@ X86_FUNC(sub_00073960) {  // the level select's "is the game beaten" (ecx the sc
         g_screen = ctx.ecx;
         uint32_t level = ScreenLevel(ctx.ecx);
         if (Opened(level)) {
-            LOG_FIRST(8, "tt: level %u completed: every hero offered (all_heroes)", level);
+            LOG_FIRST_R(8, "tt: level %u completed: every hero offered (all_heroes)", level);
             ctx.eax = 1;
             ctx.esp += 4;  // its ret
             return;
@@ -91,7 +91,7 @@ X86_FUNC(sub_000D2420) {  // (level, hero): 1 once that hero has completed that 
     // and opens what it opens then: every level for every hero, Isildur, the bonus levels and extras. Only the
     // answers change; the progress in the save stays the player's own, and in a level the game asks as before
     if (tt::g_unlock_all && level <= 14 && hero >= 1 && hero <= 4 && tt::InMenus()) {
-        LOG_FIRST(1, "tt: every level open (unlock_all)");
+        LOG_FIRST_R(1, "tt: every level open (unlock_all)");
         ctx.eax = (ctx.eax & ~0xFFu) | 1;
         ctx.esp += 4;
         return;

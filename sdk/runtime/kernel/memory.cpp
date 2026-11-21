@@ -109,6 +109,8 @@ void Decommit(uint32_t va, uint32_t size) {
 }
 
 bool IsCommitted(uint32_t va) { return InPhysical(va) || g_committed[va >> 12] != 0; }
+void Lock() { g_lock.lock(); }
+void Unlock() { g_lock.unlock(); }
 
 // first fit allocator over a guest range
 class Ranges {

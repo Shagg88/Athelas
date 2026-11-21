@@ -1164,7 +1164,7 @@ void tab_about(App &a)
     }
     status_dot(g.hasSdl, false, "Controller support (SDL3)", nullptr);
     status_dot(g.rotkIniExists, true, g.rotkIniExists ? "Game settings file found" : "Game settings file will be created", g.rotkIniPath.c_str());
-    saves_section(a, "The Return of the King", a.game.rotkIniDir, "", a.dir);
+    saves_section(a, "The Return of the King", a.game.rotkIniDir, "", a.dir, "The Return of the King (PC)");
 
     if (g.discProtected) {
         section("Original disc version");

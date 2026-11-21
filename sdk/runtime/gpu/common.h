@@ -85,8 +85,13 @@ constexpr ColourLook kLooks[] = {
     {1.15f, 0.30f, 0.72f, 0.00f, 1.05f, {-0.020f, 0.000f, 0.025f}, {0.012f, 0.006f, -0.006f}},   // dark fantasy
 };
 
-// a small draw whose float2 inputs all lie in 0..1 (sprites, HUD, text): its wrapped textures are read clamped
+// a small draw whose float2 inputs all lie in 0..1 (sprites, HUD, text)
 bool UnitTexcoords(const Assembled& a);
+// such a draw's wrapped textures are read clamped (no bleed from the far edge when enlarged), a bit per stage, but
+// only on a stage whose coordinates really are those inputs: not one the fixed pipeline moves with a texture matrix
+// or generates, and not one a vertex program computes (only a plain copy of a float2 input to oT counts). A
+// scrolling picture on a unit quad wraps, as on the console.
+uint32_t ClampStages(const State& s, const Assembled& a);
 
 // SMAA's three passes' HLSL (entries vs; edges, weights, blend)
 const std::string& SmaaSource();

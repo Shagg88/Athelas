@@ -32,12 +32,7 @@ bool Probe();  // gpu/vk_probe.cpp
 #include "xdk/hle.h"
 #include "xdk/layout.h"
 
-// testing logs: LOGR, as Info lines don't reach a release build's log
-#define LOG_FIRST_R(n, ...)                                                      \
-    do {                                                                         \
-        static std::atomic<int> _c{0};                                           \
-        if (_c.fetch_add(1, std::memory_order_relaxed) < (n)) LOGR(__VA_ARGS__); \
-    } while (0)
+// LOG_FIRST_R: core/log.h
 
 // testing: vertex logs for draws the frame captures don't show (pushed and UP vertices). Off unless XBE_CAPTURE_DIR
 // is set; the first few of each kind, plus every one between XBE_VTX_LOG_START and XBE_VTX_LOG_END seconds
@@ -708,6 +703,7 @@ HLE_STDCALL(D3DDevice_FlushVertexCache, 0) { return 0; }
 HLE_STDCALL(D3DDevice_SetGammaRamp, 2) {
     uint8_t ramp[768];
     std::memcpy(ramp, HostPtr(a[1]), 768);
+    DeviceLock lock;  // the backend is the device's (upstream XboxXBE-Recomp af7d5ab)
     if (g_backend) g_backend->SetGamma(ramp);
     return 0;
 }
@@ -901,7 +897,8 @@ HLE_STDCALL(D3DDevice_CopyRects, 5) {
 HLE_STDCALL(D3DDevice_SetViewport, 1) {
     DeviceLock lock;
     uint32_t v = a[0];
-    g_state.viewport = {R32(v), R32(v + 4), R32(v + 8), R32(v + 12), GF(v + 16), GF(v + 20)};
+    // null keeps the stored viewport, as the console's library does (upstream XboxXBE-Recomp 9e96fe5)
+    if (v) g_state.viewport = {R32(v), R32(v + 4), R32(v + 8), R32(v + 12), GF(v + 16), GF(v + 20)};
     g_state.scissor_count = 0;
     UpdateViewportConstants();
     return 0;

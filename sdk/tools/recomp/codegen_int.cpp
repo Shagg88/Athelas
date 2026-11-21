@@ -213,14 +213,16 @@ bool CodeGen::EmitInteger(uint32_t va, const ZydisDecodedInstruction& in, const 
                    wr(0, "r").c_str()));
             return true;
         case ZYDIS_MNEMONIC_RCL:
-            emit(F("%s a = %s; uint32_t n = ((uint32_t)(%s) & 31) %% %u; for (; n; n--) { uint32_t hi = (uint32_t)(a >> %u) & 1; "
-                   "a = (%s)(((uint32_t)a << 1) | cf); cf = hi; } %s",
-                   T.c_str(), rd(0).c_str(), Read(ops[1], ea).c_str(), W + 1, W - 1, T.c_str(), wr(0, "a").c_str()));
+            // OF, defined for a count of 1 (Intel SDM RCL): the result's top bit XOR the new CF (audit, 19 Nov)
+            emit(F("%s a = %s; uint32_t c = (uint32_t)(%s) & 31; uint32_t n = c %% %u; for (; n; n--) { uint32_t hi = (uint32_t)(a >> %u) & 1; "
+                   "a = (%s)(((uint32_t)a << 1) | cf); cf = hi; } if (c == 1) of = ((uint32_t)(a >> %u) & 1) ^ cf; %s",
+                   T.c_str(), rd(0).c_str(), Read(ops[1], ea).c_str(), W + 1, W - 1, T.c_str(), W - 1, wr(0, "a").c_str()));
             return true;
         case ZYDIS_MNEMONIC_RCR:
-            emit(F("%s a = %s; uint32_t n = ((uint32_t)(%s) & 31) %% %u; for (; n; n--) { uint32_t lo = a & 1; "
-                   "a = (%s)(((uint32_t)a >> 1) | (cf << %u)); cf = lo; } %s",
-                   T.c_str(), rd(0).c_str(), Read(ops[1], ea).c_str(), W + 1, T.c_str(), W - 1, wr(0, "a").c_str()));
+            // OF for a count of 1 (Intel SDM RCR): the operand's top bit XOR CF, both before the rotate (audit, 19 Nov)
+            emit(F("%s a = %s; uint32_t c = (uint32_t)(%s) & 31; uint32_t n = c %% %u; if (c == 1) of = ((uint32_t)(a >> %u) & 1) ^ cf; "
+                   "for (; n; n--) { uint32_t lo = a & 1; a = (%s)(((uint32_t)a >> 1) | (cf << %u)); cf = lo; } %s",
+                   T.c_str(), rd(0).c_str(), Read(ops[1], ea).c_str(), W + 1, W - 1, T.c_str(), W - 1, wr(0, "a").c_str()));
             return true;
         case ZYDIS_MNEMONIC_SHLD:
             if (W != 32) return false;
@@ -293,9 +295,11 @@ bool CodeGen::EmitInteger(uint32_t va, const ZydisDecodedInstruction& in, const 
                            Read(ops[0], ea).c_str(), trap.c_str(), trap.c_str()));
             } else if (w == 16) {
                 if (sgn)
+                    // DX:AX = 8000:0000 by -1 overflows the host's 32-bit division itself (a crash, not the guest's
+                    // divide error): trapped first, as the 32-bit operand's case (audit, 19 Nov)
                     emit(F("int32_t n = (int32_t)(((ctx.edx & 0xFFFFu) << 16) | (ctx.eax & 0xFFFFu)); int16_t d = (int16_t)%s; if (!d) %s "
-                           "int32_t q = n / d; if (q != (int16_t)q) %s ctx.eax = (ctx.eax & 0xFFFF0000u) | (uint16_t)q; ctx.edx = (ctx.edx & 0xFFFF0000u) | (uint16_t)(n %% d);",
-                           Read(ops[0], ea).c_str(), trap.c_str(), trap.c_str()));
+                           "if (n == INT32_MIN && d == -1) %s int32_t q = n / d; if (q != (int16_t)q) %s ctx.eax = (ctx.eax & 0xFFFF0000u) | (uint16_t)q; ctx.edx = (ctx.edx & 0xFFFF0000u) | (uint16_t)(n %% d);",
+                           Read(ops[0], ea).c_str(), trap.c_str(), trap.c_str(), trap.c_str()));
                 else
                     emit(F("uint32_t n = ((ctx.edx & 0xFFFFu) << 16) | (ctx.eax & 0xFFFFu); uint16_t d = (uint16_t)%s; if (!d) %s "
                            "uint32_t q = n / d; if (q > 0xFFFF) %s ctx.eax = (ctx.eax & 0xFFFF0000u) | (uint16_t)q; ctx.edx = (ctx.edx & 0xFFFF0000u) | (uint16_t)(n %% d);",
@@ -433,7 +437,12 @@ bool CodeGen::EmitInteger(uint32_t va, const ZydisDecodedInstruction& in, const 
                 Line("\tctx.esp += 4;");
                 return true;
             }
-            if (mem)
+            // a word popped to memory takes two bytes off the stack, not four (audit, 19 Nov); the address is worked
+            // out after ESP moves, as the CPU does
+            if (mem && ops[0].size == 16)
+                Line(F("\t{ uint16_t v = X86_MEM16(ctx.esp); ctx.esp += 2; uint32_t ea = %s; %s }", AddrExpr(ops[0]).c_str(),
+                       Write(ops[0], "ea", "v").c_str()));
+            else if (mem)
                 Line(F("\t{ uint32_t v = X86_MEM32(ctx.esp); ctx.esp += 4; uint32_t ea = %s; %s }", AddrExpr(ops[0]).c_str(),
                        Write(ops[0], "ea", "v").c_str()));
             else if (ops[0].size == 16)

@@ -269,6 +269,7 @@ const CommandLine& Args() {
             else if (a == L"--instance") c.instance = std::max(0, std::min(8, _wtoi(next().c_str())));
             else if (a == L"--no-dialogs") c.no_dialogs = true;
             else if (a == L"--any-release") c.any_release = true;
+            else if (a == L"--launcher") c.launcher = true;
             else if (a == L"--version") c.version = true;
             else if (a == L"--describe-settings") c.describe = true;
         }
@@ -307,6 +308,7 @@ std::filesystem::path ShaderCacheDir() {
 }
 
 static std::atomic<int> g_exiting_with{-1};
+std::atomic<int> g_quit_code{kExitOk};
 int ExitingWith() { return g_exiting_with.load(); }
 
 void Fail(int code, const std::wstring& message) {
@@ -546,5 +548,5 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int) {
     if (app::g_mode_changed) ChangeDisplaySettingsW(nullptr, 0);
     ach::Flush();
     logx::Flush();
-    kernel::Shutdown(0);
+    kernel::Shutdown(app::g_quit_code.load());
 }

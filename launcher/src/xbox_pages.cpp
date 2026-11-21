@@ -1096,10 +1096,11 @@ static void tt_tab_controls(App &a)
             for (int k = 0; k < KB_ACTION_COUNT; k++) if (ps[k]) a.ttFile.set("keyboard", keyNames[k], toml_quote(keys[k]));
         }
     }
-    // the mouse: aiming with the ranged attack held, the wheel and right click in the menus
+    // the mouse: aiming with the ranged attack held, the camera (Fellowship, when the port offers it), the wheel and
+    // right click in the menus
     if (tt_setting(a, "keyboard", "mouse_aim")) {
         section("Mouse");
-        for (const char *k : { "mouse_aim", "mouse_sensitivity", "mouse_invert_y", "mouse_menus" })
+        for (const char *k : { "mouse_aim", "mouse_camera", "mouse_sensitivity", "mouse_invert_y", "mouse_menus" })
             if (const PortSetting *ps = tt_setting(a, "keyboard", k)) tt_setting_row(a, *ps);
     }
     // anything else the port puts on this tab

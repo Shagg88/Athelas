@@ -347,21 +347,24 @@ static bool install(const std::string &version)
 
     InterlockedExchange(&g_istate, 2);
     HANDLE jf = CreateFileW(journal_path().c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-    auto journal = [&](const std::wstring &target, bool had) {   // "1 <path>": an old copy kept; "0 <path>": a new file
-        if (jf == INVALID_HANDLE_VALUE) return;
+    // "1 <path>": an old copy kept; "0 <path>": a new file. False when the line isn't safely on disk: the file is then
+    // left alone, since without its line a crash could not be undone (audit, 19 Nov)
+    auto journal = [&](const std::wstring &target, bool had) -> bool {
+        if (jf == INVALID_HANDLE_VALUE) return false;
         // relative to Athelas' folder: the undo still finds the files when the folder is reached by another spelling
         // (c:\games against C:\Games, a short name, a moved folder) at the next start
         std::wstring rel = target.size() > g_exe_dir.size() + 1 ? target.substr(g_exe_dir.size() + 1) : target;
         std::wstring line = (had ? L"1 " : L"0 ") + rel + L"\n";
         int n = WideCharToMultiByte(CP_UTF8, 0, line.c_str(), (int)line.size(), NULL, 0, NULL, NULL);
+        if (n <= 0) return false;
         std::string u(n, '\0');
-        WideCharToMultiByte(CP_UTF8, 0, line.c_str(), (int)line.size(), &u[0], n, NULL, NULL);
-        DWORD w;
-        WriteFile(jf, u.data(), (DWORD)u.size(), &w, NULL);
-        FlushFileBuffers(jf);
+        if (WideCharToMultiByte(CP_UTF8, 0, line.c_str(), (int)line.size(), &u[0], n, NULL, NULL) != n) return false;
+        DWORD w = 0;
+        return WriteFile(jf, u.data(), (DWORD)u.size(), &w, NULL) && w == u.size() && FlushFileBuffers(jf);
     };
     struct Done { std::wstring target; bool had_old; };
     std::vector<Done> done;
+    done.reserve(4096);   // (so recording a replaced file doesn't need memory at that moment)
     // false: a file couldn't be put back (antivirus holding a new exe, say). The journal is then kept, so the next
     // start finishes the undo (finish_unfinished) before its tidy-up deletes the .old-athelas copies (review)
     auto undo = [&]() -> bool {
@@ -389,22 +392,29 @@ static bool install(const std::string &version)
         HANDLE f = CreateFileW(fresh.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
         DWORD wrote = 0;
         bool written = f != INVALID_HANDLE_VALUE && (size == 0 || (WriteFile(f, p, (DWORD)size, &wrote, NULL) && wrote == size));
+        // on the disk before it replaces the old file: a power cut after the swap leaves a whole file, not a hole
+        if (written) written = FlushFileBuffers(f) != 0;
         if (f != INVALID_HANDLE_VALUE) CloseHandle(f);
         if (!written) { DeleteFileW(fresh.c_str()); return fail("Couldn't write " + rel + "."); }
         bool had = GetFileAttributesW(target.c_str()) != INVALID_FILE_ATTRIBUTES;
         make_writable(target);                       // (so its .old-athelas copy can be deleted later)
         make_writable(target + L".old-athelas");     // one an earlier update left read-only is moved onto
-        journal(target, had);   // before the move: a start after a crash here still finds the old copy
+        // before the move: a start after a crash here still finds the old copy
+        if (!journal(target, had)) {
+            DeleteFileW(fresh.c_str());
+            return fail("Couldn't record the update's progress (is the disk full?).");
+        }
         if (had && !MoveFileExW(target.c_str(), (target + L".old-athelas").c_str(), MOVEFILE_REPLACE_EXISTING)) {
             DeleteFileW(fresh.c_str());
             return fail("Couldn't replace " + rel + " (is a game still running?).");
         }
+        // recorded as soon as the old file is aside: if the new one then can't go in, the undo puts the old one back,
+        // and an undo that fails keeps the journal, so its .old-athelas copy isn't tidied away (audit, 19 Nov)
+        done.push_back({target, had});
         if (!MoveFileExW(fresh.c_str(), target.c_str(), MOVEFILE_REPLACE_EXISTING)) {
-            if (had) MoveFileExW((target + L".old-athelas").c_str(), target.c_str(), MOVEFILE_REPLACE_EXISTING);
             DeleteFileW(fresh.c_str());
             return fail("Couldn't replace " + rel + ".");
         }
-        done.push_back({target, had});
         return true;
     };
     bool ok = true;
@@ -524,8 +534,14 @@ static void finish_unfinished()
     std::string data;
     char buf[65536];
     DWORD got;
-    while (ReadFile(f, buf, sizeof buf, &got, NULL) && got) data.append(buf, got);
+    bool read_ok = true;
+    for (;;) {
+        if (!ReadFile(f, buf, sizeof buf, &got, NULL)) { read_ok = false; break; }
+        if (!got) break;
+        data.append(buf, got);
+    }
     CloseHandle(f);
+    if (!read_ok) return;   // the journal is kept (and so the .old-athelas copies): the next start reads it again
     std::vector<std::string> lines;
     for (size_t at = 0; at < data.size();) {
         size_t e = data.find('\n', at);
@@ -533,14 +549,18 @@ static void finish_unfinished()
         lines.push_back(data.substr(at, e - at));
         at = e + 1;
     }
-    bool all_ok = true;
+    bool all_ok = true, damaged = false;
     for (auto it = lines.rbegin(); it != lines.rend(); ++it) {
-        if (it->size() < 3) continue;
+        // a line that isn't "0 <path>" or "1 <path>", or whose path leads outside Athelas' folder, is damaged: nothing
+        // is done with it, and the journal is set aside (below) rather than deleted as if all were well (audit, 19 Nov)
+        if (it->size() < 3 || ((*it)[0] != '0' && (*it)[0] != '1') || (*it)[1] != ' ') { damaged = true; continue; }
         std::wstring target = widen(it->substr(2));
         if (target.size() > 2 && target[1] == L':') {   // (a full path: a journal from before they were relative)
-            if (target.size() <= g_exe_dir.size() || _wcsnicmp(target.c_str(), g_exe_dir.c_str(), g_exe_dir.size()) != 0) { all_ok = false; continue; }
+            // inside Athelas' folder only: C:\Games\AthelasOld shares the letters of C:\Games\Athelas but isn't in it
+            if (target.size() <= g_exe_dir.size() + 1 || _wcsnicmp(target.c_str(), g_exe_dir.c_str(), g_exe_dir.size()) != 0 ||
+                target[g_exe_dir.size()] != L'\\' || target.find(L"..") != std::wstring::npos) { damaged = true; continue; }
         } else {
-            if (target.find(L"..") != std::wstring::npos || target[0] == L'\\' || target[0] == L'/') { all_ok = false; continue; }
+            if (target.find(L"..") != std::wstring::npos || target[0] == L'\\' || target[0] == L'/') { damaged = true; continue; }
             target = g_exe_dir + L"\\" + target;
         }
         std::wstring old = target + L".old-athelas";
@@ -558,7 +578,12 @@ static void finish_unfinished()
                 GetFileAttributesW(target.c_str()) != INVALID_FILE_ATTRIBUTES) all_ok = false;
         }
     }
-    if (all_ok) DeleteFileW(j.c_str());   // kept when a file was locked: the next start tries again
+    if (!all_ok) return;   // kept when a file was locked: the next start tries again
+    // every line that could be undone was. A line that couldn't be read (damaged, or a path outside Athelas' folder)
+    // must not keep the journal, or every later update would stop at "an earlier update couldn't be undone" for
+    // good: the journal is set aside as athelas-update-unfinished.bad.txt, for a report, instead (review, 19 Nov)
+    if (!damaged || !MoveFileExW(j.c_str(), (g_exe_dir + L"\\athelas-update-unfinished.bad.txt").c_str(), MOVEFILE_REPLACE_EXISTING))
+        DeleteFileW(j.c_str());
 }
 
 void update_tidy()

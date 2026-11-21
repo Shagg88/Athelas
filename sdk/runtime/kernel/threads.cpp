@@ -14,6 +14,7 @@
 #endif
 #endif
 
+#include "app/app.h"
 #include "kernel/kernel.h"
 #include "kernel/lockstep.h"
 
@@ -122,6 +123,13 @@ void ApplyAffinity() {
 #endif
 }
 
+// Windows (or the OS) refused a thread: the game can't go on without it (a guest waiting on it, or a lockstep turn
+// that never comes, would hang), so it ends with a message instead of a silent freeze (audit, 19 Nov)
+[[noreturn]] void NoThread(unsigned long err) {
+    app::Fail(1, L"A game thread couldn't be started (error " + std::to_wstring(err) +
+                     L"). The PC may be out of memory: close other programs and start the game again.");
+}
+
 // recompiled code nests host frames as deep as the guest's calls, give it room
 void Spawn(std::function<void()> fn) {
     auto* f = new std::function<void()>(std::move(fn));
@@ -133,20 +141,29 @@ void Spawn(std::function<void()> fn) {
         return 0;
     };
     HANDLE h = ::CreateThread(nullptr, 64u << 20, entry, f, STACK_SIZE_PARAM_IS_A_RESERVATION, nullptr);
-    if (h) ::CloseHandle(h);
+    if (!h) {
+        unsigned long e = ::GetLastError();
+        delete f;
+        NoThread(e);
+    }
+    ::CloseHandle(h);
 #else
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setstacksize(&attr, 64u << 20);
     pthread_t th;
-    pthread_create(&th, &attr, [](void* p) -> void* {
+    int rc = pthread_create(&th, &attr, [](void* p) -> void* {
         ApplyAffinity();
         std::unique_ptr<std::function<void()>> g(static_cast<std::function<void()>*>(p));
         (*g)();
         return nullptr;
     }, f);
-    pthread_detach(th);
     pthread_attr_destroy(&attr);
+    if (rc != 0) {
+        delete f;
+        NoThread(static_cast<unsigned long>(rc));
+    }
+    pthread_detach(th);
 #endif
 }
 

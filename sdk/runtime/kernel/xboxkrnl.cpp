@@ -1447,6 +1447,15 @@ KERNEL_EXPORT(29, ExSaveNonVolatileSetting, 4) {
 
 // widescreen (a 4:3 output plays the console's 4:3), 480p
 static uint32_t VideoFlags() { return (app::Widescreen() ? 0x00010000 : 0) | 0x00080000; }
+// XC_AUDIO_FLAGS: the low word 0 stereo, 1 mono, 2 surround; 0x10000 AC3, 0x20000 DTS. The value the ports have
+// always given, unless XBE_AUDIO_FLAGS (hex) says another for a test
+static uint32_t AudioFlags() {
+    static const uint32_t v = [] {
+        const char* e = std::getenv("XBE_AUDIO_FLAGS");
+        return e ? uint32_t(std::strtoul(e, nullptr, 16)) : 0x00010001u;
+    }();
+    return v;
+}
 
 KERNEL_EXPORT(24, ExQueryNonVolatileSetting, 5) {
     uint32_t index = a[0], type_out = a[1], value = a[2], len = a[3], result_len = a[4];
@@ -1455,7 +1464,7 @@ KERNEL_EXPORT(24, ExQueryNonVolatileSetting, 5) {
         // XC_MAX_OS: the user settings (EEPROM 0x60..0x15F), read by XAPI's GetTimeZoneInformation for local times
         uint8_t user[0x100] = {};
         HostTimeZone(user);
-        uint32_t settings[3] = {1, VideoFlags(), 0x00010001};  // language, video, audio flags at +0x30
+        uint32_t settings[3] = {1, VideoFlags(), AudioFlags()};  // language, video, audio flags at +0x30
         std::memcpy(user + 0x30, settings, sizeof(settings));
         if (type_out) W32(type_out, 3);  // REG_BINARY
         if (value && len) std::memcpy(HostPtr(value), user, std::min<uint32_t>(len, sizeof(user)));
@@ -1469,7 +1478,9 @@ KERNEL_EXPORT(24, ExQueryNonVolatileSetting, 5) {
     switch (index) {
         case 7: v = 1; break;                      // XC_LANGUAGE english
         case 8: v = VideoFlags(); break;          // XC_VIDEO_FLAGS
-        case 9: v = 0x00010001; break;             // XC_AUDIO_FLAGS stereo
+        // XC_AUDIO_FLAGS. NOTE: 0x00010001 reads as mono (low word 1) with AC3 on; stereo is 0, and upstream
+        // XboxXBE-Recomp reports 0 since 5f760a2. Kept until heard on the PC: XBE_AUDIO_FLAGS=0 tries it
+        case 9: v = AudioFlags(); break;
         case 0x103: v = 0x00400100; break;         // XC_FACTORY_AV_REGION NTSC-M
         case 0x104: v = 1; break;                  // XC_FACTORY_GAME_REGION north america
         case 0x12: v = 1; break;                   // XC_DVD_REGION
@@ -1482,7 +1493,7 @@ KERNEL_EXPORT(24, ExQueryNonVolatileSetting, 5) {
         if (value && len >= 0x100) {
             W32(value + 0xE8, 1);                     // language
             W32(value + 0xEC, VideoFlags());          // video flags
-            W32(value + 0xF0, 0x00010001);            // audio flags
+            W32(value + 0xF0, AudioFlags());          // audio flags
             W32(value + 0x58, 0x00400100);            // factory video standard
             W32(value + 0x2C, 1);                     // factory game region
         }

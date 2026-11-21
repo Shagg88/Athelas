@@ -88,6 +88,15 @@ extern OrthoPlace g_ortho_place;
 // painted black (a full-screen menu picture held narrower than an ultrawide screen, with a 3D scene behind it that
 // would show at the sides). 1 shows it all; put back to 1 after each frame is shown.
 extern std::atomic<float> g_frame_sides;
+// g_ortho_place also asked for a game's 2D draws through vertex programs (ProgramExtent), which then move with the
+// fixed function ones: a HUD whose text is fixed function and whose pictures are programs stays in one piece. Off
+// unless the game sets it (its hook must expect them).
+extern bool g_ortho_place_programs;
+// the clip space extent of a 2D draw through a vertex program whose position is a matrix in four constants times v0
+// (dp4 with c[k]..c[k+3] into oPos.x .y .z .w, its first four instructions) with w exactly 1 for every vertex, as
+// the shader's own 2D test has it (false for any other program or a 3D draw)
+bool ProgramExtent(const State& s, uint32_t start, uint32_t count, const uint8_t* indices, float& x0, float& x1, float& y0,
+                   float& y1);
 // the clip space extent of a fixed function draw with XYZ positions in stream 0 (false when it has none)
 bool OrthoExtent(const State& s, uint32_t start, uint32_t count, const uint8_t* indices, float& x0, float& x1, float& y0,
                  float& y1);

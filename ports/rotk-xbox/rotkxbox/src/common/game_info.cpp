@@ -82,8 +82,8 @@ const app::GameInfo app::kGame = {
                  &rotk::g_safe_area},
                 {"graphics", "button_pictures", cfg::Type::Choice, "Button pictures",
                  "Which controller's buttons the game's hints show. Auto follows the controller you play with.",
-                 nullptr, &rotk::g_button_pictures, nullptr, 0, 0, {"auto", "xbox", "playstation", "nintendo", "keyboard"}, nullptr,
-                 nullptr, {"Auto", "Xbox", "PlayStation", "Nintendo", "Keyboard keys"}},
+                 nullptr, &rotk::g_button_pictures, nullptr, 0, 0, {"auto", "xbox", "playstation", "nintendo", "keyboard", "steamdeck", "steamcontroller"}, nullptr,
+                 nullptr, {"Auto", "Xbox", "PlayStation", "Nintendo", "Keyboard keys", "Steam Deck", "Steam Controller"}},
                 {"input", "second_controller", cfg::Type::Bool, "Second controller",
                  "A second controller plays as player 2 in co-op. Off: only the first controller is read, so a "
                  "second one (or a program that adds a pretend one) can't take over player 2.",

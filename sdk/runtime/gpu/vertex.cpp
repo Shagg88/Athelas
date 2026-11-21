@@ -508,6 +508,61 @@ bool OrthoExtent(const State& s, uint32_t start, uint32_t count, const uint8_t* 
     }
     return true;
 }
+bool g_ortho_place_programs = false;
+
+bool ProgramExtent(const State& s, uint32_t start, uint32_t count, const uint8_t* indices, float& x0, float& x1, float& y0,
+                   float& y1) {
+    if (!(s.vs_handle & 1) || !s.vs || s.vs->program.size() < 16 || !count) return false;
+    // the first four instructions: oPos.x .y .z .w = dp4(v0, c[k + i]) (microcode fields as shaders.cpp reads them)
+    const uint32_t* t = s.vs->program.data();
+    auto f = [&](int i, int sub, int bit, int len) { return (t[i * 4 + sub] >> bit) & ((1u << len) - 1); };
+    uint32_t k = f(0, 1, 13, 8);
+    for (int i = 0; i < 4; i++) {
+        bool dp4 = f(i, 1, 21, 4) == 7 && f(i, 1, 25, 3) == 0;
+        // A: the input register 0, read as xyzw, not negated
+        bool a = f(i, 2, 26, 2) == 2 && f(i, 1, 9, 4) == 0 && f(i, 1, 8, 1) == 0 && f(i, 1, 0, 8) == 0x1B;
+        // B: the constant k + i, read as xyzw, not negated, not indexed by a0
+        bool b = f(i, 2, 11, 2) == 3 && f(i, 1, 13, 8) == k + uint32_t(i) && f(i, 2, 25, 1) == 0 && f(i, 2, 17, 8) == 0x1B &&
+                 f(i, 3, 1, 1) == 0;
+        // into oPos, the one component: as the output register 0 (mask at bit 12, the MAC result) or as temporary 12
+        // (mask at bit 24), which is the same register; and not the last instruction
+        bool as_output = f(i, 3, 12, 4) == (8u >> i) && f(i, 3, 11, 1) == 1 && f(i, 3, 2, 1) == 0 && (f(i, 3, 3, 8) & 0xF) == 0;
+        bool as_temp = f(i, 3, 20, 4) == 12 && f(i, 3, 24, 4) == (8u >> i);
+        bool out = (as_output || as_temp) && f(i, 3, 0, 1) == 0;
+        if (!dp4 || !a || !b || !out) return false;
+    }
+    if (k + 3 >= s.vsc.size()) return false;
+    const auto& cx = s.vsc[k];
+    const auto& cy = s.vsc[k + 1];
+    const auto& cw = s.vsc[k + 3];
+    // 2D: w is exactly 1 whatever the vertex (v0.w is 1: a FLOAT2 or FLOAT3 position)
+    if (cw[0] != 0.0f || cw[1] != 0.0f || cw[2] != 0.0f || cw[3] != 1.0f) return false;
+    const VertexShader::Input& in = s.vs->inputs[0];
+    if (in.stream < 0 || in.stream >= int(s.streams.size())) return false;
+    uint32_t n = in.type == 0x22 ? 2 : in.type == 0x32 ? 3 : 0;  // D3DVSDT_FLOAT2, FLOAT3
+    const auto& st = s.streams[size_t(in.stream)];
+    if (!n || !st.vb) return false;
+    // then the program's own viewport step, as every program of the console has it: * c[-38] + c[-37], to pixels
+    const auto& vs = s.vsc[58];
+    const auto& vo = s.vsc[59];
+    uint32_t w, h;
+    SurfaceSize(s.rt, w, h);
+    if (!w || !h) return false;
+    uint32_t data = mem::VirtualFromPhysical(kernel::R32(st.vb + 4));
+    x0 = y0 = 1e30f;
+    x1 = y1 = -1e30f;
+    for (uint32_t i = 0; i < count; i++) {
+        uint32_t v = indices ? uint32_t(indices[i * 2] | indices[i * 2 + 1] << 8) + s.base_vertex : start + i;
+        float q[3] = {0, 0, 0};
+        std::memcpy(q, kernel::HostPtr(data + v * st.stride + in.offset), n * 4);
+        float x = q[0] * cx[0] + q[1] * cx[1] + q[2] * cx[2] + cx[3];
+        float y = q[0] * cy[0] + q[1] * cy[1] + q[2] * cy[2] + cy[3];
+        x = (x * vs[0] + vo[0]) * 2 / float(w) - 1;
+        y = 1 - (y * vs[1] + vo[1]) * 2 / float(h);
+        x0 = std::min(x0, x), x1 = std::max(x1, x), y0 = std::min(y0, y), y1 = std::max(y1, y);
+    }
+    return true;
+}
 ScreenSpacePlace g_screen_space_place = nullptr;
 thread_local float g_screen_space_height = 0;
 
@@ -560,11 +615,11 @@ static void Spritify(const State& s, Assembled& out) {
         }
     }
     if (out.index_count || !out.draw_count) {
-        LOG_FIRST(1, "gpu: an indexed point draw drawn as points (one pixel each)");
+        LOG_FIRST_R(1, "gpu: an indexed point draw drawn as points (one pixel each)");
         return;
     }
     out.topology = Topology::Sprites;
-    LOG_FIRST(1, "gpu: points drawn as squares of their size (%s)", s.rs[kRsPointSpriteEnable] ? "sprites" : "not sprites");
+    LOG_FIRST_R(1, "gpu: points drawn as squares of their size (%s)", s.rs[kRsPointSpriteEnable] ? "sprites" : "not sprites");
 }
 
 bool Assemble(const State& s, uint32_t prim, uint32_t start, uint32_t count, const uint8_t* ip, Assembled& out) {

@@ -102,7 +102,7 @@ constexpr const char* kLive[] = {
     "graphics.anisotropic_filtering", "graphics.lod_bias", "graphics.console_textures", "graphics.sharpening", "graphics.smooth_2d",
     "graphics.colour_look", "graphics.look_strength", "graphics.brightness", "graphics.movie_display",
     "graphics.movie_sharpening", "graphics.cutscene_audio_delay", "input.vibration", "input.stick_deadzone",
-    "input.trigger_threshold", "window.pause_unfocused", "window.mute_unfocused", "window.background_input", "keyboard.mouse_aim", "keyboard.mouse_sensitivity", "keyboard.mouse_invert_y", "keyboard.mouse_menus", "keyboard.enabled",
+    "input.trigger_threshold", "window.pause_unfocused", "window.mute_unfocused", "window.background_input", "keyboard.mouse_aim", "keyboard.mouse_camera", "keyboard.mouse_sensitivity", "keyboard.mouse_invert_y", "keyboard.mouse_menus", "keyboard.enabled",
     "keyboard.player", "achievements.notify", "discord.enabled", "system.fast_forward_speed", "system.fast_forward_toggle"};
 
 bool IsLive(const cfg::Desc& d) {
@@ -825,14 +825,26 @@ void DrawOverlay(double) {
         if (ImGui::IsKeyPressed(ImGuiKey_GamepadFaceRight, false)) ImGui::CloseCurrentPopup();   // B: stay
         pl->AddText(g_look.body, 30 * u, ImVec2(pa.x + 40 * u, pa.y + 96 * u), look::Text(0.9f),
                     "Progress since the last save is lost.");
-        const float bw = 250 * u, bh = 54 * u;
-        ImGui::SetCursorScreenPos(ImVec2(pa.x + 40 * u, pb.y - bh - 34 * u));
-        if (look::Button(L, "Quit", ImVec2(bw, bh), false)) {
+        // started from Athelas: back to it, or to the desktop (#96: on a Steam Deck the launcher is the way back to
+        // the other games); started on its own: one Quit
+        const bool two = Args().launcher;
+        const float bw = (two ? 180 : 250) * u, bh = 54 * u;
+        auto quit = [&](int code) {
             if (g_dirty.exchange(false)) {
                 if (kGame.save_settings) kGame.save_settings();
                 else Save();
             }
+            g_quit_code = code;
+            LOGR("menu: quit%s", code == kExitToLauncher ? " to Athelas" : two ? " to the desktop" : "");
             PostMessageW(static_cast<HWND>(Window()), WM_CLOSE, 0, 0);
+        };
+        ImGui::SetCursorScreenPos(ImVec2(pa.x + 40 * u, pb.y - bh - 34 * u));
+        if (two) {
+            if (look::Button(L, "To Athelas", ImVec2(bw, bh), false)) quit(kExitToLauncher);
+            ImGui::SetCursorScreenPos(ImVec2(pa.x + 40 * u + bw + 10 * u, pb.y - bh - 34 * u));
+            if (look::Button(L, "To desktop", ImVec2(bw, bh), false)) quit(kExitOk);
+        } else if (look::Button(L, "Quit", ImVec2(bw, bh), false)) {
+            quit(kExitOk);
         }
         ImGui::SetCursorScreenPos(ImVec2(pb.x - bw - 40 * u, pb.y - bh - 34 * u));
         if (look::Button(L, "Stay", ImVec2(bw, bh), true)) ImGui::CloseCurrentPopup();

@@ -110,6 +110,23 @@ static bool make_report(App &a, std::string title)
     return true;
 }
 
+// a Windows path as Linux sees it under Wine or Proton (Z:\\home\\deck\\... is /home/deck/...); empty off Wine
+static std::string unix_path(const std::string &win)
+{
+    typedef char *(__cdecl *ToUnix)(const wchar_t *);
+    ToUnix f = (ToUnix)(void *)GetProcAddress(GetModuleHandleA("kernel32.dll"), "wine_get_unix_file_name");
+    if (!f) return "";
+    int n = MultiByteToWideChar(CP_ACP, 0, win.c_str(), -1, NULL, 0);
+    if (n <= 0) return "";
+    std::wstring w(n, L'\0');
+    MultiByteToWideChar(CP_ACP, 0, win.c_str(), -1, &w[0], n);
+    char *u = f(w.c_str());
+    if (!u) return "";
+    std::string r = u;
+    HeapFree(GetProcessHeap(), 0, u);
+    return r;
+}
+
 // On each About page
 void report_section(App &a)
 {
@@ -130,6 +147,14 @@ void report_section(App &a)
         ImGui::PushFont(F_SMALL, F_SMALL->LegacySize);
         ImGui::PushTextWrapPos(0);
         ImGui::TextColored(C_GOOD, "Saved: %s", g_reportZip.c_str());
+        // under Proton or Wine (a Steam Deck) the folder and the browser may not open by themselves: where the zip is
+        // on Linux, to find in the Dolphin file manager or a browser's upload box (#96)
+        static std::string unixPath, unixFor;
+        if (running_on_wine() && unixFor != g_reportZip) { unixFor = g_reportZip; unixPath = unix_path(g_reportZip); }
+        if (running_on_wine() && !unixPath.empty()) {
+            ImGui::TextColored(C_GOOD, "On Linux or the Steam Deck: %s", unixPath.c_str());
+            if (ImGui::SmallButton("Copy where it is")) SDL_SetClipboardText(unixPath.c_str());
+        }
         ImGui::PopTextWrapPos();
         ImGui::PopFont();
     }

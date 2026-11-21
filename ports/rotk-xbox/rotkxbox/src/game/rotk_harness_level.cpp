@@ -1,9 +1,8 @@
-// Testing only, in the Linux test build and the Windows measuring build (XBE_PGO_GEN, for profiles of every level;
-// never in a shipped exe): ROTK_LEVEL=Pat01 in the environment boots that
+// Testing: ROTK_LEVEL=Pat01 in the environment (every build: the scene test runs jump straight to a level with it;
+// players never set it, and without it nothing changes) boots that
 // level where the game starts Helm's Deep, so every level can be loaded and run headless. The level name table
 // (0x16CF00, read by the scene loader 0x9AA00: "Data/Game/<abc>/<Abc01>.scx") gets the named level's pointer in
 // Hel01's entry. Without ROTK_LEVEL nothing changes.
-#if !defined(_WIN32) || defined(XBE_PGO_GEN)
 #include <cstdlib>
 #ifdef _WIN32
 #include <string.h>
@@ -31,8 +30,4 @@ void HarnessLevel() {
     LOGR("rotk: test level %s is not in the level table", want);
 }
 }  // namespace rotk
-#else
-namespace rotk {
-void HarnessLevel() {}
-}  // namespace rotk
-#endif
+

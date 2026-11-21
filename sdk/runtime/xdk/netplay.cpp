@@ -99,7 +99,9 @@ struct Session {
     bool desync_told = false;
     uint16_t port = 0;       // this PC's UDP port (network order)
     std::string my_address;  // the host's internet address and port, when the router told it
-    bool gone = false;  // the partner left or stopped answering: their player stands still from then on
+    // the partner left or stopped answering: their player stands still from then on. Atomic: the receive thread and
+    // the game thread write it under the mutex, but the heartbeat thread reads it without (audit, 19 Nov)
+    std::atomic<bool> gone{false};
     std::chrono::steady_clock::time_point heard{};  // the partner's last packet
     uint64_t file_bytes = 0;                        // what the host's files take so far (kMaxTotal)
     uint32_t their_need = 0;     // the partner's next frame needed from us (resend from there)
@@ -416,6 +418,10 @@ void Finish() {
 }  // namespace
 
 void End() { Finish(); }
+
+// replays (xapi.cpp) check the game's memory with the same hash co-op uses
+uint64_t MemoryHashSlice(uint32_t k, uint64_t h) { return StateHashSlice(k % kHashSlices, h); }
+uint64_t BuildHash() { return ExeHash(); }
 
 namespace {
 

@@ -41,6 +41,12 @@ static bool list_files(const std::string &root, const std::string &rel, std::vec
         if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ok = list_files(root, r, out, unread) && ok;
         else out.push_back(r);
     } while (FindNextFileA(h, &fd));
+    // FindNextFile also stops on a read error partway through the folder: only "no more files" means the list is
+    // whole, otherwise the backup would hold part of the saves and still pass its own check (audit, 19 Nov)
+    if (GetLastError() != ERROR_NO_MORE_FILES) {
+        if (unread && unread->empty()) *unread = rel.empty() ? root : rel;
+        ok = false;
+    }
     FindClose(h);
     return ok;
 }
@@ -48,7 +54,10 @@ static bool list_files(const std::string &root, const std::string &rel, std::vec
 bool folder_has_files(const std::string &dir)
 {
     std::vector<std::string> v;
-    list_files(dir, "", v);
+    std::string unread;
+    // a folder that couldn't be read whole counts as holding saves: the restore then tries its backup first, which
+    // stops with a clear message, instead of setting the folder aside unbacked
+    if (!list_files(dir, "", v, &unread)) return true;
     return !v.empty();
 }
 
@@ -341,15 +350,20 @@ std::string session_save(const std::string &logsDir, const Session &s, unsigned 
     return dir;
 }
 
-std::string session_newest(const std::string &logsDir)
+// game: only that game's sessions (folder "<YYYY-MM-DD HH-MM-SS> <game>", see session_save), so a game's Logs button
+// doesn't open another game's newest log (audit, 19 Nov)
+std::string session_newest(const std::string &logsDir, const std::string &game)
 {
-    std::string best;
+    std::string best, want = game.empty() ? "" : " " + safe_name(game);
     WIN32_FIND_DATAA fd;
     HANDLE h = FindFirstFileA((logsDir + "\\*").c_str(), &fd);
     if (h == INVALID_HANDLE_VALUE) return best;
-    do if ((fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && fd.cFileName[0] >= '0' && fd.cFileName[0] <= '9' &&
-           logsDir + "\\" + fd.cFileName > best) best = logsDir + "\\" + fd.cFileName;
-    while (FindNextFileA(h, &fd));
+    do {
+        if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) || fd.cFileName[0] < '0' || fd.cFileName[0] > '9') continue;
+        std::string n = fd.cFileName;
+        if (!want.empty() && (n.size() != 19 + want.size() || _stricmp(n.c_str() + 19, want.c_str()))) continue;
+        if (logsDir + "\\" + n > best) best = logsDir + "\\" + n;
+    } while (FindNextFileA(h, &fd));
     FindClose(h);
     return best;
 }
@@ -392,14 +406,20 @@ bool mod_zip_install(const std::string &zip, const std::string &modsDir, const s
     files = 0;
     mz_zip_archive z; memset(&z, 0, sizeof z);
     if (!mz_zip_reader_init_file(&z, zip.c_str(), 0)) { err = "That file isn't a zip Athelas can read."; return false; }
-    std::string dest = code ? modsDir : modsDir + "\\" + name;
-    if (!code && GetFileAttributesA(dest.c_str()) != INVALID_FILE_ATTRIBUTES) {
-        // the same mod again (a new version): the old one goes to the Recycle Bin first, so none of its files linger
-        std::string from = dest; from.push_back('\0');
+    // a data mod is unpacked beside its folder first and swapped in only once every file is there: a damaged zip or
+    // a full disk then leaves the earlier version working, not half of each (audit, 19 Nov)
+    std::string final_dest = code ? modsDir : modsDir + "\\" + name;
+    // (names starting with a dot: the Mods tab and ROTK Fix both skip those, so a leftover is never taken for a mod)
+    std::string dest = code ? modsDir : modsDir + "\\.new-" + name;
+    auto remove_tree = [](const std::string &d, bool undo) {
+        std::string from = d; from.push_back('\0');
         SHFILEOPSTRUCTA op; memset(&op, 0, sizeof op);
         op.wFunc = FO_DELETE; op.pFrom = from.c_str();
-        op.fFlags = FOF_NOCONFIRMATION | FOF_NOERRORUI | FOF_SILENT | FOF_ALLOWUNDO;
-        if (SHFileOperationA(&op) != 0 || op.fAnyOperationsAborted) { mz_zip_reader_end(&z); err = "The mod's earlier version couldn't be moved to the Recycle Bin (is the game running?)"; return false; }
+        op.fFlags = FOF_NOCONFIRMATION | FOF_NOERRORUI | FOF_SILENT | (undo ? FOF_ALLOWUNDO : 0);
+        return SHFileOperationA(&op) == 0 && !op.fAnyOperationsAborted;
+    };
+    if (!code && GetFileAttributesA(dest.c_str()) != INVALID_FILE_ATTRIBUTES && !remove_tree(dest, false)) {
+        mz_zip_reader_end(&z); err = "A half-unpacked copy of this mod from before couldn't be removed (" + dest + ")"; return false;
     }
     SHCreateDirectoryExA(NULL, dest.c_str(), NULL);
     mz_uint n = mz_zip_reader_get_num_files(&z);
@@ -429,5 +449,26 @@ bool mod_zip_install(const std::string &zip, const std::string &modsDir, const s
     }
     mz_zip_reader_end(&z);
     if (ok && !files) { err = "Nothing in the zip could be used."; ok = false; }
-    return ok;
+    if (code) return ok;
+    if (!ok) { remove_tree(dest, false); return false; }   // (the earlier version, if any, untouched)
+    // the swap: the earlier version aside, the new one in, then the earlier one to the Recycle Bin (so none of its
+    // files linger); if the new one can't go in, the earlier one goes back
+    std::string old = modsDir + "\\.old-" + name;
+    bool had = GetFileAttributesA(final_dest.c_str()) != INVALID_FILE_ATTRIBUTES;
+    if (had) {
+        if (GetFileAttributesA(old.c_str()) != INVALID_FILE_ATTRIBUTES) remove_tree(old, true);
+        if (!MoveFileA(final_dest.c_str(), old.c_str())) {
+            remove_tree(dest, false);
+            err = "The mod's earlier version couldn't be replaced (is the game running?). It was left as it was.";
+            return false;
+        }
+    }
+    if (!MoveFileA(dest.c_str(), final_dest.c_str())) {
+        if (had) MoveFileA(old.c_str(), final_dest.c_str());
+        remove_tree(dest, false);
+        err = "The mod couldn't be put in place (is the game running?). The earlier version was left as it was.";
+        return false;
+    }
+    if (had) remove_tree(old, true);
+    return true;
 }

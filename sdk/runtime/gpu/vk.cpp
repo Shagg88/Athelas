@@ -751,7 +751,7 @@ std::vector<SeedSrc> ReadShaderSeed(const std::filesystem::path& file) {
 
 // vk_pipelines.bin: a header, then PipeKeys as Pipeline made them (no padding: equal keys are equal bytes)
 struct PipeListHeader {
-    char magic[4] = {'V', 'P', 'L', '1'};
+    char magic[4] = {'V', 'P', 'L', '2'};  // 2: 3539c59 changed most pixel shaders' source
     uint32_t key_size = 0;
 };
 
@@ -3438,11 +3438,12 @@ VkSampler VkBackend::StageSampler(const State& s, int i, const TexInfo& info, co
     // smooth cut-out edges ([graphics] alpha_edges): an alpha-tested picture's first stage enlarged filtered
     if (g_alpha_edges && SimpleState(s, kMAlphaTestEnable) && i == 0) si.magFilter = VK_FILTER_LINEAR;
     si.mipmapMode = mip == kTexfLinear ? VK_SAMPLER_MIPMAP_MODE_LINEAR : VK_SAMPLER_MIPMAP_MODE_NEAREST;
-    // clamp: the draw's coordinates all lie in 0..1 (UnitTexcoords), so wrap is read as clamp
+    // clamp: this stage's coordinates all lie in 0..1 (ClampStages), so wrap is read as clamp
     si.addressModeU = VkAddress(clamp && t[kTssAddressU] == kTaddressWrap ? kTaddressClamp : t[kTssAddressU]);
     si.addressModeV = VkAddress(clamp && t[kTssAddressV] == kTaddressWrap ? kTaddressClamp : t[kTssAddressV]);
     si.addressModeW = VkAddress(t[kTssAddressW]);
-    si.mipLodBias = Bits(t[kTssMipLodBias]) + app::Get().lod_bias + (target ? 0.0f : extra);
+    // kept in the range every Vulkan driver takes (maxSamplerLodBias is at least 2, 15 or more on desktop cards)
+    si.mipLodBias = std::clamp(Bits(t[kTssMipLodBias]) + app::Get().lod_bias + (target ? 0.0f : extra), -15.0f, 15.0f);
     si.minLod = float(t[kTssMaxMipLevel]);
     si.maxLod = mip ? VK_LOD_CLAMP_NONE : si.minLod;
     // Vulkan's border is one of three colours: the nearest of transparent black, opaque black, opaque white
@@ -3838,7 +3839,9 @@ void VkBackend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t cou
     float pa = 1.0f, pb = 0.0f;
     if (g_ortho_place) {
         float x0, x1, y0, y1;
-        if (OrthoExtent(s, start, count, indices, x0, x1, y0, y1) && !g_ortho_place(s, x0, x1, y0, y1, pa, pb)) {
+        bool have = OrthoExtent(s, start, count, indices, x0, x1, y0, y1) ||
+                    (g_ortho_place_programs && ProgramExtent(s, start, count, indices, x0, x1, y0, y1));
+        if (have && !g_ortho_place(s, x0, x1, y0, y1, pa, pb)) {
             pa = 1.0f;
             pb = 0.0f;
         }
@@ -4031,6 +4034,10 @@ void VkBackend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t cou
     FillCombinerConstants(s, c);
     FillSpriteConstants(s, c);
     c.widen[0] = sh.prog ? g_program_widen.load() : 0.0f;
+    // a program's 2D draw moved with the fixed function 2D (the fixed pipeline takes the move in its wvp)
+    bool placed = sh.prog && (pa != 1.0f || pb != 0.0f);
+    c.widen[1] = placed ? pa : 0.0f;
+    c.widen[2] = placed ? pb : 0.0f;
     if (g_orbit_on.load()) {
         c.orbit[0][0] = 1.0f;
         c.orbit[0][1] = g_orbit_yaw.load();
@@ -4111,7 +4118,7 @@ void VkBackend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t cou
 
     // the samplers' draw-wide inputs, as Direct3D 12: console_textures' mip bias for a 3D draw's textures (one level
     // per doubling of the console's 480 lines), point-enlarged textures smoothed above 1.2 x 480 lines in a 3D draw
-    bool clamp = UnitTexcoords(a);
+    uint32_t clamp = ClampStages(s, a);
     float lines = scale_ * float(guest_h_);
     bool screen = g_screen_space_test && g_screen_space_test(s);
     float extra = app::Get().console_textures && lines > 480.0f && !screen ? std::log2(lines / 480.0f) : 0.0f;
@@ -4130,7 +4137,7 @@ void VkBackend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t cou
             layout = dm.layout;
         }
         imgs[i] = {VK_NULL_HANDLE, view, layout};
-        smps[i] = {StageSampler(s, i, info[i], sb[i], clamp, extra, enlarge_smooth), VK_NULL_HANDLE,
+        smps[i] = {StageSampler(s, i, info[i], sb[i], (clamp >> i & 1) != 0, extra, enlarge_smooth), VK_NULL_HANDLE,
                    VK_IMAGE_LAYOUT_UNDEFINED};
     }
     VkDescriptorSet set = CachedSet(sizeof(s.vsc), sizeof(DrawConstants), imgs, smps);
@@ -5838,6 +5845,11 @@ void VkBackend::CaptureDraw(const State& s, uint32_t prim, uint32_t count, const
         const float* t = s.transforms[size_t(m)].data();
         fprintf(cap_, " | T%d %g %g %g %g / %g %g %g", m, t[0], t[5], t[10], t[15], t[12], t[13], t[14]);
     }
+    // what the line above leaves out and a wrong blend shows up as: the blend equation as the game set it (8006 add,
+    // 800A subtract, 800B reverse subtract, 8007 min, 8008 max, F005 and F006 the console's signed ones), the blend
+    // colour, fog on or off, and a program's 2D move (g_ortho_place)
+    fprintf(cap_, " | bop %X bcol %08X fog %u move %g %g", SimpleState(s, kMBlendOp), SimpleState(s, kMBlendColor),
+            s.rs[kRsFogEnable] ? 1u : 0u, c.widen[1], c.widen[2]);
     for (int i = 0; i < 4; i++) {
         TextureDesc d;
         if (!s.textures[size_t(i)] || !Describe(s.textures[size_t(i)], d)) continue;

@@ -98,6 +98,12 @@ void BattleScene() {
 void BattleTick() {
     if (g_battle_speed <= 1) {
         app::SetGameSpeed(1);  // also when turned off from the in-game menu mid-battle
+        // and that battle forgotten: turned back on later, its old enemies and last blow would speed up whatever
+        // comes then (exploring) until the quiet time ran out (#105)
+        if (g_active.load()) {
+            std::lock_guard lock(g_lock);
+            SetInBattle(false, "battle speed turned off");
+        }
         return;
     }
     if (g_active.load()) {

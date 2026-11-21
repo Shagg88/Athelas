@@ -7,6 +7,7 @@ namespace fotr {
 extern uint32_t g_fps;       // src/game/fotr_framerate.cpp
 extern bool g_skip_logos;    // src/game/fotr_movies.cpp
 void FileOpened(const char* name);
+bool WorldShown();          // fotr_camera.cpp: the 3D world on screen (the mouse camera)
 extern bool g_cheat_ring, g_cheat_health, g_cheat_spirit, g_cheat_ammo;  // src/game/fotr_cheats.cpp
 extern uint32_t g_text_language;  // src/game/fotr_lang.cpp
 extern uint32_t g_fov_percent;    // src/game/fotr_camera.cpp
@@ -59,8 +60,8 @@ const app::GameInfo app::kGame = {
                 {"graphics", "button_pictures", cfg::Type::Choice, "Button pictures",
                  "Which controller's buttons the game's hints and menus show. Auto follows the controller you play "
                  "with when the game starts.",
-                 nullptr, &fotr::g_button_pictures, nullptr, 0, 0, {"auto", "xbox", "playstation", "nintendo", "keyboard"},
-                 nullptr, nullptr, {"Auto", "Xbox", "PlayStation", "Nintendo", "Keyboard keys"}},
+                 nullptr, &fotr::g_button_pictures, nullptr, 0, 0, {"auto", "xbox", "playstation", "nintendo", "keyboard", "steamdeck", "steamcontroller"},
+                 nullptr, nullptr, {"Auto", "Xbox", "PlayStation", "Nintendo", "Keyboard keys", "Steam Deck", "Steam Controller"}},
                 {"input", "invert_camera_y", cfg::Type::Bool, "Invert camera up/down",
                  "Reverses up and down on the controller's right stick, which moves the camera. For players used to "
                  "inverted camera controls.", &fotr::g_invert_camera_y},
@@ -128,6 +129,8 @@ const app::GameInfo app::kGame = {
     .live_settings = {"graphics.fov", "input.invert_camera_y", "input.invert_camera_x", "gameplay.damage_taken", "gameplay.enemy_damage", "cheats.infinite_health",
                       "cheats.infinite_spirit", "cheats.infinite_ammo", "cheats.infinite_ring"},
     .file_opened = fotr::FileOpened,  // the movies, to show each by the movie settings; achievements
+    .mouse_camera = true,  // the right stick turns the camera: the mouse can too ([keyboard] mouse_camera, #106)
+    .camera_live = fotr::WorldShown,  // not in the front end's menus (it has no in_menus)
     .achievements = fotr::Achievements(),
     .discord_app_id = FOTRX_DISCORD_APP_ID,
     .activity = fotr::Activity,

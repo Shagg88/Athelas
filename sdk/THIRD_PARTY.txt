@@ -135,7 +135,7 @@ Copyright (c) 2015-2025 The Khronos Group Inc. and others: BSD-3-Clause, BSD-2-C
 full text is in the release's licenses folder (glslang-LICENSE.txt).
 
 
-Vulkan Memory Allocator 3.3.0 (https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator), the Vulkan
+Vulkan Memory Allocator 3.5.0 (https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator), the Vulkan
 renderer's image memory (third_party/vma, runtime/gpu/vk_mem.cpp)
 
 Copyright (c) 2017-2025 Advanced Micro Devices, Inc. MIT (third_party/vma/LICENSE.txt; in the release's licenses
@@ -157,7 +157,7 @@ Copyright 2015-2026 The Khronos Group Inc. Apache-2.0 OR MIT (third_party/vulkan
 folder as Vulkan-Headers-LICENSE.md).
 
 
-miniupnpc 2.3.3 (https://github.com/miniupnp/miniupnp), online co-op's router port (UPnP)
+miniupnpc 2.3.5 (https://github.com/miniupnp/miniupnp), online co-op's router port (UPnP)
 
 BSD 3-Clause License
 
@@ -243,3 +243,9 @@ is preserved.
 
 Copyright (c) 2018, Arm Limited.
 SPDX-License-Identifier: MIT (the license above)
+
+------------------------------------------------------------------------------
+Input Prompts by Kenney (www.kenney.nl): the controller button pictures
+------------------------------------------------------------------------------
+Creative Commons Zero (CC0 1.0 Universal), http://creativecommons.org/publicdomain/zero/1.0/
+Public domain: free to use for any purpose. Credit is not required; thank you, Kenney.

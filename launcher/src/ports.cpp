@@ -226,7 +226,7 @@ void tt_play(App &a, const LibGame &g)
     if (!gp.empty() && gp.back() == '\\') gp += '\\';
     std::string args = "--game \"" + gp + "\" --config \"" + tt_settings_path() + "\" --textures \"" + tex +
                        "\" --log \"" + tt_log_path() + "\" --saves \"" + saves + "\" --shader-cache \"" + tt_data_dir() +
-                       "\\shadercache\" --screenshots \"" + shots + "\" --no-dialogs";
+                       "\\shadercache\" --screenshots \"" + shots + "\" --no-dialogs --launcher";
     // The Return of the King: the PC version's folder, whose Data its Sharper text reads (beside its ROTKFix.ini)
     if (tp().kind == GK_ROTK_XBOX && !a.dir.empty()) args += " --ini \"" + a.dir + "\\ROTKFix.ini\"";
     // an untested release the player said works: no question at start
@@ -306,8 +306,14 @@ void port_finished(App &a, DWORD code)
     }
     }
     a.running = NULL;
-    session_save(logs_dir(), a.session, code, code == 0 ? "closed normally" : m);
+    session_save(logs_dir(), a.session, code, code == 0 ? "closed normally" : code == 7 ? "closed normally, back to Athelas" : m);
     if (code == 0) { a.quit = true; return; }       // played and quit: close, as after ROTK
+    if (code == 7) {                                // "Quit to Athelas" in the game's menu: back here, nothing to say
+        a.ttLoaded = false;
+        SDL_ShowWindow(a.win);
+        SDL_RaiseWindow(a.win);
+        return;
+    }
     if (code == 3 && std::find(g_untested.begin(), g_untested.end(), std::string(tp().dir)) == g_untested.end())
         g_untested.push_back(tp().dir);
     if (code == 3 && a.runningArgs.find("--any-release") == std::string::npos) {

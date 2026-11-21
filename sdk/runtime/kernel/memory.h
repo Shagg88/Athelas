@@ -29,6 +29,10 @@ uint8_t* Base();
 bool Commit(uint32_t va, uint32_t size);
 void Decommit(uint32_t va, uint32_t size);
 bool IsCommitted(uint32_t va);
+// the allocator's lock, for a reader on another thread that must not have a page decommitted under it (the texture
+// sweep); held only briefly
+void Lock();
+void Unlock();
 
 // user virtual space, NTSTATUS results
 uint32_t AllocateVirtual(uint32_t& base, uint32_t& size, uint32_t type, uint32_t protect);

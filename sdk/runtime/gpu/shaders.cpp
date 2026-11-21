@@ -223,7 +223,9 @@ const char* kVsEpilogue = R"(
     precise float4 p = oPos;
     // a 2D or full-screen pass writes w exactly 1; a 3D one only by chance (GitHub #37)
     bool is2d = oPos.w == 1;
-    p.w = magclamp(p.w);
+    // w 0 is screen space: clamped to 2^-64 its clip coordinates near 1e-20 lose draws on AMD cards; w 1 draws the
+    // same (upstream XboxXBE-Recomp a50a366)
+    p.w = p.w == 0 ? 1 : magclamp(p.w);
     precise float4 q;
     // full screen passes drawn half a pixel up-left for the console's integer pixel centers stop half a pixel short
     // of the far edges on D3D12's, which upscaled leaves the last host columns and rows undrawn
@@ -248,6 +250,8 @@ const char* kVsEpilogue = R"(
     // |w - 1| > 0.001: the vertices of a 3D model whose depth fell in that band were left wide while the rest
     // narrowed, so characters burst into spikes in The Third Age's cutscenes (GitHub #37)
     if (widen.x != 0 && !is2d) q.x *= widen.x;
+    // a 2D draw the game moves sideways with its fixed function 2D (g_ortho_place, g_ortho_place_programs): x' = a x + b
+    if (widen.y != 0 && is2d) q.x = q.x * widen.y + widen.z;
     q.y = 1 - p.y * 2 / surf.y;
     q.z = p.z * surf.z;
     q.xyz *= p.w;
@@ -633,6 +637,45 @@ uint64_t Hash(const void* p, size_t n, uint64_t h) {
     return mix(seed ^ k0, uint64_t(n) ^ k1);
 }
 
+namespace {
+// D3DTOP and D3DTA values PixelKey::ff holds
+constexpr uint32_t kTopSelectArg1 = 2;
+constexpr uint32_t kTopSelectArg2 = 3;
+constexpr uint32_t kTopBlendTextureAlpha = 14;
+constexpr uint32_t kTopBlendTextureAlphaPm = 16;
+constexpr uint32_t kTopModulateAlphaAddColor = 18;
+constexpr uint32_t kTopModulateInvColorAddAlpha = 21;
+constexpr uint32_t kTopMultiplyAdd = 23;
+constexpr uint32_t kTopLerp = 24;
+constexpr uint32_t kTaCurrent = 1;
+constexpr uint32_t kTaTexture = 2;
+
+// args in PixelKey::ff order: arg1, arg2, arg0
+bool ReadsTexture(uint32_t op, const uint32_t* args, bool alpha) {
+    if (op == kTopBlendTextureAlpha || op == kTopBlendTextureAlphaPm) return true;
+    bool alpha_arg1_only = alpha && op >= kTopModulateAlphaAddColor && op <= kTopModulateInvColorAddAlpha;
+    bool uses_arg1 = op != kTopSelectArg2;
+    bool uses_arg2 = op != kTopSelectArg1 && !alpha_arg1_only;
+    bool uses_arg0 = op == kTopMultiplyAdd || op == kTopLerp;
+    auto texture = [](uint32_t a) { return (a & 0xF) == kTaTexture; };
+    return (uses_arg1 && texture(args[0])) || (uses_arg2 && texture(args[1])) || (uses_arg0 && texture(args[2]));
+}
+
+// the console library's combiner builder turns a stage op that reads a missing texture into a pass of the current
+// colour (upstream XboxXBE-Recomp c9cda4a). The missing texture read as white here: right under MODULATE, but a
+// SELECTARG1 of it drew a white, opaque piece where the console draws the vertex colour and its alpha
+void PassMissingTexture(uint32_t* f) {
+    if (f[0] > 1 && ReadsTexture(f[0], f + 1, false)) {
+        f[0] = kTopSelectArg1;
+        f[1] = kTaCurrent;
+    }
+    if (f[4] > 1 && ReadsTexture(f[4], f + 5, true)) {
+        f[4] = kTopSelectArg1;
+        f[5] = kTaCurrent;
+    }
+}
+}  // namespace
+
 PixelKey MakePixelKey(const State& s, const TexInfo tex[4]) {
     PixelKey k;
     std::memset(&k, 0, sizeof(k));
@@ -642,6 +685,7 @@ PixelKey MakePixelKey(const State& s, const TexInfo tex[4]) {
     }
     k.flat = s.simple[kMShadeMode >> 2] == 0x1D00;  // D3DSHADE_FLAT
     k.two_sided = s.rs[kRsTwoSidedLighting] != 0;
+    k.alphatest = s.simple[kMAlphaTestEnable >> 2] != 0;
     if (s.ps) {
         const uint32_t* d = s.ps->def;
         k.programmable = 1;
@@ -677,6 +721,7 @@ PixelKey MakePixelKey(const State& s, const TexInfo tex[4]) {
         uint32_t v[9] = {t[kTssColorOp], t[kTssColorArg1], t[kTssColorArg2], t[kTssColorArg0], t[kTssAlphaOp],
                          t[kTssAlphaArg1],  t[kTssAlphaArg2], t[kTssAlphaArg0], t[kTssResultArg]};
         std::memcpy(k.ff[i], v, sizeof(v));
+        if (!tex[i].kind) PassMissingTexture(k.ff[i]);
         if (program || (t[kTssTextureTransformFlags] & 0x100)) k.proj |= 1u << i;  // D3DTTFF_PROJECTED
         if (t[kTssColorOp] <= 1) break;
     }
@@ -912,7 +957,9 @@ std::string PixelHlsl(const PixelKey& k) {
             body += "outc.rgb = " + D + " + lerp(" + C + ", " + B + ", " + A + ");\n";
             body += "outc.a = " + G + ";\n";
         } else {
-            body += "float4 outc = float4(lerp(fogin.rgb, r0.rgb, fogin.a), r0.a);\n";
+            // the final combiner reads r0 unsigned: a negative colour or alpha reaches the fog blend and the alpha
+            // test as 0 (upstream XboxXBE-Recomp d834100)
+            body += "float4 outc = float4(lerp(fogin.rgb, saturate(r0.rgb), fogin.a), saturate(r0.a));\n";
         }
     } else {
         body += "float4 cur = v0, tmp = 0;\n";
@@ -947,7 +994,9 @@ std::string PixelHlsl(const PixelKey& k) {
         body += "cur.rgb = saturate(cur.rgb + v1.rgb);\n";
         body += "float4 outc = float4(lerp(fogin.rgb, cur.rgb, fogin.a), cur.a);\n";
     }
-    body += "outc.a = alphatest(outc.a);\n" + Hooks().Output() + "return outc;\n}\n";
+    // upstream 7beac8c: without the alpha test the shader has no discard, so the GPU may test depth before shading
+    if (k.alphatest) body += "outc.a = alphatest(outc.a);\n";
+    body += Hooks().Output() + "return outc;\n}\n";
     s += body;
     return k.quad ? QuadHlsl(std::move(s)) : s;
 }
