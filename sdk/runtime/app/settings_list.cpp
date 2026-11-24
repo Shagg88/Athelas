@@ -164,6 +164,14 @@ std::vector<cfg::Desc> SettingsList() {
          "Also looks for a co-op host at this address, past the local network. Empty searches the local network only.",
          nullptr, nullptr, &s.join_ip, 0, 0, {}, "join_ip"},
     };
+    if (kGame.camera_invert) {
+        l.push_back({"input", "invert_camera_y", Type::Bool, "Invert camera up/down",
+                     "Reverses up and down on the right stick (and the mouse camera) for the camera, for players used to "
+                     "inverted camera controls.", &s.invert_camera_y});
+        l.push_back({"input", "invert_camera_x", Type::Bool, "Invert camera left/right",
+                     "Reverses left and right on the right stick (and the mouse camera) for the camera.",
+                     &s.invert_camera_x});
+    }
     if (kGame.online_coop) {
         l.push_back({"network", "online_coop", Type::Choice, "Online co-op",
                      "Play co-op with a friend over the internet. Host: you are player 1 and your friend joins you; your "
@@ -268,6 +276,27 @@ std::vector<cfg::Desc> SettingsList() {
     auto at = std::find_if(l.begin(), l.end(), [](const cfg::Desc& d) { return std::string(d.section) == "textures"; });
     l.insert(at, kGame.options.begin(), kGame.options.end());
     return l;
+}
+
+std::vector<cfg::Preset> StandardPresets(bool smooth_2d) {
+    std::vector<cfg::Preset> p = {
+        {"Original", {{"graphics.fps", "\"30\""}, {"graphics.sharpening", "0"}, {"display.render_percent", "\"100\""},
+                      {"graphics.widescreen", "false"}, {"graphics.anisotropic_filtering", "\"0\""},
+                      {"graphics.lod_bias", "0.00"}, {"graphics.anti_aliasing", "\"0\""},
+                      {"graphics.console_textures", "true"}}},
+        {"Balanced", {{"graphics.sharpening", "30"}, {"display.render_percent", "\"100\""}, {"graphics.widescreen", "true"},
+                      {"graphics.anisotropic_filtering", "\"8\""}, {"graphics.lod_bias", "0.00"},
+                      {"graphics.anti_aliasing", "\"2\""}, {"graphics.console_textures", "false"}}},
+        {"High", {{"graphics.sharpening", "60"}, {"display.render_percent", "\"100\""}, {"graphics.widescreen", "true"},
+                  {"graphics.anisotropic_filtering", "\"16\""}, {"graphics.lod_bias", "-0.50"},
+                  {"graphics.anti_aliasing", "\"4\""}, {"graphics.console_textures", "false"}}},
+        {"Ultra", {{"graphics.sharpening", "60"}, {"display.render_percent", "\"150\""}, {"graphics.widescreen", "true"},
+                   {"graphics.anisotropic_filtering", "\"16\""}, {"graphics.lod_bias", "-0.50"},
+                   {"graphics.anti_aliasing", "\"8\""}, {"graphics.console_textures", "false"}}},
+    };
+    if (smooth_2d)
+        for (cfg::Preset& pr : p) pr.values.push_back({"graphics.smooth_2d", std::string(pr.name) == "Original" ? "false" : "true"});
+    return p;
 }
 
 }  // namespace app

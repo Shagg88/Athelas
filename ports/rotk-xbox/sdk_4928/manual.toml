@@ -35,4 +35,4 @@ CDirectSoundStream_SetEG           = 0x129D17
 CDirectSoundStream_SetOutputBuffer = 0x12AD40
 IDirectSound_CreateSoundStream     = 0x12B749
 D3DDevice_DrawIndexedVerticesUP    = 0x118300
-XInputGetCapabilities              = 0x1695FB  # XbSymbolDatabase XAPILIB__XInputGetCapabilities, ret 8; host version in tt_input.cpp
+XInputGetCapabilities              = 0x1695FB  # XbSymbolDatabase XAPILIB__XInputGetCapabilities, ret 8; host version in sdk/runtime/xdk/xapi.cpp

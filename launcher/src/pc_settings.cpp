@@ -1155,7 +1155,7 @@ void tab_about(App &a)
         GpuInfo gi = gpu_info();
         std::string t = gi.state == GPU_CHECKING ? "Checking the graphics card..."
                       : gi.state == GPU_VULKAN_OK ? "Graphics: " + gi.name + (gi.software ? " (software)" : gi.integrated ? " (integrated)" : "")
-                      : gi.state == GPU_VULKAN_TOO_OLD ? "Graphics: " + gi.name + " - Vulkan too old for DXVK; Direct3D 8 is used"
+                      : gi.state == GPU_VULKAN_TOO_OLD ? "Graphics: " + gi.name + " - Vulkan " + std::to_string(gi.api >> 22) + "." + std::to_string((gi.api >> 12) & 0x3FF) + ", DXVK needs 1.4; Direct3D 8 is used"
                       : gi.state == GPU_VULKAN_NO_EXT ? "Graphics: " + gi.name + " - Vulkan lacks what DXVK needs; Direct3D 8 is used"
                       : "No Vulkan driver - Direct3D 8 is used";
         status_dot(gi.state == GPU_VULKAN_OK, gi.state == GPU_CHECKING, t.c_str(),

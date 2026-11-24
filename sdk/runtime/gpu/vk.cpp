@@ -80,9 +80,6 @@ struct PerfAdd {
 
 // S15: a shaders.seed entry (Direct3D 12's layout: entry point, profile, HLSL); vs_* and ps_* compile to SPIR-V too,
 // as both renderers make their game shaders from the same generators
-struct SeedSrc {
-    std::string entry, profile, src;
-};
 
 bool HasExtension(const std::vector<VkExtensionProperties>& list, const char* name) {
     for (const VkExtensionProperties& e : list)
@@ -501,7 +498,7 @@ private:
     // and made again at the next start on a warm-up thread; the driver's VkPipelineCache saved beside them
     std::unordered_map<VkShaderModule, uint64_t> module_hash_;
     void StartWarmUp();
-    void WarmUp(std::vector<PipeKey> keys, std::vector<SeedSrc> seed);
+    void WarmUp(std::vector<PipeKey> keys, std::vector<SeedShader> seed);
     void SavePipelineCache();
     std::thread warm_;
     std::atomic<bool> warm_stop_{false};
@@ -669,14 +666,7 @@ constexpr VkFormat kColorFormat = VK_FORMAT_B8G8R8A8_UNORM;  // the console's A8
 
 uint64_t TargetKey(uint32_t data, bool depth) { return uint64_t(data) << 1 | (depth ? 1 : 0); }
 
-// a surface hashed whole up to 64 KB, a bigger one as 64 evenly spaced samples of 64 bytes
-uint64_t MemSig(uint32_t data, uint32_t total) {
-    const uint8_t* p = static_cast<const uint8_t*>(kernel::HostPtr(data));
-    uint64_t sig = Hash(&total, sizeof(total));
-    if (total <= 65536) return Hash(p, total, sig);
-    for (uint32_t i = 0; i < 64; i++) sig = Hash(p + uint64_t(total - 64) * i / 63, 64, sig);
-    return sig;
-}
+// a surface's signature: gpu::MemSig (common.cpp)
 
 // ---- S15: the shader cache's SPIR-V, the pipeline list, seeds
 
@@ -728,24 +718,12 @@ void WriteSpv(uint64_t hash, const std::vector<uint32_t>& code) {
     WriteFileAtomic(SpvPath(hash), code.data(), code.size() * 4);
 }
 
-bool ReadSeedString(FILE* f, std::string& out) {
-    uint32_t n = 0;
-    if (std::fread(&n, 4, 1, f) != 1 || n > (16u << 20)) return false;
-    out.resize(n);
-    return n == 0 || std::fread(out.data(), 1, n, f) == n;
-}
-
-std::vector<SeedSrc> ReadShaderSeed(const std::filesystem::path& file) {
-    std::vector<SeedSrc> v;
-    FILE* f = _wfopen(file.c_str(), L"rb");
-    if (!f) return v;
-    char magic[4];
-    if (std::fread(magic, 4, 1, f) == 1 && !std::memcmp(magic, "ASS1", 4)) {
-        SeedSrc s;
-        while (ReadSeedString(f, s.entry) && ReadSeedString(f, s.profile) && ReadSeedString(f, s.src))
-            if (!s.profile.compare(0, 3, "vs_") || !s.profile.compare(0, 3, "ps_")) v.push_back(s);
-    }
-    std::fclose(f);
+// shaders.seed's vertex and pixel shaders (gpu::ReadShaderSeed, common.cpp; the D3D12-only kinds left out)
+std::vector<SeedShader> ReadVkSeed(const std::filesystem::path& file) {
+    std::vector<SeedShader> v = ReadShaderSeed(file);
+    v.erase(std::remove_if(v.begin(), v.end(), [](const SeedShader& s) {
+        return s.profile.compare(0, 3, "vs_") && s.profile.compare(0, 3, "ps_");
+    }), v.end());
     return v;
 }
 
@@ -3269,21 +3247,8 @@ void VkBackend::TexturePack(Tex& tx, const uint8_t* p, const uint32_t* colours,
                       : fi.host == Host::BC1 ? pack::Format::BC1
                       : fi.host == Host::BC2 ? pack::Format::BC2
                                              : pack::Format::BC3;
-    uint64_t seed = uint64_t(d.format) | uint64_t(d.width) << 8 | uint64_t(d.height) << 24 | uint64_t(d.levels) << 40;
-    uint64_t h = Hash(p, TotalSize(d), seed);
-    if (colours) h = Hash(colours, 256 * sizeof(uint32_t), h);
-    if (!levels.empty() && dumped_.insert(h).second) {
-        // level 0 as a PNG, written on the pack thread
-        std::vector<uint8_t> rgba;
-        std::filesystem::path file = app::TextureDir() / "dump" / pack::PngName(d.width, d.height, h);
-        std::error_code ec;
-        if (std::filesystem::exists(file, ec)) {
-        } else if (pack::ToRgba(pf, d.width, d.height, levels[0], rgba)) {
-            pack::WritePngLater(file, d.width, d.height, std::move(rgba));
-        } else {
-            LOG_FIRST(4, "texture pack: %s is in a format a PNG does not take", file.filename().string().c_str());
-        }
-    }
+    uint64_t h = PackHash(d, p, colours);
+    PackDump(pf, d, h, levels, dumped_);  // (common.cpp, shared with D3D12)
     tx.pack_hash = h;
     const std::filesystem::path* file = pack_lib_.Find(h);
     if (!file && !pack::g_builtin && !pack::g_builtin_contents && !pack::g_upscale) return;
@@ -3300,29 +3265,7 @@ void VkBackend::TexturePack(Tex& tx, const uint8_t* p, const uint32_t* colours,
         LOGW("texture pack: %s is not a PNG or DDS file the renderer takes", file->string().c_str());
     if (fresh && !file) {
         pack::Image img;
-        bool got = pack::g_builtin_contents &&
-                   pack::g_builtin_contents({d.format, d.width, d.height, d.levels, p, TotalSize(d), colours}, img);
-        if (!got && pack::g_builtin) got = pack::g_builtin(h, d.width, d.height, img);
-        if (!got && pack::g_upscale && !d.linear && pack::g_upscale(h)) {
-            // a picture the game asks to be redrawn larger: level 0 decoded, upscaled 4x, its levels made anew
-            std::vector<uint8_t> px, rgba;
-            uint32_t pitch;
-            DecodeLevel(d, 0, 0, p, colours, px, pitch);
-            uint32_t rb = pack::RowBytes(pf, d.width), rows = pack::Rows(pf, d.height);
-            std::vector<uint8_t> packed(size_t(rb) * rows);
-            for (uint32_t y = 0; y < rows && size_t(y + 1) * pitch <= px.size(); y++)
-                std::memcpy(&packed[size_t(y) * rb], &px[size_t(y) * pitch], std::min(rb, pitch));
-            if (pack::ToRgba(pf, d.width, d.height, packed, rgba)) {
-                img = {};
-                img.width = d.width * 4;
-                img.height = d.height * 4;
-                img.format = pack::Format::RGBA8;
-                pack::Upscale(rgba, d.width, d.height, 4, img.levels.emplace_back());
-                pack::MakeLevels(img);
-                got = true;
-                LOGR("texture: %ux%u picture %016llx redrawn at 4x", d.width, d.height, (unsigned long long)h);
-            }
-        }
+        bool got = PackMake(pf, d, h, p, colours, img);
         if (got && d.linear) {
             // a game's own picture for a linear texture (text it draws afresh, Fellowship's sharper text): kept by
             // this texture alone, not by contents, as such textures change all the time
@@ -3700,7 +3643,7 @@ void VkBackend::StartWarmUp() {
     if (!pipe_list_) LOGW("vulkan: the pipeline list %s can't be written; no warm-up next time", file.string().c_str());
     // the release's seed after the player's own (not listed: a seed pipeline the game never makes stays out of it)
     read(app::ExeDir() / "vk_pipelines.seed", false);
-    std::vector<SeedSrc> seed = ReadShaderSeed(app::ExeDir() / "shaders.seed");
+    std::vector<SeedShader> seed = ReadVkSeed(app::ExeDir() / "shaders.seed");
     if (keys.empty() && seed.empty()) return;
     LOGR("vulkan: warming up %zu pipelines from earlier runs and %zu from the seed, %zu seed shaders", own,
          keys.size() - own, seed.size());
@@ -3709,7 +3652,7 @@ void VkBackend::StartWarmUp() {
     });
 }
 
-void VkBackend::WarmUp(std::vector<PipeKey> keys, std::vector<SeedSrc> seed) {
+void VkBackend::WarmUp(std::vector<PipeKey> keys, std::vector<SeedShader> seed) {
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
     auto start = std::chrono::steady_clock::now();
     auto secs = [&] {
@@ -3730,7 +3673,7 @@ void VkBackend::WarmUp(std::vector<PipeKey> keys, std::vector<SeedSrc> seed) {
             pool.emplace_back([&] {
                 SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
                 for (size_t i; !warm_stop_ && (i = next++) < todo.size();) {
-                    const SeedSrc& s = seed[todo[i]];
+                    const SeedShader& s = seed[todo[i]];
                     spirv::Stage st = s.profile[0] == 'v' ? spirv::Stage::Vertex : spirv::Stage::Pixel;
                     std::vector<uint32_t> code;
                     std::string err;
@@ -5458,10 +5401,6 @@ void VkBackend::BlackSides(VkCommandBuffer cb, uint32_t w, uint32_t h, float asp
     if (n) vkCmdClearAttachments(cb, 1, &at, n, rs);
 }
 
-static double MovieClock() {
-    using namespace std::chrono;
-    return duration<double>(steady_clock::now().time_since_epoch()).count();
-}
 
 // the movie frame just drawn, averaged down to up to twice the console's size into the ring (KeepMovieFrame)
 void VkBackend::KeepMovieFrame(Target& t) {
@@ -5561,50 +5500,7 @@ void VkBackend::ArtShot() {
     Submit(true);
     if (lost_ || !readback_cpu_) return;
     std::vector<uint8_t> px(readback_cpu_, readback_cpu_ + size_t(w) * h * 4);
-    auto lum = [&](uint32_t x, uint32_t y) {
-        const uint8_t* p = &px[(size_t(y) * w + x) * 4];
-        return (int(p[0]) + 2 * int(p[1]) + int(p[2])) / 4;  // BGRA
-    };
-    auto row_dark = [&](uint32_t y) {
-        int sum = 0;
-        for (uint32_t x = 0; x < w; x += 4) sum += lum(x, y);
-        return sum / int((w + 3) / 4) < 12;
-    };
-    auto col_dark = [&](uint32_t x, uint32_t y0, uint32_t y1) {
-        int sum = 0;
-        for (uint32_t y = y0; y < y1; y += 4) sum += lum(x, y);
-        return sum / int(std::max(1u, (y1 - y0 + 3) / 4)) < 12;
-    };
-    uint32_t y0 = 0, y1 = h, x0 = 0, x1 = w;
-    while (y0 < h && row_dark(y0)) y0++;
-    while (y1 > y0 && row_dark(y1 - 1)) y1--;
-    while (x0 < w && col_dark(x0, y0, y1)) x0++;
-    while (x1 > x0 && col_dark(x1 - 1, y0, y1)) x1--;
-    uint32_t cw = x1 > x0 ? x1 - x0 : 0, ch = y1 > y0 ? y1 - y0 : 0;
-    if (cw < w / 2 || ch < h / 3) return;  // nearly black: a later frame
-    long long total = 0;
-    for (uint32_t y = y0; y < y1; y += 2)
-        for (uint32_t x = x0; x < x1; x += 2) total += lum(x, y);
-    if (total / std::max(1LL, (long long)((cw + 1) / 2) * ((ch + 1) / 2)) < 40) return;  // too dark to be a picture
-    std::vector<uint8_t> out(size_t(cw) * ch * 4);
-    for (uint32_t y = 0; y < ch; y++)
-        for (uint32_t x = 0; x < cw; x++) {
-            const uint8_t* sp = &px[(size_t(y + y0) * w + x + x0) * 4];
-            uint8_t* d = &out[(size_t(y) * cw + x) * 4];
-            d[0] = sp[2];
-            d[1] = sp[1];
-            d[2] = sp[0];
-            d[3] = 255;
-        }
-    {
-        std::lock_guard lock(g_art_shot_lock);
-        if (g_art_shot != path) return;  // asked for another meanwhile
-        g_art_shot.clear();
-    }
-    std::error_code ec;
-    std::filesystem::create_directories(std::filesystem::path(path).parent_path(), ec);
-    pack::WritePngLater(path, cw, ch, std::move(out));
-    LOGR("art: %s (%ux%u)", path.c_str(), cw, ch);
+    ArtShotSave(path, px, w, h);  // (common.cpp, shared with Direct3D 12)
 }
 
 // \ (or a test's XBE_SHOT_FRAMES / SHOT): the frame as the screen pass draws it, at the frame's own size (its height,

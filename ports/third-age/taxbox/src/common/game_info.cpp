@@ -124,19 +124,8 @@ const app::GameInfo app::kGame = {
                  "Enemies can't hurt your party.", &ta::g_invulnerable},
                 {"cheats", "infinite_ap", cfg::Type::Bool, "Infinite AP",
                  "Your party's skills and magic cost no AP.", &ta::g_infinite_ap}},
-    // the same presets as the other ports, without the frame rate (no hook for it yet)
-    .presets = {{"Original", {{"graphics.sharpening", "0"}, {"display.render_percent", "\"100\""}, {"graphics.widescreen", "false"},
-                              {"graphics.anisotropic_filtering", "\"0\""}, {"graphics.lod_bias", "0.00"}, {"graphics.anti_aliasing", "\"0\""},
-                              {"graphics.smooth_2d", "false"}, {"graphics.console_textures", "true"}}},
-                {"Balanced", {{"graphics.sharpening", "30"}, {"display.render_percent", "\"100\""}, {"graphics.widescreen", "true"},
-                              {"graphics.anisotropic_filtering", "\"8\""}, {"graphics.lod_bias", "0.00"}, {"graphics.anti_aliasing", "\"2\""},
-                              {"graphics.smooth_2d", "true"}, {"graphics.console_textures", "false"}}},
-                {"High", {{"graphics.sharpening", "60"}, {"display.render_percent", "\"100\""}, {"graphics.widescreen", "true"},
-                          {"graphics.anisotropic_filtering", "\"16\""}, {"graphics.lod_bias", "-0.50"}, {"graphics.anti_aliasing", "\"4\""},
-                          {"graphics.smooth_2d", "true"}, {"graphics.console_textures", "false"}}},
-                {"Ultra", {{"graphics.sharpening", "60"}, {"display.render_percent", "\"150\""}, {"graphics.widescreen", "true"},
-                           {"graphics.anisotropic_filtering", "\"16\""}, {"graphics.lod_bias", "-0.50"}, {"graphics.anti_aliasing", "\"8\""},
-                           {"graphics.smooth_2d", "true"}, {"graphics.console_textures", "false"}}}},
+    // the same presets as the other ports; the frame rate only in Original (the console's 30)
+    .presets = app::StandardPresets(),
     // [controls]: what A and B do (the menus and the battles' commands); the others show the button's name until
     // they are checked against the game
     .button_actions = {"Select", "Back", "", "", "", "", "", ""},
@@ -147,6 +136,7 @@ const app::GameInfo app::kGame = {
     .file_opened = ta::FileOpened,  // the scene, from the .scx the game opens
     .file_read = ta::FileRead,      // a movie playing, from its .vid being read
     .in_menus = ta::InMenus,        // the front end: Esc goes back
+    .camera_invert = true,  // [input] invert_camera_* (shared): the right stick turns the camera while exploring
     .achievements = ta::Achievements(),  // areas, the kill deeds and Fate (ta_achievements.cpp)
     .discord_app_id = TAX_DISCORD_APP_ID,
     .activity = ta::Activity,  // "Eregion"

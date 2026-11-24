@@ -32,4 +32,24 @@ const PromptPicture* FindPromptPicture(const char* style, const char* button);
 // a picture made for a full square (the disc filling it) put where a game's own disc is in its texture: the box at
 // (x, y), d across, in fractions of the out_px square picture; box-filtered, transparent around it
 void PlacePicture(const gpu::pack::Image& src, float x, float y, float d, uint32_t out_px, gpu::pack::Image& out);
+
+// A game's own button textures (by texture pack hash and size) and where each one's disc is, as shares of the texture
+// (left, top, across); the pictures are given 256x256.
+struct PromptTexture {
+    uint64_t hash;
+    uint32_t size;
+    const char* button;  // A B X Y WHITE BLACK LT RT
+    float x = 0, y = 0, d = 1;
+};
+struct PromptSet {
+    const char* tag;                  // the log's "tt", "ta", "rotk"
+    const PromptTexture* known;
+    size_t count;
+    const uint32_t* setting;          // [graphics] button_pictures
+    float cap_shadow = 0.05f;         // the key cap's shadow, a share of the picture
+    bool cap_placed = true;           // the key cap drawn full size then placed like a picture (else at the disc)
+};
+// gpu::pack::g_builtin's work for such a game (TT, TA, ROTK): the button picture in the style chosen (Kenney's, or
+// the keyboard's key cap) for one of its textures; false leaves the game's own
+bool PromptBuiltin(const PromptSet& set, uint64_t hash, uint32_t width, uint32_t height, gpu::pack::Image& out);
 }  // namespace app

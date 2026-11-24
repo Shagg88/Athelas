@@ -394,11 +394,22 @@ bool ReadGameFile(const std::string& xbox_path, std::vector<uint8_t>& out) {
 
 // exports
 
+// GameInfo::file_hidden: a file the game should find missing (opening it, or asking for its attributes)
+static bool Hidden(const std::string& name) {
+    if (!app::kGame.file_hidden || !app::kGame.file_hidden(name.c_str())) return false;
+    LOG_FIRST(40, "%s: hidden from the game (GameInfo::file_hidden)", name.c_str());
+    return true;
+}
+
 KERNEL_EXPORT(190, NtCreateFile, 9) {
     uint32_t handle_out = a[0], access = a[1], attrs = a[2], iosb = a[3], disposition = a[7], options = a[8];
     (void)access;
     uint32_t root;
     std::string name = ObjectName(attrs, &root);
+    if (disposition == 1 && Hidden(name)) {
+        IoStatus(iosb, kObjectNameNotFound, 0);
+        return kObjectNameNotFound;
+    }
     if (disposition == 1 || disposition == 3)
         if (FileData m = Provided(name, root)) return OpenInMemory(std::move(m), name, handle_out, iosb, options);
     Target t = Resolve(name, root);
@@ -506,6 +517,10 @@ KERNEL_EXPORT(202, NtOpenFile, 6) {
     uint32_t handle_out = a[0], attrs = a[2], iosb = a[3], options = a[5];
     uint32_t root;
     std::string name = ObjectName(attrs, &root);
+    if (Hidden(name)) {
+        IoStatus(iosb, kObjectNameNotFound, 0);
+        return kObjectNameNotFound;
+    }
     if (FileData m = Provided(name, root)) return OpenInMemory(std::move(m), name, handle_out, iosb, options);
     Target t = Resolve(name, root);
     if (t.disc) return OpenOnDisc(t.entry, name, handle_out, iosb, 1, options);
@@ -787,6 +802,7 @@ KERNEL_EXPORT(207, NtQueryDirectoryFile, 10) {
 
 KERNEL_EXPORT(210, NtQueryFullAttributesFile, 2) {
     std::string name = ReadAnsiString(R32(a[0] + 4));
+    if (Hidden(name)) return kObjectNameNotFound;
     if (FileData m = Provided(name, R32(a[0]))) {
         FillNetworkInfo(a[1], kMemoryFileTime, m->size(), false);
         return kSuccess;

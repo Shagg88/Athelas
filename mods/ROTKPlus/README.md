@@ -8,7 +8,9 @@ It is developed at <https://github.com/brig-dev/ROTKPlus>: report problems there
     above the head, shared lives and a turn in the end-of-level screens.
   - **Versus**: 2 to 4 players, everybody against everybody or 2 against 2 (the teams of the Sun and of the Moon), with
     the level's enemies or the heroes only, last one standing or timed, a single game or a tournament for a cup, in
-    three arenas (the Southern Gate, the Courtyard of Minas Tirith, the Black Gate).
+    three arenas (the Southern Gate, the Courtyard of Minas Tirith, the Black Gate). Between players a parry can't stop
+    a fierce attack, a combo's last blow or a fully drawn shot (speed attacks, plain arrows and spears are parried as
+    in the game); `[PvP] HeavyUnblockable=0` turns that off.
 - **Fellowship**: every player has a name and statistics of their own (kills by kind of enemy, combos, Versus games,
   who knocked down whom, records, the last game), on pages of the main menu.
 

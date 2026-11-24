@@ -59,10 +59,21 @@ int gpu_probe_main()
     if (!gipa) { say("none"); return 0; }
     auto create = (PFN_vkCreateInstance)(void *)gipa(NULL, "vkCreateInstance");
     if (!create) { say("none"); return 0; }
-    VkApplicationInfo app = { 0, NULL, "ROTK Fix Launcher", 1, "ROTK Fix", 1, VK_API(1, 1) };
+    // the newest Vulkan the loader offers, up to 1.4: some drivers (MoltenVK on a Mac, #112) report a device's
+    // version only up to the one the instance asked for, so asking for 1.1 made a 1.4 device look too old
+    typedef int (VKAPI *EnumVer)(uint32_t *);
+    auto ver = (EnumVer)(void *)gipa(NULL, "vkEnumerateInstanceVersion");
+    uint32_t loader = VK_API(1, 0);
+    if (!ver || ver(&loader) != 0) loader = VK_API(1, 0);
+    uint32_t want = loader >= k_needed ? k_needed : loader > VK_API(1, 1) ? loader : VK_API(1, 1);
+    VkApplicationInfo app = { 0, NULL, "ROTK Fix Launcher", 1, "ROTK Fix", 1, want };
     VkInstanceCreateInfo ci = { 1, NULL, 0, &app, 0, NULL, 0, NULL };
     VkInstance inst = NULL;
-    if (create(&ci, NULL, &inst) != 0 || !inst) { say("none"); return 0; }
+    if (create(&ci, NULL, &inst) != 0 || !inst) {
+        app.apiVersion = VK_API(1, 1);   // as before, for a loader that refuses what it said it offers
+        inst = NULL;
+        if (create(&ci, NULL, &inst) != 0 || !inst) { say("none"); return 0; }
+    }
     auto destroy = (PFN_vkDestroyInstance)(void *)gipa(inst, "vkDestroyInstance");
     auto enumerate = (PFN_vkEnumeratePhysicalDevices)(void *)gipa(inst, "vkEnumeratePhysicalDevices");
     auto props = (PFN_vkGetPhysicalDeviceProperties)(void *)gipa(inst, "vkGetPhysicalDeviceProperties");

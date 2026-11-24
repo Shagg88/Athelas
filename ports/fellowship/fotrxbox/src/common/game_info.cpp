@@ -13,10 +13,10 @@ extern uint32_t g_text_language;  // src/game/fotr_lang.cpp
 extern uint32_t g_fov_percent;    // src/game/fotr_camera.cpp
 extern uint32_t g_button_pictures;  // src/game/fotr_prompts.cpp
 extern bool g_sharp_text;           // src/game/fotr_text.cpp
-extern bool g_invert_camera_y, g_invert_camera_x;  // src/game/fotr_input.cpp
-void Pad(int port, input::Pad& pad);
 extern uint32_t g_damage_taken, g_enemy_damage;  // src/game/fotr_difficulty.cpp
 extern bool g_combat_test;      // src/game/fotr_extras.cpp
+extern bool g_skip_all_videos;  // src/game/fotr_movies.cpp
+bool MovieHidden(const char* name);  // src/game/fotr_movies.cpp
 extern uint32_t g_start_chapter;  // src/game/fotr_chapters.cpp
 void Init();
 std::vector<ach::Def> Achievements();  // src/game/fotr_achievements.cpp
@@ -49,6 +49,10 @@ const app::GameInfo app::kGame = {
                  nullptr, {"30 fps", "60 fps", "90 fps", "120 fps", "144 fps", "165 fps", "180 fps", "240 fps"}},
                 {"graphics", "skip_logos", cfg::Type::Bool, "Skip opening logos",
                  "Go straight to the title screen at startup.", &fotr::g_skip_logos},
+                {"graphics", "skip_all_videos", cfg::Type::Bool, "Skip any video",
+                 "Skips every video, the story films too (as if each were skipped at once). The menus' moving "
+                 "background stays.",
+                 &fotr::g_skip_all_videos},
                 {"graphics", "fov", cfg::Type::Int, "Field of view",
                  "How wide the camera sees while you play, as a share of the game's own (100). Wider shows more "
                  "around Frodo but makes everything look further away. Cutscenes keep their own.",
@@ -62,12 +66,6 @@ const app::GameInfo app::kGame = {
                  "with when the game starts.",
                  nullptr, &fotr::g_button_pictures, nullptr, 0, 0, {"auto", "xbox", "playstation", "nintendo", "keyboard", "steamdeck", "steamcontroller"},
                  nullptr, nullptr, {"Auto", "Xbox", "PlayStation", "Nintendo", "Keyboard keys", "Steam Deck", "Steam Controller"}},
-                {"input", "invert_camera_y", cfg::Type::Bool, "Invert camera up/down",
-                 "Reverses up and down on the controller's right stick, which moves the camera. For players used to "
-                 "inverted camera controls.", &fotr::g_invert_camera_y},
-                {"input", "invert_camera_x", cfg::Type::Bool, "Invert camera left/right",
-                 "Reverses left and right on the controller's right stick, which moves the camera.",
-                 &fotr::g_invert_camera_x},
                 {"gameplay", "damage_taken", cfg::Type::Int, "Damage you take",
                  "How hard enemies hit you, as a share of the game's own (100). Lower is easier.",
                  nullptr, &fotr::g_damage_taken, nullptr, 10, 500},
@@ -106,31 +104,25 @@ const app::GameInfo app::kGame = {
     // the launcher's preset menu; keys left out (brightness, logos) stay the player's own. Frame rate is only in
     // Original (the console's 30): the others are picture quality. The game draws widescreen itself (the console's
     // 16:9 setting: a wider view and its HUD laid out for it), so the others have it on.
-    .presets = {{"Original", {{"graphics.sharpening", "0"}, {"display.render_percent", "\"100\""}, {"graphics.widescreen", "false"},
-                              {"graphics.anisotropic_filtering", "\"0\""}, {"graphics.lod_bias", "0.00"}, {"graphics.anti_aliasing", "\"0\""},
-                              {"graphics.fps", "\"30\""}, {"graphics.smooth_2d", "false"}, {"graphics.console_textures", "true"}}},
-                {"Balanced", {{"graphics.sharpening", "30"}, {"display.render_percent", "\"100\""}, {"graphics.widescreen", "true"},
-                              {"graphics.anisotropic_filtering", "\"8\""}, {"graphics.lod_bias", "0.00"}, {"graphics.anti_aliasing", "\"2\""},
-                              {"graphics.smooth_2d", "true"}, {"graphics.console_textures", "false"}}},
-                {"High", {{"graphics.sharpening", "60"}, {"display.render_percent", "\"100\""}, {"graphics.widescreen", "true"},
-                          {"graphics.anisotropic_filtering", "\"16\""}, {"graphics.lod_bias", "-0.50"}, {"graphics.anti_aliasing", "\"4\""},
-                          {"graphics.smooth_2d", "true"}, {"graphics.console_textures", "false"}}},
-                {"Ultra", {{"graphics.sharpening", "60"}, {"display.render_percent", "\"150\""}, {"graphics.widescreen", "true"},
-                           {"graphics.anisotropic_filtering", "\"16\""}, {"graphics.lod_bias", "-0.50"}, {"graphics.anti_aliasing", "\"8\""},
-                           {"graphics.smooth_2d", "true"}, {"graphics.console_textures", "false"}}}},
+    .presets = app::StandardPresets(),
     // [controls]: what each Xbox button does, as the game's own Control\default.map names it
     .button_actions = {"Attack", "Crouch", "Action", "Jump", "Use Belt Item", "Switch Weapons / Tools", "Target Left",
                        "Target Right"},
     .init = fotr::Init,  // after the settings load, before the window and boot
     .message = fotr::Message,  // window messages first: F1 hides the HUD
     .ui = fotr::FrameShown,  // each frame shown: wider screens tell menus from fades by it
-    .pad = fotr::Pad,        // the camera stick reversed when asked ([input] invert_camera_*)
+    .pad = nullptr,
     // the in-game menu (F10): these take effect at once
-    .live_settings = {"graphics.fov", "input.invert_camera_y", "input.invert_camera_x", "gameplay.damage_taken", "gameplay.enemy_damage", "cheats.infinite_health",
+    .live_settings = {"graphics.fov", "gameplay.damage_taken", "gameplay.enemy_damage", "cheats.infinite_health",
                       "cheats.infinite_spirit", "cheats.infinite_ammo", "cheats.infinite_ring"},
     .file_opened = fotr::FileOpened,  // the movies, to show each by the movie settings; achievements
+    .file_hidden = fotr::MovieHidden,  // [graphics] skip_all_videos: the movies missing to the game
     .mouse_camera = true,  // the right stick turns the camera: the mouse can too ([keyboard] mouse_camera, #106)
     .camera_live = fotr::WorldShown,  // not in the front end's menus (it has no in_menus)
+    // the right stick up raises the camera to look down on Frodo (fotr_input.cpp): mouse forward looks up instead,
+    // and Invert camera up/down and left/right reverse the mouse too (RecompLauncher report, 21 Nov)
+    .mouse_camera_flip_y = true,
+    .camera_invert = true,   // [input] invert_camera_* (the shared ones; they were fotr_input.cpp's, #14)
     .achievements = fotr::Achievements(),
     .discord_app_id = FOTRX_DISCORD_APP_ID,
     .activity = fotr::Activity,

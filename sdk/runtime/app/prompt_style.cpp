@@ -2,6 +2,7 @@
 #include "app/prompt_style.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -23,6 +24,7 @@
 #include "app/prompt_pictures.h"  // the one copy of the pictures (sdk/tools/mkprompts.py)
 #include "core/input.h"
 #include "core/keys.h"
+#include "core/log.h"
 
 namespace app {
 
@@ -221,5 +223,34 @@ bool KeyCapPicture(const char* button, int size_px, int cap_px, float shadow_dy,
 #else
 bool KeyCapPicture(const char*, int, int, float, gpu::pack::Image&) { return false; }
 #endif
+
+bool PromptBuiltin(const PromptSet& set, uint64_t hash, uint32_t width, uint32_t height, gpu::pack::Image& out) {
+    const PromptTexture* k = nullptr;
+    for (size_t i = 0; i < set.count; i++)
+        if (set.known[i].hash == hash && set.known[i].size == width && set.known[i].size == height) k = &set.known[i];
+    if (!k) return false;
+    constexpr uint32_t kOut = 256;
+    // auto: the controller on port 1; the keyboard's keys when it plays there and no controller is plugged in
+    uint32_t style = PromptStyle(*set.setting);
+    static std::atomic<uint32_t> logged{0};
+    const uint32_t bit = 1u << ((k - set.known) & 31);
+    gpu::pack::Image full;
+    if (style == 4) {
+        // drawn straight where the disc is (its top left, d across), or full size and placed like a picture
+        bool ok = set.cap_placed ? KeyCapPicture(k->button, int(kOut), int(kOut), set.cap_shadow, full)
+                                 : KeyCapPicture(k->button, int(kOut), int(float(kOut) * k->d), set.cap_shadow, out);
+        if (!ok) return false;
+        if (!(logged.fetch_or(1u << 31) & (1u << 31))) LOGR("%s: keyboard key pictures in the hints", set.tag);
+        if (!set.cap_placed) return true;
+    } else {
+        const char* name = PromptStyleName(style);  // playstation, nintendo, steamdeck, steamcontroller
+        if (!name) return false;
+        const PromptPicture* pic = FindPromptPicture(name, k->button);
+        if (!pic || !gpu::pack::DecodePng(pic->png, pic->size, full) || full.levels.empty()) return false;
+        if (!(logged.fetch_or(bit) & bit)) LOGR("%s: %s button picture for %s (%ux%u)", set.tag, name, k->button, width, height);
+    }
+    PlacePicture(full, k->x, k->y, k->d, kOut, out);
+    return true;
+}
 
 }  // namespace app

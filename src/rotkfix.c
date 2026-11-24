@@ -24,6 +24,7 @@
  */
 #include "rotkfix.h"
 #include <shlobj.h>
+#include <tlhelp32.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -1478,6 +1479,36 @@ BOOL WINAPI DllMain(HINSTANCE inst, DWORD reason, LPVOID reserved)
         logf_("ROTK Fix " ROTKFIX_VERSION " loaded (Limiter=%d TargetFPS=%d Spin=%dus)",
               g_limiterMode, g_targetFps, g_spinUs);
         logf_("display scaling: %s", g_dpiAware ? "per-monitor DPI aware (real screen pixels)" : "not DPI aware (older Windows)");
+        {   /* how the game was started: Athelas's launcher, another launcher (RecompLauncher, Quiver, GameNative,
+               Steam...) or a shortcut; reports from other launchers often come from how they start it */
+            HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+            char chain[1024] = "";
+            if (snap != INVALID_HANDLE_VALUE) {
+                DWORD pid = GetCurrentProcessId();
+                int depth;
+                for (depth = 0; depth < 4 && pid; depth++) {
+                    PROCESSENTRY32 e;
+                    DWORD parent = 0;
+                    BOOL ok;
+                    e.dwSize = sizeof e;
+                    for (ok = Process32First(snap, &e); ok; ok = Process32Next(snap, &e))
+                        if (e.th32ProcessID == pid) { parent = e.th32ParentProcessID; break; }
+                    if (!parent || parent == pid) break;
+                    e.dwSize = sizeof e;
+                    for (ok = Process32First(snap, &e); ok; ok = Process32Next(snap, &e))
+                        if (e.th32ProcessID == parent) break;
+                    if (!ok) { if (!depth) strcat(chain, "(ended)"); break; }
+                    if (strlen(chain) + strlen(e.szExeFile) + 8 < sizeof chain) {
+                        if (depth) strcat(chain, " <- ");
+                        strcat(chain, e.szExeFile);
+                    }
+                    pid = parent;
+                }
+                CloseHandle(snap);
+            }
+            logf_("started from: %s%s%s", chain[0] ? chain : "(unknown)", getenv("SteamAppId") ? "; Steam" : "",
+                  getenv("STEAM_COMPAT_DATA_PATH") ? "; Proton" : "");
+        }
         {   /* under Wine (CrossOver on a Mac says Darwin): problem reports tell themselves apart */
             HMODULE nt = GetModuleHandleA("ntdll.dll");
             typedef const char *(__cdecl *WineVer_t)(void);

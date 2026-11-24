@@ -219,8 +219,13 @@ void Merge(int port, input::Pad& p) {
             float v = want != 0 ? want : cur * 0.6f;
             return std::fabs(v) < 0.02f ? 0.0f : std::max(-1.0f, std::min(1.0f, v));
         };
-        g_cam_x = toward(g_cam_x, float(dx) * k);
-        g_cam_y = toward(g_cam_y, float(s.mouse_invert_y ? dy : -dy) * k);
+        // the mouse's own invert, the game's stick orientation and the game's camera invert settings (#106 again: the
+        // mouse camera was upside down in The Fellowship, and its invert settings left the mouse as it was)
+        bool flip_y = s.mouse_invert_y != app::kGame.mouse_camera_flip_y;
+        if (app::kGame.camera_invert && s.invert_camera_y) flip_y = !flip_y;
+        bool flip_x = app::kGame.camera_invert && s.invert_camera_x;
+        g_cam_x = toward(g_cam_x, float(flip_x ? -dx : dx) * k);
+        g_cam_y = toward(g_cam_y, float(flip_y ? dy : -dy) * k);
         cx = g_cam_x;
         cy = g_cam_y;
         if (cx != 0 || cy != 0) any = true;

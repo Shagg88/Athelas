@@ -127,15 +127,7 @@ const app::GameInfo app::kGame = {
                  "The game's own secret code: its Perfect Mode.", &rotk::g_cheat_perfect}},
     // the launcher's preset menu, as The Two Towers' (keys left out stay the player's own); frame rate only in
     // Original (the console's 30). Smooth menus stay the player's own: Sharper text redraws the menus here
-    .presets = {{"Original", {{"graphics.sharpening", "0"}, {"display.render_percent", "\"100\""}, {"graphics.widescreen", "false"},
-                              {"graphics.anisotropic_filtering", "\"0\""}, {"graphics.lod_bias", "0.00"}, {"graphics.anti_aliasing", "\"0\""},
-                              {"graphics.fps", "\"30\""}, {"graphics.console_textures", "true"}}},
-                {"Balanced", {{"graphics.sharpening", "30"}, {"display.render_percent", "\"100\""}, {"graphics.widescreen", "true"},
-                              {"graphics.anisotropic_filtering", "\"8\""}, {"graphics.lod_bias", "0.00"}, {"graphics.anti_aliasing", "\"2\""}, {"graphics.console_textures", "false"}}},
-                {"High", {{"graphics.sharpening", "60"}, {"display.render_percent", "\"100\""}, {"graphics.widescreen", "true"},
-                          {"graphics.anisotropic_filtering", "\"16\""}, {"graphics.lod_bias", "-0.50"}, {"graphics.anti_aliasing", "\"4\""}, {"graphics.console_textures", "false"}}},
-                {"Ultra", {{"graphics.sharpening", "60"}, {"display.render_percent", "\"150\""}, {"graphics.widescreen", "true"},
-                           {"graphics.anisotropic_filtering", "\"16\""}, {"graphics.lod_bias", "-0.50"}, {"graphics.anti_aliasing", "\"8\""}, {"graphics.console_textures", "false"}}}},
+    .presets = app::StandardPresets(false),  // smooth menus stay the player's own here
     // what each Xbox button does (ROTK Fix's names for the slots), for the keyboard's labels; Black is RB, White LB
     .button_actions = {"Speed Attack", "Physical Attack", "Parry", "Fierce Attack", "Action", "Jump Back",
                        "Ranged Attack", "Killing Move"},

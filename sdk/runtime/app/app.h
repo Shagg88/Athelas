@@ -125,6 +125,8 @@ struct Settings {
     bool mouse_camera = true;              // [keyboard] mouse_camera: otherwise the mouse turns the camera (kGame.mouse_camera games)
     uint32_t mouse_sensitivity = 100;      // [keyboard] mouse_sensitivity, percent
     bool mouse_invert_y = false;           // [keyboard] mouse_invert_y: mouse aiming up and down reversed
+    bool invert_camera_y = false;  // [input] the controller's camera stick reversed (GameInfo::camera_invert)
+    bool invert_camera_x = false;
     bool mouse_menus = true;               // [keyboard] mouse_menus: in the game's menus the wheel moves, right click goes back
     // [window]: when the game window loses the focus (another window in front, Alt-Tab)
     bool pause_unfocused = false;          // the game stops, picture and sound, until it has the focus again
@@ -232,6 +234,11 @@ std::recursive_mutex& UiLock();
 
 // what the game repo defines once
 using Option = cfg::Desc;  // a game setting in the settings file, described for a launcher
+// The launcher's preset menu every game shares (keys left out stay the player's own): Original (the console's look
+// and 30 fps), Balanced, High, Ultra. smooth_2d: whether the presets set graphics.smooth_2d (The Return of the King
+// leaves it to the player: its Sharper text redraws the menus). One table, so the games' presets can't drift apart.
+std::vector<cfg::Preset> StandardPresets(bool smooth_2d = true);
+
 struct GameInfo {
     const wchar_t* title;        // window and splash
     const wchar_t* short_title;  // message boxes
@@ -244,7 +251,7 @@ struct GameInfo {
     uint32_t title_id;           // the xbe's title id: another one is another game (kExitNoGame), not another release
     std::vector<std::pair<const char*, const char*>> images;  // xbe file name, executable name
     std::vector<Option> options;
-    std::vector<cfg::Preset> presets;  // --describe-settings: a launcher's preset menu
+    std::vector<cfg::Preset> presets;  // --describe-settings: a launcher's preset menu (as a rule StandardPresets())
     // [controls]: the game's name for what each Xbox button does (A B X Y black white left trigger right trigger),
     // the launcher's labels; empty ones show the button's name
     std::vector<const char*> button_actions;
@@ -276,6 +283,9 @@ struct GameInfo {
     // Start (a game whose menus take Start to go on, "press start" among them); with menu_start_with_a they press
     // both (a game whose menus go on with A but whose title screen takes only Start)
     void (*file_opened)(const char* name) = nullptr;  // each file the game opens (any thread), to follow its state
+    // a file the game should find missing (any thread): opening it fails as for a file not on the disc (The
+    // Fellowship's skip_all_videos: the game skips a movie it can't open)
+    bool (*file_hidden)(const char* name) = nullptr;
     void (*file_read)(const char* name) = nullptr;    // each read from a file (any thread): a game's movie streaming
     // a file the game cannot play without (true): when it is missing the run ends with kExitNoGame, naming it, instead
     // of the game crashing on it (an incomplete copy of the game)
@@ -286,6 +296,13 @@ struct GameInfo {
     // while camera_live says so (the world on screen, not a menu; null: always)
     bool mouse_camera = false;
     bool (*camera_live)() = nullptr;
+    // the game's right stick up means "look down" (the camera rises over the hero): the mouse is turned the other way
+    // so forward looks up, as players expect from a mouse; and the game's own camera invert settings, which reverse
+    // the controller's stick, reverse the mouse's camera too (null: none)
+    bool mouse_camera_flip_y = false;
+    // [input] invert_camera_y / invert_camera_x offered: the right stick reversed for the camera (before the keyboard
+    // and mouse are merged in, so the controller's), and the mouse camera reversed with it
+    bool camera_invert = false;
     bool menu_start_with_a = false;
     // with menu_start_with_a: when it says so only (a title screen), A's keys press Start too; elsewhere in the menus
     // they press A alone (The Two Towers' Yes/No pop-ups took the Start as their answer, #17)

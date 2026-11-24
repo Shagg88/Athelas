@@ -19,7 +19,22 @@
 #include "gpu/texture.h"
 
 namespace fotr {
+void AchievementsFile(const char* name);  // fotr_achievements.cpp
 bool g_skip_logos = false;  // settings.toml [graphics] skip_logos
+bool g_skip_all_videos = false;  // [graphics] skip_all_videos
+
+// GameInfo::file_hidden: with skip_all_videos the game's movies are missing to it, and it goes on without them as it
+// does for a movie it can't open (bring-up, before the movies were copied: notes/fotr-01-bringup.md). The menus'
+// moving background (start_menu) stays: it is part of the menu, not a video to skip.
+bool MovieHidden(const char* name) {
+    if (!g_skip_all_videos) return false;
+    std::string n = name;
+    for (char& c : n) c = char(std::tolower(static_cast<unsigned char>(c)));
+    if (n.find(".xmv") == std::string::npos || n.find("start_menu") != std::string::npos) return false;
+    // the achievements follow the films opened (the last one finishes the story): told as if it had played
+    AchievementsFile(name);
+    return true;
+}
 }
 
 // [[hook]] 0x935A4

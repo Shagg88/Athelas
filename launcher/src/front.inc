@@ -1109,7 +1109,16 @@ static void draw_front(App &a, ImVec2 size, SDL_Renderer *ren)
     }
     // how to add a game, centred under the buttons where it can't be missed or run off a narrow window: since 1.7.8
     // only the games the player has are on the carousel, so with one game added the others aren't shown at all
-    if (N < FR_COUNT || !owned) {
+    // With some games added, the others' names: players with one game didn't see how to add the next (#109, twice)
+    if (N < FR_COUNT && owned) {
+        std::string missing;
+        for (int e2 = 0; e2 < FR_COUNT; e2++)
+            if (!fr_owned(a, e2)) missing += std::string(missing.empty() ? "" : ", ") + tr(k_frTitle[e2]);
+        std::string add = std::string(tr("To add another game")) + " (" + missing + "): " +
+                          tr("drag its folder or disc image onto this window");
+        centred_text(dl, F_SMALL, S(17), ImGui::GetWindowPos().x + size.x * 0.5f, by + playH + S(4), size.x - S(80),
+                     IM_COL32(214, 182, 120, (int)(240 * settle)), add.c_str());
+    } else if (N < FR_COUNT || !owned) {
         const char *add = "Add a game: drag its folder or disc image onto this window";
         centred_text(dl, F_SMALL, S(15), ImGui::GetWindowPos().x + size.x * 0.5f, by + playH + S(4), size.x - S(80),
                      IM_COL32(168, 152, 124, (int)(220 * settle)), add);

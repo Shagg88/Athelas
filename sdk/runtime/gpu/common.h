@@ -3,11 +3,13 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "gpu/shaders.h"
 #include "gpu/state.h"
 #include "gpu/texture.h"
+#include "gpu/texture_pack.h"
 #include "gpu/vertex.h"
 
 namespace gpu {
@@ -101,5 +103,34 @@ const std::string& SmaaSource();
 bool CaptureOn();
 bool AutoCaptureDue();
 void WriteCaptureBmp(const std::filesystem::path& file, uint32_t w, uint32_t h, const std::vector<uint8_t>& px);
+
+// a surface's signature: hashed whole up to 64 KB, a bigger one as 64 evenly spaced samples of 64 bytes (both
+// backends: one copy, so they can't drift apart; the D3D12 backend counts them for its perf lines)
+constexpr uint32_t kSigWholeMax = 65536;
+constexpr uint32_t kSigSamples = 64;
+constexpr uint32_t kSigSampleBytes = 64;
+uint64_t MemSig(uint32_t data, uint32_t total);
+
+// shaders.seed (ASS1, then entry, profile and source as length-prefixed strings): the shaders to compile ahead
+struct SeedShader {
+    std::string entry, profile, src;
+};
+std::vector<SeedShader> ReadShaderSeed(const std::filesystem::path& file);
+
+// gpu::g_art_shot: a movie frame read back (BGRA rows, w x h) cropped of its black borders and written as the PNG
+// asked for, unless it is nearly black (a later frame then) or another was asked for meanwhile
+void ArtShotSave(const std::string& path, const std::vector<uint8_t>& px, uint32_t w, uint32_t h);
+
+// the movie ring's clock, in seconds
+double MovieClock();
+
+// Texture packs, the backends' shared part: a texture's pack hash (its file name's), its level 0 dumped as a PNG once
+// (dumped: the hashes done), and a picture the game makes for it (GameInfo builtins, the 4x redraw) when no file has
+// one. pf: how the texture's bytes are laid out on the host.
+uint64_t PackHash(const TextureDesc& d, const uint8_t* p, const uint32_t* colours);
+void PackDump(pack::Format pf, const TextureDesc& d, uint64_t h, const std::vector<std::vector<uint8_t>>& levels,
+              std::unordered_set<uint64_t>& dumped);
+bool PackMake(pack::Format pf, const TextureDesc& d, uint64_t h, const uint8_t* p, const uint32_t* colours,
+              pack::Image& img);
 
 }  // namespace gpu

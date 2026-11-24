@@ -6,11 +6,14 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
+#include <tlhelp32.h>
 #if defined(_M_X64) || defined(__x86_64__)
 #include <intrin.h>
 #endif
 
 #include <algorithm>
+#include <cctype>
+#include <iterator>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
@@ -116,12 +119,127 @@ uint64_t OneCoreMask() {
 #endif
 }
 
+namespace {
+// a process's name and full path from a snapshot (the path while it still runs; empty when it has ended)
+struct Proc {
+    DWORD pid = 0, parent = 0;
+    std::wstring name, path;
+    ULONGLONG created = 0;   // 0: not known (it can't be opened)
+};
+Proc FindProc(HANDLE snap, DWORD pid) {
+    Proc p;
+    PROCESSENTRY32W e{sizeof(e)};
+    for (BOOL ok = Process32FirstW(snap, &e); ok; ok = Process32NextW(snap, &e)) {
+        if (e.th32ProcessID != pid) continue;
+        p.pid = pid;
+        p.parent = e.th32ParentProcessID;
+        p.name = e.szExeFile;
+        if (HANDLE h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid)) {
+            wchar_t buf[MAX_PATH * 2];
+            DWORD n = DWORD(std::size(buf));
+            if (QueryFullProcessImageNameW(h, 0, buf, &n)) p.path.assign(buf, n);
+            FILETIME c{}, e2{}, k{}, u{};
+            if (GetProcessTimes(h, &c, &e2, &k, &u)) p.created = ULONGLONG(c.dwHighDateTime) << 32 | c.dwLowDateTime;
+            CloseHandle(h);
+        }
+        break;
+    }
+    return p;
+}
+
+std::string Utf8(const std::wstring& w) {
+    if (w.empty()) return {};
+    int n = WideCharToMultiByte(CP_UTF8, 0, w.c_str(), int(w.size()), nullptr, 0, nullptr, nullptr);
+    std::string s(size_t(n > 0 ? n : 0), '\0');
+    if (n > 0) WideCharToMultiByte(CP_UTF8, 0, w.c_str(), int(w.size()), &s[0], n, nullptr, nullptr);
+    return s;
+}
+
+// a path with the user's own folder written %USERPROFILE% (logs are attached to public reports)
+std::string NoUser(std::string s) {
+    char prof[MAX_PATH * 2] = {};
+    DWORD n = GetEnvironmentVariableA("USERPROFILE", prof, DWORD(sizeof(prof)));
+    if (n == 0 || n >= sizeof(prof)) return s;
+    for (size_t at; (at = s.find(prof)) != std::string::npos;) s.replace(at, n, "%USERPROFILE%");
+    return s;
+}
+
+// a launcher by the program's own file name (not its folder: RecompLauncher keeps games in ...\athelas\), or null
+const char* KnownLauncher(std::string n) {
+    for (char& c : n) c = char(std::tolower(static_cast<unsigned char>(c)));
+    struct K { const char* part; const char* name; };
+    static const K kKnown[] = {
+        {"recomplauncher", "RecompLauncher"}, {"recomp", "RecompLauncher"}, {"athelas.exe", "Athelas"}, {"quiver", "Quiver"}, {"gamenative", "GameNative"},
+        {"steam", "Steam"}, {"playnite", "Playnite"}, {"launchbox", "LaunchBox"}, {"bigbox", "LaunchBox (Big Box)"},
+        {"lutris", "Lutris"}, {"heroic", "Heroic"}, {"bottles", "Bottles"}, {"crossover", "CrossOver"},
+        {"winlator", "Winlator"}, {"retroarch", "RetroArch"}, {"galaxyclient", "GOG Galaxy"}, {"pegasus", "Pegasus"},
+        {"emulationstation", "EmulationStation"}, {"es-de", "ES-DE"}, {"explorer.exe", "Windows Explorer (a double-click)"},
+        {"cmd.exe", "a command prompt"}, {"powershell", "PowerShell"}, {"pwsh", "PowerShell"}, {"start.exe", "Wine's start"},
+    };
+    for (const K& k : kKnown)
+        if (n.find(k.part) != std::string::npos) return k.name;
+    return nullptr;
+}
+}  // namespace
+
+// how this run was started: by Athelas's launcher (--launcher), or by something else (a third-party launcher such
+// as RecompLauncher, Quiver or GameNative, Steam, a shortcut). Problems reported from other launchers often come from
+// how they start the game (no --launcher, another working folder, their own copy of settings), so the log says
+void LogLaunch() {
+    std::vector<std::string> chain;
+    const char* who = nullptr;    // the program that started the game, when it's a known one
+    const char* above = nullptr;  // or a known one further up (an unknown launcher started from, say, Steam)
+    if (HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0); snap != INVALID_HANDLE_VALUE) {
+        Proc child = FindProc(snap, GetCurrentProcessId());
+        DWORD pid = child.parent;
+        for (int depth = 0; depth < 4 && pid; depth++) {
+            Proc p = FindProc(snap, pid);
+            // a parent that has ended, or whose number Windows has since given to a newer program (made after its
+            // child: not the one that started it)
+            if (!p.pid || (p.created && child.created && p.created > child.created)) {
+                chain.push_back("(ended)");
+                break;
+            }
+            chain.push_back(NoUser(Utf8(p.path.empty() ? p.name : p.path)));
+            const char* k = KnownLauncher(Utf8(p.name));
+            if (depth == 0) who = k;
+            else if (!above) above = k;
+            if (p.parent == p.pid) break;
+            child = p;
+            pid = p.parent;
+        }
+        CloseHandle(snap);
+    }
+    std::string line;
+    for (size_t i = 0; i < chain.size(); i++) line += (i ? " <- " : "") + chain[i];
+    // what the environment tells: Steam (or Proton), Lutris, Heroic, Bottles, a Flatpak
+    std::string env;
+    auto has = [&](const char* v, const char* say) { if (std::getenv(v)) env += std::string(env.empty() ? "" : ", ") + say; };
+    has("SteamAppId", "Steam");
+    has("STEAM_COMPAT_DATA_PATH", "Proton");
+    has("LUTRIS_GAME_UUID", "Lutris");
+    has("HEROIC_APP_NAME", "Heroic");
+    has("BOTTLE_NAME", "Bottles");
+    has("FLATPAK_ID", "a Flatpak");
+    bool ours = Args().launcher;
+    std::string by = ours ? "Athelas's launcher" : who ? who : "something other than Athelas's launcher";
+    if (!ours && !who && above) by += std::string(", under ") + above;
+    LOGR("Started by: %s%s", by.c_str(), ours ? "" : " (not through Athelas: --launcher missing)");
+    LOGR("Started from: %s%s%s", line.empty() ? "(unknown)" : line.c_str(), env.empty() ? "" : "; environment: ",
+         env.c_str());
+    wchar_t cwd[MAX_PATH * 2] = {};
+    GetCurrentDirectoryW(DWORD(std::size(cwd)), cwd);
+    LOGR("Working folder: %s", NoUser(Utf8(cwd)).c_str());
+    LOGR("Command line: %s", NoUser(Utf8(GetCommandLineW())).c_str());
+}
+
 void LogSystem() {
     std::time_t now = std::time(nullptr);
     char date[32] = {};
     std::strftime(date, sizeof(date), "%Y-%m-%d %H:%M:%S", std::localtime(&now));
     LOGR("%ls (%s), %s", kGame.title, IMAGE_XBE, date);
     LOGR("Path: %ls", ExeDir().c_str());
+    LogLaunch();
     LOGR("OS: %s", OsVersion().c_str());
     SYSTEM_INFO si{};
     GetNativeSystemInfo(&si);

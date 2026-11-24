@@ -1086,6 +1086,55 @@ ASM(ParryStub_lands:)
     ASM_END
 }
 
+// the same for a 0x433A40 that takes its stack word away itself (ret 4): picked at start-up by ParryPops below, so
+// the stack is right whichever way the game's function was compiled
+static NAKED void ParryStubPops()
+{
+    ASM_BEGIN
+    ASM(push eax)
+    ASM(push ecx)
+    ASM(push edx)
+    ASM(push esi)
+    ASM(push eax)
+    ASM(call Unparryable)
+    ASM(add  esp, 8)
+    ASM(test al, al)
+    ASM(pop  edx)
+    ASM(pop  ecx)
+    ASM(pop  eax)
+    ASM(jnz  ParryStubPops_lands)
+    ASM(push 0x433A40)
+    ASM(ret)
+ASM(ParryStubPops_lands:)
+    ASM(xor  eax, eax)
+    ASM(ret 4)
+    ASM_END
+}
+
+// how 0x433A40 returns, from its own code: a register restored then "ret" (C3) or "ret 4" (C2 04 00), at the end
+// of the function: followed by padding (CC or 90) or by the next function's first byte at a 16-byte boundary, so
+// the same bytes inside another instruction or an early return don't count. -1: not found (the plain ret is kept,
+// as before, and the log says so)
+static int ParryPops()
+{
+    int r = -1;
+    Guard([&] {
+        const uint8_t* f = (const uint8_t*)0x433A40;
+        for (int i = 0; i < 0x400 && r < 0; ++i) {
+            const uint8_t b = f[i];
+            if (b != 0x5B && b != 0x5D && b != 0x5E && b != 0x5F) continue;   // pop ebx / ebp / esi / edi
+            int len = 0, pops = -1;
+            if (f[i + 1] == 0xC3) { len = 2; pops = 0; }
+            else if (f[i + 1] == 0xC2 && f[i + 2] == 0x04 && f[i + 3] == 0x00) { len = 4; pops = 4; }
+            if (pops < 0) continue;
+            const uint8_t next = f[i + len];
+            const bool end = next == 0xCC || next == 0x90 || ((uintptr_t)(f + i + len) & 15) == 0;
+            if (end) r = pops;
+        }
+    });
+    return r;
+}
+
 // --- [PvP] BossScene: the Black Gate's boss only for its scene ---------------------------------------------------------
 // Test of 05/11/2026 (BossBones=1): created during the loading, the boss plays the whole opening scene (Frodo's mithril,
 // its lines), then fights; killed, the level makes a second one at once (the gate's scene, 26 s without the HUD). With
@@ -1460,7 +1509,11 @@ void PvpInstall()
     ok &= PatchDword(0x454F25, 0x4543A0, (uint32_t)(uintptr_t)&ProjFilter);
     ok &= PatchDword(0x4534B5, 0x452FE0, (uint32_t)(uintptr_t)&SpearContact);
     // the parries' question "is this hit parried?" ([PvP] HeavyUnblockable)
-    for (uintptr_t at = 0x433E43; at <= 0x434D43; at += 0x1E0) ok &= PatchCall(at, 0x433A40, (const void*)&ParryStub);
+    const int pops = ParryPops();
+    Log("pvp: 0x433A40 returns with %s", pops == 4 ? "ret 4 (it takes its stack word)" : pops == 0 ? "ret (the caller takes its stack word)" :
+        "no return found (ret assumed)");
+    for (uintptr_t at = 0x433E43; at <= 0x434D43; at += 0x1E0)
+        ok &= PatchCall(at, 0x433A40, pops == 4 ? (const void*)&ParryStubPops : (const void*)&ParryStub);
     Log("pvp: fierce attacks, the last moves of the combos and fully drawn shots %s between players",
         g_heavyUnblock ? "can't be parried" : "are parried as in the game ([PvP] HeavyUnblockable=0)");
     Log("pvp: versus mode patches (Versus entry in the main menu), %d lives each: %s", g_lives, ok ? "active" : "NOT completely installed");

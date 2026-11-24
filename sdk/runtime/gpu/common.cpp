@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <chrono>
 #include <cstring>
@@ -16,6 +17,7 @@
 #include "core/diag.h"
 #include "core/log.h"
 #include "gpu/backend.h"
+#include "kernel/kernel.h"
 
 namespace gpu {
 
@@ -610,6 +612,135 @@ ShaderChoice ClassifyShaders(const State& s, const Assembled& a, uint32_t count)
 }
 
 // the program's hash is cached in the guest shader object
+uint64_t MemSig(uint32_t data, uint32_t total) {
+    const uint8_t* p = static_cast<const uint8_t*>(kernel::HostPtr(data));
+    uint64_t sig = Hash(&total, sizeof(total));
+    if (total <= kSigWholeMax) return Hash(p, total, sig);
+    for (uint32_t i = 0; i < kSigSamples; i++)
+        sig = Hash(p + uint64_t(total - kSigSampleBytes) * i / (kSigSamples - 1), kSigSampleBytes, sig);
+    return sig;
+}
+
+namespace {
+bool ReadSeedString(FILE* f, std::string& out) {
+    uint32_t n = 0;
+    if (std::fread(&n, 4, 1, f) != 1 || n > (16u << 20)) return false;
+    out.resize(n);
+    return n == 0 || std::fread(out.data(), 1, n, f) == n;
+}
+}  // namespace
+
+std::vector<SeedShader> ReadShaderSeed(const std::filesystem::path& file) {
+    std::vector<SeedShader> v;
+    FILE* f = _wfopen(file.c_str(), L"rb");
+    if (!f) return v;
+    char magic[4];
+    if (std::fread(magic, 4, 1, f) == 1 && !std::memcmp(magic, "ASS1", 4)) {
+        SeedShader s;
+        while (ReadSeedString(f, s.entry) && ReadSeedString(f, s.profile) && ReadSeedString(f, s.src)) v.push_back(s);
+    }
+    std::fclose(f);
+    return v;
+}
+
+uint64_t PackHash(const TextureDesc& d, const uint8_t* p, const uint32_t* colours) {
+    uint64_t seed = uint64_t(d.format) | uint64_t(d.width) << 8 | uint64_t(d.height) << 24 | uint64_t(d.levels) << 40;
+    uint64_t h = Hash(p, TotalSize(d), seed);
+    if (colours) h = Hash(colours, 256 * sizeof(uint32_t), h);
+    return h;
+}
+
+void PackDump(pack::Format pf, const TextureDesc& d, uint64_t h, const std::vector<std::vector<uint8_t>>& levels,
+              std::unordered_set<uint64_t>& dumped) {
+    if (levels.empty() || !dumped.insert(h).second) return;
+    // level 0 as a PNG, written on the pack thread
+    std::vector<uint8_t> rgba;
+    std::filesystem::path file = app::TextureDir() / "dump" / pack::PngName(d.width, d.height, h);
+    std::error_code ec;
+    if (std::filesystem::exists(file, ec)) return;
+    if (pack::ToRgba(pf, d.width, d.height, levels[0], rgba))
+        pack::WritePngLater(file, d.width, d.height, std::move(rgba));
+    else
+        LOG_FIRST(4, "texture pack: %s is in a format a PNG does not take", file.filename().string().c_str());
+}
+
+bool PackMake(pack::Format pf, const TextureDesc& d, uint64_t h, const uint8_t* p, const uint32_t* colours,
+              pack::Image& img) {
+    bool got = pack::g_builtin_contents &&
+               pack::g_builtin_contents({d.format, d.width, d.height, d.levels, p, TotalSize(d), colours}, img);
+    if (!got && pack::g_builtin) got = pack::g_builtin(h, d.width, d.height, img);
+    if (!got && pack::g_upscale && !d.linear && pack::g_upscale(h)) {
+        // a picture the game asks to be redrawn larger: level 0 decoded, upscaled 4x, its levels made anew
+        std::vector<uint8_t> px, rgba;
+        uint32_t pitch;
+        DecodeLevel(d, 0, 0, p, colours, px, pitch);
+        uint32_t rb = pack::RowBytes(pf, d.width), rows = pack::Rows(pf, d.height);
+        std::vector<uint8_t> packed(size_t(rb) * rows);
+        for (uint32_t y = 0; y < rows && size_t(y + 1) * pitch <= px.size(); y++)
+            std::memcpy(&packed[size_t(y) * rb], &px[size_t(y) * pitch], std::min(rb, pitch));
+        if (pack::ToRgba(pf, d.width, d.height, packed, rgba)) {
+            img = {};
+            img.width = d.width * 4;
+            img.height = d.height * 4;
+            img.format = pack::Format::RGBA8;
+            pack::Upscale(rgba, d.width, d.height, 4, img.levels.emplace_back());
+            pack::MakeLevels(img);
+            got = true;
+            LOGR("texture: %ux%u picture %016llx redrawn at 4x", d.width, d.height, (unsigned long long)h);
+        }
+    }
+    return got;
+}
+
+void ArtShotSave(const std::string& path, const std::vector<uint8_t>& px, uint32_t w, uint32_t h) {
+    auto lum = [&](uint32_t x, uint32_t y) {
+        const uint8_t* p = &px[(size_t(y) * w + x) * 4];
+        return (int(p[0]) + 2 * int(p[1]) + int(p[2])) / 4;  // BGRA
+    };
+    auto row_dark = [&](uint32_t y) {
+        int sum = 0;
+        for (uint32_t x = 0; x < w; x += 4) sum += lum(x, y);
+        return sum / int((w + 3) / 4) < 12;
+    };
+    auto col_dark = [&](uint32_t x, uint32_t y0, uint32_t y1) {
+        int sum = 0;
+        for (uint32_t y = y0; y < y1; y += 4) sum += lum(x, y);
+        return sum / int(std::max(1u, (y1 - y0 + 3) / 4)) < 12;
+    };
+    uint32_t y0 = 0, y1 = h, x0 = 0, x1 = w;
+    while (y0 < h && row_dark(y0)) y0++;
+    while (y1 > y0 && row_dark(y1 - 1)) y1--;
+    while (x0 < w && col_dark(x0, y0, y1)) x0++;
+    while (x1 > x0 && col_dark(x1 - 1, y0, y1)) x1--;
+    uint32_t cw = x1 > x0 ? x1 - x0 : 0, ch = y1 > y0 ? y1 - y0 : 0;
+    if (cw < w / 2 || ch < h / 3) return;  // nearly black: a later frame
+    long long total = 0;
+    for (uint32_t y = y0; y < y1; y += 2)
+        for (uint32_t x = x0; x < x1; x += 2) total += lum(x, y);
+    if (total / std::max(1LL, (long long)((cw + 1) / 2) * ((ch + 1) / 2)) < 40) return;  // too dark to be a picture
+    std::vector<uint8_t> out(size_t(cw) * ch * 4);
+    for (uint32_t y = 0; y < ch; y++)
+        for (uint32_t x = 0; x < cw; x++) {
+            const uint8_t* s = &px[(size_t(y + y0) * w + x + x0) * 4];
+            uint8_t* d = &out[(size_t(y) * cw + x) * 4];
+            d[0] = s[2]; d[1] = s[1]; d[2] = s[0]; d[3] = 255;
+        }
+    {
+        std::lock_guard lock(g_art_shot_lock);
+        if (g_art_shot != path) return;  // asked for another meanwhile
+        g_art_shot.clear();
+    }
+    std::error_code ec;
+    std::filesystem::create_directories(std::filesystem::path(path).parent_path(), ec);
+    pack::WritePngLater(path, cw, ch, std::move(out));
+    LOGR("art: %s (%ux%u)", path.c_str(), cw, ch);
+}
+
+double MovieClock() {
+    using namespace std::chrono;
+    return duration<double>(steady_clock::now().time_since_epoch()).count();
+}
+
 void EnsureProgramHash(const State& s) {
     if (!s.vs->hash) s.vs->hash = Hash(s.vs->program.data(), s.vs->program.size() * 4) | 1;
 }

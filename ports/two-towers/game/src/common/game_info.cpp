@@ -132,15 +132,7 @@ const app::GameInfo app::kGame = {
                  "Every movie can be skipped with the controller, including the opening logos.", &tt::g_skip_all_videos}},
     // the launcher's preset menu; keys left out (brightness, field of view, logos) stay the player's own. Frame rate is
     // only in Original (the console's 30): the others are picture quality, as ROTK Fix's
-    .presets = {{"Original", {{"graphics.sharpening", "0"}, {"display.render_percent", "\"100\""}, {"graphics.widescreen", "false"},
-                              {"graphics.anisotropic_filtering", "\"0\""}, {"graphics.lod_bias", "0.00"}, {"graphics.anti_aliasing", "\"0\""},
-                              {"graphics.fps", "\"30\""}, {"graphics.smooth_2d", "false"}, {"graphics.console_textures", "true"}}},
-                {"Balanced", {{"graphics.sharpening", "30"}, {"display.render_percent", "\"100\""}, {"graphics.widescreen", "true"},
-                              {"graphics.anisotropic_filtering", "\"8\""}, {"graphics.lod_bias", "0.00"}, {"graphics.anti_aliasing", "\"2\""}, {"graphics.smooth_2d", "true"}, {"graphics.console_textures", "false"}}},
-                {"High", {{"graphics.sharpening", "60"}, {"display.render_percent", "\"100\""}, {"graphics.widescreen", "true"},
-                          {"graphics.anisotropic_filtering", "\"16\""}, {"graphics.lod_bias", "-0.50"}, {"graphics.anti_aliasing", "\"4\""}, {"graphics.smooth_2d", "true"}, {"graphics.console_textures", "false"}}},
-                {"Ultra", {{"graphics.sharpening", "60"}, {"display.render_percent", "\"150\""}, {"graphics.widescreen", "true"},
-                           {"graphics.anisotropic_filtering", "\"16\""}, {"graphics.lod_bias", "-0.50"}, {"graphics.anti_aliasing", "\"8\""}, {"graphics.smooth_2d", "true"}, {"graphics.console_textures", "false"}}}},
+    .presets = app::StandardPresets(),
     // [controls]: what each Xbox button does, as the game's own controls screen names it; White does nothing, so it
     // keeps its Xbox name
     .button_actions = {"Speed Attack / Fire", "Knock Back", "Parry", "Fierce Attack", "Jump Back", nullptr, "Ranged Weapon",

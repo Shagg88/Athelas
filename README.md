@@ -65,7 +65,8 @@ write to (not Program Files). Progress is kept in player 1's save. Set **Online 
 - Widescreen and ultrawide (up to 32:9) without stretching, any resolution, 60 to 240 fps at normal game speed
 - Xbox, PlayStation and Switch controllers, with the right button pictures; keyboard and mouse
 - Sharper text, anti-aliasing, texture filtering, sharpening; FSR, DLSS and XeSS upscaling in the Xbox games
-- Texture packs, screenshots (`\` or Print Screen), achievements, the games' own cheat codes as switches
+- Texture packs (in The Return of the King on PC, fonts too: sharper text at 2x or 4x), screenshots (`\` or Print
+  Screen), achievements, the games' own cheat codes as switches
 - Faithful by default: every enhancement can be turned off, with presets from Original to Ultra
 
 **Game highlights**

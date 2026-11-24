@@ -273,22 +273,11 @@ D3D12_RESOURCE_DESC Texture2DDesc(DXGI_FORMAT fmt, uint64_t w, uint32_t h) {
     return td;
 }
 
-// MemSig hashes a surface up to kSigWholeMax bytes whole, a bigger one as evenly spaced samples
-constexpr uint32_t kSigWholeMax = 65536;
-constexpr uint32_t kSigSamples = 64;
-constexpr uint32_t kSigSampleBytes = 64;
-
-uint64_t MemSig(uint32_t data, uint32_t total) {
-    const uint8_t* p = static_cast<const uint8_t*>(kernel::HostPtr(data));
-    uint64_t sig = Hash(&total, sizeof(total));
+// gpu::MemSig (common.cpp), counted for the perf lines
+uint64_t SigCounted(uint32_t data, uint32_t total) {
     g_perf.sigs++;
     g_perf.sig_bytes += total <= kSigWholeMax ? total : kSigSamples * kSigSampleBytes;
-    if (total <= kSigWholeMax) return Hash(p, total, sig);
-    for (uint32_t i = 0; i < kSigSamples; i++) {
-        const uint8_t* sample = p + uint64_t(total - kSigSampleBytes) * i / (kSigSamples - 1);
-        sig = Hash(sample, kSigSampleBytes, sig);
-    }
-    return sig;
+    return gpu::MemSig(data, total);
 }
 
 // MemSig samples a big surface and misses small writes (XFONT text): after a Sync every byte is compared
@@ -308,7 +297,7 @@ bool LatchCpuWrite(Target& t) {
     uint64_t e = DirtyEpoch(t.data);
     if (e <= t.epoch) return false;
     t.epoch = e;
-    uint64_t sig = MemSig(t.data, t.bytes);
+    uint64_t sig = SigCounted(t.data, t.bytes);
     if (sig == t.sig && !Changed(t)) return false;
     t.sig = sig;
     return true;
@@ -346,9 +335,6 @@ struct PackTex {
 };
 
 // a shader source from shaders.seed (see ReadShaderSeed)
-struct SeedShader {
-    std::string entry, profile, src;
-};
 
 struct PsoKey {
     uint64_t vs;
@@ -1759,7 +1745,7 @@ Target* D3D12Backend::EnsureTarget(const Surface& s, bool depth) {
     t.bytes = GuestPitch(slot.gw) * slot.gh;
     if (depth) t.bytes = slot.gw * slot.gh * 4;
     t.epoch = DirtyEpoch(slot.data);
-    t.sig = MemSig(slot.data, t.bytes);
+    t.sig = SigCounted(slot.data, t.bytes);
     auto& ref = targets_[slot.key] = std::move(t);
     return &ref;
 }
@@ -2161,7 +2147,7 @@ void D3D12Backend::UploadTarget(Target& t, const Surface& s) {
     CurrentFrame().garbage.push_back(tex);
     ResWritten(t);
     t.epoch = DirtyEpoch(t.data);
-    t.sig = MemSig(t.data, t.bytes);
+    t.sig = SigCounted(t.data, t.bytes);
 }
 
 // samplers_ key of the full screen passes' samplers, apart from the stage samplers' hashed keys
@@ -2278,25 +2264,7 @@ uint64_t ShaderHash(const std::string& src, const char* entry, const char* profi
 // pipelines.bin layout) adds those pipelines to the warm-up. A seed shader the game never makes is only unused.
 constexpr char kSeedMagic[4] = {'A', 'S', 'S', '1'};
 
-bool ReadSeedString(FILE* f, std::string& out) {
-    uint32_t n = 0;
-    if (std::fread(&n, 4, 1, f) != 1 || n > (16u << 20)) return false;
-    out.resize(n);
-    return n == 0 || std::fread(out.data(), 1, n, f) == n;
-}
-
-std::vector<SeedShader> ReadShaderSeed(const std::filesystem::path& file) {
-    std::vector<SeedShader> v;
-    FILE* f = _wfopen(file.c_str(), L"rb");
-    if (!f) return v;
-    char magic[4];
-    if (std::fread(magic, 4, 1, f) == 1 && !std::memcmp(magic, kSeedMagic, 4)) {
-        SeedShader s;
-        while (ReadSeedString(f, s.entry) && ReadSeedString(f, s.profile) && ReadSeedString(f, s.src)) v.push_back(s);
-    }
-    std::fclose(f);
-    return v;
-}
+// shaders.seed is read by gpu::ReadShaderSeed (common.cpp)
 
 // XBE_SHADER_RECORD=<file>: each shader source compiled or read from the cache, once, appended to a seed file
 void RecordShader(const std::string& src, const char* entry, const char* profile, uint64_t hash) {
@@ -2919,21 +2887,8 @@ void D3D12Backend::UploadTexture(Tex& tx, const TextureDesc& d, const FormatInfo
 // texture_dump on, and a file of that name under textures/ drawn instead
 void D3D12Backend::TexturePack(Tex& tx, const TextureDesc& d, const uint8_t* p, const uint32_t* colours,
                                const std::vector<std::vector<uint8_t>>& levels) {
-    uint64_t seed = uint64_t(d.format) | uint64_t(d.width) << 8 | uint64_t(d.height) << 24 | uint64_t(d.levels) << 40;
-    uint64_t h = Hash(p, TotalSize(d), seed);
-    if (colours) h = Hash(colours, 256 * sizeof(uint32_t), h);
-    if (!levels.empty() && dumped_.insert(h).second) {
-        // level 0 as a PNG, written on the pack thread
-        std::vector<uint8_t> rgba;
-        std::filesystem::path file = app::TextureDir() / "dump" / pack::PngName(d.width, d.height, h);
-        std::error_code ec;
-        if (std::filesystem::exists(file, ec)) {
-        } else if (pack::ToRgba(pack::Format(tx.fmt), d.width, d.height, levels[0], rgba)) {
-            pack::WritePngLater(file, d.width, d.height, std::move(rgba));
-        } else {
-            LOG_FIRST(4, "texture pack: %s is in a format a PNG does not take", file.filename().string().c_str());
-        }
-    }
+    uint64_t h = PackHash(d, p, colours);
+    PackDump(pack::Format(tx.fmt), d, h, levels, dumped_);  // (common.cpp, shared with Vulkan)
     tx.pack_hash = h;
     const std::filesystem::path* file = pack_lib_.Find(h);
     if (!file && !pack::g_builtin && !pack::g_builtin_contents && !pack::g_upscale) return;
@@ -2948,29 +2903,7 @@ void D3D12Backend::TexturePack(Tex& tx, const TextureDesc& d, const uint8_t* p, 
     }
     if (fresh && !file) {
         pack::Image img;
-        bool got = pack::g_builtin_contents &&
-                   pack::g_builtin_contents({d.format, d.width, d.height, d.levels, p, TotalSize(d), colours}, img);
-        if (!got && pack::g_builtin) got = pack::g_builtin(h, d.width, d.height, img);
-        if (!got && pack::g_upscale && !d.linear && pack::g_upscale(h)) {
-            // a picture the game asks to be redrawn larger: level 0 decoded, upscaled 4x, its levels made anew
-            std::vector<uint8_t> px, rgba;
-            uint32_t pitch;
-            DecodeLevel(d, 0, 0, p, colours, px, pitch);
-            uint32_t rb = pack::RowBytes(pack::Format(tx.fmt), d.width), rows = pack::Rows(pack::Format(tx.fmt), d.height);
-            std::vector<uint8_t> packed(size_t(rb) * rows);
-            for (uint32_t y = 0; y < rows && size_t(y + 1) * pitch <= px.size(); y++)
-                std::memcpy(&packed[size_t(y) * rb], &px[size_t(y) * pitch], std::min(rb, pitch));
-            if (pack::ToRgba(pack::Format(tx.fmt), d.width, d.height, packed, rgba)) {
-                img = {};
-                img.width = d.width * 4;
-                img.height = d.height * 4;
-                img.format = pack::Format::RGBA8;
-                pack::Upscale(rgba, d.width, d.height, 4, img.levels.emplace_back());
-                pack::MakeLevels(img);
-                got = true;
-                LOGR("texture: %ux%u picture %016llx redrawn at 4x", d.width, d.height, (unsigned long long)h);
-            }
-        }
+        bool got = PackMake(pack::Format(tx.fmt), d, h, p, colours, img);
         if (got) CreatePackTexture(img, pack::PngName(d.width, d.height, h), it->second);
         if (got && d.linear) {
             // a game's own picture for a linear texture (text it draws afresh, Fellowship's sharper text): kept by
@@ -3093,7 +3026,7 @@ ID3D12Resource* D3D12Backend::BindGuestTexture(const State& s, int stage, const 
         // draws letters into with the CPU, a few bytes at a time, which the sampled signature missed (The Third Age's
         // menus: every word on a 512 x 512 LIN_A8 page, written after its first upload, so no text showed)
         bool font_cache = (d.format == 0x19 || d.format == 0x1F) && total <= (1u << 20);
-        uint64_t sig = (font_cache ? Hash(p, total, total) : MemSig(d.data, total)) ^ DirtyEpoch(d.data) ^ palette.hash;
+        uint64_t sig = (font_cache ? Hash(p, total, total) : SigCounted(d.data, total)) ^ DirtyEpoch(d.data) ^ palette.hash;
         g_perf.sig += PerfMs(perf_t);
         if (sig != tx.sig || !same) {
             PerfScope perf_up{g_perf.texup};
@@ -4692,10 +4625,6 @@ void D3D12Backend::BlitFrame(Target& t, D3D12_CPU_DESCRIPTOR_HANDLE rh) {
     }
 }
 
-double MovieClock() {
-    using namespace std::chrono;
-    return duration<double>(steady_clock::now().time_since_epoch()).count();
-}
 
 // the movie frame just drawn, averaged down to the console's size (the movie's own) into the ring
 void D3D12Backend::KeepMovieFrame(Target& t) {
@@ -4736,47 +4665,7 @@ void D3D12Backend::ArtShot() {
     Transition(f.res.Get(), f.state, D3D12_RESOURCE_STATE_COPY_SOURCE);
     std::vector<uint8_t> px;
     if (!ReadBack(f.res.Get(), w, h, px)) return;
-    auto lum = [&](uint32_t x, uint32_t y) {
-        const uint8_t* p = &px[(size_t(y) * w + x) * 4];
-        return (int(p[0]) + 2 * int(p[1]) + int(p[2])) / 4;  // BGRA
-    };
-    auto row_dark = [&](uint32_t y) {
-        int sum = 0;
-        for (uint32_t x = 0; x < w; x += 4) sum += lum(x, y);
-        return sum / int((w + 3) / 4) < 12;
-    };
-    auto col_dark = [&](uint32_t x, uint32_t y0, uint32_t y1) {
-        int sum = 0;
-        for (uint32_t y = y0; y < y1; y += 4) sum += lum(x, y);
-        return sum / int(std::max(1u, (y1 - y0 + 3) / 4)) < 12;
-    };
-    uint32_t y0 = 0, y1 = h, x0 = 0, x1 = w;
-    while (y0 < h && row_dark(y0)) y0++;
-    while (y1 > y0 && row_dark(y1 - 1)) y1--;
-    while (x0 < w && col_dark(x0, y0, y1)) x0++;
-    while (x1 > x0 && col_dark(x1 - 1, y0, y1)) x1--;
-    uint32_t cw = x1 > x0 ? x1 - x0 : 0, ch = y1 > y0 ? y1 - y0 : 0;
-    if (cw < w / 2 || ch < h / 3) return;  // nearly black: a later frame
-    long long total = 0;
-    for (uint32_t y = y0; y < y1; y += 2)
-        for (uint32_t x = x0; x < x1; x += 2) total += lum(x, y);
-    if (total / std::max(1LL, (long long)((cw + 1) / 2) * ((ch + 1) / 2)) < 40) return;  // too dark to be a picture
-    std::vector<uint8_t> out(size_t(cw) * ch * 4);
-    for (uint32_t y = 0; y < ch; y++)
-        for (uint32_t x = 0; x < cw; x++) {
-            const uint8_t* s = &px[(size_t(y + y0) * w + x + x0) * 4];
-            uint8_t* d = &out[(size_t(y) * cw + x) * 4];
-            d[0] = s[2]; d[1] = s[1]; d[2] = s[0]; d[3] = 255;
-        }
-    {
-        std::lock_guard lock(g_art_shot_lock);
-        if (g_art_shot != path) return;  // asked for another meanwhile
-        g_art_shot.clear();
-    }
-    std::error_code ec;
-    std::filesystem::create_directories(std::filesystem::path(path).parent_path(), ec);
-    pack::WritePngLater(path, cw, ch, std::move(out));
-    LOGR("art: %s (%ux%u)", path.c_str(), cw, ch);
+    ArtShotSave(path, px, w, h);  // (common.cpp, shared with Vulkan)
 }
 
 // a movie frame as [graphics] movie_display shows it, sharpened at its own size; false when no movie is on
@@ -5522,7 +5411,7 @@ void D3D12Backend::Sync(uint32_t data, uint32_t size) {
     if (TargetStale(data)) {
         // only into a resource of the target's own size, whose memory nothing has written since (by its bytes, and
         // by the lock epoch: this lock's own MarkDirty comes after it)
-        if (size != it->second.bytes || DirtyEpoch(data) > it->second.epoch || MemSig(data, it->second.bytes) != it->second.sig) {
+        if (size != it->second.bytes || DirtyEpoch(data) > it->second.epoch || SigCounted(data, it->second.bytes) != it->second.sig) {
             LOG_FIRST(8, "d3d12: read-back of %08X skipped: unused for a while and its memory written since", data);
             return;
         }
@@ -5546,7 +5435,7 @@ void D3D12Backend::Sync(uint32_t data, uint32_t size) {
     for (uint32_t y = 0; y < t.gh; y++) std::memcpy(guest + size_t(y) * pitch, &px[size_t(y) * t.gw * 4], t.gw * 4);
     t.read = std::move(px);
     t.drawn = false;
-    t.sig = MemSig(t.data, t.bytes);
+    t.sig = SigCounted(t.data, t.bytes);
 }
 
 // A NOOVERWRITE lock: the console reads whatever the GPU has finished, so a surface locked every frame gets the newest
@@ -5653,7 +5542,7 @@ void D3D12Backend::RecordLate(uint32_t data) {
     PerfScope perf_sync{g_perf.sync};
     g_perf.lates++;
     // what DeliverLate or Sync left in guest memory is no CPU write to upload back
-    t.sig = MemSig(t.data, t.bytes);
+    t.sig = SigCounted(t.data, t.bytes);
     t.read.clear();
     std::lock_guard lock(late_lock_);
     Late& l = late_[data];

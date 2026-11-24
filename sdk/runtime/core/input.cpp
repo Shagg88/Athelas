@@ -289,6 +289,12 @@ Pad Poll(int port) {
     }
     app::OverlayPad(port, p);  // Back + Start opens the in-game menu; nothing reaches the game while it is open
     if (app::kGame.pad) app::kGame.pad(port, p);
+    // [input] invert_camera_*: the controller's camera stick (the keyboard and mouse, merged next, have their own)
+    if (app::kGame.camera_invert) {
+        auto flip = [](int16_t v) { return int16_t(-1 - v); };  // (not plain negation: -32768 has no positive)
+        if (app::Get().invert_camera_y) p.ry = flip(p.ry);
+        if (app::Get().invert_camera_x) p.rx = flip(p.rx);
+    }
     keys::Merge(port, p);
     return p;
 }

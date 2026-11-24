@@ -23,8 +23,16 @@
  *    for a while (up to 96 MB), so going back does not make them again.
  *
  * Skipped: render targets and screen copies, textures the game rewrites
- * (movie frames: changed more than 3 times), text (font textures), and
- * formats without a straightforward picture (palettes, bump maps).
+ * (movie frames: changed more than 3 times), and formats without a
+ * straightforward picture (palettes, bump maps).
+ *
+ * Fonts (#72): a font texture's replacement is used only when it is exactly
+ * 2 or 4 times the game's texture (the whole power-of-two texture, as the
+ * dump saves it) and A8R8G8B8 (a PNG, or an uncompressed DDS): the glyph
+ * records hold fractions of the texture, so they fit any exact multiple, and
+ * icons.c paints the button pictures into the replacement at that scale
+ * (textures_font_hd_lock). Any other replacement of a font is left out, as
+ * all of them were before.
  * ROTK Fix itself ships no game art; packs are made by players from their
  * own copy.
  *
@@ -143,7 +151,8 @@ static const Repl *find_repl(unsigned long long h)
 
 /* ---- per-texture records (open addressing, keyed by texture pointer) ---- */
 enum { ST_NEW, ST_HASHED, ST_DONE, ST_SKIP };   /* HASHED: fingerprinted at load, replacement not looked up yet */
-typedef struct { void *tex; IDirect3DTexture8 *repl; unsigned long long hash; WORD w, h; BYTE state, unlocks, managed; } Rec;
+/* fontk: a font texture drawn from its replacement, at that scale (2 or 4); 0 = not one */
+typedef struct { void *tex; IDirect3DTexture8 *repl; unsigned long long hash; WORD w, h; BYTE state, unlocks, managed, fontk; } Rec;
 #define TAB_BITS 15
 #define TAB_SIZE (1u << TAB_BITS)
 static Rec g_tab[TAB_SIZE];
@@ -569,6 +578,9 @@ static HRESULT WINAPI hook_TexUnlock(IDirect3DTexture8 *t, UINT level)
         }
         return hr;
     }
+    /* a font drawn from its replacement: its later changes are ROTK Fix's own button pictures (icons.c), painted
+     * into the replacement too */
+    if (r && r->fontk) return hr;
     if (r && r->state != ST_SKIP) {
         if (r->state == ST_DONE) drop_replacement(r);
         /* changed after use: look again next time; changed over and over
@@ -671,8 +683,10 @@ void *textures_bind(void *dev, void *t, int skip)
 {
     if (!t || (!g_dump && !g_nrepl) || !g_realUnlock || !g_createTex) return t;
     Rec *r = rec_find(t);
-    /* a replacement made at load time for what turns out to be text or a
-     * screen copy: those are never replaced */
+    /* a font accepted by textures_font_begin: drawn from its replacement */
+    if (r && r->fontk && r->repl && r->state == ST_DONE) return r->repl;
+    /* a replacement made at load time for what turns out to be text (not an
+     * exact 2x / 4x A8R8G8B8 one) or a screen copy: not used */
     if (r && skip && r->repl) drop_replacement(r);
     if (r && r->state == ST_DONE) return r->repl ? (void *)r->repl : t;
     if (r && r->state == ST_SKIP) return t;
@@ -681,10 +695,77 @@ void *textures_bind(void *dev, void *t, int skip)
         if (!r) return t;
         if (skip) { r->state = ST_SKIP; return t; }
     }
+    /* text or a screen copy changed since it was fingerprinted (a font with the button pictures painted in): not
+     * fingerprinted again, so the dump keeps each font only as the game made it, the copy a pack replaces */
+    if (r->state == ST_NEW && skip) { r->state = ST_DONE; return t; }
     if (r->state == ST_NEW && !examine(r, (IDirect3DTexture8 *)t)) return t;
     r->state = ST_DONE;
     if (!skip) make_replacement(r, (IDirect3DDevice8 *)dev);
     return r->repl ? (void *)r->repl : t;
+}
+
+/* icons.c: font texture t has just been loaded (its letters are in it, the button pictures not yet). Its replacement
+ * is drawn from now on if it is exactly 2 or 4 times t, in A8R8G8B8 (the button pictures are then painted into it
+ * too); returns that scale, or 0 (no replacement, or one that can't be used: it is left out, as before). */
+int textures_font_begin(void *t)
+{
+    if (!t || !g_nrepl || !g_realUnlock || !g_createTex || !g_dev) return 0;
+    Rec *r = rec_find(t);
+    if (!r || r->state == ST_SKIP) return 0;
+    if (r->state == ST_NEW && !examine(r, (IDirect3DTexture8 *)t)) return 0;
+    if (!r->repl && r->hash) make_replacement(r, g_dev);   /* (made at load already, as a rule; or kept from before) */
+    r->state = ST_DONE;
+    if (!r->repl) return 0;
+    D3DSURFACE_DESC d;
+    UINT dw = 0, dh = 0;
+    int k = 0;
+    const char *why = NULL;
+    if (FAILED(((GetLevelDesc_t)(*(void ***)r->repl)[14])(r->repl, 0, &d))) why = "can't be read";
+    else {
+        dw = d.Width; dh = d.Height;
+        if (d.Format != D3DFMT_A8R8G8B8) why = "is not A8R8G8B8 (use a PNG, or an uncompressed DDS)";
+        else if (dw == 2u * r->w && dh == 2u * r->h) k = 2;
+        else if (dw == 4u * r->w && dh == 4u * r->h) k = 4;
+        else why = "is not exactly 2 or 4 times the game's size";
+    }
+    /* told once per font: the game loads its fonts again with every level */
+    static unsigned long long told[32];
+    static int ntold;
+    int seen = 0;
+    for (int i = 0; i < ntold; i++) if (told[i] == r->hash) seen = 1;
+    if (!seen && ntold < 32) told[ntold++] = r->hash;
+    if (!k) {
+        if (!seen) logf_("textures: font %ux%u_%016llx: its replacement (%ux%u) %s; the game's font is used", r->w, r->h,
+                         r->hash, dw, dh, why);
+        drop_replacement(r);
+        return 0;
+    }
+    r->fontk = (BYTE)k;
+    if (!seen) logf_("textures: font %ux%u_%016llx drawn from its replacement at %dx (%ux%u)", r->w, r->h, r->hash, k,
+                     dw, dh);
+    return k;
+}
+
+/* icons.c: lock one level of the replacement font texture t is drawn from (the real Lock: the replacement isn't one of
+ * the game's textures); 0 if t has none. Its size, scale and number of levels come back too. */
+int textures_font_hd_lock(const void *t, unsigned level, void **bits, int *pitch, unsigned *w, unsigned *h, int *k,
+                          unsigned *levels)
+{
+    Rec *r = t ? rec_find(t) : NULL;
+    if (!r || !r->fontk || !r->repl || !g_realLock) return 0;
+    IDirect3DTexture8 *x = r->repl;
+    D3DSURFACE_DESC d;
+    if (FAILED(((GetLevelDesc_t)(*(void ***)x)[14])(x, level, &d))) return 0;
+    D3DLOCKED_RECT lr;
+    if (FAILED(g_realLock(x, level, &lr, NULL, 0)) || !lr.pBits) return 0;
+    *bits = lr.pBits; *pitch = lr.Pitch; *w = d.Width; *h = d.Height; *k = r->fontk;
+    *levels = IDirect3DTexture8_GetLevelCount(x);
+    return 1;
+}
+void textures_font_hd_unlock(const void *t, unsigned level)
+{
+    Rec *r = t ? rec_find(t) : NULL;
+    if (r && r->fontk && r->repl && g_realUnlock) g_realUnlock(r->repl, level);
 }
 
 /* graphics.c: texture t is drawn as a flat 2D picture (HUD, menus). With

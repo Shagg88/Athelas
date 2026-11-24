@@ -200,10 +200,23 @@ static int vulkan_usable(void)
     if (!vk) { logf_("graphics: no Vulkan driver (vulkan-1.dll not found)"); return 0; }
     PFN_vkGIPA gipa = (PFN_vkGIPA)(void *)GetProcAddress(vk, "vkGetInstanceProcAddr");
     PFN_vkCreateInst create = gipa ? (PFN_vkCreateInst)(void *)gipa(NULL, "vkCreateInstance") : NULL;
-    VkAppInfo_ app = { 0, NULL, "ROTK Fix", 1, "ROTK Fix", 1, VK_API_(1, 1) };
+    /* the newest Vulkan the loader offers, up to 1.4: MoltenVK (a Mac, #112) reports a device's version only up to
+       the one the instance asked for, so asking for 1.1 made a 1.4 device look too old */
+    typedef int (__stdcall *PFN_vkEnumInstVer)(UINT *);
+    PFN_vkEnumInstVer ver = gipa ? (PFN_vkEnumInstVer)(void *)gipa(NULL, "vkEnumerateInstanceVersion") : NULL;
+    UINT loader = VK_API_(1, 0);
+    if (!ver || ver(&loader) != 0) loader = VK_API_(1, 0);
+    UINT want = loader >= VK_API_(1, 4) ? VK_API_(1, 4) : loader > VK_API_(1, 1) ? loader : VK_API_(1, 1);
+    VkAppInfo_ app = { 0, NULL, "ROTK Fix", 1, "ROTK Fix", 1, want };
     VkInstInfo_ ci = { 1, NULL, 0, &app, 0, NULL, 0, NULL };
     VkInstance inst = NULL;
     int rc = create ? create(&ci, NULL, &inst) : -1;
+    if ((rc != 0 || !inst) && create && want != VK_API_(1, 1)) {   /* as before, for a loader that refuses it */
+        app.api = VK_API_(1, 1); inst = NULL;
+        rc = create(&ci, NULL, &inst);
+    }
+    logf_("graphics: Vulkan loader %u.%u, instance asked for %u.%u", loader >> 22, (loader >> 12) & 0x3FF,
+          app.api >> 22, (app.api >> 12) & 0x3FF);
     if (rc != 0 || !inst) { logf_("graphics: no Vulkan driver (a Vulkan instance couldn't be made: %d)", rc); return 0; }
     PFN_vkDestroyInst destroy = (PFN_vkDestroyInst)(void *)gipa(inst, "vkDestroyInstance");
     PFN_vkEnumDevs enumerate = (PFN_vkEnumDevs)(void *)gipa(inst, "vkEnumeratePhysicalDevices");

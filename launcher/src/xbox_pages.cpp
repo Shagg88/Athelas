@@ -565,14 +565,18 @@ static void tt_tab_display(App &a)
         row_begin("Frame rate", "The game was made for 30. Higher rates play at normal speed.\n"
                                 "In fullscreen the screen switches to the matching refresh rate. In borderless and windowed, "
                                 "rates that divide evenly into your screen's refresh rate are the smoothest.");
-        char c[64];
-        snprintf(c, sizeof c, "%d fps%s", fps, fps == 30 ? "  (original)" : "");
-        if (ImGui::BeginCombo("##ttfps", c)) {
+        // a choice's name: the game's own label when it sends one (The Third Age's "0" is "Unlocked"), else "N fps"
+        auto fps_name = [&](const std::string &ch) {
+            std::string n = tt_choice_name(*pf, ch);
+            int r = atoi(ch.c_str());
+            if (r > 0 && n == ch) n = std::to_string(r) + " fps";
+            return n + (r == 30 ? "  (original)" : "");
+        };
+        if (ImGui::BeginCombo("##ttfps", fps_name(std::to_string(fps)).c_str())) {
             for (auto &ch : pf->choices) {
                 int r = atoi(ch.c_str());
-                if (r <= 0 || (vsync && r > maxHz && r != fps)) continue;
-                snprintf(c, sizeof c, "%d fps%s", r, r == 30 ? "  (original)" : "");
-                if (ImGui::Selectable(c, fps == r)) tt_put(a, "graphics", "fps", ch);
+                if (r < 0 || (vsync && r > maxHz && r != fps)) continue;   // (0: unlocked, where the game offers it)
+                if (ImGui::Selectable(fps_name(ch).c_str(), fps == r)) tt_put(a, "graphics", "fps", ch);
             }
             ImGui::EndCombo();
         }
@@ -1342,7 +1346,10 @@ std::string tt_summary(const App &a)
     if (w <= 0 || h <= 0) { w = tt_monitor(a).deskW; h = tt_monitor(a).deskH; }
     s = std::to_string(w) + " x " + std::to_string(h);
     if ((p = tt_setting(a, "display", "mode"))) s += "  |  " + cap_first(toml_unquote(tt_val(a, *p)));
-    if ((p = tt_setting(a, "graphics", "fps"))) s += "  |  " + std::to_string(atoi(toml_unquote(tt_val(a, *p)).c_str())) + " fps";
+    if ((p = tt_setting(a, "graphics", "fps"))) {
+        std::string v = toml_unquote(tt_val(a, *p)), n = tt_choice_name(*p, v);
+        s += "  |  " + (n != v ? n : std::to_string(atoi(v.c_str())) + " fps");
+    }
     // the preset, as ROTK's line ends with it
     if (!a.tt.presets.empty()) {
         std::string name = "Custom";

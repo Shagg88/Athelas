@@ -67,7 +67,7 @@ static bool make_report(App &a, std::string title)
     std::string versions = report_versions(a);
     GpuInfo gi = gpu_info();
     std::string vk = gi.state == GPU_VULKAN_OK ? "Vulkan: " + gi.name + (gi.software ? " (software)" : "")
-                   : gi.state == GPU_VULKAN_TOO_OLD ? "Vulkan: too old for DXVK (" + gi.name + ")"
+                   : gi.state == GPU_VULKAN_TOO_OLD ? "Vulkan: " + std::to_string(gi.api >> 22) + "." + std::to_string((gi.api >> 12) & 0x3FF) + ", too old for DXVK (" + gi.name + ")"
                    : gi.state == GPU_VULKAN_NO_EXT ? "Vulkan: lacks DXVK's extensions (" + gi.name + ")"
                    : gi.state == GPU_NO_VULKAN ? "Vulkan: none" : "Vulkan: still checking";
     std::string pads;
