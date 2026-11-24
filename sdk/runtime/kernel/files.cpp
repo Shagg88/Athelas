@@ -12,6 +12,16 @@
 #include "kernel/exports.h"
 #include "kernel/lockstep.h"
 
+// every file the game opens: the first 400 at Detailed logging, all of them at Full diagnostic (a bug hours into a
+// game, after the first 400)
+static std::atomic<int> g_opens_logged{0};
+#define LogOpen(...)                                                                                               \
+    do {                                                                                                           \
+        if (logx::GetLevel() >= 1 &&                                                                               \
+            (g_opens_logged.fetch_add(1, std::memory_order_relaxed) < 400 || logx::GetLevel() >= 2))              \
+            LOGI(__VA_ARGS__);                                                                                     \
+    } while (0)
+
 namespace fs = std::filesystem;
 
 namespace kernel {
@@ -340,7 +350,7 @@ uint32_t OpenInMemory(FileData data, const std::string& name, uint32_t handle_ou
     f->async = !(options & 0x30);
     W32(handle_out, NewHandle(f));
     IoStatus(iosb, kSuccess, 1);
-    LOG_FIRST(400, "open %s (from memory, %zu bytes)", name.c_str(), f->mem->size());
+    LogOpen("open %s (from memory, %zu bytes)", name.c_str(), f->mem->size());
     if (app::kGame.file_opened) app::kGame.file_opened(name.c_str());
     return kSuccess;
 }
@@ -368,7 +378,7 @@ uint32_t OpenOnDisc(const Disc::Entry* e, const std::string& name, uint32_t hand
     f->async = !(options & 0x30);
     W32(handle_out, NewHandle(f));
     IoStatus(iosb, kSuccess, 1);
-    LOG_FIRST(400, "open %s", name.c_str());
+    LogOpen("open %s", name.c_str());
     if (app::kGame.file_opened) app::kGame.file_opened(name.c_str());
     return kSuccess;
 }
@@ -507,7 +517,7 @@ KERNEL_EXPORT(190, NtCreateFile, 9) {
     f->async = !(options & 0x30);  // FILE_SYNCHRONOUS_IO_ALERT / _NONALERT
     W32(handle_out, NewHandle(f));
     IoStatus(iosb, kSuccess, info);
-    LOG_FIRST(400, "open %s", name.c_str());
+    LogOpen("open %s", name.c_str());
     if (app::kGame.file_opened) app::kGame.file_opened(name.c_str());
     return kSuccess;
 }

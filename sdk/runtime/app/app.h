@@ -131,6 +131,7 @@ struct Settings {
     // [window]: when the game window loses the focus (another window in front, Alt-Tab)
     bool pause_unfocused = false;          // the game stops, picture and sound, until it has the focus again
     bool mute_unfocused = false;           // the sound goes quiet while it runs on
+    uint32_t log_level = 0;                // [log] level: 0 Normal, 1 Detailed, 2 Full diagnostic (logx::SetLevel)
     bool background_input = true;          // [window] background_input: controllers still play while another window has the focus
     bool achievement_notes = true;         // [achievements] notify: a note in the corner when one is earned
     bool discord = false;                  // [discord] enabled: what the game is doing on the player's Discord profile

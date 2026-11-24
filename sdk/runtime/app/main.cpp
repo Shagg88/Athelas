@@ -358,6 +358,26 @@ void SetGameSpeed(uint32_t times) { g_game_speed = std::max(1u, std::min(8u, tim
 void Pace() {
     using clock = std::chrono::steady_clock;
     static clock::time_point next = clock::now();
+    // [log] level Full diagnostic: the frames of each second and the slowest of them (a stutter or a hang shows)
+    static bool stats_was = false;
+    bool stats = logx::GetLevel() >= 2;
+    if (stats) {
+        static clock::time_point second = clock::now(), last = second;
+        static int frames = 0;
+        static double slowest = 0;
+        auto t = clock::now();
+        if (!stats_was) second = last = t, frames = 0, slowest = 0;  // just turned on: no false stutter from the gap
+        slowest = std::max(slowest, std::chrono::duration<double, std::milli>(t - last).count());
+        last = t;
+        frames++;
+        if (t - second >= std::chrono::seconds(1)) {
+            LOGD("frames: %d in %.2f s, slowest %.1f ms", frames, std::chrono::duration<double>(t - second).count(), slowest);
+            second = t;
+            frames = 0;
+            slowest = 0;
+        }
+    }
+    stats_was = stats;
     // fast forward: F9 held in the game window while it isn't paused (or, with [system] fast_forward_toggle, pressed
     // once to turn it on and again to turn it off); the guest's clocks run faster (kernel::SetSpeed) and the frame
     // limit, the vertical blanks and V-Sync let that many more frames through

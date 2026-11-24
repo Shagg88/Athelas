@@ -68,6 +68,7 @@ void Load() {
         } catch (...) {
         }
     }
+    logx::SetLevel(int(Get().log_level));
     // a launcher's new settings file starts with every setting at its default; an older flat file is written again
     // in sections at once, its values kept, so a launcher finds the layout it edits
     if ((fresh && !Args().config.empty()) || old_layout) {

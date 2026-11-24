@@ -224,6 +224,14 @@ std::vector<cfg::Desc> SettingsList() {
                  "F9 turns fast forward on with one press and off with the next, instead of being held. On a "
                  "controller, Back + right stick click always turns it on and off.",
                  &s.fast_forward_toggle});
+    l.push_back({"log", "level", Type::Choice, "Logging",
+                 "How much the game writes to its log, for problem reports.\nNormal: settings, your PC and problems "
+                 "only.\nDetailed: also every controller, keyboard and mouse button press, the game files opened and the one-time "
+                 "notes about fixes at work. Use it to show a bug that depends on what you pressed.\nFull diagnostic: "
+                 "everything, with frame times each second. Logs get large and the game may run a little slower; "
+                 "turn it back to Normal afterwards.",
+                 nullptr, &s.log_level, nullptr, 0, 0, {"normal", "detailed", "full"}, nullptr, nullptr,
+                 {"Normal", "Detailed", "Full diagnostic"}});
     if (!kGame.achievements.empty())
         l.push_back({"achievements", "notify", Type::Bool, "Achievement notes",
                      "A note in the corner of the screen when you earn an achievement. The list is on the in-game "

@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <filesystem>
+#include <atomic>
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -18,6 +19,17 @@ static std::mutex g_mutex;
 static FILE* g_file = nullptr;
 static std::string g_path;
 static auto g_start = std::chrono::steady_clock::now();
+// XBE_LOG_ALL set: Detailed at least, whatever the setting (testing)
+static const int g_env_level = std::getenv("XBE_LOG_ALL") != nullptr ? 1 : 0;
+static std::atomic<int> g_level{g_env_level};
+
+void SetLevel(int level) {
+    level = std::max(g_env_level, std::min(2, std::max(0, level)));
+    int was = g_level.exchange(level);
+    static const char* names[] = {"Normal", "Detailed", "Full diagnostic"};
+    if (level != was) Write(Level::Report, "log: %s logging", names[level]);
+}
+int GetLevel() { return kVerbose ? 2 : g_level.load(std::memory_order_relaxed); }
 
 constexpr int kKeep = 30;
 
@@ -52,9 +64,9 @@ void Init(const std::string& dir, const std::string& prefix, bool append) {
 const std::string& Path() { return g_path; }
 
 void Write(Level lv, const char* fmt, ...) {
-    // XBE_LOG_ALL set: a release build keeps its Info and Warn lines too (testing: the one-time notices, LOG_FIRST)
-    static const bool all = kVerbose || std::getenv("XBE_LOG_ALL") != nullptr;
-    if (!kVerbose && lv < (all ? Level::Info : Level::Error)) return;
+    // the level: Normal keeps Report and Error lines, Detailed Info and Warn too, Full Debug too
+    int level = GetLevel();
+    if (lv < (level >= 2 ? Level::Debug : level == 1 ? Level::Info : Level::Error)) return;
     char msg[4096];
     va_list ap;
     va_start(ap, fmt);
@@ -65,12 +77,13 @@ void Write(Level lv, const char* fmt, ...) {
     auto tid = std::hash<std::thread::id>()(std::this_thread::get_id()) & 0xFFFF;
     std::lock_guard<std::mutex> lock(g_mutex);
     char line[4300];
-    int n = kVerbose ? std::snprintf(line, sizeof(line), "[%9.3f] [%s] [t%04zx] %s\n", t, names[int(lv)], size_t(tid), msg)
+    bool full = kVerbose || level >= 2;  // Full: the level and thread of each line, as a debug build's
+    int n = full ? std::snprintf(line, sizeof(line), "[%9.3f] [%s] [t%04zx] %s\n", t, names[int(lv)], size_t(tid), msg)
                      : std::snprintf(line, sizeof(line), "[%9.3f] %s%s\n", t, lv == Level::Error ? "error: " : "", msg);
     n = std::min(n, int(sizeof(line)) - 1);
     if (g_file) {
         std::fwrite(line, 1, size_t(n), g_file);
-        if (lv >= Level::Warn) std::fflush(g_file);
+        if (lv >= Level::Warn || level >= 2) std::fflush(g_file);
     }
     std::fwrite(line, 1, size_t(n), stderr);
 }

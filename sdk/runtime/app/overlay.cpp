@@ -85,6 +85,7 @@ void Close() {
     if (g_dirty.exchange(false)) {
         if (kGame.save_settings) kGame.save_settings();
         else Save();
+        logx::SetLevel(int(Get().log_level));  // [log] level changed in the menu: from now on
         LOGR("menu: settings saved");
     }
     g_open = false;
@@ -102,7 +103,7 @@ constexpr const char* kLive[] = {
     "graphics.anisotropic_filtering", "graphics.lod_bias", "graphics.console_textures", "graphics.sharpening", "graphics.smooth_2d",
     "graphics.colour_look", "graphics.look_strength", "graphics.brightness", "graphics.movie_display",
     "graphics.movie_sharpening", "graphics.cutscene_audio_delay", "input.vibration", "input.stick_deadzone",
-    "input.trigger_threshold", "window.pause_unfocused", "window.mute_unfocused", "window.background_input", "keyboard.mouse_aim", "keyboard.mouse_camera", "keyboard.mouse_sensitivity", "keyboard.mouse_invert_y", "keyboard.mouse_menus", "keyboard.enabled", "input.invert_camera_y", "input.invert_camera_x",
+    "input.trigger_threshold", "window.pause_unfocused", "window.mute_unfocused", "window.background_input", "keyboard.mouse_aim", "keyboard.mouse_camera", "keyboard.mouse_sensitivity", "keyboard.mouse_invert_y", "keyboard.mouse_menus", "keyboard.enabled", "input.invert_camera_y", "input.invert_camera_x", "log.level",
     "keyboard.player", "achievements.notify", "discord.enabled", "system.fast_forward_speed", "system.fast_forward_toggle"};
 
 bool IsLive(const cfg::Desc& d) {

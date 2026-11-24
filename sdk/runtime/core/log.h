@@ -13,6 +13,11 @@ enum class Level { Debug, Info, Warn, Error, Report };
 void Init(const std::string& dir, const std::string& prefix, bool append = false);
 void Write(Level lv, const char* fmt, ...) __attribute__((format(printf, 2, 3)));
 void Flush();
+// [log] level: 0 Normal (reports and errors), 1 Detailed (every info and warning line too: one-time notices,
+// controller presses, files opened), 2 Full diagnostic (debug lines too, frame times each second, every line written
+// to the file at once so a crash loses nothing)
+void SetLevel(int level);
+int GetLevel();
 const std::string& Path();
 
 #ifdef NDEBUG

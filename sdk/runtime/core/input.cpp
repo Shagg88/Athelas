@@ -6,6 +6,7 @@
 #include <cstring>
 #include <iterator>
 #include <mutex>
+#include <string>
 
 #include <SDL3/SDL.h>
 #ifdef _WIN32
@@ -275,6 +276,47 @@ Pad Read(int port, bool remap) {
 }
 }  // namespace
 
+namespace {
+// [log] level Detailed and up: each button the game sees go down or up (controller, keyboard and mouse merged), with
+// the frame time, so a report shows what was pressed when (#56: a No taken as Yes)
+void LogPresses(int port, const Pad& p) {
+    static const char* kDigital[8] = {"Up", "Down", "Left", "Right", "Start", "Back", "LS", "RS"};
+    static const char* kAnalog[8] = {"A", "B", "X", "Y", "Black", "White", "LT", "RT"};
+    static uint32_t was[4] = {};
+    static bool connected[4] = {};
+    static int level_was = 0;
+    if (port < 0 || port >= 4) return;
+    // any game thread may read a controller: one at a time here (only at Detailed and up)
+    static std::mutex m;
+    std::lock_guard<std::mutex> lock(m);
+    // logging just turned on (or up): what is held now is the starting point, not a press
+    int level = logx::GetLevel();
+    if (level != level_was) {
+        level_was = level;
+        for (int i = 0; i < 4; i++) was[i] = 0, connected[i] = false;
+    }
+    uint32_t now = p.buttons & 0xFF;
+    for (int i = 0; i < 8; i++)
+        if (p.analog[i] > 0x20) now |= 1u << (8 + i);
+    if (p.connected != connected[port]) {
+        connected[port] = p.connected;
+        LOGI("input: port %d %s", port + 1, p.connected ? "connected" : "disconnected");
+    }
+    if (now == was[port]) return;
+    std::string down, up;
+    for (int i = 0; i < 16; i++) {
+        bool d = now >> i & 1, w = was[port] >> i & 1;
+        if (d == w) continue;
+        std::string& to = d ? down : up;
+        if (!to.empty()) to += ' ';
+        to += i < 8 ? kDigital[i] : kAnalog[i - 8];
+    }
+    was[port] = now;
+    LOGI("input: port %d%s%s%s%s", port + 1, down.empty() ? "" : " pressed ", down.c_str(), up.empty() ? "" : " released ",
+         up.c_str());
+}
+}  // namespace
+
 Pad Raw(int port) { return Read(port, false); }
 
 bool Connected(int port) { return Read(port, false).connected || keys::Claims(port); }
@@ -296,6 +338,7 @@ Pad Poll(int port) {
         if (app::Get().invert_camera_x) p.rx = flip(p.rx);
     }
     keys::Merge(port, p);
+    if (logx::GetLevel() >= 1) LogPresses(port, p);
     return p;
 }
 

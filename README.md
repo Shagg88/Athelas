@@ -99,6 +99,11 @@ Use **Report a problem** in the launcher: it packs the logs and settings into a 
 After a crash the zip also holds the game's crash file, a memory snapshot that can't be cleaned the same way; a
 switch beside the button leaves it out.
 
+For a bug that's hard to pin down, set **Logging** (each Xbox game's Gameplay tab, under More) to **Detailed** or
+**Full diagnostic** before you play, make the bug happen, then report it. Detailed adds every button you press and every
+game file opened; Full diagnostic adds everything else, including frame times each second. Set it back to Normal
+afterwards: the logs get large. For The Return of the King (PC), ROTK Fix's own `[Log] Detailed=1` does the same.
+
 ## Building
 
 Players don't need this. ROTK Fix and the launcher cross-compile on Linux with MinGW-w64:

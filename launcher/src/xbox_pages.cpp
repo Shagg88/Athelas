@@ -209,7 +209,7 @@ static int tt_tab_of(const std::string &sec)
     if (sec == "controls" || sec == "input") return 2;
     if (sec == "audio" || sec == "sound") return 3;
     if (sec == "network") return 4;
-    if (sec == "gameplay" || sec == "cheats" || sec == "achievements" || sec == "discord" || sec == "language") return 5;
+    if (sec == "gameplay" || sec == "cheats" || sec == "achievements" || sec == "discord" || sec == "language" || sec == "log") return 5;
     return 1;   // graphics, textures and anything else
 }
 
