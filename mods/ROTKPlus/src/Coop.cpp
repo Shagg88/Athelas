@@ -27,6 +27,8 @@ static const uintptr_t kHeroP1       = 0x562A84;   // hero chosen by player 1 (0
 static const uintptr_t kHeroP2       = 0x562A88;   // hero chosen by player 2
 static const uintptr_t kCoopMode     = 0x562A98;   // 1 = co-op game
 static const uintptr_t kCharNames    = 0x562448;   // const char* [9]: "char_ara.sc" ...
+static const uintptr_t kFollNames    = 0x56246C;   // const char* [9]: "foll_ara.sc" ...
+static const uintptr_t kLevel        = 0x562A54;   // current level (5 = Black Gate, 12 = Crack of Doom)
 static const uintptr_t kSpawnPlayer  = 0x492AC0;   // void __cdecl(int n), start entity in ebx
 static const uintptr_t kLoadPackages = 0x4E0690;   // int __cdecl(list*)
 
@@ -152,6 +154,22 @@ static uint32_t __cdecl OtherForDeath(uint32_t c)
     return def;
 }
 
+// --- package of a hero, with the game's per-level variants --------------------------------
+// 0x47FD40 (players, char_) and 0x47FDF0 (allies, foll_) do not always take the table: at the Black Gate (level 5)
+// Aragorn is Char_ArC / Foll_ArC (model ARAc.g3d, the one the level's opening scene with the Mouth of Sauron is made
+// for), at the Crack of Doom (level 12) Sam is Char_SaC / Foll_SaC and Frodo Char_FrD / Foll_FrD. Until 1.4.0 the
+// extra players always got the table's package: Aragorn as third or fourth player at the Black Gate stayed in the rest
+// pose (arms open, once in mid-air) after the opening scene, while as player 1 or 2 he was fine. Returns the name
+// without the final 'w' ("Char_ArC.sc"), like the game's functions, or the table's one outside those cases.
+static const char* PackageOf(int hero, bool follower)
+{
+    const int level = *(const int*)kLevel;
+    if (level == 5 && hero == 0) return (const char*)(follower ? 0x539B04 : 0x539AE0);    // Foll_ArC / Char_ArC
+    if (level == 12 && hero == 4) return (const char*)(follower ? 0x539AF8 : 0x539AD4);   // Foll_SaC / Char_SaC
+    if (level == 12 && hero == 5) return (const char*)(follower ? 0x539B2C : 0x539B20);   // Foll_FrD / Char_FrD
+    return ((const char* const*)(follower ? kFollNames : kCharNames))[hero];
+}
+
 // --- loader: adds the extra players' char_xxx.scw before the last package (the level) -----
 // The list has 8 slots (the loader copies 0x204 bytes of it, 0x4E0690): LoadOnce, GlobScen, two char_, the allies'
 // foll_, one char_ per extra player and the level. With four players there is room for only one ally: the others are
@@ -162,7 +180,7 @@ static bool DropAlly(PackageList* list)
         const int ally = ReadHero(0x562A8C + 4 * k);
         if (ally < 0) continue;
         char path[64];
-        sprintf_s(path, "Data/Player/foll_%sw", ((const char* const*)kCharNames)[ally] + 5);
+        sprintf_s(path, "Data/Player/%sw", PackageOf(ally, true));   // Foll_ArC at the Black Gate
         for (int i = 0; i < list->count && i < 8; ++i)
             if (!_stricmp(list->path[i], path)) {
                 for (int j = i; j + 1 < list->count && j + 1 < 8; ++j) memcpy(list->path[j], list->path[j + 1], 64);
@@ -199,7 +217,7 @@ static int __cdecl LoadPackages(PackageList* list)
                 break;
             }
             char path[64];
-            sprintf_s(path, "Data/Player/%sw", ((const char* const*)kCharNames)[h]);
+            sprintf_s(path, "Data/Player/%sw", PackageOf(h, false));   // Char_ArC for Aragorn at the Black Gate
             const int last = list->count - 1;
             memcpy(list->path[last + 1], list->path[last], 64);
             strcpy_s(list->path[last], path);
