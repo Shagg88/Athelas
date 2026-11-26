@@ -575,7 +575,9 @@ static uint64_t Offset(File& f, uint32_t off) {
 }
 
 // pages is the FILE_SEGMENT_ELEMENT array for scatter and gather, 0 for one buffer
-static uint32_t Transfer(const Args& a, bool write, uint32_t pages) {
+// got: the bytes moved (0 for any early end)
+static uint32_t Transfer(const Args& a, bool write, uint32_t pages, uint32_t* got = nullptr) {
+    if (got) *got = 0;
     uint32_t h = a[0], event = a[1], apc = a[2], apc_ctx = a[3], iosb = a[4], buf = a[5], len = a[6], off = a[7];
     auto f = FileFromHandle(h);
     if (!f || (!f->fp && !f->entry && !f->mem)) return kInvalidHandle;
@@ -599,6 +601,7 @@ static uint32_t Transfer(const Args& a, bool write, uint32_t pages) {
         if (done < chunk) break;
     }
     f->pos = pos + n;
+    if (got) *got = n;
     if (write && n < len) return Finish(*f, 0xC000007F, n, event, apc, apc_ctx, iosb);  // disk full
     if (!write && len && !n) return Finish(*f, kEndOfFile, 0, event, apc, apc_ctx, iosb);
     return Finish(*f, kSuccess, n, event, apc, apc_ctx, iosb);
@@ -608,10 +611,13 @@ static uint32_t Transfer(const Args& a, bool write, uint32_t pages) {
 static uint32_t TimedRead(const Args& a, uint32_t pages) {
     Blocking told;
     int64_t t = WorkNow();
-    uint32_t r = Transfer(a, false, pages);
+    uint32_t got = 0;
+    uint32_t r = Transfer(a, false, pages, &got);
     auto f = FileFromHandle(a[0]);
-    CountRead(WorkNow() - t, a[6], f ? f->xbox : std::string());
-    if (f && app::kGame.file_read) app::kGame.file_read(f->xbox.c_str());
+    // the bytes read, not asked for (a 64 KiB ask at the file's end counted 64 KiB); and the game's callback only
+    // when something was read (an end-of-file probe refreshed The Third Age's movie state; to-do 1.9.3)
+    CountRead(WorkNow() - t, got, f ? f->xbox : std::string());
+    if (got && f && app::kGame.file_read) app::kGame.file_read(f->xbox.c_str());
     return r;
 }
 
@@ -694,10 +700,25 @@ KERNEL_EXPORT(226, NtSetInformationFile, 5) {
         case 19:  // allocation: only a size below the end of file cuts it
         case 20:  // end of file
             if (f->fp) {
+                // a failure is told to the game (it was "done" whatever happened: a save could believe its file had
+                // grown; to-do 1.9.3); judged by the size the file ends up at, so a harmless error doesn't fail a save
                 std::lock_guard<std::mutex> lock(f->io);
-                std::fflush(f->fp);
+                uint64_t want = R64(in);
+                bool flushed = std::fflush(f->fp) == 0;
                 uint64_t size = fs::file_size(f->host, ec);
-                if (cls == 20 || R64(in) < size) fs::resize_file(f->host, R64(in), ec);
+                bool ok = flushed && !ec;
+                if (ok && (cls == 20 || want < size)) {
+                    fs::resize_file(f->host, want, ec);
+                    std::error_code ec2;
+                    ok = fs::file_size(f->host, ec2) == want && !ec2;
+                }
+                if (!ok) {
+                    LOGW("NtSetInformationFile: %s could not be set to %llu bytes (%s)", f->xbox.c_str(),
+                         (unsigned long long)want, ec ? ec.message().c_str() : "flush failed");
+                    uint32_t st = ec == std::errc::permission_denied ? kAccessDenied : kUnsuccessful;
+                    IoStatus(iosb, st, 0);
+                    return st;
+                }
             }
             break;
         case 13:  // disposition
@@ -836,10 +857,18 @@ KERNEL_EXPORT(195, NtDeleteFile, 1) {
 }
 
 KERNEL_EXPORT(198, NtFlushBuffersFile, 2) {
-    if (auto f = FileFromHandle(a[0]))
-        if (f->fp) std::fflush(f->fp);
-    IoStatus(a[1], kSuccess, 0);
-    return kSuccess;
+    // a failed flush or a handle that isn't a file is told to the game, as Windows would (to-do 1.9.3)
+    auto f = FileFromHandle(a[0]);
+    uint32_t st = f ? kSuccess : kInvalidHandle;
+    if (f && f->fp) {
+        std::lock_guard<std::mutex> lock(f->io);
+        if (std::fflush(f->fp) != 0) {
+            st = kUnsuccessful;
+            LOGW("NtFlushBuffersFile: %s could not be written out", f->xbox.c_str());
+        }
+    }
+    IoStatus(a[1], st, 0);
+    return st;
 }
 
 KERNEL_EXPORT(200, NtFsControlFile, 10) {

@@ -12,7 +12,7 @@ launcher, Athelas (Athelas.exe - named after kingsfoil, the healing herb):
 - The Return of the King (Xbox), through its native PC port, ROTKXbox.exe.
 - The Two Towers (Xbox), through its native PC port, TwoTowers.exe.
 - The Fellowship of the Ring (Xbox), through its native PC port,
-  FOTRXbox.exe (new in 1.4, a first version).
+  FOTRXbox.exe.
 - The Third Age (Xbox), through its native PC port, TAXbox.exe (early).
 
 Not affiliated with or endorsed by Electronic Arts, New Line Cinema, Warner
@@ -52,8 +52,9 @@ REQUIREMENTS
   current driver). Without one the game still runs through Windows' own (Wine's own under Proton)
   Direct3D 8, but sharpening, colour looks and texture filtering are off;
   the launcher's About tab shows which one you have.
-- The Two Towers, The Return of the King and The Fellowship of the Ring
-  (Xbox): your own US Xbox copy, and a DirectX 12 graphics card.
+- The Two Towers, The Return of the King, The Fellowship of the Ring and The
+  Third Age (Xbox): your own US Xbox copy, and a graphics card with DirectX 12
+  or Vulkan (Graphics API on each game's Graphics tab).
 - ROTK (PC) 3D sound and EAX need Microsoft's free "Visual C++ Redistributable
   (x86)", which most PCs already have from other games. Without it the game
   plays its original sound, and the launcher's sound setting says so.
@@ -220,8 +221,9 @@ adjustable damage for each side.
 - Keyboard and mouse or controller (see KEYBOARD, MOUSE AND THE IN-GAME
   MENU below).
 - Button pictures (Controls tab): the game's hints and menus show Xbox,
-  PlayStation or Nintendo buttons, or the keyboard's keys. Auto follows what
-  you play with. The same in all three Xbox ports.
+  PlayStation, Nintendo, Steam Deck or Steam Controller buttons, or the
+  keyboard's keys. Auto follows what you play with. The same in all four
+  Xbox ports.
 - Unlock all levels and characters (Gameplay tab): every level, Isildur and
   the extras from the start, as once the game is beaten. Your saved progress
   isn't changed.
@@ -236,7 +238,8 @@ adjustable damage for each side.
   the ones that take effect at once are also in the in-game menu (F10).
   Its saves are in TT-Xbox\saves.
 - The game's own files are only read, never changed.
-- Needs Windows 10 or 11 (64-bit) and a Direct3D 12 graphics card.
+- Needs Windows 10 or 11 (64-bit) and a graphics card with DirectX 12 or
+  Vulkan.
 
 Keys while playing: see KEYBOARD, MOUSE AND THE IN-GAME MENU below.
 
@@ -255,7 +258,8 @@ fixes for slowdowns and vanishing enemies at high frame rates.
   release). Nothing in it is changed.
 - Sharper text and menus: if you also have The Return of the King (PC), its
   larger fonts and menu pictures are used (Graphics tab). Not required.
-- Needs Windows 10 or 11 (64-bit) and a Direct3D 12 graphics card.
+- Needs Windows 10 or 11 (64-bit) and a graphics card with DirectX 12 or
+  Vulkan.
 - Co-op: two players on one screen, with two controllers (or a controller
   and the keyboard); it can also be played online, built in (experimental)
   or by streaming (see PLAYING CO-OP ONLINE).
@@ -278,12 +282,10 @@ Its saves are in ROTK-Xbox\saves.
 Reporting a problem: see REPORTING A PROBLEM below. The log is
 ROTK-Xbox\rotkx.log, and after a crash the newest .dmp in ROTK-Xbox\CrashDumps.
 
-THE FELLOWSHIP OF THE RING (XBOX) - first version
--------------------------------------------------
-New in 1.4: an unofficial native PC port of the Xbox game (US release, 2002),
-in the FOTR-Xbox folder and started from Athelas. This is its first version:
-every level starts and runs in testing, but it hasn't been played much yet,
-so please report anything that goes wrong.
+THE FELLOWSHIP OF THE RING (XBOX)
+---------------------------------
+An unofficial native PC port of the Xbox game (US release, 2002), in the
+FOTR-Xbox folder and started from Athelas.
 - Needs your own Xbox disc dump: the extracted folder or an .iso (US
   release). Nothing in it is changed.
 - It plays as on the Xbox by default: 30 fps and the console's 4:3. Options:
@@ -308,9 +310,11 @@ so please report anything that goes wrong.
 - Achievements: one for each part of the journey and one for the whole
   story (see ACHIEVEMENTS).
 - Controls tab: the controller's buttons, named after the game's own moves,
-  and Button pictures: the hints and menus show Xbox, PlayStation or Nintendo
-  buttons, or the keyboard's keys (Auto follows what you play with).
-- Needs Windows 10 or 11 (64-bit) and a Direct3D 12 graphics card.
+  and Button pictures: the hints and menus show Xbox, PlayStation, Nintendo,
+  Steam Deck or Steam Controller buttons, or the keyboard's keys (Auto
+  follows what you play with).
+- Needs Windows 10 or 11 (64-bit) and a graphics card with DirectX 12 or
+  Vulkan.
 
 Settings: on the launcher's Fellowship of the Ring page (or in
 FOTR-Xbox\settings.toml). Its saves are in FOTR-Xbox\saves.
@@ -318,9 +322,45 @@ FOTR-Xbox\settings.toml). Its saves are in FOTR-Xbox\saves.
 Reporting a problem: see REPORTING A PROBLEM below. The log is
 FOTR-Xbox\fotrx.log, and after a crash the newest .dmp in FOTR-Xbox\CrashDumps.
 
+THE THIRD AGE (XBOX)
+--------------------
+An unofficial native PC port of the Xbox game (US release, 2004), in the
+TA-Xbox folder and started from Athelas. It is the newest of the ports and
+still being polished: please report anything that goes wrong.
+- Needs your own Xbox disc dump: the extracted folder or an .iso (US
+  release). Nothing in it is changed.
+- It plays as on the Xbox by default: 30 fps and the console's 4:3. Options:
+  frame rates up to 240 or Unlocked (the game keeps its normal speed),
+  widescreen and ultrawide (see WIDE AND ULTRAWIDE SCREENS), the HUD at the
+  screen's edges, field of view, draw distance, render resolution,
+  anti-aliasing, texture filtering, sharpening, upscaling, the Original /
+  Balanced / High / Ultra presets, skip the opening logos or all videos, and
+  movie zoom for the films.
+- Sharper text (Graphics tab): the game's text redrawn sharp at high
+  resolutions.
+- Battle speed (Gameplay tab): battles at 2x, 3x or 4x, back to normal as
+  soon as the battle ends. F9 (or Back + a stick click) is fast forward at
+  any time.
+- Difficulty (Gameplay tab): the damage you take and the damage enemies
+  take, each as a share of the game's own. A blow that would fell its target
+  at the normal damage still does: the settings change how many blows a
+  fight takes.
+- Unlock Evil Mode for every save, and cheats as switches: invulnerable and
+  infinite AP.
+- Invert camera (Controls tab), up/down and left/right.
+- Button pictures: Xbox, PlayStation, Nintendo, Steam Deck, Steam Controller
+  or the keyboard's keys (Auto follows what you play with).
+- Achievements (see ACHIEVEMENTS).
 
-KEYBOARD, MOUSE AND THE IN-GAME MENU (the three Xbox ports)
------------------------------------------------------------
+Settings: on the launcher's Third Age page (or in TA-Xbox\settings.toml).
+Its saves are in TA-Xbox\saves.
+
+Reporting a problem: see REPORTING A PROBLEM below. The log is
+TA-Xbox\ta.log, and after a crash the newest .dmp in TA-Xbox\CrashDumps.
+
+
+KEYBOARD, MOUSE AND THE IN-GAME MENU (the Xbox ports)
+-----------------------------------------------------
 Keyboard and mouse work as well as a controller, as player 1 or player 2
 (Controls tab). The keys are the PC version of The Return of the King's:
   W A S D              Move (hold Left Alt to walk)
@@ -378,20 +418,53 @@ are earned as you play, and what your saves already hold counts too, so an
 old save earns the levels it has finished the first time you play. The
 Fellowship of the Ring has 8: one for each part of the journey (the Shire,
 the Old Forest, Bree, Weathertop, Rivendell, Moria, Lothlorien), earned when
-you reach the next, and one for the whole story.
+you reach the next, and one for the whole story. The Third Age has one for
+each area you come through, deeds for enemies defeated, and Fate.
 
 A note shows in the bottom right corner when you earn one ("Achievement
 notes", Gameplay tab; on the PC version with the Vulkan renderer, the
 default). The launcher's Gameplay tab lists them, earned and not, and the
 in-game menu (F10) has an Achievements page in the Xbox ports. They are kept
 in achievements.txt: in the ROTKFix folder in the game folder for the PC
-version, and in the TT-Xbox, ROTK-Xbox and FOTR-Xbox folders for the ports. They are
+version, and in the TT-Xbox, ROTK-Xbox, FOTR-Xbox and TA-Xbox folders for
+the ports. They are
 only kept on this PC; nothing is sent anywhere.
+
+
+COMMON PROBLEMS
+---------------
+The game won't start, or the launcher says it's another release
+  Athelas plays the US Xbox releases only (see SUPPORTED GAME VERSION). A
+  different release is named before the game starts; "Start anyway" tries
+  it, but it may not work. Check the disc image isn't damaged: dump it again
+  if in doubt.
+Black screen, crash at the start, or "no DirectX 12"
+  Update your graphics driver first. Then try the other Graphics API on the
+  game's Graphics tab (Direct3D 12 or Vulkan). A card without either can't run
+  the Xbox games. On Steam Deck and Linux see STEAM DECK AND LINUX.
+Dragging a game onto the launcher shows a "no" sign
+  Fixed in 1.9.4. On older versions: start the launcher normally, not "as
+  administrator".
+No sound (The Return of the King, PC)
+  Install Microsoft's "Visual C++ Redistributable (x86)" (see REQUIREMENTS).
+  For the other games check Windows' default sound device, then restart the
+  game.
+The game runs too fast or stutters
+  Choose a frame rate your screen can keep up with (or the Original preset),
+  and check fast forward isn't on (F9).
+The controller does nothing, or moves two players
+  Turn off Steam Input (or other controller remapping programs) for Athelas,
+  and on the Controls tab check which controller is player 1.
+My saves are gone after updating
+  Saves are kept beside the launcher (see YOUR SAVES, LOGS AND THE
+  LAUNCHER'S WINDOW); earlier saves in a game's own folder are brought over
+  at the first Play. Use Back up saves before big changes.
+Anything else: REPORTING A PROBLEM below.
 
 
 REPORTING A PROBLEM
 -------------------
-The quickest way: on the launcher's About tab, press "Make a problem report"
+The quickest way: on the launcher's About tab, press "Report a problem"
 (the same button is offered after a crash). It puts the logs, the settings,
 the newest crash dump of each Xbox port and a description of your PC
 (Windows, processor, graphics card and driver, screens, controllers) into one
@@ -402,12 +475,20 @@ Athelas sends nothing itself; your Windows user name is taken out of the
 files, but the folder names where your games are stay. A free GitHub account
 is needed.
 
+For a bug that's hard to pin down, set Logging (each Xbox game's Gameplay
+tab, under More, or the in-game menu) to Detailed or Full diagnostic before
+you play, make the bug happen, then report it. Detailed adds every button you
+press and every game file opened (and in The Third Age, each blow in battle);
+Full diagnostic adds everything else, with frame times each second. Set it
+back to Normal afterwards: the logs get large.
+
 By hand: open an issue at https://github.com/Shagg88/Athelas/issues and
 attach the log:
   The Return of the King (PC)    ROTKFix.log in the game folder
   The Return of the King (Xbox)  ROTK-Xbox\rotkx.log
   The Two Towers                 TT-Xbox\tt.log
   The Fellowship of the Ring     FOTR-Xbox\fotrx.log
+  The Third Age                  TA-Xbox\ta.log
 After an Xbox port crashes, also the newest .dmp file in its CrashDumps folder,
 zipped first (right-click > Compress to ZIP file).
 
@@ -643,7 +724,8 @@ The Fellowship of the Ring (Xbox) does the same with widescreen on: the world
 reaches the sides of a 21:9 or 32:9 screen, and its HUD and menus stay 16:9 in
 the middle (the menus with bars at the sides). Its films keep 16:9 at most.
 To try an ultrawide shape on a normal monitor, set Display mode to Windowed:
-the Resolution list then also offers window sizes such as 2560 x 1080 (21:9).
+the Resolution list then also offers window sizes such as 2560 x 1080 (21:9)
+and 1280 x 800 (16:10, the Steam Deck's).
 
 
 SUPPORTED GAME VERSION
@@ -665,12 +747,12 @@ If you play from an image of your own disc, mount it in a virtual drive before
 pressing Play. The launcher shows "Disc version (protected)" for this copy.
 
 
-MOVIE SUBTITLES (the three Xbox ports)
---------------------------------------
+MOVIE SUBTITLES (the Xbox ports)
+--------------------------------
 The games have no subtitles for their film clips. The ports show them from
 subtitle files you add: an .srt file (the common SubRip format, UTF-8) named
 as the movie, in the subtitles folder of that game's port (TT-Xbox,
-ROTK-Xbox or FOTR-Xbox; the Graphics tab's Movies section has a button that
+ROTK-Xbox, FOTR-Xbox or TA-Xbox; the Graphics tab's Movies section has a button that
 opens it). The log names each movie as it starts ("subtitles: ... the movie
 fmv_2"). "Movie subtitles" on the same tab turns them off.
 
@@ -682,8 +764,9 @@ The Return of the King (Xbox): ROTK-Xbox\settings.toml. (Up to 1.5 it shared
 ROTKFix.ini with the PC version; 1.5.1 brings those settings over once.)
 The Two Towers: TT-Xbox\settings.toml.
 The Fellowship of the Ring: FOTR-Xbox\settings.toml.
+The Third Age: TA-Xbox\settings.toml.
 
-Starting ROTKXbox.exe, TwoTowers.exe or FOTRXbox.exe directly, without the
+Starting ROTKXbox.exe, TwoTowers.exe, FOTRXbox.exe or TAXbox.exe directly, without the
 launcher, uses the same settings.
 
 

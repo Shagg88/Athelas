@@ -123,6 +123,7 @@ void FileRead(const char* name) {
         gpu::g_movie_shape = gpu::kMovieFit;
         gpu::g_movie_fit_zoom = logo ? 1.0f : ta::g_movie_zoom / 100.0f;
         LOGR("ta: movie %s (fit, zoom %u%%)", SceneName(name).c_str(), logo ? 100u : ta::g_movie_zoom);
+        app::MovieSubtitles(vid);  // [graphics] movie_subtitles: subtitles\<name>.srt, as the other ports
         std::lock_guard lock(g_lock);
         g_vid_name = SceneName(name);
         g_vid_started = NowMs();

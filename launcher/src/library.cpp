@@ -197,9 +197,10 @@ static GameKind detect_iso(const std::string &path, LibGame &out)
     Reader r;
     r.f = fopen(path.c_str(), "rb");
     if (!r.f) return GK_NONE;
-    // game partition at the start (extracted game partition), or after the video
-    // partition in full dumps (XGD1, XGD2, XGD3)
-    static const unsigned long long starts[] = { 0, 0x18300000ull, 0xFD90000ull, 0x89D80000ull };
+    // game partition at the start (extracted game partition), or after the video partition in a full dump: the
+    // places the game itself (sdk/runtime/kernel/disc.cpp kPartitions) looks, so an image listed here can be started
+    // (the XGD2/XGD3 places, Xbox 360 discs, were listed too and the game then couldn't open them; to-do 1.9.3)
+    static const unsigned long long starts[] = { 0, 0x18300000ull };
     GameKind k = GK_NONE;
     for (unsigned long long s : starts) {
         r.base = s;

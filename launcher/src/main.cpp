@@ -283,6 +283,29 @@ static DWORD WINAPI cleanup_thread(LPVOID) { builder_cleanup_old(); return 0; }
 // frame is on screen
 static LARGE_INTEGER g_st0;
 static std::string g_stLog;
+// Running as administrator (a ROTK PC copy under Program Files restarts the launcher elevated so its settings can be
+// saved there), Windows won't let Explorer, which isn't elevated, drag files onto the window: the red "no" sign, and
+// no game could be added by dragging (#113). OLE drag and drop (SDL's) can't be let through; the older WM_DROPFILES
+// can, so on an elevated launcher SDL's OLE target is swapped for it (SDL turns WM_DROPFILES into the same drop event).
+static void allow_drops_when_elevated(SDL_Window *w)
+{
+    HANDLE tok = NULL;
+    TOKEN_ELEVATION el = {};
+    DWORD n = 0;
+    bool elevated = OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &tok) &&
+                    GetTokenInformation(tok, TokenElevation, &el, sizeof el, &n) && el.TokenIsElevated;
+    if (tok) CloseHandle(tok);
+    if (!elevated) return;
+    HWND h = (HWND)SDL_GetPointerProperty(SDL_GetWindowProperties(w), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+    if (!h) return;
+    RevokeDragDrop(h);
+    DragAcceptFiles(h, TRUE);
+    ChangeWindowMessageFilterEx(h, WM_DROPFILES, MSGFLT_ALLOW, NULL);
+    ChangeWindowMessageFilterEx(h, WM_COPYDATA, MSGFLT_ALLOW, NULL);
+    ChangeWindowMessageFilterEx(h, 0x0049 /* WM_COPYGLOBALDATA */, MSGFLT_ALLOW, NULL);
+    SDL_Log("running as administrator: dropping files allowed through WM_DROPFILES");
+}
+
 static void st_mark(const char *what)
 {
     if (!getenv("ATHELAS_TIMING")) return;
@@ -353,6 +376,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR cmdLine, int)
     if (win) {
         SDL_SetWindowMinimumSize(win, 640, 460);
         SDL_SetWindowHitTest(win, window_hit, nullptr);
+        allow_drops_when_elevated(win);
     }
     SDL_Renderer *ren = win ? SDL_CreateRenderer(win, NULL) : nullptr;
     if (!ren) { MessageBoxA(NULL, SDL_GetError(), "Athelas", MB_ICONERROR); return 1; }

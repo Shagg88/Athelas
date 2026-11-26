@@ -6,7 +6,9 @@
 
 // Zip every file under dir (its sub-folders kept) into zipPath, then open the zip again and check each file is in it
 // with its size. False (and the half-made zip deleted) on any problem; files = how many went in.
-bool backup_folder(const std::string &dir, const std::string &zipPath, int &files, std::string &err, const std::string &game);
+// empty: set when there was nothing to back up (no files in dir), so a caller can say so without walking it first
+bool backup_folder(const std::string &dir, const std::string &zipPath, int &files, std::string &err, const std::string &game,
+                   bool *empty = nullptr);
 // The newest backup names: "<desktop>\Athelas saves - <game> - 2026-10-28 09-41.zip"
 std::string backup_name(const std::string &game);
 std::string desktop_dir();

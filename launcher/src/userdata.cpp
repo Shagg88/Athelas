@@ -117,13 +117,15 @@ static long long file_size(const std::string &p)
 }
 
 static const char *kMarker = "athelas-backup.txt";   // in every backup: which game's saves it holds
-bool backup_folder(const std::string &dir, const std::string &zipPath, int &files, std::string &err, const std::string &game)
+bool backup_folder(const std::string &dir, const std::string &zipPath, int &files, std::string &err, const std::string &game,
+                   bool *empty)
 {
     files = 0;
+    if (empty) *empty = false;
     std::vector<std::string> list;
     std::string unread;
     if (!list_files(dir, "", list, &unread)) { err = "The backup wasn't made: " + unread + " couldn't be read (is the game still running?)"; return false; }
-    if (list.empty()) { err = "There are no saves in " + dir + " yet."; return false; }
+    if (list.empty()) { if (empty) *empty = true; err = "There are no saves in " + dir + " yet."; return false; }
     if (GetFileAttributesA(zipPath.c_str()) != INVALID_FILE_ATTRIBUTES) { err = zipPath + " is already there."; return false; }
     // written beside it under another name, and given its own name only once it has been read back (an earlier
     // backup is never overwritten or deleted)
@@ -158,6 +160,12 @@ bool backup_folder(const std::string &dir, const std::string &zipPath, int &file
                     err = "The backup didn't check out (" + r + ")";
                     break;
                 }
+            }
+            // and every file's contents (CRC): a damaged byte passes the names and sizes, and a restore trusts this
+            // backup before setting the current saves aside (to-do 1.9.3)
+            if (ok && !mz_zip_validate_archive(&rz, 0)) {
+                ok = false;
+                err = "The backup's contents didn't check out";
             }
             mz_zip_reader_end(&rz);
         }
@@ -299,6 +307,26 @@ bool shaders_set_aside(const std::string &dir, std::string &movedTo, std::string
 
 static bool copy_file(const std::string &a, const std::string &b) { return CopyFileA(a.c_str(), b.c_str(), FALSE) != 0; }
 
+// a folder session_save made: "YYYY-MM-DD HH-MM-SS <game>", not a link, with its session.txt starting "Game: ". Only
+// these are pruned or opened: a player's own folder in Logs that starts with a digit ("0 - kept for support") was
+// taken for the oldest session and deleted (to-do 1.9.3)
+static bool is_session_dir(const std::string &logsDir, const WIN32_FIND_DATAA &fd)
+{
+    if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) || (fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) return false;
+    static const char shape[] = "dddd-dd-dd dd-dd-dd ";
+    const size_t n = sizeof shape - 1;
+    std::string name = fd.cFileName;
+    if (name.size() <= n) return false;
+    for (size_t i = 0; i < n; i++)
+        if (shape[i] == 'd' ? (name[i] < '0' || name[i] > '9') : name[i] != shape[i]) return false;
+    char line[8] = "";
+    FILE *f = fopen((logsDir + "\\" + name + "\\session.txt").c_str(), "rb");
+    if (!f) return false;
+    size_t got = fread(line, 1, 6, f);
+    fclose(f);
+    return got == 6 && memcmp(line, "Game: ", 6) == 0;
+}
+
 std::string session_save(const std::string &logsDir, const Session &s, unsigned long exitCode, const std::string &meaning, int keep)
 {
     SHCreateDirectoryExA(NULL, logsDir.c_str(), NULL);
@@ -341,7 +369,7 @@ std::string session_save(const std::string &logsDir, const Session &s, unsigned 
     WIN32_FIND_DATAA fd;
     HANDLE h = FindFirstFileA((logsDir + "\\*").c_str(), &fd);
     if (h != INVALID_HANDLE_VALUE) {
-        do if ((fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && fd.cFileName[0] >= '0' && fd.cFileName[0] <= '9') all.push_back(logsDir + "\\" + fd.cFileName);
+        do if (is_session_dir(logsDir, fd)) all.push_back(logsDir + "\\" + fd.cFileName);
         while (FindNextFileA(h, &fd));
         FindClose(h);
     }
@@ -359,7 +387,7 @@ std::string session_newest(const std::string &logsDir, const std::string &game)
     HANDLE h = FindFirstFileA((logsDir + "\\*").c_str(), &fd);
     if (h == INVALID_HANDLE_VALUE) return best;
     do {
-        if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) || fd.cFileName[0] < '0' || fd.cFileName[0] > '9') continue;
+        if (!is_session_dir(logsDir, fd)) continue;
         std::string n = fd.cFileName;
         if (!want.empty() && (n.size() != 19 + want.size() || _stricmp(n.c_str() + 19, want.c_str()))) continue;
         if (logsDir + "\\" + n > best) best = logsDir + "\\" + n;

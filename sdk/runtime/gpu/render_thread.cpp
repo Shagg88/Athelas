@@ -130,6 +130,17 @@ public:
         LOGR("render thread: %s", prep_on_ ? "with a prep thread (vertices assembled on a third core)" : "on its own");
     }
     ~Threaded() override {
+        // the prep thread (XBE_PREP_THREAD=1) feeds the renderer: it is stopped, and waited for, before the renderer
+        // is told to stop, or the renderer could leave on an empty queue while prep still uses this object (to-do 1.9.3)
+        if (prep_on_ && app::ExitingWith() < 0) {
+            std::unique_lock plock(pm_);
+            prep_stop_ = true;
+            pcv_.notify_all();
+            if (!pcv_.wait_for(plock, std::chrono::seconds(6), [&] { return prep_exited_; })) {
+                LOGE("render prep: still busy 6 s after the renderer was closed; ending the process");
+                TerminateProcess(GetCurrentProcess(), 1);
+            }
+        }
         {
             std::lock_guard lock(m_);
             stop_ = true;
@@ -140,10 +151,6 @@ public:
         }
         pcv_.notify_all();
         cv_.notify_all();
-        if (prep_on_) {  // the prep thread finishes the batch it holds before the renderer goes
-            std::unique_lock plock(pm_);
-            pcv_.wait_for(plock, std::chrono::milliseconds(500), [&] { return prep_exited_; });
-        }
         quit_.store(true);  // the worker drops what is left of its batches after the command it is running
         const int failing = app::ExitingWith();
         if (failing >= 0) return;   // the process is ending (Fail): its threads are already gone, nothing to wait for
@@ -273,11 +280,19 @@ public:
     bool Queries() const override { return inner_->Queries(); }
 
     uint32_t Fence() override { return uint32_t(cur_->id); }
-    bool FencePending(uint32_t fence) override { return fence > done_.load(); }
+    // a fence in the batch still being recorded: sent now, or a title polling for it (and drawing nothing more) would
+    // wait for ever, as only the render thread moves done_ on (to-do 1.9.3); the next poll sees a new batch: one send
+    bool FencePending(uint32_t fence) override {
+        if (fence == 0 || done_.load() >= fence) return false;
+        if (fence >= cur_->id) Submit();
+        return done_.load() < fence;
+    }
     void WaitFence(uint32_t fence) override { Wait(fence, WaitFor::Fence, "fence"); }
     bool Busy(uint32_t resource) override {
         auto it = last_use_.find(resource);
-        return it != last_use_.end() && it->second > done_.load();
+        if (it == last_use_.end() || it->second <= done_.load()) return false;
+        if (it->second >= cur_->id) Submit();  // used by the batch still being recorded: sent, as FencePending
+        return it->second > done_.load();
     }
     void WaitResource(uint32_t resource) override {
         auto it = last_use_.find(resource);

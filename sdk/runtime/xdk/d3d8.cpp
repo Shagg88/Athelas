@@ -401,6 +401,8 @@ void VerticalBlank(X86Context& ctx) {
 
 gpu::State& State() { return g_state; }
 
+uint32_t g_swap_blanks = 0;
+
 void WaitVBlank(int max_ms) {
     if (kernel::ls::InTurn()) {
         uint64_t seen;
@@ -814,6 +816,13 @@ HLE_STDCALL(D3DDevice_Swap, 1) {
     // (destructors run in reverse order): loader and streaming threads' D3D calls aren't held up for a whole frame
     struct AfterSwap {
         ~AfterSwap() {
+            if (kVBlank && g_swap_blanks && !kernel::ls::g_on) {
+                static uint32_t last = 0;
+                const auto until = std::chrono::steady_clock::now() + std::chrono::milliseconds(100);  // a pause: no blanks
+                while (Dev(XDK_CDevice_VBlankCount) - last < g_swap_blanks && std::chrono::steady_clock::now() < until)
+                    WaitVBlank(4);
+                last = Dev(XDK_CDevice_VBlankCount);
+            }
             app::Pace();
             if (kernel::ls::g_on && kernel::ls::InTurn()) LockstepFramePace();  // after the device lock (above)
             if (gpu::Backend* b = g_backend.get()) b->GameFrame();

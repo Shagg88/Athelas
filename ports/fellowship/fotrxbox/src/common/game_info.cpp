@@ -45,8 +45,8 @@ const app::GameInfo app::kGame = {
     // the game's own settings, in the settings file's [graphics]; defaults as on the console
     .options = {{"graphics", "fps", cfg::Type::Choice, "Frame rate",
                  "The game was made for 30 on the Xbox. Higher rates play at normal speed; movies keep their own pace.",
-                 nullptr, &fotr::g_fps, nullptr, 0, 0, {"30", "60", "90", "120", "144", "165", "180", "240"}, nullptr,
-                 nullptr, {"30 fps", "60 fps", "90 fps", "120 fps", "144 fps", "165 fps", "180 fps", "240 fps"}},
+                 nullptr, &fotr::g_fps, nullptr, 0, 0, {"30", "60", "90", "120", "144", "165", "180", "240", "0"}, nullptr,
+                 nullptr, {"30 fps", "60 fps", "90 fps", "120 fps", "144 fps", "165 fps", "180 fps", "240 fps", "Unlocked"}},
                 {"graphics", "skip_logos", cfg::Type::Bool, "Skip opening logos",
                  "Go straight to the title screen at startup.", &fotr::g_skip_logos},
                 {"graphics", "skip_all_videos", cfg::Type::Bool, "Skip any video",

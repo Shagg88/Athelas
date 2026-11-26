@@ -46,12 +46,25 @@ int32_t Scale(int32_t v, uint32_t pct) {
 }  // namespace
 
 X86_EXTERN_FUNC(__imp__sub_001F4E30);
+namespace {
+// Logging Detailed: each blow, the target's HP before and after (#118: with damage_taken or enemy_damage away from
+// 100%, an enemy got up from what looked like a killing blow, a hero staggered and then fell; the log shows which
+// blows change their outcome)
+void TraceBlow(uint32_t target, bool party, int32_t hp, int32_t raw, int32_t sent, uint8_t kill) {
+    LOGI("ta: blow to %s %08X: hp %d, change %d (sent %d), kill byte %u, hp after %d", party ? "hero" : "enemy", target, hp,
+         raw, sent, kill, int32_t(::kernel::R32(target + 0x8C)));
+}
+}  // namespace
+
 X86_FUNC(sub_001F4E30) {
     int32_t change = int32_t(ctx.ecx);
     if (change < 0) {
-        bool party = InParty(ctx.edx);
+        const uint32_t target = ctx.edx;
+        bool party = InParty(target);
+        const int32_t hp = int32_t(::kernel::R32(target + 0x8C));  // before this blow
+        const uint8_t kill = ::kernel::G<uint8_t>(ctx.esp + 4);
         // [gameplay] battle_speed: blows tell when a battle is on (read before invulnerable clears the kill byte)
-        ta::BattleBlow(ctx.edx, party, ctx.eax, InParty(ctx.eax), ::kernel::G<uint8_t>(ctx.esp + 4) != 0);
+        ta::BattleBlow(target, party, ctx.eax, InParty(ctx.eax), kill != 0);
         if (party && ta::g_invulnerable) {
             ctx.ecx = 0;
             ::kernel::G<uint8_t>(ctx.esp + 4) = 0;  // no "kill" either
@@ -61,15 +74,32 @@ X86_FUNC(sub_001F4E30) {
                                  : ta::g_enemy_damage_percent * ach::VirtueDealt() / 100;
             pct = pct < 10 ? 10 : pct > 500 ? 500 : pct;
             // the caller already decided whether this blow kills (the byte at esp+4): a killing blow is never made
-            // smaller, or the target would be "killed" with HP left. (A blow made bigger without that byte could take
-            // HP to 0 without a kill: not seen in play so far; it needs a test above 100% on the PC, see notes.)
-            if (!(::kernel::G<uint8_t>(ctx.esp + 4) && pct < 100)) ctx.ecx = uint32_t(Scale(change, pct));
+            // smaller, or the target would be "killed" with HP left
+            if (!(kill && pct < 100)) {
+                int32_t scaled = Scale(change, pct);
+                // and the game chose the blow's animation from the damage as it was (#118): a blow that would fell the
+                // target still fells it when made smaller (an enemy got up from its death fall), and one it would
+                // survive still leaves 1 HP when made bigger (a hero staggered, then fell). The settings change how
+                // many blows a fight takes, not how one ends. (A shield's absorbing, done after this, only lowers the
+                // damage, so the outcome stays the game's own.)
+                if (hp > 0 && pct != 100) {
+                    bool falls = int64_t(hp) + change <= 0;
+                    // a felling blow made smaller is sent as it was (not just -hp: a shield, taken off after this,
+                    // could then leave HP; the game's own 100% outcome either way)
+                    if (falls && scaled > change) scaled = change;
+                    else if (!falls && scaled <= -hp) scaled = -(hp - 1);
+                }
+                ctx.ecx = uint32_t(scaled);
+            }
         }
-        if (!party && InParty(ctx.eax) && ::kernel::G<uint8_t>(ctx.esp + 4)) {
-            __imp__sub_001F4E30(ctx, base);
-            ta::EnemyDefeated();
-            return;
-        }
+        const int32_t sent = int32_t(ctx.ecx);
+        // an enemy the party felled: its HP going from above 0 to 0 (the kill byte forces 0, so a marked kill is
+        // counted too; once per enemy, not again for a later blow to one already down)
+        const bool by_party = !party && InParty(ctx.eax);
+        __imp__sub_001F4E30(ctx, base);
+        if (by_party && hp > 0 && int32_t(::kernel::R32(target + 0x8C)) <= 0) ta::EnemyDefeated();
+        if (logx::GetLevel() >= 1) TraceBlow(target, party, hp, change, sent, kill);
+        return;
     }
     __imp__sub_001F4E30(ctx, base);
 }

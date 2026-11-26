@@ -1,6 +1,7 @@
 #include "core/settings_file.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -72,8 +73,25 @@ const char* TypeName(Type t) {
     }
 }
 
+// a key or section name as TOML needs it: bare when it can be, else quoted (a name with a dot or a space, kept from a
+// file, came back as a nested key or a file that couldn't be read; to-do 1.9.3)
+std::string Key(const std::string& k) {
+    bool bare = !k.empty();
+    for (unsigned char c : k)
+        if (!(std::isalnum(c) || c == '_' || c == '-')) bare = false;
+    return bare ? k : Quote(k);
+}
+
 // a value this file does not describe, written back as it was
 std::string NodeText(const toml::node& n) {
+    // a table kept from a file (a [mods.camera] the game doesn't know): written inline, as a value
+    if (auto t = n.as_table()) {
+        toml::table v = *t;
+        v.is_inline(true);
+        std::ostringstream o;
+        o << toml::toml_formatter{v, toml::format_flags::none};
+        return o.str();
+    }
     if (auto s = n.as_string()) return Quote(s->get());
     if (auto b = n.as_boolean()) return b->get() ? "true" : "false";
     if (auto i = n.as_integer()) return std::to_string(i->get());
@@ -205,14 +223,14 @@ std::string Text(const std::vector<Desc>& list, const std::string& previous) {
     for (auto& [k, v] : old) {
         std::string key(k.str());
         if (v.is_table() || old_keys.count(key)) continue;
-        out += key + " = " + NodeText(v) + "\n";
+        out += Key(key) + " = " + NodeText(v) + "\n";
     }
     if (!out.empty()) out += "\n";
     auto unknown = [&](const std::string& section) {
         std::string s;
         if (auto tbl = old[section].as_table())
             for (auto& [k, v] : *tbl)
-                if (!known.count(section + "." + std::string(k.str()))) s += std::string(k.str()) + " = " + NodeText(v) + "\n";
+                if (!known.count(section + "." + std::string(k.str()))) s += Key(std::string(k.str())) + " = " + NodeText(v) + "\n";
         return s;
     };
     for (size_t i = 0; i < sections.size(); i++) {
@@ -225,7 +243,7 @@ std::string Text(const std::vector<Desc>& list, const std::string& previous) {
     for (auto& [k, v] : old) {
         std::string section(k.str());
         if (!v.is_table() || std::find(sections.begin(), sections.end(), section) != sections.end()) continue;
-        out += "\n[" + section + "]\n" + unknown(section);
+        out += "\n[" + Key(section) + "]\n" + unknown(section);
     }
     return out;
 }

@@ -62,11 +62,13 @@ write to (not Program Files). Progress is kept in player 1's save. Set **Online 
 ## Features
 
 **In every game**
-- Widescreen and ultrawide (up to 32:9) without stretching, any resolution, 60 to 240 fps at normal game speed
+- Widescreen and ultrawide (up to 32:9) without stretching, any resolution, 60 to 240 fps or unlocked (The Two
+  Towers up to 240) at normal game speed
 - Xbox, PlayStation and Switch controllers, with the right button pictures; keyboard and mouse
 - Sharper text, anti-aliasing, texture filtering, sharpening; FSR, DLSS and XeSS upscaling in the Xbox games
 - Texture packs (in The Return of the King on PC, fonts too: sharper text at 2x or 4x), screenshots (`\` or Print
   Screen), achievements, the games' own cheat codes as switches
+- An in-game settings menu (`F10`) and fast forward (`F9`) in the Xbox games
 - Faithful by default: every enhancement can be turned off, with presets from Original to Ultra
 
 **Game highlights**
@@ -74,7 +76,7 @@ write to (not Program Files). Progress is kept in player 1's save. Set **Online 
   Together), mods, cutscenes that fill the screen, restored 3D sound and EAX reverb
 - **The Return of the King (Xbox):** co-op on one PC or online (experimental, see above), fixes for slowdowns and
   vanishing enemies at high frame rates
-- **The Two Towers:** an in-game settings menu (`F10`), fast forward (hold `F9`)
+- **The Two Towers:** every level and character unlocked from the start (a switch), any hero in finished levels
 - **The Fellowship of the Ring:** chapter select, the developers' unused Combat Test arenas, nine languages
 - **The Third Age:** field of view, draw distance, difficulty sliders
 
@@ -84,11 +86,12 @@ which gathers the logs for you.
 ## Requirements
 
 - Windows 10 or 11 (64-bit). Steam Deck and Linux through Proton; Mac through CrossOver (less tested).
-- Xbox games: a DirectX 12 graphics card.
+- Xbox games: a graphics card with DirectX 12 or Vulkan.
 - The Return of the King (PC): a Vulkan graphics driver is recommended (without one, a few graphics options are off).
 
 **Steam Deck / Linux:** extract Athelas into a folder, then in Steam use **Add a Non-Steam Game** on `Athelas.exe`
-and set **Properties > Compatibility** to the newest Proton. The Deck's controls work as an Xbox controller.
+and set **Properties > Compatibility** to the newest Proton. The Deck's controls work as an Xbox controller, and the
+games fill its 16:10 screen (1280 x 800, full screen or in a window).
 
 More detail on every setting, key and platform is in `README.txt` in the download.
 

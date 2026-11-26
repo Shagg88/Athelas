@@ -1,6 +1,8 @@
 // Athelas - the Xbox ports: finding each port's program, its settings file, starting it, and a game closing.
 #include "app.h"
 
+#include <functional>
+
 // ---------------------------------------------------------------------------
 // The Two Towers (Xbox), played through its PC port, TwoTowers.exe.
 // The port is where the player pointed to it (remembered in ROTKFix\ports.ini), or
@@ -204,21 +206,71 @@ void tt_play(App &a, const LibGame &g)
     if (!tt_save(a)) return;
     std::string tex = tt_data_dir() + "\\textures";
     SHCreateDirectoryExA(NULL, (tex + "\\replace").c_str(), NULL);
-    // save games: kept with the launcher. The first time, bring over any the port
-    // already has in its own folder (hdd\ beside TwoTowers.exe), so no progress is lost.
+    // save games: kept with the launcher. While that folder has no saves yet, any the port has in its own folder
+    // (hdd\ beside TwoTowers.exe) are brought over first, so no progress is lost. "No saves yet" and not "no folder":
+    // the About page's Saves button makes the folder, and the old saves then stayed out of the game's sight (to-do
+    // 1.9.3). Copied to a folder beside it first and moved in only when the copy is whole: a failed copy stops Play
+    // with a message (the old saves stay where they are); the next Play starts without them.
     std::string saves = tt_data_dir() + "\\saves";
-    if (GetFileAttributesA(saves.c_str()) == INVALID_FILE_ATTRIBUTES) {
-        std::string old = a.tt.exe.substr(0, a.tt.exe.find_last_of('\\')) + "\\hdd";
-        if (GetFileAttributesA(old.c_str()) != INVALID_FILE_ATTRIBUTES) {
-            std::string from = old + "\\*";
-            from.push_back('\0');                 // SHFileOperation lists end with two zeros
-            std::string to = saves; to.push_back('\0');
-            SHCreateDirectoryExA(NULL, saves.c_str(), NULL);
+    {
+        auto has_saves = [](const std::string &d) {   // a folder that can't be read counts as having saves
+            DWORD at = GetFileAttributesA(d.c_str());
+            return at != INVALID_FILE_ATTRIBUTES && (at & FILE_ATTRIBUTE_DIRECTORY) && folder_has_files(d);
+        };
+        auto shell = [](UINT func, const std::string &from, const std::string &to) {
+            std::string f = from; f.push_back('\0');   // SHFileOperation lists end with two zeros
+            std::string t = to; t.push_back('\0');
             SHFILEOPSTRUCTA op; memset(&op, 0, sizeof op);
-            op.wFunc = FO_COPY; op.pFrom = from.c_str(); op.pTo = to.c_str();
+            op.wFunc = func; op.pFrom = f.c_str(); op.pTo = t.c_str();
             op.fFlags = FOF_NOCONFIRMATION | FOF_NOCONFIRMMKDIR | FOF_NOERRORUI | FOF_SILENT;
-            SHFileOperationA(&op);
+            return SHFileOperationA(&op) == 0 && !op.fAnyOperationsAborted;
+        };
+        std::string old = a.tt.exe.substr(0, a.tt.exe.find_last_of('\\')) + "\\hdd";
+        // being copied (never used: what is there after a crash is part of a copy) and copied whole (renamed to it in
+        // one step once the copy checked out); the mark beside the saves folder, not in it: the game reads that folder
+        std::string copying = saves + ".importing", ready = saves + ".import-ready", mark = saves + ".imported.txt";
+        // a whole copy moved in file by file, never over a file already there (a save made since is newer)
+        std::function<bool(const std::string &, const std::string &)> move_in = [&](const std::string &from, const std::string &to) {
+            SHCreateDirectoryExA(NULL, to.c_str(), NULL);
+            WIN32_FIND_DATAA fd;
+            HANDLE h = FindFirstFileA((from + "\\*").c_str(), &fd);
+            if (h == INVALID_HANDLE_VALUE) return false;
+            bool all = true;
+            do {
+                std::string n = fd.cFileName;
+                if (n == "." || n == "..") continue;
+                std::string f = from + "\\" + n, t = to + "\\" + n;
+                if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) all = move_in(f, t) && all;
+                else if (!MoveFileExA(f.c_str(), t.c_str(), 0) && GetFileAttributesA(t.c_str()) == INVALID_FILE_ATTRIBUTES) all = false;
+            } while (FindNextFileA(h, &fd));
+            FindClose(h);
+            return all;
+        };
+        auto finish = [&]() {   // a file the saves folder already has keeps its newer copy (the old one is still in hdd\\)
+            bool ok = move_in(ready, saves);
+            if (ok) shell(FO_DELETE, ready, "");
+            return ok;
+        };
+        if (GetFileAttributesA(copying.c_str()) != INVALID_FILE_ATTRIBUTES) shell(FO_DELETE, copying, "");
+        if (GetFileAttributesA(ready.c_str()) != INVALID_FILE_ATTRIBUTES) finish();   // cut short last time
+        static std::string warned;   // a copy that failed once: the second Play starts the game anyway
+        bool imported = GetFileAttributesA(mark.c_str()) != INVALID_FILE_ATTRIBUTES;
+        if (!imported && !has_saves(saves) && has_saves(old) && warned != old) {
+            SHCreateDirectoryExA(NULL, copying.c_str(), NULL);
+            bool ok = shell(FO_COPY, old + "\\*", copying) && has_saves(copying) && MoveFileA(copying.c_str(), ready.c_str());
+            if (!ok) shell(FO_DELETE, copying, "");
+            ok = ok && finish() && has_saves(saves);
+            if (!ok) {
+                warned = old;
+                set_message(a, "Could not bring your earlier saves over from " + old + " to " + saves +
+                               ". They are still in " + old + ". Press Play again to start without them.", true);
+                return;
+            }
         }
+        // once only: saves deleted in the game later (to start afresh) don't come back from hdd\ (review); also for
+        // saves brought over by an earlier version
+        if (!imported && has_saves(saves))
+            if (FILE *f = fopen(mark.c_str(), "wb")) { fputs("Saves brought over from the game's hdd folder (or not needed).\r\n", f); fclose(f); }
     }
     std::string shots = exe_dir() + "\\Screenshots";   // with ROTK's; the names start TT_
     // a folder at the top of a drive ("E:\"): its closing backslash would escape the closing quote, so it is doubled

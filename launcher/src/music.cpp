@@ -32,14 +32,14 @@ static bool read_game_file(const std::string &game, const char *rel, std::vector
     } else path = game + "\\" + rel;
     HANDLE f = CreateFileA(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
     if (f == INVALID_HANDLE_VALUE) return false;
-    if (!len) {
+    if (attr & FILE_ATTRIBUTE_DIRECTORY) {   // a loose file's size from the file; an image member's (0 too) as found
         LARGE_INTEGER s;
         if (!GetFileSizeEx(f, &s)) { CloseHandle(f); return false; }
         len = (unsigned long long)s.QuadPart;
     }
     if (len > maxBytes || len < 64) { CloseHandle(f); return false; }
     LARGE_INTEGER p; p.QuadPart = (LONGLONG)at;
-    SetFilePointerEx(f, p, NULL, FILE_BEGIN);
+    if (!SetFilePointerEx(f, p, NULL, FILE_BEGIN)) { CloseHandle(f); return false; }
     out.resize((size_t)len);
     size_t got = 0;
     while (got < out.size()) {
@@ -152,7 +152,7 @@ static bool read_game_range(const std::string &game, const char *rel, unsigned l
     } else path = game + "\\" + rel;
     HANDLE f = CreateFileA(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
     if (f == INVALID_HANDLE_VALUE) return false;
-    if (!total) {
+    if (attr & FILE_ATTRIBUTE_DIRECTORY) {   // a loose file's size from the file; an image member's (0 too) as found
         LARGE_INTEGER s;
         if (!GetFileSizeEx(f, &s)) { CloseHandle(f); return false; }
         total = (unsigned long long)s.QuadPart;
@@ -161,7 +161,7 @@ static bool read_game_range(const std::string &game, const char *rel, unsigned l
     if (off >= total) { CloseHandle(f); return false; }
     len = (size_t)std::min<unsigned long long>(len, total - off);
     LARGE_INTEGER p; p.QuadPart = (LONGLONG)(at + off);
-    SetFilePointerEx(f, p, NULL, FILE_BEGIN);
+    if (!SetFilePointerEx(f, p, NULL, FILE_BEGIN)) { CloseHandle(f); return false; }
     out.resize(len);
     size_t got = 0;
     while (got < len) {

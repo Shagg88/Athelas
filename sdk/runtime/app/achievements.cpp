@@ -62,15 +62,23 @@ const Def* Find(const std::string& id) {
     return nullptr;
 }
 
-// lock held
+bool TryLoad();
+
+// lock held. Never writes before the earned file has been read (an unreadable file - another program holding it, a
+// read error - would have been replaced by an empty one at the start: progress lost), and never truncates the earned
+// file: the new one is written beside it, checked, then put in its place in one step.
 void Save() {
+    if (!g_loaded && !TryLoad()) return;
     std::error_code ec;
     std::filesystem::create_directories(File().parent_path(), ec);
     std::filesystem::path tmp = File();
     tmp += ".new";
     {
-        std::ofstream o(tmp, std::ios::binary);
-        if (!o) return;
+        std::ofstream o(tmp, std::ios::binary | std::ios::trunc);
+        if (!o) {
+            LOGW("achievements: could not write %s; earned progress kept for the next save", tmp.string().c_str());
+            return;
+        }
         o << "; Achievements earned in this game (kept by the game; Athelas shows them).\r\n[unlocked]\r\n";
         for (const Def& d : app::kGame.achievements) {
             auto it = g_unlocked.find(d.id);
@@ -80,41 +88,101 @@ void Save() {
         for (auto& [k, v] : g_counters) o << k << " = " << v << "\r\n";
         o << "\r\n[list]\r\n";
         for (const Def& d : app::kGame.achievements) o << d.id << " = " << d.title << " | " << d.desc << "\r\n";
+        o.close();
+        if (!o) {
+            LOGW("achievements: writing %s failed; the earned file is unchanged", tmp.string().c_str());
+            return;
+        }
     }
-    std::filesystem::rename(tmp, File(), ec);
-    if (ec) {
-        // a plain copy, not std::filesystem::copy_file: that calls CopyFile2, which Wine 9 (and so CrossOver on a
-        // Mac) doesn't have, and the game closed at the second start when the rename had failed once
-        std::ifstream i(tmp, std::ios::binary);
-        std::ofstream o(File(), std::ios::binary | std::ios::trunc);
-        if (i && o) o << i.rdbuf();
-        i.close();
-        if (o) {
-            o.close();
-            std::filesystem::remove(tmp, ec);
+    // MoveFileExW replaces in one step (std::filesystem::rename too, but its fallback here used to truncate the earned
+    // file before knowing the copy would work; CopyFile2, behind std::filesystem::copy_file, isn't in Wine 9)
+    if (!MoveFileExW(tmp.c_str(), File().c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED)) {
+        static bool told = false;
+        if (!told) {
+            told = true;
+            LOGW("achievements: could not replace %s (Windows error %lu); earned progress kept for the next save",
+                 File().string().c_str(), (unsigned long)GetLastError());
         }
     }
 }
 
+// lock held. Reads the earned file into its own maps, and only when the whole file was read are they joined with
+// anything earned meanwhile (an unlock or count while the file couldn't be read yet). A missing file is a first run.
+bool TryLoad() {
+    if (g_loaded) return true;
+    std::error_code ec;
+    bool exists = std::filesystem::exists(File(), ec);
+    if (ec) return false;  // can't tell: not a first run, try again at the next save
+    std::map<std::string, std::string> unlocked;
+    std::map<std::string, uint64_t> counters;
+    if (exists) {
+        // read whole or not at all: the bytes read against the file's size (a stream's read error looks like its
+        // end, and a file cut short would then be taken for the whole and written back; review)
+        std::string text;
+        bool whole = false;
+        if (FILE* f = _wfopen(File().c_str(), L"rb")) {
+            uint64_t size = std::filesystem::file_size(File(), ec);
+            if (!ec && size < (64u << 20)) {
+                text.resize(size_t(size));
+                whole = std::fread(text.data(), 1, text.size(), f) == text.size() && !std::ferror(f);
+            }
+            std::fclose(f);
+        } else {
+            static bool told = false;
+            if (!told) {
+                told = true;
+                LOGW("achievements: could not read %s (in use?); nothing is written until it can be read",
+                     File().string().c_str());
+            }
+            return false;
+        }
+        if (!whole) {
+            LOGW("achievements: reading %s stopped early; nothing is written until it reads whole", File().string().c_str());
+            return false;
+        }
+        std::string line, section;
+        size_t at = 0;
+        while (at < text.size()) {
+            size_t e = text.find('\n', at);
+            line = Trim(text.substr(at, e == std::string::npos ? std::string::npos : e - at));
+            at = e == std::string::npos ? text.size() : e + 1;
+            if (line.empty() || line[0] == ';') continue;
+            if (line.front() == '[') {
+                section = line;
+                continue;
+            }
+            size_t eq = line.find('=');
+            if (eq == std::string::npos) continue;
+            std::string k = Trim(line.substr(0, eq)), v = Trim(line.substr(eq + 1));
+            if (section == "[unlocked]" && Find(k)) unlocked[k] = v;
+            else if (section == "[counters]") counters[k] = std::strtoull(v.c_str(), nullptr, 10);
+        }
+    }
+    // earned meanwhile: kept (the file's date wins for one already in it); counts meanwhile are added to the file's
+    for (auto& [k, v] : g_unlocked) unlocked.emplace(k, v);
+    for (auto& [k, v] : g_counters) counters[k] += v;
+    g_unlocked.swap(unlocked);
+    g_counters.swap(counters);
+    g_loaded = true;
+    return true;
+}
+
 // lock held
 void Load() {
-    if (g_loaded) return;
-    g_loaded = true;
-    std::ifstream in(File());
-    std::string line, section;
-    while (std::getline(in, line)) {
-        line = Trim(line);
-        if (line.empty() || line[0] == ';') continue;
-        if (line.front() == '[') {
-            section = line;
-            continue;
+    static bool tried = false;
+    if (g_loaded || tried) {
+        // couldn't be read at the start: tried again now and then (every read of a count would be too often)
+        static auto last = std::chrono::steady_clock::now();
+        auto now = std::chrono::steady_clock::now();
+        if (!g_loaded && now - last > std::chrono::seconds(5)) {
+            last = now;
+            if (TryLoad()) LOGR("achievements: %zu of %zu earned (read on a later try)", g_unlocked.size(),
+                                app::kGame.achievements.size());
         }
-        size_t eq = line.find('=');
-        if (eq == std::string::npos) continue;
-        std::string k = Trim(line.substr(0, eq)), v = Trim(line.substr(eq + 1));
-        if (section == "[unlocked]" && Find(k)) g_unlocked[k] = v;
-        else if (section == "[counters]") g_counters[k] = std::strtoull(v.c_str(), nullptr, 10);
+        return;
     }
+    tried = true;
+    if (!TryLoad()) return;
     LOGR("achievements: %zu of %zu earned (%s)", g_unlocked.size(), app::kGame.achievements.size(),
          File().string().c_str());
     if (!app::kGame.achievements.empty()) Save();  // the list for the launcher, from the first run
@@ -207,7 +275,8 @@ uint64_t Add(const char* name, uint64_t n) {
 
 void Flush() {
     std::lock_guard lock(g_lock);
-    if (g_loaded) Save();
+    // also when the earned file couldn't be read yet: Save reads it first, and writes only if it could
+    if (g_loaded || !g_unlocked.empty() || !g_counters.empty()) Save();
 }
 
 // the renderer's ImGui frame (UiLock held): the newest note in the bottom right corner for six seconds

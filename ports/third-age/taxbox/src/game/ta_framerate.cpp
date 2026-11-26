@@ -6,7 +6,7 @@
 // 1/59.94 s ([0x25934C]), clamped to 0..0.1 s, into [0x2FD288], with a 1200 Hz tick count ([0x2FD290], remainder
 // [0x2FD294]) beside it; the first step after a reset ([0x2FD28C] set) is 1/29.97 s ([0x2595D8]) with the ticks at 0.
 //
-// [graphics] fps (30, the console's, by default): any other rate skips the blank wait, lets the window's frame cap
+// [graphics] fps (30, the console's, by default): 30 waits for two blanks a frame (TA_FrameWait); any other rate skips the blank wait, lets the window's frame cap
 // (Settings::fps_cap) pace the frames, and gives the game the real time since its last step. Loading screens (the
 // other frame loop, 0x1C0FA0, which waits on the blank event itself) keep their pace.
 #include <atomic>
@@ -19,6 +19,7 @@
 #include "core/log.h"
 #include "cpu/x86_context.h"
 #include "kernel/kernel.h"
+#include "xdk/d3d8.h"
 #include "xdk/hle.h"
 
 namespace ta {
@@ -28,7 +29,9 @@ bool g_unlocked = false;
 // GameInfo::init (ta::Init in game_info.cpp): after the settings load
 void InitFrameRate() {
     g_unlocked = g_fps != 30;
-    if (g_unlocked) {
+    if (!g_unlocked) {
+        LOGR("ta: frame rate 30 (two vertical blanks a frame, as the console)");
+    } else {
         app::Get().fps_cap = g_fps;
         LOGR("ta: frame rate %s (the console's is 30)", g_fps ? std::to_string(g_fps).c_str() : "unlimited");
     }
@@ -38,7 +41,9 @@ void InitFrameRate() {
 using kernel::R32;
 using kernel::W32;
 
-// [[hook]] 0x1C0A70: the frame end's wait for a vertical blank; true skips to 0x1C0A81
+// [[hook]] 0x1C0A6E: just before the frame end's wait for a vertical blank (once a frame; at 0x1C0A70, the loop's own
+// start, it ran on every poll of the wait: the HUD's frame count and battle speed's tick hundreds of times a frame);
+// true skips the wait, to 0x1C0A81
 namespace ta {
 extern std::atomic<uint32_t> g_frame_no;  // ta_hud.cpp
 void BattleTick();  // ta_battle.cpp
@@ -48,7 +53,18 @@ bool TA_FrameWait(X86Context& ctx, uint8_t* base) {
     (void)base;
     ta::g_frame_no.fetch_add(1);
     ta::BattleTick();  // [gameplay] battle_speed (ta_battle.cpp)
-    return ta::g_unlocked;
+    if (ta::g_unlocked) return true;
+    // 30 fps: the game's own wait is for one vertical blank since the last frame (its 1.0 at 0x259224, a constant
+    // shared with hundreds of other places), so on a fast PC it ran at 60 with 30 chosen (measured, to-do 1.9.3; the
+    // console's 30 came from its slower drawing). Two blanks are waited for here, then the game's wait is skipped:
+    // 30, in step with the blanks as on the console (a 30 fps cap on its own clock beside the 60 Hz blanks gave
+    // steps of 1 and 3 blanks when the two lined up: judder; review). Never more than 100 ms (the blanks stopped).
+    const uint32_t last = ::kernel::R32(0x2FD284);  // kLastBlank
+    const auto until = std::chrono::steady_clock::now() + std::chrono::milliseconds(100);
+    while (::kernel::R32(0x30AF68) - last < 2 && std::chrono::steady_clock::now() < until)  // kBlanks
+        d3d::WaitVBlank(4);  // asleep until the next blank (4 ms at most: a blank counted just before this read is
+                             // waited out, not slept through; review), as ROTK's wait, not spinning a core
+    return true;
 }
 
 namespace {

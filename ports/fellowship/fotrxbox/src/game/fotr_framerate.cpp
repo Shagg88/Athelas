@@ -9,6 +9,7 @@
 #include "app/app.h"
 #include "core/log.h"
 #include "kernel/kernel.h"
+#include "xdk/d3d8.h"
 
 namespace dsound {
 extern bool g_output_buffers;  // sdk/runtime/xdk/dsound.cpp
@@ -23,7 +24,10 @@ void InitText();  // fotr_text.cpp
 void Init() {
     InitLanguage();
     InitText();
-    app::Get().fps_cap = g_fps;
+    // 30: two vertical blanks a Swap, as the console's presentation interval two (in step with the blanks; a 30 cap on
+    // its own clock could make uneven frames: parity review 1.9.4); other rates: the frame cap (0 = unlocked)
+    if (g_fps == 30) d3d::g_swap_blanks = 2;
+    else app::Get().fps_cap = g_fps;
     // DirectMusic's synth (0x16CF14 and the routines it calls) guards its voice list (0x2EAE30) by raising the IRQL
     // alone, which on the console's one processor kept every other thread out. Here two threads changed the list at
     // once as the opening film started: null writes at 0x16D2E9 / 0x16CF47, 2 of about 15 runs, in 1.8.4 too.
@@ -39,6 +43,7 @@ void Init() {
     // (0x8BB20) at their volumes; played straight they were too loud (#92). FOTR_MIXIN=0 turns it off to compare.
     const char* mi = std::getenv("FOTR_MIXIN");
     dsound::g_mixin_buffers = !(mi && *mi == '0');
-    LOGR("fotr: frame rate %u%s", g_fps, g_fps == 30 ? " (the console's)" : " (the console's is 30)");
+    LOGR("fotr: frame rate %s%s", g_fps ? std::to_string(g_fps).c_str() : "unlimited",
+         g_fps == 30 ? " (the console's, two blanks a frame)" : " (the console's is 30)");
 }
 }  // namespace fotr

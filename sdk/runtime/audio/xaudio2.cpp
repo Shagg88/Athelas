@@ -39,7 +39,7 @@ void StartOutput(std::function<void(float*, uint32_t)> render) {
             LOGE("audio: XAudio2 unavailable (%08X), no sound", unsigned(hr));
             return;
         }
-        voice->Start();
+        if (FAILED(hr = voice->Start())) LOGE("audio: XAudio2 voice wouldn't start (%08X)", unsigned(hr));
         constexpr uint32_t kFrames = kRate / 100;
         constexpr uint32_t kMinQueued = 3;
         constexpr uint32_t kMaxQueued = 10;
@@ -71,7 +71,18 @@ void StartOutput(std::function<void(float*, uint32_t)> render) {
             XAUDIO2_BUFFER xb{};
             xb.AudioBytes = kFrames * 8;
             xb.pAudioData = reinterpret_cast<const BYTE*>(b);
-            voice->SubmitSourceBuffer(&xb);
+            HRESULT sub = voice->SubmitSourceBuffer(&xb);
+            if (FAILED(sub)) {
+                // refused (the sound device gone, say): the slot stays free, and no tight loop mixing ahead while
+                // nothing is queued (to-do 1.9.3)
+                static bool told = false;
+                if (!told) {
+                    told = true;
+                    LOGE("audio: XAudio2 refused a buffer (%08X)", unsigned(sub));
+                }
+                Sleep(10);
+                continue;
+            }
             n++;  // only a submitted buffer takes a slot, XAudio2 still reads the queued ones
         }
     }).detach();

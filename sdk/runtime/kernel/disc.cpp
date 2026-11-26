@@ -55,9 +55,12 @@ bool SameName(std::string_view a, std::string_view b) {
            });
 }
 
-std::string Upper(std::string s) {
-    for (char& c : s) c = char(std::toupper(uint8_t(c)));
-    return s;
+// the order the children are kept in, case-insensitively: sorted by it once, then found by halving (each name was
+// upper-cased twice per comparison, and every path part was found by reading the whole folder; to-do 1.9.3)
+bool NameLess(std::string_view a, std::string_view b) {
+    return std::lexicographical_compare(a.begin(), a.end(), b.begin(), b.end(), [](char x, char y) {
+        return std::toupper(uint8_t(x)) < std::toupper(uint8_t(y));
+    });
 }
 
 }  // namespace
@@ -141,7 +144,17 @@ Disc::~Disc() {
 // each read carries its own position, so threads reading at once do not queue on one handle
 uint32_t Disc::ReadAt(uint64_t at, void* out, uint32_t len) const {
 #ifdef _WIN32
-    thread_local HANDLE event = CreateEventW(nullptr, TRUE, FALSE, nullptr);
+    // one event per reading thread, closed when the thread ends (a bare thread_local HANDLE was never closed: one
+    // handle left behind for each thread that had read, to-do 1.9.3)
+    struct Event {
+        HANDLE h = CreateEventW(nullptr, TRUE, FALSE, nullptr);
+        ~Event() {
+            if (h) CloseHandle(h);
+        }
+    };
+    thread_local Event ev;
+    HANDLE event = ev.h;
+    if (!event) return 0;
     OVERLAPPED o{};
     o.Offset = DWORD(at);
     o.OffsetHigh = DWORD(at >> 32);
@@ -216,7 +229,7 @@ bool Disc::ReadDir(Entry& dir, int depth) {
                                 base_ + uint64_t(sector) * kSector, size, (attributes & kFolder) != 0, {}});
     }
     std::sort(dir.children.begin(), dir.children.end(),
-              [](const Entry& a, const Entry& b) { return Upper(a.name) < Upper(b.name); });
+              [](const Entry& a, const Entry& b) { return NameLess(a.name, b.name); });
     for (Entry& child : dir.children)
         if (child.dir && !ReadDir(child, depth + 1)) return false;
     return true;
@@ -231,8 +244,9 @@ const Disc::Entry* Disc::Find(const std::vector<std::string>& parts) const {
             continue;
         }
         const Entry* dir = path.back();
-        auto it = std::find_if(dir->children.begin(), dir->children.end(), [&](const Entry& e) { return SameName(e.name, part); });
-        if (it == dir->children.end()) return nullptr;
+        auto it = std::lower_bound(dir->children.begin(), dir->children.end(), part,
+                                   [](const Entry& e, const std::string& key) { return NameLess(e.name, key); });
+        if (it == dir->children.end() || !SameName(it->name, part)) return nullptr;
         path.push_back(&*it);
     }
     return path.back();

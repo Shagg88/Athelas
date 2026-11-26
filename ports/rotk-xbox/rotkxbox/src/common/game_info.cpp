@@ -58,8 +58,8 @@ const app::GameInfo app::kGame = {
                  &rotk::g_skip_all_videos},
                 {"graphics", "fps", cfg::Type::Choice, "Frame rate",
                  "The game was made for 30 on the Xbox. Higher rates play at normal speed; movies keep their own pace.",
-                 nullptr, &rotk::g_fps, nullptr, 0, 0, {"30", "60", "90", "120", "144", "165", "180", "240"}, nullptr,
-                 nullptr, {"30 fps", "60 fps", "90 fps", "120 fps", "144 fps", "165 fps", "180 fps", "240 fps"}},
+                 nullptr, &rotk::g_fps, nullptr, 0, 0, {"30", "60", "90", "120", "144", "165", "180", "240", "0"}, nullptr,
+                 nullptr, {"30 fps", "60 fps", "90 fps", "120 fps", "144 fps", "165 fps", "180 fps", "240 fps", "Unlocked"}},
                 {"graphics", "fov", cfg::Type::Int, "Field of view",
                  "How wide the camera sees, as a share of the game's own (100). Wider shows more of the battle but "
                  "makes characters look further away.",

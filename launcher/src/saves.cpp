@@ -27,15 +27,18 @@ void saves_section(App &a, const std::string &game, const std::string &saves, co
     bool busy = a.running != NULL || saves.empty();
     if (busy) ImGui::BeginDisabled();
     if (ImGui::Button("Back up saves")) {
-        if (!folder_has_files(saves)) set_message(a, game + " has no saves yet.", false);
+        // one walk of the saves, in backup_folder (it was two: folder_has_files first)
+        if (GetFileAttributesA(saves.c_str()) == INVALID_FILE_ATTRIBUTES) set_message(a, game + " has no saves yet.", false);
         else {
             std::string zip = backup_name(game), err;
             int n = 0;
-            if (backup_folder(saves, zip, n, err, game)) {
+            bool empty = false;
+            if (backup_folder(saves, zip, n, err, game, &empty)) {
                 set_message(a, "Saves backed up (" + std::to_string(n) + (n == 1 ? " file" : " files") + ") to " + std::string(backup_place()) + ": " +
                                zip.substr(zip.find_last_of('\\') + 1), false);
                 show_file(zip);
-            } else set_message(a, "The saves couldn't be backed up: " + err, true);
+            } else if (empty) set_message(a, game + " has no saves yet.", false);
+            else set_message(a, "The saves couldn't be backed up: " + err, true);
         }
     }
     tip(("A copy of this game's saves in a zip in " + std::string(backup_place()) + ".\n" + where).c_str());

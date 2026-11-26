@@ -35,6 +35,7 @@ static const char*     (__cdecl* pNameForId)(SDL_JoystickID);
 static void            (__cdecl* pFree)(void*);
 static const char*     (__cdecl* pGetSerial)(SDL_Gamepad*);   // optional: SDL_GetGamepadSerial
 static const char*     (__cdecl* pGetPath)(SDL_Gamepad*);     // optional: SDL_GetGamepadPath
+static void            (__cdecl* pCloseGamepad)(SDL_Gamepad*); // optional: SDL_CloseGamepad
 
 // two extra controllers: the third player (input slot 2) and the fourth (slot 3, searched only when 4 players are chosen)
 struct ExtraPad { SDL_Gamepad* pad; SDL_JoystickID id; DWORD nextScan; uint16_t lastBits; };
@@ -49,6 +50,7 @@ static bool LoadSdl()
     HMODULE m = GetModuleHandleA("SDL3.dll");
     if (!m) return false;
     pGetGamepads      = (decltype(pGetGamepads))GetProcAddress(m, "SDL_GetGamepads");
+    pCloseGamepad     = (decltype(pCloseGamepad))GetProcAddress(m, "SDL_CloseGamepad");
     pOpenGamepad      = (decltype(pOpenGamepad))GetProcAddress(m, "SDL_OpenGamepad");
     pGamepadConnected = (decltype(pGamepadConnected))GetProcAddress(m, "SDL_GamepadConnected");
     pGetAxis          = (decltype(pGetAxis))GetProcAddress(m, "SDL_GetGamepadAxis");
@@ -68,7 +70,11 @@ static void FindPad(int slot)
 {
     ExtraPad& e = g_ep[slot - 2];
     if (e.pad && pGamepadConnected(e.pad)) return;
-    if (e.pad) { Log("pad of player %d disconnected", slot + 1); e.pad = nullptr; }
+    if (e.pad) {   // our open of it given back (it was left open for each unplug; review)
+        Log("pad of player %d disconnected", slot + 1);
+        if (pCloseGamepad) pCloseGamepad(e.pad);
+        e.pad = nullptr;
+    }
     const DWORD now = GetTickCount();
     if (now < e.nextScan) return;
     e.nextScan = now + 1000;

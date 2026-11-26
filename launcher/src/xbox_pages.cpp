@@ -507,7 +507,9 @@ static void tt_tab_display(App &a)
             static const struct { int w, h; const char *tag; } extra[] = {
                 { 3840, 1080, "  32:9 super ultrawide" }, { 2560, 720, "  32:9 super ultrawide" },
                 { 3440, 1440, "  21:9 ultrawide" }, { 2560, 1080, "  21:9 ultrawide" }, { 2560, 1440, "  16:9" },
-                { 1920, 1080, "  16:9" }, { 1600, 900, "  16:9" }, { 1280, 720, "  16:9" }, { 1440, 1080, "  4:3" } };
+                { 1920, 1080, "  16:9" }, { 1600, 900, "  16:9" }, { 1280, 720, "  16:9" },
+                { 1920, 1200, "  16:10" }, { 1680, 1050, "  16:10" }, { 1280, 800, "  16:10 (Steam Deck)" },
+                { 1440, 1080, "  4:3" } };
             ImGui::SeparatorText("Window sizes");
             for (auto &e : extra) {
                 if (e.w > m.deskW || e.h > m.deskH || (e.w == m.deskW && e.h == m.deskH) || m.find(e.w, e.h)) continue;
@@ -588,7 +590,12 @@ static void tt_tab_display(App &a)
             ImGui::TextColored(C_WARN, "Above this screen's %d Hz - the game will run at %d fps.", maxHz, maxHz);
         else if (mode == 1)
             ImGui::TextColored(C_DIM, "Screen will run at %d Hz.", tt_effective_refresh(a));
-        else if (fps > 0 && maxHz % fps)
+        else if (fps == 0)
+        {
+            if (vsync) ImGui::TextColored(C_DIM, "Unlocked: no frame cap beyond the screen's %d Hz (V-Sync).", maxHz);
+            else ImGui::TextColored(C_DIM, "Unlocked: no frame cap.");
+        }
+        else if (maxHz % fps)
             ImGui::TextColored(C_DIM, "Your screen runs at %d Hz; %d fps won't divide evenly into it, so motion may be slightly uneven.", maxHz, fps);
         else
             ImGui::TextColored(C_DIM, "Your screen runs at %d Hz - %d fps fits it evenly.", maxHz, fps);

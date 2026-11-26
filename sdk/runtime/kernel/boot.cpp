@@ -194,10 +194,21 @@ void Relaunch(const char* exe) {
         HANDLE wait[] = {ready, pi.hProcess};
         if (ready) WaitForMultipleObjects(2, wait, FALSE, 15000);
         if (ready) ::CloseHandle(ready);
+        // the new one ended before it showed anything: its exit code is this one's, so a launcher waiting here sees
+        // the failure (it was always 0, "closed normally"; to-do 1.9.3)
+        DWORD code = STILL_ACTIVE;
+        GetExitCodeProcess(pi.hProcess, &code);
         ::CloseHandle(pi.hThread);
         ::CloseHandle(pi.hProcess);
+        if (code != STILL_ACTIVE) {
+            LOGE("relaunch: %s.exe ended at the start (exit code %lu)", exe, (unsigned long)code);
+            logx::Flush();
+            std::_Exit(int(code));
+        }
     } else {
         LOGE("relaunch: cannot start %s.exe (%lu)", exe, GetLastError());
+        logx::Flush();
+        std::_Exit(1);
     }
     std::_Exit(0);
 #else
